@@ -1,5 +1,7 @@
 // DeflaterEngine.cs
+//
 // Copyright (C) 2001 Mike Krueger
+// Copyright (C) 2004 John Reilly
 //
 // This file was translated from java, it was part of the GNU Classpath
 // Copyright (C) 2001 Free Software Foundation, Inc.
@@ -42,27 +44,40 @@ using ICSharpCode.SharpZipLib.Checksums;
 namespace ICSharpCode.SharpZipLib.Zip.Compression 
 {
 	
+	/// <summary>
+	/// Strategies for deflater
+	/// </summary>
 	public enum DeflateStrategy 
 	{
-		// The default strategy.
+		/// <summary>
+		/// The default strategy
+		/// </summary>
 		Default  = 0,
 		
-		// This strategy will only allow longer string repetitions.  It is
-		// useful for random data with a small character set.
+		/// <summary>
+		/// This strategy will only allow longer string repetitions.  It is
+		/// useful for random data with a small character set.
+		/// </summary>
 		Filtered = 1,
-		
-		// This strategy will not look for string repetitions at all.  It
-		// only encodes with Huffman trees (which means, that more common
-		// characters get a smaller encoding.
+
+			
+		/// <summary>
+		/// This strategy will not look for string repetitions at all.  It
+		/// only encodes with Huffman trees (which means, that more common
+		/// characters get a smaller encoding.
+		/// </summary>
 		HuffmanOnly = 2
 	}
 	
+	/// <summary>
+	/// Low level compression engine for deflate algorithm which uses a 32K sliding window
+	/// with secondary compression from Huffman/Shannon-Fano codes.
+	/// </summary>
 	public class DeflaterEngine : DeflaterConstants 
 	{
 		static int TOO_FAR = 4096;
 		
 		int ins_h;
-		//		private byte[] buffer;
 		short[] head;
 		short[] prev;
 		
@@ -108,6 +123,12 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 		/// </summary>
 		Adler32 adler;
 		
+		/// <summary>
+		/// Construct instance with pending buffer
+		/// </summary>
+		/// <param name="pending">
+		/// Pending buffer to use
+		/// </param>>
 		public DeflaterEngine(DeflaterPending pending) 
 		{
 			this.pending = pending;
@@ -118,12 +139,15 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 			head   = new short[HASH_SIZE];
 			prev   = new short[WSIZE];
 			
-			/* We start at index 1, to avoid a implementation deficiency, that
+			/* We start at index 1, to avoid an implementation deficiency, that
 			* we cannot build a repeat pattern at index 0.
 			*/
 			blockStart = strstart = 1;
 		}
-		
+
+		/// <summary>
+		/// Reset internal state
+		/// </summary>		
 		public void Reset()
 		{
 			huffman.Reset();
@@ -142,24 +166,36 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 				prev[i] = 0;
 			}
 		}
-		
+
+		/// <summary>
+		/// Reset Adler checksum
+		/// </summary>		
 		public void ResetAdler()
 		{
 			adler.Reset();
 		}
-		
+
+		/// <summary>
+		/// Get current value of Adler checksum
+		/// </summary>		
 		public int Adler {
 			get {
 				return (int)adler.Value;
 			}
 		}
-		
+
+		/// <summary>
+		/// Total data processed
+		/// </summary>		
 		public int TotalIn {
 			get {
 				return totalIn;
 			}
 		}
-		
+
+		/// <summary>
+		/// Get/set the <see cref="DeflateStrategy">deflate strategy</see>
+		/// </summary>		
 		public DeflateStrategy Strategy {
 			get {
 				return strategy;
@@ -169,6 +205,9 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 			}
 		}
 		
+		/// <summary>
+		/// Set the deflate level (0-9)
+		/// </summary>
 		public void SetLevel(int lvl)
 		{
 			goodLength = DeflaterConstants.GOOD_LENGTH[lvl];
@@ -178,7 +217,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 			
 			if (DeflaterConstants.COMPR_FUNC[lvl] != comprFunc) {
 				//				if (DeflaterConstants.DEBUGGING) {
-				//					//Console.WriteLine("Change from "+comprFunc +" to "
+				//					//Console.WriteLine("Change from " + comprFunc + " to "
 				//					                  + DeflaterConstants.COMPR_FUNC[lvl]);
 				//				}
 				switch (comprFunc) {
@@ -230,10 +269,10 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 			//				if (hash != (((window[strstart] << (2*HASH_SHIFT)) ^ 
 			//				              (window[strstart + 1] << HASH_SHIFT) ^ 
 			//				              (window[strstart + 2])) & HASH_MASK)) {
-			//						throw new Exception("hash inconsistent: "+hash+"/"
-			//						                    +window[strstart]+","
-			//						                    +window[strstart+1]+","
-			//						                    +window[strstart+2]+","+HASH_SHIFT);
+			//						throw new Exception("hash inconsistent: " + hash + "/"
+			//						                    +window[strstart] + ","
+			//						                    +window[strstart+1] + ","
+			//						                    +window[strstart+2] + "," + HASH_SHIFT);
 			//					}
 			//			}
 			
@@ -265,6 +304,9 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 			}
 		}
 		
+		/// <summary>
+		/// Fill the window
+		/// </summary>
 		public void FillWindow()
 		{
 			/* If the window is almost full and there is insufficient lookahead,
@@ -344,7 +386,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 				scan += 2;
 				
 				/* We check for insufficient lookahead only every 8th comparison;
-				* the 256th check will be made at strstart+258.
+				* the 256th check will be made at strstart + 258.
 				*/
 			while (window[++scan] == window[++match] && 
 				window[++scan] == window[++match] && 
@@ -376,6 +418,9 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 			return matchLen >= MIN_MATCH;
 		}
 		
+		/// <summary>
+		/// Set compression dictionary
+		/// </summary>
 		public void SetDictionary(byte[] buffer, int offset, int length) 
 		{
 			if (DeflaterConstants.DEBUGGING && strstart != 1) {
@@ -448,7 +493,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 				}
 				
 				if (strstart > 2 * WSIZE - MIN_LOOKAHEAD) {
-					/* slide window, as findLongestMatch need this.
+					/* slide window, as findLongestMatch needs this.
 					 * This should only happen when flushing and the window
 					 * is almost full.
 					 */
@@ -598,6 +643,9 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 			return true;
 		}
 		
+		/// <summary>
+		/// Deflate drives actual compression of data
+		/// </summary>
 		public bool Deflate(bool flush, bool finish)
 		{
 			bool progress;
@@ -624,7 +672,9 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 			} while (pending.IsFlushed && progress); /* repeat while we have no pending output and progress was made */
 			return progress;
 		}
-		
+
+		/// Sets input data to be deflated.  Should only be called when <code>NeedsInput()</code>
+		/// returns true
 		public void SetInput(byte[] buf, int off, int len)
 		{
 			if (inputOff < inputEnd) {
@@ -644,7 +694,10 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 			inputOff = off;
 			inputEnd = end;
 		}
-		
+
+		/// <summary>
+		/// Return true if input is needed <see cref="SetInput"> via SetInput</see>
+		/// </summary>		
 		public bool NeedsInput()
 		{
 			return inputEnd == inputOff;

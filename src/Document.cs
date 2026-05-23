@@ -1,38 +1,66 @@
+using ICSharpCode.SharpZipLib.GZip;
 using System;
 using System.Collections;
 using System.Collections.Specialized;
 using System.Drawing;
 using System.IO;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Windows.Forms;
-using ICSharpCode.SharpZipLib.GZip;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for Document.
-	/// </summary>
-	[Serializable]
-	public sealed class Document
+    /// <summary>
+    /// Summary description for Document.
+    /// </summary>
+    [Serializable]
+    public sealed class Document
         : IDeserializationCallback,
-		  IInvalidate,
           IDisposable,
           ICloneable
-	{
-		private LayerList layers;
-		private int width;
-		private int height;
-		private NameValueCollection userMetaData;
+    {
+        private LayerList layers;
+        private int width;
+        private int height;
+        private NameValueCollection userMetaData;
 
         [NonSerialized]
         private InvalidateEventHandler layerInvalidatedDelegate;
 
         [NonSerialized]
-		private Region updateRegion;
+        private PdnRegion updateRegion;
 
         [NonSerialized]
         private bool dirty;
+
+        private Version savedWith;
+
+        /// <summary>
+        /// This is provided for future use.
+        /// If you want to add new stuff that must be serialized, create a new class,
+        /// then point 'tag' to a new instance of this class that is initialized
+        /// during construction. Make sure the new class has a 'tag' variable as well.
+        /// We effectively set up a 'linked list' where new versions of the code
+        /// can open old versions of the document, as .NET serialization is fickle in
+        /// certain areas. You might also add a new property to use simplify using 
+        /// this stuff...
+        ///    public DocumentVersion2Data DocV2Data { get { return (DocumentVersion2Data)tag; } }
+        /// </summary>
+        private object tag = null;
+
+        /// <summary>
+        /// Reports the version of Paint.NET that this file was saved with.
+        /// This is reset when SaveToStream is used. This can be used to
+        /// determine file format compatibility if necessary.
+        /// </summary>
+        public Version SavedWithVersion
+        {
+            get
+            {
+                return savedWith;
+            }
+        }
 
         /// <summary>
         /// Keeps track of whether the document has changed at all since it was last opened
@@ -44,41 +72,27 @@ namespace PaintDotNet
         {
             get
             {
-                if (disposed)
-                {
-                    throw new ObjectDisposedException("Document");
-                }
-
                 return dirty;
             }
 
             set
             {
-                if (disposed)
-                {
-                    throw new ObjectDisposedException("Document");
-                }
-
                 dirty = value;
             }
         }
 
         /// <summary>
-        /// Returns a copy of the current region that has been changed since the last
-        /// time Update() was called.
+        /// Returns a reference to the current region that has been changed since the last
+        /// time Update() was called. This does not return a copy, and thus changes made
+        /// to the object can possible disrupt coherency.
         /// </summary>
-		public Region UpdateRegion
-		{
-			get
-			{
-                if (disposed)
-                {
-                    throw new ObjectDisposedException("Document");
-                }
-
-				return updateRegion.Clone();
-			}
-		}
+        public PdnRegion UpdateRegion
+        {
+            get
+            {
+                return updateRegion;
+            }
+        }
 
         [NonSerialized]
         private string name;
@@ -103,61 +117,41 @@ namespace PaintDotNet
         /// <summary>
         /// Width of the document, in pixels. All contained layers must be this wide as well.
         /// </summary>
-		public int Width
-		{
-			get
-			{
-                if (disposed)
-                {
-                    throw new ObjectDisposedException("Document");
-                }
-
+        public int Width
+        {
+            get
+            {
                 return width;
-			}
-		}
+            }
+        }
 
         /// <summary>
         /// Height of the document, in pixels. All contained layers must be this tall as well.
         /// </summary>
-		public int Height
-		{
-			get
-			{
-                if (disposed)
-                {
-                    throw new ObjectDisposedException("Document");
-                }
-
+        public int Height
+        {
+            get
+            {
                 return height;
-			}
-		}
+            }
+        }
 
         /// <summary>
         /// The size of the document, in pixels. This is a convenience property that wraps up
         /// the Width and Height properties in one Size structure.
         /// </summary>
-		public Size Size
-		{
-			get
-			{
-                if (disposed)
-                {
-                    throw new ObjectDisposedException("Document");
-                }
-
+        public Size Size
+        {
+            get
+            {
                 return new Size(Width, Height);
-			}
-		}
+            }
+        }
 
         public Rectangle Bounds
         {
             get
             {
-                if (disposed)
-                {
-                    throw new ObjectDisposedException("Document");
-                }
-
                 return new Rectangle(0, 0, Width, Height);
             }
         }
@@ -173,12 +167,24 @@ namespace PaintDotNet
         {
             get
             {
-                if (disposed)
-                {
-                    throw new ObjectDisposedException("Document");
-                }
-
                 return userMetaData;
+            }
+        }
+
+        /// <summary>
+        /// The "tag" is used in case we want to extend the file format but keep backwards
+        /// compatibility.
+        /// </summary>
+        public object Tag
+        {
+            get
+            {
+                return tag;
+            }
+
+            set
+            {
+                tag = value;
             }
         }
 
@@ -193,24 +199,16 @@ namespace PaintDotNet
         {
             get
             {
-                if (disposed)
-                {
-                    throw new ObjectDisposedException("Document");
-                }
-
                 return name;
             }
 
             set
             {
-                if (disposed)
-                {
-                    throw new ObjectDisposedException("Document");
-                }
-
                 name = value;
             }
         }
+
+        private static readonly UnaryPixelOps.Constant constantWhite = new UnaryPixelOps.Constant(ColorBgra.FromUInt32(0xffffffff)); 
 
         /// <summary>
         /// Explicitely renders a requested region of the document.
@@ -218,22 +216,17 @@ namespace PaintDotNet
         /// <param name="args">Contains information used to control where rendering occurs.</param>
         /// <param name="roi">The rectangular region to render.</param>
         public void Render(RenderArgs args, Rectangle roi)
-		{
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
-            new UnaryPixelOps.Constant(ColorBgra.FromUInt32(0xffffffff)).Apply(args.Surface, roi);
+        {
+            constantWhite.Apply(args.Surface, roi);
 
             foreach (Layer layer in Layers)
             {
-				if (layer.Visible)
-				{
-					layer.Render(args, roi);
-				}
+                if (layer.Visible)
+                {
+                    layer.Render(args, roi);
+                }
             }
-		}
+        }
 
         public void Render(RenderArgs args, Rectangle[] roi)
         {
@@ -247,16 +240,9 @@ namespace PaintDotNet
 
         public void Render(RenderArgs args, Scanline[] scans, int startIndex, int length)
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
-            UnaryPixelOp constant = new UnaryPixelOps.Constant(ColorBgra.FromUInt32(0xffffffff));
-
             for (int i = startIndex; i < startIndex + length; ++i)
             {
-                constant.Apply(args.Surface, scans[i]);
+                constantWhite.Apply(args.Surface, scans[i]);
             }
 
             foreach (Layer layer in Layers)
@@ -273,16 +259,9 @@ namespace PaintDotNet
 
         public void Render(RenderArgs args, Rectangle[] roi, int startIndex, int length)
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
-            UnaryPixelOp constant = new UnaryPixelOps.Constant(ColorBgra.FromUInt32(0xffffffff));
-
             for (int i = startIndex; i < startIndex + length; ++i)
             {
-                constant.Apply(args.Surface, roi[i]);
+                constantWhite.Apply(args.Surface, roi[i]);
             }
 
             foreach (Layer layer in Layers)
@@ -304,16 +283,7 @@ namespace PaintDotNet
 
         public void Render(RenderArgs args, RectangleF[] roi, int startIndex, int length)
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
-            UnaryPixelOp constant = new UnaryPixelOps.Constant(ColorBgra.FromUInt32(0xffffffff));
-            for (int i = startIndex; i < startIndex + length; ++i)
-            {
-                constant.Apply(args.Surface, Rectangle.Truncate(roi[i]));
-            }
+            constantWhite.Apply(args.Surface, roi, startIndex, length);
 
             foreach (Layer layer in Layers)
             {
@@ -333,22 +303,17 @@ namespace PaintDotNet
         /// </summary>
         /// <param name="args">Contains information used to control where rendering occurs.</param>
         /// <param name="roi">The Region to render.</param>
-        public void Render(RenderArgs args, Region roi)
+        public void Render(RenderArgs args, PdnRegion roi)
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
-            RectangleF[] rectsF = roi.GetRegionScans(Utility.IdentityMatrix);
-            this.Render(args, rectsF);
+            Rectangle[] rects = roi.GetRegionScansReadOnlyInt();
+            this.Render(args, rects);
         }   
 
         private class UpdateScansContext
         {
             private Document document;
             private RenderArgs dst;
-            private Scanline[] scans;
+            private Rectangle[] scans;
             private int startIndex;
             private int length;
 
@@ -357,7 +322,7 @@ namespace PaintDotNet
                 document.Render(dst, scans, startIndex, length);
             }
 
-            public UpdateScansContext(Document document, RenderArgs dst, Scanline[] scans, int startIndex, int length)
+            public UpdateScansContext(Document document, RenderArgs dst, Rectangle[] scans, int startIndex, int length)
             {
                 this.document = document;
                 this.dst = dst;
@@ -380,19 +345,30 @@ namespace PaintDotNet
             }
 
             updateRegion.Intersect(Bounds);
-            RectangleF[] rectsF = updateRegion.GetRegionScans(Utility.IdentityMatrix);
-            Scanline[] scans = Utility.GetRegionScans(rectsF);
+            Rectangle[] rectsOriginal = updateRegion.GetRegionScansReadOnlyInt();
+            Rectangle[] rects = rectsOriginal;
 
-            // Split the task of rendering into 2 batches, and use background threads to handle them.
-            if (Utility.PhysicalCpuCount == 1)
+            // Special case where we're drawing 1 big rectangle: split it in half! Makes it much faster for dual proc
+            if (rects.Length == 1)
             {
-                UpdateScansContext usc = new UpdateScansContext(this, dst, scans, 0, scans.Length);
+                if (rects[0].Height > 1)
+                {
+                    Rectangle[] rectsNew = new Rectangle[2];
+                    rectsNew[0] = Rectangle.FromLTRB(rects[0].Left, rects[0].Top, rects[0].Right, rects[0].Top + (rects[0].Bottom - rects[0].Top) / 2);
+                    rectsNew[1] = Rectangle.FromLTRB(rects[0].Left, rects[0].Top + (rects[0].Bottom - rects[0].Top) / 2, rects[0].Right, rects[0].Bottom);
+                    rects = rectsNew;
+                }
+            }
+           
+            if (CpuCount.Info.LogicalCpuCount == 1)
+            {
+                UpdateScansContext usc = new UpdateScansContext(this, dst, rects, 0, rects.Length);
                 usc.UpdateScans(null);
             }
             else
-            {
-                UpdateScansContext usc1 = new UpdateScansContext(this, dst, scans, 0, scans.Length / 2);
-                UpdateScansContext usc2 = new UpdateScansContext(this, dst, scans, scans.Length / 2, scans.Length - (scans.Length / 2));
+            {   // Split the task of rendering into 2 batches, and use background threads to handle them.
+                UpdateScansContext usc1 = new UpdateScansContext(this, dst, rects, 0, rects.Length / 2);
+                UpdateScansContext usc2 = new UpdateScansContext(this, dst, rects, rects.Length / 2, rects.Length - (rects.Length / 2));
                 Utility.ThreadPool.QueueUserWorkItem(new WaitCallback(usc1.UpdateScans));
                 Utility.ThreadPool.QueueUserWorkItem(new WaitCallback(usc2.UpdateScans));
                 Utility.ThreadPool.Drain();
@@ -407,29 +383,24 @@ namespace PaintDotNet
         /// <param name="width"></param>
         /// <param name="height"></param>
         public Document(int width, int height)
-		{
+        {
             this.width = width;
-			this.height = height;
+            this.height = height;
             this.name = null;
             this.dirty = true;
-            this.updateRegion = new Region();
+            this.updateRegion = new PdnRegion();
             this.updateRegion.MakeEmpty();
-			layers = new LayerList(this);
+            layers = new LayerList(this);
             SetupEvents();
-			userMetaData = new NameValueCollection();
+            userMetaData = new NameValueCollection();
             Invalidate();
-		}
+        }
 
         /// <summary>
         /// Sets up event handling for contained objects.
         /// </summary>
         private void SetupEvents()
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
             layers.Changed += new EventHandler(LayerListChangedHandler);
             layers.Changing += new EventHandler(LayerListChangingHandler);
             layerInvalidatedDelegate = new InvalidateEventHandler(LayerInvalidatedHandler);
@@ -447,13 +418,7 @@ namespace PaintDotNet
         /// <param name="sender"></param>
         public void OnDeserialization(object sender)
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
-            updateRegion = new Region(this.Bounds);
-
+            updateRegion = new PdnRegion(this.Bounds);
             SetupEvents();
             dirty = true;
         }
@@ -468,21 +433,11 @@ namespace PaintDotNet
         {
             add
             {
-                if (disposed)
-                {
-                    throw new ObjectDisposedException("Document");
-                }
-
                 invalidated += value;
             }
 
             remove
             {
-                if (disposed)
-                {
-                    throw new ObjectDisposedException("Document");
-                }
-
                 invalidated -= value;
             }
         }
@@ -493,11 +448,6 @@ namespace PaintDotNet
         /// <param name="e"></param>
         private void OnInvalidated(InvalidateEventArgs e)
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
             if (invalidated != null)
             {
                 invalidated(this, e);
@@ -529,11 +479,6 @@ namespace PaintDotNet
         /// <param name="e"></param>
         private void LayerListChangedHandler(object sender, EventArgs e)
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
             foreach (Layer layer in Layers)
             {
                 layer.Invalidated += layerInvalidatedDelegate;
@@ -549,11 +494,6 @@ namespace PaintDotNet
         /// <param name="e"></param>
         private void LayerInvalidatedHandler(object sender, InvalidateEventArgs e)
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
             Invalidate(e.InvalidRect);
         }
 
@@ -563,11 +503,6 @@ namespace PaintDotNet
         /// </summary>
         public void Invalidate()
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
             dirty = true;
             Rectangle rect = new Rectangle(0, 0, Width, Height);
             updateRegion.MakeEmpty();
@@ -582,16 +517,42 @@ namespace PaintDotNet
         /// for rerendering during the next call to Update.
         /// </summary>
         /// <param name="roi">The region of interest to be invalidated.</param>
-        public void Invalidate(Region roi)
+        public void Invalidate(PdnRegion roi)
         {
-            if (disposed)
+            dirty = true;
+            updateRegion.Union(roi);
+            updateRegion.Intersect(this.Bounds);
+            
+            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
             {
-                throw new ObjectDisposedException("Document");
-            }
+                rect.Intersect(this.Bounds);
 
-            foreach (RectangleF rectF in roi.GetRegionScans(Utility.IdentityMatrix))
+                if (!rect.IsEmpty)
+                {
+                    InvalidateEventArgs iea = new InvalidateEventArgs(rect);
+                    OnInvalidated(iea);
+                }
+            }
+        }
+
+        public void Invalidate(RectangleF[] roi)
+        {
+            foreach (RectangleF rectF in roi)
             {
                 Invalidate(Rectangle.Truncate(rectF));
+            }
+        }
+
+        public void Invalidate(RectangleF roi)
+        {
+            Invalidate(Rectangle.Truncate(roi));
+        }
+
+        public void Invalidate(Rectangle[] roi)
+        {
+            foreach (Rectangle rect in roi)
+            {
+                Invalidate(rect);
             }
         }
 
@@ -602,11 +563,6 @@ namespace PaintDotNet
         /// <param name="roi">The region of interest to be invalidated.</param>
         public void Invalidate(Rectangle roi)
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
             dirty = true;
             Rectangle rect = Rectangle.Intersect(roi, this.Bounds);
             updateRegion.Union(rect);
@@ -619,13 +575,8 @@ namespace PaintDotNet
         /// </summary>
         private void Validate()
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
             updateRegion.Dispose();
-            updateRegion = new Region();
+            updateRegion = new PdnRegion();
             updateRegion.MakeEmpty();
         }
 
@@ -633,13 +584,8 @@ namespace PaintDotNet
         /// Excludes a portion of the document from the update region.
         /// </summary>
         /// <param name="roi">The region of interest to be validated.</param>
-        private void Validate(Region roi)
+        private void Validate(PdnRegion roi)
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
             updateRegion.Exclude(roi);
         }
 
@@ -649,11 +595,6 @@ namespace PaintDotNet
         /// <param name="roi">The region of interest to be validated.</param>
         private void Validate(Rectangle roi)
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
             updateRegion.Exclude(roi);
         }
 
@@ -693,20 +634,21 @@ namespace PaintDotNet
         /// <summary>
         /// Serializes the object to the given data stream.
         /// </summary>
-        /// <param name="stream">The Stream to serialize data into. This data will be compressed.</param>
-        /// <param name="callback">This can be used to keep track of the number of uncompressed bytes 
-        /// that are written. The values reported through the IOEventArgs.Count+Offset will vary from 
-        /// 1 to approximately Layers.Count*Width*Height*sizeof(ColorBgra). The final number will actually
-        /// be higher because of hierarchical overhead, so make sure to cap any progress reports to 100%.
-        /// This callback will be wired to the IOFinished event of a SiphonStream.</param>
+        /// <param name="stream">
+        /// The Stream to serialize data into. This data will be compressed.
+        /// </param>
+        /// <param name="callback">
+        /// This can be used to keep track of the number of uncompressed bytes that are written. The 
+        /// values reported through the IOEventArgs.Count+Offset will vary from 1 to approximately 
+        /// Layers.Count*Width*Height*sizeof(ColorBgra). The final number will actually be higher 
+        /// because of hierarchical overhead, so make sure to cap any progress reports to 100%. This
+        /// callback will be wired to the IOFinished event of a SiphonStream.
+        /// </param>
         public void SaveToStream(Stream stream, IOEventHandler callback)
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
+            this.savedWith = new Version(Application.ProductVersion);
 
-            GZipOutputStream gZipStream = new GZipOutputStream(stream, 4096, ICSharpCode.SharpZipLib.Zip.Compression.Deflater.BEST_SPEED);
+            GZipOutputStream gZipStream = new GZipOutputStream(stream);
             SiphonStream siphonStream = new SiphonStream(gZipStream);
 
             if (callback != null)
@@ -737,11 +679,6 @@ namespace PaintDotNet
         /// <returns></returns>
         public Document Flatten()
         {
-            if (disposed)
-            {
-                throw new ObjectDisposedException("Document");
-            }
-
             Surface surface = new Surface(Width, Height);
 
             using (RenderArgs renderArgs = new RenderArgs(surface))

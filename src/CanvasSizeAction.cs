@@ -4,14 +4,14 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// There are two ways to use this action:
-	/// 1. Through the normal "PerformAction" interface provided through DoucmentAction
-	/// 2. Through the ResizeCanvas static method
-	/// </summary>
-	public class CanvasSizeAction
+    /// <summary>
+    /// There are two ways to use this action:
+    /// 1. Through the normal "PerformAction" interface provided through DoucmentAction
+    /// 2. Through the ResizeCanvas static method
+    /// </summary>
+    public class CanvasSizeAction
         : DocumentAction
-	{
+    {
         public static BitmapLayer ResizeLayer(BitmapLayer layer, Size newSize, AnchorEdge anchor, ColorBgra background)
         {
             BitmapLayer newLayer = new BitmapLayer(newSize.Width, newSize.Height);
@@ -164,7 +164,7 @@ namespace PaintDotNet
 
             if (newDoc != null)
             {
-                ReplaceDocumentHistoryAction rdha = new ReplaceDocumentHistoryAction(Name, null, Workspace);
+                ReplaceDocumentHistoryAction rdha = new ReplaceDocumentHistoryAction(Name, Utility.GetImageResource("Icons.MenuImageCanvasSizeIcon.bmp"), Workspace);
                 Workspace.SetDocument(newDoc);
                 return rdha;
             }
@@ -174,9 +174,9 @@ namespace PaintDotNet
             }
         }
 
-		public CanvasSizeAction(DocumentWorkspace workspace)
+        public CanvasSizeAction(DocumentWorkspace workspace)
             : base(workspace, "Canvas Size")
-		{
-		}
-	}
+        {
+        }
+    }
 }

@@ -3,12 +3,12 @@ using System.Drawing;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for FlipLayerHistoryAction.
-	/// </summary>
-	public class FlipLayerHistoryAction
+    /// <summary>
+    /// Summary description for FlipLayerHistoryAction.
+    /// </summary>
+    public class FlipLayerHistoryAction
         : HistoryAction
-	{
+    {
         private Layer layer;
         private FlipType flipType;
 
@@ -57,11 +57,11 @@ namespace PaintDotNet
             return fha;
         }
 
-		public FlipLayerHistoryAction(string name, Image image, Layer flipMe, FlipType flipType)
+        public FlipLayerHistoryAction(string name, Image image, Layer flipMe, FlipType flipType)
             : base(name, image)
-		{
+        {
             this.layer = flipMe;
             this.flipType = flipType;
-		}
-	}
+        }
+    }
 }

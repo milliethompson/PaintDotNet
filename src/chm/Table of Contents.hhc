@@ -33,6 +33,10 @@
 				<param name="Local" value="OpenFileOperation.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Open Recent">
+				<param name="Local" value="OpenRecent.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Acquire">
 				<param name="Local" value="AcquireOperation.htm">
 				</OBJECT>
@@ -115,7 +119,7 @@
 				<param name="Local" value="ImageOperations.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Crop">
+				<param name="Name" value="Crop to Selection">
 				<param name="Local" value="CropOperation.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
@@ -164,12 +168,29 @@
 				<param name="Local" value="DuplicateLayers.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Flip Layer">
-				<param name="Local" value="FlipLayerOperation.htm">
+				<param name="Name" value="Adjustments">
 				</OBJECT>
+			<UL>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Brightness/Contrast">
+					<param name="Local" value="BrightnessContrast.htm">
+					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Desaturate">
+					<param name="Local" value="Desaturate.htm">
+					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Invert Colors">
+					<param name="Local" value="InvertColors.htm">
+					</OBJECT>
+			</UL>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Flatten Image">
 				<param name="Local" value="FlattenImage.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Flip Layer">
+				<param name="Local" value="FlipLayerOperation.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Layer Properties">
@@ -189,14 +210,6 @@
 				<param name="Local" value="Blur.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Desaturate">
-				<param name="Local" value="Desaturate.htm">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Invert Colors">
-				<param name="Local" value="InvertColors.htm">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Mosaic">
 				<param name="Local" value="Mosaic2.htm">
 				</OBJECT>
@@ -207,6 +220,10 @@
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Sharpen">
 				<param name="Local" value="Sharpen.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Roto Zoomer">
+				<param name="Local" value="RotoZoomer.htm">
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">

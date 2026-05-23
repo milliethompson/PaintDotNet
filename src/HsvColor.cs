@@ -54,11 +54,11 @@ namespace PaintDotNet
             Value = V;
         }
 
-		public static HsvColor FromColor(Color color)
-		{
-			RgbColor rgb = new RgbColor(color.R, color.G, color.B);
-			return rgb.ToHsv();
-		}
+        public static HsvColor FromColor(Color color)
+        {
+            RgbColor rgb = new RgbColor(color.R, color.G, color.B);
+            return rgb.ToHsv();
+        }
 
         public Color ToColor()
         {

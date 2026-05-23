@@ -9,51 +9,52 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for PencilTool.
-	/// </summary>
-	public class PencilTool
+    /// <summary>
+    /// Summary description for PencilTool.
+    /// </summary>
+    public class PencilTool
         : Tool 
-	{
+    {
+        private BinaryPixelOp blender = new BinaryPixelOps.AlphaBlend();
         private bool mouseDown = false;
-		private MouseButtons mouseButton;
+        private MouseButtons mouseButton;
         private ArrayList savedSurfaces;
         private BitmapLayer bitmapLayer;
-		private RenderArgs renderArgs;
+        private RenderArgs renderArgs;
         private ArrayList tracePoints;
         private Pen pen;
 
-		protected override void OnActivate()
-		{
-			base.OnActivate();
+        protected override void OnActivate()
+        {
+            base.OnActivate();
 
             savedSurfaces = new ArrayList();
 
             if (Workspace.ActiveLayer != null)
             {
                 bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
-				renderArgs = new RenderArgs(bitmapLayer.Surface);
+                renderArgs = new RenderArgs(bitmapLayer.Surface);
                 tracePoints = new ArrayList();
                 pen = null;
             }
             else
             {
                 bitmapLayer = null;
-				Utility.Dispose(renderArgs);
-				renderArgs = null;
+                Utility.Dispose(renderArgs);
+                renderArgs = null;
                 pen = null;
             }
-		}
+        }
 
-		protected override void OnDeactivate()
-		{
-			base.OnDeactivate();
+        protected override void OnDeactivate()
+        {
+            base.OnDeactivate();
 
-			if (mouseDown)
-			{
-				Point lastPoint = (Point)tracePoints[tracePoints.Count - 1];
-				OnMouseUp(new MouseEventArgs(mouseButton, 0, lastPoint.X, lastPoint.Y, 0));
-			}
+            if (mouseDown)
+            {
+                Point lastPoint = (Point)tracePoints[tracePoints.Count - 1];
+                OnMouseUp(new MouseEventArgs(mouseButton, 0, lastPoint.X, lastPoint.Y, 0));
+            }
 
             if (savedSurfaces != null)
             {
@@ -68,12 +69,21 @@ namespace PaintDotNet
 
             tracePoints = null;
             bitmapLayer = null;
-			Utility.Dispose(renderArgs);
-			renderArgs = null;
+
+            if (renderArgs != null)
+            {
+                renderArgs.Dispose();
+                renderArgs = null;
+            }
+
             mouseDown = false;
-            Utility.Dispose(pen);
-            pen = null;
-		}
+
+            if (pen != null)
+            {
+                pen.Dispose();
+                pen = null;
+            }
+        }
 
         private void DrawLines(RenderArgs ra, ArrayList points, int startIndex, int length, Pen pen, bool antiAliasing)
         {
@@ -81,8 +91,7 @@ namespace PaintDotNet
             {
                 return;
             }
-            else
-                if (points.Count == 1)
+            else if (points.Count == 1)
             {
                 Point p = (Point)points[0];
 
@@ -104,7 +113,6 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    BinaryPixelOp blender = new BinaryPixelOps.AlphaBlend();
                     ColorBgra color = ColorBgra.FromColor(pen.Color);
 
                     for (int i = 1; i < points.Count; ++i)
@@ -131,9 +139,45 @@ namespace PaintDotNet
             }
         }
 
-		protected override void OnMouseMove(MouseEventArgs e)
-		{
-			base.OnMouseMove(e);
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+
+            if (mouseDown)
+            {
+                return;
+            }
+
+            if (((e.Button & MouseButtons.Left) == MouseButtons.Left) ||
+                ((e.Button & MouseButtons.Right) == MouseButtons.Right))
+            {
+                mouseDown = true;
+                mouseButton = e.Button;
+                tracePoints = new ArrayList();
+                bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
+                renderArgs = new RenderArgs(bitmapLayer.Surface);
+
+                PdnRegion clipRegion;
+
+                if (!Workspace.Environment.IsSelectionEmpty)
+                {
+                    clipRegion = Workspace.Environment.CreateSelectedRegion();
+                }
+                else
+                {
+                    clipRegion = new PdnRegion();
+                    clipRegion.MakeInfinite();
+                }
+
+                renderArgs.Graphics.SetClip(clipRegion, CombineMode.Replace);
+                clipRegion.Dispose();
+                OnMouseMove(e);
+            }
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
 
             if (mouseDown && ((e.Button & mouseButton) != MouseButtons.None))
             {
@@ -170,8 +214,7 @@ namespace PaintDotNet
                         saveRect = Utility.PointsToRectangle(mouseXY, mouseXY);
                     }
                     else
-                    // >1 points
-                    {
+                    {   // >1 points
                         saveRect = Utility.PointsToRectangle((Point)tracePoints[tracePoints.Count - 1], (Point)tracePoints[tracePoints.Count - 2]);
                     }
 
@@ -184,11 +227,11 @@ namespace PaintDotNet
 
                     saveRect.Intersect(Workspace.ActiveLayer.Bounds);
 
-					// drawing outside of the canvas is a no-op, so don't do anything in that case!
+                    // drawing outside of the canvas is a no-op, so don't do anything in that case!
                     // also make sure it's within the clipping bounds
                     if (saveRect.Width > 0 && saveRect.Height > 0 && renderArgs.Graphics.Clip.IsVisible(saveRect))
                     {
-						pen.LineJoin = LineJoin.Round;
+                        pen.LineJoin = LineJoin.Round;
                         PlacedSurface savedPI = new PlacedSurface(renderArgs.Surface, saveRect);
                         savedSurfaces.Add(savedPI);
 
@@ -209,50 +252,13 @@ namespace PaintDotNet
                         DrawLines(this.renderArgs, tracePoints, startIndex, length, pen, Workspace.Environment.AntiAliasing);
 
                         bitmapLayer.Invalidate(saveRect);
-						Workspace.Update();
+                        Workspace.Update();
                     }
                 }
                 else
                 {
                     // TODO throw exception?
                 }
-            }
-
-		}
-
-		protected override void OnMouseDown(MouseEventArgs e)
-		{
-			base.OnMouseDown(e);
-
-			if (mouseDown)
-			{
-				return;
-			}
-
-            if (((e.Button & MouseButtons.Left) == MouseButtons.Left) ||
-                ((e.Button & MouseButtons.Right) == MouseButtons.Right))
-            {
-                mouseDown = true;
-				mouseButton = e.Button;
-                tracePoints = new ArrayList();
-                bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
-                renderArgs = new RenderArgs(bitmapLayer.Surface);
-
-				Region clipRegion;
-
-				if (!Workspace.Environment.IsSelectionEmpty)
-				{
-					clipRegion = Workspace.Environment.CreateSelectedRegion();
-				}
-				else
-				{
-					clipRegion = new Region();
-					clipRegion.MakeInfinite();
-				}
-
-				renderArgs.Graphics.SetClip(clipRegion, CombineMode.Replace);
-				clipRegion.Dispose();
-				OnMouseMove(e);
             }
         }
 
@@ -267,7 +273,7 @@ namespace PaintDotNet
 
                 if (savedSurfaces.Count > 0)
                 {
-                    Region saveMeRegion = new Region();
+                    PdnRegion saveMeRegion = new PdnRegion();
                     saveMeRegion.MakeEmpty();
 
                     foreach (PlacedSurface pi1 in savedSurfaces)
@@ -275,25 +281,22 @@ namespace PaintDotNet
                         saveMeRegion.Union(pi1.Bounds);
                     }
 
-                    Region simplifiedRegion = Utility.SimplifyAndInflateRegion(saveMeRegion);
+                    PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(saveMeRegion);
 
-                    //using (IrregularSurface weDrewThis = new IrregularSurface(renderArgs.Surface, simplifiedRegion))
+                    // draw in *reverse* order: that's why we don't use foreach
+                    for (int i = savedSurfaces.Count - 1; i >= 0; --i)
                     {
-                        for (int i = savedSurfaces.Count - 1; i >= 0; --i)
-                        {
-                            PlacedSurface pi = (PlacedSurface)savedSurfaces[i];
-                            pi.Draw(renderArgs.Surface);
-                            pi.Dispose();
-                        }
-
-                        savedSurfaces.Clear();
-
-                        HistoryAction ha = bitmapLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
-                        //weDrewThis.Draw(renderArgs.Surface);
-                        DrawLines(renderArgs, tracePoints, 0, tracePoints.Count, pen, Workspace.Environment.AntiAliasing);
-                        bitmapLayer.Invalidate(simplifiedRegion);
-                        Workspace.History.PushNewAction(ha);
+                        PlacedSurface pi = (PlacedSurface)savedSurfaces[i];
+                        pi.Draw(renderArgs.Surface);
+                        pi.Dispose();
                     }
+
+                    savedSurfaces.Clear();
+
+                    HistoryAction ha = bitmapLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
+                    DrawLines(renderArgs, tracePoints, 0, tracePoints.Count, pen, Workspace.Environment.AntiAliasing);
+                    bitmapLayer.Invalidate(simplifiedRegion);
+                    Workspace.History.PushNewAction(ha);
 
                     simplifiedRegion.Dispose();
                     saveMeRegion.Dispose();
@@ -305,16 +308,16 @@ namespace PaintDotNet
             }
         }
 
-		public PencilTool(DocumentWorkspace parent)
-			: base(parent)
-		{
+        public PencilTool(DocumentWorkspace parent)
+            : base(parent)
+        {
             toolBarImage = Utility.GetImageResource("Icons.PencilToolIcon.bmp");
             cursor = new Cursor(Utility.GetResourceStream("Cursors.PencilToolCursor.cur"));
             name = "Pencil";
             description = "Draws a freeform, one-pixel wide line.";
 
-			// initialize any state information you need
+            // initialize any state information you need
             mouseDown = false;
-		}
-	}
+        }
+    }
 }

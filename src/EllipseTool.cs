@@ -9,20 +9,20 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for RectangleTool.
-	/// </summary>
-	public class EllipseTool
-		: ShapeTool 
-	{
-		protected override void OnActivate()
-		{
-			base.OnActivate ();
+    /// <summary>
+    /// Summary description for RectangleTool.
+    /// </summary>
+    public class EllipseTool
+        : ShapeTool 
+    {
+        protected override void OnActivate()
+        {
+            base.OnActivate ();
         }
 
-		protected override void OnDeactivate()
-		{
-			base.OnDeactivate ();
+        protected override void OnDeactivate()
+        {
+            base.OnDeactivate ();
         }
 
         protected override ArrayList TrimShapePath(ArrayList points)
@@ -42,12 +42,12 @@ namespace PaintDotNet
             return array;
         }
 
-        protected override RectangleF[] GetOptimizedShapeOutlineRegion(Point[] points, GraphicsPath path)
+        protected override RectangleF[] GetOptimizedShapeOutlineRegion(Point[] points, PdnGraphicsPath path)
         {
             return Utility.SimplifyTrace(path.PathPoints);
         }
 
-        protected override GraphicsPath CreateShapePath(Point[] points)
+        protected override PdnGraphicsPath CreateShapePath(Point[] points)
         {
             Point a = points[0];
             Point b = points[points.Length - 1];
@@ -62,20 +62,20 @@ namespace PaintDotNet
                 rect = Utility.PointsToRectangle(a, b);
             }
 
-            GraphicsPath path = new GraphicsPath();
+            PdnGraphicsPath path = new PdnGraphicsPath();
             path.AddEllipse(rect);
             path.Flatten(Utility.IdentityMatrix, 0.25f);
             return path;
         }
 
-		public EllipseTool(DocumentWorkspace parent)
-			: base(parent)
-		{
-			toolBarImage = Utility.GetImageResource("Icons.EllipseToolIcon.bmp");
-			cursor = new Cursor(Utility.GetResourceStream("Cursors.RectangleToolCursor.cur"));
-			name = "Ellipse";
-			description = "Draws an Ellipse";
-		}
-	}
+        public EllipseTool(DocumentWorkspace parent)
+            : base(parent)
+        {
+            toolBarImage = Utility.GetImageResource("Icons.EllipseToolIcon.bmp");
+            cursor = new Cursor(Utility.GetResourceStream("Cursors.RectangleToolCursor.cur"));
+            name = "Ellipse";
+            description = "Draws an Ellipse";
+        }
+    }
 }
 

@@ -15,18 +15,21 @@ namespace PaintDotNet
     /// http://www.msdnaa.net/Resources/display.aspx?ResID=2460
     /// </summary>
     public class ColorWheel : System.Windows.Forms.UserControl
-	{
-		/// <summary> 
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
-		private Bitmap renderBitmap = null; // what we draw to the screen
+    {
+        /// <summary> 
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
+        private Bitmap renderBitmap = null; // what we draw to the screen
         private Bitmap extractBitmap = null; // what we extract colors from given (x,y) mouse coords. This surface is not anti-aliased, so it won't have the background color mixed in with valid selection areas
-		private Region wheelRegion = null;
+        private PdnRegion wheelRegion = null;
         private bool tracking = false;
         private Point lastMouseXY;
 
-        private static readonly int colorCount = 48; // this number controls what you might call the tesselation of the color wheel. higher #'s = slower, lower #'s = looks worse
+        // this number controls what you might call the tesselation of the color wheel. higher #'s = slower, lower #'s = looks worse
+        private const int colorCount = 48;
+
+        private System.Windows.Forms.PictureBox wheelPictureBox; 
 
         private HsvColor hsvColor;
         public HsvColor HsvColor
@@ -47,67 +50,97 @@ namespace PaintDotNet
                 }
             }
         }
-        
-		public ColorWheel()
-		{
-			// This call is required by the Windows.Forms Form Designer.
-			InitializeComponent();
+                
+        public ColorWheel()
+        {
+            // This call is required by the Windows.Forms Form Designer.
+            InitializeComponent();
 
-			// TODO: Add any initialization after the InitializeComponent call
-			wheelRegion = new Region();
-			hsvColor = new HsvColor(0, 0, 0);
-		}
+            // TODO: Add any initialization after the InitializeComponent call
+            wheelRegion = new PdnRegion();
+            hsvColor = new HsvColor(0, 0, 0);
+        }
 
-		private static PointF SphericalToCartesian(float r, float theta)
-		{
-			float x;
-			float y;
+        private static PointF SphericalToCartesian(float r, float theta)
+        {
+            float x;
+            float y;
 
-			x = r * (float)Math.Cos(theta);
-			y = r * (float)Math.Sin(theta);
+            x = r * (float)Math.Cos(theta);
+            y = r * (float)Math.Sin(theta);
 
-			return new PointF(x,y);
-		}
+            return new PointF(x,y);
+        }
 
-		private static PointF[] GetCirclePoints(float r, PointF center)
-		{
-			PointF[] points = new PointF[colorCount];
-			
-			for(int i = 0; i < colorCount; i++)
-			{
-				float theta = ((float)i / (float)colorCount) * 2 * (float)Math.PI;
-				points[i] = SphericalToCartesian(r, theta);
-				points[i].X += center.X;
-				points[i].Y += center.Y;
-			}
-			
-			return points;
-		}
-
-		private Color[] GetColors()
-		{
-			Color[] colors = new Color[colorCount];
-
-			for (int i = 0; i < colorCount; i++)
-			{
-				int hue = (i * 255) / colorCount;
-				colors[i] = new HsvColor(hue, 255, 255).ToColor();
-			}
-
-			return colors;
-		}
-
-		protected override void OnPaint(PaintEventArgs e)
-		{
-			base.OnPaint (e);
-
-			if (renderBitmap == null)
-			{
-				InitRenderSurface();
-			}
-
-            e.Graphics.DrawImage(renderBitmap, 0, 0, extractBitmap.Width, extractBitmap.Height);
+        private static PointF[] GetCirclePoints(float r, PointF center)
+        {
+            PointF[] points = new PointF[colorCount];
             
+            for(int i = 0; i < colorCount; i++)
+            {
+                float theta = ((float)i / (float)colorCount) * 2 * (float)Math.PI;
+                points[i] = SphericalToCartesian(r, theta);
+                points[i].X += center.X;
+                points[i].Y += center.Y;
+            }
+            
+            return points;
+        }
+
+        private Color[] GetColors()
+        {
+            Color[] colors = new Color[colorCount];
+
+            for (int i = 0; i < colorCount; i++)
+            {
+                int hue = (i * 255) / colorCount;
+                colors[i] = new HsvColor(hue, 255, 255).ToColor();
+            }
+
+            return colors;
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint (e);
+
+            if (renderBitmap == null)
+            {
+                InitRenderSurface();
+                this.wheelPictureBox.Size = renderBitmap.Size;
+                this.wheelPictureBox.Image = renderBitmap;
+            }
+
+            //e.Graphics.DrawImage(renderBitmap, 0, 0, extractBitmap.Width, extractBitmap.Height);
+        }
+
+        protected override void OnPaintBackground(PaintEventArgs e)
+        {
+            if (renderBitmap == null)
+            {
+                InitRenderSurface();
+                this.wheelPictureBox.Size = renderBitmap.Size;
+                this.wheelPictureBox.Image = renderBitmap;
+            }
+
+            using (PdnRegion eraseRegion = new PdnRegion(new Rectangle(new Point(0, 0), Size)))
+            {
+                if (extractBitmap != null)
+                {
+                    eraseRegion.Exclude(new Rectangle(new Point(0, 0), extractBitmap.Size));
+                }
+
+                using (SolidBrush bb = new SolidBrush(this.BackColor))
+                {
+                    e.Graphics.FillRegion(bb, eraseRegion);
+                }
+            }
+
+            //e.Graphics.DrawImage(renderBitmap, 0, 0, extractBitmap.Width, extractBitmap.Height);
+        }
+
+        private void wheelPictureBox_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
+        {
             float radius = ComputeRadius(Size);
             float theta = ((float)HsvColor.Hue / 255.0f) * 2.0f * (float)Math.PI;
             float alpha = ((float)HsvColor.Saturation / 255.0f);
@@ -119,26 +152,8 @@ namespace PaintDotNet
             e.Graphics.DrawRectangle(Pens.White, Rectangle.Inflate(rect, -1, -1));
         }
 
-		protected override void OnPaintBackground(PaintEventArgs e)
-		{
-            Region eraseRegion = new Region(new Rectangle(new Point(0, 0), Size));
-
-			if (renderBitmap == null)
-			{
-				InitRenderSurface();
-			}
-
-            if (extractBitmap != null)
-            {
-                eraseRegion.Exclude(new Rectangle(new Point(0, 0), extractBitmap.Size));
-            }
-
-            e.Graphics.FillRegion(new SolidBrush(this.BackColor), eraseRegion);
-            e.Graphics.DrawImage(renderBitmap, 0, 0, extractBitmap.Width, extractBitmap.Height);
-        }
-
-		private void InitRenderSurface()
-		{
+        private void InitRenderSurface()
+        {
             if (renderBitmap != null)
             {
                 renderBitmap.Dispose();
@@ -147,57 +162,60 @@ namespace PaintDotNet
             if (extractBitmap != null)
             {
                 extractBitmap.Dispose();
-			}
+            }
 
             int wheelDiameter = (int)ComputeDiameter(Size);
 
-			renderBitmap = new Bitmap(Math.Max(1, wheelDiameter), Math.Max(1, wheelDiameter), PixelFormat.Format24bppRgb);
+            renderBitmap = new Bitmap(Math.Max(1, wheelDiameter), Math.Max(1, wheelDiameter), PixelFormat.Format24bppRgb);
             extractBitmap = new Bitmap(renderBitmap.Width, renderBitmap.Height);
 
-			using (Graphics g1 = Graphics.FromImage(renderBitmap))
-			{
-                Surface drawMe = new Surface(renderBitmap.Width * 2, renderBitmap.Height * 2);
-                RenderArgs ra = new RenderArgs(drawMe);
+            using (Graphics g1 = Graphics.FromImage(renderBitmap))
+            {
+                using (Surface drawMe = new Surface(renderBitmap.Width * 2, renderBitmap.Height * 2))
+                {
+                    using (RenderArgs ra = new RenderArgs(drawMe))
+                    {
+                        ra.Graphics.Clear(this.BackColor);
+                        DrawWheel (ra.Graphics, drawMe.Width, drawMe.Height, null);
 
-                ra.Graphics.Clear(this.BackColor);
-                DrawWheel (ra.Graphics, drawMe.Width, drawMe.Height, null);
-
-                g1.Clear(this.BackColor);
-                g1.InterpolationMode = InterpolationMode.HighQualityBilinear;
-                g1.DrawImage(ra.Bitmap, 0, 0, renderBitmap.Width, renderBitmap.Width);
-                drawMe.Dispose();
-                drawMe = null;
-			}
+                        g1.Clear(this.BackColor);
+                        g1.InterpolationMode = InterpolationMode.HighQualityBilinear;
+                        g1.DrawImage(ra.Bitmap, 0, 0, renderBitmap.Width, renderBitmap.Width);
+                    }
+                }
+            }
 
             using (Graphics g2 = Graphics.FromImage(extractBitmap))
             {
                 g2.Clear(this.BackColor);
                 DrawWheel(g2, extractBitmap.Width, extractBitmap.Height, wheelRegion);
             }
-		}
+        }
 
-		private void DrawWheel(Graphics g, int width, int height, Region wheelRegion)
-		{
-			float radius = ComputeRadius(new Size(width, height));
-			PointF[] points = GetCirclePoints(Math.Max(1.0f, (float)radius - 1), new PointF(radius, radius));
-			PathGradientBrush pgb = new PathGradientBrush(points);
-
-			pgb.CenterColor = new HsvColor(255, 0, 255).ToColor();
-			pgb.CenterPoint = new PointF(radius, radius);
-			pgb.SurroundColors = GetColors();
-
-            g.FillEllipse(pgb, 0, 0, radius * 2, radius * 2);
-
-            if (wheelRegion != null)
+        private void DrawWheel(Graphics g, int width, int height, PdnRegion wheelRegion)
+        {
+            float radius = ComputeRadius(new Size(width, height));
+            PointF[] points = GetCirclePoints(Math.Max(1.0f, (float)radius - 1), new PointF(radius, radius));
+            
+            using (PathGradientBrush pgb = new PathGradientBrush(points))
             {
-                using (GraphicsPath path = new GraphicsPath())
+                pgb.CenterColor = new HsvColor(255, 0, 255).ToColor();
+                pgb.CenterPoint = new PointF(radius, radius);
+                pgb.SurroundColors = GetColors();
+
+                g.FillEllipse(pgb, 0, 0, radius * 2, radius * 2);
+
+                if (wheelRegion != null)
                 {
-                    path.AddEllipse(0, 0, radius * 2, radius * 2);
-                    wheelRegion.MakeEmpty();
-                    wheelRegion.Union(path);
+                    using (PdnGraphicsPath path = new PdnGraphicsPath())
+                    {
+                        path.AddEllipse(0, 0, radius * 2, radius * 2);
+                        wheelRegion.MakeEmpty();
+                        wheelRegion.Union(path);
+                    }
                 }
             }
-		}
+        }
 
         private static float ComputeRadius(Size size)
         {
@@ -209,27 +227,27 @@ namespace PaintDotNet
             return Math.Min((float)size.Width, (float)size.Height);       
         }
 
-		protected override void OnResize(EventArgs e)
-		{
-			base.OnResize (e);
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize (e);
 
             if (renderBitmap != null && (ComputeRadius(Size) != ComputeRadius(extractBitmap.Size)))
-			{
-				renderBitmap.Dispose();
+            {
+                renderBitmap.Dispose();
                 renderBitmap = null;
             }
 
-			Invalidate();
-		}
+            Invalidate();
+        }
 
-		public event EventHandler ColorChanged;
-		protected virtual void OnColorChanged()
-		{
-			if (ColorChanged != null)
-			{
-				ColorChanged(this, EventArgs.Empty);
-			}
-		}
+        public event EventHandler ColorChanged;
+        protected virtual void OnColorChanged()
+        {
+            if (ColorChanged != null)
+            {
+                ColorChanged(this, EventArgs.Empty);
+            }
+        }
 
         private void GrabColor(Point mouseXY)
         {
@@ -252,7 +270,7 @@ namespace PaintDotNet
 
             hsvColor = new HsvColor(h, s, v);
             OnColorChanged();
-            Invalidate();
+            Invalidate(true);
         }
 
         protected override void OnClick(EventArgs e)
@@ -287,32 +305,72 @@ namespace PaintDotNet
             {
                 GrabColor(new Point(e.X, e.Y));
             }
-		}
+        }
 
-		/// <summary> 
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary> 
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
-		#region Component Designer generated code
-		/// <summary> 
-		/// Required method for Designer support - do not modify 
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
-			components = new System.ComponentModel.Container();
-		}
-		#endregion
-	}
+        #region Component Designer generated code
+        /// <summary> 
+        /// Required method for Designer support - do not modify 
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            this.wheelPictureBox = new System.Windows.Forms.PictureBox();
+            this.SuspendLayout();
+            // 
+            // wheelPictureBox
+            // 
+            this.wheelPictureBox.Location = new System.Drawing.Point(0, 0);
+            this.wheelPictureBox.Name = "wheelPictureBox";
+            this.wheelPictureBox.TabIndex = 0;
+            this.wheelPictureBox.TabStop = false;
+            this.wheelPictureBox.Click += new System.EventHandler(this.wheelPictureBox_Click);
+            this.wheelPictureBox.Paint += new System.Windows.Forms.PaintEventHandler(this.wheelPictureBox_Paint);
+            this.wheelPictureBox.MouseUp += new System.Windows.Forms.MouseEventHandler(this.wheelPictureBox_MouseUp);
+            this.wheelPictureBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.wheelPictureBox_MouseMove);
+            this.wheelPictureBox.MouseDown += new System.Windows.Forms.MouseEventHandler(this.wheelPictureBox_MouseDown);
+            // 
+            // ColorWheel
+            // 
+            this.Controls.Add(this.wheelPictureBox);
+            this.Name = "ColorWheel";
+            this.ResumeLayout(false);
+
+        }
+        #endregion
+
+        private void wheelPictureBox_MouseMove(object sender, System.Windows.Forms.MouseEventArgs e)
+        {
+            OnMouseMove(e);
+        }
+
+        private void wheelPictureBox_MouseUp(object sender, System.Windows.Forms.MouseEventArgs e)
+        {
+            OnMouseUp(e);
+        }
+
+        private void wheelPictureBox_MouseDown(object sender, System.Windows.Forms.MouseEventArgs e)
+        {
+            OnMouseDown(e);
+        }
+
+        private void wheelPictureBox_Click(object sender, System.EventArgs e)
+        {
+            OnClick(e);
+        }
+    }
 }

@@ -6,12 +6,12 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	public class CanvasSizeDialog : PaintDotNet.ResizeDialog
-	{
-        private PaintDotNet.AnchorChooserControl anchorChooserControl;
+    public class CanvasSizeDialog : PaintDotNet.ResizeDialog
+    {
+        private AnchorChooserControl anchorChooserControl;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Label anchorLabel;
-		private System.ComponentModel.IContainer components = null;
+        private System.ComponentModel.IContainer components = null;
 
         public AnchorEdge AnchorEdge
         {
@@ -26,37 +26,39 @@ namespace PaintDotNet
             }
         }
 
-		public CanvasSizeDialog()
-		{
-			// This call is required by the Windows Form Designer.
-			InitializeComponent();
+        public CanvasSizeDialog()
+        {
+            // This call is required by the Windows Form Designer.
+            InitializeComponent();
 
-			// TODO: Add any initialization after the InitializeComponent call
+            // TODO: Add any initialization after the InitializeComponent call
             anchorChooserControl_AnchorEdgeChanged(anchorChooserControl, EventArgs.Empty);
-		}
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if (components != null) 
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+            this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.MenuImageCanvasSizeIcon.bmp"), Color.FromArgb(192, 192, 192));
+        }
 
-		#region Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null) 
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
+
+        #region Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.anchorChooserControl = new PaintDotNet.AnchorChooserControl();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.anchorLabel = new System.Windows.Forms.Label();
@@ -187,12 +189,12 @@ namespace PaintDotNet
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
         private void anchorChooserControl_AnchorEdgeChanged(object sender, System.EventArgs e)
         {
             anchorLabel.Text = Utility.InsertSpaces(anchorChooserControl.AnchorEdge.ToString());
         }
-	}
+    }
 }
 

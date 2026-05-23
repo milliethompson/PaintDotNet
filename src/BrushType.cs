@@ -2,10 +2,10 @@ using System;
 
 namespace PaintDotNet
 {
-	public enum BrushType
-	{
-		Solid,
-		Hatch,
-		None
-	}
+    public enum BrushType
+    {
+        Solid,
+        Hatch,
+        None
+    }
 }

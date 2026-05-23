@@ -8,21 +8,21 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for ColorGradientControl.
-	/// </summary>
-	public class ColorGradientControl 
+    /// <summary>
+    /// Summary description for ColorGradientControl.
+    /// </summary>
+    public class ColorGradientControl 
         : System.Windows.Forms.UserControl
-	{
-		/// <summary> 
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
+    {
+        /// <summary> 
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
 
         private bool tracking = false;
 
-        private static int triangleSize = 5;
-        private static int triangleSides = (triangleSize - 1) / 2;
+        private const int triangleSize = 5;
+        private const int triangleSides = (triangleSize - 1) / 2;
 
         // value from [0,255] that specifies the hsv "value" component
         // where we should draw little triangles that show the value
@@ -57,44 +57,44 @@ namespace PaintDotNet
             }
         }
 
-		private Color topColor;
-		public Color TopColor
-		{
-			get
-			{
-				return topColor;
-			}
+        private Color topColor;
+        public Color TopColor
+        {
+            get
+            {
+                return topColor;
+            }
 
-			set
-			{
-				topColor = value;
-				Invalidate();
-			}
-		}
+            set
+            {
+                topColor = value;
+                Invalidate();
+            }
+        }
 
-		private Color bottomColor;
-		public Color BottomColor
-		{
-			get
-			{
-				return bottomColor;
-			}
-			
-			set
-			{
-				bottomColor = value;
-				Invalidate();
-			}
-		}
+        private Color bottomColor;
+        public Color BottomColor
+        {
+            get
+            {
+                return bottomColor;
+            }
+            
+            set
+            {
+                bottomColor = value;
+                Invalidate();
+            }
+        }
 
-		public ColorGradientControl()
-		{
-			// This call is required by the Windows.Forms Form Designer.
-			InitializeComponent();
+        public ColorGradientControl()
+        {
+            // This call is required by the Windows.Forms Form Designer.
+            InitializeComponent();
 
-			// TODO: Add any initialization after the InitializeComponent call
+            // TODO: Add any initialization after the InitializeComponent call
             this.ResizeRedraw = true;
-		}
+        }
 
         private void DrawGradient(Graphics g)
         {
@@ -109,11 +109,15 @@ namespace PaintDotNet
             }
 
             // fill background
-            using (Region nonGradientRegion = new Region())
+            using (PdnRegion nonGradientRegion = new PdnRegion())
             {
                 nonGradientRegion.MakeInfinite();
                 nonGradientRegion.Exclude(gradientRect);
-                g.FillRegion(new SolidBrush(this.BackColor), nonGradientRegion);
+
+                using (SolidBrush sb = new SolidBrush(this.BackColor))
+                {
+                    g.FillRegion(sb, nonGradientRegion);
+                }
             }
 
             // draw value triangles
@@ -132,31 +136,31 @@ namespace PaintDotNet
             g.DrawLines(Pens.Black, new Point[] { a2, b2, c2, a2 });
         }
 
-		protected override void OnPaint(PaintEventArgs e)
-		{
-			base.OnPaint (e);
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint (e);
             DrawGradient(e.Graphics);
-		}
+        }
 
         protected override void OnPaintBackground(PaintEventArgs pevent)
         {
             DrawGradient(pevent.Graphics);
         }
 
-		/// <summary> 
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary> 
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
@@ -190,15 +194,15 @@ namespace PaintDotNet
             }
         }
 
-		#region Component Designer generated code
-		/// <summary> 
-		/// Required method for Designer support - do not modify 
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
-			components = new System.ComponentModel.Container();
-		}
-		#endregion
-	}
+        #region Component Designer generated code
+        /// <summary> 
+        /// Required method for Designer support - do not modify 
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            components = new System.ComponentModel.Container();
+        }
+        #endregion
+    }
 }

@@ -2,14 +2,14 @@ using System;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for FlipLayerVerticalAction.
-	/// </summary>
+    /// <summary>
+    /// Summary description for FlipLayerVerticalAction.
+    /// </summary>
     public class FlipLayerVerticalAction
         : FlipLayerAction
     {
         public FlipLayerVerticalAction(DocumentWorkspace workspace)
-            : base(workspace, "Flip Vertical", null, FlipType.Vertical)
+            : base(workspace, "Flip Vertical", Utility.GetImageResource("Icons.MenuLayersFlipVerticalIcon.bmp"), FlipType.Vertical)
         {
         }
     }

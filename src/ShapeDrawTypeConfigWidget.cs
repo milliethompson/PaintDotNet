@@ -8,86 +8,86 @@ using DotNetWidgets;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for ShapeDrawTypeConfigWidget.
-	/// </summary>
-	public class ShapeDrawTypeConfigWidget : System.Windows.Forms.UserControl
-	{
-		private ImageList imageList;
-		private ShapeDrawType shape;
+    /// <summary>
+    /// Summary description for ShapeDrawTypeConfigWidget.
+    /// </summary>
+    public class ShapeDrawTypeConfigWidget : System.Windows.Forms.UserControl
+    {
+        private ImageList imageList;
+        private ShapeDrawType shape;
         private DotNetWidgets.DotNetToolbar dotNetToolbar;
         private DotNetWidgets.DotNetToolbarButtonItem outlineButton;
         private DotNetWidgets.DotNetToolbarButtonItem interiorButton;
         private DotNetWidgets.DotNetToolbarButtonItem bothButton;
 
-		/// <summary> 
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
+        /// <summary> 
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
 
-		public ShapeDrawTypeConfigWidget()
-		{
-			// This call is required by the Windows.Forms Form Designer.
-			InitializeComponent();
+        public ShapeDrawTypeConfigWidget()
+        {
+            // This call is required by the Windows.Forms Form Designer.
+            InitializeComponent();
 
-			// TODO: Add any initialization after the InitializeComponent call
+            // TODO: Add any initialization after the InitializeComponent call
 
-			// Create ImageList
-			imageList = new ImageList();
-			imageList.ImageSize = new Size(16, 16);
+            // Create ImageList
+            imageList = new ImageList();
+            imageList.ImageSize = new Size(16, 16);
             imageList.TransparentColor = Color.FromArgb(192, 192, 192);
 
             this.dotNetToolbar.ImageList = imageList;
 
-			int outlineIndex = imageList.Images.Add(Utility.GetImageResource("Icons.ShapeOutlineIcon.bmp"), imageList.TransparentColor);
-			int bothIndex = imageList.Images.Add(Utility.GetImageResource("Icons.ShapeBothIcon.bmp"), imageList.TransparentColor);
-			int interiorIndex = imageList.Images.Add(Utility.GetImageResource("Icons.ShapeInteriorIcon.bmp"), imageList.TransparentColor);
+            int outlineIndex = imageList.Images.Add(Utility.GetImageResource("Icons.ShapeOutlineIcon.bmp"), imageList.TransparentColor);
+            int bothIndex = imageList.Images.Add(Utility.GetImageResource("Icons.ShapeBothIcon.bmp"), imageList.TransparentColor);
+            int interiorIndex = imageList.Images.Add(Utility.GetImageResource("Icons.ShapeInteriorIcon.bmp"), imageList.TransparentColor);
 
             outlineButton.ImageIndex = outlineIndex;
             interiorButton.ImageIndex = interiorIndex;
-            bothButton.ImageIndex = bothIndex;			
-		}
+            bothButton.ImageIndex = bothIndex;          
+        }
 
-		public event EventHandler ShapeDrawTypeChanged;
-		protected virtual void OnShapeDrawTypeChanged()
-		{
-			if (ShapeDrawTypeChanged != null)
-			{
-				ShapeDrawTypeChanged(this, EventArgs.Empty);
-			}
-		}
+        public event EventHandler ShapeDrawTypeChanged;
+        protected virtual void OnShapeDrawTypeChanged()
+        {
+            if (ShapeDrawTypeChanged != null)
+            {
+                ShapeDrawTypeChanged(this, EventArgs.Empty);
+            }
+        }
 
         public void PerformShapeDrawTypeChanged()
         {
             OnShapeDrawTypeChanged();
         }
 
-		public ShapeDrawType ShapeDrawType
-		{
-			get 
-			{
-				return shape;
-			}
-			set
-			{
+        public ShapeDrawType ShapeDrawType
+        {
+            get 
+            {
+                return shape;
+            }
+            set
+            {
                 if (shape != value)
                 {
                     shape = value;
-				
+                
                     // if the user sets the shape the buttons must be updated
-                    if(shape == ShapeDrawType.Outline)
+                    if (shape == ShapeDrawType.Outline)
                     {
                         this.outlineButton.Pushed = true;
                         this.bothButton.Pushed = false;
                         this.interiorButton.Pushed = false;
                     }
-                    else if(shape == ShapeDrawType.Both)
+                    else if (shape == ShapeDrawType.Both)
                     {
                         this.outlineButton.Pushed = false;
                         this.bothButton.Pushed = true;
                         this.interiorButton.Pushed = false;
                     }
-                    else if(shape == ShapeDrawType.Interior)
+                    else if (shape == ShapeDrawType.Interior)
                     {
                         this.outlineButton.Pushed = false;
                         this.bothButton.Pushed = false;
@@ -101,31 +101,31 @@ namespace PaintDotNet
 
                     this.OnShapeDrawTypeChanged();
                 }
-			}
-		}
+            }
+        }
 
-		/// <summary> 
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary> 
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
-		#region Component Designer generated code
-		/// <summary> 
-		/// Required method for Designer support - do not modify 
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Component Designer generated code
+        /// <summary> 
+        /// Required method for Designer support - do not modify 
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.dotNetToolbar = new DotNetWidgets.DotNetToolbar();
             this.outlineButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.interiorButton = new DotNetWidgets.DotNetToolbarButtonItem();
@@ -169,7 +169,7 @@ namespace PaintDotNet
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
         private void dotNetToolbar_ButtonClick(object sender, DotNetWidgets.DotNetToolbarItemClickEventArgs e)
         {
@@ -194,6 +194,6 @@ namespace PaintDotNet
                 dntbi.Enabled = this.Enabled;
             }
         }
-	
-	}
+    
+    }
 }

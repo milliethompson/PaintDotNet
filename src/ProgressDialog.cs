@@ -7,41 +7,43 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for ProgressDialog.
-	/// </summary>
-	public class ProgressDialog 
+    /// <summary>
+    /// Summary description for ProgressDialog.
+    /// </summary>
+    public class ProgressDialog 
         : PdnBaseForm
     {
         private System.Windows.Forms.ProgressBar percentBar;
         private System.Windows.Forms.Label percentText;
         private System.Windows.Forms.Button cancelButton;
         private System.Windows.Forms.Label descriptionLabel;
-		/// <summary>
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
 
         private int normalHeight;
         private int noButtonHeight;
+        private bool cancellable = true;
+        private bool done = false;
 
-		public ProgressDialog()
-		{
-			//
-			// Required for Windows Form Designer support
-			//
-			InitializeComponent();
+        public ProgressDialog()
+        {
+            //
+            // Required for Windows Form Designer support
+            //
+            InitializeComponent();
 
-			//
-			// TODO: Add any constructor code after InitializeComponent call
-			//
+            //
+            // TODO: Add any constructor code after InitializeComponent call
+            //
             this.Value = 0.0;
             
             Point bottomPoint = this.PointToScreen(new Point(0, Bottom));
             Point topPoint = this.cancelButton.PointToScreen(new Point(0, 0));
             normalHeight = Height;
             noButtonHeight = Height - 32; // (bottomPoint.Y - topPoint.Y);
-		}
+        }
 
         public string Description
         {
@@ -75,6 +77,7 @@ namespace PaintDotNet
                 }
 
                 this.cancelButton.Visible = value;
+                cancellable = value;
             }
         }
 
@@ -84,6 +87,7 @@ namespace PaintDotNet
             {
                 int intValue = (int)value;
                 string text = intValue.ToString() + "%";
+
                 if (text != percentText.Text)
                 {
                     percentText.Text = intValue.ToString() + "%";
@@ -105,6 +109,7 @@ namespace PaintDotNet
 
         public void ExternalFinish()
         {
+            done = true;
             DialogResult = DialogResult.OK;
             Close();
         }
@@ -130,28 +135,38 @@ namespace PaintDotNet
             BeginInvoke(new VoidVoidDelegate(ExternalFinish), null);
         }
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            base.OnClosing (e);
 
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+            if (cancellable == false && done == false)
+            {
+                e.Cancel = true;
+            }
+        }
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
+
+        #region Windows Form Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.percentBar = new System.Windows.Forms.ProgressBar();
             this.descriptionLabel = new System.Windows.Forms.Label();
             this.percentText = new System.Windows.Forms.Label();
@@ -186,6 +201,7 @@ namespace PaintDotNet
             // cancelButton
             // 
             this.cancelButton.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.cancelButton.Location = new System.Drawing.Point(72, 80);
             this.cancelButton.Name = "cancelButton";
@@ -196,8 +212,8 @@ namespace PaintDotNet
             // ProgressDialog
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(218, 109);
-            this.ControlBox = false;
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.percentText);
             this.Controls.Add(this.descriptionLabel);
@@ -210,10 +226,14 @@ namespace PaintDotNet
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Dialog";
+            this.Controls.SetChildIndex(this.percentBar, 0);
+            this.Controls.SetChildIndex(this.descriptionLabel, 0);
+            this.Controls.SetChildIndex(this.percentText, 0);
+            this.Controls.SetChildIndex(this.cancelButton, 0);
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
         public event EventHandler CancelClick;
         protected virtual void OnCancelClick()
@@ -242,7 +262,5 @@ namespace PaintDotNet
             base.OnClosed (e);
             Owner.Cursor = Cursors.Default;
         }
-
-
-	}
+    }
 }

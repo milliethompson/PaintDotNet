@@ -7,18 +7,18 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for WorkspaceOptionsConfigWidget.
-	/// </summary>
+    /// <summary>
+    /// Summary description for WorkspaceOptionsConfigWidget.
+    /// </summary>
     public class WorkspaceOptionsConfigWidget 
-		: System.Windows.Forms.UserControl
+        : System.Windows.Forms.UserControl
     {
         private DotNetWidgets.DotNetToolbar dotNetToolbar;
         private DotNetWidgets.DotNetToolbarButtonItem aaToggleButton;
         private System.Windows.Forms.ImageList imageList;
-		private DotNetWidgets.DotNetToolbarButtonItem rulersToggleButton;
+        private DotNetWidgets.DotNetToolbarButtonItem rulersToggleButton;
         private System.ComponentModel.IContainer components;
-		
+        
         public bool AntiAliasing
         {
             get
@@ -36,22 +36,22 @@ namespace PaintDotNet
             }
         }
 
-		public bool RulersEnabled
-		{
-			get
-			{
-				return rulersToggleButton.Pushed;
-			}
+        public bool RulersEnabled
+        {
+            get
+            {
+                return rulersToggleButton.Pushed;
+            }
 
-			set
-			{
-				if (rulersToggleButton.Pushed != value)
-				{
-					rulersToggleButton.Pushed = value;
-					this.OnRulersEnabledChanged();
-				}
-			}
-		}
+            set
+            {
+                if (rulersToggleButton.Pushed != value)
+                {
+                    rulersToggleButton.Pushed = value;
+                    this.OnRulersEnabledChanged();
+                }
+            }
+        }
 
         public WorkspaceOptionsConfigWidget()
         {
@@ -60,11 +60,11 @@ namespace PaintDotNet
 
             // TODO: Add any initialization after the InitializeComponent call
             imageList.TransparentColor = Color.FromArgb(192, 192, 192);
-			int aaIndex = imageList.Images.Add(Utility.GetImageResource("Icons.AntiAliasingButtonIcon.bmp"), imageList.TransparentColor);
-			int rulersIndex = imageList.Images.Add(Utility.GetImageResource("Icons.RulersEnabledButtonIcon.bmp"), imageList.TransparentColor);
+            int aaIndex = imageList.Images.Add(Utility.GetImageResource("Icons.AntiAliasingButtonIcon.bmp"), imageList.TransparentColor);
+            int rulersIndex = imageList.Images.Add(Utility.GetImageResource("Icons.RulersEnabledButtonIcon.bmp"), imageList.TransparentColor);
 
-			aaToggleButton.ImageIndex = aaIndex;
-			rulersToggleButton.ImageIndex = rulersIndex;
+            aaToggleButton.ImageIndex = aaIndex;
+            rulersToggleButton.ImageIndex = rulersIndex;
         }
 
         /// <summary> 
@@ -72,9 +72,9 @@ namespace PaintDotNet
         /// </summary>
         protected override void Dispose( bool disposing )
         {
-            if( disposing )
+            if ( disposing )
             {
-                if(components != null)
+                if (components != null)
                 {
                     components.Dispose();
                 }
@@ -101,7 +101,6 @@ namespace PaintDotNet
             this.dotNetToolbar.Buttons.Add(this.aaToggleButton);
             this.dotNetToolbar.Buttons.Add(this.rulersToggleButton);
             this.dotNetToolbar.DrawGrabHandle = false;
-            this.dotNetToolbar.DrawSeparator = false;
             this.dotNetToolbar.ImageList = this.imageList;
             this.dotNetToolbar.Location = new System.Drawing.Point(0, 0);
             this.dotNetToolbar.MenuProvider = null;
@@ -122,6 +121,7 @@ namespace PaintDotNet
             // 
             // imageList
             // 
+            this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
             this.imageList.ImageSize = new System.Drawing.Size(16, 16);
             this.imageList.TransparentColor = System.Drawing.Color.Transparent;
             // 
@@ -135,34 +135,34 @@ namespace PaintDotNet
         }
         #endregion
 
-		public event EventHandler AntiAliasChanged;
-		protected virtual void OnAntiAliasChanged()
-		{
-			if (AntiAliasChanged != null)
-			{
-				AntiAliasChanged(this, EventArgs.Empty);
-			}
-		}
+        public event EventHandler AntiAliasChanged;
+        protected virtual void OnAntiAliasChanged()
+        {
+            if (AntiAliasChanged != null)
+            {
+                AntiAliasChanged(this, EventArgs.Empty);
+            }
+        }
 
-		public event EventHandler RulersEnabledChanged;
-		protected virtual void OnRulersEnabledChanged()
-		{
-			if (RulersEnabledChanged != null)
-			{
-				RulersEnabledChanged(this, EventArgs.Empty);
-			}
-		}
+        public event EventHandler RulersEnabledChanged;
+        protected virtual void OnRulersEnabledChanged()
+        {
+            if (RulersEnabledChanged != null)
+            {
+                RulersEnabledChanged(this, EventArgs.Empty);
+            }
+        }
 
         private void dotNetToolbar_ButtonClick(object sender, DotNetWidgets.DotNetToolbarItemClickEventArgs e)
         {
-			if (e.Button == this.aaToggleButton)
-			{
-				this.AntiAliasing = !this.AntiAliasing;
-			}
-			else if(e.Button == this.rulersToggleButton)
-			{
-				this.RulersEnabled = !this.RulersEnabled;
-			}
+            if (e.Button == this.aaToggleButton)
+            {
+                this.AntiAliasing = !this.AntiAliasing;
+            }
+            else if (e.Button == this.rulersToggleButton)
+            {
+                this.RulersEnabled = !this.RulersEnabled;
+            }
         }
     }
 }

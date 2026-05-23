@@ -7,88 +7,88 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for ColorDisplayWidget.
-	/// </summary>
-	public class ColorDisplayWidget : System.Windows.Forms.UserControl
-	{
+    /// <summary>
+    /// Summary description for ColorDisplayWidget.
+    /// </summary>
+    public class ColorDisplayWidget : System.Windows.Forms.UserControl
+    {
         private System.ComponentModel.IContainer components;
 
-		private PaintDotNet.ColorRectangleControl foreColorRectangle;
-		private PaintDotNet.ColorRectangleControl backColorRectangle;
-		private IconBox blackAndWhiteIconBox;
+        private PaintDotNet.ColorRectangleControl foreColorRectangle;
+        private PaintDotNet.ColorRectangleControl backColorRectangle;
+        private IconBox blackAndWhiteIconBox;
         private System.Windows.Forms.ToolTip toolTip;
-		private IconBox swapIconBox;
-	
-		protected override Size DefaultSize
-		{
-			get
-			{
-				return new Size(48, 48);
-			}
-		}
+        private IconBox swapIconBox;
+    
+        protected override Size DefaultSize
+        {
+            get
+            {
+                return new Size(48, 48);
+            }
+        }
 
-		public event EventHandler UserForeColorChanged;
-		protected virtual void OnUserForeColorChanged()
-		{
-			if (UserForeColorChanged != null)
-			{
-				UserForeColorChanged(this, EventArgs.Empty);
-			}
-		}
+        public event EventHandler UserForeColorChanged;
+        protected virtual void OnUserForeColorChanged()
+        {
+            if (UserForeColorChanged != null)
+            {
+                UserForeColorChanged(this, EventArgs.Empty);
+            }
+        }
 
-		private ColorBgra userForeColor;
-		public ColorBgra UserForeColor
-		{
-			get
-			{
-				return userForeColor;
-			}
+        private ColorBgra userForeColor;
+        public ColorBgra UserForeColor
+        {
+            get
+            {
+                return userForeColor;
+            }
 
-			set
-			{
+            set
+            {
                 ColorBgra oldColor = userForeColor;
-				userForeColor = value;
+                userForeColor = value;
                 foreColorRectangle.RectangleColor = value.ToColor();
-				Invalidate();
+                Invalidate();
                 Update();
-			}
-		}
+            }
+        }
 
-		public event EventHandler UserBackColorChanged;
-		protected virtual void OnUserBackColorChanged()
-		{
-			if (UserBackColorChanged != null)
-			{
-				UserBackColorChanged(this, EventArgs.Empty);
-			}
-		}
+        public event EventHandler UserBackColorChanged;
+        protected virtual void OnUserBackColorChanged()
+        {
+            if (UserBackColorChanged != null)
+            {
+                UserBackColorChanged(this, EventArgs.Empty);
+            }
+        }
 
-		private ColorBgra userBackColor;
-		public ColorBgra UserBackColor
-		{
-			get
-			{
-				return userBackColor;
-			}
+        private ColorBgra userBackColor;
+        public ColorBgra UserBackColor
+        {
+            get
+            {
+                return userBackColor;
+            }
 
-			set
-			{
+            set
+            {
                 ColorBgra oldColor = userBackColor;
-				userBackColor = value;
+                userBackColor = value;
                 backColorRectangle.RectangleColor = value.ToColor();
-				Invalidate();
+                Invalidate();
                 Update();
-			}
-		}
+            }
+        }
 
-		public ColorDisplayWidget()
-		{
-			// This call is required by the Windows.Forms Form Designer.
-			InitializeComponent();
+        public ColorDisplayWidget()
+        {
+            // This call is required by the Windows.Forms Form Designer.
+            InitializeComponent();
 
-			// TODO: Add any initialization after the InitializeComponent call
-			swapIconBox.Icon = new Bitmap(Utility.GetImageResource("Icons.SwapIcon.bmp"));
+            // TODO: Add any initialization after the InitializeComponent call
+            swapIconBox.Icon = new Bitmap(Utility.GetImageResource("Icons.SwapIcon.bmp"));
             swapIconBox.TransparentColor = Color.FromArgb(192, 192, 192);
             blackAndWhiteIconBox.Icon = new Bitmap(Utility.GetImageResource("Icons.BlackAndWhiteIcon.bmp"));
             blackAndWhiteIconBox.TransparentColor = Color.FromArgb(192, 192, 192);
@@ -99,28 +99,28 @@ namespace PaintDotNet
             toolTip.SetToolTip(backColorRectangle, "Background");
         }
 
-		/// <summary> 
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary> 
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
-		#region Component Designer generated code
-		/// <summary> 
-		/// Required method for Designer support - do not modify 
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Component Designer generated code
+        /// <summary> 
+        /// Required method for Designer support - do not modify 
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.components = new System.ComponentModel.Container();
             this.foreColorRectangle = new PaintDotNet.ColorRectangleControl();
             this.backColorRectangle = new PaintDotNet.ColorRectangleControl();
@@ -190,10 +190,10 @@ namespace PaintDotNet
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
-		private void swapIconBox_Click(object sender, System.EventArgs e)
-		{
+        private void swapIconBox_Click(object sender, System.EventArgs e)
+        {
             ColorBgra fore = UserForeColor;
             ColorBgra back = UserBackColor;
             UserForeColor = back;
@@ -202,45 +202,45 @@ namespace PaintDotNet
             OnUserBackColorChanged();
         }
 
-		private void blackAndWhiteIconBox_Click(object sender, System.EventArgs e)
-		{
-			UserForeColor = ColorBgra.FromBgra(0, 0, 0, 255);
+        private void blackAndWhiteIconBox_Click(object sender, System.EventArgs e)
+        {
+            UserForeColor = ColorBgra.FromBgra(0, 0, 0, 255);
             OnUserForeColorChanged();
-			UserBackColor = ColorBgra.FromBgra(255, 255, 255, 255);
+            UserBackColor = ColorBgra.FromBgra(255, 255, 255, 255);
             OnUserBackColorChanged();
-		}
+        }
 
-		public event EventHandler UserForeColorClick;
-		protected virtual void OnUserForeColorClick()
-		{
-			if (UserForeColorClick != null)
-			{
-				UserForeColorClick(this, EventArgs.Empty);
-			}
-		}
+        public event EventHandler UserForeColorClick;
+        protected virtual void OnUserForeColorClick()
+        {
+            if (UserForeColorClick != null)
+            {
+                UserForeColorClick(this, EventArgs.Empty);
+            }
+        }
 
-		private void foreColorRectangle_Click(object sender, System.EventArgs e)
-		{
-			OnUserForeColorClick();
-		}
+        private void foreColorRectangle_Click(object sender, System.EventArgs e)
+        {
+            OnUserForeColorClick();
+        }
 
-		public event EventHandler UserBackColorClick;
-		protected virtual void OnUserBackColorClick()
-		{
-			if (UserBackColorClick != null)
-			{
-				UserBackColorClick(this, EventArgs.Empty);
-			}
-		}
+        public event EventHandler UserBackColorClick;
+        protected virtual void OnUserBackColorClick()
+        {
+            if (UserBackColorClick != null)
+            {
+                UserBackColorClick(this, EventArgs.Empty);
+            }
+        }
 
-		private void backColorRectangle_Click(object sender, System.EventArgs e)
-		{
-			OnUserBackColorClick();
-		}
+        private void backColorRectangle_Click(object sender, System.EventArgs e)
+        {
+            OnUserBackColorClick();
+        }
 
         private void control_KeyUp(object sender, KeyEventArgs e)
         {
             this.OnKeyUp(e);
         }
-	}
+    }
 }

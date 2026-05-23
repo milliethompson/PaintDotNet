@@ -8,21 +8,30 @@ using DotNetWidgets;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for MainToolBar.
-	/// </summary>
-	public class MainToolBar : System.Windows.Forms.UserControl
-	{
-		private PaintDotNet.ColorDisplayWidget colorDisplayWidget;
+    /// <summary>
+    /// Summary description for MainToolBar.
+    /// </summary>
+    public class MainToolBar : System.Windows.Forms.UserControl
+    {
+        private ColorDisplayWidget colorDisplayWidget;
         private DotNetWidgets.DotNetToolbar[] dotNetToolbars;
         private ImageList imageList;
         private DotNetWidgets.DotNetToolbar.ButtonClickEventHandler toolClickedDelegate;
         private const int tbWidth = 2; // two buttons per line in the toolbars
 
         /// <summary> 
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
+
+        public MainToolBar()
+        {
+            // This call is required by the Windows.Forms Form Designer.
+            InitializeComponent();
+
+            // TODO: Add any initialization after the InitializeComponent call
+            this.toolClickedDelegate = new DotNetWidgets.DotNetToolbar.ButtonClickEventHandler(dotNetToolbar_ButtonClick);
+        }
 
         public class DotNetToolbarButtonItemWithTag 
             : DotNetToolbarButtonItem
@@ -51,13 +60,13 @@ namespace PaintDotNet
             }
         }
 
-		public ColorDisplayWidget ColorDisplay
-		{
-			get
-			{
-				return colorDisplayWidget;
-			}
-		}
+        public ColorDisplayWidget ColorDisplay
+        {
+            get
+            {
+                return colorDisplayWidget;
+            }
+        }
 
         public void SetTools(Type[] toolTypes, DocumentWorkspace workspace)
         {
@@ -67,7 +76,7 @@ namespace PaintDotNet
 
             if (dotNetToolbars != null)
             {
-                foreach(DotNetToolbar tb in dotNetToolbars)
+                foreach (DotNetToolbar tb in dotNetToolbars)
                 {
                     tb.ButtonClick -= this.toolClickedDelegate;
                     this.Controls.Remove(tb);
@@ -127,7 +136,7 @@ namespace PaintDotNet
         {
             int total = 0;
 
-            foreach(Control c in dotNetToolbars)
+            foreach (Control c in dotNetToolbars)
             {
                 total += c.Height;
             }
@@ -141,37 +150,28 @@ namespace PaintDotNet
             this.ClientSize = new Size(dotNetToolbars[0].Width, colorDisplayWidget.Height + ToolbarsHeight());
         }
 
-        public MainToolBar()
+        /// <summary> 
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
         {
-            // This call is required by the Windows.Forms Form Designer.
-            InitializeComponent();
-
-            // TODO: Add any initialization after the InitializeComponent call
-            this.toolClickedDelegate = new DotNetWidgets.DotNetToolbar.ButtonClickEventHandler(dotNetToolbar_ButtonClick);
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
         }
 
-		/// <summary> 
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
-
-		#region Component Designer generated code
-		/// <summary> 
-		/// Required method for Designer support - do not modify 
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Component Designer generated code
+        /// <summary> 
+        /// Required method for Designer support - do not modify 
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.colorDisplayWidget = new PaintDotNet.ColorDisplayWidget();
             this.SuspendLayout();
             // 
@@ -190,7 +190,7 @@ namespace PaintDotNet
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
         private void dotNetToolbar_ButtonClick(object sender, DotNetWidgets.DotNetToolbarItemClickEventArgs e)
         {
@@ -210,6 +210,6 @@ namespace PaintDotNet
             button.Pushed = true;
             OnToolClicked((Type)button.Tag);
         }
-	}
+    }
 }
 

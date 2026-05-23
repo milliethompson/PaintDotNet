@@ -6,12 +6,12 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for HistoryForm.
-	/// </summary>
-	public class HistoryForm
+    /// <summary>
+    /// Summary description for HistoryForm.
+    /// </summary>
+    public class HistoryForm
         : FloatingToolForm
-	{
+    {
         private PaintDotNet.HistoryControl historyControl;
         private DotNetWidgets.DotNetToolbar dotNetToolbar;
         private DotNetWidgets.DotNetToolbarButtonItem clearHistoryButton;
@@ -30,16 +30,16 @@ namespace PaintDotNet
             }
         }
 
-		public HistoryForm()
-		{
-			//
-			// Required for Windows Form Designer support
-			//
-			InitializeComponent();
+        public HistoryForm()
+        {
+            //
+            // Required for Windows Form Designer support
+            //
+            InitializeComponent();
 
-			//
-			// TODO: Add any constructor code after InitializeComponent call
-			//
+            //
+            // TODO: Add any constructor code after InitializeComponent call
+            //
             imageList.TransparentColor = Color.FromArgb(192, 192, 192);
 
             int clearHistoryIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuLayersDeleteLayerIcon.bmp"), imageList.TransparentColor);
@@ -53,7 +53,7 @@ namespace PaintDotNet
             undoButton.ImageIndex = undoIndex;
             redoButton.ImageIndex = redoIndex;
             fastForwardButton.ImageIndex = fastForwardIndex;
-		}
+        }
 
         protected override void OnLayout(LayoutEventArgs levent)
         {
@@ -67,28 +67,28 @@ namespace PaintDotNet
             }
         }
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Windows Form Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.components = new System.ComponentModel.Container();
             this.historyControl = new PaintDotNet.HistoryControl();
             this.dotNetToolbar = new DotNetWidgets.DotNetToolbar();
@@ -150,6 +150,7 @@ namespace PaintDotNet
             // 
             // imageList
             // 
+            this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
             this.imageList.ImageSize = new System.Drawing.Size(16, 16);
             this.imageList.TransparentColor = System.Drawing.Color.Transparent;
             // 
@@ -162,10 +163,12 @@ namespace PaintDotNet
             this.Name = "HistoryForm";
             this.Text = "History";
             this.Enter += new System.EventHandler(this.HistoryForm_Enter);
+            this.Controls.SetChildIndex(this.historyControl, 0);
+            this.Controls.SetChildIndex(this.dotNetToolbar, 0);
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
         public event EventHandler ClearHistoryButtonClicked;
         protected virtual void OnClearHistoryButtonClicked()
@@ -254,8 +257,7 @@ namespace PaintDotNet
             {
                 OnRewindButtonClicked();
             }
-            else
-                if (e.Button == fastForwardButton)
+            else if (e.Button == fastForwardButton)
             {
                 OnFastForwardButtonClicked();
             }

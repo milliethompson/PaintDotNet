@@ -7,16 +7,16 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for IconBox.
-	/// </summary>
-	public class IconBox : 
+    /// <summary>
+    /// Summary description for IconBox.
+    /// </summary>
+    public class IconBox : 
         System.Windows.Forms.UserControl
-	{
-		/// <summary> 
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
+    {
+        /// <summary> 
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
         private Bitmap renderSurface = null;
         private Bitmap icon = null;
         private Color transparentColor;
@@ -31,6 +31,12 @@ namespace PaintDotNet
             set
             {
                 transparentColor = value;
+
+                if (renderSurface != null)
+                {
+                    renderSurface.Dispose();
+                }
+
                 renderSurface = null;
                 Invalidate();
             }
@@ -46,6 +52,12 @@ namespace PaintDotNet
             set
             {
                 icon = value;
+
+                if (renderSurface != null)
+                {
+                    renderSurface.Dispose();
+                }
+
                 renderSurface = null;
                 Invalidate();
             }
@@ -53,6 +65,11 @@ namespace PaintDotNet
 
         private void DoRenderSurface()
         {
+            if (renderSurface != null)
+            {
+                renderSurface.Dispose();
+            }
+
             renderSurface = new Bitmap(ClientRectangle.Width, ClientRectangle.Height);
 
             using (Graphics g = Graphics.FromImage(renderSurface))
@@ -80,10 +97,27 @@ namespace PaintDotNet
         protected override void OnBackColorChanged(EventArgs e)
         {
             base.OnBackColorChanged (e);
+
+            if (renderSurface != null)
+            {
+                renderSurface.Dispose();
+            }
+
             renderSurface = null;
             Invalidate();
         }
 
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize (e);
+
+            if (renderSurface != null)
+            {
+                renderSurface.Dispose();
+            }
+
+            renderSurface = null;
+        }
 
         private void DoDraw(Graphics g)
         {
@@ -107,39 +141,39 @@ namespace PaintDotNet
         }
 
 
-		public IconBox()
-		{
-			// This call is required by the Windows.Forms Form Designer.
-			InitializeComponent();
+        public IconBox()
+        {
+            // This call is required by the Windows.Forms Form Designer.
+            InitializeComponent();
 
-			// TODO: Add any initialization after the InitializeComponent call
+            // TODO: Add any initialization after the InitializeComponent call
             this.ResizeRedraw = true;
-		}
+        }
 
-		/// <summary> 
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary> 
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
-		#region Component Designer generated code
-		/// <summary> 
-		/// Required method for Designer support - do not modify 
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
-			components = new System.ComponentModel.Container();
-		}
-		#endregion
-	}
+        #region Component Designer generated code
+        /// <summary> 
+        /// Required method for Designer support - do not modify 
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            components = new System.ComponentModel.Container();
+        }
+        #endregion
+    }
 }

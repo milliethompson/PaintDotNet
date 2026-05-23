@@ -17,6 +17,7 @@ namespace PaintDotNet
         private Exception exception = null;
         private Point startPos = Point.Empty;
         private bool setStartPos = false;
+        private Icon icon = null;
 
         /// <summary>
         /// Used to define the top center of the dialog window when it is created.
@@ -33,6 +34,19 @@ namespace PaintDotNet
             {
                 setStartPos = true;
                 startPos = value;
+            }
+        }
+
+        public Icon Icon
+        {
+            get
+            {
+                return icon;
+            }
+
+            set
+            {
+                icon = value;
             }
         }
 
@@ -66,15 +80,22 @@ namespace PaintDotNet
             }
 
 #if !DEBUG
-        catch (Exception ex)
-        {
-            this.exception = ex;
-        }
+            catch (Exception ex)
+            {
+                this.exception = ex;
+            }
 #endif
 
             finally
             {
-                pd.Invoke(new VoidVoidDelegate(pd.Close), null);
+                try
+                {
+                    pd.BeginInvoke(new VoidVoidDelegate(pd.ExternalFinish), null);
+                }
+
+                catch
+                {
+                }
             }
         }
 
@@ -89,31 +110,41 @@ namespace PaintDotNet
         protected DialogResult ShowDialog(bool Cancellable, ThreadStart callback)
         {
             this.threadCallback = callback;
-            pd = new ProgressDialog();
-            pd.Text = dialogTitle;
-            pd.Description = dialogDescription;
-            EventHandler leh = new EventHandler(pd_Load);
-            pd.Load += leh;
-            pd.Cancellable = Cancellable;
-            thread = new Thread(new ThreadStart(BackgroundCallback));
-            Progress = 0;
+            DialogResult dr = DialogResult.Cancel;
             
-            if (setStartPos)
+            using (pd = new ProgressDialog())
             {
-                pd.Location = new Point(StartPos.X - (pd.Width / 2), StartPos.Y);;
-                pd.StartPosition = FormStartPosition.Manual;
-            }
-            else
-            {
-                pd.StartPosition = FormStartPosition.CenterParent;
-            }
+                pd.Text = dialogTitle;
+                pd.Description = dialogDescription;
 
-            DialogResult dr = pd.ShowDialog(owner);
-            pd.Load -= leh;
+                if (icon != null)
+                {
+                    pd.Icon = icon;
+                }
 
-            if (exception != null)
-            {
-                throw exception;
+                EventHandler leh = new EventHandler(pd_Load);
+                pd.Load += leh;
+                pd.Cancellable = Cancellable;
+                thread = new Thread(new ThreadStart(BackgroundCallback));
+                Progress = 0;
+            
+                if (setStartPos)
+                {
+                    pd.Location = new Point(StartPos.X - (pd.Width / 2), StartPos.Y);;
+                    pd.StartPosition = FormStartPosition.Manual;
+                }
+                else
+                {
+                    pd.StartPosition = FormStartPosition.CenterParent;
+                }
+
+                dr = pd.ShowDialog(owner);
+                pd.Load -= leh;
+
+                if (exception != null)
+                {
+                    throw exception;
+                }
             }
 
             return dr;

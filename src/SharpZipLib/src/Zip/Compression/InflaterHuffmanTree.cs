@@ -42,12 +42,23 @@ using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 namespace ICSharpCode.SharpZipLib.Zip.Compression 
 {
 	
+	/// <summary>
+	/// Huffman tree used for inflation
+	/// </summary>
 	public class InflaterHuffmanTree 
 	{
-		private static int MAX_BITLEN = 15;
-		private short[] tree;
+		static int MAX_BITLEN = 15;
+		short[] tree;
 		
-		public static InflaterHuffmanTree defLitLenTree, defDistTree;
+		/// <summary>
+		/// Literal length tree
+		/// </summary>
+		public static InflaterHuffmanTree defLitLenTree;
+		
+		/// <summary>
+		/// Distance tree
+		/// </summary>
+		public static InflaterHuffmanTree defDistTree;
 		
 		static InflaterHuffmanTree()
 		{
@@ -90,7 +101,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 			BuildTree(codeLengths);
 		}
 		
-		private void BuildTree(byte[] codeLengths)
+		void BuildTree(byte[] codeLengths)
 		{
 			int[] blCount  = new int[MAX_BITLEN + 1];
 			int[] nextCode = new int[MAX_BITLEN + 1];
@@ -114,6 +125,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression
 					treeSize += (end - start) >> (16 - bits);
 				}
 			}
+			
 /* -jr comment this out! doesnt work for dynamic trees and pkzip 2.04g
 			if (code != 65536) 
 			{

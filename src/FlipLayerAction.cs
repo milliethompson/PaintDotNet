@@ -3,12 +3,12 @@ using System.Drawing;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for FlipLayerAction.
-	/// </summary>
-	public abstract class FlipLayerAction
+    /// <summary>
+    /// Summary description for FlipLayerAction.
+    /// </summary>
+    public abstract class FlipLayerAction
         : DocumentAction
-	{
+    {
         private FlipType flipType;
         private Image undoImage;
 
@@ -18,11 +18,11 @@ namespace PaintDotNet
             return flha.PerformUndo();
         }
 
-		public FlipLayerAction(DocumentWorkspace workspace, string name, Image image, FlipType flipType)
+        public FlipLayerAction(DocumentWorkspace workspace, string name, Image image, FlipType flipType)
             : base(workspace, name)
-		{
+        {
             this.flipType = flipType;
             this.undoImage = image;
-		}
-	}
+        }
+    }
 }

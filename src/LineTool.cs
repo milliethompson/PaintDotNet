@@ -9,21 +9,21 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for LineTool.
-	/// </summary>
-	public class LineTool
-		: ShapeTool 
-	{
-		protected override void OnActivate()
-		{
-			base.OnActivate ();
-		}
+    /// <summary>
+    /// Summary description for LineTool.
+    /// </summary>
+    public class LineTool
+        : ShapeTool 
+    {
+        protected override void OnActivate()
+        {
+            base.OnActivate ();
+        }
 
-		protected override void OnDeactivate()
-		{
-			base.OnDeactivate ();
-		}
+        protected override void OnDeactivate()
+        {
+            base.OnDeactivate ();
+        }
 
         protected override ArrayList TrimShapePath(ArrayList points)
         {
@@ -42,7 +42,7 @@ namespace PaintDotNet
             return array;
         }
 
-        protected override GraphicsPath CreateShapePath(Point[] points)
+        protected override PdnGraphicsPath CreateShapePath(Point[] points)
         {
             Point a = points[0];
             Point b = points[points.Length - 1];
@@ -53,21 +53,21 @@ namespace PaintDotNet
             }
             else
             {
-                GraphicsPath path = new GraphicsPath();
+                PdnGraphicsPath path = new PdnGraphicsPath();
                 path.AddLine(a, b);
                 return path;
             }
         }
 
-		public LineTool(DocumentWorkspace parent)
-			: base(parent)
-		{
-			toolBarImage = Utility.GetImageResource("Icons.LineToolIcon.bmp");
-			cursor = new Cursor(Utility.GetResourceStream("Cursors.LineToolCursor.cur"));
-			name = "Line";
-			description = "Draws a Line";
-			this.ForceShapeDrawType = true;
-			this.ForcedShapeDrawType = ShapeDrawType.Outline;
-		}
-	}
+        public LineTool(DocumentWorkspace parent)
+            : base(parent)
+        {
+            toolBarImage = Utility.GetImageResource("Icons.LineToolIcon.bmp");
+            cursor = new Cursor(Utility.GetResourceStream("Cursors.LineToolCursor.cur"));
+            name = "Line";
+            description = "Draws a Line";
+            this.ForceShapeDrawType = true;
+            this.ForcedShapeDrawType = ShapeDrawType.Outline;
+        }
+    }
 }

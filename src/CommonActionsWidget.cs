@@ -7,11 +7,11 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for CommonActionsWidget.
-	/// </summary>
-	public class CommonActionsWidget : System.Windows.Forms.UserControl
-	{
+    /// <summary>
+    /// Summary description for CommonActionsWidget.
+    /// </summary>
+    public class CommonActionsWidget : System.Windows.Forms.UserControl
+    {
         private DotNetWidgets.DotNetToolbar dotNetToolbar;
         private System.Windows.Forms.ImageList imageList;
         private DotNetWidgets.DotNetToolbarButtonItem newButton;
@@ -27,12 +27,12 @@ namespace PaintDotNet
         private DotNetWidgets.DotNetToolbarButtonItem deselectButton;
         private System.ComponentModel.IContainer components;
 
-		public CommonActionsWidget()
-		{
-			// This call is required by the Windows.Forms Form Designer.
-			InitializeComponent();
+        public CommonActionsWidget()
+        {
+            // This call is required by the Windows.Forms Form Designer.
+            InitializeComponent();
 
-			// TODO: Add any initialization after the InitializeComponent call
+            // TODO: Add any initialization after the InitializeComponent call
             imageList.TransparentColor = Color.FromArgb(192, 192, 192);
             dotNetToolbar.ImageList = imageList;
 
@@ -49,28 +49,28 @@ namespace PaintDotNet
             zoomOutButton.ImageIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuImageZoomOutIcon.bmp"), imageList.TransparentColor);            
         }
 
-		/// <summary> 
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary> 
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
-		#region Component Designer generated code
-		/// <summary> 
-		/// Required method for Designer support - do not modify 
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Component Designer generated code
+        /// <summary> 
+        /// Required method for Designer support - do not modify 
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.components = new System.ComponentModel.Container();
             this.dotNetToolbar = new DotNetWidgets.DotNetToolbar();
             this.newButton = new DotNetWidgets.DotNetToolbarButtonItem();
@@ -79,12 +79,12 @@ namespace PaintDotNet
             this.cutButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.copyButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.pasteButton = new DotNetWidgets.DotNetToolbarButtonItem();
+            this.deselectButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.undoButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.redoButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.zoomInButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.zoomOutButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.imageList = new System.Windows.Forms.ImageList(this.components);
-            this.deselectButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.SuspendLayout();
             // 
             // dotNetToolbar
@@ -136,6 +136,10 @@ namespace PaintDotNet
             // 
             this.pasteButton.ToolTipText = "Paste";
             // 
+            // deselectButton
+            // 
+            this.deselectButton.ToolTipText = "Deselect";
+            // 
             // undoButton
             // 
             this.undoButton.BeginGroup = true;
@@ -156,12 +160,9 @@ namespace PaintDotNet
             // 
             // imageList
             // 
+            this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
             this.imageList.ImageSize = new System.Drawing.Size(16, 16);
             this.imageList.TransparentColor = System.Drawing.Color.Transparent;
-            // 
-            // deselectButton
-            // 
-            this.deselectButton.ToolTipText = "Deselect";
             // 
             // CommonActionsWidget
             // 
@@ -171,8 +172,9 @@ namespace PaintDotNet
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
+        /*
         public string[] GetButtonNames()
         {
             ArrayList names = new ArrayList();
@@ -187,46 +189,47 @@ namespace PaintDotNet
 
             return (string[])names.ToArray(typeof(string));
         }
+        */
 
-        public void SetButtonEnabled(string name, bool enabled)
+        public void SetButtonEnabled(CommonAction action, bool enabled)
         {
             for (int i = 0; i < dotNetToolbar.Buttons.Count; ++i)
             {
-                if (dotNetToolbar.Buttons[i].ToolTipText == name)
+                if (0 == string.Compare(Utility.RemoveSpaces(dotNetToolbar.Buttons[i].ToolTipText), action.ToString(), true))
                 {
                     dotNetToolbar.Buttons[i].Enabled = enabled;
                     return;
                 }
             }
 
-            throw new ArgumentException("Button name '" + name + "' not found");
+            throw new ArgumentException("Button name '" + action.ToString() + "' not found");
         }
 
-        public bool GetButtonEnabled(string name)
+        public bool GetButtonEnabled(CommonAction action)
         {
             for (int i = 0; i < dotNetToolbar.Buttons.Count; ++i)
             {
-                if (dotNetToolbar.Buttons[i].ToolTipText == name)
+                if (0 == string.Compare(Utility.RemoveSpaces(dotNetToolbar.Buttons[i].ToolTipText), action.ToString(), true))
                 {
                     return dotNetToolbar.Buttons[i].Enabled;
                 }
             }
 
-            throw new ArgumentException("Button name '" + name + "' not found");
+            throw new ArgumentException("Button name '" + action.ToString() + "' not found");
         }
 
-        public event NameEventHandler ButtonClick;
-        protected virtual void OnButtonClick(string name)
+        public event EnumValueEventHandler ButtonClick;
+        protected virtual void OnButtonClick(CommonAction action)
         {
             if (ButtonClick != null)
             {
-                ButtonClick(this, new NameEventArgs(name));
+                ButtonClick(this, new EnumValueEventArgs(action));
             }
         }
 
         private void dotNetToolbar_ButtonClick(object sender, DotNetWidgets.DotNetToolbarItemClickEventArgs e)
         {
-            OnButtonClick(e.Button.ToolTipText);
+            OnButtonClick((CommonAction)Enum.Parse(typeof(CommonAction), Utility.RemoveSpaces(e.Button.ToolTipText), true));
         }
-	}
+    }
 }

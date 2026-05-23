@@ -6,10 +6,10 @@ using System.Text;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Represents one type of file that PaintDotNet can load or save.
-	/// Objects of this type are immutable once created.
-	/// </summary>
+    /// <summary>
+    /// Represents one type of file that PaintDotNet can load or save.
+    /// Objects of this type are immutable once created.
+    /// </summary>
     [Serializable]
     public class FileType
     {
@@ -24,18 +24,18 @@ namespace PaintDotNet
             }
         }
 
-		public bool SupportsExtension(string ext)
-		{
-			foreach (string fExt in extensions)
-			{
-				if (fExt.ToLower() == ext.ToLower())
-				{
-					return true;
-				}
-			}
+        public bool SupportsExtension(string ext)
+        {
+            foreach (string fExt in extensions)
+            {
+                if (fExt.ToLower() == ext.ToLower())
+                {
+                    return true;
+                }
+            }
 
-			return false;
-		}
+            return false;
+        }
 
         public string DefaultExtension
         {
@@ -97,7 +97,7 @@ namespace PaintDotNet
                 // flatten the document
                 using (Surface surface = new Surface(input.Width, input.Height))
                 {
-					new UnaryPixelOps.Constant(ColorBgra.FromBgra(255, 255, 255, 255)).Apply(surface, surface.Bounds);
+                    new UnaryPixelOps.Constant(ColorBgra.FromBgra(255, 255, 255, 255)).Apply(surface, surface.Bounds);
 
                     using (RenderArgs ra = new RenderArgs(surface))
                     {
@@ -198,21 +198,21 @@ namespace PaintDotNet
             return sb.ToString();
         }
 
-		private static ImageCodecInfo GetImageCodecInfo(ImageFormat format)
-		{
-			ImageCodecInfo[] encoders = ImageCodecInfo.GetImageEncoders();
-			foreach(ImageCodecInfo icf in encoders)
-			{
-				if (icf.FormatID == format.Guid)
-				{
-					return icf;
-				}
-			}
+        private static ImageCodecInfo GetImageCodecInfo(ImageFormat format)
+        {
+            ImageCodecInfo[] encoders = ImageCodecInfo.GetImageEncoders();
+            foreach (ImageCodecInfo icf in encoders)
+            {
+                if (icf.FormatID == format.Guid)
+                {
+                    return icf;
+                }
+            }
 
-			return null;
-		}
+            return null;
+        }
 
-	}
+    }
 }
 
 

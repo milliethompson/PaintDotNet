@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.IO;
 using System.Threading;
 using System.Windows.Forms;
@@ -20,6 +21,7 @@ namespace PaintDotNet
         public SaveProgressDialog(IWin32Window owner)
             : base(owner, "Saving", "Saving:")
         {
+            this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.MenuFileSaveIcon.bmp"), Color.FromArgb(192, 192, 192));
         }
 
         public void Save(Stream stream, Document document, FileType fileType)

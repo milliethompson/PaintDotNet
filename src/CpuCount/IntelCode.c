@@ -58,7 +58,7 @@ unsigned int  HTSupported(void);
 unsigned char LogicalProcPerPhysicalProc(void);
 unsigned char GetAPIC_ID(void);
 unsigned char CPUCount(unsigned char *,
-					   unsigned char *);
+                       unsigned char *);
 
 
 #include <windows.h>
@@ -73,7 +73,7 @@ void main(void)
    unsigned char LogicalNum   = 0,  // Number of logical CPU per ONE PHYSICAL CPU
                  PhysicalNum  = 0,  // Total number of physical processor
 
-				 HTStatusFlag = 0;  
+                 HTStatusFlag = 0;  
 
 
    printf("CPU Counting Utility\n");
@@ -85,24 +85,24 @@ void main(void)
    switch(HTStatusFlag)
    {
    case HT_NOT_CAPABLE:
-	   printf("Hyper-threading technology not capable\n");
-	   break;
+       printf("Hyper-threading technology not capable\n");
+       break;
 
    case HT_DISABLED:
-	   printf("Hyper-threading technology disabled\n");
-	   break;
+       printf("Hyper-threading technology disabled\n");
+       break;
 
    case HT_ENABLED:
-	   printf("Hyper-threading technology enabled\n");
-	   break;
+       printf("Hyper-threading technology enabled\n");
+       break;
 
    case HT_SUPPORTED_NOT_ENABLED:
-	   printf("Hyper-threading technology capable but not enabled\n");
-	   break;
+       printf("Hyper-threading technology capable but not enabled\n");
+       break;
 
    case HT_CANNOT_DETECT:
-	   printf("Hyper-threading technology cannot be detected\n");
-	   break;
+       printf("Hyper-threading technology cannot be detected\n");
+       break;
 
 
    }
@@ -113,7 +113,7 @@ void main(void)
       printf("Number of physical processors: %d\n", PhysicalNum);
    else
    {
-	  printf("Can't determine number of physical processors\n");
+      printf("Can't determine number of physical processors\n");
       printf("Make sure to enable ALL processors\n");
    }
 
@@ -127,41 +127,41 @@ unsigned int HTSupported(void)
 {
    
 
-	unsigned int Regedx      = 0,
-		         Regeax      = 0,
-		         VendorId[3] = {0, 0, 0};
+    unsigned int Regedx      = 0,
+                 Regeax      = 0,
+                 VendorId[3] = {0, 0, 0};
 
-	__try    // Verify cpuid instruction is supported
-	{
-		__asm
-		{
-			xor eax, eax          // call cpuid with eax = 0
-        	cpuid                 // Get vendor id string
-			mov VendorId, ebx
-			mov VendorId + 4, edx
-			mov VendorId + 8, ecx
-			
-			mov eax, 1            // call cpuid with eax = 1
-			cpuid
-			mov Regeax, eax      // eax contains family processor type
-			mov Regedx, edx      // edx has info about the availability of hyper-Threading
+    __try    // Verify cpuid instruction is supported
+    {
+        __asm
+        {
+            xor eax, eax          // call cpuid with eax = 0
+            cpuid                 // Get vendor id string
+            mov VendorId, ebx
+            mov VendorId + 4, edx
+            mov VendorId + 8, ecx
+            
+            mov eax, 1            // call cpuid with eax = 1
+            cpuid
+            mov Regeax, eax      // eax contains family processor type
+            mov Regedx, edx      // edx has info about the availability of hyper-Threading
  
-		}
-	}
+        }
+    }
 
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		return(0);                   // cpuid is unavailable
-	}
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return(0);                   // cpuid is unavailable
+    }
 
     if (((Regeax & FAMILY_ID) ==  PENTIUM4_ID) || 
-		(Regeax & EXT_FAMILY_ID))
-	  if (VendorId[0] == 'uneG')
-		if (VendorId[1] == 'Ieni')
-			if (VendorId[2] == 'letn')
-				return(Regedx & HT_BIT);    // Genuine Intel with hyper-Threading technology
+        (Regeax & EXT_FAMILY_ID))
+      if (VendorId[0] == 'uneG')
+        if (VendorId[1] == 'Ieni')
+            if (VendorId[2] == 'letn')
+                return(Regedx & HT_BIT);    // Genuine Intel with hyper-Threading technology
 
-	return 0;    // Not genuine Intel processor
+    return 0;    // Not genuine Intel processor
   
 }
 
@@ -169,17 +169,17 @@ unsigned int HTSupported(void)
 unsigned char LogicalProcPerPhysicalProc(void)
 {
 
-	unsigned int Regebx = 0;
-	if (!HTSupported()) return (unsigned char) 1;  // HT not supported
-	                                               // Logical processor = 1
-	__asm
-	{
-		mov eax, 1
-		cpuid
-		mov Regebx, ebx
-	}
+    unsigned int Regebx = 0;
+    if (!HTSupported()) return (unsigned char) 1;  // HT not supported
+                                                   // Logical processor = 1
+    __asm
+    {
+        mov eax, 1
+        cpuid
+        mov Regebx, ebx
+    }
 
-	return (unsigned char) ((Regebx & NUM_LOGICAL_BITS) >> 16);
+    return (unsigned char) ((Regebx & NUM_LOGICAL_BITS) >> 16);
 
 }
 
@@ -187,134 +187,134 @@ unsigned char LogicalProcPerPhysicalProc(void)
 unsigned char GetAPIC_ID(void)
 {
 
-	unsigned int Regebx = 0;
-	if (!HTSupported()) return (unsigned char) -1;  // HT not supported
-	                                                // Logical processor = 1
-	__asm
-	{
-		mov eax, 1
-		cpuid
-		mov Regebx, ebx
-	}
+    unsigned int Regebx = 0;
+    if (!HTSupported()) return (unsigned char) -1;  // HT not supported
+                                                    // Logical processor = 1
+    __asm
+    {
+        mov eax, 1
+        cpuid
+        mov Regebx, ebx
+    }
 
-	return (unsigned char) ((Regebx & INITIAL_APIC_ID_BITS) >> 24);
+    return (unsigned char) ((Regebx & INITIAL_APIC_ID_BITS) >> 24);
 
 }
 
 
 unsigned char CPUCount(unsigned char *LogicalNum,
-					   unsigned char *PhysicalNum)
+                       unsigned char *PhysicalNum)
 {
-	unsigned char StatusFlag  = 0;
+    unsigned char StatusFlag  = 0;
     SYSTEM_INFO info;
 
 
     *PhysicalNum = 0;
-	*LogicalNum  = 0;
+    *LogicalNum  = 0;
     info.dwNumberOfProcessors = 0;
     GetSystemInfo (&info);
 
-	// Number of physical processors in a non-Intel system
-	// or in a 32-bit Intel system with Hyper-Threading technology disabled
+    // Number of physical processors in a non-Intel system
+    // or in a 32-bit Intel system with Hyper-Threading technology disabled
     *PhysicalNum = (unsigned char) info.dwNumberOfProcessors;  
 
     if (HTSupported())
-	{
-		unsigned char HT_Enabled = 0;
+    {
+        unsigned char HT_Enabled = 0;
 
         *LogicalNum= LogicalProcPerPhysicalProc();
 
-		if (*LogicalNum >= 1)    // >1 Doesn't mean HT is enabled in the BIOS
-			                     // 
-		{
+        if (*LogicalNum >= 1)    // >1 Doesn't mean HT is enabled in the BIOS
+                                 // 
+        {
             HANDLE hCurrentProcessHandle;
-			DWORD  dwProcessAffinity;
-			DWORD  dwSystemAffinity;
-			DWORD  dwAffinityMask;
+            DWORD  dwProcessAffinity;
+            DWORD  dwSystemAffinity;
+            DWORD  dwAffinityMask;
 
-			// Calculate the appropriate  shifts and mask based on the 
-			// number of logical processors.
+            // Calculate the appropriate  shifts and mask based on the 
+            // number of logical processors.
 
-			unsigned char i = 1,
-				          PHY_ID_MASK  = 0xFF,
-			              PHY_ID_SHIFT = 0;
+            unsigned char i = 1,
+                          PHY_ID_MASK  = 0xFF,
+                          PHY_ID_SHIFT = 0;
 
-			while (i < *LogicalNum)
-			{
-				i *= 2;
- 	            PHY_ID_MASK  <<= 1;
-	            PHY_ID_SHIFT++;
+            while (i < *LogicalNum)
+            {
+                i *= 2;
+                PHY_ID_MASK  <<= 1;
+                PHY_ID_SHIFT++;
 
-			}
-			
-			hCurrentProcessHandle = GetCurrentProcess();
-			GetProcessAffinityMask(hCurrentProcessHandle, &dwProcessAffinity,
-				                                          &dwSystemAffinity);
+            }
+            
+            hCurrentProcessHandle = GetCurrentProcess();
+            GetProcessAffinityMask(hCurrentProcessHandle, &dwProcessAffinity,
+                                                          &dwSystemAffinity);
 
-			// Check if available process affinity mask is equal to the
-			// available system affinity mask
+            // Check if available process affinity mask is equal to the
+            // available system affinity mask
             if (dwProcessAffinity != dwSystemAffinity)
-			{
+            {
                 StatusFlag = HT_CANNOT_DETECT;
-				*PhysicalNum = (unsigned char)-1;
-				return StatusFlag;
-			}
-			   dwAffinityMask = 1;
-			   while (dwAffinityMask != 0 && dwAffinityMask <= dwProcessAffinity)
-			   {
-			  	  // Check if this CPU is available
-				  if (dwAffinityMask & dwProcessAffinity)
-				  {
+                *PhysicalNum = (unsigned char)-1;
+                return StatusFlag;
+            }
+               dwAffinityMask = 1;
+               while (dwAffinityMask != 0 && dwAffinityMask <= dwProcessAffinity)
+               {
+                  // Check if this CPU is available
+                  if (dwAffinityMask & dwProcessAffinity)
+                  {
                      if (SetProcessAffinityMask(hCurrentProcessHandle,
-						                        dwAffinityMask))
-					 {
-						 unsigned char APIC_ID,
-							           LOG_ID,
-									   PHY_ID;
+                                                dwAffinityMask))
+                     {
+                         unsigned char APIC_ID,
+                                       LOG_ID,
+                                       PHY_ID;
 
-						 Sleep(0); // Give OS time to switch CPU
+                         Sleep(0); // Give OS time to switch CPU
 
                          APIC_ID = GetAPIC_ID();
-						 LOG_ID  = APIC_ID & ~PHY_ID_MASK;
-						 PHY_ID  = APIC_ID >> PHY_ID_SHIFT;
+                         LOG_ID  = APIC_ID & ~PHY_ID_MASK;
+                         PHY_ID  = APIC_ID >> PHY_ID_SHIFT;
  
-     					 if (LOG_ID != 0)  HT_Enabled = 1;
+                         if (LOG_ID != 0)  HT_Enabled = 1;
 
-					 }
+                     }
 
-				  }
+                  }
 
-				  dwAffinityMask = dwAffinityMask << 1;
+                  dwAffinityMask = dwAffinityMask << 1;
 
-			   }
+               }
              
-			// Reset the processor affinity
-			 SetProcessAffinityMask(hCurrentProcessHandle, dwProcessAffinity);
+            // Reset the processor affinity
+             SetProcessAffinityMask(hCurrentProcessHandle, dwProcessAffinity);
 
             
-			if (*LogicalNum == 1)  // Normal P4 : HT is disabled in hardware
-			   	StatusFlag = HT_DISABLED;
+            if (*LogicalNum == 1)  // Normal P4 : HT is disabled in hardware
+                StatusFlag = HT_DISABLED;
 
-			else
-				if (HT_Enabled)
-				{
+            else
+                if (HT_Enabled)
+                {
                      // Total physical processors in a Hyper-Threading enabled system.
-		             *PhysicalNum = *PhysicalNum / *LogicalNum;
-			   	     StatusFlag = HT_ENABLED;
-				}
-				else StatusFlag = HT_SUPPORTED_NOT_ENABLED;
+                     *PhysicalNum = *PhysicalNum / *LogicalNum;
+                     StatusFlag = HT_ENABLED;
+                }
+                else StatusFlag = HT_SUPPORTED_NOT_ENABLED;
 
-		}
+        }
 
-	}
-	else
-	{
-		// Processors do not have Hyper-Threading technology
-		StatusFlag = HT_NOT_CAPABLE;
+    }
+    else
+    {
+        // Processors do not have Hyper-Threading technology
+        StatusFlag = HT_NOT_CAPABLE;
         *LogicalNum = 1;
         
-	}
-	return StatusFlag;
+    }
+    return StatusFlag;
 }
 
 

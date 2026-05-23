@@ -1,13 +1,14 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Security;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// All interop related stuff goes in here.
-	/// </summary>
-	internal sealed class NativeMethods
-	{
+    /// <summary>
+    /// All interop related stuff goes in here.
+    /// </summary>
+    internal sealed class NativeMethods
+    {
         // GDI CharSet constants
         public sealed class GdiCharSets
         {
@@ -62,59 +63,25 @@ namespace PaintDotNet
             public const int VK_DOWN = 0x28;
         }
 
-        // Heap* functions and their constants
-        public sealed class HeapConstants
+        [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Auto)]
+        public class LOGFONT
         {
-            private HeapConstants()
-            {
-            }
-
-            public const uint HEAP_NO_SERIALIZE = 0x00000001;
-            public const uint HEAP_GROWABLE = 0x00000002;
-            public const uint HEAP_GENERATE_EXCEPTIONS = 0x00000004;
-            public const uint HEAP_ZERO_MEMORY = 0x00000008;
-            public const uint HEAP_REALLOC_IN_PLACE_ONLY = 0x00000010;
-            public const uint HEAP_TAIL_CHECKING_ENABLED = 0x00000020;
-            public const uint HEAP_FREE_CHECKING_ENABLED = 0x00000040;
-            public const uint HEAP_DISABLE_COALESCE_ON_FREE = 0x00000080;
-            public const uint HEAP_CREATE_ALIGN_16 = 0x00010000;
-            public const uint HEAP_CREATE_ENABLE_TRACING = 0x00020000;
-            public const uint HEAP_MAXIMUM_TAG = 0x0FFF;
-            public const uint HEAP_PSEUDO_TAG_FLAG = 0x8000;
-            public const uint HEAP_TAG_SHIFT = 18;
-        }
-
-		[DllImport("Kernel32.dll")]
-		public static extern IntPtr HeapAlloc(IntPtr hHeap, uint dwFlags, uint dwBytes);
-
-		[DllImport("Kernel32.dll")]
-		public static extern uint HeapFree(IntPtr hHeap, uint dwFlags, IntPtr lpMem);
-
-		[DllImport("Kernel32.dll")]
-		public static extern uint HeapSize(IntPtr hHeap, uint dwFlags, IntPtr lpMem);
-
-		[DllImport("Kernel32.dll")]
-		public static extern IntPtr GetProcessHeap();
-
-		[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Auto)]
-		public class LOGFONT
-		{
-			public int lfHeight = 0;
-			public int lfWidth = 0;
-			public int lfEscapement = 0;
-			public int lfOrientation = 0;
-			public int lfWeight = 0;
+            public int lfHeight = 0;
+            public int lfWidth = 0;
+            public int lfEscapement = 0;
+            public int lfOrientation = 0;
+            public int lfWeight = 0;
             public byte lfItalic = 0;
-			public byte lfUnderline = 0;
-			public byte lfStrikeOut = 0;
-			public byte lfCharSet = 0;
-			public byte lfOutPrecision = 0;
-			public byte lfClipPrecision = 0;
-			public byte lfQuality = 0;
-			public byte lfPitchAndFamily = 0;
-			[MarshalAs(UnmanagedType.ByValTStr, SizeConst=32)]
-			public string lfFaceName = string.Empty;
-		}
+            public byte lfUnderline = 0;
+            public byte lfStrikeOut = 0;
+            public byte lfCharSet = 0;
+            public byte lfOutPrecision = 0;
+            public byte lfClipPrecision = 0;
+            public byte lfQuality = 0;
+            public byte lfPitchAndFamily = 0;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst=32)]
+            public string lfFaceName = string.Empty;
+        }
 
         public sealed class SpiConstants
         {
@@ -295,6 +262,7 @@ namespace PaintDotNet
             public const uint SPI_SETFONTSMOOTHINGORIENTATION = 0x2013;
         }
 
+        [SuppressUnmanagedCodeSecurity]
         [DllImport("User32.dll")]
         public extern static unsafe uint SystemParametersInfo(
             uint uiAction,
@@ -302,7 +270,5 @@ namespace PaintDotNet
             void *pvParam,
             uint fWinIni
             );   
-
-
     }
 }

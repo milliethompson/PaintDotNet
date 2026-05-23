@@ -6,10 +6,10 @@ using System.Drawing.Text;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Manages document-independent workspace configuration details, and provides
-	/// notification events for every item that can change.
-	/// </summary>
+    /// <summary>
+    /// Manages document-independent workspace configuration details, and provides
+    /// notification events for every item that can change.
+    /// </summary>
     public class DocumentEnvironment
     {
         #region Font stuff
@@ -171,7 +171,7 @@ namespace PaintDotNet
         }
         #endregion
 
-		#region PenInfo
+        #region PenInfo
         private PenInfo penInfo;
 
         public Pen CreatePen(bool swapColors)
@@ -196,8 +196,8 @@ namespace PaintDotNet
             set
             {
                 OnPenInfoChanging();
-				penInfo = value;
-				OnPenInfoChanged();
+                penInfo = value;
+                OnPenInfoChanged();
             }
         }
 
@@ -396,8 +396,8 @@ namespace PaintDotNet
         #endregion
 
         #region SelectedPath and helper methods
-        private GraphicsPath selectedPath;
-        public GraphicsPath SelectedPath
+        private PdnGraphicsPath selectedPath;
+        public PdnGraphicsPath SelectedPath
         {
             get
             {
@@ -413,7 +413,7 @@ namespace PaintDotNet
 
                 OnSelectedPathChanging();
                 selectedPath.Dispose();
-                selectedPath = (GraphicsPath)value.Clone();
+                selectedPath = (PdnGraphicsPath)value;
                 OnSelectedPathChanged();
             }
         }
@@ -454,13 +454,17 @@ namespace PaintDotNet
             OnSelectedPathChanged();
         }
 
-        public Region CreateSelectedRegion()
+        public PdnRegion CreateSelectedRegion()
         {
-            using (GraphicsPath closed = (GraphicsPath)selectedPath.Clone())
+            /*
+            using (PdnGraphicsPath closed = (PdnGraphicsPath)selectedPath.Clone())
             {
                 closed.CloseAllFigures();
-                return new Region(closed);
+                return new PdnRegion(closed);
             }
+            */
+
+            return new PdnRegion(selectedPath);
         }
         #endregion
 
@@ -503,24 +507,6 @@ namespace PaintDotNet
         }
         #endregion
 
-        #region HighlightSelection
-        private bool highlightSelection;
-        public bool HighlightSelection
-        {
-            get
-            {
-                return highlightSelection;
-            }
-
-            set
-            {
-                PerformSelectedPathChanging();
-                highlightSelection = value;
-                PerformSelectedPathChanged();
-            }
-        }
-        #endregion
-
         public void PerformAllChanged()
         {
             OnFontInfoChanged();
@@ -536,7 +522,6 @@ namespace PaintDotNet
         public void ResetToDefaults()
         {
             antiAliasing = true;
-            highlightSelection = true;
             tool = null;
             foreColor = ColorBgra.FromBgra(0, 0, 0, 255);
             backColor = ColorBgra.FromBgra(255, 255, 255, 255);
@@ -554,9 +539,9 @@ namespace PaintDotNet
         }
 
         public DocumentEnvironment()
-		{    
-            selectedPath = new GraphicsPath();
+        {    
+            selectedPath = new PdnGraphicsPath();
             ResetToDefaults();
-		}
-	}
+        }
+    }
 }

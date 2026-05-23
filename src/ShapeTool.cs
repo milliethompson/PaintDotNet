@@ -10,51 +10,51 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Allows the user to draw a shape that can be defined using two points on the canvas.
-	/// The user clicks and drags between two points to define the area that bounds the shape.
-	/// </summary>
-	public abstract class ShapeTool
-		: Tool
-	{
-		private bool mouseDown;
-		private MouseButtons mouseButton;
-		private BitmapLayer bitmapLayer;
+    /// <summary>
+    /// Allows the user to draw a shape that can be defined using two points on the canvas.
+    /// The user clicks and drags between two points to define the area that bounds the shape.
+    /// </summary>
+    public abstract class ShapeTool
+        : Tool
+    {
+        private bool mouseDown;
+        private MouseButtons mouseButton;
+        private BitmapLayer bitmapLayer;
         private RenderArgs renderArgs;
-		private IrregularSurface interiorSaveSurface;
+        private IrregularSurface interiorSaveSurface;
         private IrregularSurface outlineSaveSurface;
         private ArrayList points;
-        private Region lastDrawnRegion = null;
+        private PdnRegion lastDrawnRegion = null;
 
-		// This is for shapes that should only be draw in one ShapeDrawType
-		// The line shape, for instance, should only ever be drawn in ShapeDrawType.Outline
-		private bool forceShapeType = false;
-		public bool ForceShapeDrawType
-		{
-			get
-			{
-				return forceShapeType;
-			}
+        // This is for shapes that should only be draw in one ShapeDrawType
+        // The line shape, for instance, should only ever be drawn in ShapeDrawType.Outline
+        private bool forceShapeType = false;
+        public bool ForceShapeDrawType
+        {
+            get
+            {
+                return forceShapeType;
+            }
 
-			set
-			{
-				forceShapeType = value;
-			}
-		}
+            set
+            {
+                forceShapeType = value;
+            }
+        }
 
-		private ShapeDrawType forcedShapeDrawType = ShapeDrawType.Both;
-		public ShapeDrawType ForcedShapeDrawType
-		{
-			get
-			{
-				return forcedShapeDrawType;
-			}
+        private ShapeDrawType forcedShapeDrawType = ShapeDrawType.Both;
+        public ShapeDrawType ForcedShapeDrawType
+        {
+            get
+            {
+                return forcedShapeDrawType;
+            }
 
-			set
-			{
-				forcedShapeDrawType = value;
-			}
-		}
+            set
+            {
+                forcedShapeDrawType = value;
+            }
+        }
 
 
         /// <summary>
@@ -84,104 +84,110 @@ namespace PaintDotNet
         /// <param name="points"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        protected virtual RectangleF[] GetOptimizedShapeOutlineRegion(Point[] points, GraphicsPath path)
+        protected virtual RectangleF[] GetOptimizedShapeOutlineRegion(Point[] points, PdnGraphicsPath path)
         {
             return null;
         }
 
-		// Implement this!
-		protected abstract GraphicsPath CreateShapePath(Point[] points);
+        // Implement this!
+        protected abstract PdnGraphicsPath CreateShapePath(Point[] points);
 
-		protected override void OnActivate()
-		{
-			base.OnActivate();
-			//Debug.WriteLine("OnActivate");
+        protected override void OnActivate()
+        {
+            base.OnActivate();
 
             outlineSaveSurface = null;
-			interiorSaveSurface = null;
+            interiorSaveSurface = null;
 
-			// creates a bitmap layer from the active layer
-			bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
+            // creates a bitmap layer from the active layer
+            bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
 
-			// create Graphics object
+            // create Graphics object
             renderArgs = new RenderArgs(bitmapLayer.Surface);
 
-            lastDrawnRegion = new Region();
+            lastDrawnRegion = new PdnRegion();
             lastDrawnRegion.MakeEmpty();
-		}
+        }
 
-		protected override void OnDeactivate()
-		{
-			base.OnDeactivate();
-			//Debug.WriteLine("OnDeactivate");
+        protected override void OnDeactivate()
+        {
+            base.OnDeactivate();
 
-			if (mouseDown)
-			{
-				Point lastPoint = (Point)points[points.Count - 1];
-				OnMouseUp(new MouseEventArgs(mouseButton, 0, lastPoint.X, lastPoint.Y, 0));
-			}
+            if (mouseDown)
+            {
+                Point lastPoint = (Point)points[points.Count - 1];
+                OnMouseUp(new MouseEventArgs(mouseButton, 0, lastPoint.X, lastPoint.Y, 0));
+            }
 
-			bitmapLayer = null;
+            bitmapLayer = null;
 
-            Utility.Dispose(renderArgs);
+            if (renderArgs != null)
+            {
+                renderArgs.Dispose();
+            }
+
             renderArgs = null;
 
-            Utility.Dispose(outlineSaveSurface);
+            if (outlineSaveSurface != null)
+            {
+                outlineSaveSurface.Dispose();
+            }
+
             outlineSaveSurface = null;
 
-            Utility.Dispose(interiorSaveSurface);
+            if (interiorSaveSurface != null)
+            {
+                interiorSaveSurface.Dispose();
+            }
+
             interiorSaveSurface = null;
 
             points = null;
-		}
+        }
 
-		protected override void OnMouseDown(MouseEventArgs e)
-		{
-			base.OnMouseDown(e);
-			//Debug.WriteLine("OnMouseDown");
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
 
-			if (mouseDown)
-			{
-				return;
-			}
+            if (mouseDown)
+            {
+                return;
+            }
 
-			if (((e.Button & MouseButtons.Left) == MouseButtons.Left) ||
-				((e.Button & MouseButtons.Right) == MouseButtons.Right))
-			{
-				mouseDown = true;
-				mouseButton = e.Button;
+            if (((e.Button & MouseButtons.Left) == MouseButtons.Left) ||
+                ((e.Button & MouseButtons.Right) == MouseButtons.Right))
+            {
+                mouseDown = true;
+                mouseButton = e.Button;
 
-				Region clipRegion = null;
+                PdnRegion clipRegion = null;
+                
+                if (!Workspace.Environment.IsSelectionEmpty)
+                {
+                    clipRegion = Workspace.Environment.CreateSelectedRegion();
+                }
+                else
+                {
+                    clipRegion = new PdnRegion(Workspace.Document.Bounds);
+                }
 
-				if (!Workspace.Environment.IsSelectionEmpty)
-				{
-					clipRegion = Workspace.Environment.CreateSelectedRegion();
-				}
-				else
-				{
-					clipRegion = new Region();
-					clipRegion.MakeInfinite();
-				}
-
-				renderArgs.Graphics.SetClip(clipRegion, CombineMode.Replace);
-
-				clipRegion.Dispose();
+                renderArgs.Graphics.SetClip(clipRegion, CombineMode.Replace);
+                clipRegion.Dispose();
 
                 // reset the points we're drawing!
                 points = new ArrayList();
 
-				OnMouseMove(e);
-			}
-		}
+                OnMouseMove(e);
+            }
+        }
 
-		protected override void OnMouseMove(MouseEventArgs e)
-		{
-			base.OnMouseMove(e);
-			//Debug.WriteLine("OnMouseMove");
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
 
-			// if mouse button not down then leave function
+            // if mouse button not down then leave function
             if (mouseDown && ((e.Button & mouseButton) != MouseButtons.None))
-            {	
+            {   
                 // create the Pen we will use to draw with
                 Pen outlinePen = null;
                 Brush interiorBrush = null;
@@ -204,8 +210,6 @@ namespace PaintDotNet
                     interiorBrush = bi.CreateBrush(Workspace.Environment.ForeColor.ToColor(), Workspace.Environment.BackColor.ToColor());
                 }
 
-                //
-                //outlinePen.LineJoin = LineJoin.Bevel;
                 outlinePen.LineJoin = LineJoin.MiterClipped;
                 outlinePen.MiterLimit = 2;
 
@@ -239,35 +243,35 @@ namespace PaintDotNet
                     renderArgs.Graphics.SmoothingMode = SmoothingMode.None;
                 }
 
-				// figure out how we're going to draw
+                // figure out how we're going to draw
                 ShapeDrawType drawType;
 
-				if (ForceShapeDrawType)
-				{
-					drawType = ForcedShapeDrawType;
-				}
-				else
-				{
-					drawType = Workspace.Environment.ShapeDrawType;
-				}
+                if (ForceShapeDrawType)
+                {
+                    drawType = ForcedShapeDrawType;
+                }
+                else
+                {
+                    drawType = Workspace.Environment.ShapeDrawType;
+                }
 
-				// get the region we want to save
+                // get the region we want to save
                 points = this.TrimShapePath(points);
                 Point[] pointsArray = (Point[])points.ToArray(typeof(Point));
-				GraphicsPath shapePath = CreateShapePath(pointsArray);
+                PdnGraphicsPath shapePath = CreateShapePath(pointsArray);
 
                 if (shapePath != null)
                 {
                     // create non-optimized interior region
-                    Region interiorRegion = new Region(shapePath);
+                    PdnRegion interiorRegion = new PdnRegion(shapePath);
 
                     // create non-optimized outline region
-                    Region outlineRegion;
+                    PdnRegion outlineRegion;
 
-                    using (GraphicsPath outlinePath = (GraphicsPath)shapePath.Clone())
+                    using (PdnGraphicsPath outlinePath = (PdnGraphicsPath)shapePath.Clone())
                     {
                         outlinePath.Widen(outlinePen);
-                        outlineRegion = new Region(outlinePath);
+                        outlineRegion = new PdnRegion(outlinePath);
                     }
 
                     // create optimized outlineRegion for purposes of rendering, if it is possible to do so
@@ -275,7 +279,7 @@ namespace PaintDotNet
                     // we'd otherwise get a region that encompasses the outline *and* the interior, thus
                     // slowing rendering significantly in many cases.
                     RectangleF[] optimizedOutlineRegion = GetOptimizedShapeOutlineRegion(pointsArray, shapePath);
-                    Region invalidOutlineRegion;
+                    PdnRegion invalidOutlineRegion;
 
                     if (optimizedOutlineRegion != null)
                     {
@@ -288,69 +292,35 @@ namespace PaintDotNet
                     }
 
                     // create optimized interior region
-                    Region invalidInteriorRegion = Utility.SimplifyAndInflateRegion(interiorRegion, Utility.DefaultSimplificationFactor, 3);
+                    PdnRegion invalidInteriorRegion = Utility.SimplifyAndInflateRegion(interiorRegion, Utility.DefaultSimplificationFactor, 3);
 
-                    // are we visible? if not, we shouldn't draw!
-                    bool visible = false;
+                    PdnRegion invalidRegion = new PdnRegion();
+                    invalidRegion.MakeEmpty();
 
-                    // test outline's visibility
+                    // set up alpha blending
+                    renderArgs.Graphics.CompositingMode = CompositingMode.SourceOver;
+
+                    outlineSaveSurface = new IrregularSurface(bitmapLayer.Surface, invalidOutlineRegion);
                     if ((drawType & ShapeDrawType.Outline) != 0)
                     {
-                        using (Region vis = (Region)outlineRegion.Clone())
-                        {
-                            vis.Intersect(bitmapLayer.Bounds);
-
-                            if (!vis.IsEmpty(renderArgs.Graphics))
-                            {
-                                visible = true;
-                            }
-                        }
+                        renderArgs.Graphics.DrawPath(outlinePen, shapePath);
                     }
 
-                    // test interior's visibility
+                    invalidRegion.Union(invalidOutlineRegion);
+
+                    // draw shape
                     if ((drawType & ShapeDrawType.Interior) != 0)
                     {
-                        using (Region vis = (Region)interiorRegion.Clone())
-                        {
-                            vis.Intersect(bitmapLayer.Bounds);
-
-                            if (!vis.IsEmpty(renderArgs.Graphics))
-                            {
-                                visible = true;
-                            }
-                        }
-                    }            
-
-                    if (visible)
-                    {
-                        Region invalidRegion = new Region();
-                        invalidRegion.MakeEmpty();
-
-                        // set up alpha blending
-                        renderArgs.Graphics.CompositingMode = CompositingMode.SourceOver;
-
-                        outlineSaveSurface = new IrregularSurface(bitmapLayer.Surface, invalidOutlineRegion);
-                        if ((drawType & ShapeDrawType.Outline) != 0)
-                        {
-                            renderArgs.Graphics.DrawPath(outlinePen, shapePath);
-                        }
-
-                        //bitmapLayer.Invalidate(invalidOutlineRegion);
-                        invalidRegion.Union(invalidOutlineRegion);
-
-                        // draw shape
-                        if ((drawType & ShapeDrawType.Interior) != 0)
-                        {
-                            interiorSaveSurface = new IrregularSurface(bitmapLayer.Surface, invalidInteriorRegion);
-                            renderArgs.Graphics.FillPath(interiorBrush, shapePath);
-                            //bitmapLayer.Invalidate(invalidInteriorRegion);
-                            invalidRegion.Union(invalidInteriorRegion);
-                        }
-
-                        bitmapLayer.Invalidate(invalidRegion);
-                        invalidRegion.Dispose();
+                        interiorSaveSurface = new IrregularSurface(bitmapLayer.Surface, invalidInteriorRegion);
+                        renderArgs.Graphics.FillPath(interiorBrush, shapePath);
+                        invalidRegion.Union(invalidInteriorRegion);
                     }
 
+                    bitmapLayer.Invalidate(invalidRegion);
+                    invalidRegion.Dispose();
+
+                    invalidInteriorRegion.Dispose();
+                    invalidOutlineRegion.Dispose();
                     outlineRegion.Dispose();
                     interiorRegion.Dispose();
                 }
@@ -360,51 +330,76 @@ namespace PaintDotNet
                 outlinePen.Dispose();
                 interiorBrush.Dispose();
             }
-		}
+        }
 
-		protected override void OnMouseUp(MouseEventArgs e)
-		{
-			base.OnMouseUp(e);
-			//Debug.WriteLine("OnMouseUp");
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseUp(e);
 
-			if (mouseDown)
-			{
+            if (mouseDown)
+            {
                 mouseDown = false;
 
                 ArrayList has = new ArrayList();
+                PdnRegion activeRegion;
+
+                if (Workspace.Environment.IsSelectionEmpty)
+                {
+                    activeRegion = new PdnRegion();
+                }
+                else
+                {
+                    activeRegion = Workspace.Environment.CreateSelectedRegion();
+                }
 
                 if (outlineSaveSurface != null)
                 {
-                    has.Add(bitmapLayer.CreateHistoryAction(Name, Image, outlineSaveSurface));
-                    outlineSaveSurface.Dispose();
-                    outlineSaveSurface = null;
+                    using (PdnRegion clipTest = activeRegion.Clone())
+                    {
+                        clipTest.Intersect(outlineSaveSurface.Region);
+                    
+                        if (!clipTest.IsEmpty())
+                        {
+                            has.Add(bitmapLayer.CreateHistoryAction(Name, Image, outlineSaveSurface));
+                            outlineSaveSurface.Dispose();
+                            outlineSaveSurface = null;
+                        }
+                    }
                 }
 
                 if (interiorSaveSurface != null)
                 {
-                    has.Add(bitmapLayer.CreateHistoryAction(Name, Image, interiorSaveSurface));
-                    interiorSaveSurface.Dispose();
-                    interiorSaveSurface = null;
+                    using (PdnRegion clipTest = activeRegion.Clone())
+                    {
+                        clipTest.Intersect(interiorSaveSurface.Region);
+                        
+                        if (!clipTest.IsEmpty())
+                        {
+                            has.Add(bitmapLayer.CreateHistoryAction(Name, Image, interiorSaveSurface));
+                            interiorSaveSurface.Dispose();
+                            interiorSaveSurface = null;
+                        }
+                    }
                 }
 
                 if (has.Count > 0)
                 {
                     CompoundHistoryAction cha = new CompoundHistoryAction(Name, Image, (HistoryAction[])has.ToArray(typeof(HistoryAction)));
-			        Workspace.History.PushNewAction(cha);
+                    Workspace.History.PushNewAction(cha);
                 }
 
+                activeRegion.Dispose();
                 points = null;
             }
-		}
+        }
 
-		public ShapeTool(DocumentWorkspace parent)
-			: base(parent)
-		{
-			//Debug.WriteLine("Constructor");
-			mouseDown = false;
+        public ShapeTool(DocumentWorkspace parent)
+            : base(parent)
+        {
+            mouseDown = false;
             points = null;
-		}
-	}
+        }
+    }
 }
 
 

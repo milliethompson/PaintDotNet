@@ -3,12 +3,12 @@ using System.Drawing;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for FlipDocumentAction.
-	/// </summary>
-	public class FlipDocumentAction
+    /// <summary>
+    /// Summary description for FlipDocumentAction.
+    /// </summary>
+    public class FlipDocumentAction
         : DocumentAction
-	{
+    {
         private Image undoImage;
         private FlipType flipType;
 
@@ -26,11 +26,11 @@ namespace PaintDotNet
             return new CompoundHistoryAction(Name, undoImage, actions);
         }
 
-		public FlipDocumentAction(DocumentWorkspace workspace, string name, Image image, FlipType flipType)
+        public FlipDocumentAction(DocumentWorkspace workspace, string name, Image image, FlipType flipType)
             : base(workspace, name)
-		{
+        {
             this.undoImage = image;
             this.flipType = flipType;
-		}
-	}
+        }
+    }
 }

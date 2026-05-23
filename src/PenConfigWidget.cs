@@ -14,12 +14,10 @@ namespace PaintDotNet
 	public class PenConfigWidget : System.Windows.Forms.UserControl
 	{
 		private System.Windows.Forms.ErrorProvider penSizeErrorProvider;
-		private DotNetWidgets.DotNetToolbar dotNetToolbar;
-		private DotNetWidgets.DotNetToolbarLabelItem dotNetToolbarLabelItem1;
-		private DotNetWidgets.DotNetToolbarIconButtonItem PlaceHolderButton;
-		private DotNetWidgets.DotNetToolbarComboBoxItem sizeComboBoxTB;
-		private DotNetWidgets.FlatComboBox sizeComboBox;
-		private System.Windows.Forms.ErrorProvider errorProvider1;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.ComboBox sizeComboBox;
+        private DotNetWidgets.DotNetToolbar dotNetToolbar1;
+        private DotNetWidgets.DotNetToolbarButtonItem dotNetToolbarButtonItem1;
 
 		/// <summary> 
 		/// Required designer variable.
@@ -38,50 +36,7 @@ namespace PaintDotNet
 			penSizeErrorProvider.SetIconAlignment (this.sizeComboBox, ErrorIconAlignment.MiddleRight);
 			penSizeErrorProvider.SetIconPadding (this.sizeComboBox, 2);
 			
-			this.sizeComboBox = (DotNetWidgets.FlatComboBox)sizeComboBoxTB.ContainedControl;
-			this.sizeComboBox.InitialText = "";
-			this.sizeComboBox.Items.AddRange(new object[] {
-															  "1",
-															  "2",
-															  "3",
-															  "4",
-															  "5",
-															  "6",
-															  "7",
-															  "8",
-															  "9",
-															  "10",
-															  "11",
-															  "12",
-															  "13",
-															  "14",
-															  "15",
-															  "20",
-															  "25",
-															  "30",
-															  "35",
-															  "40",
-															  "45",
-															  "50",
-															  "55",
-															  "60",
-															  "65",
-															  "70",
-															  "75",
-															  "80",
-															  "85",
-															  "90",
-															  "95",
-															  "100"});
-			this.sizeComboBox.Location = new System.Drawing.Point(32, 4);
-			this.sizeComboBox.Name = "sizeComboBox";
-			this.sizeComboBox.Size = new System.Drawing.Size(48, 21);
-			this.sizeComboBox.TabIndex = 9;
-			this.sizeComboBox.Text = "2";
-			this.sizeComboBox.Validating += new System.ComponentModel.CancelEventHandler(this.sizeComboBox_Validating);
-			this.sizeComboBox.TextChanged += new System.EventHandler(this.sizeComboBox_TextChanged);
-			sizeComboBoxTB.Text = "2";
-		}
+    	}
 
 		public event EventHandler PenChanged;
 		protected virtual void OnPenChanged()
@@ -105,16 +60,14 @@ namespace PaintDotNet
             }
         }
 
-
-
         /// <summary> 
 		/// Clean up any resources being used.
 		/// </summary>
 		protected override void Dispose( bool disposing )
 		{
-			if( disposing )
+			if ( disposing )
 			{
-				if(components != null)
+				if (components != null)
 				{
 					components.Dispose();
 				}
@@ -129,18 +82,29 @@ namespace PaintDotNet
 		/// </summary>
 		private void InitializeComponent()
 		{
-            this.sizeComboBox = new DotNetWidgets.FlatComboBox();
             this.penSizeErrorProvider = new System.Windows.Forms.ErrorProvider();
-            this.dotNetToolbar = new DotNetWidgets.DotNetToolbar();
-            this.dotNetToolbarLabelItem1 = new DotNetWidgets.DotNetToolbarLabelItem();
-            this.sizeComboBoxTB = new DotNetWidgets.DotNetToolbarComboBoxItem();
-            this.PlaceHolderButton = new DotNetWidgets.DotNetToolbarIconButtonItem();
-            this.errorProvider1 = new System.Windows.Forms.ErrorProvider();
+            this.label1 = new System.Windows.Forms.Label();
+            this.sizeComboBox = new System.Windows.Forms.ComboBox();
+            this.dotNetToolbar1 = new DotNetWidgets.DotNetToolbar();
+            this.dotNetToolbarButtonItem1 = new DotNetWidgets.DotNetToolbarButtonItem();
             this.SuspendLayout();
+            // 
+            // penSizeErrorProvider
+            // 
+            this.penSizeErrorProvider.BlinkStyle = System.Windows.Forms.ErrorBlinkStyle.NeverBlink;
+            this.penSizeErrorProvider.ContainerControl = this;
+            // 
+            // label1
+            // 
+            this.label1.Location = new System.Drawing.Point(12, 1);
+            this.label1.Name = "label1";
+            this.label1.TabIndex = 11;
+            this.label1.Text = "Brush Width:";
+            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // sizeComboBox
             // 
-            this.sizeComboBox.InitialText = "";
+            this.sizeComboBox.ItemHeight = 13;
             this.sizeComboBox.Items.AddRange(new object[] {
                                                               "1",
                                                               "2",
@@ -174,58 +138,38 @@ namespace PaintDotNet
                                                               "90",
                                                               "95",
                                                               "100"});
-            this.sizeComboBox.Location = new System.Drawing.Point(32, 4);
+            this.sizeComboBox.Location = new System.Drawing.Point(84, 3);
             this.sizeComboBox.Name = "sizeComboBox";
-            this.sizeComboBox.Size = new System.Drawing.Size(48, 21);
+            this.sizeComboBox.Size = new System.Drawing.Size(44, 21);
             this.sizeComboBox.TabIndex = 9;
             this.sizeComboBox.Text = "2";
             this.sizeComboBox.Validating += new System.ComponentModel.CancelEventHandler(this.sizeComboBox_Validating);
             this.sizeComboBox.TextChanged += new System.EventHandler(this.sizeComboBox_TextChanged);
             // 
-            // penSizeErrorProvider
+            // dotNetToolbar1
             // 
-            this.penSizeErrorProvider.BlinkStyle = System.Windows.Forms.ErrorBlinkStyle.NeverBlink;
-            this.penSizeErrorProvider.ContainerControl = this;
+            this.dotNetToolbar1.Buttons.Add(this.dotNetToolbarButtonItem1);
+            this.dotNetToolbar1.Dock = System.Windows.Forms.DockStyle.None;
+            this.dotNetToolbar1.DrawGrabHandle = false;
+            this.dotNetToolbar1.ImageList = null;
+            this.dotNetToolbar1.Location = new System.Drawing.Point(0, 0);
+            this.dotNetToolbar1.MenuProvider = null;
+            this.dotNetToolbar1.Name = "dotNetToolbar1";
+            this.dotNetToolbar1.Size = new System.Drawing.Size(32, 26);
+            this.dotNetToolbar1.TabIndex = 12;
             // 
-            // dotNetToolbar
+            // dotNetToolbarButtonItem1
             // 
-            this.dotNetToolbar.Buttons.Add(this.dotNetToolbarLabelItem1);
-            this.dotNetToolbar.Buttons.Add(this.sizeComboBoxTB);
-            this.dotNetToolbar.Buttons.Add(this.PlaceHolderButton);
-            this.dotNetToolbar.DrawGrabHandle = false;
-            this.dotNetToolbar.ImageList = null;
-            this.dotNetToolbar.Location = new System.Drawing.Point(0, 0);
-            this.dotNetToolbar.MenuProvider = null;
-            this.dotNetToolbar.Name = "dotNetToolbar";
-            this.dotNetToolbar.Size = new System.Drawing.Size(168, 27);
-            this.dotNetToolbar.TabIndex = 10;
-            // 
-            // dotNetToolbarLabelItem1
-            // 
-            this.dotNetToolbarLabelItem1.BeginGroup = true;
-            this.dotNetToolbarLabelItem1.Text = "Brush Width:";
-            // 
-            // sizeComboBoxTB
-            // 
-            this.sizeComboBoxTB.ControlWidth = 48;
-            this.sizeComboBoxTB.Text = "";
-            // 
-            // PlaceHolderButton
-            // 
-            this.PlaceHolderButton.Enabled = false;
-            this.PlaceHolderButton.Icon = null;
-            this.PlaceHolderButton.IdealSize = new System.Drawing.Size(16, 16);
-            // 
-            // errorProvider1
-            // 
-            this.errorProvider1.ContainerControl = this;
+            this.dotNetToolbarButtonItem1.BeginGroup = true;
+            this.dotNetToolbarButtonItem1.Enabled = false;
             // 
             // PenConfigWidget
             // 
-            this.Controls.Add(this.dotNetToolbar);
             this.Controls.Add(this.sizeComboBox);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.dotNetToolbar1);
             this.Name = "PenConfigWidget";
-            this.Size = new System.Drawing.Size(168, 27);
+            this.Size = new System.Drawing.Size(152, 48);
             this.ResumeLayout(false);
 
         }
@@ -264,7 +208,7 @@ namespace PaintDotNet
 				}
 				else
 				{
-					if ((float.Parse(this.sizeComboBox.Text) < 1))
+					if (float.Parse(this.sizeComboBox.Text) < 1)
 					{
 						// Set the error if the size is too small.
 						penSizeErrorProvider.SetError(this.sizeComboBox, "Size is smaller than 1");
@@ -282,11 +226,11 @@ namespace PaintDotNet
 					}
 				}
 			}
+
 			catch (FormatException)
 			{
 				e.Cancel = true;
 			}
-		
 		}
 	}
 }

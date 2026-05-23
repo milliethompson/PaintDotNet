@@ -6,16 +6,16 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for LassoSelectTool.
-	/// </summary>
-	public class LassoSelectTool
+    /// <summary>
+    /// Summary description for LassoSelectTool.
+    /// </summary>
+    public class LassoSelectTool
         : Tool
-	{
+    {
         private bool tracking = false;
-		private bool hasMoved = false;
-		private SelectionHistoryAction undoAction;
-        private GraphicsPath originalCopy;
+        private bool hasMoved = false;
+        private SelectionHistoryAction undoAction;
+        private PdnGraphicsPath originalCopy;
         private ArrayList tracePoints = null;
         private DateTime startTime;
 
@@ -41,12 +41,12 @@ namespace PaintDotNet
                 tracePoints = new ArrayList();
                 tracePoints.Add(new Point(e.X, e.Y));
 
-				undoAction = new SelectionHistoryAction("sentinel", toolBarImage, Workspace);
+                undoAction = new SelectionHistoryAction("sentinel", toolBarImage, Workspace);
 
-                // if the user is holding down the shift key then we don't want to reset the path, merely append to it
-				// we don't use the DeselectAction because we only want to end up adding
-				// one action to the history stack, not two
-				if (!((ModifierKeys & Keys.Control) == Keys.Control))
+                // if the user is holding down the control key then we don't want to reset the path, merely append to it
+                // we don't use the DeselectAction because we only want to end up adding
+                // one action to the history stack, not two
+                if (!((ModifierKeys & Keys.Control) == Keys.Control))
                 {
                     Workspace.Environment.PerformSelectedPathChanging();
                     Workspace.Environment.SelectedPath.Reset();
@@ -60,10 +60,10 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    originalCopy = (GraphicsPath)Workspace.Environment.SelectedPath.Clone();
+                    originalCopy = (PdnGraphicsPath)Workspace.Environment.SelectedPath.Clone();
                 }
 
-				hasMoved = false;
+                hasMoved = false;
             }
         }
         
@@ -90,7 +90,7 @@ namespace PaintDotNet
                             Workspace.Environment.SelectedPath.AddPath(originalCopy, false);
                         }
 
-                        Workspace.Environment.SelectedPath.AddLines(polygon);
+                        Workspace.Environment.SelectedPath.AddPolygon(polygon);
                         Workspace.Environment.PerformSelectedPathChanged();
                     }
 
@@ -110,8 +110,8 @@ namespace PaintDotNet
             {
                 OnMouseMove(e);
 
-				if (hasMoved)
-				{
+                if (hasMoved)
+                {
                     Point[] polygon = Utility.SutherlandHodgman(Workspace.Document.Bounds, tracePoints);
 
                     if (polygon.Length > 2)
@@ -152,21 +152,27 @@ namespace PaintDotNet
                             }
                         }
                     }
-				}
+                }
 
                 tracking = false;
-				hasMoved = false;
+                hasMoved = false;
             }
         }
 
-		protected override void OnClick()
-		{
-			base.OnClick ();
+        protected override void OnClick()
+        {
+            base.OnClick ();
+
+            if (tracePoints == null || tracePoints.Count == 0)
+            {
+                return;
+            }
 
             Point[] polygon = Utility.SutherlandHodgman(Workspace.Document.Bounds, tracePoints);
 
-			if (!hasMoved || polygon.Length <= 2)
-			{
+            if (!hasMoved || polygon.Length <= 2)
+            {
+
                 if (!(undoAction.IsSelectionEmpty && Workspace.Environment.IsSelectionEmpty))
                 {
                     if (this.ModifierKeys == Keys.None)
@@ -178,22 +184,22 @@ namespace PaintDotNet
                         Workspace.Environment.SelectedPath.Reset();
                         Workspace.Environment.PerformSelectedPathChanged();
                     }
-				}
+                }
 
-				tracking = false;
-				hasMoved = false;
-			}
-		}
+                tracking = false;
+                hasMoved = false;
+            }
+        }
 
-		public LassoSelectTool(DocumentWorkspace workspace)
+        public LassoSelectTool(DocumentWorkspace workspace)
             : base(workspace)
-		{
+        {
             this.name = "Lasso Select";
             this.description = "Allows you to select an arbitrary region of the image.";
             this.toolBarImage = Utility.GetImageResource("Icons.LassoSelectToolIcon.bmp");
             this.cursor = new Cursor(Utility.GetResourceStream("Cursors.LassoSelectToolCursor.cur"));
 
             tracking = false;
-		}
-	}
+        }
+    }
 }

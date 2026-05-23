@@ -54,6 +54,22 @@
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:1"
         }
+        "Release and Package"
+        {
+        "DisplayName" = "8:Release and Package"
+        "IsDebugOnly" = "11:FALSE"
+        "IsReleaseOnly" = "11:FALSE"
+        "OutputFilename" = "8:Release and Package\\WIAAutSDK MergeModule.msm"
+        "PackageFilesAs" = "3:2"
+        "PackageFileSize" = "3:-2147483648"
+        "CabType" = "3:1"
+        "Compression" = "3:3"
+        "SignOutput" = "11:FALSE"
+        "CertificateFile" = "8:"
+        "PrivateKeyFile" = "8:"
+        "TimeStampServer" = "8:"
+        "InstallerBootstrapper" = "3:1"
+        }
     }
     "Deployable"
     {
@@ -130,7 +146,7 @@
         {
         "ModuleSignature" = "8:MergeModule.13ED6334C1EB455E8FAA2B32CA81BD79"
         "Version" = "8:1.0.0.0"
-        "Title" = "8:MergeModule1"
+        "Title" = "8:WIAAutSDK"
         "Subject" = "8:"
         "Author" = "8:Default Company Name"
         "Keywords" = "8:"

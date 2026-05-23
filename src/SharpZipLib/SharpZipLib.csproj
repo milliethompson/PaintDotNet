@@ -62,6 +62,26 @@
                     TreatWarningsAsErrors = "true"
                     WarningLevel = "4"
                 />
+                <Config
+                    Name = "Release and Package"
+                    AllowUnsafeBlocks = "false"
+                    BaseAddress = "285212672"
+                    CheckForOverflowUnderflow = "false"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = "TRACE"
+                    DocumentationFile = ""
+                    DebugSymbols = "false"
+                    FileAlignment = "4096"
+                    IncrementalBuild = "false"
+                    NoStdLib = "false"
+                    NoWarn = ""
+                    Optimize = "true"
+                    OutputPath = "bin\Release\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "true"
+                    WarningLevel = "4"
+                />
             </Settings>
             <References>
                 <Reference
@@ -133,11 +153,6 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "src\BZip2\Tests\Bzip2Tests.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "src\Checksums\Adler32.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -169,11 +184,6 @@
                 />
                 <File
                     RelPath = "src\GZip\GzipOutputStream.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "src\GZip\Tests\GZipTests.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -304,11 +314,6 @@
                 />
                 <File
                     RelPath = "src\Zip\Compression\Tests\InflaterDeflaterTests.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "src\Zip\Tests\ZipTests.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

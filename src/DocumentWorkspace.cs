@@ -1,108 +1,59 @@
+using DotNetWidgets;
+using PaintDotNet.Effects;
 using System;
 using System.Collections;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
-using DotNetWidgets;
 
 namespace PaintDotNet
 {
     /// <summary>
     /// Summary description for DocumentWorkspace.
     /// </summary>
-	public class DocumentWorkspace
-		: UserControl
-	{
-		private Document document = null;
-		private HistoryStack history;
-		private Layer activeLayer;
-		private DocumentEnvironment environment;
-		private Type[] tools;
-		private Type[] effects;
-		private PaintDotNet.PenConfigWidget penConfigWidget;
-		private PaintDotNet.BrushConfigWidget brushConfigWidget;
-		private PaintDotNet.ShapeDrawTypeConfigWidget shapeDrawTypeConfigWidget;
-		private PaintDotNet.DocumentView documentView;
+    public class DocumentWorkspace
+        : UserControl
+    {
+        private Document document = null;
+        private HistoryStack history;
+        private Layer activeLayer;
+        private DocumentEnvironment environment;
+        private Type[] tools;
+        private Type[] effects = null;
+        private PenConfigWidget penConfigWidget;
+        private BrushConfigWidget brushConfigWidget;
+        private ShapeDrawTypeConfigWidget shapeDrawTypeConfigWidget;
+        private DocumentView documentView;
 
-		private EventHandler selectedPathChangingDelegate;
-		private EventHandler selectedPathChangedDelegate;
+        private EventHandler selectedPathChangingDelegate;
+        private EventHandler selectedPathChangedDelegate;
 
-		private EventHandler foreColorChangedDelegate;
-		private EventHandler backColorChangedDelegate;
-		private EventHandler shapeDrawTypeChangedDelegate;
+        private EventHandler foreColorChangedDelegate;
+        private EventHandler backColorChangedDelegate;
+        private EventHandler shapeDrawTypeChangedDelegate;
 
-		private IndexEventHandler layerRemovingDelegate;
-		private IndexEventHandler layerRemovedDelegate;
-		private IndexEventHandler layerInsertedDelegate;
-		private PropertyEventHandler layerPropertyChangingDelegate;
+        private IndexEventHandler layerRemovingDelegate;
+        private IndexEventHandler layerRemovedDelegate;
+        private IndexEventHandler layerInsertedDelegate;
+        private PropertyEventHandler layerPropertyChangingDelegate;
 
-		private FlowPanel topDock;
+        private FlowPanel topDock;
 
-		private DocumentWidgets widgets;
+        private DocumentWidgets widgets;
 
-		private MainToolBarForm mainToolBarForm;
-		private LayerForm layerForm;
-		private HistoryForm historyForm;
-		private PaintDotNet.TextConfigWidget textConfigWidget;
-		private PaintDotNet.WorkspaceOptionsConfigWidget workspaceOptionsConfigWidget;
+        private MainToolBarForm mainToolBarForm;
+        private LayerForm layerForm;
+        private HistoryForm historyForm;
+        private PaintDotNet.TextConfigWidget textConfigWidget;
+        private PaintDotNet.WorkspaceOptionsConfigWidget workspaceOptionsConfigWidget;
         private System.Timers.Timer toolPulseTimer;
         private PaintDotNet.CommonActionsWidget commonActionsWidget;
-		private ColorsForm colorsForm;
-
-        public event EventHandler ZoomChanged;
-        protected virtual void OnZoomChanged()
-        {
-            if (ZoomChanged != null)
-            {
-                ZoomChanged(this, EventArgs.Empty);
-            }
-        }
-
-        [Browsable(false)]
-        public ScaleFactor Zoom
-        {
-            get
-            {
-               return documentView.ScaleFactor;
-            }
-
-            set
-            {
-                Rectangle rect = documentView.VisibleDocumentRectangle;
-                documentView.ScaleFactor = value;
-                documentView.DocumentScrollPosition = rect.Location;
-                OnZoomChanged();
-            }
-        }
-
-		public void ZoomIn()
-		{
-			ScaleFactor sf = documentView.ScaleFactor.GetNextLarger();
-
-			if (sf.Numerator > 8 && sf.Denominator == 1)
-			{
-			}
-			else
-			{
-				Zoom = sf;
-			}
-		}
-
-		public void ZoomOut()
-		{
-			ScaleFactor sf = documentView.ScaleFactor.GetNextSmaller();
-
-			if (sf.Numerator == 1 && sf.Denominator > 8)
-			{
-			}
-			else
-			{
-				Zoom = sf;
-			}
-		}
+        private ColorsForm colorsForm;
 
         // DocumentChanging
         // This event is raised right before the 'document' is changed via the 'Document' property.
@@ -191,12 +142,12 @@ namespace PaintDotNet
         /// <param name="document"></param>
         public void SetDocument(Document document)
         {
-			Tool oldTool = Environment.Tool;
+            Tool oldTool = Environment.Tool;
 
-			Environment.SetTool(null);
+            Environment.SetTool(null);
             ActiveLayer = null;
 
-			OnDocumentChanging();
+            OnDocumentChanging();
 
             if (this.Document != null)
             {
@@ -350,6 +301,11 @@ namespace PaintDotNet
         {
             get
             {
+                if (effects == null)
+                {
+                    InitializeEffects();
+                }
+
                 return effects;
             }
         }
@@ -380,20 +336,20 @@ namespace PaintDotNet
             // enable/disable buttons on the CommonActionsWidget
             if (history.UndoStack.Count > 1)
             {
-                widgets.CommonActionsWidget.SetButtonEnabled("Undo", true);
+                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Undo, true);
             }
             else
             {
-                widgets.CommonActionsWidget.SetButtonEnabled("Undo", false);
+                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Undo, false);
             }
 
             if (history.RedoStack.Count > 0)
             {
-                widgets.CommonActionsWidget.SetButtonEnabled("Redo", true);
+                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Redo, true);
             }
             else
             {
-                widgets.CommonActionsWidget.SetButtonEnabled("Redo", false);
+                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Redo, false);
             }
         }
 
@@ -409,19 +365,19 @@ namespace PaintDotNet
             this.history = new HistoryStack(this);
 
             // initialize!
-			InitializeFloatingForms();
-			InitializeTools();
+            InitializeFloatingForms();
+            InitializeTools();
             InitializeComponent();
             InitializeToolBars();
             InitializeEffects();
 
-			this.historyForm.HistoryControl.HistoryStack = this.history;
+            this.historyForm.HistoryControl.HistoryStack = this.history;
             
             history.Changed += new EventHandler(HistoryChangedHandler);
            
             // set the workspace toggle buttons correctly
             this.workspaceOptionsConfigWidget.AntiAliasing = Environment.AntiAliasing;
-			this.workspaceOptionsConfigWidget.RulersEnabled = documentView.RulersEnabled;
+            this.workspaceOptionsConfigWidget.RulersEnabled = documentView.RulersEnabled;
 
             // hook the DocumentView with its selectedPath ...
             this.documentView.SelectedPath = Environment.SelectedPath;
@@ -467,7 +423,7 @@ namespace PaintDotNet
             widgets.MainToolBarForm = mainToolBarForm;
             widgets.LayerForm = layerForm;
             widgets.HistoryForm = historyForm;
-			widgets.ColorsForm = colorsForm;
+            widgets.ColorsForm = colorsForm;
 
             //
             penConfigWidget.PerformPenChanged();
@@ -479,20 +435,18 @@ namespace PaintDotNet
 
             // PaintBrush tool = the default
             Widgets.MainToolBar.SelectTool(typeof(PaintBrushTool));
-		}
+        }
 
-		/// <summary>
-		/// Whatever form owns this control should call this in its OnLoad method
-		/// </summary>
-		public void OnLoad_ShowFloatingForms()
-		{
+        /// <summary>
+        /// Whatever form owns this control should call this in its nLoad method
+        /// </summary>
+        public void OnLoad_ShowFloatingForms()
+        {
             colorsForm.Show();
             mainToolBarForm.Show();
-			layerForm.Show();
-			historyForm.Show();
-
-//            colorsForm.Hide();
-		}
+            layerForm.Show();
+            historyForm.Show();
+        }
 
         /// <summary>
         /// Keeps the Environment's ShapeDrawType and the corresponding widget synchronized
@@ -508,8 +462,8 @@ namespace PaintDotNet
         /// <summary>
         /// Handles the ForeColorChanged event that is raised by the DocumentEnvironment.
         /// </summary>
-		private void ForeColorChangedHandler(object sender, EventArgs e)
-		{
+        private void ForeColorChangedHandler(object sender, EventArgs e)
+        {
             if (sender == environment)
             {
                 widgets.ColorDisplayWidget.UserForeColor = Environment.ForeColor;
@@ -520,13 +474,13 @@ namespace PaintDotNet
             {
                 Environment.ForeColor = widgets.ColorDisplayWidget.UserForeColor;
             }
-		}
+        }
 
         /// <summary>
         /// Handles the BackColorChanged event that is raised by the DocumentEnvironment.
         /// </summary>
         private void BackColorChangedHandler(object sender, EventArgs e)
-		{
+        {
             if (sender == environment)
             {
                 widgets.ColorDisplayWidget.UserBackColor = Environment.BackColor;
@@ -537,7 +491,7 @@ namespace PaintDotNet
             {
                 Environment.BackColor = widgets.ColorDisplayWidget.UserBackColor;
             }
-		}
+        }
 
         private void colorsForm_UserForeColorChanged(object sender, ColorEventArgs e)
         {
@@ -589,7 +543,7 @@ namespace PaintDotNet
 
         private void LayerPropertyChangingHandler(object sender, PropertyEventArgs e)
         {
-            LayerPropertyHistoryAction lpha = new LayerPropertyHistoryAction("Layer " + e.PropertyName, null, (Layer)sender);
+            LayerPropertyHistoryAction lpha = new LayerPropertyHistoryAction("Layer " + e.PropertyName, Utility.GetImageResource("Icons.MenuLayersLayerPropertiesIcon.bmp"), (Layer)sender);
             History.PushNewAction(lpha);
         }
 
@@ -599,11 +553,12 @@ namespace PaintDotNet
         /// DocumentEnvironment. Then, when the SelectedPathChanged event is raised, the
         /// full region that needs to be redrawn is accounted for.
         /// </summary>
-        private Region selectionRedrawRegion;
+        private PdnRegion selectionRedrawInterior;
+        private PdnGraphicsPath selectionRedrawOutline;
 
         /// <summary>
         /// Handles the SelectedPathChanging event that is raised by the DocumentEnvironment.
-        /// This method initializes the selectionRedrawRegion variable for later use in
+        /// This method initializes the selectionRedrawInterior variable for later use in
         /// handling the SelectedPathChanged event inside the SelectedPathChangedHandler
         /// method.
         /// </summary>
@@ -611,19 +566,21 @@ namespace PaintDotNet
         {   
             if (!Environment.IsSelectionEmpty)
             {
-                selectionRedrawRegion = Environment.CreateSelectedRegion();
+                selectionRedrawInterior = Environment.CreateSelectedRegion();
+                selectionRedrawOutline = (PdnGraphicsPath)Environment.SelectedPath.Clone();
             }
             else
             {
-                selectionRedrawRegion = new Region();
-                selectionRedrawRegion.MakeEmpty();
+                selectionRedrawInterior = new PdnRegion();
+                selectionRedrawInterior.MakeEmpty();
+                selectionRedrawOutline = new PdnGraphicsPath();
             }
         }
 
         /// <summary>
         /// Handles the SelectedPathChanged event that is raised by the DocumentEnvironment.
         /// This method notifiest the DocumentView of the new selection region, and
-        /// finalizes the accumulated region stored in the selectionRedrawRegion variable.
+        /// finalizes the accumulated region stored in the selectionRedrawInterior variable.
         /// This accumulated redraw region is then used to Invalidate the Document and
         /// cause the correct regions to be erased and/or redrawn.
         /// We also go to extents to make sure that only the areas of the screen that
@@ -632,83 +589,105 @@ namespace PaintDotNet
         /// </summary>
         private void SelectedPathChangedHandler(object sender, EventArgs e)
         {
+            bool fullInvalidate = false;
             documentView.SelectedPath = Environment.SelectedPath;
 
-            if (!Environment.IsSelectionEmpty)
-            {
-                Region unionMe = Environment.CreateSelectedRegion();
-
-                Region excludeMe = (Region)unionMe.Clone();
-                excludeMe.Intersect(selectionRedrawRegion);
-
-                selectionRedrawRegion.Union(unionMe);
-                selectionRedrawRegion.Exclude(excludeMe);
-
+            // if we're moving to a simpler selection region ...
+            if (Environment.IsSelectionEmpty ||
+                Environment.SelectedPath.PointCount < selectionRedrawOutline.PointCount)
+            {   // then invalidate everything
+                fullInvalidate = true;
+            }
+            else
+            {   // otherwise, be intelligent about it
+                PdnRegion unionMe = Environment.CreateSelectedRegion();
+                PdnRegion excludeMe = (PdnRegion)unionMe.Clone();
+                excludeMe.Intersect(selectionRedrawInterior);
+                selectionRedrawInterior.Union(unionMe);
+                selectionRedrawInterior.Exclude(excludeMe);
                 unionMe.Dispose();
                 excludeMe.Dispose();
             }
 
-            Region simplifiedRedrawRegion;
-            
-            simplifiedRedrawRegion = Utility.SimplifyAndInflateRegion(selectionRedrawRegion);
-
             if (Document != null)
             {
-                Document.Invalidate(simplifiedRedrawRegion);
+                using (PdnRegion simplified = Utility.SimplifyAndInflateRegion(selectionRedrawInterior, Utility.DefaultSimplificationFactor, 2))
+                {
+                    this.document.Invalidate(simplified);
+                }
+
+                if (fullInvalidate)
+                {
+                    this.document.Invalidate(this.VisibleDocumentRectangle);
+                }
+
+                Update();
+
+                Rectangle[] rects = Utility.SimplifyTrace(selectionRedrawOutline);
+                Utility.InflateRectanglesInPlace(rects, 2);
+
+                using (PdnRegion simplified = Utility.RectanglesToRegion(rects))
+                {
+                    this.document.Invalidate(simplified);
+                }
+
+                Update();
             }
 
-            simplifiedRedrawRegion.Dispose();
-            selectionRedrawRegion.Dispose();
-            selectionRedrawRegion = null;
-
-            Update();
+            selectionRedrawInterior.Dispose();
+            selectionRedrawInterior = null;
 
             // set buttons on CommonActionsWidgets
             if (Environment.IsSelectionEmpty)
             {
-                widgets.CommonActionsWidget.SetButtonEnabled("Cut", false);
-                widgets.CommonActionsWidget.SetButtonEnabled("Copy", false);
-                widgets.CommonActionsWidget.SetButtonEnabled("Deselect", false);
+                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Cut, false);
+                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Copy, false);
+                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Deselect, false);
             }
             else
             {
-                widgets.CommonActionsWidget.SetButtonEnabled("Cut", true);
-                widgets.CommonActionsWidget.SetButtonEnabled("Copy", true);
-                widgets.CommonActionsWidget.SetButtonEnabled("Deselect", true);
+                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Cut, true);
+                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Copy, true);
+                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Deselect, true);
             }
         }
 
         private void InitializeComponent()
         {
+            Utility.TraceMe("starting with news");
+            System.Resources.ResourceManager resources = new System.Resources.ResourceManager(typeof(DocumentWorkspace));
             this.documentView = new PaintDotNet.DocumentView();
             this.topDock = new PaintDotNet.FlowPanel();
             this.textConfigWidget = new PaintDotNet.TextConfigWidget();
-            this.brushConfigWidget = new PaintDotNet.BrushConfigWidget();
             this.shapeDrawTypeConfigWidget = new PaintDotNet.ShapeDrawTypeConfigWidget();
             this.penConfigWidget = new PaintDotNet.PenConfigWidget();
+            this.brushConfigWidget = new PaintDotNet.BrushConfigWidget();
             this.workspaceOptionsConfigWidget = new PaintDotNet.WorkspaceOptionsConfigWidget();
             this.commonActionsWidget = new PaintDotNet.CommonActionsWidget();
             this.toolPulseTimer = new System.Timers.Timer();
             this.topDock.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.toolPulseTimer)).BeginInit();
             this.SuspendLayout();
+            Utility.TraceMe("done with news");
             // 
             // documentView
             // 
             this.documentView.BackColor = System.Drawing.SystemColors.ControlDark;
             this.documentView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.documentView.Document = null;
-            this.documentView.HighlightSelection = true;
+            this.documentView.DocumentScrollPosition = ((System.Drawing.PointF)(resources.GetObject("documentView.DocumentScrollPosition")));
+            this.documentView.EnableOutlineAnimation = true;
             this.documentView.Location = new System.Drawing.Point(0, 54);
             this.documentView.Name = "documentView";
             this.documentView.RulersEnabled = false;
             this.documentView.Size = new System.Drawing.Size(872, 586);
             this.documentView.TabIndex = 0;
-            this.documentView.DocumentMouseDown += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseDownHandler);
+            this.documentView.Scroll += new System.EventHandler(this.documentView_Scroll);
             this.documentView.DocumentMouseMove += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseMoveHandler);
+            this.documentView.DocumentMouseDown += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseDownHandler);
+            this.documentView.DocumentClick += new System.EventHandler(this.DocumentClick);
             this.documentView.DocumentMouseUp += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseUpHandler);
             this.documentView.DocumentKeyPress += new System.Windows.Forms.KeyPressEventHandler(this.DocumentKeyPress);
-            this.documentView.DocumentClick += new System.EventHandler(this.DocumentClick);
             // 
             // topDock
             // 
@@ -734,17 +713,9 @@ namespace PaintDotNet
             this.textConfigWidget.TabIndex = 2;
             this.textConfigWidget.TextAlignment = PaintDotNet.TextAlignment.Left;
             // 
-            // brushConfigWidget
-            // 
-            this.brushConfigWidget.Location = new System.Drawing.Point(341, 0);
-            this.brushConfigWidget.Name = "brushConfigWidget";
-            this.brushConfigWidget.Size = new System.Drawing.Size(193, 27);
-            this.brushConfigWidget.TabIndex = 0;
-            this.brushConfigWidget.BrushChanged += new System.EventHandler(this.brushConfigWidget_BrushChanged);
-            // 
             // shapeDrawTypeConfigWidget
             // 
-            this.shapeDrawTypeConfigWidget.Location = new System.Drawing.Point(696, 0);
+            this.shapeDrawTypeConfigWidget.Location = new System.Drawing.Point(691, 0);
             this.shapeDrawTypeConfigWidget.Name = "shapeDrawTypeConfigWidget";
             this.shapeDrawTypeConfigWidget.ShapeDrawType = PaintDotNet.ShapeDrawType.Outline;
             this.shapeDrawTypeConfigWidget.Size = new System.Drawing.Size(78, 27);
@@ -753,11 +724,19 @@ namespace PaintDotNet
             // 
             // penConfigWidget
             // 
-            this.penConfigWidget.Location = new System.Drawing.Point(534, 0);
+            this.penConfigWidget.Location = new System.Drawing.Point(547, 0);
             this.penConfigWidget.Name = "penConfigWidget";
-            this.penConfigWidget.Size = new System.Drawing.Size(162, 27);
+            this.penConfigWidget.Size = new System.Drawing.Size(144, 27);
             this.penConfigWidget.TabIndex = 0;
             this.penConfigWidget.PenChanged += new System.EventHandler(this.penConfigWidget_PenChanged);
+            // 
+            // brushConfigWidget
+            // 
+            this.brushConfigWidget.Location = new System.Drawing.Point(344, 0);
+            this.brushConfigWidget.Name = "brushConfigWidget";
+            this.brushConfigWidget.Size = new System.Drawing.Size(203, 27);
+            this.brushConfigWidget.TabIndex = 0;
+            this.brushConfigWidget.BrushChanged += new System.EventHandler(this.brushConfigWidget_BrushChanged);
             // 
             // workspaceOptionsConfigWidget
             // 
@@ -765,7 +744,7 @@ namespace PaintDotNet
             this.workspaceOptionsConfigWidget.Location = new System.Drawing.Point(286, 0);
             this.workspaceOptionsConfigWidget.Name = "workspaceOptionsConfigWidget";
             this.workspaceOptionsConfigWidget.RulersEnabled = false;
-            this.workspaceOptionsConfigWidget.Size = new System.Drawing.Size(55, 27);
+            this.workspaceOptionsConfigWidget.Size = new System.Drawing.Size(58, 27);
             this.workspaceOptionsConfigWidget.TabIndex = 3;
             this.workspaceOptionsConfigWidget.AntiAliasChanged += new System.EventHandler(this.workspaceOptionsConfigWidget_AntiAliasChanged);
             this.workspaceOptionsConfigWidget.RulersEnabledChanged += new System.EventHandler(this.workspaceOptionsConfigWidget_RulersEnabledChanged);
@@ -792,7 +771,6 @@ namespace PaintDotNet
             this.topDock.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.toolPulseTimer)).EndInit();
             this.ResumeLayout(false);
-
         }
 
         // The Document* events are raised by the Document class, handled here,
@@ -823,13 +801,13 @@ namespace PaintDotNet
             }
         }
 
-		private void DocumentClick(object sender, EventArgs e)
-		{
-			if (Environment.Tool != null)
-			{
-				Environment.Tool.PerformClick();
-			}
-		}
+        private void DocumentClick(object sender, EventArgs e)
+        {
+            if (Environment.Tool != null)
+            {
+                Environment.Tool.PerformClick();
+            }
+        }
 
         private void DocumentKeyPress(object sender, KeyPressEventArgs e)
         {
@@ -840,12 +818,12 @@ namespace PaintDotNet
         }
         #endregion
 
-		private void InitializeFloatingForms()
-		{
+        private void InitializeFloatingForms()
+        {
             // MainToolBarForm
-			mainToolBarForm = new MainToolBarForm();
-			mainToolBarForm.MainToolBar.ColorDisplay.UserForeColorClick += new EventHandler(colorDisplay_ForeColorClicked);
-			mainToolBarForm.MainToolBar.ColorDisplay.UserBackColorClick += new EventHandler(colorDisplay_BackColorClicked);
+            mainToolBarForm = new MainToolBarForm();
+            mainToolBarForm.MainToolBar.ColorDisplay.UserForeColorClick += new EventHandler(colorDisplay_ForeColorClicked);
+            mainToolBarForm.MainToolBar.ColorDisplay.UserBackColorClick += new EventHandler(colorDisplay_BackColorClicked);
 
             // LayerForm
             layerForm = new LayerForm();
@@ -866,8 +844,8 @@ namespace PaintDotNet
             historyForm.RedoButtonClicked += new EventHandler(historyForm_RedoButtonClicked);
             historyForm.FastForwardButtonClicked += new EventHandler(historyForm_FastForwardButtonClicked);
 
-			// ColorsForm
-			colorsForm = new ColorsForm();
+            // ColorsForm
+            colorsForm = new ColorsForm();
             colorsForm.UserForeColor = Environment.ForeColor;
             colorsForm.UserBackColor = Environment.BackColor;
             colorsForm.WhichUserColor = WhichUserColor.Foreground;
@@ -899,30 +877,27 @@ namespace PaintDotNet
             tools.Add(typeof(PanTool));
 
             tools.Add(typeof(PencilTool));
-			tools.Add(typeof(PaintBrushTool));
+            tools.Add(typeof(PaintBrushTool));
             tools.Add(typeof(EraserTool));
 
-			tools.Add(typeof(RectangleTool));
+            tools.Add(typeof(RectangleTool));
             tools.Add(typeof(EllipseTool));
             tools.Add(typeof(RoundedRectangleTool));
             tools.Add(typeof(LineTool));
             tools.Add(typeof(FreeformShapeTool));
             tools.Add(typeof(ColorPickerTool));
-			tools.Add(typeof(PaintBucketTool));
-			tools.Add(typeof(TextTool));
+            tools.Add(typeof(PaintBucketTool));
+            tools.Add(typeof(TextTool));
 
             // convert from ArrayList to a normal array
             this.tools = (Type[])tools.ToArray(typeof(Type));
         }
 
-        private void InitializeEffects()
+        private Type[] GetEffectsFromAssembly(Assembly assembly)
         {
             ArrayList effects = new ArrayList();
 
-            // add all the effects
-            Assembly ourAssembly = Assembly.GetExecutingAssembly();
-
-            foreach (Type type in ourAssembly.GetTypes())
+            foreach (Type type in assembly.GetTypes())
             {
                 if (type.IsSubclassOf(typeof(Effect)) && !type.IsAbstract)
                 {
@@ -931,21 +906,98 @@ namespace PaintDotNet
             }
 
             // convert from ArrayList to normal array
-            this.effects = (Type[])effects.ToArray(typeof(Type));
+            return (Type[])effects.ToArray(typeof(Type));
         }
 
-		/// <summary>
-		/// Provides a way for you to perform an action by its class name. This 
-		/// only works for actions that are registered in InitializeActions and 
-		/// which don't take any extra context.
-		/// </summary>
-		/// <param name="actionName"></param>
-		public void PerformAction(Type actionType)
-		{
+        private void InitializeEffects()
+        {
+            ArrayList effectsArrays = new ArrayList();
+            string homeDir = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+
+            try
+            {
+                string fileName = Path.Combine(homeDir, "PaintDotNet.Effects.dll");
+                effectsArrays.Add(GetEffectsFromAssembly(Assembly.LoadFrom(fileName)));
+            }
+
+            catch (FileNotFoundException)
+            {
+                //Utility.ErrorBox(this, "PdnEffects.dll could not be found -- many Effects will not be available.");
+            }
+
+            try
+            {
+                string effectsDir = Path.Combine(homeDir, "Effects");
+                DirectoryInfo dirInfo = new DirectoryInfo(effectsDir);
+
+                if (dirInfo.Exists)
+                {
+                    foreach (string fileName in Directory.GetFiles(effectsDir, "*.dll"))
+                    {
+                        bool success = false;
+                        Assembly pluginAssembly = null;
+                        System.Type[] pluginEffects = null;
+
+                        try
+                        {
+                            pluginAssembly = Assembly.LoadFrom(fileName);
+                            pluginEffects = GetEffectsFromAssembly(pluginAssembly);
+                            success = true;
+                        }
+
+                        catch
+                        {
+                            Utility.ErrorBox(this, "There was an error loading " + fileName + ". It may be corrupt, or it may need to be recompiled.");
+                        }
+
+                        if (success)
+                        {
+                            effectsArrays.Add(pluginEffects);
+                        }
+                    }
+                }
+            }
+
+            catch (System.IO.DirectoryNotFoundException)
+            {
+            }
+
+            effectsArrays.Add(GetEffectsFromAssembly(Assembly.GetExecutingAssembly()));
+
+            // convert ArrayList of arrays into one big array
+            int count = 0;
+
+            foreach (Type[] typeArray in effectsArrays)
+            {
+                count += typeArray.Length;
+            }
+
+            this.effects = new Type[count];
+            int cursor = 0;
+
+            foreach (Type[] typeArray in effectsArrays)
+            {
+                foreach (Type type in typeArray)
+                {
+                    this.effects[cursor] = type;
+                    ++cursor;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Provides a way for you to perform an action by its class name. This 
+        /// only works for actions that are registered in InitializeActions and 
+        /// which don't take any extra context.
+        /// </summary>
+        /// <param name="actionName"></param>
+        public void PerformAction(Type actionType)
+        {
             Type oldToolType = Environment.GetToolType();
             Environment.SetTool(null);
 
-			Update();
+            Update();
+
             using (new WaitCursorChanger(this))
             {
                 ConstructorInfo ci = actionType.GetConstructor(new Type[] { typeof(DocumentWorkspace) });
@@ -956,13 +1008,13 @@ namespace PaintDotNet
             Environment.SetTool(oldToolType, this);
         }
 
-		/// <summary>
-		/// Same as PerformAction(Type) except it lets you rename the HistoryAction's name.
-		/// </summary>
-		/// <param name="actionType"></param>
-		/// <param name="newName"></param>
-		public void PerformAction(Type actionType, string newName, Image icon)
-		{
+        /// <summary>
+        /// Same as PerformAction(Type) except it lets you rename the HistoryAction's name.
+        /// </summary>
+        /// <param name="actionType"></param>
+        /// <param name="newName"></param>
+        public void PerformAction(Type actionType, string newName, Image icon)
+        {
             Type oldToolType = Environment.GetToolType();
             Environment.SetTool(null);
 
@@ -985,15 +1037,15 @@ namespace PaintDotNet
             Environment.SetTool(oldToolType, this);
         }
 
-		public void PerformAction(DocumentAction performMe)
-		{
+        public void PerformAction(DocumentAction performMe)
+        {
             Type oldToolType = Environment.GetToolType();
             Environment.SetTool(null);
 
             Update();
 
             using (new WaitCursorChanger(this))
-            {			
+            {           
                 HistoryAction ha = performMe.PerformAction();
 
                 if (ha != null)
@@ -1015,6 +1067,23 @@ namespace PaintDotNet
             if (Environment.Tool != null)
             {
                 documentView.Cursor = Environment.Tool.Cursor;
+                Environment.Tool.CursorChanged += new EventHandler(ToolCursorChangedHandler);
+            }
+        }
+
+        private void ToolChangingHandler(object sender, EventArgs e)
+        {
+            if (Environment.Tool != null)
+            {
+                Environment.Tool.CursorChanged -= new EventHandler(ToolCursorChangedHandler);
+            }
+        }
+
+        private void ToolCursorChangedHandler(object sender, EventArgs e)
+        {
+            if (Environment.Tool != null)
+            {
+                documentView.Cursor = Environment.Tool.Cursor;
             }
         }
 
@@ -1022,6 +1091,7 @@ namespace PaintDotNet
         {
             mainToolBarForm.MainToolBar.SetTools(tools, this);
             mainToolBarForm.MainToolBar.ToolClicked += new ToolClickedEventHandler(this.mainToolBar_ToolClicked);
+            Environment.ToolChanging += new EventHandler(this.ToolChangingHandler);
             Environment.ToolChanged += new EventHandler(this.ToolChangedHandler);
         }
 
@@ -1030,62 +1100,65 @@ namespace PaintDotNet
             Environment.AntiAliasing = ((WorkspaceOptionsConfigWidget)sender).AntiAliasing;
         }
 
-		private void penConfigWidget_PenChanged(object sender, System.EventArgs e)
-		{
+        private void penConfigWidget_PenChanged(object sender, System.EventArgs e)
+        {
             Environment.PenInfo = penConfigWidget.PenInfo;
-		}
+        }
 
-		private void brushConfigWidget_BrushChanged(object sender, System.EventArgs e)
-		{
+        private void brushConfigWidget_BrushChanged(object sender, System.EventArgs e)
+        {
             Environment.BrushInfo = brushConfigWidget.BrushInfo;
         }
 
-		private void layerControl_ClickedOnLayer(object sender, PaintDotNet.LayerEventArgs ce)
-		{
-			ActiveLayer = ce.Layer;
-		}
+        private void layerControl_ClickedOnLayer(object sender, PaintDotNet.LayerEventArgs ce)
+        {
+            ActiveLayer = ce.Layer;
+        }
 
         private void layerForm_NewLayerButtonClicked(object sender, System.EventArgs e)
         {
-            BitmapLayer newLayer = null;
-
             try
             {
-                newLayer = new BitmapLayer(Document.Width, Document.Height);
+                AddNewLayerToDocument();
             }
 
-            catch (OutOfMemoryException)
+            catch
             {
                 Utility.ErrorBox(this, "Not enough memory to create the new layer.");
                 return;
             }
+        }
 
-            newLayer.Name = "Layer " + (Document.Layers.Count + 1).ToString(); // whatever
-            HistoryAction ha = new NewLayerHistoryAction("New Layer (" + newLayer.Name + ")", Utility.GetImageResource("Icons.MenuLayersAddNewLayerIcon.bmp"), this, newLayer);
-
-            Document.Layers.Add(newLayer);
+        public NewLayerHistoryAction AddNewLayerToDocument()
+        {
+            BitmapLayer newLayer = null;
+            newLayer = new BitmapLayer(Document.Width, Document.Height);
+            newLayer.Name = "Layer " + (Document.Layers.Count + 1).ToString();
+            NewLayerHistoryAction ha = new NewLayerHistoryAction("New Layer", Utility.GetImageResource("Icons.MenuLayersAddNewLayerIcon.bmp"), this, newLayer);
+            document.Layers.Add(newLayer);
             History.PushNewAction(ha);
+            return ha;
         }
 
         private void layerForm_DeleteLayerButtonClicked(object sender, System.EventArgs e)
         {
-			if (ActiveLayer.IsBackground)
-			{
-				Utility.ErrorBox(this, "The background layer may not be deleted.");
-			}
-			else if (Document.Layers.Count == 1)
-			{
-				Utility.ErrorBox(this, "There must be at least one layer in an image.");
-			}
-			else
-			{
-				if (DialogResult.Yes == Utility.AskYesNo(this, "Delete layer?"))
-				{
-					HistoryAction ha = new DeleteLayerHistoryAction("Delete Layer (" + ActiveLayer.Name + ")", Utility.GetImageResource("Icons.MenuLayersDeleteLayerIcon.bmp"), this, ActiveLayer);
-					Document.Layers.Remove(ActiveLayer);
-					History.PushNewAction(ha);
-				}
-			}
+            if (ActiveLayer.IsBackground)
+            {
+                Utility.ErrorBox(this, "The background layer may not be deleted.");
+            }
+            else if (Document.Layers.Count == 1)
+            {
+                Utility.ErrorBox(this, "There must be at least one layer in an image.");
+            }
+            else
+            {
+                if (DialogResult.Yes == Utility.AskYesNo(this, "Delete layer?"))
+                {
+                    HistoryAction ha = new DeleteLayerHistoryAction("Delete Layer", Utility.GetImageResource("Icons.MenuLayersDeleteLayerIcon.bmp"), this, ActiveLayer);
+                    Document.Layers.Remove(ActiveLayer);
+                    History.PushNewAction(ha);
+                }
+            }
         }
 
         private void layerForm_DuplicateLayerButtonClick(object sender, System.EventArgs e)
@@ -1103,8 +1176,8 @@ namespace PaintDotNet
                 return;
             }
 
-			newLayer.IsBackground = false;
-            HistoryAction ha = new NewLayerHistoryAction("Duplicate Layer (" + ActiveLayer.Name + ")", Utility.GetImageResource("Icons.MenuLayersDuplicateLayerIcon.bmp"), this, newLayer);
+            newLayer.IsBackground = false;
+            HistoryAction ha = new NewLayerHistoryAction("Duplicate Layer", Utility.GetImageResource("Icons.MenuLayersDuplicateLayerIcon.bmp"), this, newLayer);
             Document.Layers.Insert(1 + Document.Layers.IndexOf(ActiveLayer), newLayer);
             History.PushNewAction(ha);
             newLayer.Invalidate();
@@ -1209,9 +1282,9 @@ namespace PaintDotNet
             }
         }
 
-		private void workspaceOptionsConfigWidget_RulersEnabledChanged(object sender, System.EventArgs e)
-		{
-			documentView.RulersEnabled = workspaceOptionsConfigWidget.RulersEnabled;
+        private void workspaceOptionsConfigWidget_RulersEnabledChanged(object sender, System.EventArgs e)
+        {
+            documentView.RulersEnabled = workspaceOptionsConfigWidget.RulersEnabled;
         }
 
         private void historyForm_RewindButtonClicked(object sender, EventArgs e)
@@ -1298,5 +1371,18 @@ namespace PaintDotNet
             }
         }
 
+        public event EventHandler Scroll;
+        protected virtual void OnScroll()
+        {
+            if (Scroll != null)
+            {
+                Scroll(this, EventArgs.Empty);
+            }
+        }
+
+        private void documentView_Scroll(object sender, System.EventArgs e)
+        {
+            OnScroll();
+        }
     }
 }

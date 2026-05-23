@@ -6,67 +6,67 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for AboutDialog.
-	/// </summary>
-	public class AboutDialog 
+    /// <summary>
+    /// Summary description for AboutDialog.
+    /// </summary>
+    public class AboutDialog 
         : PdnBaseForm
-	{
+    {
         private System.Windows.Forms.PictureBox logoBox;
         private System.Windows.Forms.Button okButton;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.RichTextBox richCreditsBox;
         private System.Windows.Forms.Label copyrightLabel;
         private System.Windows.Forms.TextBox versionLabel;
-		/// <summary>
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
 
-		public AboutDialog()
-		{
-			//
-			// Required for Windows Form Designer support
-			//
-			InitializeComponent();
+        public AboutDialog()
+        {
+            //
+            // Required for Windows Form Designer support
+            //
+            InitializeComponent();
 
-			//
-			// TODO: Add any constructor code after InitializeComponent call
-			//
+            //
+            // TODO: Add any constructor code after InitializeComponent call
+            //
             this.Text = "About " + Application.ProductName;
-            this.logoBox.Image = Utility.GetImageResource("PaintDotNetLogo.bmp");
+            this.logoBox.Image = Utility.GetImageResource("PaintDotNetLogo.png");
             this.logoBox.Size = logoBox.Image.Size;
             this.SetClientSizeCore (logoBox.Image.Width, ClientRectangle.Height);
 
-            this.versionLabel.Text = Utility.GetFullAppName();
-            
+            this.versionLabel.Text = PdnInfo.GetFullAppName();
             this.richCreditsBox.LoadFile(Utility.GetResourceStream("AboutCredits.rtf"), RichTextBoxStreamType.RichText);
+            this.copyrightLabel.Text = PdnInfo.GetCopyrightString();
 
-            copyrightLabel.Text = Utility.GetCopyrightString();
-		}
+            this.Icon = new Icon(Utility.GetResourceStream("PaintDotNet.ico"));
+        }
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Windows Form Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.okButton = new System.Windows.Forms.Button();
             this.logoBox = new System.Windows.Forms.PictureBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -80,7 +80,7 @@ namespace PaintDotNet
             this.okButton.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.okButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.okButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.okButton.Location = new System.Drawing.Point(144, 280);
+            this.okButton.Location = new System.Drawing.Point(144, 288);
             this.okButton.Name = "okButton";
             this.okButton.TabIndex = 2;
             this.okButton.Text = "OK";
@@ -94,7 +94,8 @@ namespace PaintDotNet
             // 
             // label1
             // 
-            this.label1.Location = new System.Drawing.Point(8, 100);
+            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.label1.Location = new System.Drawing.Point(8, 108);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(104, 16);
             this.label1.TabIndex = 5;
@@ -102,8 +103,9 @@ namespace PaintDotNet
             // 
             // richCreditsBox
             // 
+            this.richCreditsBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.richCreditsBox.CausesValidation = false;
-            this.richCreditsBox.Location = new System.Drawing.Point(10, 116);
+            this.richCreditsBox.Location = new System.Drawing.Point(10, 124);
             this.richCreditsBox.Name = "richCreditsBox";
             this.richCreditsBox.ReadOnly = true;
             this.richCreditsBox.Size = new System.Drawing.Size(331, 152);
@@ -116,7 +118,7 @@ namespace PaintDotNet
             this.copyrightLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
             this.copyrightLabel.Location = new System.Drawing.Point(8, 78);
             this.copyrightLabel.Name = "copyrightLabel";
-            this.copyrightLabel.Size = new System.Drawing.Size(336, 16);
+            this.copyrightLabel.Size = new System.Drawing.Size(336, 26);
             this.copyrightLabel.TabIndex = 9;
             this.copyrightLabel.Text = "label2";
             // 
@@ -135,7 +137,7 @@ namespace PaintDotNet
             this.AcceptButton = this.okButton;
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
             this.CancelButton = this.okButton;
-            this.ClientSize = new System.Drawing.Size(360, 309);
+            this.ClientSize = new System.Drawing.Size(360, 317);
             this.Controls.Add(this.versionLabel);
             this.Controls.Add(this.copyrightLabel);
             this.Controls.Add(this.richCreditsBox);
@@ -150,10 +152,16 @@ namespace PaintDotNet
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "AboutDialog";
+            this.Controls.SetChildIndex(this.okButton, 0);
+            this.Controls.SetChildIndex(this.logoBox, 0);
+            this.Controls.SetChildIndex(this.label1, 0);
+            this.Controls.SetChildIndex(this.richCreditsBox, 0);
+            this.Controls.SetChildIndex(this.copyrightLabel, 0);
+            this.Controls.SetChildIndex(this.versionLabel, 0);
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
         private void richCreditsBox_LinkClicked(object sender, System.Windows.Forms.LinkClickedEventArgs e)
         {
@@ -162,5 +170,5 @@ namespace PaintDotNet
                 System.Diagnostics.Process.Start(e.LinkText);
             }
         }
-	}
+    }
 }

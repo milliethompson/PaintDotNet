@@ -9,15 +9,16 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for Ruler.
-	/// </summary>
-	public class Ruler : System.Windows.Forms.UserControl
-	{
-		/// <summary>
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
+    /// <summary>
+    /// Summary description for Ruler.
+    /// </summary>
+    public class Ruler 
+        : System.Windows.Forms.UserControl
+    {
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
 
         private Orientation orientation;
 
@@ -162,8 +163,8 @@ namespace PaintDotNet
 
         private Bitmap renderSurface = null;
 
-		public Ruler()
-		{
+        public Ruler()
+        {
             scaleFactor = new ScaleFactor(1, 1);
             majorDivisionLength = 100;
             mediumDivisionCount = 2;
@@ -173,12 +174,12 @@ namespace PaintDotNet
             orientation = Orientation.Horizontal;
 
             // This call is required by the Windows.Forms Form Designer.
-			InitializeComponent();
+            InitializeComponent();
 
             renderSurface = new Bitmap(Width, Height, PixelFormat.Format32bppArgb);
 
             this.ResizeRedraw = true;
-		}
+        }
 
         protected override void OnResize(EventArgs e)
         {
@@ -189,7 +190,7 @@ namespace PaintDotNet
                 renderSurface.Dispose();
             }
 
-            renderSurface = new Bitmap(Math.Max(1, Width), Math.Max(1, Height), PixelFormat.Format32bppArgb);
+            renderSurface = new Bitmap(Math.Max(1, Width), Math.Max(1, Height), PixelFormat.Format24bppRgb);
         }
 
         protected override void OnPaintBackground(PaintEventArgs pevent)
@@ -327,30 +328,30 @@ namespace PaintDotNet
             pen.Dispose();
         }
 
-		/// <summary> 
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary> 
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
-		#region Component Designer generated code
-		/// <summary> 
-		/// Required method for Designer support - do not modify 
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
-			components = new System.ComponentModel.Container();
-		}
-		#endregion
-	}
+        #region Component Designer generated code
+        /// <summary> 
+        /// Required method for Designer support - do not modify 
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            components = new System.ComponentModel.Container();
+        }
+        #endregion
+    }
 }

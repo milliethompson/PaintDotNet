@@ -2,11 +2,11 @@ using System;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for AnchorEdge.
-	/// </summary>
-	public enum AnchorEdge
-	{
+    /// <summary>
+    /// Summary description for AnchorEdge.
+    /// </summary>
+    public enum AnchorEdge
+    {
         TopLeft,
         Top,
         TopRight,
@@ -16,5 +16,5 @@ namespace PaintDotNet
         BottomLeft,
         Bottom,
         BottomRight
-	}
+    }
 }

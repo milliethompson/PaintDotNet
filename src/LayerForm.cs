@@ -6,12 +6,12 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for LayerForm.
-	/// </summary>
-	public class LayerForm
+    /// <summary>
+    /// Summary description for LayerForm.
+    /// </summary>
+    public class LayerForm
         : FloatingToolForm
-	{
+    {
         private PaintDotNet.LayerControl layerControl;
         private DotNetWidgets.DotNetToolbar dotNetToolbar;
         private System.Windows.Forms.ImageList imageList;
@@ -31,17 +31,20 @@ namespace PaintDotNet
             }
         }
 
-		public LayerForm()
-		{
-			//
-			// Required for Windows Form Designer support
-			//
-			InitializeComponent();
+        public LayerForm()
+        {
+            //
+            // Required for Windows Form Designer support
+            //
+            InitializeComponent();
 
-			//
-			// TODO: Add any constructor code after InitializeComponent call
-			//
+            //addNewLayerButton2.Image = Utility.GetImageResource("Icons.MenuLayersAddNewLayerIcon.bmp");
+
+            //
+            // TODO: Add any constructor code after InitializeComponent call
+            //
             imageList.TransparentColor = Color.FromArgb(192, 192, 192);
+
             int addNewLayerIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuLayersAddNewLayerIcon.bmp"), imageList.TransparentColor);
             int deleteLayerIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuLayersDeleteLayerIcon.bmp"), imageList.TransparentColor);
             int moveLayerUpIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuLayersMoveLayerUpIcon.bmp"), imageList.TransparentColor);
@@ -58,7 +61,7 @@ namespace PaintDotNet
 
             //
             layerControl.KeyUp += new KeyEventHandler(layerControl_KeyUp);
-		}
+        }
 
         protected override void OnLayout(LayoutEventArgs levent)
         {
@@ -180,15 +183,15 @@ namespace PaintDotNet
             this.OnPropertiesButtonClick();
         }
 
-		private void newLayerButton_Click(object sender, System.EventArgs e)
-		{
-			OnNewLayerButtonClick();
-		}
+        private void newLayerButton_Click(object sender, System.EventArgs e)
+        {
+            OnNewLayerButtonClick();
+        }
 
-		private void deleteLayerButton_Click(object sender, System.EventArgs e)
-		{
-			OnDeleteLayerButtonClick();
-		}
+        private void deleteLayerButton_Click(object sender, System.EventArgs e)
+        {
+            OnDeleteLayerButtonClick();
+        }
 
         private void duplicateLayerButton_Click(object sender, System.EventArgs e)
         {
@@ -196,14 +199,14 @@ namespace PaintDotNet
         }
 
         private void moveUpButton_Click(object sender, System.EventArgs e)
-		{
-			OnMoveLayerUpButtonClick();
-		}
+        {
+            OnMoveLayerUpButtonClick();
+        }
 
-		private void moveDownButton_Click(object sender, System.EventArgs e)
-		{
-			OnMoveLayerDownButtonClick();
-		}
+        private void moveDownButton_Click(object sender, System.EventArgs e)
+        {
+            OnMoveLayerDownButtonClick();
+        }
 
         private void propertiesButton_Click(object sender, System.EventArgs e)
         {
@@ -211,27 +214,27 @@ namespace PaintDotNet
         }
 
         /// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Windows Form Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.components = new System.ComponentModel.Container();
             this.layerControl = new PaintDotNet.LayerControl();
             this.dotNetToolbar = new DotNetWidgets.DotNetToolbar();
@@ -301,6 +304,7 @@ namespace PaintDotNet
             // 
             // imageList
             // 
+            this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
             this.imageList.ImageSize = new System.Drawing.Size(16, 16);
             this.imageList.TransparentColor = System.Drawing.Color.Transparent;
             // 
@@ -312,10 +316,12 @@ namespace PaintDotNet
             this.Controls.Add(this.layerControl);
             this.Name = "LayerForm";
             this.Text = "Layers";
+            this.Controls.SetChildIndex(this.layerControl, 0);
+            this.Controls.SetChildIndex(this.dotNetToolbar, 0);
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
         private void dotNetToolbar_ButtonClick(object sender, DotNetWidgets.DotNetToolbarItemClickEventArgs e)
         {

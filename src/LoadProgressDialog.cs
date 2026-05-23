@@ -7,7 +7,7 @@ using System.Windows.Forms;
 namespace PaintDotNet
 {
     public class LoadProgressDialog
-                : CallbackWithProgressDialog
+        : CallbackWithProgressDialog
     {
         private SiphonStream siphonStream;
         private FileType fileType;
@@ -25,12 +25,25 @@ namespace PaintDotNet
             this.fileType = fileType;
             this.siphonStream = new SiphonStream(stream);
             this.siphonStream.IOFinished += new IOEventHandler(siphonStream_IOFinished);
+            this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.ImageFromDiskIcon.bmp"), Color.FromArgb(192, 192, 192));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns>
+        /// A new document, or null if the user cancelled.
+        /// </returns>
         public Document Load()
         {
             totalBytes = 0;
-            DialogResult dr = this.ShowDialog(false, new ThreadStart(LoadCallback));
+            DialogResult dr = this.ShowDialog(true, new ThreadStart(LoadCallback));
+
+            if (dr == DialogResult.Cancel)
+            {
+                return null;
+            }
+
             return document;
         }
 

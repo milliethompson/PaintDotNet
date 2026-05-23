@@ -4,10 +4,10 @@ Instructions:
 
     1. Open src/paintdotnet.sln with Microsoft Visual Studio .NET 2003. 
     
-    2. Make sure the project configuration is set to "Release."
+    2. Make sure the project configuration is set to "Release and Package."
        This can be done by going to the "Build" menu, selecting "Configuration
-       Manager...", selecting "Release" under "Active Solution Configuration:"
-       and then clicking Close.
+       Manager...", selecting "Release and Package" under "Active Solution 
+       Configuration:" and then clicking Close.
        
     3. Go to the "Build" menu and click "Rebuild Solution."
     
@@ -28,15 +28,19 @@ Instructions:
                  PaintDotNet.msi, but provides a very convenient "dummy-proof"
                  installation.
 
+For normal development work, use either the 'Release' or 'Debug' 
+configurations. This will skip the process of building all the setup packages
+and merge modules.
+
 Directory Layout:
 
 src/
     The main folder containing all the Paint.NET source code.
 
 src/bin
-    This is where the main Paint.NET executable and DLLS will be placed.
+    This is where the main Paint.NET executable and DLLs will be placed.
     When you build PDN, you should be able to run PaintDotNet.exe from this
-    directory (i.e. all dependencies are in that directory).
+    directory, as all dependencies are in that directory.
 
 src/chm
     Contains all the help files that are compiled into PaintDotNet.chm.
@@ -60,6 +64,10 @@ src/dotnetwidgets
     Contains the DLL for DotNetWidgets which we use to provide a "Office XP"
     style user interface.
 
+src/Effects
+    Contains the code that is build for the PaintDotNet.Effects.dll. This is
+    the Effects subsystem of Paint.NET that plugins will have to reference.
+
 src/icons
     Contains all the *.ico and *.bmp icons that are used throughout the 
     program.
@@ -73,6 +81,10 @@ src/makechm
 src/obj
     Intermediate files used during compilation go here.
 
+src/PdnLib
+    Contains the Paint.NET "library." This is code that is plausibly usable 
+    either outside of Paint.NET or required for Effects to link against.
+
 src/Setup
     Contains a project that is used to build PaintDotNet.msi. Note that the
     MSI file is not complete until the "Setup-Config" project has finished!
@@ -83,13 +95,19 @@ src/Setup-Config
     of "Install for Just Me." It then packages together PaintDotNet.msi with
     dotnetfx.exe using a NSIS (Nullsoft Scriptable Installation System).
 
+src/SetupJit
+    This is a program that is run as part of install and uninstall that "pre-
+    JITs" a few of the utility DLLs (such as #ziplib and CpuCount.NET).
+
 src/SharpZipLib
     Contains the source code for #ziplib, by Mike Krueger.
+
+src/Skybound.VisualStyles
 
 src/Threading
     Contains a simple thread pool wrapper. The functionality we add is the
     ability to "drain" the thread pool. That is, you can perform an efficient
-    wait-operation that completes when the jobs in the thread pool have all
+    wait-operation that signals when the jobs in the thread pool have all
     finished.
 
 src/tools

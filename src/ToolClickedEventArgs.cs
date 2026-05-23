@@ -2,12 +2,12 @@ using System;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for ToolClickedEventArgs.
-	/// </summary>
-	public class ToolClickedEventArgs
+    /// <summary>
+    /// Summary description for ToolClickedEventArgs.
+    /// </summary>
+    public class ToolClickedEventArgs
         : System.EventArgs
-	{
+    {
         private Type toolType;
         public Type ToolType
         {
@@ -22,9 +22,9 @@ namespace PaintDotNet
             this.toolType = tool.GetType();
         }
 
-		public ToolClickedEventArgs(Type toolType)
-		{
+        public ToolClickedEventArgs(Type toolType)
+        {
             this.toolType = toolType;
-		}
-	}
+        }
+    }
 }

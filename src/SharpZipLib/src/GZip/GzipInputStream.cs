@@ -1,4 +1,5 @@
 // GzipInputStream.cs
+//
 // Copyright (C) 2001 Mike Krueger
 //
 // This file was translated from java, it was part of the GNU Classpath
@@ -56,7 +57,7 @@ namespace ICSharpCode.SharpZipLib.GZip
 	/// using System;
 	/// using System.IO;
 	/// 
-	/// using NZlib.GZip;
+	/// using ICSharpCode.SharpZipLib.GZip;
 	/// 
 	/// class MainClass
 	/// {
@@ -121,13 +122,13 @@ namespace ICSharpCode.SharpZipLib.GZip
 		/// Reads uncompressed data into an array of bytes
 		/// </summary>
 		/// <param name="buf">
-		/// the buffer to read uncompressed data into
+		/// The buffer to read uncompressed data into
 		/// </param>
 		/// <param name="offset">
-		/// the offset indicating where the data should be placed
+		/// The offset indicating where the data should be placed
 		/// </param>
 		/// <param name="len">
-		/// the number of uncompressed bytes to be read
+		/// The number of uncompressed bytes to be read
 		/// </param>
 		public override int Read(byte[] buf, int offset, int len) 
 		{
@@ -160,7 +161,7 @@ namespace ICSharpCode.SharpZipLib.GZip
 			return numRead;
 		}
 		
-		private void ReadHeader() 
+		void ReadHeader() 
 		{
 			/* 1. Check the two magic bytes */
 			Crc32 headCRC = new Crc32();
@@ -303,30 +304,36 @@ namespace ICSharpCode.SharpZipLib.GZip
 			//System.err.println("Read GZIP header");
 		}
 		
-		private void ReadFooter() 
+		void ReadFooter() 
 		{
 			byte[] footer = new byte[8];
 			int avail = inf.RemainingInput;
+			
 			if (avail > 8) {
 				avail = 8;
 			}
+			
 			System.Array.Copy(buf, len - inf.RemainingInput, footer, 0, avail);
 			int needed = 8 - avail;
+			
 			while (needed > 0) {
 				int count = baseInputStream.Read(footer, 8-needed, needed);
 				if (count <= 0) {
-					throw new Exception("Early EOF baseInputStream GZIP footer");
+					throw new ApplicationException("Early EOF baseInputStream GZIP footer");
 				}
 				needed -= count; //Jewel Jan 16
 			}
+			
 			int crcval = (footer[0] & 0xff) | ((footer[1] & 0xff) << 8) | ((footer[2] & 0xff) << 16) | (footer[3] << 24);
 			if (crcval != (int) crc.Value) {
-				throw new IOException("GZIP crc sum mismatch, theirs \"" + crcval + "\" and ours \"" + (int) crc.Value);
+				throw new ApplicationException("GZIP crc sum mismatch, theirs \"" + crcval + "\" and ours \"" + (int) crc.Value);
 			}
+			
 			int total = (footer[4] & 0xff) | ((footer[5] & 0xff) << 8) | ((footer[6] & 0xff) << 16) | (footer[7] << 24);
 			if (total != inf.TotalOut) {
-				throw new IOException("Number of bytes mismatch");
+				throw new ApplicationException("Number of bytes mismatch");
 			}
+			
 			/* XXX Should we support multiple members.
 			* Difficult, since there may be some bytes still baseInputStream buf
 			*/

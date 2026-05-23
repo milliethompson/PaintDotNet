@@ -7,23 +7,23 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Encapsulates the functionality for a tool that goes in the main window's toolbar
-	/// and that affects the Document.
-	/// A Tool should only emit a HistoryAction when it actually modifies the canvas.
-	/// So, for instance, if the user draws a line but that line doesn't fall within
-	/// the canvas (like if the seleciton region excludes it), then since the user
-	/// hasn't really done anything there should be no HistoryAction emitted.
-	/// </summary>
-	public class Tool
-	{
-		protected Image toolBarImage;
+    /// <summary>
+    /// Encapsulates the functionality for a tool that goes in the main window's toolbar
+    /// and that affects the Document.
+    /// A Tool should only emit a HistoryAction when it actually modifies the canvas.
+    /// So, for instance, if the user draws a line but that line doesn't fall within
+    /// the canvas (like if the seleciton region excludes it), then since the user
+    /// hasn't really done anything there should be no HistoryAction emitted.
+    /// </summary>
+    public class Tool
+    {
+        protected Image toolBarImage;
         protected Cursor cursor;
-		protected string name;
+        protected string name;
         protected string description;
         private DocumentWorkspace workspace;
-		private EventHandler selectionChangedDelegate;
-		private EventHandler selectionChangingDelegate;
+        private EventHandler selectionChangedDelegate;
+        private EventHandler selectionChangingDelegate;
         private bool active = false;
         private Hashtable keysThatAreDown = new Hashtable();
 
@@ -74,6 +74,26 @@ namespace PaintDotNet
             }
         }
 
+        public event EventHandler CursorChanging;
+
+        protected virtual void OnCursorChanging()
+        {
+            if (CursorChanging != null)
+            {
+                CursorChanging(this, EventArgs.Empty);
+            }
+        }
+
+        public event EventHandler CursorChanged;
+
+        protected virtual void OnCursorChanged()
+        {
+            if (CursorChanged != null)
+            {
+                CursorChanged(this, EventArgs.Empty);
+            }
+        }
+
         /// <summary>
         /// The Cursor that is displayed when this Tool is active and the
         /// mouse cursor is inside the document view.
@@ -83,6 +103,13 @@ namespace PaintDotNet
             get
             {
                 return cursor;
+            }
+
+            set
+            {
+                OnCursorChanging();
+                cursor = value;
+                OnCursorChanged();
             }
         }
 
@@ -121,12 +148,12 @@ namespace PaintDotNet
 
         // Methods to send messages to this class
         public void PerformActivate()
-		{
+        {
             OnActivate();
-		}
+        }
 
-		public void PerformDeactivate()
-		{
+        public void PerformDeactivate()
+        {
             OnDeactivate();
         }
 
@@ -165,77 +192,87 @@ namespace PaintDotNet
             OnKeyDown(e);
         }
 
-		public void PerformClick()
-		{
-			OnClick();
-		}
+        public void PerformClick()
+        {
+            OnClick();
+        }
 
         public void PerformPulse()
         {
             OnPulse();
         }
 
+        public void PerformPaste(IDataObject data, out bool handled)
+        {
+            OnPaste(data, out handled);
+        }
+
+        public void PerformPasteQuery(IDataObject data, out bool canHandle)
+        {
+            OnPasteQuery(data, out canHandle);
+        }
+
         // Messages for derived classes to override
 
-		/// <summary>
-		/// This method is called when the tool is being activated; that is, when the
-		/// user has chosen to use this tool by clicking on it on a toolbar.
-		/// </summary>
+        /// <summary>
+        /// This method is called when the tool is being activated; that is, when the
+        /// user has chosen to use this tool by clicking on it on a toolbar.
+        /// </summary>
         protected virtual void OnActivate()
         {
             active = true;
-			Workspace.Environment.SelectedPathChanging += selectionChangingDelegate;
-			Workspace.Environment.SelectedPathChanged += selectionChangedDelegate;
+            Workspace.Environment.SelectedPathChanging += selectionChangingDelegate;
+            Workspace.Environment.SelectedPathChanged += selectionChangedDelegate;
         }
 
-		/// <summary>
-		/// This method is called when the tool is being deactivated; that is, when the
-		/// user has chosen to use another tool by clicking on another tool on a
-		/// toolbar.
-		/// </summary>
+        /// <summary>
+        /// This method is called when the tool is being deactivated; that is, when the
+        /// user has chosen to use another tool by clicking on another tool on a
+        /// toolbar.
+        /// </summary>
         protected virtual void OnDeactivate()
         {
             active = false;
-			Workspace.Environment.SelectedPathChanging -= selectionChangingDelegate;
-			Workspace.Environment.SelectedPathChanged -= selectionChangedDelegate;
-		}
+            Workspace.Environment.SelectedPathChanging -= selectionChangingDelegate;
+            Workspace.Environment.SelectedPathChanged -= selectionChangedDelegate;
+        }
 
-		/// <summary>
-		/// This method is called when the Tool is active and the mouse is moving within
-		/// the document canvas area.
-		/// </summary>
-		/// <param name="e">Contains information about where the mouse cursor is, in document coordinates.</param>
+        /// <summary>
+        /// This method is called when the Tool is active and the mouse is moving within
+        /// the document canvas area.
+        /// </summary>
+        /// <param name="e">Contains information about where the mouse cursor is, in document coordinates.</param>
         protected virtual void OnMouseMove(MouseEventArgs e)
         {
         }
 
-		/// <summary>
-		/// This method is called when the Tool is active and a mouse button has been
-		/// pressed within the document area.
-		/// </summary>
-		/// <param name="e">Contains information about where the mouse cursor is, in document coordinates, and which mouse buttons were pressed.</param>
+        /// <summary>
+        /// This method is called when the Tool is active and a mouse button has been
+        /// pressed within the document area.
+        /// </summary>
+        /// <param name="e">Contains information about where the mouse cursor is, in document coordinates, and which mouse buttons were pressed.</param>
         protected virtual void OnMouseDown(MouseEventArgs e)
         {
         }
 
-		/// <summary>
-		/// This method is called when the Tool is active and a mouse button has been
-		/// released within the document area.
-		/// </summary>
-		/// <param name="e">Contains information about where the mouse cursor is, in document coordinates, and which mouse buttons were released.</param>
-		protected virtual void OnMouseUp(MouseEventArgs e)
+        /// <summary>
+        /// This method is called when the Tool is active and a mouse button has been
+        /// released within the document area.
+        /// </summary>
+        /// <param name="e">Contains information about where the mouse cursor is, in document coordinates, and which mouse buttons were released.</param>
+        protected virtual void OnMouseUp(MouseEventArgs e)
         {
         }
 
-		/// <summary>
-		/// This method is called when the Tool is active and a mouse button has been
-		/// clicked within the document area. If you need more specific information,
-		/// such as where the mouse was clicked and which button was used, respond to
-		/// the MouseDown/MouseUp events.
-		/// </summary>
-		protected virtual void OnClick()
-		{
-		}
+        /// <summary>
+        /// This method is called when the Tool is active and a mouse button has been
+        /// clicked within the document area. If you need more specific information,
+        /// such as where the mouse was clicked and which button was used, respond to
+        /// the MouseDown/MouseUp events.
+        /// </summary>
+        protected virtual void OnClick()
+        {
+        }
 
         /// <summary>
         /// This method is called when the tool is active and a keyboard key is pressed
@@ -260,7 +297,6 @@ namespace PaintDotNet
         /// </summary>
         protected virtual void OnKeyUp(KeyEventArgs e)
         {
-            //Debug.WriteLine("up: " + e.KeyData.ToString());
             keysThatAreDown.Clear();
         }
 
@@ -271,7 +307,6 @@ namespace PaintDotNet
         /// </summary>
         protected virtual void OnKeyDown(KeyEventArgs e)
         {
-            //Debug.WriteLine("down: " + e.KeyData.ToString());
             if (!e.Handled)
             {
                 try
@@ -282,7 +317,7 @@ namespace PaintDotNet
                 catch (ArgumentException)
                 {
                     // item was already in the hashtable
-                    // ignored because we don't really care
+                    // exception is ignored because we don't really care
                 }
 
                 // arrow keys are processed in another way
@@ -292,21 +327,59 @@ namespace PaintDotNet
             }
         }
 
-		/// <summary>
-		/// This method is called when the Tool is active and the selection area is
-		/// about to be changed.
-		/// </summary>
-		protected virtual void OnSelectionChanging()
-		{
-		}
+        /// <summary>
+        /// This method is called when the Tool is active and the selection area is
+        /// about to be changed.
+        /// </summary>
+        protected virtual void OnSelectionChanging()
+        {
+        }
 
-		/// <summary>
-		/// This method is called when the Tool is active and the selection area has
-		/// been changed.
-		/// </summary>
-		protected virtual void OnSelectionChanged()
-		{
-		}
+        /// <summary>
+        /// This method is called when the Tool is active and the selection area has
+        /// been changed.
+        /// </summary>
+        protected virtual void OnSelectionChanged()
+        {
+        }
+
+        /// <summary>
+        /// This method is called when the system is querying a tool as to whether
+        /// it can handle a pasted object.
+        /// </summary>
+        /// <param name="data">
+        /// The clipboard data that was pasted by the user that should be inspected.
+        /// </param>
+        /// <param name="canHandle">
+        /// <b>true</b> if the data can be handled by the tool, <b>false</b> if not.
+        /// </param>
+        /// <remarks>
+        /// If you do not set canHandle to <b>true</b> then the tool will not be
+        /// able to respond to the Edit menu's Paste item.
+        /// </remarks>
+        protected virtual void OnPasteQuery(IDataObject data, out bool canHandle)
+        {
+            canHandle = false;
+        }
+
+        /// <summary>
+        /// This method is called when the user invokes a paste operation. Tools get
+        /// the first chance to handle this data.
+        /// </summary>
+        /// <param name="data">
+        /// The data that was pasted by the user.
+        /// </param>
+        /// <param name="handled">
+        /// <b>true</b> if the data was handled and pasted, <b>false</b> if not.
+        /// </param>
+        /// <remarks>
+        /// If you do not set handled to <b>true</b> the event will be passed to the 
+        /// global paste handler.
+        /// </remarks>
+        protected virtual void OnPaste(IDataObject data, out bool handled)
+        {
+            handled = false;
+        }
 
         /// <summary>
         /// This method is called many times per second, called by the DocumentWorkspace.
@@ -356,24 +429,24 @@ namespace PaintDotNet
             }
         }
 
-		private void SelectionChangingHandler(object sender, EventArgs e)
-		{
-			OnSelectionChanging();
-		}
+        private void SelectionChangingHandler(object sender, EventArgs e)
+        {
+            OnSelectionChanging();
+        }
 
-		private void SelectionChangedHandler(object sender, EventArgs e)
-		{
-			OnSelectionChanged();
-		}
+        private void SelectionChangedHandler(object sender, EventArgs e)
+        {
+            OnSelectionChanged();
+        }
 
-		public Tool(DocumentWorkspace workspace)
-		{
-			this.workspace = workspace;
+        public Tool(DocumentWorkspace workspace)
+        {
+            this.workspace = workspace;
             this.toolBarImage = null;
             this.name = string.Empty;
-			this.selectionChangingDelegate = new EventHandler(SelectionChangingHandler);
-			this.selectionChangedDelegate = new EventHandler(SelectionChangedHandler);
-		}
+            this.selectionChangingDelegate = new EventHandler(SelectionChangingHandler);
+            this.selectionChangedDelegate = new EventHandler(SelectionChangedHandler);
+        }
 
         public static Tool CreateTool(Type toolType, DocumentWorkspace workspace)
         {
@@ -381,5 +454,5 @@ namespace PaintDotNet
             Tool tool = (Tool)ci.Invoke(new object[] { workspace });
             return tool;
         }
-	}
+    }
 }

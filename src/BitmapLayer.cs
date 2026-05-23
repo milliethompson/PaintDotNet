@@ -1,3 +1,4 @@
+using PaintDotNet.Effects;
 using System;
 using System.Collections;
 using System.Collections.Specialized;
@@ -9,14 +10,14 @@ using System.Threading;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for BitmapLayer.
-	/// </summary>
+    /// <summary>
+    /// Summary description for BitmapLayer.
+    /// </summary>
     [Serializable]
     public class BitmapLayer
         : Layer,
           IDeserializationCallback
-	{
+    {
         private bool disposed = false;
         protected override void Dispose(bool disposing)
         {
@@ -26,8 +27,14 @@ namespace PaintDotNet
 
                 try
                 {
-                    surface.Dispose();
-                    surface = null;
+                    if (disposing)
+                    {
+                        if (surface != null)
+                        {
+                            surface.Dispose();
+                            surface = null;
+                        }
+                    }
                 }
                     
                 finally
@@ -50,28 +57,28 @@ namespace PaintDotNet
 
             public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
             {
-                int a = (rhs.a * opacity) / 256;
+                int a = (rhs.A * opacity) / 256;
                 int invA = 256 - a;
 
-                int r = ((invA * lhs.r) + (a * rhs.r)) / 256;
-                int g = ((invA * lhs.g) + (a * rhs.g)) / 256;
-                int b = ((invA * lhs.b) + (a * rhs.b)) / 256;
+                int r = ((invA * lhs.R) + (a * rhs.R)) / 256;
+                int g = ((invA * lhs.G) + (a * rhs.G)) / 256;
+                int b = ((invA * lhs.B) + (a * rhs.B)) / 256;
 
-                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, lhs.a);
+                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, lhs.A);
             }
 
             protected override unsafe void Apply(ColorBgra * dst, ColorBgra * lhs, ColorBgra * rhs, int length)
             {
                 while (length > 0)
                 {
-                    int a = ((rhs->a * opacity) / 256);
+                    int a = ((rhs->A * opacity) / 256);
                     int invA = 256 - a;
 
-                    int r = ((invA * lhs->r) + (a * rhs->r)) / 256;
-                    int g = ((invA * lhs->g) + (a * rhs->g)) / 256;
-                    int b = ((invA * lhs->b) + (a * rhs->b)) / 256;
+                    int r = ((invA * lhs->R) + (a * rhs->R)) / 256;
+                    int g = ((invA * lhs->G) + (a * rhs->G)) / 256;
+                    int b = ((invA * lhs->B) + (a * rhs->B)) / 256;
 
-                    dst->bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)lhs->a << 24));
+                    dst->Bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)lhs->A << 24));
 
                     ++dst;
                     ++lhs;
@@ -84,14 +91,14 @@ namespace PaintDotNet
             {
                 while (length > 0)
                 {
-                    int a = ((src->a * opacity) / 256);
+                    int a = ((src->A * opacity) / 256);
                     int invA = 256 - a;
 
-                    int r = ((invA * dst->r) + (a * src->r)) / 256;
-                    int g = ((invA * dst->g) + (a * src->g)) / 256;
-                    int b = ((invA * dst->b) + (a * src->b)) / 256;
+                    int r = ((invA * dst->R) + (a * src->R)) / 256;
+                    int g = ((invA * dst->G) + (a * src->G)) / 256;
+                    int b = ((invA * dst->B) + (a * src->B)) / 256;
 
-                    dst->bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)dst->a << 24));
+                    dst->Bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)dst->A << 24));
 
                     ++dst;
                     ++src;
@@ -119,14 +126,14 @@ namespace PaintDotNet
             {
                 ColorBgra rhs2 = op.Apply(lhs, rhs);
 
-                int a = (rhs2.a * opacity) / 256;
+                int a = (rhs2.A * opacity) / 256;
                 int invA = 256 - a;
 
-                int r = ((invA * lhs.r) + (a * rhs2.r)) / 256;
-                int g = ((invA * lhs.g) + (a * rhs2.g)) / 256;
-                int b = ((invA * lhs.b) + (a * rhs2.b)) / 256;
+                int r = ((invA * lhs.R) + (a * rhs2.R)) / 256;
+                int g = ((invA * lhs.G) + (a * rhs2.G)) / 256;
+                int b = ((invA * lhs.B) + (a * rhs2.B)) / 256;
 
-                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, rhs2.a);
+                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, rhs2.A);
             }
 
             protected override unsafe void Apply(ColorBgra * dst, ColorBgra * lhs, ColorBgra * rhs, int length)
@@ -135,14 +142,14 @@ namespace PaintDotNet
                 {
                     ColorBgra rhs2 = op.Apply(*lhs, *rhs);
 
-                    int a = ((rhs2.a * opacity) / 256);
+                    int a = ((rhs2.A * opacity) / 256);
                     int invA = 256 - a;
 
-                    int r = ((invA * lhs->r) + (a * rhs2.r)) / 256;
-                    int g = ((invA * lhs->g) + (a * rhs2.g)) / 256;
-                    int b = ((invA * lhs->b) + (a * rhs2.b)) / 256;
+                    int r = ((invA * lhs->R) + (a * rhs2.R)) / 256;
+                    int g = ((invA * lhs->G) + (a * rhs2.G)) / 256;
+                    int b = ((invA * lhs->B) + (a * rhs2.B)) / 256;
 
-                    dst->bgra = (uint)(b + (g << 8) + (r << 16) + (rhs2.a << 24));
+                    dst->Bgra = (uint)(b + (g << 8) + (r << 16) + (rhs2.A << 24));
 
                     ++dst;
                     ++lhs;
@@ -157,14 +164,14 @@ namespace PaintDotNet
                 {
                     ColorBgra src2 = op.Apply(*dst, *src);
 
-                    int a = ((src2.a * opacity) / 256);
+                    int a = ((src2.A * opacity) / 256);
                     int invA = 256 - a;
 
-                    int r = ((invA * dst->r) + (a * src2.r)) / 256;
-                    int g = ((invA * dst->g) + (a * src2.g)) / 256;
-                    int b = ((invA * dst->b) + (a * src2.b)) / 256;
+                    int r = ((invA * dst->R) + (a * src2.R)) / 256;
+                    int g = ((invA * dst->G) + (a * src2.G)) / 256;
+                    int b = ((invA * dst->B) + (a * src2.B)) / 256;
 
-                    dst->bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)src2.a << 24));
+                    dst->Bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)src2.A << 24));
 
                     ++dst;
                     ++src;
@@ -207,54 +214,54 @@ namespace PaintDotNet
             base.OnPropertyChanged (propertyName);
         }
 
-		[NonSerialized]
-		private int needToUpdatePreview = 0; // set to non-zero when the preview should be updated
+        [NonSerialized]
+        private int needToUpdatePreview = 0; // set to non-zero when the preview should be updated
 
-		[Serializable]
-		private class BitmapLayerProperties
-			: ICloneable
-		{
-			public UserBlendOp blendOp;
+        [Serializable]
+        private class BitmapLayerProperties
+            : ICloneable
+        {
+            public UserBlendOp blendOp;
             public byte opacity;
 
-			public BitmapLayerProperties(UserBlendOp blendOp, byte opacity)
-			{
-				this.blendOp = blendOp;
+            public BitmapLayerProperties(UserBlendOp blendOp, byte opacity)
+            {
+                this.blendOp = blendOp;
                 this.opacity = opacity;
-			}
+            }
 
-			public BitmapLayerProperties(BitmapLayerProperties cloneMe)
-			{
-				this.blendOp = cloneMe.blendOp;
+            public BitmapLayerProperties(BitmapLayerProperties cloneMe)
+            {
+                this.blendOp = cloneMe.blendOp;
                 this.opacity = cloneMe.opacity;
-			}
+            }
 
-			#region ICloneable Members
+            #region ICloneable Members
 
-			public object Clone()
-			{
-				return new BitmapLayerProperties(this);
-			}
+            public object Clone()
+            {
+                return new BitmapLayerProperties(this);
+            }
 
-			#endregion
-		}
+            #endregion
+        }
 
-		private BitmapLayerProperties properties;
-		private Surface surface;
+        private BitmapLayerProperties properties;
+        private Surface surface;
 
-		public override object SaveProperties()
-		{
+        public override object SaveProperties()
+        {
             if (disposed)
             {
                 throw new ObjectDisposedException("BitmapLayer");
             }
 
             object baseProperties = base.SaveProperties();
-			return new List(properties.Clone(), new List(baseProperties, null));
-		}
+            return new List(properties.Clone(), new List(baseProperties, null));
+        }
 
-		public override void LoadProperties(object oldState, bool suppressEvents)
-		{
+        public override void LoadProperties(object oldState, bool suppressEvents)
+        {
             if (disposed)
             {
                 throw new ObjectDisposedException("BitmapLayer");
@@ -299,7 +306,7 @@ namespace PaintDotNet
             {
                 OnPropertyChanged("Opacity");
             }
-    	}
+        }
 
         public void SetBlendOp(UserBlendOp blendOp)
         {
@@ -318,18 +325,18 @@ namespace PaintDotNet
             }
         }
 
-		public override object Clone()
-		{
+        public override object Clone()
+        {
             if (disposed)
             {
                 throw new ObjectDisposedException("BitmapLayer");
             }
 
             return (object)new BitmapLayer(this);
-		}
+        }
 
-		public void UpdatePreview()
-		{
+        public void UpdatePreview()
+        {
             if (disposed)
             {
                 throw new ObjectDisposedException("BitmapLayer");
@@ -337,17 +344,17 @@ namespace PaintDotNet
 
             if (Surface != null)
             {
-                int previewSide = 30;
+                int previewSide = 32;
                 Size previewSize;
 
                 // decide size ... are we 'tall' or 'wide' ?
                 if (Width > Height)
                 {   // wide
-                    previewSize = new Size(previewSide, (Height * previewSide) / Width);
+                    previewSize = new Size(previewSide, Math.Max(1, (Height * previewSide) / Width));
                 }
                 else
                 {   
-                    previewSize = new Size((Width * previewSide) / Height, previewSide);
+                    previewSize = new Size(Math.Max(1, (Width * previewSide) / Height), previewSide);
                 }
 
                 Surface surface = new Surface(previewSide, previewSide);
@@ -355,6 +362,8 @@ namespace PaintDotNet
                 Surface previewWindow = surface.CreateWindow(new Rectangle(new Point((previewSide - previewSize.Width) / 2, (previewSide - previewSize.Height) / 2), previewSize));
                 previewWindow.SuperSamplingFitSurface(Surface);
                 previewWindow.Dispose();
+
+                new SharpenEffect().RenderInPlace(new RenderArgs(surface), surface.Bounds);
 
                 Bitmap bitmap = new Bitmap(surface.Width, surface.Height);
 
@@ -372,10 +381,10 @@ namespace PaintDotNet
         }
 
         [NonSerialized]
-        public object previewLock = new object();
+        private object previewLock = new object();
 
-		public void UpdatePreviewHandler(object context)
-		{
+        public void UpdatePreviewHandler(object context)
+        {
             int delay = (int)context;
 
             if (disposed)
@@ -386,44 +395,59 @@ namespace PaintDotNet
             lock (previewLock) // make sure to serialize preview updates ... sometimes we get more than one in there
             {
                 ThreadPriority oldPriority = Thread.CurrentThread.Priority;
-                Thread.CurrentThread.Priority = ThreadPriority.Lowest;
 
-                while (this.SuppressPreviewChanges)
+                try
                 {
-                    Thread.Sleep(delay);
+                    Thread.CurrentThread.Priority = ThreadPriority.Lowest;
+                    int count = 10;
+
+                    while (this.IsSuppressingPreviewChanges && count > 0)
+                    {
+                        if (disposed)
+                        {
+                            return;
+                        }
+
+                        Thread.Sleep(delay);
+                        --count;
+                    }
+
+                    this.needToUpdatePreview = 0;
+                    UpdatePreview();
                 }
 
-                this.needToUpdatePreview = 0;
-                UpdatePreview();
-                Thread.CurrentThread.Priority = oldPriority;
+                finally
+                {
+                    Thread.CurrentThread.Priority = oldPriority;
+                }
             }
-		}
+        }
 
-		public Surface Surface
-		{
-			get
-			{
+        public Surface Surface
+        {
+            get
+            {
                 if (disposed)
                 {
                     throw new ObjectDisposedException("BitmapLayer");
                 }
 
                 return surface;
-			}
-		}
+            }
+        }
 
-		public UserBlendOp BlendOp
-		{
-			get
-			{
+        public UserBlendOp BlendOp
+        {
+            get
+            {
                 if (disposed)
                 {
                     throw new ObjectDisposedException("BitmapLayer");
                 }
 
                 return properties.blendOp;
-			}
-		}
+            }
+        }
 
         public byte Opacity
         {
@@ -454,8 +478,8 @@ namespace PaintDotNet
             }
         }
 
-		protected override void OnInvalidated(System.Windows.Forms.InvalidateEventArgs e)
-		{
+        protected override void OnInvalidated(System.Windows.Forms.InvalidateEventArgs e)
+        {
             if (disposed)
             {
                 throw new ObjectDisposedException("BitmapLayer");
@@ -466,15 +490,15 @@ namespace PaintDotNet
             {
                 ThreadPool.QueueUserWorkItem(new WaitCallback(UpdatePreviewHandler), 250);
             }
-		}
+        }
 
-		public BitmapLayer(int width, int height)
+        public BitmapLayer(int width, int height)
             : base(width, height)
-		{
-			this.surface = new Surface(width, height);
-			// clear to see-through white, 0x00ffffff
-			new UnaryPixelOps.Constant(ColorBgra.FromBgra(255, 255, 255, 0)).Apply(Surface, Surface.Bounds);
-			this.properties = new BitmapLayerProperties(UserBlendOps.CreateBlendOp(UserBlendOps.GetDefaultBlendOp()), 255);
+        {
+            this.surface = new Surface(width, height);
+            // clear to see-through white, 0x00ffffff
+            new UnaryPixelOps.Constant(ColorBgra.FromBgra(255, 255, 255, 0)).Apply(Surface, Surface.Bounds);
+            this.properties = new BitmapLayerProperties(UserBlendOps.CreateBlendOp(UserBlendOps.GetDefaultBlendOp()), 255);
         }
 
         /// <summary>
@@ -482,19 +506,19 @@ namespace PaintDotNet
         /// pixels from the given Surface.
         /// </summary>
         /// <param name="surface">The Surface to copy pixels from.</param>
-		public BitmapLayer(Surface surface)
-			: base(surface.Width, surface.Height)
-		{
-			this.surface = surface.CopyContents();
-			this.properties = new BitmapLayerProperties(UserBlendOps.CreateBlendOp(UserBlendOps.GetDefaultBlendOp()), 255);
-		}
+        public BitmapLayer(Surface surface)
+            : base(surface.Width, surface.Height)
+        {
+            this.surface = surface.CopyContents();
+            this.properties = new BitmapLayerProperties(UserBlendOps.CreateBlendOp(UserBlendOps.GetDefaultBlendOp()), 255);
+        }
 
-		private BitmapLayer(BitmapLayer copyMe)
-			: base(copyMe)
-		{
-			this.surface = copyMe.Surface.CopyContents();
-			this.properties = (BitmapLayerProperties)copyMe.properties.Clone();
-		}
+        private BitmapLayer(BitmapLayer copyMe)
+            : base(copyMe)
+        {
+            this.surface = copyMe.Surface.CopyContents();
+            this.properties = (BitmapLayerProperties)copyMe.properties.Clone();
+        }
 
         public BitmapLayer(Image image)
             : base(image.Width, image.Height)
@@ -506,16 +530,16 @@ namespace PaintDotNet
                     g.DrawImage(image, 0, 0, image.Width, image.Height);
                 }
             }
-		}
+        }
 
-		/// <summary>
-		/// Creates a HistoryAction by saving the requested region.
-		/// </summary>
-		/// <param name="name">The name that will show up in the History box.</param>
-		/// <param name="image">The icon that will show up in the History box.</param>
-		/// <param name="roi">The region that you want to save.</param>
-		/// <returns></returns>
-        public HistoryAction CreateHistoryAction(string name, Image image, Region roi)
+        /// <summary>
+        /// Creates a HistoryAction by saving the requested region.
+        /// </summary>
+        /// <param name="name">The name that will show up in the History box.</param>
+        /// <param name="image">The icon that will show up in the History box.</param>
+        /// <param name="roi">The region that you want to save.</param>
+        /// <returns></returns>
+        public HistoryAction CreateHistoryAction(string name, Image image, PdnRegion roi)
         {
             if (disposed)
             {
@@ -525,22 +549,22 @@ namespace PaintDotNet
             return (HistoryAction)new BitmapLayerHistoryAction(name, image, this, roi);
         }
 
-		/// <summary>
-		/// Creates a HistoryAction using a region that you have already saved.
-		/// </summary>
-		/// <param name="name">The name that will show up in the History box.</param>
-		/// <param name="image">The icon that will show up in the History box.</param>
-		/// <param name="saved">The region of the layer that you have already saved.</param>
-		/// <returns></returns>
-		public HistoryAction CreateHistoryAction(string name, Image image, IrregularSurface saved)
-		{
+        /// <summary>
+        /// Creates a HistoryAction using a region that you have already saved.
+        /// </summary>
+        /// <param name="name">The name that will show up in the History box.</param>
+        /// <param name="image">The icon that will show up in the History box.</param>
+        /// <param name="saved">The region of the layer that you have already saved.</param>
+        /// <returns></returns>
+        public HistoryAction CreateHistoryAction(string name, Image image, IrregularSurface saved)
+        {
             if (disposed)
             {
                 throw new ObjectDisposedException("BitmapLayer");
             }
 
             return (HistoryAction)new BitmapLayerHistoryAction(name, image, this, saved);
-		}
+        }
 
         public override void Render(RenderArgs args, Scanline roi)
         {
@@ -572,24 +596,24 @@ namespace PaintDotNet
             private BitmapLayer layer;
             private IrregularSurface undoImage;
 
-            public BitmapLayerHistoryAction(string name, Image image, BitmapLayer layer, Region changedRegion)
+            public BitmapLayerHistoryAction(string name, Image image, BitmapLayer layer, PdnRegion changedRegion)
                 : base(name, image)
             {
                 this.layer = layer;
 
-                using (Region r = changedRegion.Clone())
+                using (PdnRegion r = changedRegion.Clone())
                 {
                     r.Intersect(layer.Bounds);
                     undoImage = new IrregularSurface(this.layer.Surface, r);
                 }
             }
 
-			public BitmapLayerHistoryAction(string name, Image image, BitmapLayer layer, IrregularSurface saved)
-				: base(name, image)
-			{
-				this.layer = layer;
-				this.undoImage = (IrregularSurface)saved.Clone();
-			}
+            public BitmapLayerHistoryAction(string name, Image image, BitmapLayer layer, IrregularSurface saved)
+                : base(name, image)
+            {
+                this.layer = layer;
+                this.undoImage = (IrregularSurface)saved.Clone();
+            }
 
             protected override HistoryAction OnUndo()
             {
@@ -599,11 +623,14 @@ namespace PaintDotNet
                 }
 
                 BitmapLayerHistoryAction redo = new BitmapLayerHistoryAction(Name, Image, layer, undoImage.Region);
-				redo.id = id;
+                redo.id = id;
 
-				undoImage.Draw(this.layer.Surface);
+                undoImage.Draw(this.layer.Surface);
 
-                Utility.FastInvalidate(layer, undoImage.Region, 10);
+                using (PdnRegion simple = Utility.SimplifyAndInflateRegion(undoImage.Region))
+                {
+                    layer.Invalidate(simple);
+                }
 
                 undoImage.Dispose();
                 undoImage = null;

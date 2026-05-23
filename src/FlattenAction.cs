@@ -2,12 +2,12 @@ using System;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for FlattenAction.
-	/// </summary>
-	public class FlattenAction
+    /// <summary>
+    /// Summary description for FlattenAction.
+    /// </summary>
+    public class FlattenAction
         : DocumentAction
-	{
+    {
         public override HistoryAction PerformAction()
         {
             ReplaceDocumentHistoryAction rdha = new ReplaceDocumentHistoryAction(name, null, Workspace);
@@ -15,9 +15,9 @@ namespace PaintDotNet
             return rdha;
         }
 
-		public FlattenAction(DocumentWorkspace workspace)
+        public FlattenAction(DocumentWorkspace workspace)
             : base(workspace, "Flatten")
-		{
-		}
-	}
+        {
+        }
+    }
 }

@@ -3,18 +3,18 @@ using System.IO;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// This was written as a workaround for a bug in SharpZipLib that prevents it
-	/// from working right with huge Write() commands. So we split the incoming
-	/// requests into smaller requests, like 4KB each or so.
-	/// 
-	/// However, this didn't work around the bug. But now I use this class so that
-	/// I can keep tabs on a serialization or deserialization operation and have a
-	/// dialog box with a progress bar.
-	/// </summary>
-	public class SiphonStream
+    /// <summary>
+    /// This was written as a workaround for a bug in SharpZipLib that prevents it
+    /// from working right with huge Write() commands. So we split the incoming
+    /// requests into smaller requests, like 4KB each or so.
+    /// 
+    /// However, this didn't work around the bug. But now I use this class so that
+    /// I can keep tabs on a serialization or deserialization operation and have a
+    /// dialog box with a progress bar.
+    /// </summary>
+    public class SiphonStream
         : Stream
-	{
+    {
         private Stream stream;
         private int siphonSize;
 
@@ -60,9 +60,9 @@ namespace PaintDotNet
                 int count2 = Math.Min(siphonSize, countLeft);    
                 long position = this.Position;
 
-                OnIOBeginning(new IOEventArgs(IOOperation.Read, position, count2));
+                OnIOBeginning(new IOEventArgs(IOOperationType.Read, position, count2));
                 amountRead += stream.Read(buffer, cursor, count2);
-                OnIOFinished(new IOEventArgs(IOOperation.Read, position, count2));
+                OnIOFinished(new IOEventArgs(IOOperationType.Read, position, count2));
 
                 countLeft -= siphonSize;
             }
@@ -79,9 +79,9 @@ namespace PaintDotNet
                 int count2 = Math.Min(siphonSize, countLeft);               
                 long position = this.Position;
 
-                OnIOBeginning(new IOEventArgs(IOOperation.Write, position, count2));
+                OnIOBeginning(new IOEventArgs(IOOperationType.Write, position, count2));
                 stream.Write(buffer, cursor, count2);
-                OnIOFinished(new IOEventArgs(IOOperation.Write, position, count2));
+                OnIOFinished(new IOEventArgs(IOOperationType.Write, position, count2));
 
                 countLeft -= siphonSize;
             }
@@ -156,5 +156,5 @@ namespace PaintDotNet
             this.stream = underlyingStream;
             this.siphonSize = siphonSize;
         }
-	}
+    }
 }

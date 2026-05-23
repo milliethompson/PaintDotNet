@@ -1,4 +1,5 @@
 // DeflaterOutputStream.cs
+//
 // Copyright (C) 2001 Mike Krueger
 //
 // This file was translated from java, it was part of the GNU Classpath
@@ -44,8 +45,8 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 {
 
 	/// <summary>
-	/// This is a special FilterOutputStream deflating the bytes that are
-	/// written through it.  It uses the Deflater for deflating.
+	/// A special stream deflating or compressing the bytes that are
+	/// written to it.  It uses a Deflater to perform actual deflating.
 	/// 
 	/// authors of the original java version : Tom Tromey, Jochen Hoenicke 
 	/// </summary>
@@ -63,12 +64,21 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 		protected Deflater def;
 		
 		/// <summary>
-		/// base stream the deflater depends on.
+		/// Base stream the deflater depends on.
 		/// </summary>
 		protected Stream baseOutputStream;
+
+		///	<summary>
+		/// Allows client to determine if an entry can be patched after its added
+		/// </summary>
+		public bool CanPatchEntries {
+			get { 
+				return baseOutputStream.CanSeek; 
+			}
+		}
 		
 		/// <summary>
-		/// I needed to implement the abstract member.
+		/// Gets value indicating stream can be read from
 		/// </summary>
 		public override bool CanRead {
 			get {
@@ -77,17 +87,17 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 		}
 		
 		/// <summary>
-		/// I needed to implement the abstract member.
+		/// Gets a value indicating if seeking is supported for this stream
+		/// This property always returns false
 		/// </summary>
 		public override bool CanSeek {
 			get {
 				return false;
-//				return baseOutputStream.CanSeek;
 			}
 		}
 		
 		/// <summary>
-		/// I needed to implement the abstract member.
+		/// Get value indicating if this stream supports writing
 		/// </summary>
 		public override bool CanWrite {
 			get {
@@ -96,7 +106,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 		}
 		
 		/// <summary>
-		/// I needed to implement the abstract member.
+		/// Get current length of stream
 		/// </summary>
 		public override long Length {
 			get {
@@ -105,59 +115,88 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 		}
 		
 		/// <summary>
-		/// I needed to implement the abstract member.
+		/// The current position within the stream.
+		/// Always throws a NotSupportedExceptionNotSupportedException
 		/// </summary>
+		/// <exception cref="NotSupportedException">Any attempt to set position</exception>
 		public override long Position {
 			get {
 				return baseOutputStream.Position;
 			}
 			set {
-				baseOutputStream.Position = value;
+//				baseOutputStream.Position = value;
+				throw new NotSupportedException("DefalterOutputStream Position not supported");
 			}
 		}
 		
 		/// <summary>
-		/// I needed to implement the abstract member.
+		/// Sets the current position of this stream to the given value. Not supported by this class!
 		/// </summary>
+		/// <exception cref="NotSupportedException">Any access</exception>
 		public override long Seek(long offset, SeekOrigin origin)
 		{
-			throw new NotSupportedException("Seek not supported"); // -jr- 01-Dec-2003
+			throw new NotSupportedException("DeflaterOutputStream Seek not supported");
 //			return baseOutputStream.Seek(offset, origin);
 		}
 		
 		/// <summary>
-		/// I needed to implement the abstract member.
+		/// Sets the length of this stream to the given value. Not supported by this class!
 		/// </summary>
+		/// <exception cref="NotSupportedException">Any access</exception>
 		public override void SetLength(long val)
 		{
-			baseOutputStream.SetLength(val);
+//			baseOutputStream.SetLength(val);
+			throw new NotSupportedException("DeflaterOutputStream SetLength not supported");
 		}
 		
 		/// <summary>
-		/// I needed to implement the abstract member.
+		/// Read a byte from stream advancing position by one
 		/// </summary>
+		/// <exception cref="NotSupportedException">Any access</exception>
 		public override int ReadByte()
 		{
-			return baseOutputStream.ReadByte();
+//			return baseOutputStream.ReadByte();
+			throw new NotSupportedException("DeflaterOutputStream ReadByte not supported");
 		}
 		
 		/// <summary>
-		/// I needed to implement the abstract member.
+		/// Read a block of bytes from stream
 		/// </summary>
+		/// <exception cref="NotSupportedException">Any access</exception>
 		public override int Read(byte[] b, int off, int len)
 		{
-			return baseOutputStream.Read(b, off, len);
-		}
-		// -jr- 01-Dec-2003
-		public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-		{
-			throw new NotSupportedException("Asynch read not currently supported");
+//			return baseOutputStream.Read(b, off, len);
+			throw new NotSupportedException("DeflaterOutputStream Read not supported");
 		}
 		
-		// -jr- 01-Dec-2003
+		/// <summary>
+		/// Asynchronous reads are not supported a NotSupportedException is always thrown
+		/// </summary>
+		/// <param name="buffer"></param>
+		/// <param name="offset"></param>
+		/// <param name="count"></param>
+		/// <param name="callback"></param>
+		/// <param name="state"></param>
+		/// <returns></returns>
+		/// <exception cref="NotSupportedException">Any access</exception>
+		public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+		{
+			throw new NotSupportedException("DeflaterOutputStream BeginRead not currently supported");
+		}
+		
+		/// <summary>
+		/// Asynchronous writes arent supported, a NotSupportedException is always thrown
+		/// </summary>
+		/// <param name="buffer"></param>
+		/// <param name="offset"></param>
+		/// <param name="count"></param>
+		/// <param name="callback"></param>
+		/// <param name="state"></param>
+		/// <returns></returns>
+		/// <exception cref="NotSupportedException">Any access</exception>
 		public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 		{
-			throw new NotSupportedException("Asynch write not currently supported");
+			throw new NotSupportedException("DeflaterOutputStream BeginWrite not currently supported");
 		}
 		
 		/// <summary>
@@ -170,15 +209,19 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 			while (!def.IsNeedingInput) {
 				int len = def.Deflate(buf, 0, buf.Length);
 				
-				//	System.err.println("DOS deflated " + len + " baseOutputStream of " + buf.length);
 				if (len <= 0) {
 					break;
 				}
+				
+				if (this.Password != null) {
+					this.EncryptBlock(buf, 0, len);
+				}
+				
 				baseOutputStream.Write(buf, 0, len);
 			}
 			
 			if (!def.IsNeedingInput) {
-				throw new ApplicationException("Can't deflate all input?");
+				throw new ApplicationException("DeflaterOutputStream can't deflate all input?");
 			}
 		}
 		
@@ -202,7 +245,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 		/// <param name="defl">
 		/// the underlying deflater.
 		/// </param>
-		public DeflaterOutputStream(Stream baseOutputStream, Deflater defl) :this(baseOutputStream, defl, 512)
+		public DeflaterOutputStream(Stream baseOutputStream, Deflater defl) : this(baseOutputStream, defl, 512)
 		{
 		}
 		
@@ -211,25 +254,40 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 		/// buffer size.
 		/// </summary>
 		/// <param name="baseOutputStream">
-		/// the output stream where deflated output should be written.
+		/// The output stream where deflated output is written.
 		/// </param>
-		/// <param name="defl">
-		/// the underlying deflater.
+		/// <param name="deflater">
+		/// The underlying deflater to use
 		/// </param>
 		/// <param name="bufsize">
-		/// the buffer size.
+		/// The buffer size to use when deflating
 		/// </param>
-		/// <exception cref="System.InvalidOperationException">
-		/// if bufsize isn't positive.
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// bufsize is less than or equal to zero.
 		/// </exception>
-		public DeflaterOutputStream(Stream baseOutputStream, Deflater defl, int bufsize)
+		/// <exception cref="ArgumentException">
+		/// baseOutputStream does not support writing
+		/// </exception>
+		/// <exception cref="ArgumentNullException">
+		/// deflater instance is null
+		/// </exception>
+		public DeflaterOutputStream(Stream baseOutputStream, Deflater deflater, int bufsize)
 		{
-			this.baseOutputStream = baseOutputStream;
-			if (bufsize <= 0) {
-				throw new InvalidOperationException("bufsize <= 0");
+			if (baseOutputStream.CanWrite == false) {
+				throw new ArgumentException("baseOutputStream", "must support writing");
 			}
+
+			if (deflater == null) {
+				throw new ArgumentNullException("deflater");
+			}
+			
+			if (bufsize <= 0) {
+				throw new ArgumentOutOfRangeException("bufsize");
+			}
+			
+			this.baseOutputStream = baseOutputStream;
 			buf = new byte[bufsize];
-			def = defl;
+			def = deflater;
 		}
 		
 		/// <summary>
@@ -256,9 +314,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 					break;
 				}
 				
-				// kidnthrain encryption alteration
 				if (this.Password != null) {
-					// plain data has been deflated. Now encrypt result
 					this.EncryptBlock(buf, 0, len);
 				}
 				
@@ -271,7 +327,7 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 		}
 		
 		/// <summary>
-		/// Calls finish () and closes the stream.
+		/// Calls finish() and closes the stream.
 		/// </summary>
 		public override void Close()
 		{
@@ -283,38 +339,42 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 		/// Writes a single byte to the compressed output stream.
 		/// </summary>
 		/// <param name="bval">
-		/// the byte value.
+		/// The byte value.
 		/// </param>
 		public override void WriteByte(byte bval)
 		{
 			byte[] b = new byte[1];
-			b[0] = (byte) bval;
+			b[0] = bval;
 			Write(b, 0, 1);
 		}
 		
 		/// <summary>
-		/// Writes a len bytes from an array to the compressed stream.
+		/// Writes bytes from an array to the compressed stream.
 		/// </summary>
 		/// <param name="buf">
-		/// the byte array.
+		/// The byte array
 		/// </param>
 		/// <param name="off">
-		/// the offset into the byte array where to start.
+		/// The offset into the byte array where to start.
 		/// </param>
 		/// <param name="len">
-		/// the number of bytes to write.
+		/// The number of bytes to write.
 		/// </param>
 		public override void Write(byte[] buf, int off, int len)
 		{
-			//    System.err.println("DOS with off " + off + " and len " + len);
 			def.SetInput(buf, off, len);
 			Deflate();
 		}
 		
 		#region Encryption
+		
+		// TODO  Refactor this code.  The presence of Zip specific code in this low level class is wrong
 		string password = null;
 		uint[] keys     = null;
 		
+		/// <summary>
+		/// Get/set the password used for encryption.  When null no encryption is performed
+		/// </summary>
 		public string Password {
 			get { 
 				return password; 
@@ -325,11 +385,12 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 		}
 		
 		
-		//The beauty of xor-ing bits is that
-		//plain ^ key = enc
-		//and enc ^ key = plain
-		//accordingly, this is the exact same as the decrypt byte
-		//function in InflaterInputStream
+		/// <summary>
+		/// Encrypt a single byte 
+		/// </summary>
+		/// <returns>
+		/// The encrypted value
+		/// </returns>
 		protected byte EncryptByte()
 		{
 			uint temp = ((keys[2] & 0xFFFF) | 2);
@@ -338,22 +399,28 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 		
 		
 		/// <summary>
-		/// Takes a buffer of data and uses the keys
-		/// that have been previously initialized from a
-		/// password and then updated via a random encryption header
-		/// to encrypt that data
+		/// Encrypt a block of data
 		/// </summary>
-		protected void EncryptBlock(byte[] buf, int off, int len)
+		/// <param name="buffer">
+		/// Data to encrypt.  NOTE the original contents of the buffer are lost
+		/// </param>
+		/// <param name="offset">
+		/// Offset of first byte in buffer to encrypt
+		/// </param>
+		/// <param name="length">
+		/// Number of bytes in buffer to encrypt
+		/// </param>
+		protected void EncryptBlock(byte[] buffer, int offset, int length)
 		{
-			for (int i = off; i < off + len; ++i) {
-				byte oldbyte = buf[i];
-				buf[i] ^= EncryptByte();
+			for (int i = offset; i < offset + length; ++i) {
+				byte oldbyte = buffer[i];
+				buffer[i] ^= EncryptByte();
 				UpdateKeys(oldbyte);
 			}
 		}
 		
 		/// <summary>
-		/// Initializes our encryption keys using a given password
+		/// Initializes encryption keys based on given password
 		/// </summary>
 		protected void InitializePassword(string password) {
 			keys = new uint[] {
@@ -366,7 +433,10 @@ namespace ICSharpCode.SharpZipLib.Zip.Compression.Streams
 				UpdateKeys((byte)password[i]);
 			}
 		}
-		
+
+		/// <summary>
+		/// Update encryption keys 
+		/// </summary>		
 		protected void UpdateKeys(byte ch)
 		{
 			keys[0] = Crc32.ComputeCrc32(keys[0], ch);

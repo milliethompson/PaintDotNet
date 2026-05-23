@@ -3,5 +3,5 @@ using System.Drawing;
 
 namespace PaintDotNet
 {
-    public delegate void InvalidateDelegate(Region region);
+    public delegate void InvalidateDelegate(PdnRegion region);
 }

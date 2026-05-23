@@ -5,23 +5,23 @@ using System.Runtime.InteropServices;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for FileTypes.
-	/// </summary>
-	public sealed class FileTypes
-	{
-		private FileTypes()
-		{
-		}
+    /// <summary>
+    /// Summary description for FileTypes.
+    /// </summary>
+    public sealed class FileTypes
+    {
+        private FileTypes()
+        {
+        }
 
         // This class handles the layered bitmap format
         [Serializable]
-        private class LayeredBitmapFileType
+        private class PdnFileType
             : FileType,
               ISaveWithProgress
         {
-            public LayeredBitmapFileType()
-                : base("Layered Bitmap", null, true, new string[] { ".lbmp" })
+            public PdnFileType()
+                : base(System.Windows.Forms.Application.ProductName + " Image", null, true, new string[] { ".pdn" })
             {
             }
 
@@ -44,7 +44,7 @@ namespace PaintDotNet
                 public void IOEventHandler(object sender, IOEventArgs e)
                 {
                     totalBytes += (long)e.Count;
-					double percent = Math.Max(0.0, Math.Min(100.0, ((double)totalBytes * 100.0) / (double)maxBytes));
+                    double percent = Math.Max(0.0, Math.Min(100.0, ((double)totalBytes * 100.0) / (double)maxBytes));
                     callback(sender, new ProgressEventArgs(percent));
                 }
 
@@ -74,6 +74,6 @@ namespace PaintDotNet
         public static readonly FileType Gif = new FileType("GIF", ImageFormat.Gif, false, new string[] { ".gif" });
         public static readonly FileType Tiff = new FileType("TIFF", ImageFormat.Tiff, false, new string[] { ".tif", ".tiff" });
         public static readonly FileType Png = new FileType("PNG", ImageFormat.Png, false, new string[] { ".png" });
-        public static readonly FileType Lbmp = new LayeredBitmapFileType();
-	}
+        public static readonly FileType Pdn = new PdnFileType();
+    }
 }

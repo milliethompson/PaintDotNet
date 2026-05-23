@@ -5,12 +5,12 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for MoveTool.
-	/// </summary>
-	public class MoveTool
+    /// <summary>
+    /// Summary description for MoveTool.
+    /// </summary>
+    public class MoveTool
         : Tool
-	{
+    {
         public static string StaticName
         {
             get
@@ -27,9 +27,9 @@ namespace PaintDotNet
         private Point startMouseXY;
         private Point offset;
         private IPixelOp pixelOp;
-		private bool didPaste = false;
+        private bool didPaste = false;
         private bool tracking;
-		private bool dontDrop = false; // so that OnSelectionChanging() can tell who is raising the event ... don't drop the pixels if WE caused the event
+        private bool dontDrop = false; // so that OnSelectionChanging() can tell who is raising the event ... don't drop the pixels if WE caused the event
 
         protected override void OnActivate()
         {
@@ -41,65 +41,13 @@ namespace PaintDotNet
             tracking = false;
         }
 
-		private void DropPixels()
-		{
-			if (saveSurface != null)
-			{
-				saveSurface.Draw(renderArgs.Surface);
-				saveSurface.Dispose();
-				saveSurface = null;
-			}
-
-            // 1. simplify the region into a few rectangles
-			RectangleF[] simplifiedRectsF = Utility.SimplifyRegion(liftedPixels.Region, 10);
-
-            // 2. inflate it -- this is necessary to make sure there are no gaps between the 
-            // rectangles, and to account for the extra rendering surface area from the selection 
-            // outline
-            RectangleF[] inflatedRectsF = Utility.InflateRectangles(simplifiedRectsF, 2);
-
-            // 3. translate it
-            RectangleF[] translatedRectsF = Utility.TranslateRectangles(inflatedRectsF, offset);
-
-            // 4. convert it back to a Region
-            Region simplifiedRegion = Utility.RectanglesToRegion(translatedRectsF);
-
-			HistoryAction bitmapAction2 = activeLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
-
-			liftedPixels.Draw(activeLayer.Surface, offset.X, offset.Y, pixelOp);
-			liftedPixels.Dispose();
-			liftedPixels = null;
-			activeLayer.Invalidate(simplifiedRegion);
-
-			if (didPaste || !(offset.X == 0 && offset.Y == 0))
-			{
-				string name;
-				Image image;
-
-				if (didPaste)
-				{
-					name = "Paste";
-					image = Utility.GetImageResource("Icons.MenuEditPasteIcon.bmp");
-				}
-				else
-				{
-					name = this.Name;
-					image = this.Image;
-				}
-
-				CompoundHistoryAction cha = new CompoundHistoryAction(name, Image, new HistoryAction[] { undoAction, bitmapAction2 });
-				Workspace.History.PushNewAction(cha);
-				didPaste = false;
-			}
-		}
-
         protected override void OnDeactivate()
         {
             base.OnDeactivate ();
 
             if (liftedPixels != null)
             {   
-				DropPixels();
+                DropPixels();
             }
 
             activeLayer = null;
@@ -110,33 +58,89 @@ namespace PaintDotNet
             tracking = false;
         }
 
+        private void DropPixels()
+        {
+            if (saveSurface != null)
+            {
+                saveSurface.Draw(renderArgs.Surface);
+                saveSurface.Dispose();
+                saveSurface = null;
+            }
+
+            // 1. simplify the region into a few rectangles
+            Rectangle[] simplifiedRects = Utility.SimplifyRegion(liftedPixels.Region, 10);
+
+            // 2. inflate it -- this is necessary to make sure there are no gaps between the 
+            // rectangles, and to account for the extra rendering surface area from the selection 
+            // outline
+            Rectangle[] inflatedRects = Utility.InflateRectangles(simplifiedRects, 2);
+
+            // 3. translate it
+            Rectangle[] translatedRects = Utility.TranslateRectangles(inflatedRects, offset.X, offset.Y);
+
+            // 4. convert it back to a Region
+            HistoryAction bitmapAction2;
+
+            using (PdnRegion simplifiedRegion = Utility.RectanglesToRegion(translatedRects))
+            {
+                bitmapAction2 = activeLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
+
+                liftedPixels.Draw(activeLayer.Surface, offset.X, offset.Y, pixelOp);
+                liftedPixels.Dispose();
+                liftedPixels = null;
+
+                activeLayer.Invalidate(simplifiedRegion);
+            }
+
+            if (didPaste || !(offset.X == 0 && offset.Y == 0))
+            {
+                string name;
+                Image image;
+
+                if (didPaste)
+                {
+                    name = "Paste";
+                    image = Utility.GetImageResource("Icons.MenuEditPasteIcon.bmp");
+                }
+                else
+                {
+                    name = this.Name;
+                    image = this.Image;
+                }
+
+                CompoundHistoryAction cha = new CompoundHistoryAction(name, Image, new HistoryAction[] { undoAction, bitmapAction2 });
+                Workspace.History.PushNewAction(cha);
+                didPaste = false;
+            }
+        }
+
         protected override void OnClick()
         {
             base.OnClick ();
         }
 
-		protected override void OnSelectionChanging()
-		{
-			base.OnSelectionChanging();
+        protected override void OnSelectionChanging()
+        {
+            base.OnSelectionChanging();
 
-			if (!dontDrop)
-			{
-				if (liftedPixels != null)
-				{
-					DropPixels();
-				}
+            if (!dontDrop)
+            {
+                if (liftedPixels != null)
+                {
+                    DropPixels();
+                }
 
                 if (tracking)
                 {
-					tracking = false;
+                    tracking = false;
                 }
-			}
-		}
+            }
+        }
 
-		protected override void OnSelectionChanged()
-		{
-			base.OnSelectionChanged();
-		}
+        protected override void OnSelectionChanged()
+        {
+            base.OnSelectionChanged();
+        }
 
         /// <summary>
         /// Provided as a special entry point so that Paste can work well.
@@ -159,17 +163,18 @@ namespace PaintDotNet
             Matrix translationMatrix = new Matrix();
             translationMatrix.Reset();
             translationMatrix.Translate((float)offset.X, (float)offset.Y);
-            GraphicsPath translatedPath = (GraphicsPath)sfc.Outline.CreateGraphicsPath();
+            PdnGraphicsPath translatedPath = (PdnGraphicsPath)sfc.Outline.CreateGraphicsPath();
             //translatedPath.Transform(translationMatrix);
 
-			dontDrop = true;
+            dontDrop = true;
             Workspace.Environment.SelectedPath = translatedPath;
-			dontDrop = false;
+            translatedPath = null;
+            dontDrop = false;
 
             tracking = true;
             pixelOp = new UnaryPixelOps.Identity();
 
-			this.didPaste = true;
+            this.didPaste = true;
             MouseEventArgs mea = new MouseEventArgs(MouseButtons.None, 0, offset.X, offset.Y, 0);
             OnMouseDown(mea);
             OnMouseUp(mea);
@@ -191,16 +196,14 @@ namespace PaintDotNet
 
             if (liftedPixels == null)
             {   // lift!
-                Region liftRegion = null; 
-
                 SelectionHistoryAction selectionAction = new SelectionHistoryAction(Name, Image, Workspace);
 
-                liftRegion = Workspace.Environment.CreateSelectedRegion();
+                PdnRegion liftRegion = Workspace.Environment.CreateSelectedRegion();
                 liftRegion.Intersect(activeLayer.Bounds);
-
                 liftedPixels = new IrregularSurface(activeLayer.Surface, liftRegion);
-				//Region simplifiedRegion = Utility.SimplifyAndInflateRegion(liftedPixels.Region, Utility.DefaultSimplificationFactor, 2);
-				Region simplifiedRegion = new Region(liftedPixels.Region.GetBounds(this.renderArgs.Graphics));
+
+                //PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(liftedPixels.Region, Utility.DefaultSimplificationFactor, 2);
+                PdnRegion simplifiedRegion = new PdnRegion(liftedPixels.Region.GetBounds(this.renderArgs.Graphics));
 
                 HistoryAction bitmapAction = activeLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
                 undoAction = new CompoundHistoryAction(Name, Image, new HistoryAction[] { bitmapAction, selectionAction });
@@ -208,21 +211,20 @@ namespace PaintDotNet
                 startMouseXY = new Point(e.X, e.Y);
                 offset = new Point(0, 0);
 
-				// If the user is holding down the control key, we want to *copy* the pixels
-				// and not "lift and erase"
-				if ((ModifierKeys & Keys.Control) == Keys.None)
-				{
-					ColorBgra fill = Workspace.Environment.BackColor;
-                    fill.a = 0;
+                // If the user is holding down the control key, we want to *copy* the pixels
+                // and not "lift and erase"
+                if ((ModifierKeys & Keys.Control) == Keys.None)
+                {
+                    ColorBgra fill = Workspace.Environment.BackColor;
+                    fill.A = 0;
                     UnaryPixelOp op = new UnaryPixelOps.Constant(fill);
-
                     op.Apply(renderArgs.Surface, liftRegion);
-
                     activeLayer.Invalidate(simplifiedRegion);
                 }
 
                 pixelOp = new UnaryPixelOps.Identity();
-				simplifiedRegion.Dispose();
+                simplifiedRegion.Dispose();
+                liftRegion.Dispose();
             }
 
             Point mouseXY = new Point(e.X, e.Y);
@@ -254,32 +256,34 @@ namespace PaintDotNet
                     saveSurface = null;
                 }
 
-                Matrix translateMatrix = new Matrix();
-                translateMatrix.Reset();
-                translateMatrix.Translate((float)delta.Width, (float)delta.Height);
+                using (Matrix translateMatrix = new Matrix())
+                {
+                    translateMatrix.Reset();
+                    translateMatrix.Translate((float)delta.Width, (float)delta.Height);
 
-				dontDrop = true;
-                Workspace.Environment.PerformSelectedPathChanging();
-                Workspace.Environment.SelectedPath.Transform(translateMatrix);
+                    dontDrop = true;
+                    Workspace.Environment.PerformSelectedPathChanging();
+                    Workspace.Environment.SelectedPath.Transform(translateMatrix);
+                }
 
-                Region selectedRegion = null;
+                PdnRegion selectedRegion = null;
                 
                 if (Workspace.Environment.IsSelectionEmpty)
                 {
-                    selectedRegion = new Region(renderArgs.Surface.Bounds);
+                    selectedRegion = new PdnRegion(renderArgs.Surface.Bounds);
                 }
                 else
                 {
                     selectedRegion = Workspace.Environment.CreateSelectedRegion();
                 }
 
-                Region simplifiedRegion = Utility.SimplifyAndInflateRegion(selectedRegion);
+                PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(selectedRegion);
 
                 saveSurface = new IrregularSurface(renderArgs.Surface, simplifiedRegion);
                 liftedPixels.Draw(renderArgs.Surface, newOffset.X, newOffset.Y, pixelOp);
                 activeLayer.Invalidate(simplifiedRegion);
                 Workspace.Environment.PerformSelectedPathChanged();
-				dontDrop = false;
+                dontDrop = false;
                 Workspace.Update();
 
                 simplifiedRegion.Dispose();
@@ -327,19 +331,22 @@ namespace PaintDotNet
                     dy *= 10;
                 }
 
-                OnMouseDown(new MouseEventArgs(MouseButtons.Left, 0, 0, 0, 0));
-                OnMouseMove(new MouseEventArgs(MouseButtons.Left, 0, dx, dy, 0));
-                OnMouseUp(new MouseEventArgs(MouseButtons.Left, 0, dx, dy, 0));
+                if (dx != 0 || dy != 0)
+                {
+                    OnMouseDown(new MouseEventArgs(MouseButtons.Left, 0, 0, 0, 0));
+                    OnMouseMove(new MouseEventArgs(MouseButtons.Left, 0, dx, dy, 0));
+                    OnMouseUp(new MouseEventArgs(MouseButtons.Left, 0, dx, dy, 0));
+                }
             }
         }
 
-		public MoveTool(DocumentWorkspace workspace)
+        public MoveTool(DocumentWorkspace workspace)
             : base(workspace)
-		{
+        {
             this.name = MoveTool.StaticName;
             this.description = "Allows you to move around pixels that have been selected.";
             this.toolBarImage = Utility.GetImageResource("Icons.MoveToolIcon.bmp");
             this.cursor = new Cursor(Utility.GetResourceStream("Cursors.MoveToolCursor.cur"));
-		}
-	}
+        }
+    }
 }

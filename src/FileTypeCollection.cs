@@ -4,9 +4,9 @@ using System.Text;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Represents a collection of FileType instances.
-	/// </summary>
+    /// <summary>
+    /// Represents a collection of FileType instances.
+    /// </summary>
     [Serializable]
     public class FileTypeCollection
     {
@@ -125,10 +125,10 @@ namespace PaintDotNet
         {
             int i = 0;
 
-			if (findMeExt == null)
-			{
-				return -1;
-			}
+            if (findMeExt == null)
+            {
+                return -1;
+            }
 
             foreach (FileType ft in fileTypes)
             {

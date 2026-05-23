@@ -7,82 +7,83 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// New File Dialog By Chris Trevino
-	/// Last Updated: 2/5/2004
-	/// </summary>
-	public class NewFileDialog 
+    /// <summary>
+    /// New File Dialog By Chris Trevino
+    /// Last Updated: 2/5/2004
+    /// </summary>
+    public class NewFileDialog 
         : PdnBaseForm
     {
-		private System.Windows.Forms.Button okButton;
-		private System.Windows.Forms.Button cancelButton;
-		private System.Windows.Forms.Label label1;
-		private System.Windows.Forms.Label label2;
-		public System.Windows.Forms.NumericUpDown widthUpDown;
-		public System.Windows.Forms.NumericUpDown heightUpDown;
-		private System.Windows.Forms.GroupBox fileSizeGroupBox;
+        private System.Windows.Forms.Button okButton;
+        private System.Windows.Forms.Button cancelButton;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label label2;
+        public System.Windows.Forms.NumericUpDown widthUpDown;
+        public System.Windows.Forms.NumericUpDown heightUpDown;
+        private System.Windows.Forms.GroupBox fileSizeGroupBox;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Label label4;
 
-		/// <summary>
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
 
-		public int NewWidth 
-		{
-			get
-			{
-				return (int)widthUpDown.Value;
-			}
+        public int NewWidth 
+        {
+            get
+            {
+                return (int)widthUpDown.Value;
+            }
 
-			set
-			{
-				widthUpDown.Value = (int)Math.Ceiling(value);
-				SetImageSizeLabel();
-			}
-		}
+            set
+            {
+                widthUpDown.Value = (int)Math.Ceiling(value);
+                SetImageSizeLabel();
+            }
+        }
 
-		public int NewHeight
-		{
-			get
-			{
-				return (int)heightUpDown.Value;
-			}
-			set
-			{
-				heightUpDown.Value = (int)Math.Ceiling(value);
-				SetImageSizeLabel();
-			}
-		}
+        public int NewHeight
+        {
+            get
+            {
+                return (int)heightUpDown.Value;
+            }
+            set
+            {
+                heightUpDown.Value = (int)Math.Ceiling(value);
+                SetImageSizeLabel();
+            }
+        }
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
         public NewFileDialog()
         {
             InitializeComponent();
+            this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.MenuFileNewIcon.bmp"), Color.FromArgb(192, 192, 192));
         }
 
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Windows Form Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.okButton = new System.Windows.Forms.Button();
             this.cancelButton = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
@@ -125,10 +126,10 @@ namespace PaintDotNet
             this.label1.ImeMode = System.Windows.Forms.ImeMode.NoControl;
             this.label1.Location = new System.Drawing.Point(8, 47);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(56, 16);
+            this.label1.Size = new System.Drawing.Size(40, 16);
             this.label1.TabIndex = 4;
             this.label1.Text = "Height:";
-            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // label2
             // 
@@ -138,7 +139,7 @@ namespace PaintDotNet
             this.label2.Size = new System.Drawing.Size(40, 16);
             this.label2.TabIndex = 5;
             this.label2.Text = "Width:";
-            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // widthUpDown
             // 
@@ -153,7 +154,7 @@ namespace PaintDotNet
             this.widthUpDown.TabIndex = 0;
             this.widthUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.widthUpDown.Enter += new System.EventHandler(this.upDown_Enter);
-            this.widthUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(upDown_KeyUp);
+            this.widthUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
             this.widthUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.widthUpDown.Leave += new System.EventHandler(this.upDown_Leave);
             // 
@@ -170,7 +171,7 @@ namespace PaintDotNet
             this.heightUpDown.TabIndex = 1;
             this.heightUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.heightUpDown.Enter += new System.EventHandler(this.upDown_Enter);
-            this.heightUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(upDown_KeyUp);
+            this.heightUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
             this.heightUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.heightUpDown.Leave += new System.EventHandler(this.upDown_Leave);
             // 
@@ -214,7 +215,6 @@ namespace PaintDotNet
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
             this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(194, 125);
-            this.ControlBox = false;
             this.Controls.Add(this.fileSizeGroupBox);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.okButton);
@@ -226,48 +226,53 @@ namespace PaintDotNet
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "New";
+            this.Controls.SetChildIndex(this.okButton, 0);
+            this.Controls.SetChildIndex(this.cancelButton, 0);
+            this.Controls.SetChildIndex(this.fileSizeGroupBox, 0);
             ((System.ComponentModel.ISupportInitialize)(this.widthUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.heightUpDown)).EndInit();
             this.fileSizeGroupBox.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
-		private void okButton_Click(object sender, System.EventArgs e)
-		{
-			DialogResult = DialogResult.OK;
-			Close();
-		}
+        private void okButton_Click(object sender, System.EventArgs e)
+        {
+            DialogResult = DialogResult.OK;
+            Close();
+        }
 
-		private void cancelButton_Click(object sender, System.EventArgs e)
-		{
-			this.Close();
-		}
+        private void cancelButton_Click(object sender, System.EventArgs e)
+        {
+            this.Close();
+        }
 
-		private void SetImageSizeLabel()
-		{
-			double fileSize = ((double)NewWidth * (double)NewHeight * 4.0);
-			fileSizeGroupBox.Text = "File Size: " + Utility.SizeStringFromBytes(fileSize);
-		}
+        private void SetImageSizeLabel()
+        {
+            double fileSize = ((double)NewWidth * (double)NewHeight * 4.0);
+            fileSizeGroupBox.Text = "File Size: " + Utility.SizeStringFromBytes(fileSize);
+        }
 
-		private void upDown_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
-		{
-			bool numberIsOk = Utility.CheckNumericUpDown((NumericUpDown)sender);
+        private void upDown_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
+        {
+            bool numberIsOk = Utility.CheckNumericUpDown((NumericUpDown)sender);
 
-			if(numberIsOk)
-			{
-				SetImageSizeLabel();
+            if (numberIsOk)
+            {
+                SetImageSizeLabel();
                 SetOkEnable();
             }
 
-			SetImageSizeLabel();
-		}
+            SetImageSizeLabel();
+        }
 
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad (e);
             SetOkEnable();
+            this.widthUpDown.Select();
+            this.widthUpDown.Select(0, widthUpDown.Text.Length);
         }
 
         /// <summary>
@@ -301,11 +306,11 @@ namespace PaintDotNet
             okButton.Enabled = enabled;
         }
 
-		private void upDown_ValueChanged(object sender, System.EventArgs e)
-		{
-			SetImageSizeLabel();
+        private void upDown_ValueChanged(object sender, System.EventArgs e)
+        {
+            SetImageSizeLabel();
             SetOkEnable();
-		}
+        }
 
         private void upDown_Enter(object sender, System.EventArgs e)
         {
@@ -317,5 +322,5 @@ namespace PaintDotNet
         {
             upDown_ValueChanged(sender, e);
         }
-	}
+    }
 }

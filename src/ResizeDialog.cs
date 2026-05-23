@@ -9,10 +9,10 @@ using System.Diagnostics;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for ResizeDialog.
-	/// </summary>
-	public class ResizeDialog 
+    /// <summary>
+    /// Summary description for ResizeDialog.
+    /// </summary>
+    public class ResizeDialog 
         : PdnBaseForm
     {
         protected System.Windows.Forms.CheckBox ratioCheck;
@@ -20,54 +20,54 @@ namespace PaintDotNet
         protected System.Windows.Forms.Label label2;
         protected System.Windows.Forms.Button okButton;
         protected System.Windows.Forms.Button cancelButton;
-		
-		private InterpolationMode interpolationMode;
-        protected DotNetWidgets.FlatComboBox interpolationModeComboBox;
+        
+        private InterpolationMode interpolationMode;
+        protected System.Windows.Forms.ComboBox interpolationModeComboBox;
         protected System.Windows.Forms.Label label3;
 
-		private ResampleMethod lowQuality;
-		private ResampleMethod highQuality;
+        private ResampleMethod lowQuality;
+        private ResampleMethod highQuality;
         protected System.Windows.Forms.NumericUpDown widthUpDown;
         protected System.Windows.Forms.NumericUpDown heightUpDown;
 
         private EventHandler upDownValueChangedDelegate;
 
-		private double ratio;
-		private bool isLocked;
-		private int layers;
+        private double ratio;
+        private bool isLocked;
+        private int layers;
         protected System.Windows.Forms.Label label5;
         protected System.Windows.Forms.Label currentImageSize;
         protected System.Windows.Forms.GroupBox resizedImageGroupBox;
         protected System.Windows.Forms.Label label4;
         protected System.Windows.Forms.Label label6;
-		
-		/// <summary>
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
+        
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
         protected System.Windows.Forms.Label originalImageSize;
 
-		public int ImageWidth
-		{
-			get
-			{
-				return (int)widthUpDown.Value;
-			}
+        public int ImageWidth
+        {
+            get
+            {
+                return (int)widthUpDown.Value;
+            }
 
-			set
-			{
-				if(value <= 0)
-				{
-					value = 0;
-				}				
-				if((int)value > (int)widthUpDown.Maximum)
-				{
-					value = (int)widthUpDown.Maximum;
-				}
-				widthUpDown.Value = (decimal)value; //(int)(Math.Round((double)value));
-				resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((double)layers * 4.0 * (double)ImageHeight * (double)ImageWidth);
-			}
-		}
+            set
+            {
+                if (value <= 0)
+                {
+                    value = 0;
+                }               
+                if ((int)value > (int)widthUpDown.Maximum)
+                {
+                    value = (int)widthUpDown.Maximum;
+                }
+                widthUpDown.Value = (decimal)value; //(int)(Math.Round((double)value));
+                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((double)layers * 4.0 * (double)ImageHeight * (double)ImageWidth);
+            }
+        }
 
         private Size originalSize = Size.Empty;
         public Size OriginalSize
@@ -83,182 +83,190 @@ namespace PaintDotNet
             }
         }
 
-		public double AspectRatio
-		{
-			
-			get
-			{
-				return ratio;
-			}
+        public double AspectRatio
+        {
+            get
+            {
+                return ratio;
+            }
 
-			set
-			{
-				ratio = value;
-			}
-		}
-		public int ImageHeight
-		{
-			get
-			{
-				return (int)heightUpDown.Value;
-			}
+            set
+            {
+                ratio = value;
+            }
+        }
 
-			set
-			{
-				if(value <= 0)
-				{
-					value = 0;
-				}
+        public int ImageHeight
+        {
+            get
+            {
+                return (int)heightUpDown.Value;
+            }
 
-				if((int)value > (int)heightUpDown.Maximum)
-				{
-					value = (int)heightUpDown.Maximum;
-				}
+            set
+            {
+                if (value <= 0)
+                {
+                    value = 0;
+                }
 
-				heightUpDown.Value = (decimal)value; //(int)(Math.Round((double)value));	
-				resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((double)layers * 4.0 * (double)ImageHeight * (double)ImageWidth);
-			}
-		}
+                if ((int)value > (int)heightUpDown.Maximum)
+                {
+                    value = (int)heightUpDown.Maximum;
+                }
 
-		public double DocumentSize
-		{
-			set
-			{
-				currentImageSize.Text = Utility.SizeStringFromBytes(value);
-			}
-		}
+                heightUpDown.Value = (decimal)value; //(int)(Math.Round((double)value));    
+                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((double)layers * 4.0 * (double)ImageHeight * (double)ImageWidth);
+            }
+        }
 
-		public InterpolationMode InterpMode
-		{
-			get
-			{
-				return interpolationMode;
-			}
-			
-			set
-			{
-				interpolationMode = value;
-			}
-		}
+        public double DocumentSize
+        {
+            set
+            {
+                currentImageSize.Text = Utility.SizeStringFromBytes(value);
+            }
+        }
 
-		public bool IsLocked
-		{
-			get
-			{
-				return isLocked;
-			}
+        public InterpolationMode InterpMode
+        {
+            get
+            {
+                return interpolationMode;
+            }
+            
+            set
+            {
+                interpolationMode = value;
+            }
+        }
 
-			set
-			{
-				isLocked = value;
-				ratioCheck.Checked = value;
+        public bool IsLocked
+        {
+            get
+            {
+                return isLocked;
+            }
 
-				if(isLocked && ratio != 0.0)
-				{
-					FixHeightToRatio();
-				}
-			}
-		}
+            set
+            {
+                isLocked = value;
+                ratioCheck.Checked = value;
 
-		public int Layers
-		{
-			get
-			{
-				return layers;
-			}
+                if (isLocked && ratio != 0.0)
+                {
+                    FixHeightToRatio();
+                }
+            }
+        }
 
-			set
-			{
-				layers = value;
-				double initialSize = (double)layers * 4.0 * (double)ImageHeight * (double)ImageWidth;
-				DocumentSize = initialSize;
-				resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes(initialSize);
-			}
-		}
+        public int Layers
+        {
+            get
+            {
+                return layers;
+            }
 
-		#region Resample Method Private Class
-		private class ResampleMethod
-		{
-			public InterpolationMode method;
+            set
+            {
+                layers = value;
+                double initialSize = (double)layers * 4.0 * (double)ImageHeight * (double)ImageWidth;
+                DocumentSize = initialSize;
+                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes(initialSize);
+            }
+        }
 
-			public override string ToString()
-			{
-				switch (method)
-				{
-					case InterpolationMode.NearestNeighbor:
-						return "Nearest Neighbor";
+        #region Resample Method Private Class
+        private class ResampleMethod
+        {
+            public InterpolationMode method;
 
-					case InterpolationMode.HighQualityBicubic:
-						return "Bicubic";
+            public override string ToString()
+            {
+                switch (method)
+                {
+                    case InterpolationMode.NearestNeighbor:
+                        return "Nearest Neighbor";
 
-					default:
-						return method.ToString();
-				}
-			}
+                    case InterpolationMode.HighQualityBicubic:
+                        return "Bicubic";
 
-			public ResampleMethod(InterpolationMode method)
-			{
-				this.method = method;
-			}
-		}
-		#endregion
+                    default:
+                        return method.ToString();
+                }
+            }
 
-		public ResizeDialog()
-		{
-			//
-			// Required for Windows Form Designer support
-			//
-			InitializeComponent();
+            public ResampleMethod(InterpolationMode method)
+            {
+                this.method = method;
+            }
+        }
+        #endregion
 
-			//
-			// TODO: Add any constructor code after InitializeComponent call
-			//
+        public ResizeDialog()
+        {
+            //
+            // Required for Windows Form Designer support
+            //
+            InitializeComponent();
 
-			ratioCheck.Checked = true;
-			interpolationModeComboBox.Items.Clear();
-			ratio = -1;
+            //
+            // TODO: Add any constructor code after InitializeComponent call
+            //
+
+            ratioCheck.Checked = true;
+            interpolationModeComboBox.Items.Clear();
+            ratio = -1;
 
             upDownValueChangedDelegate = new EventHandler(upDown_ValueChanged);
 
-			highQuality = new ResampleMethod(InterpolationMode.HighQualityBicubic);
-			lowQuality = new ResampleMethod(InterpolationMode.NearestNeighbor);
+            highQuality = new ResampleMethod(InterpolationMode.HighQualityBicubic);
+            lowQuality = new ResampleMethod(InterpolationMode.NearestNeighbor);
 
-			interpolationModeComboBox.Items.Add(highQuality);
-			interpolationModeComboBox.Items.Add(lowQuality);
+            interpolationModeComboBox.Items.Add(highQuality);
+            interpolationModeComboBox.Items.Add(lowQuality);
 
-			interpolationModeComboBox.SelectedItem = highQuality;
-			layers = 1;
+            interpolationModeComboBox.SelectedItem = highQuality;
+            layers = 1;
 
-		}
+            this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.MenuImageResizeIcon.bmp"), Color.FromArgb(192, 192, 192));
+        }
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad (e);
+            this.widthUpDown.Select();
+            this.widthUpDown.Select(0, widthUpDown.Text.Length);
+        }
 
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
+
+        #region Windows Form Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.ratioCheck = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.okButton = new System.Windows.Forms.Button();
             this.cancelButton = new System.Windows.Forms.Button();
-            this.interpolationModeComboBox = new DotNetWidgets.FlatComboBox();
+            this.interpolationModeComboBox = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
             this.widthUpDown = new System.Windows.Forms.NumericUpDown();
             this.heightUpDown = new System.Windows.Forms.NumericUpDown();
@@ -327,7 +335,6 @@ namespace PaintDotNet
             // interpolationModeComboBox
             // 
             this.interpolationModeComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.interpolationModeComboBox.InitialText = "";
             this.interpolationModeComboBox.Location = new System.Drawing.Point(78, 20);
             this.interpolationModeComboBox.Name = "interpolationModeComboBox";
             this.interpolationModeComboBox.Size = new System.Drawing.Size(130, 21);
@@ -455,7 +462,6 @@ namespace PaintDotNet
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
             this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(238, 213);
-            this.ControlBox = false;
             this.Controls.Add(this.originalImageSize);
             this.Controls.Add(this.currentImageSize);
             this.Controls.Add(this.label5);
@@ -469,68 +475,73 @@ namespace PaintDotNet
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Resize";
+            this.Controls.SetChildIndex(this.resizedImageGroupBox, 0);
+            this.Controls.SetChildIndex(this.okButton, 0);
+            this.Controls.SetChildIndex(this.cancelButton, 0);
+            this.Controls.SetChildIndex(this.label5, 0);
+            this.Controls.SetChildIndex(this.currentImageSize, 0);
+            this.Controls.SetChildIndex(this.originalImageSize, 0);
             ((System.ComponentModel.ISupportInitialize)(this.widthUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.heightUpDown)).EndInit();
             this.resizedImageGroupBox.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
-		private void okButton_Click(object sender, System.EventArgs e)
-		{
-			this.DialogResult = DialogResult.OK;
-			this.Close();			
-		}
+        private void okButton_Click(object sender, System.EventArgs e)
+        {
+            this.DialogResult = DialogResult.OK;
+            this.Close();           
+        }
 
-		private void cancelButton_Click(object sender, System.EventArgs e)
-		{
-			this.DialogResult = DialogResult.Cancel;
-			this.Close();		
-		}
+        private void cancelButton_Click(object sender, System.EventArgs e)
+        {
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();       
+        }
 
-		private void ratioCheck_CheckedChanged(object sender, System.EventArgs e)
-		{
-			if(ratioCheck.Checked != IsLocked)
-			{
-				IsLocked = ratioCheck.Checked;
-			}
-		}
+        private void ratioCheck_CheckedChanged(object sender, System.EventArgs e)
+        {
+            if (ratioCheck.Checked != IsLocked)
+            {
+                IsLocked = ratioCheck.Checked;
+            }
+        }
 
-		private void interpolationModeComboBox_SelectedIndexChanged(object sender, System.EventArgs e)
-		{
-			ResampleMethod rm = (ResampleMethod)((ComboBox)sender).SelectedItem;
-			InterpMode = rm.method;
-		}
+        private void interpolationModeComboBox_SelectedIndexChanged(object sender, System.EventArgs e)
+        {
+            ResampleMethod rm = (ResampleMethod)((ComboBox)sender).SelectedItem;
+            InterpMode = rm.method;
+        }
 
-		private void FixWidthToRatio()
-		{
-			widthUpDown.ValueChanged -= upDownValueChangedDelegate;
-			ImageWidth = (int)(Math.Round(ImageHeight* ratio));
-			widthUpDown.ValueChanged += upDownValueChangedDelegate;			
-		}
+        private void FixWidthToRatio()
+        {
+            widthUpDown.ValueChanged -= upDownValueChangedDelegate;
+            ImageWidth = (int)(Math.Round(ImageHeight* ratio));
+            widthUpDown.ValueChanged += upDownValueChangedDelegate;         
+        }
 
-		private void FixHeightToRatio()
-		{
-			heightUpDown.ValueChanged -= upDownValueChangedDelegate;
-			ImageHeight = (int)(Math.Round(ImageWidth * (1/ratio)));
-			heightUpDown.ValueChanged += upDownValueChangedDelegate;
-		}
+        private void FixHeightToRatio()
+        {
+            heightUpDown.ValueChanged -= upDownValueChangedDelegate;
+            ImageHeight = (int)(Math.Round(ImageWidth * (1/ratio)));
+            heightUpDown.ValueChanged += upDownValueChangedDelegate;
+        }
 
-		private void upDown_ValueChanged(object sender, System.EventArgs e)
-		{
-			if (IsLocked)
-			{
+        private void upDown_ValueChanged(object sender, System.EventArgs e)
+        {
+            if (IsLocked)
+            {
                 if (sender == heightUpDown)
                 {
-                    FixWidthToRatio();			
+                    FixWidthToRatio();          
                 }
-                else
-                    if (sender == widthUpDown)
+                else if (sender == widthUpDown)
                 {
-                    FixHeightToRatio();			
+                    FixHeightToRatio();         
                 }
-			}
+            }
 
             if (widthUpDown.Value != 0 && heightUpDown.Value != 0)
             {
@@ -540,19 +551,19 @@ namespace PaintDotNet
             {
                 okButton.Enabled = false;
             }
-		}
+        }
 
-		private void upDown_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
-		{
-			bool numberIsOk = Utility.CheckNumericUpDown((NumericUpDown)sender);
-			okButton.Enabled = numberIsOk;
+        private void upDown_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
+        {
+            bool numberIsOk = Utility.CheckNumericUpDown((NumericUpDown)sender);
+            okButton.Enabled = numberIsOk;
 
-			if (numberIsOk)
-			{
-				resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((double)ImageHeight * (double)ImageWidth * 4.0 * (double)Layers);
-				upDown_ValueChanged(sender, e);
-			}
-		}
+            if (numberIsOk)
+            {
+                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((double)ImageHeight * (double)ImageWidth * 4.0 * (double)Layers);
+                upDown_ValueChanged(sender, e);
+            }
+        }
 
         private void upDown_Enter(object sender, System.EventArgs e)
         {
@@ -564,5 +575,5 @@ namespace PaintDotNet
         {
             //upDown_ValueChanged(sender, e);
         }
-	}
+    }
 }

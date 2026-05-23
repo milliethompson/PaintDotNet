@@ -3,19 +3,19 @@ using System.Collections;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Basically an ArrayList, but lets the containing Document instance be
-	/// notified when the list is modified so it can know that it needs to
-	/// re-render itself.
-	/// This implementation also enforces that any contained layer must be
-	/// of the same dimensions as the document it is contained within.
-	/// If you try to add a layer that is the wrong size, an exception will
-	/// be thrown.
-	/// </summary>
+    /// <summary>
+    /// Basically an ArrayList, but lets the containing Document instance be
+    /// notified when the list is modified so it can know that it needs to
+    /// re-render itself.
+    /// This implementation also enforces that any contained layer must be
+    /// of the same dimensions as the document it is contained within.
+    /// If you try to add a layer that is the wrong size, an exception will
+    /// be thrown.
+    /// </summary>
     [Serializable]
     public class LayerList
         : ArrayList
-	{
+    {
         private Document parent;
 
         /// <summary>
@@ -61,39 +61,39 @@ namespace PaintDotNet
         /// thus, when you handle this event the collection is empty.
         /// </summary>
         [NonSerialized]
-		private EventHandler cleared;
-		public event EventHandler Cleared
-		{
-			add
-			{
-				cleared += value;
-			}
+        private EventHandler cleared;
+        public event EventHandler Cleared
+        {
+            add
+            {
+                cleared += value;
+            }
 
-			remove
-			{
-				cleared -= value;
-			}
-		}
+            remove
+            {
+                cleared -= value;
+            }
+        }
 
         /// <summary>
         /// This event is raised when a new element is inserted into the collection.
         /// The new element is at the array index specified by the Index property
         /// of the IndexEventArgs.
         /// </summary>
-		[NonSerialized]
-		private IndexEventHandler inserted;
-		public event IndexEventHandler Inserted
-		{
-			add
-			{
-				inserted += value;
-			}
+        [NonSerialized]
+        private IndexEventHandler inserted;
+        public event IndexEventHandler Inserted
+        {
+            add
+            {
+                inserted += value;
+            }
 
-			remove
-			{
-				inserted -= value;
-			}
-		}
+            remove
+            {
+                inserted -= value;
+            }
+        }
 
         /// <summary>
         /// This event is raised before an element is removed from the collection.
@@ -120,20 +120,20 @@ namespace PaintDotNet
         /// The index specified by the Index property of the IndexEventArgs is where
         /// the element used to be.
         /// </summary>
-		[NonSerialized]
-		private IndexEventHandler removedAt;
-		public event IndexEventHandler RemovedAt
-		{
-			add
-			{
-				removedAt += value;
-			}
+        [NonSerialized]
+        private IndexEventHandler removedAt;
+        public event IndexEventHandler RemovedAt
+        {
+            add
+            {
+                removedAt += value;
+            }
 
-			remove
-			{
-				removedAt -= value;
-			}
-		}
+            remove
+            {
+                removedAt -= value;
+            }
+        }
 
         private void OnRemovingAt(int index)
         {
@@ -143,29 +143,29 @@ namespace PaintDotNet
             }
         }
 
-		private void OnRemovedAt(int index)
-		{
-			if(removedAt != null)
-			{
-				removedAt(this, new IndexEventArgs(index));
-			}
-		}
+        private void OnRemovedAt(int index)
+        {
+            if (removedAt != null)
+            {
+                removedAt(this, new IndexEventArgs(index));
+            }
+        }
 
-		private void OnInserted(int index)
-		{
-			if(inserted != null)
-			{
-				inserted(this, new IndexEventArgs(index));
-			}
-		}
+        private void OnInserted(int index)
+        {
+            if (inserted != null)
+            {
+                inserted(this, new IndexEventArgs(index));
+            }
+        }
 
-		private void OnCleared()
-		{
-			if(cleared != null)
-			{
-				cleared(this, EventArgs.Empty);
-			}
-		}
+        private void OnCleared()
+        {
+            if (cleared != null)
+            {
+                cleared(this, EventArgs.Empty);
+            }
+        }
 
         private void OnChanging()
         {
@@ -183,8 +183,8 @@ namespace PaintDotNet
             }
         }
 
-		public LayerList(Document parent)
-		{
+        public LayerList(Document parent)
+        {
             this.parent = parent;
         }
 
@@ -194,7 +194,7 @@ namespace PaintDotNet
 
             if (layer.Width != parent.Width || layer.Height != parent.Height)
             {
-                throw new SizeMismatchException("Size of layer does not match size of containing document");
+                throw new ArgumentException("Size of layer does not match size of containing document");
             }
         }
 
@@ -212,7 +212,7 @@ namespace PaintDotNet
         public override void AddRange(ICollection c)
         {
             // Implemented using Add(), and thus we don't raise our own events
-            foreach(object o in c)
+            foreach (object o in c)
             {
                 Add(o);
             }
@@ -222,7 +222,7 @@ namespace PaintDotNet
         {
             OnChanging();
             base.Clear ();
-			OnCleared();
+            OnCleared();
             OnChanged();
         }
 
@@ -231,7 +231,7 @@ namespace PaintDotNet
             OnChanging();
             CheckLayerSize(value);
             base.Insert (index, value);
-			OnInserted(index);
+            OnInserted(index);
             OnChanged();
         }
 
@@ -249,10 +249,10 @@ namespace PaintDotNet
         public override void Remove(object obj)
         {
             //OnChanging();
-			int index = IndexOf(obj);
+            int index = IndexOf(obj);
             RemoveAt(index);
             //base.Remove (obj);
-			//OnRemovedAt(index);
+            //OnRemovedAt(index);
             //OnChanged();
         }
         */
@@ -262,7 +262,7 @@ namespace PaintDotNet
             OnChanging();
             OnRemovingAt(index);
             base.RemoveAt (index);
-			OnRemovedAt(index);
+            OnRemovedAt(index);
             OnChanged();
         }
 
@@ -282,6 +282,7 @@ namespace PaintDotNet
 
         public override void Reverse(int index, int count)
         {
+            throw new NotSupportedException();
         }
 
         public override void SetRange(int index, ICollection c)

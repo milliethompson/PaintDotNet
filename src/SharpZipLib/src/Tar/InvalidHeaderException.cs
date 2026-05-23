@@ -45,10 +45,18 @@ namespace ICSharpCode.SharpZipLib.Tar {
 	/// </summary>
 	public class InvalidHeaderException : System.IO.IOException
 	{
+		/// <summary>
+		/// Construct default instance
+		/// Used to indicate problems with Tar archive headers
+		/// </summary>
 		public InvalidHeaderException()
 		{
 		}
-	
+
+		/// <summary>
+		/// Construct instance with a message
+		/// Used to indicate problems with Tar archive headers
+		/// </summary>
 		public InvalidHeaderException(string msg) : base(msg)
 		{
 		}

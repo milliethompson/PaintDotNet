@@ -113,6 +113,56 @@
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="Release and Package|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				RuntimeLibrary="4"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/Setup-Config.exe"
+				LinkIncremental="1"
+				GenerateDebugInformation="TRUE"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"
+				Description="Making setup packages ..."
+				CommandLine="call &quot;$(ProjectDir)\SetAllUsers.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNet.msi&quot;
+..\tools\makensis /D$(ConfigurationName) MakeFullSetup.nsi
+"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -126,6 +176,12 @@
 			</File>
 			<File
 				RelativePath=".\MakeFullSetup.nsi">
+			</File>
+			<File
+				RelativePath=".\SetAllUsers.bat">
+			</File>
+			<File
+				RelativePath=".\WiRunSQL.vbs">
 			</File>
 		</Filter>
 		<Filter
@@ -148,12 +204,6 @@
 				RelativePath=".\Bootstrap\Settings.ini">
 			</File>
 		</Filter>
-		<File
-			RelativePath=".\SetAllUsers.bat">
-		</File>
-		<File
-			RelativePath=".\WiRunSQL.vbs">
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -16,8 +16,8 @@
                 DefaultTargetSchema = "IE50"
                 DelaySign = "false"
                 OutputType = "WinExe"
-                PreBuildEvent = '@rem register the WIA 2.0 library&#xd;&#xa;regsvr32 /s "$(SolutionDir)\WIAAutSDK\wiaaut.dll"'
-                PostBuildEvent = '@rem copy manifest file over&#xd;&#xa;echo Copying manifest to target dir ...&#xd;&#xa;copy "$(SolutionDir)\PaintDotNet.exe.manifest" "$(TargetDir)\"&#xd;&#xa;&#xd;&#xa;@rem copy CpuCount.dll over&#xd;&#xa;echo Copying CpuCount.dll to target dir ...&#xd;&#xa;copy "$(SolutionDir)\CpuCount\$(ConfigurationName)\CpuCount.dll" "$(TargetDir)\"&#xd;&#xa;&#xd;&#xa;@rem compiling CHM help file&#xd;&#xa;echo Compiling PaintDotNet.chm ...&#xd;&#xa;"$(SolutionDir)\makechm\bin\$(ConfigurationName)\makechm.exe" "..\..\tools\hhc.exe" "..\..\chm\PaintDotNet.hhp"&#xd;&#xa;echo Copying PaintDotNet.chm to target dir ...&#xd;&#xa;copy ..\..\chm\PaintDotNet.chm&#xd;&#xa;'
+                PreBuildEvent = '@rem register the WIA 2.0 library&#xd;&#xa;regsvr32 /s "$(SolutionDir)\WIAAutSDK\wiaaut.dll"&#xd;&#xa;'
+                PostBuildEvent = '@rem copy manifest file over&#xd;&#xa;echo Copying manifest to target dir ...&#xd;&#xa;copy "$(SolutionDir)\PaintDotNet.exe.manifest" "$(TargetDir)\"&#xd;&#xa;&#xd;&#xa;@rem copy CpuCount.dll over&#xd;&#xa;echo Copying CpuCount.dll to target dir ...&#xd;&#xa;copy "$(SolutionDir)\CpuCount\$(ConfigurationName)\CpuCount.dll" "$(TargetDir)\"&#xd;&#xa;&#xd;&#xa;@rem copy RotoZoomer.dll over&#xd;&#xa;mkdir "$(TargetDir)\Effects"&#xd;&#xa;copy "$(SolutionDir)\Effects\RotoZoomer\bin\$(ConfigurationName)\RotoZoomer.dll" "$(TargetDir)\Effects"&#xd;&#xa;&#xd;&#xa;@rem create RotoZoomer sample zip&#xd;&#xa;pushd "$(SolutionDir)"&#xd;&#xa;call MakeRZZip.bat "$(ConfigurationName)"&#xd;&#xa;popd&#xd;&#xa;&#xd;&#xa;@rem compiling CHM help file&#xd;&#xa;"$(SolutionDir)\makechm\bin\$(ConfigurationName)\makechm.exe" "..\..\tools\hhc.exe" "..\..\chm\PaintDotNet.hhp"&#xd;&#xa;echo Copying PaintDotNet.chm to target dir ...&#xd;&#xa;copy ..\..\chm\PaintDotNet.chm&#xd;&#xa;&#xd;&#xa;:done'
                 RootNamespace = "PaintDotNet"
                 RunPostBuildEvent = "OnBuildSuccess"
                 StartupObject = ""
@@ -62,6 +62,26 @@
                     TreatWarningsAsErrors = "true"
                     WarningLevel = "4"
                 />
+                <Config
+                    Name = "Release and Package"
+                    AllowUnsafeBlocks = "true"
+                    BaseAddress = "285212672"
+                    CheckForOverflowUnderflow = "false"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = ""
+                    DocumentationFile = ""
+                    DebugSymbols = "false"
+                    FileAlignment = "4096"
+                    IncrementalBuild = "false"
+                    NoStdLib = "false"
+                    NoWarn = ""
+                    Optimize = "true"
+                    OutputPath = "bin\Release\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "true"
+                    WarningLevel = "4"
+                />
             </Settings>
             <References>
                 <Reference
@@ -83,11 +103,6 @@
                     Name = "System.Windows.Forms"
                     AssemblyName = "System.Windows.Forms"
                     HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Windows.Forms.dll"
-                />
-                <Reference
-                    Name = "System.Runtime.Serialization.Formatters.Soap"
-                    AssemblyName = "System.Runtime.Serialization.Formatters.Soap"
-                    HintPath = "..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Runtime.Serialization.Formatters.Soap.dll"
                 />
                 <Reference
                     Name = "SharpZipLib"
@@ -117,6 +132,16 @@
                     AssemblyName = "System.Xml"
                     HintPath = "..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.XML.dll"
                 />
+                <Reference
+                    Name = "PdnLib"
+                    Project = "{1EADE568-A866-4DD4-9898-0A151E3F0E26}"
+                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+                />
+                <Reference
+                    Name = "Effects"
+                    Project = "{2E4E8805-00F7-4B18-A967-C23994BBCE75}"
+                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+                />
             </References>
         </Build>
         <Files>
@@ -136,21 +161,6 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "AmountEffectConfigDialog.cs"
-                    SubType = "Form"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "AmountEffectConfigDialog.resx"
-                    DependentUpon = "AmountEffectConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "AmountEffectConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "AnchorChooserControl.cs"
                     SubType = "UserControl"
                     BuildAction = "Compile"
@@ -166,32 +176,7 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "AngleChooserControl.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "AngleChooserControl.resx"
-                    DependentUpon = "AngleChooserControl.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
                     RelPath = "AssemblyInfo.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BackgroundEffectRenderer.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BinaryPixelOp.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BinaryPixelOps.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -209,11 +194,6 @@
                     RelPath = "BitmapLayerPropertiesDialog.resx"
                     DependentUpon = "BitmapLayerPropertiesDialog.cs"
                     BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "BlurEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
                 />
                 <File
                     RelPath = "BrushConfigWidget.cs"
@@ -253,26 +233,6 @@
                 <File
                     RelPath = "CanvasSizeDialog.resx"
                     DependentUpon = "CanvasSizeDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "CloneStampTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorBgra.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorConfigWidget.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorConfigWidget.resx"
-                    DependentUpon = "ColorConfigWidget.cs"
                     BuildAction = "EmbeddedResource"
                 />
                 <File
@@ -341,6 +301,11 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
+                    RelPath = "CommonAction.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "CommonActionsWidget.cs"
                     SubType = "UserControl"
                     BuildAction = "Compile"
@@ -356,9 +321,14 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "ConvolutionFilterEffect.cs"
-                    SubType = "Code"
+                    RelPath = "ControlShadow.cs"
+                    SubType = "Component"
                     BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ControlShadow.resx"
+                    DependentUpon = "ControlShadow.cs"
+                    BuildAction = "EmbeddedResource"
                 />
                 <File
                     RelPath = "CropAction.cs"
@@ -366,17 +336,7 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "CursorChanger.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "DeleteLayerHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DesaturateEffect.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -426,32 +386,17 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "EditingMode.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Effect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EffectConfigDialog.cs"
-                    SubType = "Form"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EffectConfigDialog.resx"
-                    DependentUpon = "EffectConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "EffectConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "EllipseTool.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "EnumValueEventArgs.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "EnumValueEventHandler.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -576,13 +521,13 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "HistoryElementControl.cs"
+                    RelPath = "HistoryElement.cs"
                     SubType = "UserControl"
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "HistoryElementControl.resx"
-                    DependentUpon = "HistoryElementControl.cs"
+                    RelPath = "HistoryElement.resx"
+                    DependentUpon = "HistoryElement.cs"
                     BuildAction = "EmbeddedResource"
                 />
                 <File
@@ -616,16 +561,6 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "IConfigurableEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IInvalidate.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "IndexEventArgs.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -637,11 +572,6 @@
                 />
                 <File
                     RelPath = "InvalidateDelegate.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "InvertColorsEffect.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -661,32 +591,12 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "IOOperation.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IPixelOp.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IrregularImage.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IrregularSurface.cs"
+                    RelPath = "IOOperationType.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "ISaveWithProgress.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ISurfaceDraw.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -711,13 +621,13 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "LayerElementControl.cs"
+                    RelPath = "LayerElement.cs"
                     SubType = "UserControl"
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "LayerElementControl.resx"
-                    DependentUpon = "LayerElementControl.cs"
+                    RelPath = "LayerElement.resx"
+                    DependentUpon = "LayerElement.cs"
                     BuildAction = "EmbeddedResource"
                 />
                 <File
@@ -762,15 +672,10 @@
                 />
                 <File
                     RelPath = "License.txt"
-                    BuildAction = "Content"
+                    BuildAction = "None"
                 />
                 <File
                     RelPath = "LineTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "List.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -810,47 +715,12 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "MemoryBlock.cs"
+                    RelPath = "MostRecentFile.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "MosaicEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MosaicEffectConfigDialog.cs"
-                    SubType = "Form"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MosaicEffectConfigDialog.resx"
-                    DependentUpon = "MosaicEffectConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "MosaicEffectConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MotionBlurEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MotionBlurEffectConfigDialog.cs"
-                    SubType = "Form"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MotionBlurEffectConfigDialog.resx"
-                    DependentUpon = "MotionBlurEffectConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "MotionBlurEffectConfigToken.cs"
+                    RelPath = "MostRecentFiles.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -913,7 +783,7 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "PaintDotNetLogo.bmp"
+                    RelPath = "PaintDotNetLogo.png"
                     BuildAction = "EmbeddedResource"
                 />
                 <File
@@ -932,14 +802,9 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "PdnBaseForm.cs"
-                    SubType = "Form"
+                    RelPath = "PdnInfo.cs"
+                    SubType = "Code"
                     BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PdnBaseForm.resx"
-                    DependentUpon = "PdnBaseForm.cs"
-                    BuildAction = "EmbeddedResource"
                 />
                 <File
                     RelPath = "PencilTool.cs"
@@ -958,26 +823,6 @@
                 />
                 <File
                     RelPath = "PenInfo.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PixelOp.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PixelOpType.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PlacedImage.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PlacedSurface.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -1022,21 +867,6 @@
                 />
                 <File
                     RelPath = "RectangleTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RenderArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RenderedTileEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RenderedTileEventHandler.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -1096,27 +926,12 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "ScaleFactor.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Scanline.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "SelectAllAction.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "SelectionHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Set.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -1141,17 +956,7 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "SharpenEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "SiphonStream.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SizeMismatchException.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -1169,21 +974,6 @@
                     RelPath = "Startup.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Surface.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SurfaceBox.cs"
-                    SubType = "Component"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SurfaceBox.resx"
-                    DependentUpon = "SurfaceBox.cs"
-                    BuildAction = "EmbeddedResource"
                 />
                 <File
                     RelPath = "SurfaceForClipboard.cs"
@@ -1226,37 +1016,12 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "UnaryPixelOp.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "UnaryPixelOps.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "UserBlendOp.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "UserBlendOps.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Utility.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "VoidVoidDelegate.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "WaitCursorChanger.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -1274,18 +1039,6 @@
                     RelPath = "WorkspaceOptionsConfigWidget.resx"
                     DependentUpon = "WorkspaceOptionsConfigWidget.cs"
                     BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "chm\Index.hhk"
-                    BuildAction = "None"
-                />
-                <File
-                    RelPath = "chm\PaintDotNet.hhp"
-                    BuildAction = "None"
-                />
-                <File
-                    RelPath = "chm\Table of Contents.hhc"
-                    BuildAction = "None"
                 />
                 <File
                     RelPath = "Cursors\ColorPickerCursor.cur"
@@ -1348,10 +1101,6 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "Icons\CloneStampToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
                     RelPath = "Icons\ColorPickerToolIcon.bmp"
                     BuildAction = "EmbeddedResource"
                 />
@@ -1389,6 +1138,10 @@
                 />
                 <File
                     RelPath = "Icons\HistoryRewindIcon.bmp"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Icons\ImageFromDiskIcon.bmp"
                     BuildAction = "EmbeddedResource"
                 />
                 <File
@@ -1464,11 +1217,51 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
+                    RelPath = "Icons\MenuImageActualSizeIcon.bmp"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Icons\MenuImageCanvasSizeIcon.bmp"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Icons\MenuImageCropIcon.bmp"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
                     RelPath = "Icons\MenuImageFlipHorizontalIcon.bmp"
                     BuildAction = "EmbeddedResource"
                 />
                 <File
                     RelPath = "Icons\MenuImageFlipVerticalIcon.bmp"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Icons\MenuImageResizeIcon.bmp"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Icons\MenuImageRotate180CCWIcon.bmp"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Icons\MenuImageRotate180CWIcon.bmp"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Icons\MenuImageRotate270CCWIcon.bmp"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Icons\MenuImageRotate270CWIcon.bmp"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Icons\MenuImageRotate90CCWIcon.bmp"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Icons\MenuImageRotate90CWIcon.bmp"
                     BuildAction = "EmbeddedResource"
                 />
                 <File
@@ -1532,10 +1325,6 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "Icons\NewImageIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
                     RelPath = "Icons\PaintBrushToolIcon.bmp"
                     BuildAction = "EmbeddedResource"
                 />
@@ -1549,10 +1338,6 @@
                 />
                 <File
                     RelPath = "Icons\PencilToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\PolyLineToolIcon.bmp"
                     BuildAction = "EmbeddedResource"
                 />
                 <File
@@ -1614,16 +1399,6 @@
                 <File
                     RelPath = "Icons\TrashCanIcon.bmp"
                     BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Threading\ThreadPool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Threading\WaitableCounter.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
                 />
             </Include>
         </Files>

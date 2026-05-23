@@ -1,8 +1,10 @@
 Microsoft Visual Studio Solution File, Format Version 8.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "paintdotnet", "paintdotnet.csproj", "{34920450-488E-41DF-8565-AA22C2A56902}"
 	ProjectSection(ProjectDependencies) = postProject
+		{2E4E8805-00F7-4B18-A967-C23994BBCE75} = {2E4E8805-00F7-4B18-A967-C23994BBCE75}
 		{8E186A1F-3DDE-4B66-8E5C-D3C20F9B835C} = {8E186A1F-3DDE-4B66-8E5C-D3C20F9B835C}
 		{77B00122-EF30-459D-8789-8C6A97537C02} = {77B00122-EF30-459D-8789-8C6A97537C02}
+		{1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7} = {1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7}
 		{643D256B-A137-49F7-9ECE-0895E68C8801} = {643D256B-A137-49F7-9ECE-0895E68C8801}
 	EndProjectSection
 EndProject
@@ -40,44 +42,99 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Paint.NET Setup Config", "S
 		{082CE919-258F-49DE-8DB7-7E5C9DD79501} = {082CE919-258F-49DE-8DB7-7E5C9DD79501}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdnLib", "PdnLib\PdnLib.csproj", "{1EADE568-A866-4DD4-9898-0A151E3F0E26}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SetupJit", "SetupJit\SetupJit.csproj", "{A57B0938-1160-4A79-8FC2-B8D1519DADF2}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Effects", "Effects\Effects.csproj", "{2E4E8805-00F7-4B18-A967-C23994BBCE75}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RotoZoomer", "Effects\RotoZoomer\RotoZoomer.csproj", "{1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2E4E8805-00F7-4B18-A967-C23994BBCE75} = {2E4E8805-00F7-4B18-A967-C23994BBCE75}
+		{1EADE568-A866-4DD4-9898-0A151E3F0E26} = {1EADE568-A866-4DD4-9898-0A151E3F0E26}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
 		Release = Release
+		Release and Package = Release and Package
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
 		{34920450-488E-41DF-8565-AA22C2A56902}.Debug.ActiveCfg = Debug|.NET
 		{34920450-488E-41DF-8565-AA22C2A56902}.Debug.Build.0 = Debug|.NET
 		{34920450-488E-41DF-8565-AA22C2A56902}.Release.ActiveCfg = Release|.NET
 		{34920450-488E-41DF-8565-AA22C2A56902}.Release.Build.0 = Release|.NET
+		{34920450-488E-41DF-8565-AA22C2A56902}.Release and Package.ActiveCfg = Release|.NET
+		{34920450-488E-41DF-8565-AA22C2A56902}.Release and Package.Build.0 = Release|.NET
 		{8E186A1F-3DDE-4B66-8E5C-D3C20F9B835C}.Debug.ActiveCfg = Debug|.NET
 		{8E186A1F-3DDE-4B66-8E5C-D3C20F9B835C}.Debug.Build.0 = Debug|.NET
 		{8E186A1F-3DDE-4B66-8E5C-D3C20F9B835C}.Release.ActiveCfg = Release|.NET
 		{8E186A1F-3DDE-4B66-8E5C-D3C20F9B835C}.Release.Build.0 = Release|.NET
+		{8E186A1F-3DDE-4B66-8E5C-D3C20F9B835C}.Release and Package.ActiveCfg = Release|.NET
+		{8E186A1F-3DDE-4B66-8E5C-D3C20F9B835C}.Release and Package.Build.0 = Release|.NET
 		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}.Debug.ActiveCfg = Debug|Win32
 		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}.Debug.Build.0 = Debug|Win32
 		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}.Release.ActiveCfg = Release|Win32
 		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}.Release.Build.0 = Release|Win32
+		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}.Release and Package.ActiveCfg = Release|Win32
+		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}.Release and Package.Build.0 = Release|Win32
 		{643D256B-A137-49F7-9ECE-0895E68C8801}.Debug.ActiveCfg = Debug|.NET
 		{643D256B-A137-49F7-9ECE-0895E68C8801}.Debug.Build.0 = Debug|.NET
 		{643D256B-A137-49F7-9ECE-0895E68C8801}.Release.ActiveCfg = Release|.NET
 		{643D256B-A137-49F7-9ECE-0895E68C8801}.Release.Build.0 = Release|.NET
+		{643D256B-A137-49F7-9ECE-0895E68C8801}.Release and Package.ActiveCfg = Release|.NET
+		{643D256B-A137-49F7-9ECE-0895E68C8801}.Release and Package.Build.0 = Release|.NET
 		{082CE919-258F-49DE-8DB7-7E5C9DD79501}.Debug.ActiveCfg = Debug
 		{082CE919-258F-49DE-8DB7-7E5C9DD79501}.Release.ActiveCfg = Release
-		{082CE919-258F-49DE-8DB7-7E5C9DD79501}.Release.Build.0 = Release
+		{082CE919-258F-49DE-8DB7-7E5C9DD79501}.Release and Package.ActiveCfg = Release
+		{082CE919-258F-49DE-8DB7-7E5C9DD79501}.Release and Package.Build.0 = Release
 		{6376F236-ADF7-4E71-BA6B-9969E566BC88}.Debug.ActiveCfg = Debug
 		{6376F236-ADF7-4E71-BA6B-9969E566BC88}.Release.ActiveCfg = Release
-		{6376F236-ADF7-4E71-BA6B-9969E566BC88}.Release.Build.0 = Release
+		{6376F236-ADF7-4E71-BA6B-9969E566BC88}.Release and Package.ActiveCfg = Release
+		{6376F236-ADF7-4E71-BA6B-9969E566BC88}.Release and Package.Build.0 = Release
 		{0927C737-D924-478F-A01D-50AD01E80656}.Debug.ActiveCfg = Debug
 		{0927C737-D924-478F-A01D-50AD01E80656}.Release.ActiveCfg = Release
-		{0927C737-D924-478F-A01D-50AD01E80656}.Release.Build.0 = Release
+		{0927C737-D924-478F-A01D-50AD01E80656}.Release and Package.ActiveCfg = Release
+		{0927C737-D924-478F-A01D-50AD01E80656}.Release and Package.Build.0 = Release
 		{77B00122-EF30-459D-8789-8C6A97537C02}.Debug.ActiveCfg = Debug|.NET
 		{77B00122-EF30-459D-8789-8C6A97537C02}.Debug.Build.0 = Debug|.NET
 		{77B00122-EF30-459D-8789-8C6A97537C02}.Release.ActiveCfg = Release|.NET
 		{77B00122-EF30-459D-8789-8C6A97537C02}.Release.Build.0 = Release|.NET
+		{77B00122-EF30-459D-8789-8C6A97537C02}.Release and Package.ActiveCfg = Release|.NET
+		{77B00122-EF30-459D-8789-8C6A97537C02}.Release and Package.Build.0 = Release|.NET
 		{40A8C52E-F2F8-49D7-A825-A0411BD7306A}.Debug.ActiveCfg = Debug|Win32
 		{40A8C52E-F2F8-49D7-A825-A0411BD7306A}.Release.ActiveCfg = Release|Win32
-		{40A8C52E-F2F8-49D7-A825-A0411BD7306A}.Release.Build.0 = Release|Win32
+		{40A8C52E-F2F8-49D7-A825-A0411BD7306A}.Release and Package.ActiveCfg = Release|Win32
+		{40A8C52E-F2F8-49D7-A825-A0411BD7306A}.Release and Package.Build.0 = Release|Win32
+		{1EADE568-A866-4DD4-9898-0A151E3F0E26}.Debug.ActiveCfg = Debug|.NET
+		{1EADE568-A866-4DD4-9898-0A151E3F0E26}.Debug.Build.0 = Debug|.NET
+		{1EADE568-A866-4DD4-9898-0A151E3F0E26}.Release.ActiveCfg = Release|.NET
+		{1EADE568-A866-4DD4-9898-0A151E3F0E26}.Release.Build.0 = Release|.NET
+		{1EADE568-A866-4DD4-9898-0A151E3F0E26}.Release and Package.ActiveCfg = Release|.NET
+		{1EADE568-A866-4DD4-9898-0A151E3F0E26}.Release and Package.Build.0 = Release|.NET
+		{A57B0938-1160-4A79-8FC2-B8D1519DADF2}.Debug.ActiveCfg = Debug|.NET
+		{A57B0938-1160-4A79-8FC2-B8D1519DADF2}.Release.ActiveCfg = Release|.NET
+		{A57B0938-1160-4A79-8FC2-B8D1519DADF2}.Release and Package.ActiveCfg = Release|.NET
+		{A57B0938-1160-4A79-8FC2-B8D1519DADF2}.Release and Package.Build.0 = Release|.NET
+		{2E4E8805-00F7-4B18-A967-C23994BBCE75}.Debug.ActiveCfg = Debug|.NET
+		{2E4E8805-00F7-4B18-A967-C23994BBCE75}.Debug.Build.0 = Debug|.NET
+		{2E4E8805-00F7-4B18-A967-C23994BBCE75}.Release.ActiveCfg = Release|.NET
+		{2E4E8805-00F7-4B18-A967-C23994BBCE75}.Release.Build.0 = Release|.NET
+		{2E4E8805-00F7-4B18-A967-C23994BBCE75}.Release and Package.ActiveCfg = Release|.NET
+		{2E4E8805-00F7-4B18-A967-C23994BBCE75}.Release and Package.Build.0 = Release|.NET
+		{1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7}.Debug.ActiveCfg = Debug|.NET
+		{1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7}.Debug.Build.0 = Debug|.NET
+		{1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7}.Release.ActiveCfg = Release|.NET
+		{1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7}.Release.Build.0 = Release|.NET
+		{1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7}.Release and Package.ActiveCfg = Release|.NET
+		{1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7}.Release and Package.Build.0 = Release|.NET
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

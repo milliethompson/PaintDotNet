@@ -3,11 +3,14 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for DocumentWidgets.
-	/// </summary>
-	public class DocumentWidgets
-	{
+    /// <summary>
+    /// This class is used to hold references to many of the UI elements
+    /// that are privately encapsulated in the DocumentWorkspace class.
+    /// This allows other program elements to access these objects without
+    /// breaking OO best practices.
+    /// </summary>
+    public class DocumentWidgets
+    {
         private DocumentWorkspace workspace;
 
         private FlowPanel topDock;
@@ -94,19 +97,19 @@ namespace PaintDotNet
             }
         }
 
-		private MainToolBarForm mainToolBarForm;
-		public MainToolBarForm MainToolBarForm
-		{
-			get
-			{
-				return mainToolBarForm;
-			}
+        private MainToolBarForm mainToolBarForm;
+        public MainToolBarForm MainToolBarForm
+        {
+            get
+            {
+                return mainToolBarForm;
+            }
 
-			set
-			{
-				mainToolBarForm = value;
-			}
-		}
+            set
+            {
+                mainToolBarForm = value;
+            }
+        }
 
         public MainToolBar MainToolBar
         {
@@ -117,12 +120,12 @@ namespace PaintDotNet
         }
 
         public ColorDisplayWidget ColorDisplayWidget
-		{
-			get
-			{
-				return mainToolBarForm.MainToolBar.ColorDisplay;
-			}
-		}
+        {
+            get
+            {
+                return mainToolBarForm.MainToolBar.ColorDisplay;
+            }
+        }
 
         private LayerForm layerForm;
         public LayerForm LayerForm
@@ -168,24 +171,24 @@ namespace PaintDotNet
             }
         }
 
-		private ColorsForm colorsForm;
-		public ColorsForm ColorsForm
-		{
-			get
-			{
-				return colorsForm;
-			}
+        private ColorsForm colorsForm;
+        public ColorsForm ColorsForm
+        {
+            get
+            {
+                return colorsForm;
+            }
 
-			set
-			{
-				colorsForm = value;
-			}
-		}
+            set
+            {
+                colorsForm = value;
+            }
+        }
 
 
-		public DocumentWidgets(DocumentWorkspace workspace)
-		{
+        public DocumentWidgets(DocumentWorkspace workspace)
+        {
             this.workspace = workspace;
-		}
-	}
+        }
+    }
 }

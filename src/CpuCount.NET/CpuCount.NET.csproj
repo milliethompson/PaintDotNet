@@ -17,7 +17,7 @@
                 DelaySign = "false"
                 OutputType = "Library"
                 PreBuildEvent = ""
-                PostBuildEvent = '@rem copy CPUCount.dll over&#xd;&#xa;copy "$(SolutionDir)\CpuCount\$(ConfigurationName)\CpuCount.dll" "$(TargetDir)\"'
+                PostBuildEvent = '@rem copy CPUCount.dll over&#xd;&#xa;copy "$(SolutionDir)\CpuCount\$(ConfigurationName)\CpuCount.dll" "$(TargetDir)\"&#xd;&#xa;'
                 RootNamespace = "CpuCount.NET"
                 RunPostBuildEvent = "OnBuildSuccess"
                 StartupObject = ""
@@ -44,6 +44,26 @@
                 />
                 <Config
                     Name = "Release"
+                    AllowUnsafeBlocks = "false"
+                    BaseAddress = "285212672"
+                    CheckForOverflowUnderflow = "false"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = "TRACE"
+                    DocumentationFile = ""
+                    DebugSymbols = "false"
+                    FileAlignment = "4096"
+                    IncrementalBuild = "false"
+                    NoStdLib = "false"
+                    NoWarn = ""
+                    Optimize = "true"
+                    OutputPath = "bin\Release\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "true"
+                    WarningLevel = "4"
+                />
+                <Config
+                    Name = "Release and Package"
                     AllowUnsafeBlocks = "false"
                     BaseAddress = "285212672"
                     CheckForOverflowUnderflow = "false"

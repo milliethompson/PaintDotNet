@@ -7,11 +7,11 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for AnchorChooserControl.
-	/// </summary>
-	public class AnchorChooserControl : System.Windows.Forms.UserControl
-	{
+    /// <summary>
+    /// Summary description for AnchorChooserControl.
+    /// </summary>
+    public class AnchorChooserControl : System.Windows.Forms.UserControl
+    {
         private System.Windows.Forms.RadioButton middleButton;
         private System.Windows.Forms.RadioButton leftButton;
         private System.Windows.Forms.RadioButton topRightButton;
@@ -22,10 +22,10 @@ namespace PaintDotNet
         private System.Windows.Forms.RadioButton bottomButton;
         private System.Windows.Forms.RadioButton bottomLeftButton;
         private System.Windows.Forms.RadioButton rightButton;
-		/// <summary> 
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
+        /// <summary> 
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
 
         private Point ButtonToXy(RadioButton button)
         {
@@ -91,11 +91,11 @@ namespace PaintDotNet
 
 
         public AnchorChooserControl()
-		{
-			// This call is required by the Windows.Forms Form Designer.
-			InitializeComponent();
+        {
+            // This call is required by the Windows.Forms Form Designer.
+            InitializeComponent();
 
-			// TODO: Add any initialization after the InitializeComponent call
+            // TODO: Add any initialization after the InitializeComponent call
             buttons = new System.Windows.Forms.RadioButton[3,3];
             topLeftButton.Tag = AnchorEdge.TopLeft;
             topButton.Tag = AnchorEdge.Top;
@@ -146,28 +146,28 @@ namespace PaintDotNet
             this.AnchorEdge = (AnchorEdge)((RadioButton)sender).Tag;
         }
 
-		/// <summary> 
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary> 
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
-		#region Component Designer generated code
-		/// <summary> 
-		/// Required method for Designer support - do not modify 
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Component Designer generated code
+        /// <summary> 
+        /// Required method for Designer support - do not modify 
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.bottomRightButton = new System.Windows.Forms.RadioButton();
             this.bottomButton = new System.Windows.Forms.RadioButton();
             this.bottomLeftButton = new System.Windows.Forms.RadioButton();
@@ -284,6 +284,6 @@ namespace PaintDotNet
             this.ResumeLayout(false);
 
         }
-		#endregion
-	}
+        #endregion
+    }
 }

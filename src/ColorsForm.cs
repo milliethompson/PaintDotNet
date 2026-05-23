@@ -6,33 +6,33 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for ColorsForm.
-	/// </summary>
-	public class ColorsForm : 
+    /// <summary>
+    /// Summary description for ColorsForm.
+    /// </summary>
+    public class ColorsForm : 
         FloatingToolForm
-	{
-		private System.Windows.Forms.GroupBox groupBox;
-		private System.Windows.Forms.NumericUpDown redUpDown;
-		private System.Windows.Forms.NumericUpDown greenUpDown;
-		private System.Windows.Forms.NumericUpDown blueUpDown;
-		private System.Windows.Forms.Label label1;
-		private System.Windows.Forms.Label label2;
-		private System.Windows.Forms.Label label3;
-		private System.Windows.Forms.Label label6;
-		private System.Windows.Forms.NumericUpDown hueUpDown;
-		private System.Windows.Forms.NumericUpDown valueUpDown;
-		private System.Windows.Forms.NumericUpDown saturationUpDown;
-		/// <summary>
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
-		private System.Windows.Forms.Label label7;
-		private System.Windows.Forms.Label label8;
-		private System.Windows.Forms.GroupBox rgbGroupBox;
-		private System.Windows.Forms.GroupBox hsvGroupBox;
-        private DotNetWidgets.FlatComboBox whichUserColorBox;
-        private PaintDotNet.ColorGradientControl colorGradientControl;
+    {
+        private System.Windows.Forms.GroupBox groupBox;
+        private System.Windows.Forms.NumericUpDown redUpDown;
+        private System.Windows.Forms.NumericUpDown greenUpDown;
+        private System.Windows.Forms.NumericUpDown blueUpDown;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.NumericUpDown hueUpDown;
+        private System.Windows.Forms.NumericUpDown valueUpDown;
+        private System.Windows.Forms.NumericUpDown saturationUpDown;
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
+        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.GroupBox rgbGroupBox;
+        private System.Windows.Forms.GroupBox hsvGroupBox;
+        private System.Windows.Forms.ComboBox whichUserColorBox;
+        private ColorGradientControl colorGradientControl;
         private System.Windows.Forms.NumericUpDown alphaUpDown;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TrackBar alphaTrackBar;
@@ -97,7 +97,7 @@ namespace PaintDotNet
 
                     if (WhichUserColor == WhichUserColor.Foreground)
                     {
-                        Utility.SetNumericUpDownValue(alphaUpDown, value.a);
+                        Utility.SetNumericUpDownValue(alphaUpDown, value.A);
                         SyncHsvFromRgb(value);
                     }
                 }
@@ -136,7 +136,7 @@ namespace PaintDotNet
 
                     if (WhichUserColor == WhichUserColor.Background)
                     {
-                        Utility.SetNumericUpDownValue(alphaUpDown, value.a);
+                        Utility.SetNumericUpDownValue(alphaUpDown, value.A);
                         SyncHsvFromRgb(value);
                     }
                 }
@@ -225,28 +225,28 @@ namespace PaintDotNet
             moreLessButton.PerformClick();
         }
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Windows Form Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.colorGradientControl = new PaintDotNet.ColorGradientControl();
             this.groupBox = new System.Windows.Forms.GroupBox();
             this.colorWheel = new PaintDotNet.ColorWheel();
@@ -264,7 +264,7 @@ namespace PaintDotNet
             this.hueUpDown = new System.Windows.Forms.NumericUpDown();
             this.rgbGroupBox = new System.Windows.Forms.GroupBox();
             this.hsvGroupBox = new System.Windows.Forms.GroupBox();
-            this.whichUserColorBox = new DotNetWidgets.FlatComboBox();
+            this.whichUserColorBox = new System.Windows.Forms.ComboBox();
             this.alphaUpDown = new System.Windows.Forms.NumericUpDown();
             this.label4 = new System.Windows.Forms.Label();
             this.alphaTrackBar = new System.Windows.Forms.TrackBar();
@@ -518,7 +518,6 @@ namespace PaintDotNet
             // whichUserColorBox
             // 
             this.whichUserColorBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.whichUserColorBox.InitialText = "";
             this.whichUserColorBox.Location = new System.Drawing.Point(8, 8);
             this.whichUserColorBox.Name = "whichUserColorBox";
             this.whichUserColorBox.Size = new System.Drawing.Size(121, 21);
@@ -554,11 +553,13 @@ namespace PaintDotNet
             // alphaTrackBar
             // 
             this.alphaTrackBar.AutoSize = false;
+            this.alphaTrackBar.LargeChange = 64;
             this.alphaTrackBar.Location = new System.Drawing.Point(8, 40);
             this.alphaTrackBar.Maximum = 255;
             this.alphaTrackBar.Name = "alphaTrackBar";
-            this.alphaTrackBar.Size = new System.Drawing.Size(128, 24);
+            this.alphaTrackBar.Size = new System.Drawing.Size(128, 25);
             this.alphaTrackBar.TabIndex = 8;
+            this.alphaTrackBar.TickFrequency = 64;
             this.alphaTrackBar.TickStyle = System.Windows.Forms.TickStyle.None;
             this.alphaTrackBar.ValueChanged += new System.EventHandler(this.alphaTrackBar_ValueChanged);
             // 
@@ -635,6 +636,16 @@ namespace PaintDotNet
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "ColorsForm";
             this.Text = "Colors";
+            this.Controls.SetChildIndex(this.moreModeGroupBoxSentinel, 0);
+            this.Controls.SetChildIndex(this.lessModeGroupBoxSentinel, 0);
+            this.Controls.SetChildIndex(this.alphaGroupBox, 0);
+            this.Controls.SetChildIndex(this.groupBox, 0);
+            this.Controls.SetChildIndex(this.rgbGroupBox, 0);
+            this.Controls.SetChildIndex(this.whichUserColorBox, 0);
+            this.Controls.SetChildIndex(this.hsvGroupBox, 0);
+            this.Controls.SetChildIndex(this.moreLessButton, 0);
+            this.Controls.SetChildIndex(this.lessModeButtonSentinel, 0);
+            this.Controls.SetChildIndex(this.moreModeButtonSentinel, 0);
             this.groupBox.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.redUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.greenUpDown)).EndInit();
@@ -648,8 +659,9 @@ namespace PaintDotNet
             ((System.ComponentModel.ISupportInitialize)(this.alphaTrackBar)).EndInit();
             this.alphaGroupBox.ResumeLayout(false);
             this.ResumeLayout(false);
+
         }
-		#endregion
+        #endregion
 
         private void whichUserColorBox_SelectedIndexChanged(object sender, System.EventArgs e)
         {
@@ -670,10 +682,10 @@ namespace PaintDotNet
             }
 
             PushIgnoreChangedEvents();
-            Utility.SetNumericUpDownValue(redUpDown, color.r);
-            Utility.SetNumericUpDownValue(greenUpDown, color.g);
-            Utility.SetNumericUpDownValue(blueUpDown, color.b);
-            Utility.SetNumericUpDownValue(alphaUpDown, color.a);
+            Utility.SetNumericUpDownValue(redUpDown, color.R);
+            Utility.SetNumericUpDownValue(greenUpDown, color.G);
+            Utility.SetNumericUpDownValue(blueUpDown, color.B);
+            Utility.SetNumericUpDownValue(alphaUpDown, color.A);
             PopIgnoreChangedEvents();
 
             SyncHsvFromRgb(color);
@@ -694,10 +706,10 @@ namespace PaintDotNet
             Utility.SetNumericUpDownValue(saturationUpDown, hsvColor.Saturation);
             Utility.SetNumericUpDownValue(valueUpDown, hsvColor.Value);
 
-            Utility.SetNumericUpDownValue(redUpDown, color.r);
-            Utility.SetNumericUpDownValue(greenUpDown, color.g);
-            Utility.SetNumericUpDownValue(blueUpDown, color.b);
-            Utility.SetNumericUpDownValue(alphaUpDown, color.a);
+            Utility.SetNumericUpDownValue(redUpDown, color.R);
+            Utility.SetNumericUpDownValue(greenUpDown, color.G);
+            Utility.SetNumericUpDownValue(blueUpDown, color.B);
+            Utility.SetNumericUpDownValue(alphaUpDown, color.A);
 
             colorGradientControl.TopColor = new HsvColor(hsvColor.Hue, hsvColor.Saturation, 255).ToColor();
             colorGradientControl.BottomColor = new HsvColor(hsvColor.Hue, hsvColor.Saturation, 0).ToColor();
@@ -796,14 +808,11 @@ namespace PaintDotNet
                 switch (WhichUserColor)
                 {
                     case WhichUserColor.Foreground:
-                        //userForeColor = ColorBgra.FromBgra(userForeColor.b, userForeColor.g, userForeColor.r, (byte)alphaTrackBar.Value);
-                        OnUserForeColorChanged(ColorBgra.FromBgra(lastForeColor.b, lastForeColor.g, lastForeColor.r, (byte)alphaTrackBar.Value));
+                        OnUserForeColorChanged(ColorBgra.FromBgra(lastForeColor.B, lastForeColor.G, lastForeColor.R, (byte)alphaTrackBar.Value));
                         break;
 
                     case WhichUserColor.Background:
-                        //userBackColor = ColorBgra.FromBgra(userBackColor.b, userBackColor.g, userBackColor.r, (byte)alphaTrackBar.Value);
-                        OnUserBackColorChanged(ColorBgra.FromBgra(lastBackColor.b, lastBackColor.g, lastBackColor.r, (byte)alphaTrackBar.Value));
-                        //OnUserBackColorChanged(userBackColor);
+                        OnUserBackColorChanged(ColorBgra.FromBgra(lastBackColor.B, lastBackColor.G, lastBackColor.R, (byte)alphaTrackBar.Value));
                         break;
 
                     default:
@@ -813,7 +822,7 @@ namespace PaintDotNet
                 PopIgnoreChangedEvents();
             }
             else
-            if (IgnoreChangedEvents)
+                if (IgnoreChangedEvents)
             {
                 return;
             }
@@ -866,14 +875,14 @@ namespace PaintDotNet
             if (this.inMoreState)
             {
                 this.inMoreState = false;
-                this.Size = lessSize;
+                Size newSize = lessSize;
                 this.moreLessButton.Text = "More >>";
                 this.moreLessButton.Location = this.lessModeButtonSentinel.Location;
                 this.groupBox.Size = lessModeGroupBoxSentinel.Size;
                 this.groupBox.Top -= 4;
 
                 int widthDelta = (moreModeGroupBoxSentinel.Width - lessModeGroupBoxSentinel.Width);
-                this.Width -= widthDelta;
+                newSize.Width -= widthDelta;
                 this.colorWheel.Width -= widthDelta;
                 this.colorWheel.Height -= widthDelta;
                 this.colorGradientControl.Left -= widthDelta;
@@ -882,7 +891,9 @@ namespace PaintDotNet
                 this.colorGradientControl.Height -= widthDelta;
                 this.colorWheel.Top -= 8;
                 this.colorGradientControl.Height -= 20;
-                this.Height -= heightDelta;
+                newSize.Height -= heightDelta;
+
+                this.Size = newSize;
             }
             else
             {
@@ -896,7 +907,6 @@ namespace PaintDotNet
                 this.colorWheel.Width += widthDelta;
                 this.colorWheel.Height += widthDelta;
                 this.colorGradientControl.Left += widthDelta;
-                this.Width += widthDelta;
 
                 int heightDelta = (moreModeGroupBoxSentinel.Height - lessModeGroupBoxSentinel.Height);
                 this.colorGradientControl.Height += widthDelta;

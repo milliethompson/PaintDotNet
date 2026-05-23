@@ -6,20 +6,20 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for FloatingToolForm.
-	/// </summary>
-	public class FloatingToolForm 
+    /// <summary>
+    /// Summary description for FloatingToolForm.
+    /// </summary>
+    public class FloatingToolForm 
         : PdnBaseForm
-	{
+    {
         private System.ComponentModel.IContainer components = null;
 
         private ControlEventHandler controlAddedDelegate;
         private ControlEventHandler controlRemovedDelegate;
         private KeyEventHandler keyUpDelegate;
 
-		public FloatingToolForm()
-		{
+        public FloatingToolForm()
+        {
             this.KeyPreview = true;
             controlAddedDelegate = new ControlEventHandler(ControlAddedHandler);
             controlRemovedDelegate = new ControlEventHandler(ControlRemovedHandler);
@@ -29,14 +29,14 @@ namespace PaintDotNet
             this.ControlRemoved += controlRemovedDelegate;
 
             //
-			// Required for Windows Form Designer support
-			//
-			InitializeComponent();
+            // Required for Windows Form Designer support
+            //
+            InitializeComponent();
 
-			//
-			// TODO: Add any constructor code after InitializeComponent call
-			//
-		}
+            //
+            // TODO: Add any constructor code after InitializeComponent call
+            //
+        }
 
         protected override void OnActivated(EventArgs e)
         {
@@ -66,28 +66,28 @@ namespace PaintDotNet
             return base.ProcessCmdKey (ref msg, keyData);
         }
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose( bool disposing )
+        {
+            if ( disposing )
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose( disposing );
+        }
 
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Windows Form Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             // 
             // FloatingToolForm
             // 

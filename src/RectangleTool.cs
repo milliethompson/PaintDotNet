@@ -9,20 +9,20 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for RectangleTool.
-	/// </summary>
-	public class RectangleTool
-		: ShapeTool 
-	{
-		protected override void OnActivate()
-		{
-			base.OnActivate ();
-		}
+    /// <summary>
+    /// Summary description for RectangleTool.
+    /// </summary>
+    public class RectangleTool
+        : ShapeTool 
+    {
+        protected override void OnActivate()
+        {
+            base.OnActivate ();
+        }
 
-		protected override void OnDeactivate()
-		{
-			base.OnDeactivate ();
+        protected override void OnDeactivate()
+        {
+            base.OnDeactivate ();
         }
 
         protected override ArrayList TrimShapePath(ArrayList points)
@@ -42,7 +42,7 @@ namespace PaintDotNet
             return array;
         }
 
-        protected override GraphicsPath CreateShapePath(Point[] points)
+        protected override PdnGraphicsPath CreateShapePath(Point[] points)
         {
             Point a = points[0];
             Point b = points[points.Length - 1];
@@ -57,20 +57,20 @@ namespace PaintDotNet
                 rect = Utility.PointsToRectangle(a, b);
             }
 
-            GraphicsPath path = new GraphicsPath();
+            PdnGraphicsPath path = new PdnGraphicsPath();
             path.AddRectangle(rect);
             path.CloseFigure();
             path.Reverse();
             return path;
         }
 
-		public RectangleTool(DocumentWorkspace parent)
-			: base(parent)
-		{
-			toolBarImage = Utility.GetImageResource("Icons.RectangleToolIcon.bmp");
-			cursor = new Cursor(Utility.GetResourceStream("Cursors.RectangleToolCursor.cur"));
-			name = "Rectangle";
-			description = "Draws a rectangle";
+        public RectangleTool(DocumentWorkspace parent)
+            : base(parent)
+        {
+            toolBarImage = Utility.GetImageResource("Icons.RectangleToolIcon.bmp");
+            cursor = new Cursor(Utility.GetResourceStream("Cursors.RectangleToolCursor.cur"));
+            name = "Rectangle";
+            description = "Draws a rectangle";
         }
-	}
+    }
 }

@@ -9,11 +9,11 @@ using System.Runtime.CompilerServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-[assembly: AssemblyTitle("Paint.NET")]
+[assembly: AssemblyTitle("Paint.NET v1.1")]
 [assembly: AssemblyDescription("Successor to Microsoft Paint that uses .NET, C#, and GDI+ technologies.")]
-[assembly: AssemblyCompany("Washington State University")]
-[assembly: AssemblyProduct("Paint.NET")]
-[assembly: AssemblyCopyright("Copyright © 2004 Rick Brewster, Brandon Ortiz, Chris Trevino, and Luke Walker")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Paint.NET v1.1")]
+[assembly: AssemblyCopyright("Copyright © 2004 Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -27,12 +27,12 @@ using System.Runtime.CompilerServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-
-[assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.1.*")]
 
 // Change this to say "Final" for final builds. Otherwise the titlebar will contain
 // a long version string. Final versions should just say the ApplicationProduct
 // attribute (i.e., "Paint.NET" instead of "Paint.NET (Beta 2 build: 1.0.*.*)"
+// Use this to hold the current milestone title, such as "Milestone 2" or "Beta 3"
 [assembly: AssemblyConfiguration("Final")]
 
 //
@@ -61,5 +61,6 @@ using System.Runtime.CompilerServices;
 //       documentation for more information on this.
 //
 [assembly: AssemblyDelaySign(false)]
-[assembly: AssemblyKeyFile("")]
+// can't sign the exe because we can't sign Interop.WIA.dll
+[assembly: AssemblyKeyFile(/*@"..\..\paintdotnet.keys"*/ "")]
 [assembly: AssemblyKeyName("")]

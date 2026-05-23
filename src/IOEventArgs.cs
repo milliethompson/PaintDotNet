@@ -3,21 +3,21 @@ using System.IO;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for IOEventArgs.
-	/// </summary>
-	public class IOEventArgs
+    /// <summary>
+    /// Summary description for IOEventArgs.
+    /// </summary>
+    public class IOEventArgs
         : System.EventArgs
-	{
+    {
         /// <summary>
         /// Whether we are reporting a Read or Write operation.
         /// </summary>
-        private IOOperation ioOperation;
-        public IOOperation IOOperation
+        private IOOperationType ioOperationType;
+        public IOOperationType IOOperationType
         {
             get
             {
-                return ioOperation;
+                return ioOperationType;
             }
         }
 
@@ -45,11 +45,11 @@ namespace PaintDotNet
             }
         }
 
-		public IOEventArgs(IOOperation ioOperation, long position, int count)
-		{
-            this.ioOperation = ioOperation;
+        public IOEventArgs(IOOperationType ioOperationType, long position, int count)
+        {
+            this.ioOperationType = ioOperationType;
             this.position = position;
             this.count = count;
-		}
-	}
+        }
+    }
 }

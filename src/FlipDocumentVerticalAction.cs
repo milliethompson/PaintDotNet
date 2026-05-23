@@ -9,7 +9,7 @@ namespace PaintDotNet
         : FlipDocumentAction
     {
         public FlipDocumentVerticalAction(DocumentWorkspace workspace)
-            : base(workspace, "Flip Vertical (all)", null, FlipType.Vertical)
+            : base(workspace, "Flip Vertical (all)", Utility.GetImageResource("Icons.MenuImageFlipVerticalIcon.bmp"), FlipType.Vertical)
         {
         }
     }

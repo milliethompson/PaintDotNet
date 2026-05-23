@@ -2,12 +2,12 @@ using System;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for NameEventArgs.
-	/// </summary>
-	public class NameEventArgs
+    /// <summary>
+    /// Summary description for NameEventArgs.
+    /// </summary>
+    public sealed class NameEventArgs
         : System.EventArgs
-	{
+    {
         private string name;
         public string Name
         {
@@ -17,9 +17,9 @@ namespace PaintDotNet
             }
         }
 
-		public NameEventArgs(string name)
-		{
+        public NameEventArgs(string name)
+        {
             this.name = name;
-		}
-	}
+        }
+    }
 }

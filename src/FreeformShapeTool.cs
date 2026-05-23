@@ -25,12 +25,12 @@ namespace PaintDotNet
             base.OnDeactivate ();
         }
 
-        protected override RectangleF[] GetOptimizedShapeOutlineRegion(Point[] points, GraphicsPath path)
+        protected override RectangleF[] GetOptimizedShapeOutlineRegion(Point[] points, PdnGraphicsPath path)
         {
             return Utility.SimplifyTrace(path.PathPoints);
         }
 
-        protected override GraphicsPath CreateShapePath(Point[] points)
+        protected override PdnGraphicsPath CreateShapePath(Point[] points)
         {
             // make sure we don't screw them up
             if (points.Length < 2)
@@ -55,7 +55,7 @@ namespace PaintDotNet
                 return null;
             }
 
-            GraphicsPath path = new GraphicsPath();
+            PdnGraphicsPath path = new PdnGraphicsPath();
             path.AddLines(points);
             path.AddLine(points[points.Length - 1], points[0]);
             path.CloseAllFigures();
