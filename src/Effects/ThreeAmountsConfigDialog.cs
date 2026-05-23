@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 
 namespace PaintDotNet.Effects
@@ -211,6 +219,8 @@ namespace PaintDotNet.Effects
 
         private void amount3UpDown_Leave(object sender, System.EventArgs e)
         {
+            Utility.ClipNumericUpDown(amount3UpDown);
+
             if (Utility.CheckNumericUpDown(amount3UpDown))
             {
                 amount3UpDown.Value = decimal.Parse(amount3UpDown.Text);
@@ -221,5 +231,12 @@ namespace PaintDotNet.Effects
         {
             this.amount3Slider.Value = amount3Default;
         }
+
+        protected override void OnOkButtonClicked(object sender, EventArgs e)
+        {
+            amount3UpDown_Leave(sender, e);
+            base.OnOkButtonClicked(sender, e);
+        }
+
 	}
 }

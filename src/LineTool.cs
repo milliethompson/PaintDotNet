@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.Drawing;
@@ -15,15 +23,7 @@ namespace PaintDotNet
     public class LineTool
         : ShapeTool 
     {
-        protected override void OnActivate()
-        {
-            base.OnActivate ();
-        }
-
-        protected override void OnDeactivate()
-        {
-            base.OnDeactivate ();
-        }
+        private Cursor lineToolCursor;
 
         protected override ArrayList TrimShapePath(ArrayList points)
         {
@@ -42,10 +42,10 @@ namespace PaintDotNet
             return array;
         }
 
-        protected override PdnGraphicsPath CreateShapePath(Point[] points)
+        protected override PdnGraphicsPath CreateShapePath(PointF[] points)
         {
-            Point a = points[0];
-            Point b = points[points.Length - 1];
+            PointF a = points[0];
+            PointF b = points[points.Length - 1];
 
             if (a == b)
             {
@@ -59,18 +59,39 @@ namespace PaintDotNet
             }
         }
 
-        public LineTool(DocumentWorkspace parent)
-            : base(parent)
+        public override PixelOffsetMode GetPixelOffsetMode()
         {
-            toolBarImage = Utility.GetImageResource("Icons.LineToolIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.LineToolCursor.cur"));
-            name = "Line";
-            description = "Draws a Line";
-			helpText = "Left click to draw a line with the foreground color, right click to use the background color";
+            return PixelOffsetMode.None;
+        }
 
+
+        public LineTool(DocumentWorkspace parent)
+            : base(parent,
+                   Utility.GetImageResource("Icons.LineToolIcon.bmp"),
+                   "Line",
+                   "Draws a Line",
+                   "Left click to draw a line with the foreground color, right click to use the background color")
+        {
+            this.lineToolCursor = new Cursor(Utility.GetResourceStream("Cursors.LineToolCursor.cur"));
+            this.Cursor = this.lineToolCursor;
             this.ForceShapeDrawType = true;
             this.ForcedShapeDrawType = ShapeDrawType.Outline;
+        }
 
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose (disposing);
+
+            if (disposing)
+            {
+                DisposeImage();
+
+                if (this.lineToolCursor != null)
+                {
+                    this.lineToolCursor.Dispose();
+                    this.lineToolCursor = null;
+                }
+            }
         }
     }
 }

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -26,7 +34,6 @@ namespace PaintDotNet.Effects
         {
             // This call is required by the Windows Form Designer.
             InitializeComponent();
-
         }
 
         protected override void InitialInitToken()
@@ -52,16 +59,18 @@ namespace PaintDotNet.Effects
 		/// <summary>
 		/// Clean up any resources being used.
 		/// </summary>
-		protected override void Dispose( bool disposing )
+		protected override void Dispose(bool disposing)
 		{
-			if ( disposing )
+			if (disposing)
 			{
 				if (components != null) 
 				{
 					components.Dispose();
-				}
+                    components = null;
+                }
 			}
-			base.Dispose( disposing );
+
+			base.Dispose(disposing);
 		}
 
 		#region Designer generated code
@@ -273,6 +282,7 @@ namespace PaintDotNet.Effects
             if (angleUpDown.Value != (decimal)angleChooserControl.ValueDouble)
             {
                 angleUpDown.Value = (decimal)angleChooserControl.ValueDouble;
+                Update();
                 UpdateToken();
             }
         }
@@ -282,6 +292,7 @@ namespace PaintDotNet.Effects
             if (angleChooserControl.ValueDouble != (double)angleUpDown.Value)
             {
                 angleChooserControl.ValueDouble = (double)angleUpDown.Value;
+                Update();
                 UpdateToken();
             }
         }
@@ -291,6 +302,7 @@ namespace PaintDotNet.Effects
             if (distanceTrackBar.Value != (int)distanceUpDown.Value)
             {
                 distanceTrackBar.Value = (int)distanceUpDown.Value;
+                Update();
                 UpdateToken();
             }
         }
@@ -300,12 +312,16 @@ namespace PaintDotNet.Effects
             if (distanceUpDown.Value != (decimal)distanceTrackBar.Value)
             {
                 distanceUpDown.Value = (decimal)distanceTrackBar.Value;
+                Update();
                 UpdateToken();
             }
         }
 
         private void okButton_Click(object sender, System.EventArgs e)
         {
+            // if the user types, then presses Enter or clicks OK, this will make sure we take what they typed and not the value of the trackbar            
+            angleUpDown_Leave(sender, e);
+
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
@@ -322,6 +338,8 @@ namespace PaintDotNet.Effects
 
         private void angleUpDown_Leave(object sender, System.EventArgs e)
         {
+            Utility.ClipNumericUpDown(angleUpDown);
+
             if (Utility.CheckNumericUpDown(angleUpDown))
             {
                 angleUpDown.Value = decimal.Parse(angleUpDown.Text);
@@ -336,6 +354,8 @@ namespace PaintDotNet.Effects
         
         private void distanceUpDown_Leave(object sender, System.EventArgs e)
         {
+            Utility.ClipNumericUpDown(distanceUpDown);
+
             if (Utility.CheckNumericUpDown(distanceUpDown))
             {
                 distanceUpDown.Value = decimal.Parse(distanceUpDown.Text);

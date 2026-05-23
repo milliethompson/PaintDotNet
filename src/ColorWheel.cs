@@ -1,10 +1,17 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Data;
 using System.Windows.Forms;
 
 namespace PaintDotNet
@@ -14,7 +21,8 @@ namespace PaintDotNet
     /// "A Primer on Building a Color Picker User Control with GDI+ in Visual Basic .NET or C#"
     /// http://www.msdnaa.net/Resources/display.aspx?ResID=2460
     /// </summary>
-    public class ColorWheel : System.Windows.Forms.UserControl
+    public class ColorWheel 
+        : System.Windows.Forms.UserControl
     {
         /// <summary> 
         /// Required designer variable.
@@ -75,7 +83,7 @@ namespace PaintDotNet
         {
             PointF[] points = new PointF[colorCount];
             
-            for(int i = 0; i < colorCount; i++)
+            for (int i = 0; i < colorCount; i++)
             {
                 float theta = ((float)i / (float)colorCount) * 2 * (float)Math.PI;
                 points[i] = SphericalToCartesian(r, theta);
@@ -99,6 +107,19 @@ namespace PaintDotNet
             return colors;
         }
 
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad (e);
+
+            if (renderBitmap == null)
+            {
+                InitRenderSurface();
+                this.wheelPictureBox.Size = renderBitmap.Size;
+                this.wheelPictureBox.Image = renderBitmap;
+            }
+        }
+
+
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint (e);
@@ -109,33 +130,6 @@ namespace PaintDotNet
                 this.wheelPictureBox.Size = renderBitmap.Size;
                 this.wheelPictureBox.Image = renderBitmap;
             }
-
-            //e.Graphics.DrawImage(renderBitmap, 0, 0, extractBitmap.Width, extractBitmap.Height);
-        }
-
-        protected override void OnPaintBackground(PaintEventArgs e)
-        {
-            if (renderBitmap == null)
-            {
-                InitRenderSurface();
-                this.wheelPictureBox.Size = renderBitmap.Size;
-                this.wheelPictureBox.Image = renderBitmap;
-            }
-
-            using (PdnRegion eraseRegion = new PdnRegion(new Rectangle(new Point(0, 0), Size)))
-            {
-                if (extractBitmap != null)
-                {
-                    eraseRegion.Exclude(new Rectangle(new Point(0, 0), extractBitmap.Size));
-                }
-
-                using (SolidBrush bb = new SolidBrush(this.BackColor))
-                {
-                    e.Graphics.FillRegion(bb, eraseRegion);
-                }
-            }
-
-            //e.Graphics.DrawImage(renderBitmap, 0, 0, extractBitmap.Width, extractBitmap.Height);
         }
 
         private void wheelPictureBox_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
@@ -146,10 +140,12 @@ namespace PaintDotNet
             float x = (alpha * (radius - 1) * (float)Math.Cos(theta)) + radius;
             float y = (alpha * (radius - 1) * (float)Math.Sin(theta)) + radius;
 
+            GraphicsContainer container = e.Graphics.BeginContainer();
 			e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
 			e.Graphics.SmoothingMode = SmoothingMode.HighQuality;
             e.Graphics.DrawRectangle(Pens.Black, x - 1, y - 1, 3, 3);
 			e.Graphics.DrawRectangle(Pens.White, x, y, 1, 1);
+            e.Graphics.EndContainer(container);
         }
 
         private void InitRenderSurface()
@@ -273,12 +269,6 @@ namespace PaintDotNet
             Invalidate(true);
         }
 
-        protected override void OnClick(EventArgs e)
-        {
-            base.OnClick(e);
-            GrabColor(lastMouseXY);
-        }
-
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown (e);
@@ -292,6 +282,12 @@ namespace PaintDotNet
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp (e);
+
+            if (tracking)
+            {
+                GrabColor(new Point(e.X, e.Y));
+            }
+
             tracking = false;
         }
 
@@ -310,16 +306,18 @@ namespace PaintDotNet
         /// <summary> 
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+
+            base.Dispose(disposing);
         }
 
         #region Component Designer generated code

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using PaintDotNet;
@@ -8,6 +16,7 @@ namespace PaintDotNet.Effects
 	/// Summary description for DesaturateEffect.
 	/// </summary>
 	[EffectCategory(EffectCategory.Adjustment)]
+    [EffectTypeHint(EffectTypeHint.Fast)]
 	public class AutoLevel
 		: Effect
 	{
@@ -18,11 +27,14 @@ namespace PaintDotNet.Effects
 		{
 			if (levels == null) 
 			{
-				histogram.UpdateHistogram(srcArgs.Surface, this.Selection);
-				levels = histogram.MakeLevelsAuto();
+                histogram.UpdateHistogram(srcArgs.Surface, this.EnvironmentParameters.GetSelection(dstArgs.Bounds));
+                levels = histogram.MakeLevelsAuto();
 			}
-			if (levels.isValid)
-				levels.Apply(dstArgs.Surface, roi.Location, srcArgs.Surface, roi.Location, roi.Size);
+
+            if (levels.isValid)
+            {
+                levels.Apply(dstArgs.Surface, roi.Location, srcArgs.Surface, roi.Location, roi.Size);
+            }
 		}
 
 		public AutoLevel()

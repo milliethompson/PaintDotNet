@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 
@@ -9,7 +17,8 @@ namespace PaintDotNet
     public class FlipLayerHistoryAction
         : HistoryAction
     {
-        private Layer layer;
+        private DocumentWorkspace workspace;
+        private int layerIndex;
         private FlipType flipType;
 
         public void Flip(Surface surface, FlipType flipType)
@@ -51,16 +60,18 @@ namespace PaintDotNet
 
         protected override HistoryAction OnUndo()
         {
-            FlipLayerHistoryAction fha = new FlipLayerHistoryAction(this.Name, this.Image, layer, flipType);
-            Flip(((BitmapLayer)layer).Surface, this.flipType);
+            FlipLayerHistoryAction fha = new FlipLayerHistoryAction(this.Name, this.Image, workspace, layerIndex, flipType);
+            BitmapLayer layer = (BitmapLayer)workspace.Document.Layers[layerIndex];
+            Flip(layer.Surface, this.flipType);
             layer.Invalidate();
             return fha;
         }
 
-        public FlipLayerHistoryAction(string name, Image image, Layer flipMe, FlipType flipType)
+        public FlipLayerHistoryAction(string name, Image image, DocumentWorkspace workspace, int layerIndex, FlipType flipType)
             : base(name, image)
         {
-            this.layer = flipMe;
+            this.workspace = workspace;
+            this.layerIndex = layerIndex;
             this.flipType = flipType;
         }
     }

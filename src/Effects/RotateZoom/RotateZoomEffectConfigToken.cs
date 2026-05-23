@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using PaintDotNet;
 using System;
 using System.Drawing;
@@ -14,17 +22,17 @@ namespace PaintDotNet.Effects
         internal struct RzInfo
         {
             // gradients
-            public double dsxddx;
-            public double dsxddy;
-            public double dsyddy;
-            public double dsyddx;
+            public float dsxddx;
+            public float dsxddy;
+            public float dsyddy;
+            public float dsyddx;
 
             // degrees -> radians
-            public double angleRadians;
+            public float angleRadians;
 
             // cache cos() and sin() of angle
-            public double angleCos;
-            public double angleSin;
+            public float angleCos;
+            public float angleSin;
         }
 
         private void UpdateRzInfo()
@@ -33,16 +41,16 @@ namespace PaintDotNet.Effects
             {
                 computedOnce = new RzInfo();
 
-                computedOnce.angleRadians = ((double)this.Angle * (double)Math.PI) / 180.0f;
-                computedOnce.angleCos = (double)Math.Cos(computedOnce.angleRadians);
-                computedOnce.angleSin = (double)Math.Sin(computedOnce.angleRadians);
+                computedOnce.angleRadians = ((float)this.Angle * (float)Math.PI) / 180.0f;
+                computedOnce.angleCos = (float)Math.Cos(computedOnce.angleRadians);
+                computedOnce.angleSin = (float)Math.Sin(computedOnce.angleRadians);
             
-                double sxul = ((1 * computedOnce.angleCos) - (1 * computedOnce.angleSin)) * this.Zoom;
-                double syul = ((1 * computedOnce.angleSin) + (1 * computedOnce.angleCos)) * this.Zoom;
-                double sxur = ((2 * computedOnce.angleCos) - (1 * computedOnce.angleSin)) * this.Zoom;
-                double syur = ((2 * computedOnce.angleSin) + (1 * computedOnce.angleCos)) * this.Zoom;
-                double sxll = ((1 * computedOnce.angleCos) - (2 * computedOnce.angleSin)) * this.Zoom;
-                double syll = ((1 * computedOnce.angleSin) + (2 * computedOnce.angleCos)) * this.Zoom;
+                float sxul = ((1 * computedOnce.angleCos) - (1 * computedOnce.angleSin)) * this.Zoom;
+                float syul = ((1 * computedOnce.angleSin) + (1 * computedOnce.angleCos)) * this.Zoom;
+                float sxur = ((2 * computedOnce.angleCos) - (1 * computedOnce.angleSin)) * this.Zoom;
+                float syur = ((2 * computedOnce.angleSin) + (1 * computedOnce.angleCos)) * this.Zoom;
+                float sxll = ((1 * computedOnce.angleCos) - (2 * computedOnce.angleSin)) * this.Zoom;
+                float syll = ((1 * computedOnce.angleSin) + (2 * computedOnce.angleCos)) * this.Zoom;
 
                 computedOnce.dsxddx = sxur - sxul;
                 computedOnce.dsxddy = sxll - sxul;
@@ -60,8 +68,8 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private double angle;
-        public double Angle
+        private float angle;
+        public float Angle
         {
             get
             {
@@ -90,21 +98,6 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private Point anchorOffset;
-        public Point AnchorOffset
-        {
-            get
-            {
-                return anchorOffset;
-            }
-
-            set
-            {
-                anchorOffset = value;
-                UpdateRzInfo();
-            }
-        }
-
         private bool sourceAsBackground;
         public bool SourceAsBackground
         {
@@ -120,11 +113,10 @@ namespace PaintDotNet.Effects
             }
         }
 
-		public RotateZoomEffectConfigToken(double angle, float zoom, Point anchorOffset, bool sourceAsBackground)
+		public RotateZoomEffectConfigToken(float angle, float zoom, bool sourceAsBackground)
 		{
             this.angle = angle;
             this.zoom = zoom;
-            this.anchorOffset = anchorOffset;
             this.sourceAsBackground = sourceAsBackground;
             UpdateRzInfo();
         }
@@ -133,7 +125,6 @@ namespace PaintDotNet.Effects
         {
             this.angle = copyMe.angle;
             this.zoom = copyMe.zoom;
-            this.anchorOffset = copyMe.anchorOffset;
             this.sourceAsBackground = copyMe.sourceAsBackground;
             UpdateRzInfo();
         }
@@ -142,6 +133,5 @@ namespace PaintDotNet.Effects
         {
             return new RotateZoomEffectConfigToken(this);
         }
-
     }
 }

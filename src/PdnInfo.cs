@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Reflection;
 using System.Windows.Forms;
@@ -9,7 +17,7 @@ namespace PaintDotNet
     /// </summary>
     internal sealed class PdnInfo
     {
-		private const string webSite = "http://www.eecs.wsu.edu/paint.net";
+        private const string webSite = "http://www.eecs.wsu.edu/paint.net/";
 
         private PdnInfo()
         {
@@ -20,6 +28,11 @@ namespace PaintDotNet
             object[] attributes = Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(AssemblyCopyrightAttribute), false);
             AssemblyCopyrightAttribute aca = (AssemblyCopyrightAttribute)attributes[0];            
             return aca.Copyright;
+        }
+
+        public static Version GetVersion()
+        {
+            return new Version(Application.ProductVersion);
         }
 
         /// <summary>
@@ -73,7 +86,7 @@ namespace PaintDotNet
 
 		public static void LaunchWebSite()
 		{
-			System.Diagnostics.Process.Start(webSite);
+			System.Diagnostics.Process.Start(new Uri(new Uri(webSite), "pdnabout.html").ToString());
 		}
     }
 }

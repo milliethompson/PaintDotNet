@@ -1,8 +1,10 @@
-// ReliefEffectConfigDialog.cs
-// ui for configuring ReliefEffect parameters. creates 
-// a ReliefEffectConfigToken for ReliefEffect
-//
-// Chris Crosetto
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
 using PaintDotNet.Effects;
@@ -31,19 +33,6 @@ namespace PaintDotNet.Effects
         {
             theEffectToken = new ReliefEffectConfigToken(45);
         }
-
-        /*
-        protected override void InitTokenFromDialog()
-        {
-            ((ReliefEffectConfigToken)EffectToken).Angle = angleChooserControl.Value;
-        }
-
-        protected override void InitDialogFromToken(EffectConfigToken effectToken)
-        {
-            ReliefEffectConfigToken token = (ReliefEffectConfigToken)effectToken;
-            angleChooserControl.Value = token.Angle;
-        }
-        */
 
         #region Windows Form Designer generated code
         /// <summary>

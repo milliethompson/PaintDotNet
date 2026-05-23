@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -14,14 +22,14 @@ namespace PaintDotNet.Effects
         private string name;
         private string description;
         private Image image;
-		private Shortcut shortcut;
-		private PdnRegion effectSelection;
-		private bool singleThreaded;
-		private EffectEnvironmentParameters envParams;
+        private Shortcut shortcut;
+        private bool singleThreaded;
+        private EffectEnvironmentParameters envParams;
+
         /// <summary>
         /// Returns the category of the effect. If there is no EffectCategoryAttribute
         /// applied to the runtime type, then the default category, EffectCategory.Effect,
-        /// will be returne.d
+        /// will be returned.
         /// </summary>
         public EffectCategory Category
         {
@@ -41,29 +49,30 @@ namespace PaintDotNet.Effects
             }
         }
 
-		public EffectEnvironmentParameters EnvironmentParameters 
-		{
-			get 
-			{
-				return envParams;
-			}
-			set 
-			{
-				envParams = value;
-			}
-		}
+        public EffectEnvironmentParameters EnvironmentParameters 
+        {
+            get 
+            {
+                return envParams;
+            }
 
-		/// <summary>
-		/// Gets whether an Effect wants to be rendered using only 1 thread.
-		/// It is up to the caller of Render() to enforce this.
-		/// </summary>
-		public bool SingleThreaded
-		{
-			get
-			{
-				return singleThreaded;
-			}
-		}
+            set 
+            {
+                envParams = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether an Effect wants to be rendered using only 1 thread.
+        /// It is up to the caller of Render() to enforce this.
+        /// </summary>
+        public bool SingleThreaded
+        {
+            get
+            {
+                return singleThreaded;
+            }
+        }
 
         public string SubMenuName
         {
@@ -107,31 +116,23 @@ namespace PaintDotNet.Effects
             }
         }
 
-		public Shortcut Shortcut 
-		{
-			get 
-			{
-				return shortcut;
-			}
-		}
+        public Shortcut Shortcut 
+        {
+            get 
+            {
+                return shortcut;
+            }
+        }
 
-		public PdnRegion Selection
-		{
-			get
-			{
-				if (effectSelection == null || effectSelection.IsEmpty()) 
-				{
-					effectSelection = new PdnRegion();
-					effectSelection.MakeInfinite();
-				}
-				return effectSelection;
-			}
+        [Obsolete("user EnvironmentParameters.GetSelection() instead")]
+        public PdnRegion Selection
+        {
+            get
+            {
+                return new PdnRegion();
+            }
+        }
 
-			set
-			{
-				effectSelection = value;
-			}
-		}
         /// <summary>
         /// Performs the effect's rendering. The source is to be treated as read-only,
         /// and only the destination pixels within the given rectangle-of-interest are
@@ -176,21 +177,13 @@ namespace PaintDotNet.Effects
         /// This is a helper function. It allows you to render an effect "in place."
         /// That is, you don't need both a destination and a source Surface.
         /// </summary>
-        private Surface renderSurface = null;
         public void RenderInPlace(RenderArgs srcAndDstArgs, PdnRegion roi)
         {
-            if (renderSurface == null || renderSurface.Size != srcAndDstArgs.Surface.Size)
+            using (Surface renderSurface = new Surface(srcAndDstArgs.Surface.Size))
             {
-                renderSurface = new Surface(srcAndDstArgs.Surface.Size);
-            }
-
-            using (PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(roi))
-            {
-                simplifiedRegion.Intersect(renderSurface.Bounds);
-
                 using (RenderArgs renderArgs = new RenderArgs(renderSurface))
                 {
-                    Render(renderArgs, srcAndDstArgs, simplifiedRegion);
+                    Render(renderArgs, srcAndDstArgs, roi);
                     srcAndDstArgs.Surface.CopySurface(renderSurface, roi);
                 }
             }
@@ -202,31 +195,31 @@ namespace PaintDotNet.Effects
             
             RenderInPlace(srcAndDstArgs, region);
             region.Dispose();
-		}
+        }
 
-		public Effect(string name, string description, Image image, Shortcut shortcut)
-		{
-			this.name = name;
-			this.description = description;
-			this.image = image;
-			this.shortcut = shortcut;
-			this.singleThreaded = false;
-			this.envParams = null;
+        public Effect(string name, string description, Image image)
+            : this(name, description, image, Shortcut.None)
+        {
+        }
 
-			object[] attributes = this.GetType().GetCustomAttributes(true);
+        public Effect(string name, string description, Image image, Shortcut shortcut)
+        {
+            this.name = name;
+            this.description = description;
+            this.image = image;
+            this.shortcut = shortcut;
+            this.singleThreaded = false;
+            this.envParams = EffectEnvironmentParameters.DefaultParameters;
 
-			foreach (Attribute attribute in attributes)
-			{
-				if (attribute is SingleThreadedEffectAttribute)
-				{
-					this.singleThreaded = true;
-				}
-			}
-		}
+            object[] attributes = this.GetType().GetCustomAttributes(true);
 
-		public Effect(string name, string description, Image image)
-			: this(name, description, image, Shortcut.None)
-		{
-		}
+            foreach (Attribute attribute in attributes)
+            {
+                if (attribute is SingleThreadedEffectAttribute)
+                {
+                    this.singleThreaded = true;
+                }
+            }
+        }
     }
 }

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.ComponentModel;
 using System.Drawing;
@@ -86,13 +94,7 @@ namespace PaintDotNet
             // Initialize the new Doc
             ReplaceDocumentHistoryAction rdha = new ReplaceDocumentHistoryAction(Name + " " + suffix, icon, Workspace);
             Document newDoc = new Document(newWidth, newHeight);
-
-            foreach (string key in Workspace.Document.UserMetaData)
-            {
-                newDoc.UserMetaData.Set(key, Workspace.Document.UserMetaData[key]);
-            }
-
-            newDoc.Name = Workspace.Document.Name;
+            newDoc.CopyPropertiesFrom(Workspace.Document);
 
             foreach (Layer layer in Workspace.Document.Layers)
             {

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -21,12 +29,9 @@ namespace PaintDotNet
         protected System.Windows.Forms.Button okButton;
         protected System.Windows.Forms.Button cancelButton;
         
-        private InterpolationMode interpolationMode;
-        protected System.Windows.Forms.ComboBox interpolationModeComboBox;
+        protected System.Windows.Forms.ComboBox resamplingAlgorithmComboBox;
         protected System.Windows.Forms.Label label3;
 
-        private ResampleMethod lowQuality;
-        private ResampleMethod highQuality;
         protected System.Windows.Forms.NumericUpDown widthUpDown;
         protected System.Windows.Forms.NumericUpDown heightUpDown;
 
@@ -46,6 +51,12 @@ namespace PaintDotNet
         /// </summary>
         private System.ComponentModel.Container components = null;
         protected System.Windows.Forms.Label originalImageSize;
+		protected System.Windows.Forms.Label label7;
+		protected System.Windows.Forms.NumericUpDown percentUpDown;
+        protected System.Windows.Forms.RadioButton absoluteRB;
+        protected System.Windows.Forms.RadioButton percentRB;
+        protected System.Windows.Forms.Label asteriskTextLabel;
+        protected System.Windows.Forms.Label asteriskLabel;
 
         public int ImageWidth
         {
@@ -60,12 +71,14 @@ namespace PaintDotNet
                 {
                     value = 0;
                 }               
+
                 if ((int)value > (int)widthUpDown.Maximum)
                 {
                     value = (int)widthUpDown.Maximum;
                 }
-                widthUpDown.Value = (decimal)value; //(int)(Math.Round((double)value));
-                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((double)layers * 4.0 * (double)ImageHeight * (double)ImageWidth);
+
+                widthUpDown.Value = (decimal)value;
+                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((long)layers * (long)ColorBgra.SizeOf * (long)ImageHeight * (long)ImageWidth);
             }
         }
 
@@ -79,6 +92,8 @@ namespace PaintDotNet
 
             set
             {
+				originalSize.Width = value.Width;
+				originalSize.Height = value.Height;
                 originalImageSize.Text = value.Width.ToString() + " x " + value.Height.ToString();
             }
         }
@@ -116,28 +131,30 @@ namespace PaintDotNet
                 }
 
                 heightUpDown.Value = (decimal)value; //(int)(Math.Round((double)value));    
-                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((double)layers * 4.0 * (double)ImageHeight * (double)ImageWidth);
+                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((long)layers * (long)ColorBgra.SizeOf * (long)ImageHeight * (long)ImageWidth);
+                PopulateAsteriskLabels();
             }
         }
 
-        public double DocumentSize
+        public long DocumentSize
         {
             set
             {
-                currentImageSize.Text = Utility.SizeStringFromBytes(value);
+                currentImageSize.Text = Utility.SizeStringFromBytes((long)value);
             }
         }
 
-        public InterpolationMode InterpMode
+        public ResamplingAlgorithm ResamplingAlgorithm
         {
             get
             {
-                return interpolationMode;
+                return ((ResampleMethod)this.resamplingAlgorithmComboBox.SelectedItem).method;
             }
             
             set
             {
-                interpolationMode = value;
+                this.resamplingAlgorithmComboBox.SelectedItem = new ResampleMethod(value);
+                PopulateAsteriskLabels();
             }
         }
 
@@ -170,38 +187,56 @@ namespace PaintDotNet
             set
             {
                 layers = value;
-                double initialSize = (double)layers * 4.0 * (double)ImageHeight * (double)ImageWidth;
+                long initialSize = (long)layers * ColorBgra.SizeOf * (long)ImageHeight * (long)ImageWidth;
                 DocumentSize = initialSize;
                 resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes(initialSize);
             }
         }
 
-        #region Resample Method Private Class
-        private class ResampleMethod
+        private sealed class ResampleMethod
         {
-            public InterpolationMode method;
+            public ResamplingAlgorithm method;
 
             public override string ToString()
             {
                 switch (method)
                 {
-                    case InterpolationMode.NearestNeighbor:
+                    case ResamplingAlgorithm.NearestNeighbor:
                         return "Nearest Neighbor";
 
-                    case InterpolationMode.HighQualityBicubic:
+                    case ResamplingAlgorithm.Bicubic:
                         return "Bicubic";
+
+                    case ResamplingAlgorithm.SuperSampling:
+                        return "Best Quality";
 
                     default:
                         return method.ToString();
                 }
             }
 
-            public ResampleMethod(InterpolationMode method)
+            public override bool Equals(object obj)
+            {
+                if (obj is ResampleMethod && ((ResampleMethod)obj).method == this.method)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            public override int GetHashCode()
+            {
+                return this.method.GetHashCode();
+            }
+
+            public ResampleMethod(ResamplingAlgorithm method)
             {
                 this.method = method;
             }
         }
-        #endregion
 
         public ResizeDialog()
         {
@@ -211,21 +246,23 @@ namespace PaintDotNet
             InitializeComponent();
 
             ratioCheck.Checked = true;
-            interpolationModeComboBox.Items.Clear();
+            resamplingAlgorithmComboBox.Items.Clear();
             ratio = -1;
 
             upDownValueChangedDelegate = new EventHandler(upDown_ValueChanged);
 
-            highQuality = new ResampleMethod(InterpolationMode.HighQualityBicubic);
-            lowQuality = new ResampleMethod(InterpolationMode.NearestNeighbor);
+            resamplingAlgorithmComboBox.Items.Add(new ResampleMethod(ResamplingAlgorithm.Bicubic));
+            resamplingAlgorithmComboBox.Items.Add(new ResampleMethod(ResamplingAlgorithm.Bilinear));
+            resamplingAlgorithmComboBox.Items.Add(new ResampleMethod(ResamplingAlgorithm.NearestNeighbor));
+            resamplingAlgorithmComboBox.Items.Add(new ResampleMethod(ResamplingAlgorithm.SuperSampling));
 
-            interpolationModeComboBox.Items.Add(highQuality);
-            interpolationModeComboBox.Items.Add(lowQuality);
-
-            interpolationModeComboBox.SelectedItem = highQuality;
+            resamplingAlgorithmComboBox.SelectedItem = new ResampleMethod(ResamplingAlgorithm.SuperSampling);
             layers = 1;
 
+			this.percentUpDown.Enabled = false;
+
             this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.MenuImageResizeIcon.bmp"), Color.FromArgb(192, 192, 192));
+            PopulateAsteriskLabels();
         }
 
         protected override void OnLoad(EventArgs e)
@@ -233,21 +270,23 @@ namespace PaintDotNet
             base.OnLoad (e);
             this.widthUpDown.Select();
             this.widthUpDown.Select(0, widthUpDown.Text.Length);
+            this.PopulateAsteriskLabels();
         }
 
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
         #region Windows Form Designer generated code
@@ -262,34 +301,41 @@ namespace PaintDotNet
             this.label2 = new System.Windows.Forms.Label();
             this.okButton = new System.Windows.Forms.Button();
             this.cancelButton = new System.Windows.Forms.Button();
-            this.interpolationModeComboBox = new System.Windows.Forms.ComboBox();
+            this.resamplingAlgorithmComboBox = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
             this.widthUpDown = new System.Windows.Forms.NumericUpDown();
             this.heightUpDown = new System.Windows.Forms.NumericUpDown();
             this.label5 = new System.Windows.Forms.Label();
             this.currentImageSize = new System.Windows.Forms.Label();
             this.resizedImageGroupBox = new System.Windows.Forms.GroupBox();
+            this.absoluteRB = new System.Windows.Forms.RadioButton();
+            this.percentRB = new System.Windows.Forms.RadioButton();
             this.label6 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
+            this.percentUpDown = new System.Windows.Forms.NumericUpDown();
+            this.label7 = new System.Windows.Forms.Label();
             this.originalImageSize = new System.Windows.Forms.Label();
+            this.asteriskTextLabel = new System.Windows.Forms.Label();
+            this.asteriskLabel = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.widthUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.heightUpDown)).BeginInit();
             this.resizedImageGroupBox.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.percentUpDown)).BeginInit();
             this.SuspendLayout();
             // 
             // ratioCheck
             // 
             this.ratioCheck.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.ratioCheck.Location = new System.Drawing.Point(11, 102);
+            this.ratioCheck.Location = new System.Drawing.Point(38, 118);
             this.ratioCheck.Name = "ratioCheck";
             this.ratioCheck.Size = new System.Drawing.Size(136, 16);
-            this.ratioCheck.TabIndex = 3;
+            this.ratioCheck.TabIndex = 4;
             this.ratioCheck.Text = "Maintain Aspect Ratio";
             this.ratioCheck.CheckedChanged += new System.EventHandler(this.ratioCheck_CheckedChanged);
             // 
             // label1
             // 
-            this.label1.Location = new System.Drawing.Point(8, 49);
+            this.label1.Location = new System.Drawing.Point(35, 68);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(72, 16);
             this.label1.TabIndex = 1;
@@ -298,7 +344,7 @@ namespace PaintDotNet
             // 
             // label2
             // 
-            this.label2.Location = new System.Drawing.Point(8, 76);
+            this.label2.Location = new System.Drawing.Point(35, 94);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(72, 16);
             this.label2.TabIndex = 2;
@@ -309,10 +355,10 @@ namespace PaintDotNet
             // 
             this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.okButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.okButton.Location = new System.Drawing.Point(80, 184);
+            this.okButton.Location = new System.Drawing.Point(100, 248);
             this.okButton.Name = "okButton";
             this.okButton.Size = new System.Drawing.Size(72, 23);
-            this.okButton.TabIndex = 4;
+            this.okButton.TabIndex = 7;
             this.okButton.Text = "OK";
             this.okButton.Click += new System.EventHandler(this.okButton_Click);
             // 
@@ -321,22 +367,23 @@ namespace PaintDotNet
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.cancelButton.Location = new System.Drawing.Point(160, 184);
+            this.cancelButton.Location = new System.Drawing.Point(180, 248);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(72, 23);
-            this.cancelButton.TabIndex = 5;
+            this.cancelButton.TabIndex = 8;
             this.cancelButton.Text = "Cancel";
             this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
             // 
-            // interpolationModeComboBox
+            // resamplingAlgorithmComboBox
             // 
-            this.interpolationModeComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.interpolationModeComboBox.Location = new System.Drawing.Point(78, 20);
-            this.interpolationModeComboBox.Name = "interpolationModeComboBox";
-            this.interpolationModeComboBox.Size = new System.Drawing.Size(130, 21);
-            this.interpolationModeComboBox.TabIndex = 0;
-            this.interpolationModeComboBox.Tag = "";
-            this.interpolationModeComboBox.SelectedIndexChanged += new System.EventHandler(this.interpolationModeComboBox_SelectedIndexChanged);
+            this.resamplingAlgorithmComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.resamplingAlgorithmComboBox.Location = new System.Drawing.Point(78, 20);
+            this.resamplingAlgorithmComboBox.Name = "resamplingAlgorithmComboBox";
+            this.resamplingAlgorithmComboBox.Size = new System.Drawing.Size(130, 21);
+            this.resamplingAlgorithmComboBox.Sorted = true;
+            this.resamplingAlgorithmComboBox.TabIndex = 0;
+            this.resamplingAlgorithmComboBox.Tag = "";
+            this.resamplingAlgorithmComboBox.SelectedIndexChanged += new System.EventHandler(this.resamplingAlgorithmComboBox_SelectedIndexChanged);
             // 
             // label3
             // 
@@ -349,7 +396,7 @@ namespace PaintDotNet
             // 
             // widthUpDown
             // 
-            this.widthUpDown.Location = new System.Drawing.Point(78, 49);
+            this.widthUpDown.Location = new System.Drawing.Point(115, 68);
             this.widthUpDown.Maximum = new System.Decimal(new int[] {
                                                                         65535,
                                                                         0,
@@ -357,7 +404,7 @@ namespace PaintDotNet
                                                                         0});
             this.widthUpDown.Name = "widthUpDown";
             this.widthUpDown.Size = new System.Drawing.Size(72, 20);
-            this.widthUpDown.TabIndex = 1;
+            this.widthUpDown.TabIndex = 2;
             this.widthUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.widthUpDown.Value = new System.Decimal(new int[] {
                                                                       797,
@@ -371,7 +418,7 @@ namespace PaintDotNet
             // 
             // heightUpDown
             // 
-            this.heightUpDown.Location = new System.Drawing.Point(78, 76);
+            this.heightUpDown.Location = new System.Drawing.Point(115, 94);
             this.heightUpDown.Maximum = new System.Decimal(new int[] {
                                                                          65535,
                                                                          0,
@@ -379,7 +426,7 @@ namespace PaintDotNet
                                                                          0});
             this.heightUpDown.Name = "heightUpDown";
             this.heightUpDown.Size = new System.Drawing.Size(72, 20);
-            this.heightUpDown.TabIndex = 2;
+            this.heightUpDown.TabIndex = 3;
             this.heightUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.heightUpDown.Value = new System.Decimal(new int[] {
                                                                        595,
@@ -409,26 +456,53 @@ namespace PaintDotNet
             // 
             // resizedImageGroupBox
             // 
+            this.resizedImageGroupBox.Controls.Add(this.asteriskLabel);
+            this.resizedImageGroupBox.Controls.Add(this.asteriskTextLabel);
+            this.resizedImageGroupBox.Controls.Add(this.absoluteRB);
+            this.resizedImageGroupBox.Controls.Add(this.percentRB);
             this.resizedImageGroupBox.Controls.Add(this.widthUpDown);
             this.resizedImageGroupBox.Controls.Add(this.heightUpDown);
             this.resizedImageGroupBox.Controls.Add(this.label6);
             this.resizedImageGroupBox.Controls.Add(this.label4);
             this.resizedImageGroupBox.Controls.Add(this.label2);
             this.resizedImageGroupBox.Controls.Add(this.label1);
-            this.resizedImageGroupBox.Controls.Add(this.interpolationModeComboBox);
+            this.resizedImageGroupBox.Controls.Add(this.resamplingAlgorithmComboBox);
             this.resizedImageGroupBox.Controls.Add(this.label3);
             this.resizedImageGroupBox.Controls.Add(this.ratioCheck);
+            this.resizedImageGroupBox.Controls.Add(this.percentUpDown);
+            this.resizedImageGroupBox.Controls.Add(this.label7);
             this.resizedImageGroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.resizedImageGroupBox.Location = new System.Drawing.Point(8, 40);
             this.resizedImageGroupBox.Name = "resizedImageGroupBox";
-            this.resizedImageGroupBox.Size = new System.Drawing.Size(220, 128);
+            this.resizedImageGroupBox.Size = new System.Drawing.Size(240, 200);
             this.resizedImageGroupBox.TabIndex = 15;
             this.resizedImageGroupBox.TabStop = false;
             this.resizedImageGroupBox.Text = "New Image Size group box";
             // 
+            // absoluteRB
+            // 
+            this.absoluteRB.Checked = true;
+            this.absoluteRB.Location = new System.Drawing.Point(11, 46);
+            this.absoluteRB.Name = "absoluteRB";
+            this.absoluteRB.Size = new System.Drawing.Size(152, 15);
+            this.absoluteRB.TabIndex = 1;
+            this.absoluteRB.TabStop = true;
+            this.absoluteRB.Text = "By Absolute Size:";
+            this.absoluteRB.Click += new System.EventHandler(this.absoluteRB_Click);
+            this.absoluteRB.CheckedChanged += new System.EventHandler(this.percentRB_CheckedChanged);
+            // 
+            // percentRB
+            // 
+            this.percentRB.Location = new System.Drawing.Point(11, 144);
+            this.percentRB.Name = "percentRB";
+            this.percentRB.TabIndex = 5;
+            this.percentRB.Text = "By Percentage:";
+            this.percentRB.Click += new System.EventHandler(this.percentRB_Click);
+            this.percentRB.CheckedChanged += new System.EventHandler(this.percentRB_CheckedChanged);
+            // 
             // label6
             // 
-            this.label6.Location = new System.Drawing.Point(152, 76);
+            this.label6.Location = new System.Drawing.Point(189, 94);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(40, 16);
             this.label6.TabIndex = 10;
@@ -437,12 +511,43 @@ namespace PaintDotNet
             // 
             // label4
             // 
-            this.label4.Location = new System.Drawing.Point(152, 49);
+            this.label4.Location = new System.Drawing.Point(189, 68);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(40, 16);
             this.label4.TabIndex = 9;
             this.label4.Text = "pixels";
             this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // percentUpDown
+            // 
+            this.percentUpDown.Location = new System.Drawing.Point(115, 146);
+            this.percentUpDown.Maximum = new System.Decimal(new int[] {
+                                                                          2000,
+                                                                          0,
+                                                                          0,
+                                                                          0});
+            this.percentUpDown.Name = "percentUpDown";
+            this.percentUpDown.Size = new System.Drawing.Size(72, 20);
+            this.percentUpDown.TabIndex = 6;
+            this.percentUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.percentUpDown.Value = new System.Decimal(new int[] {
+                                                                        100,
+                                                                        0,
+                                                                        0,
+                                                                        0});
+            this.percentUpDown.Enter += new System.EventHandler(this.upDown_Enter);
+            this.percentUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
+            this.percentUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.percentUpDown.Leave += new System.EventHandler(this.upDown_Leave);
+            // 
+            // label7
+            // 
+            this.label7.Location = new System.Drawing.Point(189, 147);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(16, 16);
+            this.label7.TabIndex = 13;
+            this.label7.Text = "%";
+            this.label7.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // originalImageSize
             // 
@@ -452,12 +557,30 @@ namespace PaintDotNet
             this.originalImageSize.TabIndex = 17;
             this.originalImageSize.Text = "800 x 600";
             // 
+            // asteriskTextLabel
+            // 
+            this.asteriskTextLabel.Location = new System.Drawing.Point(8, 176);
+            this.asteriskTextLabel.Name = "asteriskTextLabel";
+            this.asteriskTextLabel.Size = new System.Drawing.Size(224, 16);
+            this.asteriskTextLabel.TabIndex = 14;
+            this.asteriskTextLabel.Text = "* ...";
+            this.asteriskTextLabel.Visible = false;
+            // 
+            // asteriskLabel
+            // 
+            this.asteriskLabel.Location = new System.Drawing.Point(213, 21);
+            this.asteriskLabel.Name = "asteriskLabel";
+            this.asteriskLabel.Size = new System.Drawing.Size(13, 16);
+            this.asteriskLabel.TabIndex = 15;
+            this.asteriskLabel.Text = "*";
+            this.asteriskLabel.Visible = false;
+            // 
             // ResizeDialog
             // 
             this.AcceptButton = this.okButton;
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
             this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(238, 213);
+            this.ClientSize = new System.Drawing.Size(258, 277);
             this.Controls.Add(this.originalImageSize);
             this.Controls.Add(this.currentImageSize);
             this.Controls.Add(this.label5);
@@ -480,6 +603,7 @@ namespace PaintDotNet
             ((System.ComponentModel.ISupportInitialize)(this.widthUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.heightUpDown)).EndInit();
             this.resizedImageGroupBox.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.percentUpDown)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -505,39 +629,50 @@ namespace PaintDotNet
             }
         }
 
-        private void interpolationModeComboBox_SelectedIndexChanged(object sender, System.EventArgs e)
-        {
-            ResampleMethod rm = (ResampleMethod)((ComboBox)sender).SelectedItem;
-            InterpMode = rm.method;
-        }
-
         private void FixWidthToRatio()
         {
             widthUpDown.ValueChanged -= upDownValueChangedDelegate;
-            ImageWidth = (int)(Math.Round(ImageHeight* ratio));
-            widthUpDown.ValueChanged += upDownValueChangedDelegate;         
+            ImageWidth = (int)Math.Round((double)ImageHeight * ratio);
+			widthUpDown.ValueChanged += upDownValueChangedDelegate;         
         }
 
         private void FixHeightToRatio()
         {
-            heightUpDown.ValueChanged -= upDownValueChangedDelegate;
-            ImageHeight = (int)(Math.Round(ImageWidth * (1/ratio)));
-            heightUpDown.ValueChanged += upDownValueChangedDelegate;
+            heightUpDown.ValueChanged -= upDownValueChangedDelegate;      
+			ImageHeight = (int)Math.Round((double)ImageWidth * (1 / ratio));
+			heightUpDown.ValueChanged += upDownValueChangedDelegate;
         }
+
+		private void FixPercent()
+		{
+			widthUpDown.ValueChanged -= upDownValueChangedDelegate;
+			heightUpDown.ValueChanged -= upDownValueChangedDelegate;
+
+			ImageHeight = (int)((double)OriginalSize.Height * ((double)percentUpDown.Value / 100.0));
+			ImageWidth = (int)((double)OriginalSize.Width * ((double)percentUpDown.Value / 100.0));
+		
+			widthUpDown.ValueChanged += upDownValueChangedDelegate;
+			heightUpDown.ValueChanged += upDownValueChangedDelegate;
+		}
 
         private void upDown_ValueChanged(object sender, System.EventArgs e)
         {
             if (IsLocked)
             {
-                if (sender == heightUpDown)
-                {
-                    FixWidthToRatio();          
-                }
-                else if (sender == widthUpDown)
-                {
-                    FixHeightToRatio();         
-                }
+				if (sender == heightUpDown)
+				{
+					FixWidthToRatio();          
+				}
+				else if (sender == widthUpDown)
+				{
+					FixHeightToRatio();         
+				}
             }
+
+			if (sender == percentUpDown)
+			{
+				FixPercent();
+			}
 
             if (widthUpDown.Value != 0 && heightUpDown.Value != 0)
             {
@@ -547,6 +682,8 @@ namespace PaintDotNet
             {
                 okButton.Enabled = false;
             }
+
+            PopulateAsteriskLabels();
         }
 
         private void upDown_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
@@ -556,7 +693,7 @@ namespace PaintDotNet
 
             if (numberIsOk)
             {
-                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((double)ImageHeight * (double)ImageWidth * 4.0 * (double)Layers);
+                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((long)ImageHeight * (long)ImageWidth * (long)ColorBgra.SizeOf * (long)Layers);
                 upDown_ValueChanged(sender, e);
             }
         }
@@ -570,6 +707,74 @@ namespace PaintDotNet
         private void upDown_Leave(object sender, System.EventArgs e)
         {
             //upDown_ValueChanged(sender, e);
+        }
+
+        private void percentRB_CheckedChanged(object sender, System.EventArgs e)
+        {
+            if (percentRB.Checked)
+            {
+                widthUpDown.Enabled = false;
+                heightUpDown.Enabled = false;
+                ratioCheck.Enabled = false;
+                percentUpDown.Enabled = true;
+            }
+            else
+            {
+                widthUpDown.Enabled = true;
+                heightUpDown.Enabled = true;
+                ratioCheck.Enabled = true;
+                percentUpDown.Enabled = false;
+            }
+        }
+
+        private void absoluteRB_Click(object sender, System.EventArgs e)
+        {
+            absoluteRB.Checked = true;
+            percentRB.Checked = false;
+        }
+
+        private void percentRB_Click(object sender, System.EventArgs e)
+        {
+            absoluteRB.Checked = false;
+            percentRB.Checked = true;
+            FixPercent();
+        }
+
+        private void PopulateAsteriskLabels()
+        {
+            ResampleMethod rm = (ResampleMethod)this.resamplingAlgorithmComboBox.SelectedItem;
+
+            switch (rm.method)
+            {
+                default:
+                    this.asteriskLabel.Visible = false;
+                    this.asteriskTextLabel.Visible = false;
+                    break;
+
+                case ResamplingAlgorithm.SuperSampling:
+                    if (this.ImageWidth < this.OriginalSize.Width &&
+                        this.ImageHeight < this.OriginalSize.Height)
+                    {
+                        this.asteriskTextLabel.Text = "* Super Sampling will be used";
+                    }
+                    else
+                    {
+                        this.asteriskTextLabel.Text = "* Bicubic will be used";
+                    }
+
+                    if (this.resamplingAlgorithmComboBox.Visible)
+                    {
+                        this.asteriskLabel.Visible = true;
+                        this.asteriskTextLabel.Visible = true;
+                    }
+
+                    break;
+            }
+        }
+
+        private void resamplingAlgorithmComboBox_SelectedIndexChanged(object sender, System.EventArgs e)
+        {
+            PopulateAsteriskLabels();
         }
     }
 }

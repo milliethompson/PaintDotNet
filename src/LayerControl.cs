@@ -1,8 +1,15 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
-using System.Data;
 using System.Windows.Forms;
 using System.Diagnostics;
 
@@ -11,9 +18,9 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for LayerControl.
     /// </summary>
-    public class LayerControl : System.Windows.Forms.UserControl
-    {
-    
+    public class LayerControl 
+        : System.Windows.Forms.UserControl
+    {    
         private EventHandler elementClickDelegate;
         private EventHandler elementDoubleClickDelegate;
         private EventHandler documentChangedDelegate;
@@ -25,20 +32,40 @@ namespace PaintDotNet
         
         private const int elementHeight = 34;
         
-        private DocumentWorkspace workspace; 
+        private DocumentWorkspace workspace;
+        private Document document;
+
         private ArrayList layerControls;
         private PanelEx layerControlPanel;
-		public ArrayList LayerControls
+
+        [Browsable(false)]
+        public LayerElement[] Layers
 		{
 			get
 			{
-				return this.layerControls;
-			}
-			set
-			{
-				this.layerControls = value; //not sure if this is needed.. prob not but will leave in for now
+                if (layerControls == null)
+                {
+                    return new LayerElement[0];
+                }
+                else
+                {
+                    return (LayerElement[])this.layerControls.ToArray(typeof(LayerElement));
+                }
 			}
 		}
+
+        public BorderStyle BorderStyle
+        {
+            get
+            {
+                return layerControlPanel.BorderStyle;
+            }
+
+            set
+            {
+                layerControlPanel.BorderStyle = value;
+            }
+        }
 
         /// <summary> 
         /// Required designer variable.
@@ -61,31 +88,34 @@ namespace PaintDotNet
             keyUpDelegate = new KeyEventHandler(KeyUpHandler);
 
             layerControls = new ArrayList();
-
         }
 
-        private void DocumentChangedHandler(object sender, EventArgs e)
+        private void SetupNewDocument(Document document)
         {
-            // Subscribe the Events
-            workspace.Document.Layers.Inserted += layerInsertedDelegate;
-            workspace.Document.Layers.RemovedAt += layerRemovedDelegate;
-            
+            // Subscribe to the eevents
+            this.document = document;
+            this.document.Layers.Inserted += layerInsertedDelegate;
+            this.document.Layers.RemovedAt += layerRemovedDelegate;
+
             layerControlPanel.SuspendLayout();
 
-            for (int i = 0; i < workspace.Document.Layers.Count; ++i)
+            for (int i = 0; i < this.document.Layers.Count; ++i)
             {
                 this.LayerInsertedHandler(this, new IndexEventArgs(i));
             }
 
-            foreach (LayerElement lec in layerControls)
+            if (workspace != null)
             {
-                if (lec.Layer == workspace.ActiveLayer)
+                foreach (LayerElement lec in layerControls)
                 {
-                    lec.IsSelected = true;
-                }
-                else
-                {
-                    lec.IsSelected = false;
+                    if (lec.Layer == workspace.ActiveLayer)
+                    {
+                        lec.IsSelected = true;
+                    }
+                    else
+                    {
+                        lec.IsSelected = false;
+                    }
                 }
             }
 
@@ -93,7 +123,7 @@ namespace PaintDotNet
             PerformLayout();
         }
 
-        private void DocumentChangingHandler(object sender, EventArgs e)
+        private void TearDownOldDocument()
         {
             foreach (LayerElement lec in layerControls)
             {
@@ -109,11 +139,21 @@ namespace PaintDotNet
             layerControls.TrimToSize();
 
             // Unsubscribe to the Events
-            if (workspace.Document != null)
+            if (this.Document != null)
             {
-                workspace.Document.Layers.Inserted -= layerInsertedDelegate;
-                workspace.Document.Layers.RemovedAt -= layerRemovedDelegate;
+                this.document.Layers.Inserted -= layerInsertedDelegate;
+                this.document.Layers.RemovedAt -= layerRemovedDelegate;
             }
+        }
+
+        private void DocumentChangedHandler(object sender, EventArgs e)
+        {
+            SetupNewDocument(workspace.Document);
+        }
+
+        private void DocumentChangingHandler(object sender, EventArgs e)
+        {
+            TearDownOldDocument();
         }
 
         protected override void OnLayout(LayoutEventArgs levent)
@@ -126,7 +166,8 @@ namespace PaintDotNet
                 {
                     LayerElement lec = (LayerElement)layerControls[i];
                     lec.Width = layerControlPanel.ClientRectangle.Width;
-                    lec.Location = new Point(layerControlPanel.AutoScrollPosition.X, layerControlPanel.AutoScrollPosition.Y + (elementHeight * i));
+                    lec.Location = new Point(layerControlPanel.AutoScrollPosition.X, 
+                                             layerControlPanel.AutoScrollPosition.Y + (elementHeight * i));
                 }
             }
         }
@@ -179,7 +220,7 @@ namespace PaintDotNet
 
         private void LayerInsertedHandler(object sender, IndexEventArgs e)
         {
-            Layer layer = (Layer)workspace.Document.Layers[e.Index];
+            Layer layer = (Layer)this.document.Layers[e.Index];
             LayerElement lec = new LayerElement();
             InitializeLayerElement(lec, layer);
             layerControls.Insert(e.Index, lec);
@@ -188,11 +229,12 @@ namespace PaintDotNet
             PerformLayout();
             layerControlPanel.ScrollControlIntoView(lec);
             lec.Select();
+            lec.RefreshPreview();
         }
 
         /// <summary>
         /// This event is raised whenever the user clicks on a layer within the
-        /// LayerControl.
+        /// LayerControl to select it.
         /// </summary>
         public event LayerEventHandler ClickedOnLayer;
         private void OnClickedOnLayer(Layer layer)
@@ -243,11 +285,28 @@ namespace PaintDotNet
             Select(workspace.ActiveLayer);
         }
 
+        public void SuspendLayerPreviewUpdates()
+        {
+            foreach (LayerElement element in this.layerControls)
+            {
+                element.SuspendPreviewUpdates();
+            }
+        }
+
+        public void ResumeLayerPreviewUpdates()
+        {
+            foreach (LayerElement element in this.layerControls)
+            {
+                element.ResumePreviewUpdates();
+            }
+        }
+
         private void KeyUpHandler(object sender, KeyEventArgs e)
         {
             this.OnKeyUp(e);
         }
     
+        [Browsable(false)]
         public DocumentWorkspace Workspace
         {
             get
@@ -273,20 +332,49 @@ namespace PaintDotNet
                 }
             }
         }
+
+        [Browsable(false)]
+        public Document Document
+        {
+            get
+            {
+                return this.document;
+            }
+
+            set
+            {
+                if (this.workspace != null)
+                {
+                    throw new InvalidOperationException("Workspace property is already set");
+                }
+
+                if (this.document != null)
+                {
+                    TearDownOldDocument();
+                }
+
+                if (value != null)
+                {
+                    SetupNewDocument(value);
+                }
+            }
+        }
         
         /// <summary> 
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+
+            base.Dispose(disposing);
         }
 
         #region Component Designer generated code
@@ -316,7 +404,5 @@ namespace PaintDotNet
 
         }
         #endregion
-
-
     }
 }

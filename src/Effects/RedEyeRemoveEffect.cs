@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 
 namespace PaintDotNet.Effects
@@ -5,7 +13,8 @@ namespace PaintDotNet.Effects
 	/// <summary>
 	/// Summary description for DesaturateEffect.
 	/// </summary>
-	public class RedEyeRemoveEffect
+    [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
+    public class RedEyeRemoveEffect
 		: Effect,
 		IConfigurableEffect
 	{
@@ -37,14 +46,16 @@ namespace PaintDotNet.Effects
 			PixelOp redEyeRemove = new UnaryPixelOps.RedEyeRemove(tact.Amount1,tact.Amount2);
 			
 			System.Drawing.Rectangle[] rects = roi.GetRegionScansInt();		
-			foreach(System.Drawing.Rectangle rect in rects)
+			foreach (System.Drawing.Rectangle rect in rects)
 			{
 				redEyeRemove.Apply(dstArgs.Surface, rect.Location, srcArgs.Surface, rect.Location, rect.Size);
 			}
 		}
 
 		public RedEyeRemoveEffect()
-			: base("Red Eye Removal", "Removes all instances of red eye detected", Utility.GetImageResource("Icons.RedEyeRemoveEffect.bmp"))
+			: base("Red Eye Removal", 
+                   "Removes all instances of red eye detected", 
+                   Utility.GetImageResource("Icons.RedEyeRemoveEffect.bmp"))
 		{
 		}
 	}

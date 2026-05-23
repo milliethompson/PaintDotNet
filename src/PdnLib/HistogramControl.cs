@@ -1,9 +1,16 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Data;
 using System.Windows.Forms;
 
 namespace PaintDotNet
@@ -81,12 +88,14 @@ namespace PaintDotNet
 		private const int tickSize = 4;
 		unsafe private void UpdateRenderedHistogram() 
 		{
-			int max = Histogram.GetMax() + 1;
+			long max = Histogram.GetMax() + 1;
 			mean = Histogram.GetMeanColor();
 			ColorBgra *ptr;
+
 			for (int y = 0; y < renderedHistogram.Height; y++) 
 			{
 				ptr = renderedHistogram.GetRowAddress(y);
+
 				for (int x = 0; x < renderedHistogram.Width; x++) 
 				{
 					ptr[x].Bgra = 0x000000;
@@ -95,6 +104,7 @@ namespace PaintDotNet
 			for (int c = 0; c < 3; c++) 
 			{
 				byte onColor = 255;
+
 				if (mask[c] == 0) 
 				{
 					onColor /= 4;
@@ -102,7 +112,8 @@ namespace PaintDotNet
 
 				for (int v = 0; v <= 255; v++) 
 				{
-					int cutoff = Histogram.GetOccurrences(c, (byte)v) * renderedHistogram.Width / max, x;
+					long cutoff = Histogram.GetOccurrences(c, (byte)v) * renderedHistogram.Width / max, x;
+
 					if (flipVertical) 
 					{
 						ptr = renderedHistogram.GetRowAddress(1 + v);
@@ -129,6 +140,7 @@ namespace PaintDotNet
 					}
 				}
 			}
+
 			this.isValid = true;
 		}
 
@@ -136,36 +148,44 @@ namespace PaintDotNet
 		protected override void OnPaint(PaintEventArgs e)
 		{
 			base.OnPaint (e);
+
 			if (!isValid) 
 			{
 				UpdateRenderedHistogram();
 			}
-			Bitmap bmp = renderedHistogram.CreateAliasedBitmap();
-			if (this.Height < 256) 
-			{
-				e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-			} 
-			else 
-			{
-				e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-			}
-			e.Graphics.DrawImage(bmp, Rectangle.Inflate(this.ClientRectangle, -1, -1), renderedHistogram.Bounds, GraphicsUnit.Pixel);
-			e.Graphics.DrawRectangle(Pens.Black, 0, 0, ClientRectangle.Width - 1, ClientRectangle.Height - 1);
-			for (int c = 0; c < 3; c++)
-			{
-				int x = flipHorizontal ? 0 : this.Width;
-				int y = flipVertical ? mean[c] + 1 : 256 - mean[c];
-				y = (y * this.Height) / 258;
-				Point l, t, r, b;
 
-				ColorBgra col = ColorBgra.FromBgr(0, 0, 0);
-				col[c] = 255;
-				l = new Point(x - tickSize, y);
-				t = new Point(x, y - tickSize);
-				r = new Point(x + tickSize, y);
-				b = new Point(x, y + tickSize);
-				e.Graphics.FillPolygon(new SolidBrush(col.ToColor()), new Point[]{l, t, r, b});
-			}
+            using (Bitmap bmp = renderedHistogram.CreateAliasedBitmap())
+            {
+                if (this.Height < 256) 
+                {
+                    e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                } 
+                else 
+                {
+                    e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+                }
+
+                e.Graphics.DrawImage(bmp, Rectangle.Inflate(this.ClientRectangle, -1, -1), renderedHistogram.Bounds, GraphicsUnit.Pixel);
+                e.Graphics.DrawRectangle(Pens.Black, 0, 0, ClientRectangle.Width - 1, ClientRectangle.Height - 1);
+
+                for (int c = 0; c < 3; c++)
+                {
+                    int x = flipHorizontal ? 0 : this.Width;
+                    int y = flipVertical ? mean[c] + 1 : 256 - mean[c];
+                    y = (y * this.Height) / 258;
+                    Point l, t, r, b;
+
+                    ColorBgra col = ColorBgra.FromBgr(0, 0, 0);
+
+                    col[c] = 255;
+                    l = new Point(x - tickSize, y);
+                    t = new Point(x, y - tickSize);
+                    r = new Point(x + tickSize, y);
+                    b = new Point(x, y + tickSize);
+
+                    e.Graphics.FillPolygon(new SolidBrush(col.ToColor()), new Point[] {l, t, r, b});
+                }
+            }
 		}
 
 		private void Histogram_HistogramChanged(object sender, EventArgs e)

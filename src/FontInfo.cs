@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -5,7 +13,6 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Reflection;
-using System.Data;
 using System.Windows.Forms;
 
 namespace PaintDotNet
@@ -15,6 +22,7 @@ namespace PaintDotNet
     /// Does not carry text alignment information.
     /// </summary>
     public class FontInfo
+        : IDisposable
     {
         private FontFamily family;
         private float size;
@@ -47,11 +55,22 @@ namespace PaintDotNet
             return unchecked(family.GetHashCode() + size.GetHashCode() + style.GetHashCode());
         }
         
+        /// <summary>
+        /// Constructs an instance of the FontInfo class.
+        /// </summary>
+        /// <param name="fontFamily">The FontFamily to associate with this class. The FontInfo instance takes ownership of this FontFamily instance: do not call Dispose() on it.</param>
+        /// <param name="size">The Size of the font.</param>
+        /// <param name="fontStyle">The FontStyle of the font.</param>
         public FontInfo(FontFamily fontFamily, float size, FontStyle fontStyle)
         {
             this.FontFamily = fontFamily;
             this.Size = size;
             this.FontStyle = fontStyle;
+        }
+
+        ~FontInfo()
+        {
+            Dispose(false);
         }
 
         /// <summary>
@@ -104,7 +123,7 @@ namespace PaintDotNet
 
         public bool CanCreateFont()
         {
-            if (this.FontFamily.IsStyleAvailable(this.FontStyle))   // check to see if style is availble in family
+            if (this.FontFamily.IsStyleAvailable(this.FontStyle))   // check to see if style is available in family
             {
                 return true;
             }
@@ -119,10 +138,6 @@ namespace PaintDotNet
                     return true;
                 }
                 else if (this.FontFamily.IsStyleAvailable(FontStyle.Bold))
-                {
-                    return true;
-                }
-                else if (this.FontFamily.IsStyleAvailable(FontStyle.Strikeout))
                 {
                     return true;
                 }
@@ -141,7 +156,7 @@ namespace PaintDotNet
             // I am checking for this possibility in the textconfig widget getFontInfo fucntion
             if (this.FontFamily.IsStyleAvailable(this.FontStyle))   // check to see if style is availble in family
             {
-                return new Font(this.FontFamily, this.Size, this.FontStyle);
+                return new Font(this.FontFamily, (float)Math.Max(1.0, (double)this.Size), this.FontStyle);
             }
             else    // find the style it is available in (coersion)
             {
@@ -159,10 +174,6 @@ namespace PaintDotNet
                 {
                     fs = FontStyle.Bold;    
                 }
-                else if (this.FontFamily.IsStyleAvailable(FontStyle.Strikeout))
-                {
-                    fs = FontStyle.Strikeout;
-                }
                 else if (this.FontFamily.IsStyleAvailable(FontStyle.Underline))
                 {
                     fs = FontStyle.Underline;
@@ -170,7 +181,7 @@ namespace PaintDotNet
 
                 try
                 {
-                    return new Font(this.FontFamily, this.Size, fs);
+                    return new Font(this.FontFamily, (float)Math.Max(1.0, (double)this.Size), fs);
                 }
 
                 catch
@@ -179,5 +190,26 @@ namespace PaintDotNet
                 }
             }
         }
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (this.FontFamily != null)
+                {
+                    this.FontFamily.Dispose();
+                    this.FontFamily = null;
+                }
+            }
+        }
+
+        #endregion
     }
 }

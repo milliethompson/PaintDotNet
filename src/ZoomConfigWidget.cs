@@ -1,8 +1,15 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
-using System.Data;
 using System.Windows.Forms;
 
 namespace PaintDotNet
@@ -55,36 +62,39 @@ namespace PaintDotNet
 		public ZoomConfigWidget()
 		{
 			InitializeComponent();
-			ScaleFactor = new ScaleFactor(1.0f);
+			this.ScaleFactor = ScaleFactor.OneToOne;
 			udZoom.SelectedIndex = 4;
 			udZoom.DropDownWidth = 1;
 
-			
 			Graphics g = Graphics.FromHwnd(udZoom.Handle);
+
 			foreach (string str in udZoom.Items) 
 			{
 				udZoom.DropDownWidth = (int)Math.Max(udZoom.DropDownWidth, 2 + g.MeasureString(str, udZoom.Font).Width);
 			}
+
 			tbZoomConfig.ImageList = imageList;
 			imageList.TransparentColor = Color.FromArgb(192, 192, 192);
-			btnZoomIn.ImageIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuImageZoomInIcon.bmp"), imageList.TransparentColor);            
-			btnZoomOut.ImageIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuImageZoomOutIcon.bmp"), imageList.TransparentColor);
+			btnZoomIn.ImageIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuViewZoomInIcon.bmp"), imageList.TransparentColor);            
+			btnZoomOut.ImageIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuViewZoomOutIcon.bmp"), imageList.TransparentColor);
 			btnZoomIn.ToolTipText = "Zoom in";
 			btnZoomOut.ToolTipText = "Zoom out";
 			zoomBasis = ZoomBasis.Factor;
 			ScaleFactor = ScaleFactor.OneToOne;
 		}
 
-		protected override void Dispose( bool disposing )
+		protected override void Dispose(bool disposing)
 		{
-			if ( disposing )
+			if (disposing)
 			{
 				if (components != null)
 				{
 					components.Dispose();
-				}
+                    components = null;
+                }
 			}
-			base.Dispose( disposing );
+
+			base.Dispose(disposing);
 		}
 
 		#region Component Designer generated code
@@ -94,105 +104,134 @@ namespace PaintDotNet
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.components = new System.ComponentModel.Container();
-			this.udZoom = new System.Windows.Forms.ComboBox();
-			this.tooltipProvider = new System.Windows.Forms.ToolTip(this.components);
-			this.tbZoomConfig = new DotNetWidgets.DotNetToolbar();
-			this.btnZoomIn = new DotNetWidgets.DotNetToolbarButtonItem();
-			this.btnZoomOut = new DotNetWidgets.DotNetToolbarButtonItem();
-			this.imageList = new System.Windows.Forms.ImageList(this.components);
-			this.SuspendLayout();
-			// 
-			// udZoom
-			// 
-			this.udZoom.DropDownWidth = 128;
-			this.udZoom.ItemHeight = 13;
-			this.udZoom.Items.AddRange(new object[] {
-														"1600%",
-														"800%",
-														"400%",
-														"200%",
-														"100%",
-														"50%",
-														"25%",
-														"10%",
-														"5%",
-														"2%",
-														"Window",
-														"Selection"});
-			this.udZoom.Location = new System.Drawing.Point(57, 3);
-			this.udZoom.MaxDropDownItems = 99;
-			this.udZoom.Name = "udZoom";
-			this.udZoom.RightToLeft = System.Windows.Forms.RightToLeft.No;
-			this.udZoom.Size = new System.Drawing.Size(70, 21);
-			this.udZoom.TabIndex = 1;
-			this.udZoom.Text = "100%";
-			this.udZoom.CausesValidation = true;
-			this.udZoom.Validating += new CancelEventHandler(udZoom_Validating);
-			this.udZoom.SelectedIndexChanged += new EventHandler(udZoom_SelectedIndexChanged);
-			// 
-			// tbZoomConfig
-			// 
-			this.tbZoomConfig.Buttons.Add(this.btnZoomIn);
-			this.tbZoomConfig.Buttons.Add(this.btnZoomOut);
-			this.tbZoomConfig.DrawGrabHandle = false;
-			this.tbZoomConfig.ImageList = null;
-			this.tbZoomConfig.Location = new System.Drawing.Point(0, 0);
-			this.tbZoomConfig.MenuProvider = null;
-			this.tbZoomConfig.Name = "tbZoomConfig";
-			this.tbZoomConfig.Size = new System.Drawing.Size(120, 26);
-			this.tbZoomConfig.TabIndex = 2;
-			this.tbZoomConfig.ButtonClick += new DotNetWidgets.DotNetToolbar.ButtonClickEventHandler(this.tbZoomConfig_ButtonClick);
-			// 
-			// btnZoomIn
-			// 
-			this.btnZoomIn.BeginGroup = true;
-			// 
-			// imageList
-			// 
-			this.imageList.ImageSize = new System.Drawing.Size(16, 16);
-			this.imageList.TransparentColor = System.Drawing.Color.Transparent;
-			// 
-			// ZoomConfigWidget
-			// 
-			this.Controls.Add(this.udZoom);
-			this.Controls.Add(this.tbZoomConfig);
-			this.Name = "ZoomConfigWidget";
-			this.Size = new System.Drawing.Size(120, 26);
-			this.ResumeLayout(false);
+            this.components = new System.ComponentModel.Container();
+            this.udZoom = new System.Windows.Forms.ComboBox();
+            this.tooltipProvider = new System.Windows.Forms.ToolTip(this.components);
+            this.tbZoomConfig = new DotNetWidgets.DotNetToolbar();
+            this.btnZoomIn = new DotNetWidgets.DotNetToolbarButtonItem();
+            this.btnZoomOut = new DotNetWidgets.DotNetToolbarButtonItem();
+            this.imageList = new System.Windows.Forms.ImageList(this.components);
+            this.SuspendLayout();
+            // 
+            // udZoom
+            // 
+            this.udZoom.DropDownWidth = 128;
+            this.udZoom.ItemHeight = 13;
+            this.udZoom.Items.AddRange(new object[] {
+                                                        "3200%",
+                                                        "1600%",
+                                                        "800%",
+                                                        "400%",
+                                                        "200%",
+                                                        "100%",
+                                                        "50%",
+                                                        "25%",
+                                                        "10%",
+                                                        "5%",
+                                                        "2%",
+                                                        "Window"
+                                                    });
 
-		}
+            this.udZoom.Location = new System.Drawing.Point(57, 3);
+            this.udZoom.MaxDropDownItems = 99;
+            this.udZoom.Name = "udZoom";
+            this.udZoom.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.udZoom.Size = new System.Drawing.Size(70, 21);
+            this.udZoom.TabIndex = 1;
+            this.udZoom.Text = "100%";
+            this.udZoom.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.udZoom_KeyPress);
+            this.udZoom.Validating += new System.ComponentModel.CancelEventHandler(this.udZoom_Validating);
+            this.udZoom.SelectedIndexChanged += new System.EventHandler(this.udZoom_SelectedIndexChanged);
+            // 
+            // tbZoomConfig
+            // 
+            this.tbZoomConfig.Buttons.Add(this.btnZoomIn);
+            this.tbZoomConfig.Buttons.Add(this.btnZoomOut);
+            this.tbZoomConfig.DrawGrabHandle = false;
+            this.tbZoomConfig.ImageList = null;
+            this.tbZoomConfig.Location = new System.Drawing.Point(0, 0);
+            this.tbZoomConfig.MenuProvider = null;
+            this.tbZoomConfig.Name = "tbZoomConfig";
+            this.tbZoomConfig.Size = new System.Drawing.Size(120, 26);
+            this.tbZoomConfig.TabIndex = 2;
+            this.tbZoomConfig.ButtonClick += new DotNetWidgets.DotNetToolbar.ButtonClickEventHandler(this.tbZoomConfig_ButtonClick);
+            // 
+            // btnZoomIn
+            // 
+            this.btnZoomIn.BeginGroup = true;
+            // 
+            // imageList
+            // 
+            this.imageList.ImageSize = new System.Drawing.Size(16, 16);
+            this.imageList.TransparentColor = System.Drawing.Color.Transparent;
+            // 
+            // ZoomConfigWidget
+            // 
+            this.Controls.Add(this.udZoom);
+            this.Controls.Add(this.tbZoomConfig);
+            this.Name = "ZoomConfigWidget";
+            this.Size = new System.Drawing.Size(120, 26);
+            this.ResumeLayout(false);
+
+        }
 		#endregion
 		
 		private void SetZoomText() 
 		{
 			this.udZoom.BackColor = SystemColors.Window;
+            string newText = udZoom.Text;
+
 			switch (zoomBasis) 
 			{
 				case ZoomBasis.Window: 
-					udZoom.Text = "Window";
+					newText = "Window";
 					break;
-				case ZoomBasis.Selection:
-					udZoom.Text = "Selection";
-					break;
-				case ZoomBasis.Factor:
-					udZoom.Text = scaleFactor.ToString();
-					break;
-			}
-		}
 
-		public event EventHandler ZoomScaleChanged;
-		protected void OnZoomScaleChanged() 
-		{
-			if (zoomBasis == ZoomBasis.Factor) 
-			{
-				SetZoomText();
-				if (ZoomScaleChanged != null)
-				{
-					ZoomScaleChanged(this, EventArgs.Empty);
-				}
+				case ZoomBasis.Selection:
+					newText = "Selection";
+					break;
+
+				case ZoomBasis.Factor:
+					newText = scaleFactor.ToString();
+					break;
 			}
-		}
+
+            if (udZoom.Text != newText)
+            {
+                udZoom.Text = newText;
+            }
+        }
+
+        public event EventHandler ZoomScaleChanged;
+        protected void OnZoomScaleChanged() 
+        {
+            if (zoomBasis == ZoomBasis.Factor) 
+            {
+                SetZoomText();
+                if (ZoomScaleChanged != null)
+                {
+                    ZoomScaleChanged(this, EventArgs.Empty);
+                }
+            }
+        }
+
+        public event EventHandler ZoomIn;
+        protected void OnZoomIn() 
+        {
+            if (ZoomIn != null)
+            {
+                ZoomIn(this, EventArgs.Empty);
+            }
+        }
+
+        public event EventHandler ZoomOut;
+        protected void OnZoomOut() 
+        {
+            if (ZoomOut != null)
+            {
+                ZoomOut(this, EventArgs.Empty);
+            }
+        }
 
 		public void PerformZoomBasisChanged() 
 		{
@@ -203,6 +242,7 @@ namespace PaintDotNet
 		protected void OnZoomBasisChanged() 
 		{
 			SetZoomText();
+
 			if (ZoomBasisChanged != null)
 			{
 				ZoomBasisChanged(this, EventArgs.Empty);
@@ -220,6 +260,7 @@ namespace PaintDotNet
 			{
 				int val = 1;
 				e.Cancel = false;
+
 				if (udZoom.Text == "Window") 
 				{
 					ZoomBasis = ZoomBasis.Window;
@@ -234,11 +275,20 @@ namespace PaintDotNet
 					{
 						string text = udZoom.Text;
 
-						if (text[text.Length - 1] == '%')
-							text = text.Substring(0, text.Length - 1);
+                        if (text.Length == 0)
+                        {
+                            e.Cancel = true;
+                        }
+                        else
+                        {
+                            if (text[text.Length - 1] == '%')
+                            {
+                                text = text.Substring(0, text.Length - 1);
+                            }
 
-						val = (int)Math.Round(double.Parse(text));
-						ZoomBasis = ZoomBasis.Factor;
+                            val = (int)Math.Round(double.Parse(text));
+                            ZoomBasis = ZoomBasis.Factor;
+                        }
 					}
 
 					catch (FormatException)
@@ -262,13 +312,13 @@ namespace PaintDotNet
 						{
 							e.Cancel = true;
 							this.udZoom.BackColor = Color.Red;
-							this.tooltipProvider.SetToolTip(this.udZoom, "ERROR: Zoom must be at least 1%");
+							this.tooltipProvider.SetToolTip(this.udZoom, "ERROR: Zoom has be at least 1%");
 						}
-						else if (val > 1600)
+						else if (val > 3200)
 						{
 							e.Cancel = true;
 							this.udZoom.BackColor = Color.Red;
-							this.tooltipProvider.SetToolTip(this.udZoom, "ERROR: Zoom must not exceed 1600%");
+							this.tooltipProvider.SetToolTip(this.udZoom, "ERROR: Zoom can not exceed 3200%");
 						}
 						else 
 						{
@@ -276,28 +326,32 @@ namespace PaintDotNet
 							e.Cancel = false;
 							this.tooltipProvider.RemoveAll();
 							this.udZoom.BackColor = SystemColors.Window;
-							ScaleFactor = new ScaleFactor(val / 100.0f);
+							ScaleFactor = new ScaleFactor(val, 100);
 						}
 					}
 				}
 			}
+
 			catch (FormatException)
 			{
-				;
 			}
 		}
 
 		private void tbZoomConfig_ButtonClick(object sender, DotNetWidgets.DotNetToolbarItemClickEventArgs e)
 		{
-			if (e.Button == btnZoomIn)
+            ScaleFactor oldSF = this.ScaleFactor;
+
+            // We often end up in a feedback loop of some sort where the scale factor will be read
+            // as, say, 6.125% and then get increased to 6.25% and then converted back to 6.125%
+            // So we first force an increase of one percentage point, then jump up (or down) to the 
+            // next power of 2
+            if (e.Button == btnZoomIn)
 			{
-				ZoomBasis = ZoomBasis.Factor;
-				ScaleFactor = ScaleFactor.GetNextLarger();
+                OnZoomIn();
 			} 
 			else if (e.Button == btnZoomOut) 
 			{
-				ZoomBasis = ZoomBasis.Factor;
-				ScaleFactor = ScaleFactor.GetNextSmaller();
+                OnZoomOut();
 			}
 		}
 
@@ -305,5 +359,14 @@ namespace PaintDotNet
 		{
 			this.Validate();
 		}
+
+        private void udZoom_KeyPress(object sender, System.Windows.Forms.KeyPressEventArgs e)
+        {
+            if (e.KeyChar == '\n' || e.KeyChar == '\r')
+            {
+                udZoom_Validating(sender, new CancelEventArgs(false));
+                udZoom.Select(0, udZoom.Text.Length);
+            }
+        }
 	}
 }

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -7,14 +15,7 @@ namespace PaintDotNet
     public class ColorPickerTool : Tool
     {
         private bool mouseDown;
-
-		public override char HotKey
-		{
-			get
-			{
-				return 'd';
-			}
-		}
+        private Cursor colorPickerToolCursor;
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
@@ -40,7 +41,7 @@ namespace PaintDotNet
             mouseDown = false;
         }
 
-        private ColorBgra LiftColor( int x, int y )
+        private ColorBgra LiftColor(int x, int y)
         {
             ColorBgra newColor;
             newColor = ((BitmapLayer)this.Workspace.ActiveLayer).Surface[x, y];
@@ -49,7 +50,7 @@ namespace PaintDotNet
 
         private void PickColor(MouseEventArgs e)
         {
-            if (!Utility.IsPointInRectangle(new Point(e.X, e.Y), new Rectangle(new Point(0,0), this.Workspace.Document.Size)))
+            if (!Utility.IsPointInRectangle(e.X, e.Y, Workspace.Document.Bounds))
             {
                 return;
             }
@@ -69,16 +70,35 @@ namespace PaintDotNet
         }
 
         public ColorPickerTool(DocumentWorkspace parent)
-            : base(parent)
+            : base(parent,
+                   Utility.GetImageResource("Icons.ColorPickerToolIcon.bmp"),
+                   "Color Picker",
+                   "Gets current color from canvas",
+                   "Left click to set foreground color, right click to set background color",
+                   'd')
         {
-            toolBarImage = Utility.GetImageResource("Icons.ColorPickerToolIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.ColorPickerToolCursor.cur"));
-            name = "Color Picker";
-            description = "Gets current color from canvas";
-			helpText = "Left click to set foreground color, right click to set background color";
+            this.colorPickerToolCursor = new Cursor(Utility.GetResourceStream("Cursors.ColorPickerToolCursor.cur"));
+            this.Cursor = this.colorPickerToolCursor;
 
             // initialize any state information you need
             mouseDown = false;
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose (disposing);
+
+            if (disposing)
+            {
+                DisposeImage();
+
+                if (this.colorPickerToolCursor != null)
+                {
+                    this.colorPickerToolCursor.Dispose();
+                    this.colorPickerToolCursor = null;
+                }
+            }
+        }
+
     }
 }

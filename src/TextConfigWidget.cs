@@ -1,7 +1,14 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -17,6 +24,9 @@ namespace PaintDotNet
     /// </summary>
     public class TextConfigWidget : System.Windows.Forms.UserControl
     {
+        private const int maxFontSize = 1000;
+        private const int minFontSize = 1;
+
         private FontFamily arialFontFamily;
         private FontStyle style;
         private TextAlignment alignment;
@@ -31,18 +41,27 @@ namespace PaintDotNet
         private DotNetWidgets.DotNetToolbarButtonItem alignRightButton;
         private System.Windows.Forms.ComboBox fontComboBox;
         private System.Windows.Forms.ComboBox sizeComboBox;
-		private DotNetWidgets.DotNetToolbar dotNetToolbar1;
-		private DotNetWidgets.DotNetToolbarLabelItem lblFont;
-		private System.Windows.Forms.ToolTip tooltipProvider;
-		private System.ComponentModel.IContainer components;
+        private DotNetWidgets.DotNetToolbar dotNetToolbar;
+        private DotNetWidgets.DotNetToolbarLabelItem lblFont;
+        private System.Windows.Forms.ToolTip tooltipProvider;
+        private System.ComponentModel.IContainer components;
+        private Brush highlightBrush;
+        private Brush highlightTextBrush;
+        private Brush windowBrush;
+        private Brush windowTextBrush;
+        private Font arialFont10;
+        private const string arialName = "Arial";
 
         public TextConfigWidget()
         {
             // This call is required by the Windows.Forms Form Designer.
+
             InitializeComponent();
 
-            Utility.TraceMe("init fontcombobox");
-            #region initializaion of fontComboBox
+            this.SuspendLayout();
+            this.arialFontFamily = new FontFamily(arialName);
+            this.arialFont10 = new Font(arialFontFamily, 10, FontStyle.Regular);
+
             this.fontComboBox.AllowDrop = true;
             this.fontComboBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
             this.fontComboBox.DropDownWidth = 240;
@@ -53,31 +72,32 @@ namespace PaintDotNet
             this.fontComboBox.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.fontComboBox_DrawItem);
             this.fontComboBox.Sorted = true;
             this.fontComboBox.DropDown += new EventHandler(fontComboBox_DropDown);
-            this.fontComboBox.Items.Add("Arial");
-            this.fontComboBox.SelectedItem = "Arial";
-            this.arialFontFamily = new FontFamily("Arial");
-            
-            Utility.TraceMe("populate");
-            // Get an array of the available font families.
-            //new Thread(new ThreadStart(PopulateFonts)).Start();
-            //PopulateFonts();
+            this.fontComboBox.Items.Add(arialName);
+            this.fontComboBox.SelectedItem = arialName;
 
-            #endregion
-
-            Utility.TraceMe("init sizecomboboxtb");
-
-            #region sizeComboBox
             this.sizeComboBox.TextChanged += new EventHandler(sizeComboBox_TextChanged);
             this.sizeComboBox.Validating += new CancelEventHandler(sizeComboBox_Validating);
             this.sizeComboBox.Text = "10";
-            #endregion
-    
-            Utility.TraceMe("create imagelist");
-            #region Create ImageList
-            // Create ImageList
-            imageList = new ImageList();
-            imageList.ImageSize = new Size(16, 16);
-            imageList.TransparentColor = Color.FromArgb(192, 192, 192);
+
+            alignment = TextAlignment.Left;
+            alignLeftButton.Pushed = true;
+            oldSizeValue = 2;
+
+            this.ResumeLayout();
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad (e);
+
+            this.highlightBrush = new SolidBrush(SystemColors.Highlight);
+            this.highlightTextBrush = new SolidBrush(SystemColors.HighlightText);
+            this.windowBrush = new SolidBrush(SystemColors.Window);
+            this.windowTextBrush = new SolidBrush(SystemColors.WindowText);
+
+            this.imageList = new ImageList();
+            this.imageList.ImageSize = new Size(16, 16);
+            this.imageList.TransparentColor = Color.FromArgb(192, 192, 192);
 
             this.fontToolbar.ImageList = imageList;
 
@@ -88,28 +108,16 @@ namespace PaintDotNet
             int alignCenterIndex = imageList.Images.Add(Utility.GetImageResource("Icons.TextAlignCenterIcon.bmp"), imageList.TransparentColor);
             int alignRightIndex = imageList.Images.Add(Utility.GetImageResource("Icons.TextAlignRightIcon.bmp"), imageList.TransparentColor);
 
-            boldButton.ImageIndex = boldIndex;
-            italicButton.ImageIndex = italicIndex;
-            underlineButton.ImageIndex = underlineIndex;
-            alignLeftButton.ImageIndex = alignLeftIndex;
-            alignCenterButton.ImageIndex = alignCenterIndex;
-            alignRightButton.ImageIndex = alignRightIndex;
-            #endregion
-            
-            Utility.TraceMe("misc");
-            alignment = TextAlignment.Left;
-            alignLeftButton.Pushed = true;
-            oldSizeValue = 2;
-
-            Utility.TraceMe("done");
+            this.boldButton.ImageIndex = boldIndex;
+            this.italicButton.ImageIndex = italicIndex;
+            this.underlineButton.ImageIndex = underlineIndex;
+            this.alignLeftButton.ImageIndex = alignLeftIndex;
+            this.alignCenterButton.ImageIndex = alignCenterIndex;
+            this.alignRightButton.ImageIndex = alignRightIndex;        
         }
 
         private void PopulateFonts()
         {
-            Utility.TraceMe("populating");
-
-            FontStyle fontStyle = new FontStyle();
-
             using (Graphics g = this.CreateGraphics())
             {
                 using (new WaitCursorChanger(this))
@@ -123,17 +131,23 @@ namespace PaintDotNet
                             continue;
                         }
 
-                        FontInfo fi = new FontInfo(family, 10, FontStyle.Regular);
-
-                        if (fi.CanCreateFont())
+                        using (FontInfo fi = new FontInfo(family, 10, FontStyle.Regular))
                         {
-                            fontComboBox.Items.Add(family.Name);
+                            if (fi.CanCreateFont())
+                            {
+                                fontComboBox.Items.Add(family.Name);
+                            }
                         }
                     }
                 }
-            }
 
-            Utility.TraceMe("done");
+                // HACK: If you move the mouse while we have that waitcursor in place,
+                //       then the cursor STAYS as a wait cursor
+                if (this.ParentForm != null)
+                {
+                    this.ParentForm.Cursor = Cursors.Default;
+                }
+            }
         }
 
         public event EventHandler FontTextChanged;
@@ -160,6 +174,7 @@ namespace PaintDotNet
             {
                 return new FontInfo(this.FontFamily, this.FontSize, this.FontStyle);
             }   
+
             set
             {
                 if (value != this.FontInfo)
@@ -223,8 +238,8 @@ namespace PaintDotNet
                 }
                     
                 return oldSizeValue;
-                    
             }
+
             set
             {
                 bool invalid = false;
@@ -346,16 +361,17 @@ namespace PaintDotNet
         /// <summary> 
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
         #region Component Designer generated code
@@ -365,145 +381,136 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-			this.components = new System.ComponentModel.Container();
-			this.fontToolbar = new DotNetWidgets.DotNetToolbar();
-			this.boldButton = new DotNetWidgets.DotNetToolbarButtonItem();
-			this.italicButton = new DotNetWidgets.DotNetToolbarButtonItem();
-			this.underlineButton = new DotNetWidgets.DotNetToolbarButtonItem();
-			this.alignLeftButton = new DotNetWidgets.DotNetToolbarButtonItem();
-			this.alignCenterButton = new DotNetWidgets.DotNetToolbarButtonItem();
-			this.alignRightButton = new DotNetWidgets.DotNetToolbarButtonItem();
-			this.fontComboBox = new System.Windows.Forms.ComboBox();
-			this.sizeComboBox = new System.Windows.Forms.ComboBox();
-			this.dotNetToolbar1 = new DotNetWidgets.DotNetToolbar();
-			this.lblFont = new DotNetWidgets.DotNetToolbarLabelItem();
-			this.tooltipProvider = new System.Windows.Forms.ToolTip(this.components);
-			this.SuspendLayout();
-			// 
-			// fontToolbar
-			// 
-			this.fontToolbar.Buttons.Add(this.boldButton);
-			this.fontToolbar.Buttons.Add(this.italicButton);
-			this.fontToolbar.Buttons.Add(this.underlineButton);
-			this.fontToolbar.Buttons.Add(this.alignLeftButton);
-			this.fontToolbar.Buttons.Add(this.alignCenterButton);
-			this.fontToolbar.Buttons.Add(this.alignRightButton);
-			this.fontToolbar.Dock = System.Windows.Forms.DockStyle.None;
-			this.fontToolbar.DrawGrabHandle = false;
-			this.fontToolbar.ImageList = null;
-			this.fontToolbar.Location = new System.Drawing.Point(216, 0);
-			this.fontToolbar.MenuProvider = null;
-			this.fontToolbar.Name = "fontToolbar";
-			this.fontToolbar.Size = new System.Drawing.Size(456, 26);
-			this.fontToolbar.TabIndex = 3;
-			this.fontToolbar.ButtonClick += new DotNetWidgets.DotNetToolbar.ButtonClickEventHandler(this.fontToolbar_ButtonClick);
-			// 
-			// boldButton
-			// 
-			this.boldButton.ToolTipText = "Bold Text";
-			// 
-			// italicButton
-			// 
-			this.italicButton.ToolTipText = "Italics Text";
-			// 
-			// underlineButton
-			// 
-			this.underlineButton.ToolTipText = "Underline Text";
-			// 
-			// alignLeftButton
-			// 
-			this.alignLeftButton.BeginGroup = true;
-			this.alignLeftButton.ToolTipText = "Align Text Left";
-			// 
-			// alignCenterButton
-			// 
-			this.alignCenterButton.ToolTipText = "Center Text";
-			// 
-			// alignRightButton
-			// 
-			this.alignRightButton.ToolTipText = "Align Text Right";
-			// 
-			// fontComboBox
-			// 
-			this.fontComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-			this.fontComboBox.Location = new System.Drawing.Point(45, 3);
-			this.fontComboBox.Name = "fontComboBox";
-			this.fontComboBox.Size = new System.Drawing.Size(120, 21);
-			this.fontComboBox.TabIndex = 4;
-			this.fontComboBox.SelectedIndexChanged += new System.EventHandler(this.fontComboBox_SelectedIndexChanged);
-			// 
-			// sizeComboBox
-			// 
-			this.sizeComboBox.Items.AddRange(new object[] {
-															  "8",
-															  "9",
-															  "10",
-															  "11",
-															  "12",
-															  "14",
-															  "16",
-															  "18",
-															  "20",
-															  "22",
-															  "24",
-															  "26",
-															  "28",
-															  "36",
-															  "48",
-															  "72"});
-			this.sizeComboBox.Location = new System.Drawing.Point(168, 3);
-			this.sizeComboBox.Name = "sizeComboBox";
-			this.sizeComboBox.Size = new System.Drawing.Size(48, 21);
-			this.sizeComboBox.TabIndex = 9;
-			this.sizeComboBox.Text = "comboBox1";
-			// 
-			// dotNetToolbar1
-			// 
-			this.dotNetToolbar1.Buttons.Add(this.lblFont);
-			this.dotNetToolbar1.Dock = System.Windows.Forms.DockStyle.None;
-			this.dotNetToolbar1.DrawGrabHandle = false;
-			this.dotNetToolbar1.ImageList = null;
-			this.dotNetToolbar1.Location = new System.Drawing.Point(0, 0);
-			this.dotNetToolbar1.MenuProvider = null;
-			this.dotNetToolbar1.Name = "dotNetToolbar1";
-			this.dotNetToolbar1.Size = new System.Drawing.Size(72, 26);
-			this.dotNetToolbar1.TabIndex = 8;
-			// 
-			// lblFont
-			// 
-			this.lblFont.BeginGroup = true;
-			this.lblFont.Text = "Font:";
-			// 
-			// TextConfigWidget
-			// 
-			this.Controls.Add(this.sizeComboBox);
-			this.Controls.Add(this.fontComboBox);
-			this.Controls.Add(this.fontToolbar);
-			this.Controls.Add(this.dotNetToolbar1);
-			this.Name = "TextConfigWidget";
-			this.Size = new System.Drawing.Size(456, 26);
-			this.ResumeLayout(false);
+            this.components = new System.ComponentModel.Container();
+            this.fontToolbar = new DotNetWidgets.DotNetToolbar();
+            this.boldButton = new DotNetWidgets.DotNetToolbarButtonItem();
+            this.italicButton = new DotNetWidgets.DotNetToolbarButtonItem();
+            this.underlineButton = new DotNetWidgets.DotNetToolbarButtonItem();
+            this.alignLeftButton = new DotNetWidgets.DotNetToolbarButtonItem();
+            this.alignCenterButton = new DotNetWidgets.DotNetToolbarButtonItem();
+            this.alignRightButton = new DotNetWidgets.DotNetToolbarButtonItem();
+            this.fontComboBox = new System.Windows.Forms.ComboBox();
+            this.sizeComboBox = new System.Windows.Forms.ComboBox();
+            this.dotNetToolbar = new DotNetWidgets.DotNetToolbar();
+            this.lblFont = new DotNetWidgets.DotNetToolbarLabelItem();
+            this.tooltipProvider = new System.Windows.Forms.ToolTip(this.components);
+            this.SuspendLayout();
+            // 
+            // fontToolbar
+            // 
+            this.fontToolbar.Buttons.Add(this.boldButton);
+            this.fontToolbar.Buttons.Add(this.italicButton);
+            this.fontToolbar.Buttons.Add(this.underlineButton);
+            this.fontToolbar.Buttons.Add(this.alignLeftButton);
+            this.fontToolbar.Buttons.Add(this.alignCenterButton);
+            this.fontToolbar.Buttons.Add(this.alignRightButton);
+            this.fontToolbar.Dock = System.Windows.Forms.DockStyle.None;
+            this.fontToolbar.DrawGrabHandle = false;
+            this.fontToolbar.ImageList = null;
+            this.fontToolbar.Location = new System.Drawing.Point(216, 0);
+            this.fontToolbar.MenuProvider = null;
+            this.fontToolbar.Name = "fontToolbar";
+            this.fontToolbar.Size = new System.Drawing.Size(456, 26);
+            this.fontToolbar.TabIndex = 3;
+            this.fontToolbar.ButtonClick += new DotNetWidgets.DotNetToolbar.ButtonClickEventHandler(this.fontToolbar_ButtonClick);
+            // 
+            // boldButton
+            // 
+            this.boldButton.ToolTipText = "Bold Text";
+            // 
+            // italicButton
+            // 
+            this.italicButton.ToolTipText = "Italics Text";
+            // 
+            // underlineButton
+            // 
+            this.underlineButton.ToolTipText = "Underline Text";
+            // 
+            // alignLeftButton
+            // 
+            this.alignLeftButton.BeginGroup = true;
+            this.alignLeftButton.ToolTipText = "Align Text Left";
+            // 
+            // alignCenterButton
+            // 
+            this.alignCenterButton.ToolTipText = "Center Text";
+            // 
+            // alignRightButton
+            // 
+            this.alignRightButton.ToolTipText = "Align Text Right";
+            // 
+            // fontComboBox
+            // 
+            this.fontComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.fontComboBox.Location = new System.Drawing.Point(45, 3);
+            this.fontComboBox.Name = "fontComboBox";
+            this.fontComboBox.Size = new System.Drawing.Size(120, 21);
+            this.fontComboBox.TabIndex = 4;
+            this.fontComboBox.SelectedIndexChanged += new System.EventHandler(this.fontComboBox_SelectedIndexChanged);
+            // 
+            // sizeComboBox
+            // 
+            this.sizeComboBox.Items.AddRange(new object[] {
+                                                              "8",
+                                                              "9",
+                                                              "10",
+                                                              "11",
+                                                              "12",
+                                                              "14",
+                                                              "16",
+                                                              "18",
+                                                              "20",
+                                                              "22",
+                                                              "24",
+                                                              "26",
+                                                              "28",
+                                                              "36",
+                                                              "48",
+                                                              "72"});
+            this.sizeComboBox.Location = new System.Drawing.Point(168, 3);
+            this.sizeComboBox.Name = "sizeComboBox";
+            this.sizeComboBox.Size = new System.Drawing.Size(48, 21);
+            this.sizeComboBox.TabIndex = 9;
+            this.sizeComboBox.Text = "comboBox1";
+            // 
+            // dotNetToolbar
+            // 
+            this.dotNetToolbar.Buttons.Add(this.lblFont);
+            this.dotNetToolbar.Dock = System.Windows.Forms.DockStyle.None;
+            this.dotNetToolbar.DrawGrabHandle = false;
+            this.dotNetToolbar.ImageList = null;
+            this.dotNetToolbar.Location = new System.Drawing.Point(0, 0);
+            this.dotNetToolbar.MenuProvider = null;
+            this.dotNetToolbar.Name = "dotNetToolbar";
+            this.dotNetToolbar.Size = new System.Drawing.Size(72, 26);
+            this.dotNetToolbar.TabIndex = 8;
+            this.dotNetToolbar.TabStop = false;
+            // 
+            // lblFont
+            // 
+            this.lblFont.BeginGroup = true;
+            this.lblFont.Text = "Font:";
+            // 
+            // TextConfigWidget
+            // 
+            this.Controls.Add(this.sizeComboBox);
+            this.Controls.Add(this.fontComboBox);
+            this.Controls.Add(this.fontToolbar);
+            this.Controls.Add(this.dotNetToolbar);
+            this.Name = "TextConfigWidget";
+            this.Size = new System.Drawing.Size(456, 26);
+            this.ResumeLayout(false);
 
-		}
+        }
         #endregion
 
         private void fontComboBox_DrawItem(object sender, System.Windows.Forms.DrawItemEventArgs e)
         {
-            // The following method should generally be called before drawing.
-            // It is actually superfluous here, since the subsequent drawing
-            // will completely cover the area of interest.
-            e.DrawBackground();
-
-            // The system provides the context
-            // into which the owner custom-draws the required graphics.
-            // The context into which to draw is e.graphics.
-            // The index of the item to be painted is e.Index.
-            // The painting should be done into the area described by e.Bounds.
             if (e.Index != -1)
             {
                 string displayText = (string)fontComboBox.Items[e.Index];
 
-                SizeF stringSize = e.Graphics.MeasureString(displayText, new FontInfo(arialFontFamily, 10, FontStyle.Regular).CreateFont());
+                SizeF stringSize = e.Graphics.MeasureString(displayText, arialFont10);
                 int size = (int)stringSize.Width;
                 
                 // set up two areas to draw
@@ -517,36 +524,32 @@ namespace PaintDotNet
 
                 using (Font myFont = IndexToFont(e.Index, 10, FontStyle.Regular))
                 {
-                    NativeMethods.LOGFONT logFont = new NativeMethods.LOGFONT();
-                    myFont.ToLogFont(logFont);  // logFont is populated.
+                    bool isSymbol = PaintDotNet.SystemLayer.Fonts.IsSymbolFont(myFont);
+                    bool isSelected = ((e.State & DrawItemState.Selected) != 0);
+                    Brush fillBrush;
+                    Brush textBrush;
 
-                    if ((e.State & DrawItemState.Selected) == 0)
+                    if (isSelected)
                     {
-                        if (logFont.lfCharSet == NativeMethods.GdiCharSets.SYMBOL_CHARSET)
-                        {
-                            e.Graphics.FillRectangle(new SolidBrush(SystemColors.Window), e.Bounds);
-                            e.Graphics.DrawString(displayText, new FontInfo(arialFontFamily, 10, FontStyle.Regular).CreateFont(),new SolidBrush(SystemColors.WindowText), e.Bounds);
-                            e.Graphics.DrawString(displayText, myFont, new SolidBrush(SystemColors.WindowText), r);
-                        }
-                        else
-                        {
-                            e.Graphics.FillRectangle(new SolidBrush(SystemColors.Window), e.Bounds);
-                            e.Graphics.DrawString(displayText, myFont, new SolidBrush(SystemColors.WindowText), e.Bounds);
-                        }
+                        fillBrush = highlightBrush;
+                        textBrush = highlightTextBrush;
                     }
                     else
                     {
-                        if (logFont.lfCharSet == NativeMethods.GdiCharSets.SYMBOL_CHARSET)
-                        {
-                            e.Graphics.FillRectangle(new SolidBrush(SystemColors.Highlight), e.Bounds);
-                            e.Graphics.DrawString(displayText, new FontInfo(arialFontFamily, 10, FontStyle.Regular).CreateFont(),new SolidBrush(SystemColors.HighlightText), e.Bounds);
-                            e.Graphics.DrawString(displayText, myFont, new SolidBrush(SystemColors.HighlightText), r);
-                        }
-                        else
-                        {
-                            e.Graphics.FillRectangle(new SolidBrush(SystemColors.Highlight), e.Bounds);
-                            e.Graphics.DrawString(displayText, myFont, new SolidBrush(SystemColors.HighlightText), e.Bounds);
-                        }
+                        fillBrush = windowBrush;
+                        textBrush = windowTextBrush;
+                    }
+
+                    e.Graphics.FillRectangle(fillBrush, e.Bounds);
+
+                    if (isSymbol)
+                    {
+                        e.Graphics.DrawString(displayText, arialFont10, textBrush, e.Bounds);
+                        e.Graphics.DrawString(displayText, myFont, textBrush, r);
+                    }
+                    else
+                    {
+                        e.Graphics.DrawString(displayText, myFont, textBrush, e.Bounds);
                     }
                 }
             }
@@ -664,27 +667,27 @@ namespace PaintDotNet
                 }
 
                 if (invalid)
-				{
-					this.sizeComboBox.BackColor = Color.Red;
-					this.tooltipProvider.SetToolTip(this.sizeComboBox, "Invalid number");
+                {
+                    this.sizeComboBox.BackColor = Color.Red;
+                    this.tooltipProvider.SetToolTip(this.sizeComboBox, "Invalid number");
                 }
                 else
                 {
-                    if ((float.Parse(sizeComboBox.Text) < 1))
-					{   // Set the error if the size is too small.
-						this.sizeComboBox.BackColor = Color.Red;
-						this.tooltipProvider.SetToolTip(this.sizeComboBox, "Size is smaller than 1");
-					}
-                    else if ((float.Parse(sizeComboBox.Text) > 100 ))
-					{   // Set the error if the size is too large.
-						this.sizeComboBox.BackColor = Color.Red;
-						this.tooltipProvider.SetToolTip(this.sizeComboBox, "Size is larger than 100");
+                    if ((float.Parse(sizeComboBox.Text) < minFontSize))
+                    {   // Set the error if the size is too small.
+                        this.sizeComboBox.BackColor = Color.Red;
+                        this.tooltipProvider.SetToolTip(this.sizeComboBox, "Size is smaller than " + minFontSize);
+                    } 
+                    else if ((float.Parse(sizeComboBox.Text) > maxFontSize))
+                    {   // Set the error if the size is too large.
+                        this.sizeComboBox.BackColor = Color.Red;
+                        this.tooltipProvider.SetToolTip(this.sizeComboBox, "Size is larger than " + maxFontSize);
                     }
                     else 
                     {   // Clear the error, if any, in the error provider.
-						this.tooltipProvider.RemoveAll();
-						this.sizeComboBox.BackColor = SystemColors.Window;
-						OnFontTextChanged();
+                        this.tooltipProvider.RemoveAll();
+                        this.sizeComboBox.BackColor = SystemColors.Window;
+                        OnFontTextChanged();
                     }
                 }
             }
@@ -698,10 +701,6 @@ namespace PaintDotNet
         private void sizeComboBox_TextChanged(object sender, System.EventArgs e)
         {
             this.Validate();
-        }
-
-        private void fontComboBoxTB_SelectedIndexChanged(object sender, System.EventArgs e)
-        {
         }
 
         private void fontComboBox_DropDown(object sender, EventArgs e)

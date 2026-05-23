@@ -1,3 +1,12 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
+using PaintDotNet.SystemLayer;
 using System;
 using System.Drawing;
 
@@ -12,7 +21,8 @@ namespace PaintDotNet
         {
         }
 
-        // Provided for compatability with beta builds
+        // Provided for compatability with some older 1.x beta builds
+        [Obsolete]
         [Serializable]
         public class AlphaFromRhsBlend : AlphaBlend
         {
@@ -27,58 +37,48 @@ namespace PaintDotNet
         /// top pixel alpha value and added to the top pixel to form the final blended 
         /// color." -- DirectX C++ Documentation Glossary definition for "alpha blend"   
         /// Thus: result(lhs,rhs) = (1 - rhs.A)(lhs.A * lhs) + (rhs.A * rhs)
-        ///       result.A is 255 because all alpha-based scaling has already been
-        ///       performed.
+        /// Alpha channel is computed as 1 - (lha.A * rhs.A)
         /// </summary>
         [Serializable]
         public class AlphaBlend
             : BinaryPixelOp
         {
-            public static ColorBgra Apply(ColorBgra lhs, ColorBgra rhs, double alpha)
-            {
-                return Apply(lhs, rhs, Math.Min(255, Math.Max(0, 255.0 * alpha)));
-            }
-
-            public static ColorBgra Apply(ColorBgra lhs, ColorBgra rhs, byte rhsAlpha)
-            {
-                int rhsA = rhsAlpha + 1;
-                int invRhsA = 256 - rhsA;
-                int lhsA = lhs.A + 1;
-
-                int r = (((invRhsA * (lhsA * lhs.R)) / 256) + (rhsA * rhs.R)) / 256;
-                int g = (((invRhsA * (lhsA * lhs.G)) / 256) + (rhsA * rhs.G)) / 256;
-                int b = (((invRhsA * (lhsA * lhs.B)) / 256) + (rhsA * rhs.B)) / 256;
-
-                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, 255);
-            }
-
-            public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
+            public static ColorBgra ApplyStatic(ColorBgra lhs, ColorBgra rhs)
             {
                 int rhsA = rhs.A + 1;
                 int invRhsA = 256 - rhsA;
                 int lhsA = lhs.A + 1;
+                int invLhsA = 256 - lhsA;
 
                 int r = (((invRhsA * (lhsA * lhs.R)) / 256) + (rhsA * rhs.R)) / 256;
                 int g = (((invRhsA * (lhsA * lhs.G)) / 256) + (rhsA * rhs.G)) / 256;
                 int b = (((invRhsA * (lhsA * lhs.B)) / 256) + (rhsA * rhs.B)) / 256;
+                int a = ComputeAlpha(lhs.A, rhs.A);
 
-                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, 255);
+                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
+            }
+
+            public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
+            {
+                return AlphaBlend.ApplyStatic(lhs, rhs);
             }
 
             [CLSCompliant(false)]
-            protected override unsafe void Apply(ColorBgra * dst, ColorBgra * lhs, ColorBgra * rhs, int length)
+            public static unsafe void ApplyStatic(ColorBgra *dst, ColorBgra *lhs, ColorBgra *rhs, int length)
             {
                 while (length > 0)
                 {
                     int rhsA = rhs->A + 1;
                     int invRhsA = 256 - rhsA;
                     int lhsA = lhs->A + 1;
+                    int invLhsA = 256 - lhsA;
 
                     int r = (((invRhsA * (lhsA * lhs->R)) / 256) + (rhsA * rhs->R)) / 256;
                     int g = (((invRhsA * (lhsA * lhs->G)) / 256) + (rhsA * rhs->G)) / 256;
                     int b = (((invRhsA * (lhsA * lhs->B)) / 256) + (rhsA * rhs->B)) / 256;
+                    int a = ComputeAlpha(lhs->A, rhs->A);
                 
-                    dst->Bgra = (uint)(b + (g << 8) + (r << 16)) + ((uint)255 << 24);
+                    dst->Bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)a << 24));
 
                     ++dst;
                     ++lhs;
@@ -88,7 +88,13 @@ namespace PaintDotNet
             }
 
             [CLSCompliant(false)]
-            protected override unsafe void Apply(ColorBgra * dst, ColorBgra * src, int length)
+            protected override unsafe void Apply(ColorBgra *dst, ColorBgra *lhs, ColorBgra *rhs, int length)
+            {
+                AlphaBlend.ApplyStatic(dst, lhs, rhs, length);
+            }
+
+            [CLSCompliant(false)]
+            public static unsafe void ApplyStatic(ColorBgra *dst, ColorBgra *src, int length)
             {
                 while (length > 0)
                 {
@@ -99,13 +105,20 @@ namespace PaintDotNet
                     int r = (((invSrcA * (dstA * dst->R)) / 256) + (srcA * src->R)) / 256;
                     int g = (((invSrcA * (dstA * dst->G)) / 256) + (srcA * src->G)) / 256;
                     int b = (((invSrcA * (dstA * dst->B)) / 256) + (srcA * src->B)) / 256;
+                    int a = ComputeAlpha(dst->A, src->A);
                 
-                    dst->Bgra = (uint)(b + (g << 8) + (r << 16)) + ((uint)255 << 24);
+                    dst->Bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)a << 24));
 
                     ++dst;
                     ++src;
                     --length;
                 }
+            }
+
+            [CLSCompliant(false)]
+            protected override unsafe void Apply(ColorBgra *dst, ColorBgra *src, int length)
+            {
+                AlphaBlend.ApplyStatic(dst, src, length);
             }
         }
 
@@ -148,109 +161,19 @@ namespace PaintDotNet
             }
 
             [CLSCompliant(false)]
-            protected unsafe override void Apply(ColorBgra * dst, ColorBgra * lhs, ColorBgra * rhs, int length)
+            protected unsafe override void Apply(ColorBgra *dst, ColorBgra *lhs, ColorBgra *rhs, int length)
             {
-                MemoryBlock.CopyMemory(dst, rhs, length * 4);
+                Memory.Copy(dst, rhs, (ulong)length * (ulong)ColorBgra.SizeOf);
             }
 
             [CLSCompliant(false)]
-            protected unsafe override void Apply(ColorBgra * dst, ColorBgra * src, int length)
+            protected unsafe override void Apply(ColorBgra *dst, ColorBgra *src, int length)
             {
-                MemoryBlock.CopyMemory(dst, src, length * 4);
+                Memory.Copy(dst, src, (ulong)length * (ulong)ColorBgra.SizeOf);
             }
             
             public AssignFromRhs()
             {
-            }
-        }
-
-        [Serializable]
-        public class MultipliedAssignFromRhs
-            : BinaryPixelOp
-        {
-            public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
-            {
-                int a = 1 + rhs.A;
-                int b = (rhs.B * a) / 256;
-                int g = (rhs.G * a) / 256;
-                int r = (rhs.R * a) / 256;
-
-                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, lhs.A);
-            }
-
-            [CLSCompliant(false)]
-            protected unsafe override void Apply(ColorBgra * dst, ColorBgra * lhs, ColorBgra * rhs, int length)
-            {
-                while (length > 0)
-                {
-                    int a = 1 + rhs->A;
-                    int b = (rhs->B * a) / 256;
-                    int g = (rhs->G * a) / 256;
-                    int r = (rhs->R * a) / 256;
-                    
-                    dst->Bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)lhs->A << 24));
-
-                    ++dst;
-                    ++lhs;
-                    ++rhs;
-                    --length;
-                }
-            }
-
-            [CLSCompliant(false)]
-            protected unsafe override void Apply(ColorBgra * dst, ColorBgra * src, int length)
-            {
-                while (length > 0)
-                {
-                    int a = 1 + src->A;
-                    int b = (src->B * a) / 256;
-                    int g = (src->G * a) / 256;
-                    int r = (src->R * a) / 256;
-                    
-                    dst->Bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)dst->A << 24));
-
-                    ++dst;
-                    ++src;
-                    --length;
-                }
-            }
-        }
-
-        /// <summary>
-        /// result(lhs,rhs) = min(1, lhs + rhs)
-        /// </summary>
-        [Serializable]
-        public class Add
-            : BinaryPixelOp
-        {
-            public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
-            {
-                int r = lhs.R + rhs.R;
-                int g = lhs.G + rhs.G;
-                int b = lhs.B + rhs.B;
-                int a = lhs.A + rhs.A;
-
-                if (r > 255)
-                {
-                    r = 255;
-                }
-
-                if (g > 255)
-                {
-                    g = 255;
-                }
-
-                if (b > 255)
-                {
-                    b = 255;
-                }
-
-                if (a > 255)
-                {
-                    a = 255;
-                }
-
-                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
             }
         }
 

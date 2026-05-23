@@ -4,27 +4,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "paintdotnet", "paintdotnet.
 		{2E4E8805-00F7-4B18-A967-C23994BBCE75} = {2E4E8805-00F7-4B18-A967-C23994BBCE75}
 		{77B00122-EF30-459D-8789-8C6A97537C02} = {77B00122-EF30-459D-8789-8C6A97537C02}
 		{1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7} = {1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7}
-		{643D256B-A137-49F7-9ECE-0895E68C8801} = {643D256B-A137-49F7-9ECE-0895E68C8801}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CpuCount", "CpuCount\CpuCount.vcproj", "{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CpuCount.NET", "CpuCount.NET\CpuCount.NET.csproj", "{643D256B-A137-49F7-9ECE-0895E68C8801}"
-	ProjectSection(ProjectDependencies) = postProject
-		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF} = {95D9B8D9-47F1-40D1-89E8-989CF7B551FF}
 	EndProjectSection
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Paint.NET Setup", "Setup\Setup.vdproj", "{082CE919-258F-49DE-8DB7-7E5C9DD79501}"
 	ProjectSection(ProjectDependencies) = postProject
+		{354DACCE-A2BF-4FE1-8FED-0035C6A1D7CD} = {354DACCE-A2BF-4FE1-8FED-0035C6A1D7CD}
+		{E37739E9-1A6D-4252-81CD-148379AD0832} = {E37739E9-1A6D-4252-81CD-148379AD0832}
 	EndProjectSection
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "WIAAutSDK MergeModule", "WIAAutSDK\MergeModule\WIAAutSDK MergeModule.vdproj", "{6376F236-ADF7-4E71-BA6B-9969E566BC88}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "CpuCount.NET MergeModule", "CpuCount.NET\MergeModule\CpuCount.NET MergeModule.vdproj", "{0927C737-D924-478F-A01D-50AD01E80656}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
@@ -41,10 +29,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdnLib", "PdnLib\PdnLib.csp
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SetupJit", "SetupJit\SetupJit.csproj", "{A57B0938-1160-4A79-8FC2-B8D1519DADF2}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Effects", "Effects\Effects.csproj", "{2E4E8805-00F7-4B18-A967-C23994BBCE75}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
@@ -53,6 +37,31 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RotateZoom", "Effects\Rotat
 	ProjectSection(ProjectDependencies) = postProject
 		{2E4E8805-00F7-4B18-A967-C23994BBCE75} = {2E4E8805-00F7-4B18-A967-C23994BBCE75}
 		{1EADE568-A866-4DD4-9898-0A151E3F0E26} = {1EADE568-A866-4DD4-9898-0A151E3F0E26}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StylusReader", "StylusReader\StylusReader.csproj", "{E2E8B028-9FF8-4AF1-86BF-F20568EAB0EC}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SystemLayer", "SystemLayer\SystemLayer.csproj", "{80572820-93A5-4278-A513-D902BEA2639C}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Data", "Data\Data.csproj", "{66681BB0-955D-451D-A466-94C045B1CF4A}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShellExtension", "ShellExtension\ShellExtension.vcproj", "{354DACCE-A2BF-4FE1-8FED-0035C6A1D7CD}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SetupNgen", "SetupNgen\SetupNgen.csproj", "{E37739E9-1A6D-4252-81CD-148379AD0832}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Help", "Help\Help.vcproj", "{96889681-0B89-4985-9C0B-742DCBCA4F55}"
+	ProjectSection(ProjectDependencies) = postProject
+		{77B00122-EF30-459D-8789-8C6A97537C02} = {77B00122-EF30-459D-8789-8C6A97537C02}
 	EndProjectSection
 EndProject
 Global
@@ -68,18 +77,6 @@ Global
 		{34920450-488E-41DF-8565-AA22C2A56902}.Release.Build.0 = Release|.NET
 		{34920450-488E-41DF-8565-AA22C2A56902}.Release and Package.ActiveCfg = Release|.NET
 		{34920450-488E-41DF-8565-AA22C2A56902}.Release and Package.Build.0 = Release|.NET
-		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}.Debug.ActiveCfg = Debug|Win32
-		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}.Debug.Build.0 = Debug|Win32
-		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}.Release.ActiveCfg = Release|Win32
-		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}.Release.Build.0 = Release|Win32
-		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}.Release and Package.ActiveCfg = Release|Win32
-		{95D9B8D9-47F1-40D1-89E8-989CF7B551FF}.Release and Package.Build.0 = Release|Win32
-		{643D256B-A137-49F7-9ECE-0895E68C8801}.Debug.ActiveCfg = Debug|.NET
-		{643D256B-A137-49F7-9ECE-0895E68C8801}.Debug.Build.0 = Debug|.NET
-		{643D256B-A137-49F7-9ECE-0895E68C8801}.Release.ActiveCfg = Release|.NET
-		{643D256B-A137-49F7-9ECE-0895E68C8801}.Release.Build.0 = Release|.NET
-		{643D256B-A137-49F7-9ECE-0895E68C8801}.Release and Package.ActiveCfg = Release|.NET
-		{643D256B-A137-49F7-9ECE-0895E68C8801}.Release and Package.Build.0 = Release|.NET
 		{082CE919-258F-49DE-8DB7-7E5C9DD79501}.Debug.ActiveCfg = Debug
 		{082CE919-258F-49DE-8DB7-7E5C9DD79501}.Release.ActiveCfg = Release
 		{082CE919-258F-49DE-8DB7-7E5C9DD79501}.Release and Package.ActiveCfg = Release
@@ -88,14 +85,8 @@ Global
 		{6376F236-ADF7-4E71-BA6B-9969E566BC88}.Release.ActiveCfg = Release
 		{6376F236-ADF7-4E71-BA6B-9969E566BC88}.Release and Package.ActiveCfg = Release
 		{6376F236-ADF7-4E71-BA6B-9969E566BC88}.Release and Package.Build.0 = Release
-		{0927C737-D924-478F-A01D-50AD01E80656}.Debug.ActiveCfg = Debug
-		{0927C737-D924-478F-A01D-50AD01E80656}.Release.ActiveCfg = Release
-		{0927C737-D924-478F-A01D-50AD01E80656}.Release and Package.ActiveCfg = Release
-		{0927C737-D924-478F-A01D-50AD01E80656}.Release and Package.Build.0 = Release
 		{77B00122-EF30-459D-8789-8C6A97537C02}.Debug.ActiveCfg = Debug|.NET
-		{77B00122-EF30-459D-8789-8C6A97537C02}.Debug.Build.0 = Debug|.NET
 		{77B00122-EF30-459D-8789-8C6A97537C02}.Release.ActiveCfg = Release|.NET
-		{77B00122-EF30-459D-8789-8C6A97537C02}.Release.Build.0 = Release|.NET
 		{77B00122-EF30-459D-8789-8C6A97537C02}.Release and Package.ActiveCfg = Release|.NET
 		{77B00122-EF30-459D-8789-8C6A97537C02}.Release and Package.Build.0 = Release|.NET
 		{40A8C52E-F2F8-49D7-A825-A0411BD7306A}.Debug.ActiveCfg = Debug|Win32
@@ -108,10 +99,6 @@ Global
 		{1EADE568-A866-4DD4-9898-0A151E3F0E26}.Release.Build.0 = Release|.NET
 		{1EADE568-A866-4DD4-9898-0A151E3F0E26}.Release and Package.ActiveCfg = Release|.NET
 		{1EADE568-A866-4DD4-9898-0A151E3F0E26}.Release and Package.Build.0 = Release|.NET
-		{A57B0938-1160-4A79-8FC2-B8D1519DADF2}.Debug.ActiveCfg = Debug|.NET
-		{A57B0938-1160-4A79-8FC2-B8D1519DADF2}.Release.ActiveCfg = Release|.NET
-		{A57B0938-1160-4A79-8FC2-B8D1519DADF2}.Release and Package.ActiveCfg = Release|.NET
-		{A57B0938-1160-4A79-8FC2-B8D1519DADF2}.Release and Package.Build.0 = Release|.NET
 		{2E4E8805-00F7-4B18-A967-C23994BBCE75}.Debug.ActiveCfg = Debug|.NET
 		{2E4E8805-00F7-4B18-A967-C23994BBCE75}.Debug.Build.0 = Debug|.NET
 		{2E4E8805-00F7-4B18-A967-C23994BBCE75}.Release.ActiveCfg = Release|.NET
@@ -124,6 +111,36 @@ Global
 		{1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7}.Release.Build.0 = Release|.NET
 		{1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7}.Release and Package.ActiveCfg = Release|.NET
 		{1DAD5748-3BF2-4D05-94AF-B09ADC0FBCD7}.Release and Package.Build.0 = Release|.NET
+		{E2E8B028-9FF8-4AF1-86BF-F20568EAB0EC}.Debug.ActiveCfg = Debug|.NET
+		{E2E8B028-9FF8-4AF1-86BF-F20568EAB0EC}.Debug.Build.0 = Debug|.NET
+		{E2E8B028-9FF8-4AF1-86BF-F20568EAB0EC}.Release.ActiveCfg = Release|.NET
+		{E2E8B028-9FF8-4AF1-86BF-F20568EAB0EC}.Release.Build.0 = Release|.NET
+		{E2E8B028-9FF8-4AF1-86BF-F20568EAB0EC}.Release and Package.ActiveCfg = Release|.NET
+		{E2E8B028-9FF8-4AF1-86BF-F20568EAB0EC}.Release and Package.Build.0 = Release|.NET
+		{80572820-93A5-4278-A513-D902BEA2639C}.Debug.ActiveCfg = Debug|.NET
+		{80572820-93A5-4278-A513-D902BEA2639C}.Debug.Build.0 = Debug|.NET
+		{80572820-93A5-4278-A513-D902BEA2639C}.Release.ActiveCfg = Release|.NET
+		{80572820-93A5-4278-A513-D902BEA2639C}.Release.Build.0 = Release|.NET
+		{80572820-93A5-4278-A513-D902BEA2639C}.Release and Package.ActiveCfg = Release|.NET
+		{80572820-93A5-4278-A513-D902BEA2639C}.Release and Package.Build.0 = Release|.NET
+		{66681BB0-955D-451D-A466-94C045B1CF4A}.Debug.ActiveCfg = Debug|.NET
+		{66681BB0-955D-451D-A466-94C045B1CF4A}.Debug.Build.0 = Debug|.NET
+		{66681BB0-955D-451D-A466-94C045B1CF4A}.Release.ActiveCfg = Release|.NET
+		{66681BB0-955D-451D-A466-94C045B1CF4A}.Release.Build.0 = Release|.NET
+		{66681BB0-955D-451D-A466-94C045B1CF4A}.Release and Package.ActiveCfg = Release|.NET
+		{66681BB0-955D-451D-A466-94C045B1CF4A}.Release and Package.Build.0 = Release|.NET
+		{354DACCE-A2BF-4FE1-8FED-0035C6A1D7CD}.Debug.ActiveCfg = Debug|Win32
+		{354DACCE-A2BF-4FE1-8FED-0035C6A1D7CD}.Release.ActiveCfg = Release|Win32
+		{354DACCE-A2BF-4FE1-8FED-0035C6A1D7CD}.Release and Package.ActiveCfg = Release|Win32
+		{354DACCE-A2BF-4FE1-8FED-0035C6A1D7CD}.Release and Package.Build.0 = Release|Win32
+		{E37739E9-1A6D-4252-81CD-148379AD0832}.Debug.ActiveCfg = Debug|.NET
+		{E37739E9-1A6D-4252-81CD-148379AD0832}.Release.ActiveCfg = Release|.NET
+		{E37739E9-1A6D-4252-81CD-148379AD0832}.Release and Package.ActiveCfg = Release|.NET
+		{E37739E9-1A6D-4252-81CD-148379AD0832}.Release and Package.Build.0 = Release|.NET
+		{96889681-0B89-4985-9C0B-742DCBCA4F55}.Debug.ActiveCfg = Debug|Win32
+		{96889681-0B89-4985-9C0B-742DCBCA4F55}.Release.ActiveCfg = Release|Win32
+		{96889681-0B89-4985-9C0B-742DCBCA4F55}.Release and Package.ActiveCfg = Release|Win32
+		{96889681-0B89-4985-9C0B-742DCBCA4F55}.Release and Package.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

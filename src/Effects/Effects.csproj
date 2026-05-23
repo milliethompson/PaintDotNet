@@ -25,7 +25,7 @@
                 <Config
                     Name = "Debug"
                     AllowUnsafeBlocks = "true"
-                    BaseAddress = "285212672"
+                    BaseAddress = "310378496"
                     CheckForOverflowUnderflow = "true"
                     ConfigurationOverrideFile = ""
                     DefineConstants = "DEBUG;TRACE"
@@ -70,16 +70,6 @@
                     HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.dll"
                 />
                 <Reference
-                    Name = "System.Data"
-                    AssemblyName = "System.Data"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Data.dll"
-                />
-                <Reference
-                    Name = "System.XML"
-                    AssemblyName = "System.Xml"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.XML.dll"
-                />
-                <Reference
                     Name = "System.Drawing"
                     AssemblyName = "System.Drawing"
                     HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Drawing.dll"
@@ -100,7 +90,7 @@
             <Include>
                 <File
                     RelPath = "AmountEffectConfigDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File
@@ -115,7 +105,7 @@
                 />
                 <File
                     RelPath = "AngleChooserConfigDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File
@@ -155,7 +145,7 @@
                 />
                 <File
                     RelPath = "BrightnessAndContrastAdjustmentConfigDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File
@@ -185,7 +175,7 @@
                 />
                 <File
                     RelPath = "EdgeDetectConfigDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File
@@ -220,7 +210,7 @@
                 />
                 <File
                     RelPath = "EffectConfigDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File
@@ -244,13 +234,23 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "EffectTypeHint.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "EffectTypeHintAttribute.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "EmbossEffect.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "EmbossEffectConfigDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File
@@ -290,7 +290,7 @@
                 />
                 <File
                     RelPath = "LevelsEffectConfigDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File
@@ -304,33 +304,13 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "MosaicEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MosaicEffectConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MosaicEffectConfigDialog.resx"
-                    DependentUpon = "MosaicEffectConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "MosaicEffectConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "MotionBlurEffect.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "MotionBlurEffectConfigDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File
@@ -349,13 +329,18 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "PixelateEffect.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "RedEyeRemoveEffect.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "RedEyeRemoveEffectDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File
@@ -370,7 +355,7 @@
                 />
                 <File
                     RelPath = "ReliefEffectConfigDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File
@@ -395,7 +380,7 @@
                 />
                 <File
                     RelPath = "ThreeAmountsConfigDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File
@@ -410,7 +395,7 @@
                 />
                 <File
                     RelPath = "TwoAmountsConfigDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File
@@ -464,15 +449,15 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "Icons\MosaicEffect.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
                     RelPath = "Icons\MotionBlurEffect.bmp"
                     BuildAction = "EmbeddedResource"
                 />
                 <File
                     RelPath = "Icons\OilPaintingEffect.bmp"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Icons\PixelateEffect.bmp"
                     BuildAction = "EmbeddedResource"
                 />
                 <File

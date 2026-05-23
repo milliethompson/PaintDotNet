@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 
@@ -73,7 +81,8 @@ namespace PaintDotNet
             max = Math.Max(Math.Max(r, g), b);
             v = max;
             delta = max - min;
-            if ( max == 0 || delta == 0 ) 
+
+            if (max == 0 || delta == 0) 
             {
                 // R, G, and B must be 0, or all the same.
                 // In this case, S is 0, and H is undefined.
@@ -84,12 +93,12 @@ namespace PaintDotNet
             else 
             {
                 s = delta / max;
-                if ( r == max ) 
+                if (r == max) 
                 {
                     // Between Yellow and Magenta
                     h = (g - b) / delta;
                 } 
-                else if ( g == max ) 
+                else if (g == max) 
                 {
                     // Between Cyan and Yellow
                     h = 2 + (b - r) / delta;
@@ -105,7 +114,8 @@ namespace PaintDotNet
             // This may require adding 360, if the value
             // is negative.
             h *= 60;
-            if ( h < 0 ) 
+
+            if (h < 0)
             {
                 h += 360;
             }

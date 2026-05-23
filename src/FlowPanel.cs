@@ -1,8 +1,15 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
-using System.Data;
 using System.Windows.Forms;
 
 namespace PaintDotNet
@@ -11,7 +18,7 @@ namespace PaintDotNet
     /// Summary description for FlowPanel.
     /// </summary>
     public class FlowPanel 
-        : System.Windows.Forms.Panel
+        : Control
     {
         /// <summary> 
         /// Required designer variable.
@@ -41,7 +48,6 @@ namespace PaintDotNet
 
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
-
         }
 
         private Point[] GetLayoutPoints(Control.ControlCollection controls)
@@ -68,12 +74,6 @@ namespace PaintDotNet
         protected override void OnResize(EventArgs e)
         {
             base.OnResize (e);
-
-            if (Controls.Count > 0)
-            {
-                Point[] points = GetLayoutPoints(Controls);
-                this.Height = points[0].Y + forcedHeight; // ensure exact height
-            }
         }
 
         protected override void OnLayout(LayoutEventArgs levent)
@@ -87,22 +87,27 @@ namespace PaintDotNet
                     Controls[i].Location = points[i];
                     Controls[i].Height = forcedHeight;
                 }
+
+                this.Height = points[0].Y + forcedHeight; // ensure exact height
             }
+
+            base.OnLayout(levent);
         }
 
         /// <summary> 
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
         #region Component Designer generated code

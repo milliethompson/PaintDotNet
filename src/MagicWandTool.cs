@@ -1,366 +1,249 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
+using System.Collections;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
-using System.Collections;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for MagicWandTool.
-	/// </summary>
-	public class MagicWandTool 
-		: Tool
-	{
-		//Variable declaration
-		private ArrayList tracePoints = null;
-		//private PdnGraphicsPath originalCopy;
-		private PdnRegion currentRegion;
-		private Surface surface;
-		private int minX, maxX, minY, maxY;
-		private ColorBgra currentColor;
-		private bool[,] pixelsChecked;
-		private Cursor cursorMouseDown, cursorMouseUp;
+    /// <summary>
+    /// Summary description for RectangleSelectTool.
+    /// </summary>
+    public class MagicWandTool
+        : FloodTool
+    {
+        private Cursor cursorMouseUp;
+        private Cursor cursorMouseDown;
+        private Cursor cursorMagicWandUnion;
+        private Cursor cursorMagicWandXor;
+        private Cursor cursorMagicWandSubtract;
+        private PdnRegion regionBefore = null;
+        private Keys modifiersOnClick;
+        private const Keys UnionModifiers = Keys.Shift;
+        private const Keys XorModifiers = Keys.Control;
+        private const Keys SubtractModifiers = Keys.Shift | Keys.Control;
+        private const Keys RegularModifiers = 0;
+        private const Keys ModifierMask = Keys.Shift | Keys.Control;
 
-		public override char HotKey
-		{
-			get
-			{
-				return 'w';
-			}
-		}
+        protected override void OnMouseUp(System.Windows.Forms.MouseEventArgs e)
+        {
+            UpdateCursor();
+            base.OnMouseUp (e);
+        }
 
-		protected override void OnActivate()
-		{
-			base.OnActivate();
-		}
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            Cursor = cursorMouseDown;
+            modifiersOnClick = ModifierKeys;
+            regionBefore = null;
 
-		protected override void OnDeactivate()
-		{
-			base.OnDeactivate();
-		}
+            if ((modifiersOnClick & ModifierMask) == UnionModifiers ||
+                (modifiersOnClick & ModifierMask) == XorModifiers)
+            {
+                regionBefore = Workspace.Environment.CreateSelectedRegion();
+                base.OnMouseDown(e);
+            }
+            else if ((modifiersOnClick & ModifierMask) == SubtractModifiers)
+            {
+                if (!Workspace.Environment.IsSelectionEmpty)
+                {
+                    regionBefore = Workspace.Environment.CreateSelectedRegion();
+                    base.OnMouseDown(e);
+                }
+            }
+            else
+            {
+                base.OnMouseDown(e);
+            }
+        }
 
-		#region Find extreme left and right
-		private int FindLeft(int x, int y, bool[,] pixelsChecked)
-		{
-			int lowX = x;
-			
-			while (lowX >= 0 && 
-				CheckColorBgra(surface[lowX, y], currentColor) && 
-				currentRegion.IsVisible(lowX,y) && 
-				!pixelsChecked[lowX, y])
-			{
-				pixelsChecked[lowX, y] = true;
-				lowX--;
-			}
-			if(lowX < 0 || pixelsChecked[lowX,y] == false)
-			{
-				tracePoints.Add(new Point(lowX+1,y));	
-			}
-			
-			if (lowX < minX)
-			{
-				minX = lowX;
-			}
+        protected override void RegionSelected(PdnRegion fillRegion, Rectangle boundingBox)
+        {
+            base.RegionSelected(fillRegion, boundingBox);
 
-			return lowX+1;
-		}
+            if (regionBefore != null &&
+                (modifiersOnClick & ModifierMask) == UnionModifiers ||
+                (modifiersOnClick & ModifierMask) == SubtractModifiers ||
+                (modifiersOnClick & ModifierMask) == XorModifiers)
+            {
+                Rectangle bounds = Rectangle.Union(fillRegion.GetBoundsInt(), regionBefore.GetBoundsInt());
+                BitVector2D stencil = new BitVector2D(bounds.Width, bounds.Height);
+                Rectangle[] scansBefore = regionBefore.GetRegionScansReadOnlyInt();
+                Rectangle[] scansNew = fillRegion.GetRegionScansReadOnlyInt();
 
-		private int FindRight(int x, int y, bool[,] pixelsChecked)
-		{
-			int highX = x;
+                for (int i = 0; i < scansBefore.Length; ++i)
+                {
+                    Rectangle rect = scansBefore[i];
 
-			while ((highX < Workspace.Document.Width) && 
-				currentRegion.IsVisible(highX, y) &&
-				CheckColorBgra(surface[highX, y], currentColor) && 
-				!pixelsChecked[highX, y])
-			{
-				pixelsChecked[highX, y] = true;
-				highX++;
-			}
-			if(highX >= Workspace.Document.Width || pixelsChecked[highX,y] == false)
-			{
-				tracePoints.Add(new Point(highX,y));
-			}
-			if (highX >= maxX)
-			{
-				maxX = highX;
-			}
+                    rect.X -= bounds.X;
+                    rect.Y -= bounds.Y;
+                    stencil.Set(rect, true);
+                }
 
-			return highX;
-		}
+                if ((modifiersOnClick & ModifierMask) == UnionModifiers)
+                {
+                    for (int i = 0; i < scansNew.Length; ++i)
+                    {
+                        Rectangle rect = scansNew[i];
 
-		private Point CheckPixel(int x, int y, bool [,] pixelsChecked)
-		{
-			if(!pixelsChecked[x,y])
-			{
-				if(currentRegion.IsVisible(x,y) && CheckColorBgra(surface[x,y],currentColor) )
-				{
-					pixelsChecked[x,y] = true;
-					return new Point(x,y);
-				}
-			}
-			return new Point(-1,-1);
-		}
+                        rect.X -= bounds.X;
+                        rect.Y -= bounds.Y;
+                        stencil.Set(rect, true);
+                    }
+                }
+                else if ((modifiersOnClick & ModifierMask) == SubtractModifiers)
+                {
+                    for (int i = 0; i < scansNew.Length; ++i)
+                    {
+                        Rectangle rect = scansNew[i];
 
-		private void FindExtremePoints(int x, int y)
-		{
+                        rect.X -= bounds.X;
+                        rect.Y -= bounds.Y;
+                        stencil.Set(rect, false);
+                    }
+                }
+                else if ((modifiersOnClick & ModifierMask) == XorModifiers)
+                {
+                    for (int i = 0; i < scansNew.Length; ++i)
+                    {
+                        Rectangle rect = scansNew[i];
 
-			int lowX = FindLeft(x, y, pixelsChecked);
-			int highX = FindRight(x + 1, y, pixelsChecked);
-			int i;
-		
-			// For Creating the Bounding Box///
-			if (y >= maxY)
-			{
-				maxY = y+1;
-			}
-			else if (y < minY)
-			{
-				minY = y;
-			}
+                        rect.X -= bounds.X;
+                        rect.Y -= bounds.Y;
+                        stencil.Invert(rect);
+                    }
+                }
 
-			// Vertical Scan
-			for (i = lowX+1; i < highX; i++)
-			{
-				if (y > 0 && 
-					!pixelsChecked[i, y - 1] && 
-					CheckColorBgra(surface[i, y - 1], currentColor))
-				{
-					FindExtremePoints(i,y-1);
-				}
-				else
-					if(y > 0 && 
-					!pixelsChecked[i,y-1] &&
-					!CheckColorBgra(surface[i,y-1],currentColor))
-				{
-						pixelsChecked[i, y-1] = true;	
-						tracePoints.Add(new Point(i,y-1));	
-				}
+                PdnGraphicsPath path = PdnGraphicsPath.PathFromStencil(stencil, new Rectangle(0, 0, stencil.Width, stencil.Height));
 
-				if (y < Workspace.Document.Size.Height - 1 &&
-					!pixelsChecked[i, y + 1] && 
-					CheckColorBgra(surface[i, y + 1], currentColor))
-				{
-					FindExtremePoints(i, y + 1);
-				}
-				else
-					if(y < Workspace.Document.Size.Height -1 && 
-					!pixelsChecked[i,y+1] &&
-					!CheckColorBgra(surface[i,y+1],currentColor))
-				{
-					pixelsChecked[i, y+1] = true;
-					tracePoints.Add(new Point(i,y+1));	
-				}
-			}
+                using (Matrix matrix = new Matrix())
+                {
+                    matrix.Reset();
+                    matrix.Translate(bounds.X, bounds.Y);
+                    path.Transform(matrix);
+                }
 
-		}
-		#endregion
+                SelectionHistoryAction undoAction = new SelectionHistoryAction(this.Name, this.Image, Workspace);
 
-		#region Tolerence Checking
-		private bool CheckColorBgra(ColorBgra checkMe, ColorBgra source)
-		{
-			int ds = 0, t;
-			t = checkMe.R - source.R;
-			ds += t * t;
-			t = checkMe.G - source.G;
-			ds += t * t;
-			t = checkMe.B - source.B;
-			ds += t * t;
-			return (ds < Workspace.Environment.Tolerance * Workspace.Environment.Tolerance);
-		}
-		#endregion
+                Workspace.Environment.SelectedPath = path;
+                Workspace.History.PushNewAction(undoAction);
 
-		private class ComparePointsByYThenX : IComparer
-		{
-			public int Compare(object a, object b)
-			{
-				Point point1 = (Point)a;
-				Point point2 = (Point)b;
+                regionBefore.Dispose();
+                regionBefore = null;
+            }
+        }
 
-				if(point1.Y < point2.Y)
-					return -1;
-				else if(point1.Y > point2.Y)
-					return 1;				
-				if(point1.X < point2.X)
-					return -1;
-				else if(point1.X > point2.X)
-					return 1;
-				else
-					return 0;
-			}
-		}
+        protected override void PerimeterFound(PdnGraphicsPath path)
+        {
+            base.PerimeterFound(path);
 
-		protected PdnGraphicsPath MakePathFromBoundryPoints(ArrayList pts) 
-		{
-			PdnGraphicsPath retVal = new PdnGraphicsPath();
-			IComparer pointCompare = new ComparePointsByYThenX();
+            if ((modifiersOnClick & ModifierMask) == RegularModifiers)
+            {
+                SelectionHistoryAction undoAction = new SelectionHistoryAction(this.Name, this.Image, Workspace);
 
-			pts.Sort(pointCompare);
+                Workspace.Environment.SelectedPath = (PdnGraphicsPath)path.Clone();
+                Workspace.History.PushNewAction(undoAction);
+            }
+        }
 
-			while (pts.Count > 0) 
-			{
-				ArrayList figurePts = new ArrayList();
-				int currIndex = 0;//for each figure, start with the first point in the pts array
+        public MagicWandTool(DocumentWorkspace workspace)
+            : base(workspace,
+            Utility.GetImageResource("Icons.MagicWandToolIcon.bmp"),
+            "Magic Wand",
+            "Selects a Homogenous Color Region",
+            "Click to select an area of similar color. Hold Shift to add (union), Ctrl to xor, or Ctrl+Shift to remove.",
+            's')
+        {
+            cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.MagicWandToolCursor.cur"));
+            cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.MagicWandToolCursorMouseDown.cur"));
+            cursorMagicWandUnion = new Cursor(Utility.GetResourceStream("Cursors.MagicWandToolCursorUnion.cur"));
+            cursorMagicWandXor = new Cursor(Utility.GetResourceStream("Cursors.MagicWandToolCursorXor.cur"));
+            cursorMagicWandSubtract = new Cursor(Utility.GetResourceStream("Cursors.MagicWandToolCursorSubtract.cur"));
+            Cursor = cursorMouseUp;
+            LimitToSelection = false;
+        }
 
-				while (currIndex >= 0) 
-				{
-					Point currPt = (Point)pts[currIndex];
-					pts.RemoveAt(currIndex);
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose (disposing);
 
-					//find the bounds within the array of the surrounding 3 lines of points
-					int start, end, count;
-					start = ~pts.BinarySearch(0, currIndex, new Point(-1, currPt.Y - 1), pointCompare);
-					end = ~pts.BinarySearch(currIndex, pts.Count - currIndex, new Point(-1, currPt.Y + 2), pointCompare);
-					count = end - start;
-					
-					ArrayList candidates = new ArrayList(6);
-					for (int y = -1; y <= 1; y++) 
-					{
-						//find the candidate points such that {pt.Y - 1 <= y <= pt.Y + 1}
-						int ptIndex = pts.BinarySearch(start, count, new Point(currPt.X, currPt.Y + y), pointCompare);
+            if (disposing)
+            {
+                DisposeImage();
 
-						if (ptIndex >= 0) 
-						{
-							candidates.Add(ptIndex);
-						} 
-						else 
-						{
-							if (~ptIndex < pts.Count) 
-							{
-								candidates.Add(~ptIndex);
-							}
-							if (~ptIndex > 0) 
-							{
-								candidates.Add(~ptIndex - 1);
-							}
-						}
-					}
+                if (cursorMouseUp != null)
+                {
+                    cursorMouseUp.Dispose();
+                    cursorMouseUp = null;
+                }
 
-					//look for closest point out of candidates
-					//int bestDistanceSquared = int.MaxValue, bestIndex = -1;
-					int bestDistanceSquared = 40, bestIndex = -1;
-					foreach (object obj in candidates) 
-					{
-						int possIndex = (int)obj;
-						Point possPt = (Point)pts[possIndex];
+                if (cursorMouseDown != null)
+                {
+                    cursorMouseDown.Dispose();
+                    cursorMouseDown = null;
+                }
 
-						int distanceSquared, linearDistance;
+                if (cursorMagicWandSubtract != null)
+                {
+                    cursorMagicWandSubtract.Dispose();
+                    cursorMagicWandSubtract = null;
+                }
 
-						linearDistance = possPt.Y - currPt.Y;
-						distanceSquared = linearDistance * linearDistance;
-						if (linearDistance > 1) 
-						{
-							continue;
-						}
-						linearDistance = possPt.X - currPt.X;
-						distanceSquared += linearDistance * linearDistance;
+                if (cursorMagicWandUnion != null)
+                {
+                    cursorMagicWandUnion.Dispose();
+                    cursorMagicWandUnion = null;
+                }
 
-						if (distanceSquared < bestDistanceSquared) 
-						{
-							bestIndex = possIndex;
-							bestDistanceSquared = distanceSquared;
-						}
-					}
+                if (cursorMagicWandXor != null)
+                {
+                    cursorMagicWandXor.Dispose();
+                    cursorMagicWandXor = null;
+                }
+            }
+        }
 
-					//Add the point to the figure. If we just ran out of points,
-					//then this will cause the while-condition to break
-					figurePts.Add(currPt);
-					currIndex = bestIndex;
-				}
-				//we now have a figure stored in 'figurePts'
-				if (figurePts.Count > 2) 
-				{
-					retVal.StartFigure();
-					retVal.AddPolygon((Point[])figurePts.ToArray(typeof(Point)));
-					retVal.CloseFigure();
-				}
-			}
-			return retVal;
-		}
-		private void MakeSelection()
-		{
-			if (tracePoints.Count > 2)
-			{
-				SelectionHistoryAction undoAction = new SelectionHistoryAction("sentinel", toolBarImage, Workspace);
-				undoAction.Name = "Magic Wand Select";
-				Workspace.History.PushNewAction(undoAction);
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            UpdateCursor();
 
-				Workspace.Environment.SelectedPath = MakePathFromBoundryPoints(tracePoints);
-				Workspace.Environment.PerformSelectedPathChanging();
-				Workspace.Environment.PerformSelectedPathChanged();
-			}
-		}
+            base.OnKeyDown (e);
+        }
 
-		protected override void OnMouseDown(MouseEventArgs e)
-		{
-			base.OnMouseDown (e);
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            UpdateCursor();
 
-			Cursor = cursorMouseDown;
-			if (Utility.IsPointInRectangle(new Point(e.X, e.Y), Workspace.Document.Bounds))
-			{
+            base.OnKeyUp (e);
+        }
 
-				Workspace.Environment.PerformSelectedPathChanging();
-				Workspace.Environment.SelectedPath.Reset();
-
-
-				Workspace.Environment.PerformSelectedPathChanged();
-
-
-				// Create the Current Region
-				if (!Workspace.Environment.IsSelectionEmpty)
-				{
-					currentRegion = Workspace.Environment.CreateSelectedRegion();
-				}
-				else
-				{
-					currentRegion = new PdnRegion(Workspace.Document.Bounds);
-				}
-
-				// See if the Mouseclick is valid fo schizzle
-				if (!currentRegion.IsVisible(new Point(e.X,e.Y)))
-				{
-					return;
-				}		
-
-				surface = ((BitmapLayer)Workspace.ActiveLayer).Surface;
-				pixelsChecked = new bool[Workspace.Document.Width + 1, Workspace.Document.Height + 1];
-				currentColor = surface[e.X, e.Y];
-
-				// These four variable help create the bounding box;
-				minX = e.X;
-				maxX = e.X; 
-				minY = e.Y;
-				maxY = e.Y;
-
-				tracePoints = new ArrayList();
-
-				// Bounding Box Pass
-				FindExtremePoints(e.X, e.Y);
-
-				Rectangle boundingBox = Rectangle.FromLTRB(minX, minY, maxX + 1, maxY + 1);
-					
-				pixelsChecked = new bool[Workspace.Document.Width + 1, Workspace.Document.Height + 1];
-
-				// Draw Pass
-				FindExtremePoints(e.X, e.Y);
-
-				MakeSelection();
-				pixelsChecked = null;
-			}
-			Cursor = cursorMouseUp;
-		}
-
-		public MagicWandTool(DocumentWorkspace parent) : base(parent)
-		{
-			name = "Magic Wand";
-			toolBarImage = Utility.GetImageResource("Icons.MagicWandToolIcon.bmp");
-			description = "Selects a Homogenous Color Region";
-			helpText = "Click to select a region of similar color";
-			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.MagicWandToolCursor.cur"));
-			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.MagicWandToolCursorMouseDown.cur"));
-			Cursor = cursorMouseUp;
-		}
-	}
+        private void UpdateCursor()
+        {
+            if ((ModifierKeys & ModifierMask) == SubtractModifiers)
+            {
+                Cursor = cursorMagicWandSubtract;
+            }
+            else if ((ModifierKeys & ModifierMask) == XorModifiers)
+            {
+                Cursor = cursorMagicWandXor;
+            }
+            else if ((ModifierKeys & ModifierMask) == UnionModifiers)
+            {
+                Cursor = cursorMagicWandUnion;
+            }
+            else
+            {
+                Cursor = cursorMouseUp;
+            }
+        }
+    }
 }

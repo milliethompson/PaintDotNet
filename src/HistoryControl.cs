@@ -1,8 +1,15 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
-using System.Data;
 using System.Diagnostics;
 using System.Windows.Forms;
 
@@ -11,37 +18,6 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for HistoryControl
     /// </summary>
-    // Outstanding: correct comment header block for legacy code prior to version 2.0
-    // Parameters: none
-    // Properties: HistoryStack
-    // Returns: none
-	// Initial Conception: Chris Trevino
-    // ..Alterations: provide a user control for the history "concept"
-    // Changes: Michael Kelsey
-    // ..Alterations: incorporate support for Limited History length
-    // ..Alterations: added the following methods to support Limited History Length
-    //    private void HistoryTruncatedHandler(object sender, EventArgs e)
-    //       Purpose: event handler for truncation events originating from the HistoryStack
-    //       Parameters: see above
-    //       Returns: the big nothing
-	//    private void RefreshHistoryControl()
-	//       Purpose: synchronizes the redoActions and undoActions ArrayLists to match
-	//					up with the redoStack and undoStack
-	//		  Parameters: none
-	//		  Returns: nothing
-	// ..Alterations: modified the following methods to support Limited History Length
-	//    public class HistoryControl : System.Windows.Forms.UserControl
-    //    private void HistorySteppedForwardHandler(object sender, EventArgs e)
-	//    public HistoryStack HistoryStack
-	//    public void DrawHistoryElement(HistoryElement hec)
-	//    private void HistorySteppedForwardHandler(object sender, EventArgs e)
-	//    private void HistorySteppedBackwardHandler(object sender, EventArgs e)
-	//    private void HistoryNewActionHandler(object sender, EventArgs e)
-	//    public HistoryControl() 
-	//    private void ElementClickedHandler(object sender, EventArgs e)              
-	// Most Recent Changes: Michael Kelsey
-	// ..Alterations: add comment header block
-	// End of Comment Header Block
     public class HistoryControl : System.Windows.Forms.UserControl
     {
         /// <summary> 
@@ -49,7 +25,7 @@ namespace PaintDotNet
         /// </summary>
         private System.ComponentModel.Container components = null;
         private HistoryStack historyStack;
-        private PanelEx historyControlPanel;
+        private PanelWithLayout historyControlPanel;
         private ArrayList undoActions;
         private ArrayList redoActions;
         private EventHandler elementClickedDelegate;
@@ -60,6 +36,70 @@ namespace PaintDotNet
         private EventHandler historyFlushedDelegate;
 		private EventHandler historyTruncatedDelegate;
         private bool scrollIntoView = true; // we use this flag for when the user clicks on a HistoryElement and we don't want to do lots of crazy scrolling and confuse the user
+
+        private sealed class PanelWithLayout
+            : PanelEx
+        {
+            private HistoryControl parentHistoryControl;
+            public HistoryControl ParentHistoryControl
+            {
+                get
+                {
+                    return parentHistoryControl;
+                }
+
+                set
+                {
+                    this.parentHistoryControl = value;
+                    Invalidate();
+                }
+            }
+
+            public PanelWithLayout()
+            {
+            }
+
+            protected override void OnLayout(LayoutEventArgs levent)
+            {
+                if (this.parentHistoryControl != null)
+                {
+                    int cursor = this.AutoScrollPosition.Y;
+                    int newWidth = this.ClientRectangle.Width;
+
+                    foreach (Control c in parentHistoryControl.undoActions)
+                    {
+                        if (c.Width != newWidth)
+                        {
+                            c.Width = newWidth;
+                        }
+
+                        if (c.Top != cursor)
+                        {
+                            c.Top = cursor;
+                        }
+
+                        cursor += c.Height;
+                    } // foreach
+
+                    foreach (Control c in parentHistoryControl.redoActions)
+                    {
+                        if (c.Width != newWidth)
+                        {
+                            c.Width = newWidth;
+                        }
+
+                        if (c.Top != cursor)
+                        {
+                            c.Top = cursor;
+                        }
+
+                        cursor += c.Height;
+                    } // foreach
+                } // if
+
+                base.OnLayout(levent);
+            }
+        }
 
         private const int elementHeight = 16;
 
@@ -109,26 +149,6 @@ namespace PaintDotNet
             }
         }
         
-        protected override void OnLayout(LayoutEventArgs levent)
-        {
-            base.OnLayout (levent);
-            int cursor = historyControlPanel.AutoScrollPosition.Y;
-
-            foreach (Control c in this.undoActions)
-            {
-                c.Width = historyControlPanel.ClientRectangle.Width;
-                c.Top = cursor;
-                cursor += c.Height;
-            }
-
-            foreach (Control c in this.redoActions)
-            {
-                c.Width = historyControlPanel.ClientRectangle.Width;
-                c.Top = cursor;
-                cursor += c.Height;
-            }
-        }
-
         private void DrawHistory()
         {
             Point spt = historyControlPanel.AutoScrollPosition;
@@ -164,8 +184,6 @@ namespace PaintDotNet
         public void DrawHistoryElement(HistoryElement hec)
         {
             int cursor = historyStack.UndoStack.Count - 1;
-            // we add AutoScrollPosition.Y to the location because it seems this offset
-            // is used when you add a control to a Panel ... undocumented?
             hec.Location = new Point(0, this.historyControlPanel.AutoScrollPosition.Y + elementHeight * cursor);
             historyControlPanel.Controls.Add(hec);          
         }
@@ -186,23 +204,26 @@ namespace PaintDotNet
 		{
 			if ((undoActions.Count - historyStack.UndoStack.Count) > 0)
 			{
-				for(int i = 0; i < (undoActions.Count - historyStack.UndoStack.Count); i++)
+				for (int i = 0; i < (undoActions.Count - historyStack.UndoStack.Count); i++)
 				{
 					((HistoryElement)undoActions[i]).Click -= elementClickedDelegate;
 					historyControlPanel.Controls.Remove((HistoryElement)undoActions[i]);
 				}
+
 				undoActions.RemoveRange(0, undoActions.Count - historyStack.UndoStack.Count);
 			}
 
 			if ((redoActions.Count - historyStack.RedoStack.Count) > 0)
 			{
-				for(int i = 0; i < (redoActions.Count - historyStack.RedoStack.Count); i++)
+				for (int i = 0; i < (redoActions.Count - historyStack.RedoStack.Count); i++)
 				{
 					((HistoryElement)redoActions[i]).Click -= elementClickedDelegate;
 					historyControlPanel.Controls.Remove((HistoryElement)redoActions[i]);
 				}
+
 				redoActions.RemoveRange(0, redoActions.Count - historyStack.RedoStack.Count);
 			}
+
 			this.PerformLayout();
 		}
 
@@ -227,7 +248,7 @@ namespace PaintDotNet
             redoActions = new ArrayList();
         }
 
-        private void InitializeHistoryElement( HistoryElement hec, HistoryAction ha, bool isUndo )
+        private void InitializeHistoryElement(HistoryElement hec, HistoryAction ha, bool isUndo)
         {
             hec.Height = elementHeight;
             hec.Width = historyControlPanel.ClientRectangle.Width;
@@ -236,13 +257,12 @@ namespace PaintDotNet
             hec.Tag = ha.ID;
             hec.Image = ha.Image;
             hec.IsUndo = isUndo;
-            //hec.Dock = DockStyle.Top;
         }
 
         private void HistorySteppedForwardHandler(object sender, EventArgs e)
         {
             // Pull first redo action, make it last undo action
-            if ( redoActions.Count > 0 )
+            if (redoActions.Count > 0)
             {
                 HistoryElement hec = (HistoryElement)redoActions[0];
                 hec.IsUndo = true;
@@ -268,7 +288,7 @@ namespace PaintDotNet
         private void HistorySteppedBackwardHandler(object sender, EventArgs e)
         {
             // Pull last undo action, make it first redo action
-            if ( undoActions.Count > 0 )
+            if (undoActions.Count > 0)
             {
                 HistoryElement hec = (HistoryElement)undoActions[undoActions.Count - 1];
                 undoActions.Remove(hec);
@@ -324,6 +344,7 @@ namespace PaintDotNet
         private void HistoryChangedHandler(object sender, EventArgs e)
         {
             OnHistoryChanged();
+            Update();
         }
 
         public HistoryControl()
@@ -361,22 +382,33 @@ namespace PaintDotNet
                 {
                     if (historyStack.UndoStack.Count > 1)
                     {
-                        historyStack.StepBackward();
+                        using (new WaitCursorChanger(this))
+                        {
+                            historyStack.StepBackward();
+                        }
                     }
                 }
                 else
-                while (((HistoryAction)historyStack.UndoStack[historyStack.UndoStack.Count - 1]).ID != haId)
                 {
-                    historyStack.StepBackward();
+                    while (((HistoryAction)historyStack.UndoStack[historyStack.UndoStack.Count - 1]).ID != haId)
+                    {
+                        using (new WaitCursorChanger(this))
+                        {
+                            historyStack.StepBackward();
+                        }
+                    }
                 }
             }
             else 
             {   // Step forward to redo
                 while (((HistoryAction)historyStack.UndoStack[historyStack.UndoStack.Count - 1]).ID != haId)
                 {
-                    historyStack.StepForward();
+                    using (new WaitCursorChanger(this))
+                    {
+                        historyStack.StepForward();
+                    }
                 }                  
-            }
+            }            
 
             scrollIntoView = true;
         }
@@ -384,16 +416,18 @@ namespace PaintDotNet
         /// <summary> 
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+
+            base.Dispose(disposing);
         }
 
         #region Component Designer generated code
@@ -403,7 +437,7 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            this.historyControlPanel = new PaintDotNet.PanelEx();
+            this.historyControlPanel = new PanelWithLayout(); //new PaintDotNet.PanelEx();
             this.SuspendLayout();
             // 
             // historyControlPanel
@@ -415,7 +449,7 @@ namespace PaintDotNet
             this.historyControlPanel.ScrollPosition = new System.Drawing.Point(0, 0);
             this.historyControlPanel.Size = new System.Drawing.Size(248, 152);
             this.historyControlPanel.TabIndex = 0;
-            this.historyControlPanel.Layout += new System.Windows.Forms.LayoutEventHandler(this.historyControlPanel_Layout);
+            this.historyControlPanel.ParentHistoryControl = this;
             // 
             // HistoryControl
             // 
@@ -426,10 +460,5 @@ namespace PaintDotNet
 
         }
         #endregion
-
-        private void historyControlPanel_Layout(object sender, System.Windows.Forms.LayoutEventArgs e)
-        {
-            PerformLayout();
-        }
     }
 }

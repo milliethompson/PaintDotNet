@@ -1,4 +1,13 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
+using System.Collections;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -10,201 +19,108 @@ namespace PaintDotNet
     /// Summary description for RectangleSelectTool.
     /// </summary>
     public class RectangleSelectTool
-        : Tool
+        : SelectionTool
     {
-        private bool tracking;   // if true, then the left mouse button is down and OnMouseMove will know to actually do stuff
-        private bool hasMoved = false;
-        private Point firstXY;
-        private Point lastXY;
-        private PdnGraphicsPath originalCopy;
-        private SelectionHistoryAction undoAction;
-        private Rectangle ourRect = Rectangle.Empty;
-		private DateTime startTime;
-		private Cursor cursorMouseUp, cursorMouseDown;
-
-		public override char HotKey
-		{
-			get
-			{
-				return 's';
-			}
-		}
-
-        protected override void OnActivate()
-        {
-            base.OnActivate ();
-            hasMoved = false;
-        }
-
-        protected override void OnDeactivate()
-        {
-            base.OnDeactivate ();
-
-            if (originalCopy != null)
-            {
-                originalCopy.Dispose();
-                originalCopy = null;
-            }
-        }
+		private Cursor cursorMouseUp;
+        private Cursor cursorMouseDown;
 
         protected override void OnMouseDown(System.Windows.Forms.MouseEventArgs e)
         {
+            Cursor = cursorMouseDown;
             base.OnMouseDown (e);
-
-			Cursor = cursorMouseDown;
-
-			if ((e.Button & MouseButtons.Left) == MouseButtons.Left)
-			{
-
-				tracking = true;
-				firstXY = new Point(e.X, e.Y);
-				lastXY = firstXY;
-
-				undoAction = new SelectionHistoryAction("sentinel", toolBarImage, Workspace);
-
-				// if they are NOT holding down control, reset the path
-				// we don't use the DeselectAction because we only want to end up adding
-				// one action to the history stack, not two
-				if (!((ModifierKeys & Keys.Control) == Keys.Control))
-				{
-					Workspace.Environment.PerformSelectedPathChanging();
-					Workspace.Environment.SelectedPath.Reset();
-					Workspace.Environment.PerformSelectedPathChanged();
-				}
-
-				if (originalCopy != null)
-				{
-					originalCopy.Dispose();
-				}
-
-				if (Workspace.Environment.IsSelectionEmpty)
-				{
-					originalCopy = null;
-				}
-				else
-				{
-					originalCopy = (PdnGraphicsPath)Workspace.Environment.SelectedPath.Clone();
-				}
-
-				hasMoved = false;
-				startTime = DateTime.Now;
-			}
-        }
-
-        protected override void OnMouseMove(System.Windows.Forms.MouseEventArgs e)
-        {
-            base.OnMouseMove (e);
-
-//			if ((e.Button & MouseButtons.Left) == MouseButtons.Left)
-			{
-				if (tracking && Utility.TicksToMs((DateTime.Now - startTime).Ticks) > 100)
-				{
-
-
-					Point mouseXY = new Point(e.X, e.Y);
-
-					Workspace.Environment.PerformSelectedPathChanging();
-					Workspace.Environment.SelectedPath.Reset();
-
-					if (originalCopy != null)
-					{
-						Workspace.Environment.SelectedPath.AddPath(originalCopy, false);
-					}
-
-					Rectangle rect;
-                
-					if ((ModifierKeys & Keys.Shift) != Keys.None)
-					{
-						rect = Utility.PointsToConstrainedRectangle(firstXY, mouseXY);
-					}
-					else
-					{
-						rect = Utility.PointsToRectangle(firstXY, mouseXY);
-					}
-
-					rect = Rectangle.Intersect(rect, Workspace.Document.Bounds);
-					ourRect = rect;
-
-					if (!rect.IsEmpty)
-					{
-						Workspace.Environment.SelectedPath.AddRectangle(rect);
-					}
-
-					Workspace.Environment.PerformSelectedPathChanged();
-
-					lastXY = mouseXY;
-					hasMoved = true;
-				}
-			}
         }
 
         protected override void OnMouseUp(System.Windows.Forms.MouseEventArgs e)
         {
+            Cursor = cursorMouseUp;
             base.OnMouseUp (e);
-
-			Cursor = cursorMouseUp;
-
-            if (tracking)
-            {
-                if (hasMoved)
-                {
-                    if (!ourRect.IsEmpty)
-                    {
-                        undoAction.Name = "Rectangle Select";
-                        Workspace.History.PushNewAction(undoAction);
-                        Workspace.Environment.PerformSelectedPathChanging();
-                        Workspace.Environment.SelectedPath.CloseFigure();
-                        Workspace.Environment.PerformSelectedPathChanged();
-                    }
-                }
-
-                tracking = false;
-                hasMoved = false;
-                undoAction = null;
-            }
         }
 
-        protected override void OnClick()
+        protected override ArrayList TrimShapePath(ArrayList tracePoints)
         {
-            base.OnClick ();
+            ArrayList array = new ArrayList();
 
-            if (!hasMoved)
+            if (tracePoints.Count > 0)
             {
-				if(undoAction == null)
-					undoAction = new SelectionHistoryAction("sentinel", toolBarImage, Workspace);
+                array.Add(tracePoints[0]);
 
-                if (!(undoAction.IsSelectionEmpty && Workspace.Environment.IsSelectionEmpty))
+                if (tracePoints.Count > 1)
                 {
-                    if (this.ModifierKeys == Keys.None)
-                    {
-                        undoAction.Name = "Deselect";
-                        undoAction.Image = Image.FromStream(Utility.GetResourceStream("Icons.MenuEditDeselectIcon.bmp"));
-                        Workspace.History.PushNewAction(undoAction);
-                        Workspace.Environment.PerformSelectedPathChanging();
-                        Workspace.Environment.SelectedPath.Reset();
-                        Workspace.Environment.PerformSelectedPathChanged();
-                    }
+                    array.Add(tracePoints[tracePoints.Count - 1]);
                 }
-
-                tracking = false;
-                hasMoved = false;
-                undoAction = null;
             }
+
+            return array;
         }
+
+        protected override PointF[] CreateShape(PointF[] tracePoints)
+        {
+            PointF a = tracePoints[0];
+            PointF b = tracePoints[tracePoints.Length - 1];
+
+            RectangleF rect;
+            if ((ModifierKeys & Keys.Shift) != 0)
+            {
+                rect = Utility.PointsToConstrainedRectangle(a, b);
+            }
+            else
+            {
+                rect = Utility.PointsToRectangle(a, b);
+            }
+
+            // disallow coordinates on a fractional coordinate
+            RectangleF roundedRect = Rectangle.FromLTRB((int)Math.Floor(rect.Left),
+                                                        (int)Math.Floor(rect.Top),
+                                                        (int)Math.Floor(rect.Right),
+                                                        (int)Math.Floor(rect.Bottom));
+
+            roundedRect.Intersect(Workspace.Document.Bounds);
+
+            PointF[] shape = new PointF[5];
+
+            shape[0] = new PointF(roundedRect.Left, roundedRect.Top);
+            shape[1] = new PointF(roundedRect.Right, roundedRect.Top);
+            shape[2] = new PointF(roundedRect.Right, roundedRect.Bottom);
+            shape[3] = new PointF(roundedRect.Left, roundedRect.Bottom);
+            shape[4] = shape[0];
+            return shape;
+        }
+
 
         public RectangleSelectTool(DocumentWorkspace workspace)
-            : base(workspace)
+            : base(workspace,
+                   Utility.GetImageResource("Icons.RectangleSelectToolIcon.bmp"),
+                   "Rectangle Select",
+                   "Allows you to select a rectangular region of the image.",
+                   "Click and move the mouse to select a rectangular region of the image. Hold shift to constrain to a square.",
+                   's')
         {
-            toolBarImage = Utility.GetImageResource("Icons.RectangleSelectToolIcon.bmp");
-            name = "Rectangle Select";
-            description = "Allows you to select a rectangular region of the image.";
-			helpText = "Click and move the mouse to select a rectangular region of the image";
-
 			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.RectangleSelectToolCursor.cur"));
 			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.RectangleSelectToolCursorMouseDown.cur"));
 			Cursor = cursorMouseUp;
-
-            tracking = false;
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose (disposing);
+
+            if (disposing)
+            {
+                DisposeImage();
+
+                if (cursorMouseUp != null)
+                {
+                    cursorMouseUp.Dispose();
+                    cursorMouseUp = null;
+                }
+
+                if (cursorMouseDown != null)
+                {
+                    cursorMouseDown.Dispose();
+                    cursorMouseDown = null;
+                }
+            }
+        }
+
     }
 }

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using PaintDotNet;
 using PaintDotNet.Effects;
 using System;
@@ -9,8 +17,8 @@ namespace PaintDotNet.Effects
     /// <summary>
     /// Summary description for Rotate / Zoom Effect.
     /// </summary>
-    //[EffectSubMenu("Rick's Plugins")]
     [EffectCategory(EffectCategory.Adjustment)]
+    [EffectTypeHint(EffectTypeHint.Fast)]
     public class RotateZoomEffect
         : Effect,
           IConfigurableEffect
@@ -30,92 +38,119 @@ namespace PaintDotNet.Effects
             return new RotateZoomEffectConfigDialog();
         }
 
-        public void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public unsafe void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
         {
             RotateZoomEffectConfigToken token = (RotateZoomEffectConfigToken)properties;
             RotateZoomEffectConfigToken.RzInfo rzInfo = token.ComputedOnce;
-            Rectangle bounds = Rectangle.Round(this.Selection.GetBounds());
+            Rectangle bounds = this.EnvironmentParameters.GetSelection(dstArgs.Bounds).GetBoundsInt();
+            bounds.Intersect(dstArgs.Bounds);
 			Point center = new Point((bounds.Left + bounds.Right) / 2, (bounds.Top + bounds.Bottom) / 2);
             Rectangle[] rects = roi.GetRegionScansReadOnlyInt();
 
+            uint srcMask;
+
+            if (token.SourceAsBackground)
+            {
+                srcMask = 0xffffffff;
+            }
+            else
+            {
+                srcMask = 0;
+            }
+
             foreach (Rectangle rect in rects)
             {
-                double sxul = (double)center.X + ((((double)(rect.Left - center.X) * rzInfo.angleCos) - ((double)(rect.Top - center.Y) * rzInfo.angleSin)) * token.Zoom);
-                double syul = (double)center.Y + ((((double)(rect.Left - center.X) * rzInfo.angleSin) + ((double)(rect.Top - center.Y) * rzInfo.angleCos)) * token.Zoom);
+                float sxul = (float)center.X + ((((float)(rect.Left - center.X) * rzInfo.angleCos) - ((float)(rect.Top - center.Y) * rzInfo.angleSin)) * token.Zoom);
+                float syul = (float)center.Y + ((((float)(rect.Left - center.X) * rzInfo.angleSin) + ((float)(rect.Top - center.Y) * rzInfo.angleCos)) * token.Zoom);
 
                 for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
-                    double xp = sxul;
-                    double yp = syul;
+                    float xp = sxul;
+                    float yp = syul;
+
+                    int xpInt = (int)xp;
+                    int ypInt = (int)yp;
+
+                    ColorBgra *dstPtr = dstArgs.Surface.GetPointAddressUnchecked(rect.Left, y);
 
                     for (int x = rect.Left; x < rect.Right; ++x)
                     {
-                        double xLerp = xp - Math.Floor(xp);
-                        double yLerp = yp - Math.Floor(yp);
+                        float xLerp = xp - (float)Math.Floor(xp);
+                        float yLerp = yp - (float)Math.Floor(yp);
 
                         // compute weights
-                        double ulw = (1 - xLerp) * (1 - yLerp);
-                        double urw = xLerp * (1 - yLerp);
-                        double llw = (1 - xLerp) * yLerp;
-                        double lrw = xLerp * yLerp;
+                        float ulw = (1 - xLerp) * (1 - yLerp);
+                        float urw = xLerp * (1 - yLerp);
+                        float llw = (1 - xLerp) * yLerp;
+                        float lrw = xLerp * yLerp;
 
-                        // compute source Points
-                        Point ulp = new Point((int)xp, (int)yp);
-                        Point urp = new Point(ulp.X + 1, ulp.Y);
-                        Point llp = new Point(ulp.X, ulp.Y + 1);
-                        Point lrp = new Point(ulp.X + 1, ulp.Y + 1);
-
-						ColorBgra backColor = token.SourceAsBackground ? srcArgs.Surface[x, y] : seeThroughColor;
+						ColorBgra backColor = ColorBgra.FromUInt32((srcArgs.Surface.GetPointUnchecked(x, y).Bgra & srcMask) | (seeThroughColor.Bgra & ~srcMask));
 
                         ColorBgra ulc;
-                        if (Utility.IsPointInRectangle(ulp, bounds))
-                        {
-                            ulc = srcArgs.Surface[ulp];
-                        }
-                        else
-                        {
-                            ulc = backColor;
-                        }
-
-                        ColorBgra urc;
-                        if (Utility.IsPointInRectangle(urp, bounds))
-                        {
-                            urc = srcArgs.Surface[urp];
-                        }
-                        else
-                        {
-                            urc = backColor;
-                        }
-
-                        ColorBgra llc;
-                        if (Utility.IsPointInRectangle(llp, bounds))
-                        {
-                            llc = srcArgs.Surface[llp];
-                        }
-                        else
-                        {
-                            llc = backColor;
-                        }
-
                         ColorBgra lrc;
-                        if (Utility.IsPointInRectangle(lrp, bounds))
+                        ColorBgra urc;
+                        ColorBgra llc;
+
+                        if (Utility.IsPointInRectangle(xpInt, ypInt, bounds) &&
+                            Utility.IsPointInRectangle(xpInt + 1, ypInt + 1, bounds))
                         {
-                            lrc = srcArgs.Surface[lrp];
+                            ulc = srcArgs.Surface.GetPointUnchecked(xpInt, ypInt);
+                            urc = srcArgs.Surface.GetPointUnchecked(xpInt + 1, ypInt);
+                            lrc = srcArgs.Surface.GetPointUnchecked(xpInt + 1, ypInt + 1);
+                            llc = srcArgs.Surface.GetPointUnchecked(xpInt, ypInt + 1);
                         }
                         else
                         {
-                            lrc = backColor;
+                            if (Utility.IsPointInRectangle(xpInt, ypInt, bounds))
+                            {
+                                ulc = srcArgs.Surface.GetPointUnchecked(xpInt, ypInt);
+                            }
+                            else
+                            {
+                                ulc = backColor;
+                            }
+
+                            if (Utility.IsPointInRectangle(xpInt + 1, ypInt + 1, bounds))
+                            {
+                                lrc = srcArgs.Surface.GetPointUnchecked(xpInt + 1, ypInt + 1);
+                            }
+                            else
+                            {
+                                lrc = backColor;
+                            }
+
+                            if (Utility.IsPointInRectangle(xpInt + 1, ypInt, bounds))
+                            {
+                                urc = srcArgs.Surface.GetPointUnchecked(xpInt + 1, ypInt);
+                            }
+                            else
+                            {
+                                urc = backColor;
+                            }
+
+                            if (Utility.IsPointInRectangle(xpInt, ypInt + 1, bounds))
+                            {
+                                llc = srcArgs.Surface.GetPointUnchecked(xpInt, ypInt + 1);
+                            }
+                            else
+                            {
+                                llc = backColor;
+                            }
                         }
 
-                        double b = Math.Min(255.0f, ((double)ulc.B * ulw) + ((double)urc.B * urw) + ((double)llc.B * llw) + ((double)lrc.B * lrw));
-                        double g = Math.Min(255.0f, ((double)ulc.G * ulw) + ((double)urc.G * urw) + ((double)llc.G * llw) + ((double)lrc.G * lrw));
-                        double r = Math.Min(255.0f, ((double)ulc.R * ulw) + ((double)urc.R * urw) + ((double)llc.R * llw) + ((double)lrc.R * lrw));
-                        double a = Math.Min(255.0f, ((double)ulc.A * ulw) + ((double)urc.A * urw) + ((double)llc.A * llw) + ((double)lrc.A * lrw));
+                        float b = (float)Math.Min(255.0f, ((float)ulc.B * ulw) + ((float)urc.B * urw) + ((float)llc.B * llw) + ((float)lrc.B * lrw));
+                        float g = (float)Math.Min(255.0f, ((float)ulc.G * ulw) + ((float)urc.G * urw) + ((float)llc.G * llw) + ((float)lrc.G * lrw));
+                        float r = (float)Math.Min(255.0f, ((float)ulc.R * ulw) + ((float)urc.R * urw) + ((float)llc.R * llw) + ((float)lrc.R * lrw));
+                        float a = (float)Math.Min(255.0f, ((float)ulc.A * ulw) + ((float)urc.A * urw) + ((float)llc.A * llw) + ((float)lrc.A * lrw));
                         
-                        dstArgs.Surface[x, y] = ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
+                        *dstPtr = ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
+                        ++dstPtr;
 
                         xp += rzInfo.dsxddx;
                         yp += rzInfo.dsyddx;
+
+                        xpInt = (int)xp;
+                        ypInt = (int)yp;
                     }
 
                     sxul += rzInfo.dsxddy;

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Threading;
 
@@ -10,6 +18,22 @@ namespace PaintDotNet.Threading
 	/// </summary>
 	public class ThreadPool
 	{
+        public static int MinimumCount
+        {
+            get
+            {
+                return WaitableCounter.MinimumCount;
+            }
+        }
+
+        public static int MaximumCount
+        {
+            get
+            {
+                return WaitableCounter.MaximumCount;
+            }
+        }
+
         private WaitableCounter counter;
 
 		public ThreadPool()
@@ -19,6 +43,11 @@ namespace PaintDotNet.Threading
 
         public ThreadPool(int maxThreads)
         {
+            if (maxThreads < MinimumCount || maxThreads > MaximumCount)
+            {
+                throw new ArgumentOutOfRangeException("maxThreads", "must be between " + MinimumCount.ToString() + " and " + MaximumCount.ToString() + " inclusive");
+            }
+
             counter = new WaitableCounter(maxThreads);
         }
 
@@ -39,7 +68,7 @@ namespace PaintDotNet.Threading
             counter.WaitForEmpty();
         }
 
-        private class ThreadWrapperContext
+        private sealed class ThreadWrapperContext
         {
             public WaitCallback Callback;
             public object Context;
@@ -55,9 +84,10 @@ namespace PaintDotNet.Threading
 
         private void ThreadWrapper(object state)
         {
-            using (IDisposable token = ((ThreadWrapperContext)state).CounterToken)
+            ThreadWrapperContext context = (ThreadWrapperContext)state;
+
+            using (IDisposable token = context.CounterToken)
             {
-                ThreadWrapperContext context = (ThreadWrapperContext)state;
                 context.Callback(context.Context);
             }
         }

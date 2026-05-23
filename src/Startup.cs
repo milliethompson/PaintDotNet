@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -24,11 +32,11 @@ namespace PaintDotNet
 
             if (fileName != null && fileName.Length != 0)
             {
-                arg = "/nosplash \"" + fileName + "\"";
+                arg = "\"" + fileName + "\"";
             }
             else
             {
-                arg = "/nosplash";
+                arg = "";
             }
 
             ProcessStartInfo psi = new ProcessStartInfo(Process.GetCurrentProcess().MainModule.FileName, arg);
@@ -41,11 +49,11 @@ namespace PaintDotNet
 
             if (fileName == null)
             {
-                args = new string[] { "/nosplash" };
+                args = new string[] { };
             }
             else
             {
-                args = new string[] { "/nosplash", fileName };
+                args = new string[] { fileName };
             }
 
             new Thread(new ThreadStart(new Startup(args).Start)).Start();
@@ -69,15 +77,14 @@ namespace PaintDotNet
 
         public void Start()
         {
-            Utility.TraceMe("the beginning");
-
-#if !DEBUG
+#if DEBUG
+#else
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
+            Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
 #endif
 
             // Create our self ...
             MainForm mainForm = new MainForm(args);
-            Utility.TraceMe("created MainForm");
 
             // if the display is set to a portrait mode (tall), then orient the PDN window the same way
             if (mainForm.ScreenAspect < 1.0)
@@ -126,12 +133,9 @@ namespace PaintDotNet
                 mainForm.Height = 100; // this value was chosen arbitrarily
             }
 
-            Utility.TraceMe("calling Application.Run");
-
             // 3 2 1 go
             Application.Run(mainForm);
             mainForm.Dispose();
-            mainForm = null;
         }
 
         /// <summary>
@@ -144,17 +148,18 @@ namespace PaintDotNet
             return 0;
         }
 
-        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        private void UnhandledException(Exception ex)
         {
             string fullName = Path.GetFullPath("pdncrash.log");
 
             using (StreamWriter stream = new System.IO.StreamWriter(fullName, true))
             {
+                stream.AutoFlush = true;
                 stream.WriteLine("Crash log for " + PdnInfo.GetFullAppName());
                 stream.WriteLine("Time of crash: " + DateTime.Now.ToString());
                 stream.WriteLine();
 
-                Exception writeMe = (Exception)e.ExceptionObject;
+                Exception writeMe = ex;
                 bool first = true;
 
                 while (writeMe != null)
@@ -175,11 +180,22 @@ namespace PaintDotNet
             }
 
             Utility.ErrorBox(null, "There was an unhandled error, and Paint.NET must be closed. Refer to '" + fullName + "' for more information.");
+        }
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            UnhandledException((Exception)e.ExceptionObject);
 
             if (!e.IsTerminating)
             {
                 Process.GetCurrentProcess().Kill();
-            }
+            }        
+        }
+
+        private void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
+        {
+            UnhandledException(e.Exception);
+            Process.GetCurrentProcess().Kill();
         }
     }
 }

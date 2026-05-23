@@ -1,3 +1,12 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
+using PaintDotNet.SystemLayer;
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -22,58 +31,123 @@ namespace PaintDotNet
         private System.Windows.Forms.ToolTip toolTipSentinel;
         private System.Windows.Forms.Control fixNoToolTipsAndFocusBugSentinel;
         private System.ComponentModel.IContainer components;
-        private System.Windows.Forms.Timer win2kTsDetectionTimer; // this timer is used in Win2K so we can poll every few seconds to see if we are running in a remote session
 
-        private static readonly Skybound.VisualStyles.VisualStyleProvider visualStyleProvider = 
-            new Skybound.VisualStyles.VisualStyleProvider();
+        // NOTE: This is done as an object and not VisualStyleProvider so that we can delay loading
+        //       the Skybound.VisualStyles.dll until the user clicks "More >>" on the ColorsForm
+        //       (or brings up any other dialog with a control that requires this class' assitance)
+        private static Skybound.VisualStyles.VisualStyleProvider visualStyleProvider;
+        
+        private Skybound.VisualStyles.VisualStyleProvider VisualStyleProvider
+        {
+            get
+            {
+                if (visualStyleProvider == null)
+                {
+                    visualStyleProvider = new Skybound.VisualStyles.VisualStyleProvider();
+                }
+
+                return (Skybound.VisualStyles.VisualStyleProvider)visualStyleProvider;
+            }
+        }
+
+        private bool instanceEnableOpacity = true;
+        private static bool globalEnableOpacity = true;
+
+        protected override void OnHelpRequested(HelpEventArgs hevent)
+        {
+            if (!hevent.Handled)
+            {
+                Utility.ShowHelp(this);
+                hevent.Handled = true;
+            }
+
+            base.OnHelpRequested (hevent);
+        }
+
+        public static EventHandler EnableOpacityChanged;
+        private static void OnEnableOpacityChanged()
+        {
+            if (EnableOpacityChanged != null)
+            {
+                EnableOpacityChanged(null, EventArgs.Empty);
+            }
+        }
+
+        public bool EnableInstanceOpacity
+        {
+            get
+            {
+                return instanceEnableOpacity;
+            }
+
+            set
+            {
+                instanceEnableOpacity = value;
+                this.DecideOpacitySetting();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a flag that enables or disables opacity for all PdnBaseForm instances.
+        /// If a particular form's EnableInstanceOpacity property is false, this will override
+        /// this property being 'true'.
+        /// </summary>
+        public static bool EnableOpacity
+        {
+            get
+            {
+                return globalEnableOpacity;
+            }
+
+            set
+            {
+                globalEnableOpacity = value;
+                OnEnableOpacityChanged();
+            }
+        }
 
         public PdnBaseForm()
         {
-            //
-            // Required for Windows Form Designer support
-            //
             InitializeComponent();
-
             toolTipSentinel.SetToolTip(fixNoToolTipsAndFocusBugSentinel, "fixed");
+        }
+
+        private void EnableOpacityChangedHandler(object sender, EventArgs e)
+        {
+            this.DecideOpacitySetting();
         }
 
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated (e);
 
-            try
-            {
-                SafeNativeMethods.WTSRegisterSessionNotification(this.Handle, SafeNativeMethods.NOTIFY_FOR_ALL_SESSIONS);
-            }
-
-            catch (EntryPointNotFoundException)
-            {
-                win2kTsDetectionTimer.Enabled = true;
-            }
-
+            PdnBaseForm.EnableOpacityChanged += new EventHandler(EnableOpacityChangedHandler);
+            UserSessions.SessionChanged += new EventHandler(UserSessions_SessionChanged);
             DecideOpacitySetting();
-            OnRemoteSessionChange();
         }
 
         protected override void OnHandleDestroyed(EventArgs e)
         {
             base.OnHandleDestroyed (e);
 
-            win2kTsDetectionTimer.Enabled = false;
-
-            try
-            {
-                SafeNativeMethods.WTSUnRegisterSessionNotification(this.Handle);
-            }
-
-            catch (EntryPointNotFoundException)
-            {
-            }
+            PdnBaseForm.EnableOpacityChanged -= new EventHandler(EnableOpacityChangedHandler);
+            UserSessions.SessionChanged -= new EventHandler(UserSessions_SessionChanged);
         }
 
         protected override void OnLoad(EventArgs e)
         {
+            OnEnableStyles();
             base.OnLoad (e);
+        }
+
+        /// <summary>
+        /// This method is called to recursively enable visual style support on the form.
+        /// Normally this is called during OnLoad but you can override this method to
+        /// disable that and defer style support initialization until later.
+        /// All this method does is call EnableStyles(this).
+        /// </summary>
+        protected virtual void OnEnableStyles()
+        {
             EnableStyles(this);
         }
 
@@ -82,21 +156,30 @@ namespace PaintDotNet
         /// Important when running with .NET 1.1.
         /// </summary>
         /// <param name="control"></param>
-        private void EnableStyles(Control control)
+        protected void EnableStyles(Control control)
         {
-            if (control is ButtonBase)
+            // This terrible nesting is necessary to limit ourself to 1 typecast per test
+            ButtonBase buttonBase = control as ButtonBase;
+            if (buttonBase != null)
             {
-                ((ButtonBase)control).FlatStyle = FlatStyle.System;
+                buttonBase.FlatStyle = FlatStyle.System;
             }
-
-            if (control is GroupBox)
+            else
             {
-                ((GroupBox)control).FlatStyle = FlatStyle.System;
-            }
+                GroupBox groupBox = control as GroupBox;
+                if (groupBox != null)
+                {
+                    groupBox.FlatStyle = FlatStyle.System;
+                }
+                else
+                {
+                    NumericUpDown numericUpDown = control as NumericUpDown;
 
-            if (control is NumericUpDown)
-            {
-                visualStyleProvider.SetVisualStyleSupport(control, true);
+                    if (numericUpDown != null)
+                    {
+                        EnableVisualStyleSupport(numericUpDown);
+                    }
+                }
             }
 
             foreach (Control c in control.Controls)
@@ -105,19 +188,26 @@ namespace PaintDotNet
             }
         }
 
+        private void EnableVisualStyleSupport(Control control)
+        {
+            VisualStyleProvider.SetVisualStyleSupport(control, true);
+        }
+
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+
+            base.Dispose(disposing);
         }
 
         /// <summary>
@@ -147,46 +237,12 @@ namespace PaintDotNet
             }
         }
 
-        [SuppressUnmanagedCodeSecurity]
-        private class SafeNativeMethods
-        {
-            private SafeNativeMethods()
-            {
-            }
-
-            public const int SM_REMOTESESSION = 0x1000;
-            public const int WM_WTSSESSION_CHANGE = 0x2b1;
-            public const int WM_MOVING = 0x0216;
-            public const uint NOTIFY_FOR_ALL_SESSIONS = 1;
-            public const uint NOTIFY_FOR_THIS_SESSION = 0;
-
-            [DllImport("User32.dll")]
-            internal static extern int GetSystemMetrics(int nIndex);
-
-            [DllImport("wtsapi32.dll")]
-            internal static extern uint WTSRegisterSessionNotification(IntPtr hWnd, uint dwFlags);
-
-            [DllImport("wtsapi32.dll")]
-            internal static extern uint WTSUnRegisterSessionNotification(IntPtr hWnd);
-        }
-
-        /// <summary>
-        /// Determines whether the form is running within a remoted session (Terminal Server, Remote Desktop).
-        /// </summary>
-        /// <returns>
-        /// <b>true</b> if we're running in a remote session, <b>false</b> otherwise.
-        /// </returns>
-        public static bool IsRemoteSession()
-        {
-            return 0 != SafeNativeMethods.GetSystemMetrics(SafeNativeMethods.SM_REMOTESESSION);
-        }
-
         /// <summary>
         /// Decides whether or not to have opacity be enabled.
         /// </summary>
         private void DecideOpacitySetting()
         {
-            if (IsRemoteSession())
+            if (UserSessions.IsRemote() || !PdnBaseForm.globalEnableOpacity || !this.EnableInstanceOpacity)
             {
                 try
                 {
@@ -216,47 +272,52 @@ namespace PaintDotNet
             }
         }
 
+        public event CancelEventHandler QueryEndSession;
+        protected virtual void OnQueryEndSession(CancelEventArgs e)
+        {
+            if (QueryEndSession != null)
+            {
+                QueryEndSession(this, e);
+            }
+        }
+
+        private const int WM_MOVING = 0x0216;
+        private const int WM_QUERYENDSESSION = 0x0011;
         protected override void WndProc(ref Message m)
         {
             switch (m.Msg)
             {
-                case SafeNativeMethods.WM_WTSSESSION_CHANGE:
-                    DecideOpacitySetting();
-                    OnRemoteSessionChange();
+                case WM_MOVING:
+                    unsafe
+                    {
+                        int *p = (int*)m.LParam;
+                        Rectangle rect = Rectangle.FromLTRB(p[0], p[1], p[2], p[3]);
+                       
+                        MovingEventArgs mea = new MovingEventArgs(rect);
+                        OnMoving(mea);
+
+                        p[0] = mea.Rectangle.Left;
+                        p[1] = mea.Rectangle.Top;
+                        p[2] = mea.Rectangle.Right;
+                        p[3] = mea.Rectangle.Bottom;
+
+                        m.Result = new IntPtr(1);
+                    }
                     break;
 
-                case SafeNativeMethods.WM_MOVING:
-                unsafe
-                {
-                    int* p = (int*)m.LParam;
-
-                    // The location is defined as two points, one in the top left, and one in the bottom right
-                    Point a = new Point((int)p[0],(int)p[1]);
-                    Point b = new Point((int)p[2],(int)p[3]);
-
-                    // Calculates the x,y and width, height of the rectangle
-                    Rectangle rect = new Rectangle(a.X,a.Y,b.X - a.X,b.Y - a.Y);
-                    
-                    MovingEventArgs mea = new MovingEventArgs(rect);
-                    
-                    OnMoving(mea); // The call
-
-                    // Grabs the new position of the rectangle, and turns it into the two points version
-                    p[0] = mea.Rectangle.X;
-                    p[1] = mea.Rectangle.Y;
-                    p[2] = mea.Rectangle.X + mea.Rectangle.Width;
-                    p[3] = mea.Rectangle.Y + mea.Rectangle.Height;
-
-                    m.Result = new IntPtr(1); // return that it was successfull
-                }
-                break;
+                // WinForms doesn't handle this message correctly and wrongly returns 0 instead of 1.
+                case WM_QUERYENDSESSION:
+                    CancelEventArgs e = new CancelEventArgs();
+                    OnQueryEndSession(e);
+                    m.Result = e.Cancel ? IntPtr.Zero : new IntPtr(1);
+                    break;
 
                 default:
                     base.WndProc (ref m);
                     break;
             }
         }
-        
+
         public event MovingEventHandler Moving;
         protected virtual void OnMoving(MovingEventArgs mea)
         {
@@ -266,29 +327,12 @@ namespace PaintDotNet
             }
         }
 
-        /// <summary>
-        /// This event is raised when the remote session changes (i.e. whenever the WM_WTSSESSION_CHANGE
-        /// window message is received).
-        /// </summary>
-        public event EventHandler RemoteSessionChange;
-
-        /// <summary>
-        /// Raises the RemoteSessionChange event.
-        /// </summary>
-        protected virtual void OnRemoteSessionChange()
-        {
-            if (RemoteSessionChange != null)
-            {
-                RemoteSessionChange(this, EventArgs.Empty);
-            }
-        }
-
         public double ScreenAspect
         {
             get
             {
-                Screen ourScreen = Screen.FromControl(this);
-                double aspect = (double)ourScreen.Bounds.Width / (double)ourScreen.Bounds.Height;
+                Rectangle bounds = System.Windows.Forms.Screen.FromControl(this).Bounds;
+                double aspect = (double)bounds.Width / (double)bounds.Height;
                 return aspect;
             }
         }
@@ -303,7 +347,6 @@ namespace PaintDotNet
             this.components = new System.ComponentModel.Container();
             this.toolTipSentinel = new System.Windows.Forms.ToolTip(this.components);
             this.fixNoToolTipsAndFocusBugSentinel = new System.Windows.Forms.Control();
-            this.win2kTsDetectionTimer = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // fixNoToolTipsAndFocusBugSentinel
@@ -314,11 +357,6 @@ namespace PaintDotNet
             this.fixNoToolTipsAndFocusBugSentinel.TabIndex = 0;
             this.fixNoToolTipsAndFocusBugSentinel.TabStop = false;
             this.fixNoToolTipsAndFocusBugSentinel.Text = "control1";
-            // 
-            // win2kTsDetectionTimer
-            // 
-            this.win2kTsDetectionTimer.Interval = 5000;
-            this.win2kTsDetectionTimer.Tick += new System.EventHandler(this.win2kTsDetectionTimer_Tick);
             // 
             // PdnBaseForm
             // 
@@ -334,9 +372,9 @@ namespace PaintDotNet
         }
         #endregion
 
-        private void win2kTsDetectionTimer_Tick(object sender, System.EventArgs e)
+        private void UserSessions_SessionChanged(object sender, EventArgs e)
         {
-            DecideOpacitySetting();
+            this.DecideOpacitySetting();
         }
     }
 }

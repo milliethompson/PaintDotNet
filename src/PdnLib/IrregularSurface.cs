@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.Drawing;
@@ -78,7 +86,7 @@ namespace PaintDotNet
             region.Intersect(source.Bounds);
         }
 
-        public IrregularSurface (Surface source, Rectangle[] roi)
+        public IrregularSurface(Surface source, Rectangle[] roi)
         {
             placedSurfaces = new ArrayList(roi.Length);
 

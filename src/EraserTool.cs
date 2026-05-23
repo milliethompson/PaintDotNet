@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.Drawing;
@@ -22,15 +30,8 @@ namespace PaintDotNet
         private Point lastMouseXY;
         private RenderArgs renderArgs;
 		private BitmapLayer bitmapLayer;
-		private Cursor cursorMouseDown, cursorMouseUp;
-
-		public override char HotKey
-		{
-			get
-			{
-				return 'e';
-			}
-		}     
+		private Cursor cursorMouseDown;
+        private Cursor cursorMouseUp;
 
         protected override void OnActivate()
         {
@@ -156,7 +157,8 @@ namespace PaintDotNet
 
                         savedSurfaces.Clear();
 
-                        HistoryAction ha = bitmapLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
+                        //HistoryAction ha = bitmapLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
+                        HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, simplifiedRegion);
                         weDrewThis.Draw(bitmapLayer.Surface);
                         Workspace.History.PushNewAction(ha);
                     }
@@ -167,14 +169,14 @@ namespace PaintDotNet
         private static void DrawCircleOverLine(Graphics g, Pen pen, Point a, Point b)
         {
             Point[] coords = Utility.GetLinePoints(a, b);
-            int penWidth = (int)pen.Width;
-            int halfPenWidth = (int)(pen.Width / 2.0f);
-            Rectangle rectBase = new Rectangle(-halfPenWidth, -halfPenWidth, penWidth, penWidth);
+            float halfPenWidth = (pen.Width / 2.0f);
+            RectangleF rectBase = new RectangleF(-halfPenWidth, -halfPenWidth, pen.Width, pen.Width);
 
-            foreach (Point p in coords)
+            foreach (PointF p in coords)
             {
-                Rectangle rect = new Rectangle(new Point(rectBase.X + p.X, rectBase.Y + p.Y), rectBase.Size);
-                g.DrawEllipse(pen, rect);
+                RectangleF rect = new RectangleF(new PointF(rectBase.X + p.X, rectBase.Y + p.Y), rectBase.Size);
+				g.DrawEllipse(pen,rect);
+				g.FillEllipse(pen.Brush, rect);
             }
         }
 
@@ -185,6 +187,7 @@ namespace PaintDotNet
             if (mouseDown && ((e.Button & mouseButton) != MouseButtons.None))
             {
                 Pen pen = Workspace.Environment.PenInfo.CreatePen(Workspace.Environment.BrushInfo, Color.FromArgb(255, 0, 0, 0), Color.FromArgb(255, 0, 0, 0));
+				pen.Width = pen.Width / 2.0f;
 
                 Point a = lastMouseXY;
                 Point b = new Point(e.X, e.Y);
@@ -202,7 +205,7 @@ namespace PaintDotNet
 
                 // drawing outside of the canvas is a no-op, so don't do anything in that case!
                 // also make sure we're within the clip region
-                if (saveRect.Width > 0 && saveRect.Height > 0 && renderArgs.Graphics.Clip.IsVisible(saveRect))
+                if (saveRect.Width > 0 && saveRect.Height > 0 && renderArgs.Graphics.IsVisible(saveRect))
                 {
                     PlacedSurface savedPS = new PlacedSurface(renderArgs.Surface, saveRect);
                     savedSurfaces.Add(savedPS);
@@ -231,17 +234,40 @@ namespace PaintDotNet
             }
         }
         
-        public EraserTool(DocumentWorkspace parent) : base(parent)
+        public EraserTool(DocumentWorkspace parent) 
+            : base(parent,
+                   Utility.GetImageResource("Icons.EraserToolIcon.bmp"),
+                   "Eraser", 
+                   "Brush-like erasing tool",
+                   "Click and drag to erase a portion of the image",
+                   'e')
         {
-            name = "Eraser";
-            toolBarImage = Utility.GetImageResource("Icons.EraserToolIcon.bmp");
-            description = "Brush-like erasing tool";
-			helpText = "Click and drag to erase a portion of the image";
-
 			// cursor-transitions
 			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.EraserToolCursor.cur"));
 			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.EraserToolCursorMouseDown.cur"));
-			Cursor = cursorMouseUp;
+			this.Cursor = cursorMouseUp;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose (disposing);
+
+            if (disposing)
+            {
+                DisposeImage();
+
+                if (cursorMouseUp != null)
+                {
+                    cursorMouseUp.Dispose();
+                    cursorMouseUp = null;
+                }
+
+                if (cursorMouseDown != null)
+                {
+                    cursorMouseDown.Dispose();
+                    cursorMouseDown = null;
+                }
+            }
         }
     }
 }

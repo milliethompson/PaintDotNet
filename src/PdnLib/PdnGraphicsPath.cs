@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.Diagnostics;
@@ -33,7 +41,7 @@ namespace PaintDotNet
             return regionCache;
         }
 
-        public GraphicsPath GdiPath
+        private GraphicsPath GdiPath
         {
             get 
             { 
@@ -93,6 +101,151 @@ namespace PaintDotNet
         {
             Changed();
             gdiPath = new GraphicsPath(pts, types, fillMode);
+        }
+
+        public static PdnGraphicsPath FromRegion(PdnRegion region)
+        {
+            Rectangle bounds = region.GetBoundsInt();
+            Rectangle[] scans = region.GetRegionScansReadOnlyInt();
+            BitVector2D stencil = new BitVector2D(bounds.Width, bounds.Height);
+
+            for (int i = 0; i < scans.Length; ++i)
+            {
+                Rectangle rect = scans[i];
+                rect.X -= bounds.X;
+                rect.Y -= bounds.Y;
+
+                stencil.Set(rect, true);
+            }
+
+            PdnGraphicsPath path = PathFromStencil(stencil, new Rectangle(0, 0, stencil.Width, stencil.Height));
+
+            using (Matrix matrix = new Matrix())
+            {
+                matrix.Reset();
+                matrix.Translate(bounds.X, bounds.Y);
+                path.Transform(matrix);
+            }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Creates a graphics path from the given stencil buffer. It should be filled with 'true' values
+        /// to indicate the areas that should be outlined.
+        /// </summary>
+        /// <param name="stencil">The stencil buffer to read from. NOTE: The contents of this will be destroyed when this method returns.</param>param>
+        /// <param name="bounds">The bounding box within the stencil buffer to limit discovery to.</param>
+        /// <returns>A PdnGraphicsPath with traces that outline the various areas from the given stencil buffer.</returns>
+        public unsafe static PdnGraphicsPath PathFromStencil(IBitVector2D stencil, Rectangle bounds)
+        {
+            if (stencil.IsEmpty)
+            {
+                return new PdnGraphicsPath();
+            }
+
+            PdnGraphicsPath ret = new PdnGraphicsPath();
+            Point start = bounds.Location;
+            PointVector pts = new PointVector(64);
+            int count = 0;
+
+            // find all islands
+            while (true) 
+            {
+                bool startFound = false;
+
+                while (true)
+                {
+                    if (stencil[start])
+                    {
+                        startFound = true;
+                        break;
+                    }
+
+                    ++start.X;
+
+                    if (start.X >= bounds.Right)
+                    {
+                        ++start.Y;
+                        start.X = bounds.Left;
+
+                        if (start.Y >= bounds.Bottom)
+                        {
+                            break;
+                        }
+                    }
+                }
+            
+                if (!startFound)
+                {
+                    break;
+                }
+
+                pts.Clear();
+                Point last = new Point(start.X, start.Y + 1);
+                Point curr = new Point(start.X, start.Y);
+                Point next = curr;
+                Point left = Point.Empty;
+                Point right = Point.Empty;
+            
+                // trace island outline
+                while (true)
+                {
+
+                    left.X = ((curr.X - last.X) + (curr.Y - last.Y) + 2) / 2 + curr.X - 1;
+                    left.Y = ((curr.Y - last.Y) - (curr.X - last.X) + 2) / 2 + curr.Y - 1;
+
+                    right.X = ((curr.X - last.X) - (curr.Y - last.Y) + 2) / 2 + curr.X - 1;
+                    right.Y = ((curr.Y - last.Y) + (curr.X - last.X) + 2) / 2 + curr.Y - 1;
+
+                    if (Utility.IsPointInRectangle(left, bounds) && stencil[left])
+                    {
+                        //go left
+                        next.X += curr.Y - last.Y;
+                        next.Y -= curr.X - last.X;
+                    }
+                    else if (Utility.IsPointInRectangle(right, bounds) && stencil[right])
+                    {
+                        //go straight
+                        next.X += curr.X - last.X;
+                        next.Y += curr.Y - last.Y;
+                    }
+                    else
+                    {
+                        //turn right
+                        next.X -= curr.Y - last.Y;
+                        next.Y += curr.X - last.X;
+                    }
+
+                    if (Math.Sign(next.X - curr.X) != Math.Sign(curr.X - last.X) ||
+                        Math.Sign(next.Y - curr.Y) != Math.Sign(curr.Y - last.Y))
+                    {
+                        pts.Add(curr);
+                        ++count;
+                    }
+                    last = curr;
+                    curr = next;
+
+                    if (next.X == start.X && next.Y == start.Y)
+                    {
+                        break;
+                    }
+                }
+
+                using (PdnGraphicsPath path = new PdnGraphicsPath())
+                {
+                    path.AddPolygon(pts.GetPointArray());
+
+                    using (PdnRegion inner = new PdnRegion(path))
+					{
+						stencil.Invert(inner);
+                    }
+
+                    ret.AddPath(path, false);
+                }
+            }
+
+            return ret;
         }
 
         ~PdnGraphicsPath()
@@ -460,6 +613,51 @@ namespace PaintDotNet
         {
             Changed();
             gdiPath.Flatten(matrix, flatness);
+        }
+
+        public RectangleF GetBounds2()
+        {
+            if (this.PointCount == 0)
+            {
+                return RectangleF.Empty;
+            }
+
+            PointF[] points = this.PathPoints;
+
+            if (points.Length == 0)
+            {
+                return RectangleF.Empty;
+            }
+
+            float left = points[0].X;
+            float right = points[0].X;
+            float top = points[0].Y;
+            float bottom = points[0].Y;
+
+            for (int i = 1; i < points.Length; ++i)
+            {
+                if (points[i].X < left)
+                {
+                    left = points[i].X;
+                }
+
+                if (points[i].Y < top)
+                {
+                    top = points[i].Y;
+                }
+
+                if (points[i].X > right)
+                {
+                    right = points[i].X;
+                }
+
+                if (points[i].Y > bottom)
+                {
+                    bottom = points[i].Y;
+                }
+            }
+
+            return RectangleF.FromLTRB(left, top, right, bottom);
         }
 
         public RectangleF GetBounds()

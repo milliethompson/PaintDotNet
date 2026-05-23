@@ -24,7 +24,7 @@
             >
                 <Config
                     Name = "Debug"
-                    AllowUnsafeBlocks = "false"
+                    AllowUnsafeBlocks = "true"
                     BaseAddress = "285212672"
                     CheckForOverflowUnderflow = "true"
                     ConfigurationOverrideFile = ""
@@ -44,7 +44,7 @@
                 />
                 <Config
                     Name = "Release"
-                    AllowUnsafeBlocks = "false"
+                    AllowUnsafeBlocks = "true"
                     BaseAddress = "285212672"
                     CheckForOverflowUnderflow = "false"
                     ConfigurationOverrideFile = ""
@@ -59,7 +59,7 @@
                     OutputPath = "bin\Release\"
                     RegisterForComInterop = "false"
                     RemoveIntegerChecks = "false"
-                    TreatWarningsAsErrors = "false"
+                    TreatWarningsAsErrors = "true"
                     WarningLevel = "4"
                 />
             </Settings>
@@ -100,7 +100,7 @@
                 />
                 <File
                     RelPath = "Readme.txt"
-                    BuildAction = "Content"
+                    BuildAction = "None"
                 />
                 <File
                     RelPath = "RotateZoomEffect.cs"
@@ -109,7 +109,7 @@
                 />
                 <File
                     RelPath = "RotateZoomEffectConfigDialog.cs"
-                    SubType = "Code"
+                    SubType = "Form"
                     BuildAction = "Compile"
                 />
                 <File

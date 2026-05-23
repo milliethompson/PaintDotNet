@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using PaintDotNet.Threading;
 using System;
 using System.Collections;
@@ -27,25 +35,27 @@ namespace PaintDotNet
         }
 
         private static DateTime startTime = DateTime.Now;
+        private static DateTime lastTime = DateTime.Now;
 
+        [Obsolete("use Tracing.Ping() instead")]
         [Conditional("DEBUG")]
         public static void TraceMe(string message)
         {
-            StackTrace trace = new StackTrace();
-            StackFrame parentFrame = trace.GetFrame(1);
-            MethodBase parentMethod = parentFrame.GetMethod();
-            DateTime now = DateTime.Now;
-            Debug.WriteLine(((now.Ticks - startTime.Ticks) / 10000).ToString() + ": " + parentMethod.DeclaringType.Name + "." + parentMethod.Name + (message != null ? (": " + message) : ""));
         }
 
+        [Obsolete("use Tracing.Ping() instead")]
         [Conditional("DEBUG")]
         public static void TraceMe()
         {
-            StackTrace trace = new StackTrace();
-            StackFrame parentFrame = trace.GetFrame(1);
-            MethodBase parentMethod = parentFrame.GetMethod();
-            DateTime now = DateTime.Now;
-            Debug.WriteLine(((now.Ticks - startTime.Ticks) / 10000).ToString() + ": " + parentMethod.DeclaringType.Name + "." + parentMethod.Name);
+        }
+
+        public static string VersionFromFullAssemblyName(string name)
+        {
+            const string versionTag = "Version=";
+            int begin = name.IndexOf(versionTag);
+            int end = name.IndexOf(",", begin);
+            string version = name.Substring(begin + versionTag.Length, end - begin - versionTag.Length);
+            return version;
         }
 
         public static void GCFullCollect()
@@ -53,9 +63,10 @@ namespace PaintDotNet
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
 
-        private static int defaultSimplificationFactor = 30;
+        private static int defaultSimplificationFactor = 50;
         public static int DefaultSimplificationFactor
         {
             get
@@ -97,9 +108,24 @@ namespace PaintDotNet
             return result;
         }
 
+        public static void SplitRectangle(Rectangle rect, Rectangle[] rects)
+        {
+            int height = rect.Height;
+
+            for (int i = 0; i < rects.Length; ++i)
+            {
+                Rectangle newRect = Rectangle.FromLTRB(rect.Left,
+                                                       rect.Top + ((height * i) / rects.Length),
+                                                       rect.Right,
+                                                       rect.Top + ((height * (i + 1)) / rects.Length));
+
+                rects[i] = newRect;
+            }
+        }
+
         public static long TicksToMs(long ticks)
         {
-            return ticks/10000;
+            return ticks / 10000;
         }
 
         public static string GetStaticName(Type type)
@@ -123,11 +149,13 @@ namespace PaintDotNet
             }
         }
 
-        public static readonly float[][] Identity5x5F = new float[][] { new float[] { 1, 0, 0, 0, 0 },
-                                                                        new float[] { 0, 1, 0, 0, 0 },
-                                                                        new float[] { 0, 0, 1, 0, 0 },
-                                                                        new float[] { 0, 0, 0, 1, 0 },
-                                                                        new float[] { 0, 0, 0, 0, 1 } };
+        public static readonly float[][] Identity5x5F = new float[][] {
+                                                                          new float[] { 1, 0, 0, 0, 0 },
+                                                                          new float[] { 0, 1, 0, 0, 0 },
+                                                                          new float[] { 0, 0, 1, 0, 0 },
+                                                                          new float[] { 0, 0, 0, 1, 0 },
+                                                                          new float[] { 0, 0, 0, 0, 1 } 
+                                                                      };
 
         public static readonly ColorMatrix IdentityColorMatrix = new ColorMatrix(Identity5x5F);
 
@@ -219,12 +247,14 @@ namespace PaintDotNet
             for (int i = 1; i < str2.Length; i++)
             {
                 char ch = str2[i];
+
                 if (char.IsUpper(ch))
                 {
                     str2 = str2.Insert(i, " ");
                     i++;
                     number = false;
                 }
+
                 if (char.IsNumber(ch))
                 {
                     if (!number)
@@ -232,6 +262,7 @@ namespace PaintDotNet
                         str2 = str2.Insert(i, " ");
                         i++;
                     }
+
                     number = true;
                 }
             }
@@ -287,6 +318,18 @@ namespace PaintDotNet
             return sum;
         }
 
+        public static void ClipNumericUpDown(NumericUpDown upDown)
+        {
+            if (upDown.Value < upDown.Minimum)
+            {
+                upDown.Value = upDown.Minimum;
+            }
+            else if (upDown.Value > upDown.Maximum)
+            {
+                upDown.Value = upDown.Maximum;
+            }
+        }
+
         public static bool CheckNumericUpDown(NumericUpDown upDown)
         {
             int a;
@@ -296,12 +339,12 @@ namespace PaintDotNet
                 a = int.Parse(upDown.Text);
             }
 
-            catch(FormatException)
+            catch (FormatException)
             {
                 return false;
             }
 
-            catch(OverflowException)
+            catch (OverflowException)
             {
                 return false;
             }
@@ -337,32 +380,33 @@ namespace PaintDotNet
             return p;
         }
 
-        public static string SizeStringFromBytes(double bytes)
+        public static string SizeStringFromBytes(long bytes)
         {
             string returnMe;
+            double bytesDouble = (double)bytes;
 
-            // Gigs
-            if (bytes > (1024 * 1024 * 1024))
+            if (bytesDouble > (1024 * 1024 * 1024))
             {
-                bytes /= 1024 * 1024 * 1024;
-                returnMe = bytes.ToString("F1") + " GB";
+                // Gigs
+                bytesDouble /= 1024 * 1024 * 1024;
+                returnMe = bytesDouble.ToString("F1") + " GB";
             }
+            else if (bytesDouble > (1024 * 1024))
+            {
                 // Megs
-            else if (bytes > (1024 * 1024))
-            {
-                bytes /= 1024 * 1024;
-                returnMe = bytes.ToString("F1") + " MB";
+                bytesDouble /= 1024 * 1024;
+                returnMe = bytesDouble.ToString("F1") + " MB";
             }
+            else if (bytesDouble > (1024))
+            {
                 // K
-            else if (bytes > (1024))
-            {
-                bytes /= 1024;
-                returnMe = bytes.ToString("F1") + " KB";
+                bytesDouble /= 1024;
+                returnMe = bytesDouble.ToString("F1") + " KB";
             }
-                // Bytes
             else
             {
-                returnMe = bytes.ToString("F0") + " Bytes";
+                // Bytes
+                returnMe = bytesDouble.ToString("F0") + " Bytes";
             }
 
             return returnMe;
@@ -371,6 +415,16 @@ namespace PaintDotNet
         public static void ErrorBox(IWin32Window parent, string message)
         {
             MessageBox.Show(parent, message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        public static void InfoBox(IWin32Window parent, string message)
+        {
+            MessageBox.Show(parent, message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        public static DialogResult AskOKCancel(IWin32Window parent, string question)
+        {
+            return MessageBox.Show(parent, question, Application.ProductName, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
         }
 
         public static DialogResult AskYesNo(IWin32Window parent, string question)
@@ -383,50 +437,77 @@ namespace PaintDotNet
             return MessageBox.Show(parent, question, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
         }
 
-		public static Icon ImageToIcon(Image image)
-		{
-			return ImageToIcon(image, Color.FromArgb(192, 192, 192));
-		}
-
-		public static Icon ImageToIcon(Image image, bool disposeImage)
-		{
-			return ImageToIcon(image, Color.FromArgb(192, 192, 192), disposeImage);
-		}
-
-		public static Icon ImageToIcon(Image image, Color seeThru)
-		{
-			return ImageToIcon(image, seeThru, false);
-		}
-
-		/// <summary>
-		/// Converts an Image to an Icon.
-		/// </summary>
-		/// <param name="image">The Image to convert to an icon. Must be an appropriate icon size (32x32, 16x16, etc).</param>
-		/// <param name="seeThru">The color that will be treated as transparent in the icon.</param>
-		/// <param name="disposeImage">Whether or not to dispose the passed-in Image.</param>
-		/// <returns>An Icon representation of the Image.</returns>
-		public static Icon ImageToIcon(Image image, Color seeThru, bool disposeImage)
+        public static Icon ImageToIcon(Image image)
         {
-			Bitmap bitmap = new Bitmap(image);
+            return ImageToIcon(image, Color.FromArgb(192, 192, 192));
+        }
 
-			for (int y = 0; y < bitmap.Height; ++y)
-			{
-				for (int x = 0; x < bitmap.Width; ++x)
-				{
-					if (bitmap.GetPixel(x, y) == seeThru)
-					{
-						bitmap.SetPixel(x, y, Color.FromArgb(0));
-					}
-				}
-			}
+        public static Icon ImageToIcon(Image image, bool disposeImage)
+        {
+            return ImageToIcon(image, Color.FromArgb(192, 192, 192), disposeImage);
+        }
 
-			Icon icon = Icon.FromHandle(bitmap.GetHicon());
-			bitmap.Dispose();
+        public static Icon ImageToIcon(Image image, Color seeThru)
+        {
+            return ImageToIcon(image, seeThru, false);
+        }
 
-			if (disposeImage)
-			{
-				image.Dispose();
-			}
+        /// <summary>
+        /// Converts an Image to an Icon.
+        /// </summary>
+        /// <param name="image">The Image to convert to an icon. Must be an appropriate icon size (32x32, 16x16, etc).</param>
+        /// <param name="seeThru">The color that will be treated as transparent in the icon.</param>
+        /// <param name="disposeImage">Whether or not to dispose the passed-in Image.</param>
+        /// <returns>An Icon representation of the Image.</returns>
+        public static Icon ImageToIcon(Image image, Color seeThru, bool disposeImage)
+        {
+            Bitmap bitmap = new Bitmap(image);
+
+            for (int y = 0; y < bitmap.Height; ++y)
+            {
+                for (int x = 0; x < bitmap.Width; ++x)
+                {
+                    if (bitmap.GetPixel(x, y) == seeThru)
+                    {
+                        bitmap.SetPixel(x, y, Color.FromArgb(0));
+                    }
+                }
+            }
+
+            Icon icon = Icon.FromHandle(bitmap.GetHicon());
+            bitmap.Dispose();
+
+            if (disposeImage)
+            {
+                image.Dispose();
+            }
+
+            return icon;
+        }
+
+        public static Icon BitmapToIcon(Bitmap bitmap, bool disposeBitmap)
+        {
+            Icon icon = Icon.FromHandle(bitmap.GetHicon());
+
+            if (disposeBitmap)
+            {
+                bitmap.Dispose();
+            }
+
+            return icon;
+        }
+
+        public static Icon SurfaceToIcon(Surface surface, bool disposeSurface)
+        {
+            Bitmap bitmap = surface.CreateAliasedBitmap();
+            Icon icon = Icon.FromHandle(bitmap.GetHicon());
+
+            bitmap.Dispose();
+
+            if (disposeSurface)
+            {
+                surface.Dispose();
+            }
 
             return icon;
         }
@@ -443,17 +524,18 @@ namespace PaintDotNet
             return image;
         }
 
-		public static Icon GetIconResource(string fileName) 
-		{
-			StackTrace trace = new StackTrace();
-			StackFrame parentFrame = trace.GetFrame(1);
-			MethodBase parentMethod = parentFrame.GetMethod();
-			Type parentType = parentMethod.DeclaringType;
-			Assembly parentAssembly = parentType.Assembly;
-			Stream stream = GetResourceStream(parentAssembly, parentType.Namespace, fileName);
-			Image image = Image.FromStream(stream);
-			return Icon.FromHandle(((Bitmap)image).GetHicon());
-		}
+        public static Icon GetIconResource(string fileName) 
+        {
+            StackTrace trace = new StackTrace();
+            StackFrame parentFrame = trace.GetFrame(1);
+            MethodBase parentMethod = parentFrame.GetMethod();
+            Type parentType = parentMethod.DeclaringType;
+            Assembly parentAssembly = parentType.Assembly;
+            Stream stream = GetResourceStream(parentAssembly, parentType.Namespace, fileName);
+            Image image = Image.FromStream(stream);
+            return Icon.FromHandle(((Bitmap)image).GetHicon());
+        }
+
         public static Stream GetResourceStream(string fileName)
         {
             StackTrace trace = new StackTrace();
@@ -505,11 +587,13 @@ namespace PaintDotNet
             return scans;
         }
 
+        [Obsolete]
         public static PdnRegion ScanlinesToRegion(Scanline[] scans)
         {
             return ScanlinesToRegion(scans, 0, scans.Length);
         }
 
+        [Obsolete]
         public static PdnRegion ScanlinesToRegion(Scanline[] scans, int startIndex, int length)
         {
             return RectanglesToRegion(ScanlinesToRectangles(scans, startIndex, length));
@@ -532,6 +616,7 @@ namespace PaintDotNet
             return rects;
         }
 
+        [Obsolete]
         public static Scanline[] GetRegionScans(RectangleF[] region)
         {
             int scanCount = 0;
@@ -701,12 +786,12 @@ namespace PaintDotNet
             return area;
         }
 
-		public static RectangleF RectFromCenter(PointF center, float size) 
-		{
-			RectangleF ret = new RectangleF(center.X, center.Y, 0, 0);
-			ret.Inflate(size, size);
-			return ret;
-		}
+        public static RectangleF RectFromCenter(PointF center, float size) 
+        {
+            RectangleF ret = new RectangleF(center.X, center.Y, 0, 0);
+            ret.Inflate(size, size);
+            return ret;
+        }
 
         public static Rectangle[] InflateRectangles(Rectangle[] rects, int amount)
         {
@@ -769,6 +854,27 @@ namespace PaintDotNet
             return rect;
         }
 
+        public static RectangleF PointsToConstrainedRectangle(PointF a, PointF b)
+        {
+            RectangleF rect = Utility.PointsToRectangle(a, b);
+            float minWH = Math.Min(rect.Width, rect.Height);
+
+            rect.Width = minWH;
+            rect.Height = minWH;
+
+            if (rect.Y != a.Y)
+            {
+                rect.Location = new PointF(rect.X, a.Y - minWH);
+            }
+
+            if (rect.X != a.X)
+            {
+                rect.Location = new PointF(a.X - minWH, rect.Y);
+            }
+
+            return rect;
+        }
+
         /// <summary>
         /// Takes two points and creates a bounding rectangle from them.
         /// </summary>
@@ -791,6 +897,26 @@ namespace PaintDotNet
             float y = Math.Min(a.Y, b.Y);
             float width = Math.Abs(a.X - b.X) + 1;
             float height = Math.Abs(a.Y - b.Y) + 1;
+ 
+            return new RectangleF(x, y, width, height);
+        }
+
+        public static Rectangle PointsToRectangleExclusive(Point a, Point b)
+        {
+            int x = Math.Min(a.X, b.X);
+            int y = Math.Min(a.Y, b.Y);
+            int width = Math.Abs(a.X - b.X);
+            int height = Math.Abs(a.Y - b.Y);
+ 
+            return new Rectangle(x, y, width, height);
+        }
+
+        public static RectangleF PointsToRectangleExclusive(PointF a, PointF b)
+        {
+            float x = Math.Min(a.X, b.X);
+            float y = Math.Min(a.Y, b.Y);
+            float width = Math.Abs(a.X - b.X);
+            float height = Math.Abs(a.Y - b.Y);
  
             return new RectangleF(x, y, width, height);
         }
@@ -875,9 +1001,14 @@ namespace PaintDotNet
             return new BinaryFormatter().Deserialize(stream);
         }
 
-        public static bool IsPointInRectangle(Point p, Rectangle r)
+        public static bool IsPointInRectangle(Point pt, Rectangle rect)
         {
-            if ((p.X < r.X) || (p.Y < r.Y) || (p.X >= r.Right) || (p.Y >= r.Bottom))
+            return IsPointInRectangle(pt.X, pt.Y, rect);
+        }
+        
+        public static bool IsPointInRectangle(int x, int y, Rectangle rect)
+        {
+            if ((x < rect.X) || (y < rect.Y) || (x >= rect.Right) || (y >= rect.Bottom))
             {
                 return false;
             }
@@ -1135,7 +1266,7 @@ namespace PaintDotNet
             PointF centerB = new PointF(rectsF[indexB].Left + (rectsF[indexB].Width / 2), rectsF[indexB].Top + (rectsF[indexB].Height / 2));
             
             return ((centerA.X - centerB.X) * (centerA.X - centerB.X)) + 
-                   ((centerA.Y - centerB.Y) * (centerA.Y - centerB.Y));
+                ((centerA.Y - centerB.Y) * (centerA.Y - centerB.Y));
         }
        
         /// <summary>
@@ -1152,8 +1283,7 @@ namespace PaintDotNet
 
         public static Rectangle[] SimplifyRegion(Rectangle[] rects, int complexity)
         {
-            if (complexity == 0 ||
-                rects.Length < complexity)
+            if (complexity == 0 || rects.Length < complexity)
             {
                 return (Rectangle[])rects.Clone();
             }
@@ -1323,6 +1453,30 @@ namespace PaintDotNet
             return rects;
         }
 
+        public static Point[] TruncatePoints(PointF[] pointsF)
+        {
+            Point[] points = new Point[pointsF.Length];
+
+            for (int i = 0; i < pointsF.Length; ++i)
+            {
+                points[i] = Point.Truncate(pointsF[i]);
+            }
+
+            return points;
+        }
+
+        public static Point[] RoundPoints(PointF[] pointsF)
+        {
+            Point[] points = new Point[pointsF.Length];
+
+            for (int i = 0; i < pointsF.Length; ++i)
+            {
+                points[i] = Point.Round(pointsF[i]);
+            }
+
+            return points;
+        }
+
         /// <summary>
         /// The Sutherland-Hodgman clipping alrogithm.
         /// http://ezekiel.vancouver.wsu.edu/~cs442/lectures/clip/clip/index.html
@@ -1347,9 +1501,24 @@ namespace PaintDotNet
             return p4;
         }
 
+        public static PointF[] SutherlandHodgman(RectangleF bounds, PointF[] v)
+        {
+            PointF[] p1 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Left, v);
+            PointF[] p2 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Right, p1);
+            PointF[] p3 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Top, p2);
+            PointF[] p4 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Bottom, p3);
+
+            return p4;
+        }
+
         public static Point[] SutherlandHodgman(Rectangle bounds, ArrayList v)
         {
             return SutherlandHodgman(bounds, (Point[])v.ToArray(typeof(Point)));
+        }
+
+        public static PointF[] SutherlandHodgman(RectangleF bounds, ArrayList v)
+        {
+            return SutherlandHodgman(bounds, (PointF[])v.ToArray(typeof(PointF)));
         }
 
         private enum RectangleEdge
@@ -1378,19 +1547,23 @@ namespace PaintDotNet
                 bool sIn = IsInside(bounds, edge, s);
 
                 if (sIn && pIn)
-                {   // case 1: inside -> inside
+                {   
+                    // case 1: inside -> inside
                     polygon.Add(p);
                 }
                 else if (sIn && !pIn)
-                {   // case 2: inside -> outside
+                {   
+                    // case 2: inside -> outside
                     polygon.Add(LineIntercept(bounds, edge, s, p));
                 }
                 else if (!sIn && !pIn)
-                {   // case 3: outside -> outside
+                {   
+                    // case 3: outside -> outside
                     // emit nothing
                 }
                 else if (!sIn && pIn)
-                {   // case 4: outside -> inside
+                {   
+                    // case 4: outside -> inside
                     polygon.Add(LineIntercept(bounds, edge, s, p));
                     polygon.Add(p);
                 }
@@ -1401,49 +1574,87 @@ namespace PaintDotNet
             return (Point[])polygon.ToArray(typeof(Point));
         }
 
+        private static PointF[] SutherlandHodgmanOneAxis(RectangleF bounds, RectangleEdge edge, PointF[] v)
+        {
+            if (v.Length == 0)
+            {
+                return new PointF[0];
+            }
+
+            ArrayList polygon = new ArrayList();
+            
+            PointF s = v[v.Length - 1];
+
+            for (int i = 0; i < v.Length; ++i)
+            {
+                PointF p = v[i];
+                bool pIn = IsInside(bounds, edge, p);
+                bool sIn = IsInside(bounds, edge, s);
+
+                if (sIn && pIn)
+                {   
+                    // case 1: inside -> inside
+                    polygon.Add(p);
+                }
+                else if (sIn && !pIn)
+                {   
+                    // case 2: inside -> outside
+                    polygon.Add(LineIntercept(bounds, edge, s, p));
+                }
+                else if (!sIn && !pIn)
+                {   
+                    // case 3: outside -> outside
+                    // emit nothing
+                }
+                else if (!sIn && pIn)
+                {   
+                    // case 4: outside -> inside
+                    polygon.Add(LineIntercept(bounds, edge, s, p));
+                    polygon.Add(p);
+                }
+
+                s = p;
+            }
+
+            return (PointF[])polygon.ToArray(typeof(PointF));
+        }
+
         private static bool IsInside(Rectangle bounds, RectangleEdge edge, Point p)
         {
             switch (edge)
             {
                 case RectangleEdge.Left:
-                    if (p.X < bounds.Left)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
+                    return !(p.X < bounds.Left);
                         
                 case RectangleEdge.Right:
-                    if (p.X >= bounds.Right)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
+                    return !(p.X >= bounds.Right);
 
                 case RectangleEdge.Top:
-                    if (p.Y < bounds.Top)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
+                    return !(p.Y < bounds.Top);
 
                 case RectangleEdge.Bottom:
-                    if (p.Y >= bounds.Bottom)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
+                    return !(p.Y >= bounds.Bottom);
+
+                default:
+                    throw new InvalidEnumArgumentException("edge");
+            }
+        }
+
+        private static bool IsInside(RectangleF bounds, RectangleEdge edge, PointF p)
+        {
+            switch (edge)
+            {
+                case RectangleEdge.Left:
+                    return !(p.X < bounds.Left);
+                        
+                case RectangleEdge.Right:
+                    return !(p.X >= bounds.Right);
+
+                case RectangleEdge.Top:
+                    return !(p.Y < bounds.Top);
+
+                case RectangleEdge.Bottom:
+                    return !(p.Y >= bounds.Bottom);
 
                 default:
                     throw new InvalidEnumArgumentException("edge");
@@ -1495,6 +1706,51 @@ namespace PaintDotNet
             throw new ArgumentException("no intercept found");
         }
 
+        private static PointF LineIntercept(RectangleF bounds, RectangleEdge edge, PointF a, PointF b)
+        {
+            if (a == b)
+            {
+                return a;
+            }
+
+            switch (edge)
+            {
+                case RectangleEdge.Bottom:
+                    if (b.Y == a.Y)
+                    {
+                        throw new ArgumentException("no intercept found");
+                    }
+
+                    return new PointF(a.X + (((b.X - a.X) * (bounds.Bottom - a.Y)) / (b.Y - a.Y)), bounds.Bottom);
+
+                case RectangleEdge.Left:
+                    if (b.X == a.X)
+                    {
+                        throw new ArgumentException("no intercept found");
+                    }
+
+                    return new PointF(bounds.Left, a.Y + (((b.Y - a.Y) * (bounds.Left - a.X)) / (b.X - a.X)));
+
+                case RectangleEdge.Right:
+                    if (b.X == a.X)
+                    {
+                        throw new ArgumentException("no intercept found");
+                    }
+
+                    return new PointF(bounds.Right, a.Y + (((b.Y - a.Y) * (bounds.Right - a.X)) / (b.X - a.X)));
+
+                case RectangleEdge.Top:
+                    if (b.Y == a.Y)
+                    {
+                        throw new ArgumentException("no intercept found");
+                    }
+
+                    return new PointF(a.X + (((b.X - a.X) * (bounds.Top - a.Y)) / (b.Y - a.Y)), bounds.Top);                                    
+            }
+
+            throw new ArgumentException("no intercept found");
+        }
+
         public static Point[] GetLinePoints(Point first, Point second)
         {
             Point[] coords = null;
@@ -1533,8 +1789,8 @@ namespace PaintDotNet
                 }
             }
             else 
-            // had to add in this cludge for slopes of 1 ... wasn't drawing half the line
-            if (dxabs == dyabs)
+                // had to add in this cludge for slopes of 1 ... wasn't drawing half the line
+                if (dxabs == dyabs)
             {
                 coords = new Point[dxabs + 1];
 
@@ -1572,41 +1828,53 @@ namespace PaintDotNet
             return Utility.TicksToMs(DateTime.Now.Ticks);        
         }
 
-		/// <summary>
-		/// Returns the Distance between two points
-		/// </summary>
-		public static float Distance(PointF a, PointF b)
-		{
-			return Magnitude(new PointF(a.X - b.X, a.Y - b.Y));
-		}
+        /// <summary>
+        /// Returns the Distance between two points
+        /// </summary>
+        public static float Distance(PointF a, PointF b)
+        {
+            return Magnitude(new PointF(a.X - b.X, a.Y - b.Y));
+        }
 
-		/// <summary>
-		/// Returns the Magnitude (distance to origin) of a point
-		/// </summary>
-		public static float Magnitude(PointF p)
-		{
-			return (float)Math.Sqrt(p.X * p.X + p.Y * p.Y);
-		}
+        /// <summary>
+        /// Returns the Magnitude (distance to origin) of a point
+        /// </summary>
+        public static float Magnitude(PointF p)
+        {
+            return (float)Math.Sqrt(p.X * p.X + p.Y * p.Y);
+        }
 
-		public static double Clamp(double x, double min, double max) 
-		{
-			if (x < min)
-				return min;
-			else if (x > max)
-				return max;
-			else
-				return x;
-		}
+        public static double Clamp(double x, double min, double max) 
+        {
+            if (x < min)
+            {
+                return min;
+            }
+            else if (x > max)
+            {
+                return max;
+            }
+            else
+            {
+                return x;
+            }
+        }
 
-		public static float Clamp(float x, float min, float max) 
-		{
-			if (x < min)
-				return min;
-			else if (x > max)
-				return max;
-			else
-				return x;
-		}
+        public static float Clamp(float x, float min, float max) 
+        {
+            if (x < min)
+            {
+                return min;
+            }
+            else if (x > max)
+            {
+                return max;
+            }
+            else
+            {
+                return x;
+            }
+        }
 
         public static int Clamp(int x, int min, int max)
         {
@@ -1622,81 +1890,133 @@ namespace PaintDotNet
             {
                 return x;
             }
-		}
+        }
         
-		public static byte ClampToByte(double x) 
-		{
-			if (x > 255)
-				return 255;
-			else if (x < 0)
-				return 0;
-			else
-				return (byte)x;
-		}
+        public static byte ClampToByte(double x) 
+        {
+            if (x > 255)
+            {
+                return 255;
+            }
+            else if (x < 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return (byte)x;
+            }
+        }
         
-		public static byte ClampToByte(float x) 
-		{
-			if (x > 255)
-				return 255;
-			else if (x < 0)
-				return 0;
-			else
-				return (byte)x;
-		}
+        public static byte ClampToByte(float x) 
+        {
+            if (x > 255)
+            {
+                return 255;
+            }
+            else if (x < 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return (byte)x;
+            }
+        }
         
-		public static byte ClampToByte(int x) 
-		{
-			if (x > 255)
-				return 255;
-			else if (x < 0)
-				return 0;
-			else
-				return (byte)x;
-		}
+        public static byte ClampToByte(int x) 
+        {
+            if (x > 255)
+            {
+                return 255;
+            }
+            else if (x < 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return (byte)x;
+            }
+        }
 
-		public static float Lerp(float from, float to, float frac) 
-		{
-			return (from * (1 - frac) + to * frac);
-		}
+        public static float Lerp(float from, float to, float frac) 
+        {
+            return (from * (1 - frac) + to * frac);
+        }
 
-		public static double Lerp(double from, double to, double frac) 
-		{
-			return (from * (1 - frac) + to * frac);
-		}
+        public static double Lerp(double from, double to, double frac) 
+        {
+            return (from * (1 - frac) + to * frac);
+        }
 
-		public static int ColorDifference(ColorBgra a, ColorBgra b) 
-		{
-			return (int)Math.Ceiling(Math.Sqrt(ColorDifferenceSquared(a, b)));
-		}
+        public static int ColorDifference(ColorBgra a, ColorBgra b) 
+        {
+            return (int)Math.Ceiling(Math.Sqrt(ColorDifferenceSquared(a, b)));
+        }
 
-		public static int ColorDifferenceSquared(ColorBgra a, ColorBgra b) 
-		{
-			int diffSq = 0, tmp;
+        public static int ColorDifferenceSquared(ColorBgra a, ColorBgra b) 
+        {
+            int diffSq = 0, tmp;
 
-			tmp = a.R - b.R;
-			diffSq += tmp * tmp;
-			tmp = a.G - b.G;
-			diffSq += tmp * tmp;
-			tmp = a.B - b.B;
-			diffSq += tmp * tmp;
+            tmp = a.R - b.R;
+            diffSq += tmp * tmp;
+            tmp = a.G - b.G;
+            diffSq += tmp * tmp;
+            tmp = a.B - b.B;
+            diffSq += tmp * tmp;
 
-			return diffSq / 3;
-		}
+            return diffSq / 3;
+        }
 
-		public static Rectangle [] MakeRectangleOutline(Rectangle roi) 
-		{
-			Rectangle [] ret = new Rectangle[4];
+        public static DialogResult ShowDialog(Form showMe, IWin32Window owner)
+        {
+            DialogResult dr;
 
-			//Left
-			ret[0] = new Rectangle(roi.Left - 2, roi.Top - 2, 5, roi.Height + 5);
-			//Right
-			ret[1] = new Rectangle(roi.Right - 2, roi.Top - 2, 5, roi.Height + 5);
-			//Top
-			ret[2] = new Rectangle(roi.Left - 2, roi.Top - 2, roi.Width + 5, 5);
-			//Bottom
-			ret[2] = new Rectangle(roi.Left - 2, roi.Bottom - 2, roi.Width + 5, 5);
+            if (showMe is PdnBaseForm)
+            {
+                PdnBaseForm showMe2 = (PdnBaseForm)showMe;
+                double oldOpacity = showMe2.Opacity;
+                showMe2.Opacity = 0.9;
+                dr = showMe2.ShowDialog(owner);
+                showMe2.Opacity = oldOpacity;
+            }
+            else
+            {
+                double oldOpacity = showMe.Opacity;
+                showMe.Opacity = 0.9;
+                dr = showMe.ShowDialog(owner);
+                showMe.Opacity = oldOpacity;
+            }
 
-			return ret;
-		}
+            Control control = owner as Control;
+            if (control != null)
+            {
+                control.Update();
+            }
+
+            return dr;
+        }
+
+        public static void ShowHelp(Control parent)
+        {
+            try
+            {
+                string fileName = "PaintDotNet.chm";
+                string dirName = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+                string fullName = Path.Combine(dirName, fileName);
+
+                // HACK: This avoids some very, very weird behavior if MainForm is used as the first parameter
+                //       "This" referring to ignoring the parent parameter and using 'new Control()' instead.
+                Control control = new Control();
+                control.CreateControl();
+                Help.ShowHelp(control, fullName, HelpNavigator.TableOfContents);
+            }
+
+            catch
+            {
+                Utility.ErrorBox(parent, "The help file could not be found.");
+            }
+        }
     }
 }

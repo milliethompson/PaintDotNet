@@ -1,3 +1,12 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
+using PaintDotNet.SystemLayer;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -29,11 +38,11 @@ namespace PaintDotNet
             [CLSCompliant(false)]
             protected unsafe override void Apply(ColorBgra *dst, ColorBgra *src, int length)
             {
-                MemoryBlock.CopyMemory(dst, src, length * sizeof(ColorBgra));
+                Memory.Copy(dst, src, (ulong)length * (ulong)sizeof(ColorBgra));
             }
 
             [CLSCompliant(false)]
-            protected unsafe override void Apply(ColorBgra * ptr, int length)
+            protected unsafe override void Apply(ColorBgra *ptr, int length)
             {
                 return;
             }
@@ -82,8 +91,7 @@ namespace PaintDotNet
         }
 
         /// <summary>
-        /// Blends pixels with the specified constant color. The alpha channel
-        /// is passed through.
+        /// Blends pixels with the specified constant color.
         /// </summary>
         [Serializable]
         public class BlendConstant
@@ -99,28 +107,14 @@ namespace PaintDotNet
                 int r = ((color.R * invA) + (blendColor.R * a)) / 256;
                 int g = ((color.G * invA) + (blendColor.G * a)) / 256;
                 int b = ((color.B * invA) + (blendColor.B * a)) / 256;
+                byte a2 = ComputeAlpha(color.A, blendColor.A);
 
-                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, color.A);
+                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, a2);
             }
 
             public BlendConstant(ColorBgra blendColor)
             {
                 this.blendColor = blendColor;
-            }
-        }
-
-        [Serializable]
-        public class MultiplyByAlpha
-            : UnaryPixelOp
-        {
-            public override ColorBgra Apply(ColorBgra color)
-            {
-                int a = color.A;
-                int r = (color.R * a) / 256;
-                int g = (color.G * a) / 256;
-                int b = (color.B * a) / 256;
-
-                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, color.A);
             }
         }
 
@@ -269,71 +263,74 @@ namespace PaintDotNet
             }
         }
 
-		/// <summary>
-		/// If the color is within the red tolerance, remove it
-		/// </summary>
-		[Serializable]
-		public class RedEyeRemove
-			: UnaryPixelOp
-		{
-			private int tolerence;
-			private double setSaturation;
+        /// <summary>
+        /// If the color is within the red tolerance, remove it
+        /// </summary>
+        [Serializable]
+        public class RedEyeRemove
+            : UnaryPixelOp
+        {
+            private int tolerence;
+            private double setSaturation;
 
-			public RedEyeRemove(int tol, int sat)
-			{
-				tolerence = tol;
-				setSaturation = (double)sat / 100;
-			}
+            public RedEyeRemove(int tol, int sat)
+            {
+                tolerence = tol;
+                setSaturation = (double)sat / 100;
+            }
 
-			public override ColorBgra Apply(ColorBgra color)
-			{
-				// The higher the saturation, the more red it is
-				int saturation = GetSaturation(color);
-				// The higher the difference between the other colors, the more red it is
-				int difference = color.R - Math.Max(color.B,color.G);
+            public override ColorBgra Apply(ColorBgra color)
+            {
+                // The higher the saturation, the more red it is
+                int saturation = GetSaturation(color);
+                // The higher the difference between the other colors, the more red it is
+                int difference = color.R - Math.Max(color.B,color.G);
 
-				// If it is within tolerence, and the saturation is high
-				if((difference > tolerence) && (saturation > 100)) 
-				{
-					double i = 255.0 * color.GetIntensity();
+                // If it is within tolerence, and the saturation is high
+                if ((difference > tolerence) && (saturation > 100)) 
+                {
+                    double i = 255.0 * color.GetIntensity();
                     byte ib = (byte)(i * setSaturation); // adjust the red color for user inputted saturation
-					return ColorBgra.FromBgra((byte)color.B,(byte)color.G, ib, color.A);
-				}
-				else
-					return color;
-			}
+                    return ColorBgra.FromBgra((byte)color.B,(byte)color.G, ib, color.A);
+                }
+                else
+                {
+                    return color;
+                }
+            }
 
-			//Saturation formula from RgbColor.cs, public HsvColor ToHsv()
-			private int GetSaturation(ColorBgra color)
-			{
+            //Saturation formula from RgbColor.cs, public HsvColor ToHsv()
+            private int GetSaturation(ColorBgra color)
+            {
+                double min;
+                double max;
+                double delta;
 
-				double min;
-				double max;
-				double delta;
+                double r = (double) color.R / 255;
+                double g = (double) color.G / 255;
+                double b = (double) color.B / 255;
 
-				double r = (double) color.R / 255;
-				double g = (double) color.G / 255;
-				double b = (double) color.B / 255;
+                double s;
 
-				double s;
+                min = Math.Min(Math.Min(r, g), b);
+                max = Math.Max(Math.Max(r, g), b);
+                delta = max - min;
 
-				min = Math.Min(Math.Min(r, g), b);
-				max = Math.Max(Math.Max(r, g), b);
-				delta = max - min;
+                if (max == 0 || delta == 0) 
+                {
+                    // R, G, and B must be 0, or all the same.
+                    // In this case, S is 0, and H is undefined.
+                    // Using H = 0 is as good as any...
+                    s = 0;
+                } 
+                else
+                {
+                    s = delta / max;
+                }
 
-				if ( max == 0 || delta == 0 ) 
-				{
-					// R, G, and B must be 0, or all the same.
-					// In this case, S is 0, and H is undefined.
-					// Using H = 0 is as good as any...
-					s = 0;
-				} 
-				else
-					s = delta / max;
-
-				return (int)(s * 255);
-			}				
-		}
+                return (int)(s * 255);
+            }               
+        }
 
         /// <summary>
         /// Inverts a pixel's color and its alpha component.
@@ -364,7 +361,7 @@ namespace PaintDotNet
         }
 
         [Serializable]
-            public class Desaturate
+        public class Desaturate
             : UnaryPixelOp
         {
             // These numbers taken from http://www.codeproject.com/cs/media/csharpgraphicfilters11.asp
@@ -409,327 +406,334 @@ namespace PaintDotNet
             }
         }
 
-		[Serializable]
-			public class Resaturate
-			: UnaryPixelOp
-		{
-			// These numbers taken from http://www.codeproject.com/cs/media/csharpgraphicfilters11.asp
-			public override ColorBgra Apply(ColorBgra color)
-			{
-				float x = (0.114f * color.B) + (0.587f * color.G) + (0.299f * color.R);
-				return ColorBgra.FromBgra(
-					Utility.ClampToByte(color.B + (color.B - x) / 2),
-					Utility.ClampToByte(color.G + (color.G - x) / 2),
-					Utility.ClampToByte(color.R + (color.R - x) / 2),
-					color.A);
-			}
-		}
+        [Serializable]
+        public class Level
+            : UnaryPixelOp, ICloneable
+        {
 
-		[Serializable]
-		public class Level
-			: UnaryPixelOp, ICloneable
-		{
+            private ColorBgra colorInLow;
+            public ColorBgra ColorInLow 
+            {
+                get 
+                {
+                    return colorInLow; 
+                }
 
-			private ColorBgra colorInLow;
-			public ColorBgra ColorInLow 
-			{
-				get 
-				{
-					return colorInLow; 
-				}
-				set 
-				{
-					if (value.R == 255) 
-					{
-						value.R = 254;
-					}
-					if (value.G == 255)
-					{
-						value.G = 254;
-					}
-					if (value.B == 255)
-					{
-						value.B = 254;
-					}
-					if (colorInHigh.R < value.R + 1) 
-					{
-						colorInHigh.R = (byte)(value.R + 1);
-					}
-					if (colorInHigh.G < value.G + 1) 
-					{
-						colorInHigh.G = (byte)(value.R + 1);
-					}
-					if (colorInHigh.B < value.B + 1) 
-					{
-						colorInHigh.B = (byte)(value.R + 1);
-					}
-					colorInLow = value;
-					UpdateLookupTable();
-				}
-			}
-			private ColorBgra colorInHigh;
-			public ColorBgra ColorInHigh 
-			{
-				get 
-				{
-					return colorInHigh;
-				}
-				set 
-				{
-					if (value.R == 0) 
-					{
-						value.R = 1;
-					}
-					if (value.G == 0)
-					{ 
-						value.G = 1;
-					}
-					if (value.B == 0)
-					{
-						value.B = 1;
-					}
-					if (colorInLow.R > value.R - 1) 
-					{
-						colorInLow.R = (byte)(value.R - 1);
-					}
-					if (colorInLow.G > value.G - 1) 
-					{
-						colorInLow.G = (byte)(value.R - 1);
-					}
-					if (colorInLow.B > value.B - 1) 
-					{
-						colorInLow.B = (byte)(value.R - 1);
-					}
-					colorInHigh = value;
-					UpdateLookupTable();
-				}
-			}
-			private ColorBgra colorOutLow;
-			public ColorBgra ColorOutLow 
-			{
-				get 
-				{
-					return colorOutLow;
-				}
-				set 
-				{
-					if (value.R == 255) 
-					{
-						value.R = 254;
-					}
-					if (value.G == 255)
-					{
-						value.G = 254;
-					}
-					if (value.B == 255)
-					{
-						value.B = 254;
-					}
-					if (colorOutHigh.R < value.R + 1) 
-					{
-						colorOutHigh.R = (byte)(value.R + 1);
-					}
-					if (colorOutHigh.G < value.G + 1) 
-					{
-						colorOutHigh.G = (byte)(value.G + 1);
-					}
-					if (colorOutHigh.B < value.B + 1) 
-					{
-						colorOutHigh.B = (byte)(value.B + 1);
-					}
-					colorOutLow = value;
-					UpdateLookupTable();
-				}
-			}
-			private ColorBgra colorOutHigh;
-			public ColorBgra ColorOutHigh 
-			{
-				get 
-				{
-					return colorOutHigh;
-				}
-				set 
-				{
-					if (value.R == 0) 
-					{
-						value.R = 1;
-					}
-					if (value.G == 0)
-					{ 
-						value.G = 1;
-					}
-					if (value.B == 0)
-					{
-						value.B = 1;
-					}
-					if (colorOutLow.R > value.R - 1) 
-					{
-						colorOutLow.R = (byte)(value.R - 1);
-					}
-					if (colorOutLow.G > value.G - 1) 
-					{
-						colorOutLow.G = (byte)(value.G - 1);
-					}
-					if (colorOutLow.B > value.B - 1) 
-					{
-						colorOutLow.B = (byte)(value.B - 1);
-					}
-					colorOutHigh = value;
-					UpdateLookupTable();
-				}		
-			}				
-						
-			private float [] gamma = new float[3];
-			public float GetGamma(int index) 
-			{				
-				if (index < 0 || index >= 3) 
-				{
-					throw new ArgumentOutOfRangeException("index", index, "Index must be between 0 and 2");
-				}
-				return gamma[index];
-			}
-			public void SetGamma(int index, float val) 
-			{
-				if (index < 0 || index >= 3) 
-				{
-					throw new ArgumentOutOfRangeException("index", index, "Index must be between 0 and 2");
-				}
-				gamma[index] = Utility.Clamp(val, 0.1f, 10.0f);
-				UpdateLookupTable();
-			}
+                set 
+                {
+                    if (value.R == 255) 
+                    {
+                        value.R = 254;
+                    }
+                    if (value.G == 255)
+                    {
+                        value.G = 254;
+                    }
+                    if (value.B == 255)
+                    {
+                        value.B = 254;
+                    }
+                    if (colorInHigh.R < value.R + 1) 
+                    {
+                        colorInHigh.R = (byte)(value.R + 1);
+                    }
+                    if (colorInHigh.G < value.G + 1) 
+                    {
+                        colorInHigh.G = (byte)(value.R + 1);
+                    }
+                    if (colorInHigh.B < value.B + 1) 
+                    {
+                        colorInHigh.B = (byte)(value.R + 1);
+                    }
+                    colorInLow = value;
+                    UpdateLookupTable();
+                }
+            }
 
-			byte [,] lookup;
-			public bool isValid = true;
+            private ColorBgra colorInHigh;
+            public ColorBgra ColorInHigh 
+            {
+                get 
+                {
+                    return colorInHigh;
+                }
 
-			public static Level AutoFromLoMdHi(ColorBgra lo, ColorBgra md, ColorBgra hi) 
-			{
-				float [] gamma = new float[3];
-				for (int i = 0; i < 3; i++)
-				{
-					if (lo[i] < md[i] && md[i] < hi[i])
-						gamma[i] = (float)Utility.Clamp(Math.Log(0.5, (float)(md[i] - lo[i]) / (float)(hi[i] - lo[i])), 0.1, 10.0);
-					else
-						gamma[i] = 1.0f;
-				}
-				return new Level(lo, hi, gamma, ColorBgra.FromColor(Color.Black), ColorBgra.FromColor(Color.White));
-			}
+                set 
+                {
+                    if (value.R == 0) 
+                    {
+                        value.R = 1;
+                    }
+                    if (value.G == 0)
+                    { 
+                        value.G = 1;
+                    }
+                    if (value.B == 0)
+                    {
+                        value.B = 1;
+                    }
+                    if (colorInLow.R > value.R - 1) 
+                    {
+                        colorInLow.R = (byte)(value.R - 1);
+                    }
+                    if (colorInLow.G > value.G - 1) 
+                    {
+                        colorInLow.G = (byte)(value.R - 1);
+                    }
+                    if (colorInLow.B > value.B - 1) 
+                    {
+                        colorInLow.B = (byte)(value.R - 1);
+                    }
+                    colorInHigh = value;
+                    UpdateLookupTable();
+                }
+            }
 
-			private void UpdateLookupTable() 
-			{
-				lookup = new byte[3, 256];
-				for (int i = 0; i < 3; i++) 
-				{
-					if (colorOutHigh[i] < colorOutLow[i] ||
-						colorInHigh[i] <= colorInLow[i] ||
-						gamma[i] < 0)
-					{
-						isValid = false;
-						return;
-					}
-					for (int j = 0; j < 256; j++) 
-					{
-						/* this computes a lookup table for Apply()
-						 * lookup[i, j] = the result of the transfer from color[i] to ret[i]
-						 * This does all the work of rescaling the input range, computing the
-						 * gamma, and scaling to the output range. */
-						lookup[i, j] = (byte)Utility.Clamp(
-							colorOutLow[i] + (colorOutHigh[i] - colorOutLow[i]) * Math.Pow((double)j / (colorInHigh[i] - colorInLow[i]), gamma[i]),
-							0.0f,
-							255.0f);
-					}
-				}
-			}
+            private ColorBgra colorOutLow;
+            public ColorBgra ColorOutLow 
+            {
+                get 
+                {
+                    return colorOutLow;
+                }
+                set 
+                {
+                    if (value.R == 255) 
+                    {
+                        value.R = 254;
+                    }
+                    if (value.G == 255)
+                    {
+                        value.G = 254;
+                    }
+                    if (value.B == 255)
+                    {
+                        value.B = 254;
+                    }
+                    if (colorOutHigh.R < value.R + 1) 
+                    {
+                        colorOutHigh.R = (byte)(value.R + 1);
+                    }
+                    if (colorOutHigh.G < value.G + 1) 
+                    {
+                        colorOutHigh.G = (byte)(value.G + 1);
+                    }
+                    if (colorOutHigh.B < value.B + 1) 
+                    {
+                        colorOutHigh.B = (byte)(value.B + 1);
+                    }
+                    colorOutLow = value;
+                    UpdateLookupTable();
+                }
+            }
 
-			public Level() : this(
-				ColorBgra.FromColor(Color.Black),
-				ColorBgra.FromColor(Color.White),
-				new float []{1, 1, 1},
-				ColorBgra.FromColor(Color.Black),
-				ColorBgra.FromColor(Color.White))
-			{
-			}
-			public Level(ColorBgra in_lo, ColorBgra in_hi, float [] gamma, ColorBgra out_lo, ColorBgra out_hi)
-			{
-				colorInLow = in_lo;
-				colorInHigh = in_hi;
-				colorOutLow = out_lo;
-				colorOutHigh = out_hi;
-				if (gamma.Length != 3) 
-				{
-					throw new ArgumentException("gamma", "gamma must be a float[3]");
-				}
-				this.gamma = gamma;
-				UpdateLookupTable();
-			}
+            private ColorBgra colorOutHigh;
+            public ColorBgra ColorOutHigh 
+            {
+                get 
+                {
+                    return colorOutHigh;
+                }
+                set 
+                {
+                    if (value.R == 0) 
+                    {
+                        value.R = 1;
+                    }
+                    if (value.G == 0)
+                    { 
+                        value.G = 1;
+                    }
+                    if (value.B == 0)
+                    {
+                        value.B = 1;
+                    }
+                    if (colorOutLow.R > value.R - 1) 
+                    {
+                        colorOutLow.R = (byte)(value.R - 1);
+                    }
+                    if (colorOutLow.G > value.G - 1) 
+                    {
+                        colorOutLow.G = (byte)(value.G - 1);
+                    }
+                    if (colorOutLow.B > value.B - 1) 
+                    {
+                        colorOutLow.B = (byte)(value.B - 1);
+                    }
+                    colorOutHigh = value;
+                    UpdateLookupTable();
+                }       
+            }               
+                        
+            private float [] gamma = new float[3];
+            public float GetGamma(int index) 
+            {               
+                if (index < 0 || index >= 3) 
+                {
+                    throw new ArgumentOutOfRangeException("index", index, "Index must be between 0 and 2");
+                }
+                return gamma[index];
+            }
 
-			public ColorBgra Apply(float r, float g, float b) 
-			{
-				ColorBgra ret = new ColorBgra();
-				float [] input = new float[]{b, g, r};
+            public void SetGamma(int index, float val) 
+            {
+                if (index < 0 || index >= 3) 
+                {
+                    throw new ArgumentOutOfRangeException("index", index, "Index must be between 0 and 2");
+                }
+                gamma[index] = Utility.Clamp(val, 0.1f, 10.0f);
+                UpdateLookupTable();
+            }
 
-				for (int i = 0; i < 3; i++) 
-				{
-					float v = (input[i] - colorInLow[i]);
-					if (v < 0)
-						ret[i] = colorOutLow[i];
-					else if (v + colorInLow[i] >= colorInHigh[i])
-						ret[i] = colorOutHigh[i];
-					else
-						ret[i] = (byte)Utility.Clamp(
-						colorOutLow[i] + (colorOutHigh[i] - colorOutLow[i]) * Math.Pow(v / (colorInHigh[i] - colorInLow[i]), gamma[i]),
-						0.0f,
-						255.0f);
-				}
-				return ret;
-			}
+            byte [] lookupR;
+            byte [] lookupG;
+            byte [] lookupB;
+            byte [] lookupA;
+            public bool isValid = true;
 
-			public void UnApply(ColorBgra after, float [] before, float [] slopes) 
-			{
-				if (before.Length != 3) 
-				{
-					throw new ArgumentException("before must be a float[3]", "before");
-				}
-				if (slopes.Length != 3) 
-				{
-					throw new ArgumentException("slopes must be a float[3]", "slopes");
-				}
-				for (int i = 0; i < 3; i++) 
-				{
-					before[i] = colorInLow[i] + (colorInHigh[i] - colorInLow[i]) *
-						(float)Math.Pow((float)(after[i] - colorOutLow[i]) / (colorOutHigh[i] - colorOutLow[i]), 1 / gamma[i]);
-					slopes[i] = (float)(colorInHigh[i] - colorInLow[i]) / ((colorOutHigh[i] - colorOutLow[i]) * gamma[i]) *
-						(float)Math.Pow((float)(after[i] - colorOutLow[i]) / (colorOutHigh[i] - colorOutLow[i]), 1 / gamma[i] - 1);
-					if (float.IsInfinity(slopes[i]) || float.IsNaN(slopes[i])) 
-					{
-						slopes[i] = 0;
-					}
-				}
-			}
+            public static Level AutoFromLoMdHi(ColorBgra lo, ColorBgra md, ColorBgra hi) 
+            {
+                float [] gamma = new float[3];
 
-			public override ColorBgra Apply(ColorBgra color)
-			{
-				ColorBgra ret = new ColorBgra();
-			
-				for (int i = 0; i < 3; i++) 
-				{
-					int v = (color[i] - colorInLow[i]);
-					if (v < 0)
-						ret[i] = colorOutLow[i];
-					else if (v + colorInLow[i] >= colorInHigh[i])
-						ret[i] = colorOutHigh[i];
-					else
-                        ret[i] = lookup[i, v];
-				}
-				ret[3] = color[3];
+                for (int i = 0; i < 3; i++)
+                {
+                    if (lo[i] < md[i] && md[i] < hi[i])
+                    {
+                        gamma[i] = (float)Utility.Clamp(Math.Log(0.5, (float)(md[i] - lo[i]) / (float)(hi[i] - lo[i])), 0.1, 10.0);
+                    }
+                    else
+                    {
+                        gamma[i] = 1.0f;
+                    }
+                }
 
-				return ret;
-			}
+                return new Level(lo, hi, gamma, ColorBgra.FromColor(Color.Black), ColorBgra.FromColor(Color.White));
+            }
 
-			public object Clone()
-			{
-				return new Level(colorInLow, colorInHigh, (float[])gamma.Clone(), colorOutLow, colorOutHigh);
-			}
-		}
+            private void UpdateLookupTable() 
+            {
+                lookupB = new byte[256];
+                lookupG = new byte[256];
+                lookupR = new byte[256];
+                lookupA = new byte[256];
+
+                for (int i = 0; i < 3; i++) 
+                {
+                    if (colorOutHigh[i] < colorOutLow[i] ||
+                        colorInHigh[i] <= colorInLow[i] ||
+                        gamma[i] < 0)
+                    {
+                        isValid = false;
+                        return;
+                    }
+
+                    for (int j = 0; j < 256; j++) 
+                    {
+                        ColorBgra col = Apply(j, j, j);
+                        lookupR[j] = col.R;
+                        lookupG[j] = col.G;
+                        lookupB[j] = col.B;
+                        lookupA[j] = (byte)j; // TODO: if this is the identity function, why do we even have this lookup table?
+                    }
+                }
+            }
+
+            public Level() 
+                : this(ColorBgra.FromColor(Color.Black),
+                       ColorBgra.FromColor(Color.White),
+                       new float []{1, 1, 1},
+                       ColorBgra.FromColor(Color.Black),
+                       ColorBgra.FromColor(Color.White))
+            {
+            }
+
+            public Level(ColorBgra in_lo, ColorBgra in_hi, float [] gamma, ColorBgra out_lo, ColorBgra out_hi)
+            {
+                colorInLow = in_lo;
+                colorInHigh = in_hi;
+                colorOutLow = out_lo;
+                colorOutHigh = out_hi;
+
+                if (gamma.Length != 3) 
+                {
+                    throw new ArgumentException("gamma", "gamma must be a float[3]");
+                }
+
+                this.gamma = gamma;
+                UpdateLookupTable();
+            }
+
+            public ColorBgra Apply(float r, float g, float b) 
+            {
+                ColorBgra ret = new ColorBgra();
+                float [] input = new float[]{b, g, r};
+
+                for (int i = 0; i < 3; i++) 
+                {
+                    float v = (input[i] - colorInLow[i]);
+                    if (v < 0)
+                    {
+                        ret[i] = colorOutLow[i];
+                    }
+                    else if (v + colorInLow[i] >= colorInHigh[i])
+                    {
+                        ret[i] = colorOutHigh[i];
+                    }
+                    else
+                    {
+                        ret[i] = (byte)Utility.Clamp(
+                            colorOutLow[i] + (colorOutHigh[i] - colorOutLow[i]) * Math.Pow(v / (colorInHigh[i] - colorInLow[i]), gamma[i]),
+                            0.0f,
+                            255.0f);
+                    }
+                }
+                return ret;
+            }
+
+            public void UnApply(ColorBgra after, float [] before, float [] slopes) 
+            {
+                if (before.Length != 3) 
+                {
+                    throw new ArgumentException("before must be a float[3]", "before");
+                }
+
+                if (slopes.Length != 3) 
+                {
+                    throw new ArgumentException("slopes must be a float[3]", "slopes");
+                }
+
+                for (int i = 0; i < 3; i++) 
+                {
+                    before[i] = colorInLow[i] + (colorInHigh[i] - colorInLow[i]) *
+                        (float)Math.Pow((float)(after[i] - colorOutLow[i]) / (colorOutHigh[i] - colorOutLow[i]), 1 / gamma[i]);
+
+                    slopes[i] = (float)(colorInHigh[i] - colorInLow[i]) / ((colorOutHigh[i] - colorOutLow[i]) * gamma[i]) *
+                        (float)Math.Pow((float)(after[i] - colorOutLow[i]) / (colorOutHigh[i] - colorOutLow[i]), 1 / gamma[i] - 1);
+
+                    if (float.IsInfinity(slopes[i]) || float.IsNaN(slopes[i])) 
+                    {
+                        slopes[i] = 0;
+                    }
+                }
+            }
+
+            public override ColorBgra Apply(ColorBgra color)
+            {
+                ColorBgra ret = new ColorBgra();
+            
+                ret.R = lookupR[color.R];
+                ret.G = lookupG[color.G];
+                ret.B = lookupB[color.B];
+                ret.A = lookupA[color.A];
+
+                return ret;
+            }
+
+            public object Clone()
+            {
+                return new Level(colorInLow, colorInHigh, (float[])gamma.Clone(), colorOutLow, colorOutHigh);
+            }
+        }
 
         [Serializable]
         public class HueSaturationLightness
@@ -742,7 +746,7 @@ namespace PaintDotNet
             public HueSaturationLightness(int hueDelta, int satDelta, int lightness)
             {
                 this.hueDelta = hueDelta;
-                this.satFactor = (int)(satDelta * 1024.0 / 100.0);
+                this.satFactor = (satDelta * 1024) / 100;
 
                 if (lightness == 0)
                 {
@@ -753,7 +757,7 @@ namespace PaintDotNet
                 {
                     blendOp = new UnaryPixelOps.BlendConstant(ColorBgra.FromBgra(255, 255, 255, (byte)((lightness * 255) / 100)));
                 }
-                else
+                else // if (lightness < 0)
                 {
                     blendOp = new UnaryPixelOps.BlendConstant(ColorBgra.FromBgra(0, 0, 0, (byte)((-lightness * 255) / 100)));
                 }
@@ -768,8 +772,11 @@ namespace PaintDotNet
                 hue += hueDelta;
 
                 sat = sat * satFactor / 1024;
-				if (sat > 100)
-					sat = 100;
+
+                if (sat > 100)
+                {
+                    sat = 100;
+                }
 
                 while (hue < 0)
                 {

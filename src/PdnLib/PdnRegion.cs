@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -22,25 +30,8 @@ namespace PaintDotNet
         private Region gdiRegion;
         bool changed = true;
         private int cachedArea = -1;
-        private MemoryBlock scansBlock = null;
         private RectangleF[] cachedRectsF = null;
         private Rectangle[] cachedRects = null;
-
-        [ThreadStatic]
-        private Graphics nullGraphics;
-        
-        private Graphics NullGraphics
-        {   
-            get
-            {
-                if (nullGraphics == null)
-                {
-                    nullGraphics = Graphics.FromImage(new Bitmap(16, 16));
-                }
-
-                return nullGraphics;
-            }
-        }
 
         public object SyncRoot
         {
@@ -154,7 +145,12 @@ namespace PaintDotNet
             }
         }
 
-        // DEPRECATED
+        // This constructor is used by WrapRegion. The boolean parameter is just
+        // there because we already have a parameterless contructor
+        private PdnRegion(bool sentinel)
+        {
+        }
+
         [Obsolete]
         private PdnRegion(IntPtr hrgn)
         {
@@ -169,6 +165,13 @@ namespace PaintDotNet
             PdnRegion region = new PdnRegion();
             region.MakeEmpty();
             return region;
+        }
+
+        public static PdnRegion WrapRegion(Region region)
+        {
+            PdnRegion pdnRegion = new PdnRegion(false);
+            pdnRegion.gdiRegion = region;
+            return pdnRegion;
         }
 
         public PdnRegion Clone()
@@ -206,10 +209,13 @@ namespace PaintDotNet
         }
         #endregion
 
-        //[Obsolete]
         public static implicit operator Region(PdnRegion convert)
         {
-            return convert.gdiRegion;
+            lock (convert.lockObject)
+            {
+                convert.changed = true;
+                return convert.gdiRegion;
+            }
         }
 
         public void Complement(GraphicsPath path)
@@ -331,8 +337,31 @@ namespace PaintDotNet
         {
             lock (lockObject)
             {
-                return gdiRegion.GetBounds(NullGraphics);
+                using (SystemLayer.NullGraphics nullGraphics = new SystemLayer.NullGraphics())
+                {
+                    return gdiRegion.GetBounds(nullGraphics.Graphics);
+                }
             }
+        }
+
+        // TODO: optimize this to cache the bounds
+        public Rectangle GetBoundsInt()
+        {
+            Rectangle[] rects = GetRegionScansReadOnlyInt();
+            
+            if (rects.Length == 0)
+            {
+                return Rectangle.Empty;
+            }
+
+            Rectangle bounds = rects[0];
+
+            for (int i = 1; i < rects.Length; ++i)
+            {
+                bounds = Rectangle.Union(bounds, rects[i]);
+            }
+
+            return bounds;
         }
 
         [Obsolete]
@@ -352,51 +381,7 @@ namespace PaintDotNet
             }
         }
 
-        private sealed class NativeMethods
-        {
-            private NativeMethods()
-            {
-            }
-
-            [StructLayout(LayoutKind.Sequential)]
-            public struct RECT
-            {
-                public int left;
-                public int top;
-                public int right;
-                public int bottom;
-            }
-
-            [StructLayout(LayoutKind.Sequential)]
-            public struct RGNDATAHEADER 
-            { 
-                public uint dwSize; 
-                public uint iType; 
-                public uint nCount; 
-                public uint nRgnSize; 
-                public RECT rcBound; 
-            };
-
-            [StructLayout(LayoutKind.Sequential)]
-            public struct RGNDATA
-            {
-                public RGNDATAHEADER rdh;
-
-                public unsafe static RECT *GetRectsPointer(RGNDATA *me)
-                {
-                    return (RECT *)((byte *)me + sizeof(RGNDATAHEADER));
-                }
-            }
-
-            [SuppressUnmanagedCodeSecurity]
-            [DllImport("Gdi32.dll", SetLastError = true)]
-            public unsafe static extern uint GetRegionData(
-                IntPtr hRgn,         // handle to region
-                uint dwCount,        // size of region data buffer
-                RGNDATA *lpRgnData   // region data buffer
-                );
-        }
-
+        [Obsolete]
         public RectangleF[] GetRegionScans(System.Drawing.Drawing2D.Matrix matrix)
         {
             return GetRegionScans();
@@ -437,6 +422,7 @@ namespace PaintDotNet
             }
         }
 
+        [Obsolete]
         public Rectangle[] GetRegionScansInt(System.Drawing.Drawing2D.Matrix matrix)
         {
             return GetRegionScansInt();
@@ -460,88 +446,12 @@ namespace PaintDotNet
             }
         }
 
-        private const int screwUpMax = 10;
-#if DEBUG
-        private static int[] screwUpCount = new int[screwUpMax];
-#endif
-
         private unsafe void UpdateCachedRegionScans()
         {
             lock (lockObject)
             {
-                using (GdiHandleWrapper hRgn = new GdiHandleWrapper(gdiRegion.GetHrgn(NullGraphics)))
-                {
-                    uint bytes = 0;
-                    int countdown = screwUpMax;
-                    
-                    // HACK: It seems that someimtes the GetRegionData will return ERROR_INVALID_HANDLE
-                    //       even though the handle (the HRGN) is fine. Maybe the function is not
-                    //       re-entrant? I'm not sure, but trying it again seems to fix it.
-                    while (countdown > 0)
-                    {
-                        bytes = NativeMethods.GetRegionData(hRgn.HGdiObj, 0, (NativeMethods.RGNDATA *)IntPtr.Zero);
-
-                        if (bytes == 0)
-                        {
-                            --countdown;
-#if DEBUG
-                            System.Threading.Interlocked.Increment(ref screwUpCount[countdown]);
-#endif
-                            System.Threading.Thread.Sleep(5);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-
-                    // But if we retry several times and it still messes up then we will finally give up.
-                    if (bytes == 0)
-                    {
-                        int error = Marshal.GetLastWin32Error();
-                        throw new Win32Exception(error, "GetRegionData returned " + bytes.ToString() + ", GetLastError() = " + error.ToString());
-                    }
-
-                    if (scansBlock == null || bytes > scansBlock.Length)
-                    {
-                        if (scansBlock != null)
-                        {
-                            scansBlock.Dispose();
-                            scansBlock = null;
-                        }
-
-                        scansBlock = new MemoryBlock((int)bytes);
-                    }
-
-                    NativeMethods.RGNDATA *pRgnData = (NativeMethods.RGNDATA *)scansBlock.VoidStar;
-                    uint result = NativeMethods.GetRegionData(hRgn.HGdiObj, bytes, pRgnData);
-
-                    if (result != bytes)
-                    {
-                        throw new OutOfMemoryException("NativeMethods.GetRegionData returned 0");
-                    }
-
-                    NativeMethods.RECT *pRects = NativeMethods.RGNDATA.GetRectsPointer(pRgnData);
-                    //RectangleF[] ourCachedRectsF = new RectangleF[pRgnData->rdh.nCount];
-                    Rectangle[] ourCachedRects = new Rectangle[pRgnData->rdh.nCount];
-            
-                    for (int i = 0; i < ourCachedRects.Length; ++i)
-                    {
-                        //ourCachedRectsF[i] = RectangleF.FromLTRB(pRects[i].left, pRects[i].top, pRects[i].right, pRects[i].bottom);
-                        ourCachedRects[i] = Rectangle.FromLTRB(pRects[i].left, pRects[i].top, pRects[i].right, pRects[i].bottom);
-                    }
-
-                    pRects = null;
-                    pRgnData = null;
-
-                    changed = false;
-
-                    //Debug.WriteLine("Uncached call to PdnRegion.GetRegionScans() (" + cachedRectsF.Length.ToString() + " rects)");
-
-                    //cachedRectsF = ourCachedRectsF;
-                    cachedRectsF = null;
-                    cachedRects = ourCachedRects;
-                }
+                SystemLayer.PdnGraphics.GetRegionScans(this.gdiRegion, out cachedRects, out cachedArea);
+                this.cachedRectsF = null; // only update this when specifically asked for it
             }
         }
                 
@@ -797,7 +707,6 @@ namespace PaintDotNet
                 }
             }
         }
-
 
         public void Union(Region region)
         {

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.Drawing;
@@ -15,15 +23,7 @@ namespace PaintDotNet
     public class EllipseTool
         : ShapeTool 
     {
-        protected override void OnActivate()
-        {
-            base.OnActivate ();
-        }
-
-        protected override void OnDeactivate()
-        {
-            base.OnDeactivate ();
-        }
+        private Cursor ellipseToolCursor;
 
         protected override ArrayList TrimShapePath(ArrayList points)
         {
@@ -42,16 +42,16 @@ namespace PaintDotNet
             return array;
         }
 
-        protected override RectangleF[] GetOptimizedShapeOutlineRegion(Point[] points, PdnGraphicsPath path)
+        protected override RectangleF[] GetOptimizedShapeOutlineRegion(PointF[] points, PdnGraphicsPath path)
         {
             return Utility.SimplifyTrace(path.PathPoints);
         }
 
-        protected override PdnGraphicsPath CreateShapePath(Point[] points)
+        protected override PdnGraphicsPath CreateShapePath(PointF[] points)
         {
-            Point a = points[0];
-            Point b = points[points.Length - 1];
-            Rectangle rect;
+            PointF a = points[0];
+            PointF b = points[points.Length - 1];
+            RectangleF rect;
 
             if ((ModifierKeys & Keys.Shift) != 0)
             {
@@ -69,13 +69,30 @@ namespace PaintDotNet
         }
 
         public EllipseTool(DocumentWorkspace parent)
-            : base(parent)
+            : base(parent,
+                   Utility.GetImageResource("Icons.EllipseToolIcon.bmp"),
+                   "Ellipse",
+                   "Draws an Ellipse",
+                   "Click and drag to draw an ellipse (right click for background color). Hold shift to constrain to a circle.")
         {
-            toolBarImage = Utility.GetImageResource("Icons.EllipseToolIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.EllipseToolCursor.cur"));
-            name = "Ellipse";
-            description = "Draws an Ellipse";
-			helpText = "Left click to draw an ellipse with the foreground color, right click to use the background color";
+            this.ellipseToolCursor = new Cursor(Utility.GetResourceStream("Cursors.EllipseToolCursor.cur"));
+            this.Cursor = this.ellipseToolCursor;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose (disposing);
+
+            if (disposing)
+            {
+                DisposeImage();
+
+                if (this.ellipseToolCursor != null)
+                {
+                    this.ellipseToolCursor.Dispose();
+                    this.ellipseToolCursor = null;
+                }
+            }
         }
     }
 }

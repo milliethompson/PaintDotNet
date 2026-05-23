@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using PaintDotNet;
 using System;
 using System.Drawing;
@@ -50,6 +58,12 @@ namespace PaintDotNet.Effects
 
 			set
 			{
+                if (effectSelection != null)
+                {
+                    effectSelection.Dispose();
+                    effectSelection = null;
+                }
+
 				effectSelection = value;
 			}
 		}
@@ -58,7 +72,6 @@ namespace PaintDotNet.Effects
         {
             InitializeComponent();
             InitialInitToken();
-            this.Opacity = 0.9;
 			effectSelection = new PdnRegion();
 			effectSelection.MakeInfinite();
         }
@@ -86,7 +99,7 @@ namespace PaintDotNet.Effects
         /// <param name="e"></param>
         /// <remarks>
         /// Derived classes MUST call this base method if they override it!
-        /// E</remarks>
+        /// </remarks>
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad (e);
@@ -114,6 +127,8 @@ namespace PaintDotNet.Effects
         /// This method must be overriden in the derived classes.
         /// In this you initialize the default values for the token, and
         /// thus the default values for the dialog box.
+        /// The job of this function is to initialize this.theEffectToken with
+        /// a non-null reference.
         /// </summary>
         protected virtual void InitialInitToken()
         {
@@ -124,8 +139,9 @@ namespace PaintDotNet.Effects
         /// This method must be overridden in derived classes.
         /// In this method you must take the values from the given EffectToken
         /// and use them to properly initialize the dialog's user interface elements.
+        /// Make sure to read values from the passed-in effectToken
         /// </summary>
-        protected virtual void InitDialogFromToken(EffectConfigToken effectToken)
+        protected virtual void InitDialogFromToken(EffectConfigToken effectTokenCopy)
         {
             //throw new InvalidOperationException("InitDialogFromToken was not implemented, or the derived method called the base method");
         }

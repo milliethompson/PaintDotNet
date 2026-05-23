@@ -1,4 +1,13 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
+using System.Drawing;
 
 namespace PaintDotNet
 {
@@ -8,6 +17,22 @@ namespace PaintDotNet
     public class DeselectAction
         : DocumentAction
     {
+        public static string StaticName
+        {
+            get
+            {
+                return "Deselect";
+            }
+        }
+
+        public static Image StaticImage
+        {
+            get
+            {
+                return Utility.GetImageResource("Icons.MenuEditDeselectIcon.bmp");
+            }
+        }
+        
         public override HistoryAction PerformAction()
         {
             if (Workspace.Environment.IsSelectionEmpty)
@@ -16,8 +41,8 @@ namespace PaintDotNet
             }
             else
             {
-                SelectionHistoryAction sha = new SelectionHistoryAction(Name, Utility.GetImageResource("Icons.MenuEditDeselectIcon.bmp"), Workspace);
-            
+                SelectionHistoryAction sha = new SelectionHistoryAction(Name, StaticImage, Workspace);
+
                 Workspace.Environment.PerformSelectedPathChanging();
                 Workspace.Environment.SelectedPath.Reset();
                 Workspace.Environment.PerformSelectedPathChanged();
@@ -27,7 +52,7 @@ namespace PaintDotNet
         }
 
         public DeselectAction(DocumentWorkspace workspace)
-            : base(workspace, "Deselect")
+            : base(workspace, DeselectAction.StaticName)
         {
         }
     }

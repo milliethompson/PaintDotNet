@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Collections;
@@ -17,20 +25,16 @@ namespace PaintDotNet
         private System.Windows.Forms.Label statusLabel;
         private System.Windows.Forms.Label copyrightLabel;
         private System.Windows.Forms.Panel panel;
-        private System.ComponentModel.IContainer components = null;
 
         public SplashForm()
         {
-            Utility.TraceMe();
             //
             // Required for Windows Form Designer support
             //
             InitializeComponent();
 
             // Initialize logo
-            Utility.TraceMe("loading logo");
             logoPicture.Image = Utility.GetImageResource("PaintDotNetLogo.png");
-            Utility.TraceMe("done loading logo");
 
             // Fill in the status label
             statusLabel.Text = "Starting ...";
@@ -46,23 +50,6 @@ namespace PaintDotNet
                 logoPicture.Height + statusLabel.Height + copyrightLabel.Height);
 
             this.Size = this.panel.ClientSize + padding;
-
-            Utility.TraceMe("done with ctor");
-        }
-
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        protected override void Dispose( bool disposing )
-        {
-            if( disposing )
-            {
-                if(components != null)
-                {
-                    components.Dispose();
-                }
-            }
-            base.Dispose( disposing );
         }
 
         #region Windows Form Designer generated code
@@ -98,7 +85,7 @@ namespace PaintDotNet
             this.copyrightLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
             this.copyrightLabel.Location = new System.Drawing.Point(0, 64);
             this.copyrightLabel.Name = "copyrightLabel";
-            this.copyrightLabel.Size = new System.Drawing.Size(290, 32);
+            this.copyrightLabel.Size = new System.Drawing.Size(290, 48);
             this.copyrightLabel.TabIndex = 3;
             this.copyrightLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 

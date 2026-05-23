@@ -1,21 +1,25 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Collections;
 using System.ComponentModel;
 using System.Windows.Forms;
 
-
 namespace PaintDotNet
 {
     /// <summary>
     /// New File Dialog By Chris Trevino
-    /// Last Updated: 2/5/2004
     /// </summary>
     public class NewFileDialog 
-        : PdnBaseForm
+        : PdnBaseDialog
     {
-        private System.Windows.Forms.Button okButton;
-        private System.Windows.Forms.Button cancelButton;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         public System.Windows.Forms.NumericUpDown widthUpDown;
@@ -38,7 +42,7 @@ namespace PaintDotNet
 
             set
             {
-                widthUpDown.Value = (int)Math.Ceiling(value);
+                widthUpDown.Value = (int)Math.Ceiling((double)value);
                 SetImageSizeLabel();
             }
         }
@@ -51,7 +55,7 @@ namespace PaintDotNet
             }
             set
             {
-                heightUpDown.Value = (int)Math.Ceiling(value);
+                heightUpDown.Value = (int)Math.Ceiling((double)value);
                 SetImageSizeLabel();
             }
         }
@@ -59,16 +63,17 @@ namespace PaintDotNet
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
         public NewFileDialog()
@@ -84,8 +89,6 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            this.okButton = new System.Windows.Forms.Button();
-            this.cancelButton = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.widthUpDown = new System.Windows.Forms.NumericUpDown();
@@ -98,28 +101,19 @@ namespace PaintDotNet
             this.fileSizeGroupBox.SuspendLayout();
             this.SuspendLayout();
             // 
-            // okButton
+            // baseOkButton
             // 
-            this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.okButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.okButton.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.okButton.Location = new System.Drawing.Point(32, 96);
-            this.okButton.Name = "okButton";
-            this.okButton.TabIndex = 2;
-            this.okButton.Text = "OK";
-            this.okButton.Click += new System.EventHandler(this.okButton_Click);
+            this.baseOkButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.baseOkButton.Location = new System.Drawing.Point(30, 96);
+            this.baseOkButton.Name = "baseOkButton";
+            this.baseOkButton.Click += new System.EventHandler(this.baseOkButton_Click);
             // 
-            // cancelButton
+            // baseCancelButton
             // 
-            this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.cancelButton.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.cancelButton.Location = new System.Drawing.Point(112, 96);
-            this.cancelButton.Name = "cancelButton";
-            this.cancelButton.TabIndex = 3;
-            this.cancelButton.Text = "Cancel";
-            this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
+            this.baseCancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.baseCancelButton.Location = new System.Drawing.Point(110, 96);
+            this.baseCancelButton.Name = "baseCancelButton";
+            this.baseCancelButton.Click += new System.EventHandler(this.baseCancelButton_Click);
             // 
             // label1
             // 
@@ -211,23 +205,17 @@ namespace PaintDotNet
             // 
             // NewFileDialog
             // 
-            this.AcceptButton = this.okButton;
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(194, 125);
+            this.ClientSize = new System.Drawing.Size(192, 128);
             this.Controls.Add(this.fileSizeGroupBox);
-            this.Controls.Add(this.cancelButton);
-            this.Controls.Add(this.okButton);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
-            this.MinimizeBox = false;
             this.Name = "NewFileDialog";
-            this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "New";
-            this.Controls.SetChildIndex(this.okButton, 0);
-            this.Controls.SetChildIndex(this.cancelButton, 0);
+            this.Controls.SetChildIndex(this.baseCancelButton, 0);
+            this.Controls.SetChildIndex(this.baseOkButton, 0);
             this.Controls.SetChildIndex(this.fileSizeGroupBox, 0);
             ((System.ComponentModel.ISupportInitialize)(this.widthUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.heightUpDown)).EndInit();
@@ -237,20 +225,20 @@ namespace PaintDotNet
         }
         #endregion
 
-        private void okButton_Click(object sender, System.EventArgs e)
+        private void baseOkButton_Click(object sender, System.EventArgs e)
         {
             DialogResult = DialogResult.OK;
             Close();
         }
 
-        private void cancelButton_Click(object sender, System.EventArgs e)
+        private void baseCancelButton_Click(object sender, System.EventArgs e)
         {
             this.Close();
         }
 
         private void SetImageSizeLabel()
         {
-            double fileSize = ((double)NewWidth * (double)NewHeight * 4.0);
+            long fileSize = (long)NewWidth * (long)NewHeight * (long)ColorBgra.SizeOf;
             fileSizeGroupBox.Text = "File Size: " + Utility.SizeStringFromBytes(fileSize);
         }
 
@@ -303,7 +291,7 @@ namespace PaintDotNet
                 enabled = false;
             }
 
-            okButton.Enabled = enabled;
+            baseOkButton.Enabled = enabled;
         }
 
         private void upDown_ValueChanged(object sender, System.EventArgs e)

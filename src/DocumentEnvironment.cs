@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -11,6 +19,7 @@ namespace PaintDotNet
     /// notification events for every item that can change.
     /// </summary>
     public class DocumentEnvironment
+        : IDisposable
     {
         #region Font stuff
         private TextAlignment textAlignment;
@@ -134,6 +143,7 @@ namespace PaintDotNet
             if (tool != null)
             {
                 tool.PerformDeactivate();
+                tool.Dispose();
                 tool = null;
             }
 
@@ -397,6 +407,17 @@ namespace PaintDotNet
 
         #region SelectedPath and helper methods
         private PdnGraphicsPath selectedPath;
+
+        /// <summary>
+        /// Gets or sets the currently selected path.
+        /// If you set this property, the DocumentEnvironment instance will take ownership
+        /// of the PdnGraphicsPath and you should NOT call Dispose() on it.
+        /// </summary>
+        /// <remarks>
+        /// If you are modifying the SelectedPath, you should call PerformSelectedPathChanging,
+        /// then modify the path, then call PerformSelectedPathChanged.
+        /// If you set this property, however, do not call those methods.
+        /// </remarks>
         public PdnGraphicsPath SelectedPath
         {
             get
@@ -412,7 +433,12 @@ namespace PaintDotNet
                 }
 
                 OnSelectedPathChanging();
-                selectedPath.Dispose();
+
+                if (!Object.ReferenceEquals(value, selectedPath))
+                {
+                    selectedPath.Dispose();
+                }
+
                 selectedPath = (PdnGraphicsPath)value;
                 OnSelectedPathChanged();
             }
@@ -454,16 +480,14 @@ namespace PaintDotNet
             OnSelectedPathChanged();
         }
 
+        /// <summary>
+        /// Returns a copy of the currently selected region. This is not necessarily intersected
+        /// with the document's bounds, so if you need that property to be true you will have to
+        /// call PdnRegion.Intersect yourself.
+        /// </summary>
+        /// <returns></returns>
         public PdnRegion CreateSelectedRegion()
         {
-            /*
-            using (PdnGraphicsPath closed = (PdnGraphicsPath)selectedPath.Clone())
-            {
-                closed.CloseAllFigures();
-                return new PdnRegion(closed);
-            }
-            */
-
             return new PdnRegion(selectedPath);
         }
         #endregion
@@ -526,8 +550,8 @@ namespace PaintDotNet
 			}
 		}
 
-		private int tolerance;
-		public int Tolerance
+		private float tolerance;
+		public float Tolerance
 		{
 			get
 			{
@@ -571,10 +595,7 @@ namespace PaintDotNet
             fontInfo = new FontInfo(new FontFamily("Arial"), 12, 0); // Arial size 12, no bold/italic/underline
             textAlignment = TextAlignment.Left;
             shapeDrawType = ShapeDrawType.Outline;
-			
-			OnToleranceChanging();
-			tolerance = 20;
-			OnToleranceChanged();
+			tolerance = 0.5f;
 
             OnSelectedPathChanging();
             SelectedPath.Reset();
@@ -585,6 +606,29 @@ namespace PaintDotNet
         {    
             selectedPath = new PdnGraphicsPath();
             ResetToDefaults();
+        }
+
+        ~DocumentEnvironment()
+        {
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (this.tool != null)
+                {
+                    this.tool.Dispose();
+                    this.tool = null;
+                }
+            }
         }
     }
 }

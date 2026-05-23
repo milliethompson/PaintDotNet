@@ -1,5 +1,11 @@
-// Frosted Glass effect
-// Paint.NET implementation by Rick Brewster
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 // Original C++ implementation by Jason Waltman as part of "Filter Explorer," http://www.jasonwaltman.com/thesis/index.html
 
 using PaintDotNet;
@@ -30,7 +36,9 @@ namespace PaintDotNet.Effects
         }
 
         public FrostedGlassEffect() 
-            : base("Frosted Glass", "Gives the illusion of peering through a pane of frosted glass", Utility.GetImageResource("Icons.FrostedGlassEffect.bmp")) 
+            : base("Frosted Glass", 
+                   "Gives the illusion of peering through a pane of frosted glass", 
+                   Utility.GetImageResource("Icons.FrostedGlassEffect.bmp"))
         {
         }
 

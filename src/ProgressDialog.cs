@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Collections;
@@ -64,7 +72,7 @@ namespace PaintDotNet
 
             set
             {
-                if (value == true)
+                if (value)
                 {
                     this.Height = normalHeight;
                 }
@@ -80,6 +88,11 @@ namespace PaintDotNet
 
         public double Value
         {
+            get
+            {
+                return (double)percentBar.Value;
+            }
+
             set
             {
                 int intValue = (int)value;
@@ -92,16 +105,16 @@ namespace PaintDotNet
                     Update();
                 }
             }
-
-            get
-            {
-                return (double)percentBar.Value;
-            }
         }
 
-        private void SetValue(object value)
+        private void SetValueHigher(object higherValue)
         {
-            this.Value = (double)value;
+            double newValue = (double)higherValue;
+
+            if (this.Value <= newValue)
+            {
+                this.Value = newValue;
+            }
         }
 
         public void ExternalFinish()
@@ -117,26 +130,26 @@ namespace PaintDotNet
             {
                 double newValue = 100.0 * ((double)(e.TileNumber + 1) / (double)e.TileCount);
 
-                if (newValue > Value)
+                if (this.IsHandleCreated)
                 {
-                    if (this.IsHandleCreated)
-                    {
-                        BeginInvoke(new WaitCallback(SetValue), new object[] { newValue });
-                    }
+                    BeginInvoke(new WaitCallback(SetValueHigher), new object[] { newValue });
                 }
             }
         }
 
         public void FinishedRenderingHandler(object sender, EventArgs e)
         {
-            BeginInvoke(new VoidVoidDelegate(ExternalFinish), null);
+			if (this.IsHandleCreated)
+			{
+				BeginInvoke(new VoidVoidDelegate(ExternalFinish), null);
+			}
         }
 
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing (e);
 
-            if (cancellable == false && done == false)
+            if (!cancellable && !done)
             {
                 e.Cancel = true;
             }
@@ -145,16 +158,17 @@ namespace PaintDotNet
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
         #region Windows Form Designer generated code

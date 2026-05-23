@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Threading;
@@ -11,6 +19,11 @@ namespace PaintDotNet
     public unsafe abstract class PixelOp
         : IPixelOp
     {
+        protected static byte ComputeAlpha(byte a1, byte a2)
+        {
+            return (byte)(255 - (((255 - a1) * (256 - a2)) / 256));
+        }
+
         public void Apply(Surface dst, Point dstOffset, Surface src, Point srcOffset, Size roiSize)
         {
             ApplyBase(dst, dstOffset, src, srcOffset, roiSize);

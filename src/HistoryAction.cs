@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Threading;
@@ -9,7 +17,24 @@ namespace PaintDotNet
     /// so that an action that is yet to be performed can be undone at a later time.
     /// For example, if you are going to paint in a certain region, you first create a
     /// HistoryAction that saves the contents of the area you are painting to. Then you
-    /// paint.
+    /// paint. Then you push the history action on to the history stack.
+    /// 
+    /// Using the HistoryActionData class you can serialize your data to disk so that it
+    /// doesn't fester in memory. There are important rules to follow here though:
+    /// 1. Don't hold a reference to a Layer. Store a reference to the DocumentWorkspace and
+    ///    the layer's index instead, and access it via Workspace.Document.Layers[index].
+    /// 2. The exception to #1 is if you are deleting a layer. But you should use
+    ///    DeleteLayerHistoryAction for that.
+    /// 3. To generalize, avoid serializing something unless you're replacing or deleting it.
+    ///    (and by 'serializing' I mean 'putting it in your HistoryActionData class')
+    ///    It is better to hold a 'navigation reference' as opposed to a real reference.
+    ///    An example of a 'navigation reference' is listed in #1, where we don't store a ref
+    ///    to the layer itself but we store the information needed to navigate to it.
+    ///    The reasoning for this is made clear if you consider the following case. Assume you
+    ///    are holding on to a layer reference ("private Layer theLayer;"). Next, assume that
+    ///    the layer is deleted. Then the deletion is undone. The new layer in memory is not
+    ///    the layer you have a reference to even though they hold the same data. Changes made
+    ///    to one do not show up in the other one.
     /// </summary>
     public abstract class HistoryAction
     {
@@ -54,6 +79,45 @@ namespace PaintDotNet
             {
                 id = value;
             }
+        }
+
+        private PersistedObject historyActionData = null;
+
+        /// <summary>
+        /// Gets or sets the HistoryActionData associated with this HistoryAction.
+        /// </summary>
+        /// <remarks>
+        /// Setting this property will immediately serialize the given object to disk.
+        /// </remarks>
+        protected HistoryActionData Data
+        {
+            get
+            {
+                return (HistoryActionData)historyActionData.Object;
+            }
+
+            set
+            {
+                this.historyActionData = new PersistedObject(value);
+            }
+        }
+
+        /// <summary>
+        /// Ensures that the memory held by the Data property is serialized to disk and
+        /// freed from memory.
+        /// </summary>
+        public void Flush()
+        {
+            if (historyActionData != null)
+            {
+                historyActionData.Flush();
+            }
+
+            OnFlush();
+        }
+
+        protected virtual void OnFlush()
+        {
         }
 
         /// <summary>

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -16,14 +24,14 @@ namespace PaintDotNet
         {
             BitmapLayer newLayer = new BitmapLayer(newSize.Width, newSize.Height);
 
-            // Background = 0xffffffff
+            // Background
             new UnaryPixelOps.Constant(background).Apply(newLayer.Surface, newLayer.Surface.Bounds);
 
-            // non-background = 0x00ffffff (see-through)
+            // non-background = clear the alpha channel (see-through)
             if (!layer.IsBackground)
             {
                 new UnaryPixelOps.SetAlphaChannel(0).Apply(newLayer.Surface, newLayer.Surface.Bounds);
-            }                
+            }
 
             int topY = 0;
             int leftX = 0;
@@ -92,47 +100,37 @@ namespace PaintDotNet
 
         public static Document ResizeDocument(Document document, Size newSize, AnchorEdge edge, ColorBgra background)
         {
-            Document nd = new Document(newSize.Width, newSize.Height);
+            Document newDoc = new Document(newSize.Width, newSize.Height);
+            newDoc.CopyPropertiesFrom(document);
 
-            foreach (string key in document.UserMetaData)
-            {
-                nd.UserMetaData.Set(key, document.UserMetaData[key]);
-            }
-
-            nd.Name = document.Name;
-
-			Layer backgroundLayer = (Layer)document.Layers[0];
-			if(backgroundLayer is BitmapLayer)
+			for (int i = 0; i < document.Layers.Count; ++i)
 			{
-				if (backgroundLayer is BitmapLayer)
+				Layer layer = (Layer)document.Layers[i];
+
+				if (layer is BitmapLayer)
 				{
-					Layer nl = ResizeLayer((BitmapLayer)backgroundLayer, newSize, edge, background);
-					nd.Layers.Add(nl);
+                    Layer newLayer;
+
+                    try
+                    {
+                        newLayer = ResizeLayer((BitmapLayer)layer, newSize, edge, background);
+                    }
+
+                    catch (OutOfMemoryException)
+                    {
+                        newDoc.Dispose();
+                        throw;
+                    }
+
+					newDoc.Layers.Add(newLayer);
 				}
 				else
 				{
 					throw new InvalidOperationException("Canvas Size does not support Layers that are not BitmapLayers");
 				}
-			}
-
-			int i = 1;
-			while(i < document.Layers.Count)
-			{
-				Layer l = (Layer)document.Layers[i];
-				if (l is BitmapLayer)
-				{
-					Layer nl = ResizeLayer((BitmapLayer)l, newSize, edge, ColorBgra.FromBgra(255,255,255,0));
-					nd.Layers.Add(nl);
-				}
-				else
-				{
-					throw new InvalidOperationException("Canvas Size does not support Layers that are not BitmapLayers");
-				}
-				++i;
 			}
                     
-
-            return nd;
+            return newDoc;
         }
 
         // returns null to indicate user cancelled, or if initialNewSize = newSize that the user requested, 
@@ -143,42 +141,45 @@ namespace PaintDotNet
                                               AnchorEdge initialAnchor, 
                                               ColorBgra background)
         {
-            CanvasSizeDialog csd = new CanvasSizeDialog();
-
-            csd.AspectRatio = (double)document.Width / (double)document.Height;
-            csd.IsLocked = false;
-            csd.OriginalSize = document.Size;
-            csd.ImageWidth = initialNewSize.Width;
-            csd.ImageHeight = initialNewSize.Height;
-            csd.DocumentSize = csd.ImageHeight * csd.ImageWidth * document.Layers.Count * System.Runtime.InteropServices.Marshal.SizeOf(typeof(ColorBgra));
-            csd.Layers = document.Layers.Count;
-            csd.AnchorEdge = initialAnchor;
-
-            DialogResult result = csd.ShowDialog(parent);
-            Size newSize = new Size(csd.ImageWidth, csd.ImageHeight);
-
-            if (result == DialogResult.Cancel ||
-                newSize == document.Size)
+            using (CanvasSizeDialog csd = new CanvasSizeDialog())
             {
-                return null;
-            }
 
-            try
-            {
-                return ResizeDocument(document, newSize, csd.AnchorEdge, background);
-            }
+                csd.AspectRatio = (double)document.Width / (double)document.Height;
+                csd.IsLocked = false;
+                csd.OriginalSize = document.Size;
+                csd.ImageWidth = initialNewSize.Width;
+                csd.ImageHeight = initialNewSize.Height;
+                csd.DocumentSize = csd.ImageHeight * csd.ImageWidth * document.Layers.Count * System.Runtime.InteropServices.Marshal.SizeOf(typeof(ColorBgra));
+                csd.Layers = document.Layers.Count;
+                csd.AnchorEdge = initialAnchor;
 
-            catch (OutOfMemoryException)
-            {
-                Utility.ErrorBox(parent, "Not enough memory to resize the canvas.");
-                return null;
+                DialogResult result = Utility.ShowDialog(csd, parent);
+                Size newSize = new Size(csd.ImageWidth, csd.ImageHeight);
+
+                if (result == DialogResult.Cancel ||
+                    newSize == document.Size)
+                {
+                    return null;
+                }
+
+                try
+                {
+                    return ResizeDocument(document, newSize, csd.AnchorEdge, background);
+                }
+
+                catch (OutOfMemoryException)
+                {
+                    Utility.GCFullCollect();
+                    Utility.ErrorBox(parent, "Not enough memory to resize the canvas.");
+                    return null;
+                }
             }
         }
 
         public override HistoryAction PerformAction()
         {
             Document newDoc = ResizeDocument(Workspace.FindForm(), 
-                Workspace.Document, Workspace.Document.Size, AnchorEdge.Middle, ColorBgra.FromBgra(255,255,255,255));
+                Workspace.Document, Workspace.Document.Size, AnchorEdge.Middle, Workspace.Environment.BackColor);
 
             if (newDoc != null)
             {

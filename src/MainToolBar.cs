@@ -1,8 +1,15 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
-using System.Data;
 using System.Windows.Forms;
 using DotNetWidgets;
 
@@ -76,7 +83,7 @@ namespace PaintDotNet
             }
         }
 
-        public void SetTools(Type[] toolTypes, DocumentWorkspace workspace)
+        public void SetTools(ToolInfo[] toolInfos, DocumentWorkspace workspace)
         {
             imageList = new ImageList();
             imageList.TransparentColor = Color.FromArgb(192, 192, 192);
@@ -91,7 +98,7 @@ namespace PaintDotNet
                 }
             }
 
-            dotNetToolbars = new DotNetWidgets.DotNetToolbar[(toolTypes.Length + (tbWidth - 1)) / tbWidth];
+            dotNetToolbars = new DotNetWidgets.DotNetToolbar[(toolInfos.Length + (tbWidth - 1)) / tbWidth];
 
             for (int i = 0; i < dotNetToolbars.Length; ++i)
             {
@@ -102,22 +109,16 @@ namespace PaintDotNet
                 dotNetToolbars[i].ImageList = imageList;
             }
 
-            // We add them in reverse order so they show up in the correct order
-            for (int i = dotNetToolbars.Length - 1; i >= 0; --i)
-            {
-                this.Controls.Add(dotNetToolbars[i]);
-            }
+            this.Controls.AddRange(dotNetToolbars);
 
-            foreach (Type type in toolTypes)
+            foreach (ToolInfo toolInfo in toolInfos)
             {
-                Tool tool = Tool.CreateTool(type, workspace);
+                int imageIndex = imageList.Images.Add((Image)toolInfo.Image.Clone(), imageList.TransparentColor);
                 DotNetToolbarButtonItemWithTag tbb = new DotNetToolbarButtonItemWithTag();
-                int index = imageList.Images.Add(tool.Image, imageList.TransparentColor);
-                tbb.ImageIndex = index;
-                tbb.Tag = type;
-                tbb.ToolTipText = tool.Name + " (" + tool.HotKey.ToString().ToUpper() + ")";
-                dotNetToolbars[tbIndex / tbWidth].Buttons.Add(tbb);
-                tool = null;
+                tbb.ImageIndex = imageIndex;
+                tbb.Tag = toolInfo.ToolType;
+                tbb.ToolTipText = toolInfo.Name + " (" + toolInfo.HotKey.ToString().ToUpper() + ")";
+                dotNetToolbars[dotNetToolbars.Length - (tbIndex / tbWidth) - 1].Buttons.Add(tbb);
 
                 ++tbIndex;
             }
@@ -161,16 +162,17 @@ namespace PaintDotNet
         /// <summary> 
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
         #region Component Designer generated code
@@ -199,7 +201,7 @@ namespace PaintDotNet
 			this.toleranceSlider.Name = "toleranceSlider";
 			this.toleranceSlider.Size = new System.Drawing.Size(44, 16);
 			this.toleranceSlider.TabIndex = 0;
-			this.toleranceSlider.Tolerance = 128;
+			this.toleranceSlider.Tolerance = 0.5f;
 			// 
 			// MainToolBar
 			// 

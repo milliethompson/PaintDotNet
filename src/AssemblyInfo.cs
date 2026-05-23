@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -9,11 +17,11 @@ using System.Runtime.CompilerServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-[assembly: AssemblyTitle("Paint.NET v2.0")]
-[assembly: AssemblyDescription("Successor to Microsoft Paint that uses .NET, C#, and GDI+ technologies.")]
+[assembly: AssemblyTitle("Paint.NET v2.1b")]
+[assembly: AssemblyDescription("Free replacement for Microsoft Paint written in C#.")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Paint.NET v2.0")]
-[assembly: AssemblyCopyright("Copyright © 2004 Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker")]
+[assembly: AssemblyProduct("Paint.NET v2.1b")]
+[assembly: AssemblyCopyright("Copyright © 2004, 2005 Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2004, 2005 Microsoft Corporation. All Rights Reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -27,7 +35,7 @@ using System.Runtime.CompilerServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below: 
-[assembly: AssemblyVersion("2.0.*")]
+[assembly: AssemblyVersion("2.1.*")]
 
 // Change this to say "Final" for final builds. Otherwise the titlebar will contain
 // a long version string. Final versions should just say the ApplicationProduct

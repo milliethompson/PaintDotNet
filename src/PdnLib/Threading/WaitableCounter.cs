@@ -1,3 +1,12 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
+using PaintDotNet.SystemLayer;
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -8,134 +17,110 @@ namespace PaintDotNet.Threading
 	/// Threading primitive that allows you to "count" and to wait on two conditions:
 	/// 1. Empty -- this is when we have not dished out any "tokens"
 	/// 2. NotFull -- this is when we currently have 1 or more "tokens" out in the wild
+	/// Note that the tokens given by Acquire() *must* be disposed. Otherwise things
+	/// won't work right!
 	/// </summary>
 	public class WaitableCounter
 	{
-        private class CounterToken
-            : IDisposable
+        /// <summary>
+        /// The minimum value that may be passed to the constructor for initialization.
+        /// </summary>
+        public static int MinimumCount
         {
-            WaitableCounter owner;
-
-            public CounterToken(WaitableCounter owner)
+            get
             {
-                this.owner = owner;
-            }
-
-            ~CounterToken()
-            {
-                ////Debug.WriteLine("WaitableCounter.Finalize(), hash=" + GetHashCode().ToString());
-                Dispose(false);
-            }
-
-            private bool disposed = false;
-            public void Dispose()
-            {
-                ////Debug.WriteLine("WaitableCounter.Dispose(), hash=" + GetHashCode().ToString());
-                Dispose(true);
-                GC.SuppressFinalize(this);
-            }
-
-            private void Dispose(bool disposing)
-            {
-                ////Debug.WriteLine("WaitableCounter.Dispose(" + disposing.ToString() + "), hash=" + GetHashCode().ToString());
-                if (!disposed)
-                {
-                    disposed = true;
-
-                    if (disposing)
-                    {
-                        owner.ReleaseToken(this);
-                        owner = null;
-                    }
-                }
+                return WaitHandleArray.MinimumCount;
             }
         }
 
-        private int count;
-        private int maxCount;
-        private ManualResetEvent emptyEvent;
-        private ManualResetEvent notFullEvent;
-
-        private void ReleaseToken(CounterToken token)
+        /// <summary>
+        /// The maximum value that may be passed to the construct for initialization.
+        /// </summary>
+        public static int MaximumCount
         {
-            try
+            get
             {
+                return WaitHandleArray.MaximumCount;
             }
+        }
 
-            finally
+        private sealed class CounterToken
+            : IDisposable
+        {
+            private WaitableCounter parent;
+            private int index;
+
+            public int Index
             {
-                ////Debug.WriteLine("ReleaseToken (" + count.ToString() + ")");
-
-                lock (this)
+                get
                 {
-                    int newCount = Interlocked.Decrement(ref count);
-
-                    if (newCount == 0)
-                    {
-                        emptyEvent.Set();
-                    }
-
-                    notFullEvent.Set();
+                    return this.index;
                 }
             }
+
+            public CounterToken(WaitableCounter parent, int index)
+            {
+                this.parent = parent;
+                this.index = index;
+            }
+
+            public void Dispose()
+            {
+                parent.Release(this);
+            }
+        }
+
+        private WaitHandleArray freeEvents;    // each of these is signaled (set) when the corresponding slot is 'free'
+        private WaitHandleArray inUseEvents;   // each of these is signaled (set) when the corresponding slot is 'in use'
+
+        private object theLock;
+
+        public WaitableCounter(int maxCount)
+        {
+            if (maxCount < 1 || maxCount > 64)
+            {
+                throw new ArgumentOutOfRangeException("maxCount", "must be between 1 and 64, inclusive");
+            }
+
+            this.freeEvents = new WaitHandleArray(maxCount);
+            this.inUseEvents = new WaitHandleArray(maxCount);
+
+            for (int i = 0; i < maxCount; ++i)
+            {
+                this.freeEvents[i] = new ManualResetEvent(true);
+                this.inUseEvents[i] = new ManualResetEvent(false);
+            }
+
+            this.theLock = new object();
+        }
+
+        private void Release(CounterToken token)
+        {
+            ((ManualResetEvent)this.inUseEvents[token.Index]).Reset();
+            ((ManualResetEvent)this.freeEvents[token.Index]).Set();
         }
 
         public IDisposable AcquireToken()
         {
-            CounterToken token = null;
-            ////Debug.WriteLine("AcquireToken (" + count.ToString() + ")");
-
-            try
+            lock (this.theLock)
             {
-                while (token == null)
-                {
-                    WaitForNotFull();
-
-                    lock (this)
-                    {
-                        if (count < maxCount)
-                        {
-                            Interlocked.Increment(ref count);
-                            token = new CounterToken(this);
-
-                            if (count == maxCount)
-                            {
-                                notFullEvent.Reset();
-                            }
-
-                            emptyEvent.Reset();
-                        }
-                    }
-                }
+                int index = WaitForNotFull();
+                ((ManualResetEvent)this.freeEvents[index]).Reset();
+                ((ManualResetEvent)this.inUseEvents[index]).Set();
+                return new CounterToken(this, index);
             }
-
-            catch
-            {
-                if (token != null)
-                {
-                    token.Dispose();
-                }
-            }
-
-            return token;
         }
 
         public void WaitForEmpty()
         {
-            emptyEvent.WaitOne();
+            freeEvents.WaitAll();
         }
 
-        public void WaitForNotFull()
+        public int WaitForNotFull()
         {
-            notFullEvent.WaitOne();
+            int returnVal = freeEvents.WaitAny();
+            return returnVal;
         }
 
-		public WaitableCounter(int maxCount)
-		{
-            this.count = 0;
-            this.maxCount = maxCount;
-            emptyEvent = new ManualResetEvent(true);
-            notFullEvent = new ManualResetEvent(true);
-		}
 	}
 }

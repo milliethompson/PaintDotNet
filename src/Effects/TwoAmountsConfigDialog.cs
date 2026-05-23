@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -150,16 +158,17 @@ namespace PaintDotNet.Effects
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null) 
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
         protected override void InitialInitToken()
@@ -212,7 +221,7 @@ namespace PaintDotNet.Effects
             this.okButton.Name = "okButton";
             this.okButton.TabIndex = 2;
             this.okButton.Text = "OK";
-            this.okButton.Click += new System.EventHandler(this.okButton_Click);
+            this.okButton.Click += new System.EventHandler(this.OnOkButtonClicked);
             // 
             // cancelButton
             // 
@@ -223,7 +232,7 @@ namespace PaintDotNet.Effects
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.TabIndex = 3;
             this.cancelButton.Text = "Cancel";
-            this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
+            this.cancelButton.Click += new System.EventHandler(this.OnCancelButtonClicked);
             // 
             // amount1Slider
             // 
@@ -355,13 +364,15 @@ namespace PaintDotNet.Effects
         }
         #endregion
 
-        private void okButton_Click(object sender, System.EventArgs e)
+        protected virtual void OnOkButtonClicked(object sender, System.EventArgs e)
         {
+            amount1UpDown_ValueChanged(sender, e);
+            amount2UpDown_ValueChanged(sender, e);
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
 
-        private void cancelButton_Click(object sender, System.EventArgs e)
+        protected virtual void OnCancelButtonClicked(object sender, System.EventArgs e)
         {
             this.Close();
         }
@@ -391,6 +402,8 @@ namespace PaintDotNet.Effects
 
         private void amount1UpDown_Leave(object sender, System.EventArgs e)
         {
+            Utility.ClipNumericUpDown(amount1UpDown);
+
             if (Utility.CheckNumericUpDown(amount1UpDown))
             {
                 amount1UpDown.Value = decimal.Parse(amount1UpDown.Text);
@@ -422,6 +435,8 @@ namespace PaintDotNet.Effects
 
         private void amount2UpDown_Leave(object sender, System.EventArgs e)
         {
+            Utility.ClipNumericUpDown(amount2UpDown);
+
             if (Utility.CheckNumericUpDown(amount2UpDown))
             {
                 amount2UpDown.Value = decimal.Parse(amount2UpDown.Text);

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Collections;
@@ -23,7 +31,6 @@ namespace PaintDotNet
         private DotNetWidgets.DotNetToolbarButtonItem propertiesButton;
         private System.ComponentModel.IContainer components;
 
-
         public LayerControl LayerControl
         {
             get
@@ -32,14 +39,26 @@ namespace PaintDotNet
             }
         }
 
+        protected override void OnVisibleChanged(EventArgs e)
+        {
+            if (this.Visible)
+            {
+                foreach (LayerElement le in this.layerControl.Layers)
+                {
+                    le.RefreshPreview();
+                }
+            }
+
+            base.OnVisibleChanged (e);
+        }
+
+
         public LayerForm()
         {
             //
             // Required for Windows Form Designer support
             //
             InitializeComponent();
-
-            //addNewLayerButton2.Image = Utility.GetImageResource("Icons.MenuLayersAddNewLayerIcon.bmp");
 
             imageList.TransparentColor = Color.FromArgb(192, 192, 192);
 
@@ -57,7 +76,6 @@ namespace PaintDotNet
             duplicateLayerButton.ImageIndex = duplicateLayerIndex;
             propertiesButton.ImageIndex = propertiesIndex;
 
-            //
             layerControl.KeyUp += new KeyEventHandler(layerControl_KeyUp);
         }
 
@@ -69,6 +87,11 @@ namespace PaintDotNet
             {
                 layerControl.Size = new Size(ClientRectangle.Width, ClientRectangle.Height - (dotNetToolbar.Height + (ClientRectangle.Height - ClientRectangle.Bottom)));
             }
+        }
+
+        protected override void OnEnableStyles()
+        {
+            //base.OnEnableStyles ();
         }
 
         /// <summary>
@@ -108,7 +131,6 @@ namespace PaintDotNet
                 DuplicateLayerButtonClick(this, EventArgs.Empty);
             }
         }
-
 
         /// <summary>
         /// Event Handler for Move Layer Up Button Click
@@ -214,16 +236,17 @@ namespace PaintDotNet
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
         #region Windows Form Designer generated code
@@ -353,8 +376,8 @@ namespace PaintDotNet
         {
             int index = layerControl.Workspace.Document.Layers.IndexOf(ce.Layer);
 
-            // Find reasons to disable the Move Layer Up button
-            if (index == 0 || index == 1)
+            // Find a reason to disable the Move Layer Up button
+            if (index == 0)
             {
                 moveLayerUpButton.Enabled = false;
             }
@@ -363,8 +386,8 @@ namespace PaintDotNet
                 moveLayerUpButton.Enabled = true;
             }
 
-            // Find reasons to disable the Move Layer Down button
-            if (index == 0 || index == (layerControl.Workspace.Document.Layers.Count - 1))
+            // Find a reason to disable the Move Layer Down button
+            if (index == (layerControl.Workspace.Document.Layers.Count - 1))
             {
                 moveLayerDownButton.Enabled = false;
             }
@@ -374,7 +397,7 @@ namespace PaintDotNet
             }
 
             // Find reasons to disable the Delete Layer button
-            if (index == 0)
+            if (layerControl.Workspace.Document.Layers.Count <= 1)
             {
                 deleteLayerButton.Enabled = false;
             }

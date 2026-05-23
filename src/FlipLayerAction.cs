@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 
@@ -14,7 +22,7 @@ namespace PaintDotNet
 
         public override HistoryAction PerformAction()
         {
-            FlipLayerHistoryAction flha = new FlipLayerHistoryAction(this.Name, this.undoImage, Workspace.ActiveLayer, flipType);
+            FlipLayerHistoryAction flha = new FlipLayerHistoryAction(this.Name, this.undoImage, Workspace, Workspace.ActiveLayerIndex, flipType);
             return flha.PerformUndo();
         }
 

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using PaintDotNet;
 using System;
 using System.Drawing;
@@ -10,6 +18,7 @@ namespace PaintDotNet.Effects
 	/// Summary description for HueAndSaturationAdjustment.
 	/// </summary>
 	[EffectCategory(EffectCategory.Adjustment)]
+    [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
 	public class HueAndSaturationAdjustment
         : Effect,
           IConfigurableEffect  
@@ -57,14 +66,24 @@ namespace PaintDotNet.Effects
             int satDelta = token.Amount2;
             int lightness = token.Amount3;
 
+            UnaryPixelOp op;
+
             Surface dst = dstArgs.Surface;
             Surface src = srcArgs.Surface;
 
-            UnaryPixelOps.HueSaturationLightness hslOp = new UnaryPixelOps.HueSaturationLightness(hueDelta, satDelta, lightness);
+            if (hueDelta == 0 && satDelta == 100 && lightness == 0)
+            {
+                op = new UnaryPixelOps.Identity();
+            }
+            else
+            {
+                op = new UnaryPixelOps.HueSaturationLightness(hueDelta, satDelta, lightness);
+            }
+            
 
             foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
             {
-                hslOp.Apply(dst, src, rect);
+                op.Apply(dst, src, rect);
             }
         }
     }

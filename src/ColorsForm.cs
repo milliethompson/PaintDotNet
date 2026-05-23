@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Collections;
@@ -9,7 +17,7 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for ColorsForm.
     /// </summary>
-    public class ColorsForm : 
+    public class ColorsForm :
         FloatingToolForm
     {
         private System.Windows.Forms.GroupBox groupBox;
@@ -34,7 +42,6 @@ namespace PaintDotNet
         private System.Windows.Forms.ComboBox whichUserColorBox;
         private ColorGradientControl colorGradientControl;
         private System.Windows.Forms.NumericUpDown alphaUpDown;
-        private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TrackBar alphaTrackBar;
         private PaintDotNet.ColorWheel colorWheel;
         private System.Windows.Forms.GroupBox alphaGroupBox;
@@ -51,7 +58,11 @@ namespace PaintDotNet
         private System.Windows.Forms.Control lessModeGroupBoxSentinel;
         private System.Windows.Forms.Control moreModeGroupBoxSentinel;
         private bool inMoreState = true;
-		private uint ignore = 0;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.TextBox hexBox;
+        private uint ignore = 0;
+
+        private bool haveDoneInitStyles = false;
 
         public WhichUserColor WhichUserColor
         {
@@ -67,12 +78,12 @@ namespace PaintDotNet
         }
 
         public event ColorEventHandler UserForeColorChanged;
-        protected virtual void OnUserForeColorChanged(ColorBgra newColor, bool takeFocus)
+        protected virtual void OnUserForeColorChanged(ColorBgra newColor)
         {
             if (UserForeColorChanged != null && ignore == 0)
             {
-                UserForeColorChanged(this, new ColorEventArgs(newColor, takeFocus));
-				lastForeColor = newColor;
+                UserForeColorChanged(this, new ColorEventArgs(newColor));
+                lastForeColor = newColor;
             }
         }
 
@@ -94,31 +105,51 @@ namespace PaintDotNet
                 if (userForeColor != value)
                 {
                     userForeColor = value;
-                    OnUserForeColorChanged(value, false);
+                    OnUserForeColorChanged(value);
 
-                    if (WhichUserColor == WhichUserColor.Foreground)
-					{
-						ignore++;
-						//only do the update on the last one, so partial RGB info isn't parsed.
-						Utility.SetNumericUpDownValue(alphaUpDown, value.A);
-						Utility.SetNumericUpDownValue(redUpDown, value.R);
-						Utility.SetNumericUpDownValue(greenUpDown, value.G);
-						ignore--;
-						Utility.SetNumericUpDownValue(blueUpDown, value.B);
-						rgbGroupBox.Update();
-						hsvGroupBox.Update();
-					}
+                    if (WhichUserColor != WhichUserColor.Foreground)
+                    {
+                        this.WhichUserColor = WhichUserColor.Foreground;
+                    }
+
+                    ignore++;
+
+                    // only do the update on the last one, so partial RGB info isn't parsed.
+                    Utility.SetNumericUpDownValue(alphaUpDown, value.A);
+                    Utility.SetNumericUpDownValue(redUpDown, value.R);
+                    Utility.SetNumericUpDownValue(greenUpDown, value.G);
+
+                    ignore--;
+                    Utility.SetNumericUpDownValue(blueUpDown, value.B);
+                    rgbGroupBox.Update();
+                    hsvGroupBox.Update();
+
+                    string hexText = GetHexNumericUpDownValue(value.R, value.G, value.B);
+                    hexBox.Text = hexText;
                 }
             }
         }
 
+        private string GetHexNumericUpDownValue(int red, int green, int blue)
+        {
+            int newHexNumber = (red << 16) | (green << 8) | blue;
+            string newHexText = System.Convert.ToString(newHexNumber, 16);
+            
+            while (newHexText.Length < 6)
+            {
+                newHexText = "0" + newHexText;
+            }
+
+            return newHexText.ToUpper();
+        }
+
         public event ColorEventHandler UserBackColorChanged;
-        protected virtual void OnUserBackColorChanged(ColorBgra newColor, bool takeFocus)
+        protected virtual void OnUserBackColorChanged(ColorBgra newColor)
         {
             if (UserBackColorChanged != null && ignore == 0)
             {
                 lastBackColor = newColor;
-				UserBackColorChanged(this, new ColorEventArgs(newColor, takeFocus));
+                UserBackColorChanged(this, new ColorEventArgs(newColor));
             }
         }
 
@@ -140,23 +171,32 @@ namespace PaintDotNet
                 if (userBackColor != value)
                 {
                     userBackColor = value;
-                    OnUserBackColorChanged(value, false);
+                    OnUserBackColorChanged(value);
 
-                    if (WhichUserColor == WhichUserColor.Background)
-					{
-						ignore++;
-						//only do the update on the last one, so partial RGB info isn't parsed.
-						Utility.SetNumericUpDownValue(alphaUpDown, value.A);
-						Utility.SetNumericUpDownValue(redUpDown, value.R);
-						Utility.SetNumericUpDownValue(greenUpDown, value.G);
-						ignore--;
-						Utility.SetNumericUpDownValue(blueUpDown, value.B);
-						rgbGroupBox.Update();
-						hsvGroupBox.Update();
+                    if (WhichUserColor != WhichUserColor.Background)
+                    {
+                        this.WhichUserColor = WhichUserColor.Background;
                     }
+
+                    ignore++;
+
+                    //only do the update on the last one, so partial RGB info isn't parsed.
+                    Utility.SetNumericUpDownValue(alphaUpDown, value.A);
+                    Utility.SetNumericUpDownValue(redUpDown, value.R);
+                    Utility.SetNumericUpDownValue(greenUpDown, value.G);
+
+                    ignore--;
+                    Utility.SetNumericUpDownValue(blueUpDown, value.B);
+                    rgbGroupBox.Update();
+                    hsvGroupBox.Update();
+
+                    string hexText = GetHexNumericUpDownValue(value.R, value.G, value.B);
+                    hexBox.Text = hexText;
                 }
             }
         }
+
+
 
         /// <summary>
         /// Convenience function for ColorsForm internals. Checks the value of the
@@ -164,16 +204,16 @@ namespace PaintDotNet
         /// the UserBackColorChanged events.
         /// </summary>
         /// <param name="newColor">The new color to notify clients about.</param>
-        private void OnUserColorChanged(ColorBgra newColor, bool takeFocus)
+        private void OnUserColorChanged(ColorBgra newColor)
         {
             switch (WhichUserColor)
             {
                 case WhichUserColor.Foreground:
-                    OnUserForeColorChanged(newColor, takeFocus);
+                    OnUserForeColorChanged(newColor);
                     break;
 
                 case WhichUserColor.Background:
-                    OnUserBackColorChanged(newColor, takeFocus);
+                    OnUserBackColorChanged(newColor);
                     break;
 
                 default:
@@ -188,22 +228,26 @@ namespace PaintDotNet
         /// <param name="newColor">The RGB color that should be converted to HSV.</param>
         private void SyncHsvFromRgb(ColorBgra newColor)
         {
-			if (ignore == 0) 
-			{
-				ignore++;
-				HsvColor hsvColor = HsvColor.FromColor(newColor.ToColor());
+            if (ignore == 0) 
+            {
+                ignore++;
+                HsvColor hsvColor = HsvColor.FromColor(newColor.ToColor());
 
-				Utility.SetNumericUpDownValue(hueUpDown, hsvColor.Hue);
-				Utility.SetNumericUpDownValue(saturationUpDown, hsvColor.Saturation);
-				Utility.SetNumericUpDownValue(valueUpDown, hsvColor.Value);
+                Utility.SetNumericUpDownValue(hueUpDown, hsvColor.Hue);
+                Utility.SetNumericUpDownValue(saturationUpDown, hsvColor.Saturation);
+                Utility.SetNumericUpDownValue(valueUpDown, hsvColor.Value);
 
-				colorGradientControl.Value = (int)(2.55 * hsvColor.Value);
-				colorGradientControl.TopColor = new HsvColor(hsvColor.Hue, hsvColor.Saturation, 100).ToColor();
-				colorGradientControl.BottomColor = new HsvColor(hsvColor.Hue, hsvColor.Saturation, 0).ToColor();
+                if (hsvColor.Value != ((colorGradientControl.Value * 100) / 255))
+                {
+                    colorGradientControl.Value = (255 * hsvColor.Value) / 100;
+                }
 
-				colorWheel.HsvColor = hsvColor;
-				ignore--;
-			}
+                colorGradientControl.TopColor = new HsvColor(hsvColor.Hue, hsvColor.Saturation, 100).ToColor();
+                colorGradientControl.BottomColor = new HsvColor(hsvColor.Hue, hsvColor.Saturation, 0).ToColor();
+
+                colorWheel.HsvColor = hsvColor;
+                ignore--;
+            }
         }
 
         /// <summary>
@@ -212,21 +256,21 @@ namespace PaintDotNet
         /// </summary>
         /// <param name="newColor">The HSV color that should be converted to RGB.</param>
         private void SyncRgbFromHsv(HsvColor newColor)
-		{
-			if (ignore == 0) 
-			{
-				ignore++;
-				RgbColor rgbColor = newColor.ToRgb();
+        {
+            if (ignore == 0) 
+            {
+                ignore++;
+                RgbColor rgbColor = newColor.ToRgb();
 
-				Utility.SetNumericUpDownValue(redUpDown, rgbColor.Red);
-				Utility.SetNumericUpDownValue(greenUpDown, rgbColor.Green);
-				Utility.SetNumericUpDownValue(blueUpDown, rgbColor.Blue);
-				ignore--;
-			} 
-			else 
-			{
-				Utility.TraceMe("RGB Blocked");
-			}
+                Utility.SetNumericUpDownValue(redUpDown, rgbColor.Red);
+                Utility.SetNumericUpDownValue(greenUpDown, rgbColor.Green);
+                Utility.SetNumericUpDownValue(blueUpDown, rgbColor.Blue);
+
+                string hexText = GetHexNumericUpDownValue(rgbColor.Red, rgbColor.Green, rgbColor.Blue);
+                hexBox.Text = hexText;
+
+                ignore--;
+            } 
         }
 
         public ColorsForm()
@@ -246,24 +290,33 @@ namespace PaintDotNet
 
         protected override void OnLoad(EventArgs e)
         {
-            base.OnLoad (e);
             this.inMoreState = true;
+            haveDoneInitStyles = true;
             moreLessButton.PerformClick();
+            haveDoneInitStyles = false;
+            base.OnLoad (e);
+        }
+
+        protected override void OnEnableStyles()
+        {
+            // do nothing
         }
 
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+
+            base.Dispose(disposing);
         }
 
         #region Windows Form Designer generated code
@@ -289,10 +342,11 @@ namespace PaintDotNet
             this.saturationUpDown = new System.Windows.Forms.NumericUpDown();
             this.hueUpDown = new System.Windows.Forms.NumericUpDown();
             this.rgbGroupBox = new System.Windows.Forms.GroupBox();
+            this.hexBox = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
             this.hsvGroupBox = new System.Windows.Forms.GroupBox();
             this.whichUserColorBox = new System.Windows.Forms.ComboBox();
             this.alphaUpDown = new System.Windows.Forms.NumericUpDown();
-            this.label4 = new System.Windows.Forms.Label();
             this.alphaTrackBar = new System.Windows.Forms.TrackBar();
             this.alphaGroupBox = new System.Windows.Forms.GroupBox();
             this.moreLessButton = new System.Windows.Forms.Button();
@@ -317,6 +371,7 @@ namespace PaintDotNet
             // colorGradientControl
             // 
             this.colorGradientControl.BottomColor = System.Drawing.Color.Black;
+            this.colorGradientControl.Count = 1;
             this.colorGradientControl.Location = new System.Drawing.Point(192, 16);
             this.colorGradientControl.Name = "colorGradientControl";
             this.colorGradientControl.Size = new System.Drawing.Size(29, 216);
@@ -324,7 +379,7 @@ namespace PaintDotNet
             this.colorGradientControl.TabStop = false;
             this.colorGradientControl.TopColor = System.Drawing.Color.White;
             this.colorGradientControl.Value = 0;
-            this.colorGradientControl.ValueChanged += new System.EventHandler(this.colorGradientControl_ValueChanged);
+            this.colorGradientControl.ValueChanged += new IndexEventHandler(this.colorGradientControl_ValueChanged);
             // 
             // groupBox
             // 
@@ -359,12 +414,10 @@ namespace PaintDotNet
             this.redUpDown.Size = new System.Drawing.Size(56, 20);
             this.redUpDown.TabIndex = 1;
             this.redUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.redUpDown.VisibleChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.redUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.redUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.redUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
-            this.redUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.redUpDown.Leave += new System.EventHandler(this.upDown_Leave);
-			this.redUpDown.CausesValidation = true;
             // 
             // greenUpDown
             // 
@@ -378,13 +431,11 @@ namespace PaintDotNet
             this.greenUpDown.Size = new System.Drawing.Size(56, 20);
             this.greenUpDown.TabIndex = 2;
             this.greenUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.greenUpDown.VisibleChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.greenUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.greenUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.greenUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
-            this.greenUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.greenUpDown.Leave += new System.EventHandler(this.upDown_Leave);
-			this.greenUpDown.CausesValidation = true;
-			// 
+            // 
             // blueUpDown
             // 
             this.blueUpDown.Location = new System.Drawing.Point(80, 64);
@@ -397,15 +448,14 @@ namespace PaintDotNet
             this.blueUpDown.Size = new System.Drawing.Size(56, 20);
             this.blueUpDown.TabIndex = 3;
             this.blueUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.blueUpDown.VisibleChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.blueUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.blueUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.blueUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
-            this.blueUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.blueUpDown.Leave += new System.EventHandler(this.upDown_Leave);
-			this.blueUpDown.CausesValidation = true;
             // 
             // label1
             // 
+            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
             this.label1.Location = new System.Drawing.Point(32, 16);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(40, 24);
@@ -415,6 +465,7 @@ namespace PaintDotNet
             // 
             // label2
             // 
+            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
             this.label2.Location = new System.Drawing.Point(32, 64);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(40, 24);
@@ -424,6 +475,7 @@ namespace PaintDotNet
             // 
             // label3
             // 
+            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
             this.label3.Location = new System.Drawing.Point(32, 40);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(40, 24);
@@ -461,41 +513,26 @@ namespace PaintDotNet
             // valueUpDown
             // 
             this.valueUpDown.Location = new System.Drawing.Point(80, 64);
-            this.valueUpDown.Maximum = new System.Decimal(new int[] {
-                                                                        100,
-                                                                        0,
-                                                                        0,
-                                                                        0});
             this.valueUpDown.Name = "valueUpDown";
             this.valueUpDown.Size = new System.Drawing.Size(56, 20);
             this.valueUpDown.TabIndex = 6;
             this.valueUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.valueUpDown.VisibleChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.valueUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.valueUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.valueUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
-            this.valueUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.valueUpDown.Leave += new System.EventHandler(this.upDown_Leave);
-			this.valueUpDown.CausesValidation = true;
-			// 
+            // 
             // saturationUpDown
             // 
             this.saturationUpDown.Location = new System.Drawing.Point(80, 40);
-            this.saturationUpDown.Maximum = new System.Decimal(new int[] {
-                                                                             100,
-                                                                             0,
-                                                                             0,
-                                                                             0});
             this.saturationUpDown.Name = "saturationUpDown";
             this.saturationUpDown.Size = new System.Drawing.Size(56, 20);
             this.saturationUpDown.TabIndex = 5;
             this.saturationUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.saturationUpDown.VisibleChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.saturationUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.saturationUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.saturationUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
-            this.saturationUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.saturationUpDown.Leave += new System.EventHandler(this.upDown_Leave);
-			this.saturationUpDown.CausesValidation = true;
-
             // 
             // hueUpDown
             // 
@@ -509,15 +546,15 @@ namespace PaintDotNet
             this.hueUpDown.Size = new System.Drawing.Size(56, 20);
             this.hueUpDown.TabIndex = 4;
             this.hueUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.hueUpDown.VisibleChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.hueUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.hueUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.hueUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
-            this.hueUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.hueUpDown.Leave += new System.EventHandler(this.upDown_Leave);
-			this.hueUpDown.CausesValidation = true;
-			// 
+            // 
             // rgbGroupBox
             // 
+            this.rgbGroupBox.Controls.Add(this.hexBox);
+            this.rgbGroupBox.Controls.Add(this.label4);
             this.rgbGroupBox.Controls.Add(this.redUpDown);
             this.rgbGroupBox.Controls.Add(this.greenUpDown);
             this.rgbGroupBox.Controls.Add(this.blueUpDown);
@@ -527,10 +564,33 @@ namespace PaintDotNet
             this.rgbGroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.rgbGroupBox.Location = new System.Drawing.Point(248, 8);
             this.rgbGroupBox.Name = "rgbGroupBox";
-            this.rgbGroupBox.Size = new System.Drawing.Size(144, 96);
+            this.rgbGroupBox.Size = new System.Drawing.Size(144, 120);
             this.rgbGroupBox.TabIndex = 17;
             this.rgbGroupBox.TabStop = false;
             this.rgbGroupBox.Text = "RGB";
+            // 
+            // hexBox
+            // 
+            this.hexBox.Location = new System.Drawing.Point(80, 88);
+            this.hexBox.Name = "hexBox";
+            this.hexBox.Size = new System.Drawing.Size(56, 20);
+            this.hexBox.TabIndex = 14;
+            this.hexBox.Text = "000000";
+            this.hexBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.hexBox.TextChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.hexBox.Leave += new System.EventHandler(this.hexUpDown_Leave);
+            this.hexBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.hexUpDown_KeyUp);
+            this.hexBox.Enter += new System.EventHandler(this.hexUpDown_Enter);
+            // 
+            // label4
+            // 
+            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
+            this.label4.Location = new System.Drawing.Point(40, 88);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(32, 24);
+            this.label4.TabIndex = 13;
+            this.label4.Text = "Hex:";
+            this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // hsvGroupBox
             // 
@@ -541,7 +601,7 @@ namespace PaintDotNet
             this.hsvGroupBox.Controls.Add(this.hueUpDown);
             this.hsvGroupBox.Controls.Add(this.label7);
             this.hsvGroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.hsvGroupBox.Location = new System.Drawing.Point(248, 112);
+            this.hsvGroupBox.Location = new System.Drawing.Point(248, 136);
             this.hsvGroupBox.Name = "hsvGroupBox";
             this.hsvGroupBox.Size = new System.Drawing.Size(144, 96);
             this.hsvGroupBox.TabIndex = 18;
@@ -573,25 +633,15 @@ namespace PaintDotNet
             this.alphaUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
             this.alphaUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.alphaUpDown.Leave += new System.EventHandler(this.upDown_Leave);
-			this.alphaUpDown.CausesValidation = true;
-			// 
-            // label4
-            // 
-            this.label4.Location = new System.Drawing.Point(32, 16);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(40, 24);
-            this.label4.TabIndex = 17;
-            this.label4.Text = "Alpha:";
-            this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // alphaTrackBar
             // 
             this.alphaTrackBar.AutoSize = false;
             this.alphaTrackBar.LargeChange = 64;
-            this.alphaTrackBar.Location = new System.Drawing.Point(8, 40);
+            this.alphaTrackBar.Location = new System.Drawing.Point(8, 16);
             this.alphaTrackBar.Maximum = 255;
             this.alphaTrackBar.Name = "alphaTrackBar";
-            this.alphaTrackBar.Size = new System.Drawing.Size(128, 25);
+            this.alphaTrackBar.Size = new System.Drawing.Size(64, 25);
             this.alphaTrackBar.TabIndex = 8;
             this.alphaTrackBar.TickFrequency = 64;
             this.alphaTrackBar.TickStyle = System.Windows.Forms.TickStyle.None;
@@ -600,20 +650,19 @@ namespace PaintDotNet
             // alphaGroupBox
             // 
             this.alphaGroupBox.Controls.Add(this.alphaUpDown);
-            this.alphaGroupBox.Controls.Add(this.label4);
             this.alphaGroupBox.Controls.Add(this.alphaTrackBar);
             this.alphaGroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.alphaGroupBox.Location = new System.Drawing.Point(248, 216);
+            this.alphaGroupBox.Location = new System.Drawing.Point(248, 240);
             this.alphaGroupBox.Name = "alphaGroupBox";
-            this.alphaGroupBox.Size = new System.Drawing.Size(144, 72);
+            this.alphaGroupBox.Size = new System.Drawing.Size(144, 48);
             this.alphaGroupBox.TabIndex = 20;
             this.alphaGroupBox.TabStop = false;
-            this.alphaGroupBox.Text = "Transparency";
+            this.alphaGroupBox.Text = "Transparency - Alpha";
             // 
             // moreLessButton
             // 
             this.moreLessButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.moreLessButton.Location = new System.Drawing.Point(165, 8);
+            this.moreLessButton.Location = new System.Drawing.Point(165, 7);
             this.moreLessButton.Name = "moreLessButton";
             this.moreLessButton.TabIndex = 21;
             this.moreLessButton.Text = "<< Less";
@@ -621,7 +670,7 @@ namespace PaintDotNet
             // 
             // lessModeButtonSentinel
             // 
-            this.lessModeButtonSentinel.Location = new System.Drawing.Point(136, 8);
+            this.lessModeButtonSentinel.Location = new System.Drawing.Point(136, 7);
             this.lessModeButtonSentinel.Name = "lessModeButtonSentinel";
             this.lessModeButtonSentinel.TabIndex = 22;
             this.lessModeButtonSentinel.Text = "we put the lessMore control here when in \"Less\" mode";
@@ -629,7 +678,7 @@ namespace PaintDotNet
             // 
             // moreModeButtonSentinel
             // 
-            this.moreModeButtonSentinel.Location = new System.Drawing.Point(165, 8);
+            this.moreModeButtonSentinel.Location = new System.Drawing.Point(165, 7);
             this.moreModeButtonSentinel.Name = "moreModeButtonSentinel";
             this.moreModeButtonSentinel.TabIndex = 23;
             this.moreModeButtonSentinel.Text = "control1";
@@ -656,7 +705,7 @@ namespace PaintDotNet
             // ColorsForm
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.ClientSize = new System.Drawing.Size(400, 296);
+            this.ClientSize = new System.Drawing.Size(402, 296);
             this.Controls.Add(this.moreModeButtonSentinel);
             this.Controls.Add(this.lessModeButtonSentinel);
             this.Controls.Add(this.moreLessButton);
@@ -719,6 +768,10 @@ namespace PaintDotNet
             Utility.SetNumericUpDownValue(redUpDown, color.R);
             Utility.SetNumericUpDownValue(greenUpDown, color.G);
             Utility.SetNumericUpDownValue(blueUpDown, color.B);
+
+            string hexText = GetHexNumericUpDownValue(color.R, color.G, color.B);
+            hexBox.Text = hexText;
+
             Utility.SetNumericUpDownValue(alphaUpDown, color.A);
             PopIgnoreChangedEvents();
 
@@ -732,6 +785,8 @@ namespace PaintDotNet
                 return;
             }
 
+            PushIgnoreChangedEvents();
+
             HsvColor hsvColor = colorWheel.HsvColor;
             RgbColor rgbColor = hsvColor.ToRgb();
             ColorBgra color = ColorBgra.FromBgra((byte)rgbColor.Blue, (byte)rgbColor.Green, (byte)rgbColor.Red, (byte)alphaUpDown.Value);
@@ -743,31 +798,40 @@ namespace PaintDotNet
             Utility.SetNumericUpDownValue(redUpDown, color.R);
             Utility.SetNumericUpDownValue(greenUpDown, color.G);
             Utility.SetNumericUpDownValue(blueUpDown, color.B);
+
+            string hexText = GetHexNumericUpDownValue(color.R, color.G, color.B);
+            hexBox.Text = hexText;
+            
             Utility.SetNumericUpDownValue(alphaUpDown, color.A);
 
             colorGradientControl.TopColor = new HsvColor(hsvColor.Hue, hsvColor.Saturation, 100).ToColor();
             colorGradientControl.BottomColor = new HsvColor(hsvColor.Hue, hsvColor.Saturation, 0).ToColor();
-            colorGradientControl.Value = (int)(2.55 * hsvColor.Value);
+            colorGradientControl.Value = (255 * hsvColor.Value) / 100;
             
             switch (WhichUserColor)
             {
                 case WhichUserColor.Foreground:
                     userForeColor = color;
-                    OnUserForeColorChanged(color, true);
+                    OnUserForeColorChanged(color);
+                    OnRelinquishFocus();
                     break;
 
                 case WhichUserColor.Background:
                     userBackColor = color;
-                    OnUserBackColorChanged(color, true);
+                    OnUserBackColorChanged(color);
+                    OnRelinquishFocus();
                     break;
 
                 default:
                     throw new InvalidEnumArgumentException("WhichUserColor property");
             }
-			colorWheel.Update();
+
+            PopIgnoreChangedEvents();
+
+            Update();
         }
 
-        private void colorGradientControl_ValueChanged(object sender, System.EventArgs e)
+        private void colorGradientControl_ValueChanged(object sender, IndexEventArgs e)
         {
             if (IgnoreChangedEvents)
             {
@@ -776,7 +840,7 @@ namespace PaintDotNet
 
             int hue = (int)hueUpDown.Value;
             int saturation = (int)saturationUpDown.Value;
-            int value = (int)(colorGradientControl.Value / 2.55);
+            int value = (colorGradientControl.Value * 100) / 255;
 
             HsvColor hsvColor = new HsvColor(hue, saturation, value);
             colorWheel.HsvColor = hsvColor;
@@ -791,22 +855,28 @@ namespace PaintDotNet
             Utility.SetNumericUpDownValue(greenUpDown, rgbColor.Green);
             Utility.SetNumericUpDownValue(blueUpDown, rgbColor.Blue);
             
+            string hexText = GetHexNumericUpDownValue(rgbColor.Red, rgbColor.Green, rgbColor.Blue);
+            hexBox.Text = hexText;
+            
             switch (WhichUserColor)
             {
                 case WhichUserColor.Foreground:
                     userForeColor = color;
-                    OnUserForeColorChanged(color, true);
+                    OnUserForeColorChanged(color);
+                    OnRelinquishFocus();
                     break;
 
                 case WhichUserColor.Background:
                     userBackColor = color;
-                    OnUserBackColorChanged(color, true);
+                    OnUserBackColorChanged(color);
+                    OnRelinquishFocus();
                     break;
 
                 default:
                     throw new InvalidEnumArgumentException("WhichUserColor property");
             }
-			colorGradientControl.Update();
+
+            Update();
         }
 
         private void upDown_Enter(object sender, System.EventArgs e)
@@ -818,6 +888,57 @@ namespace PaintDotNet
         private void upDown_Leave(object sender, System.EventArgs e)
         {
             upDown_ValueChanged(sender, e);
+        }
+
+        private void hexUpDown_Enter(object sender, System.EventArgs e)
+        {
+            TextBox tb = (TextBox)sender;
+            tb.Select(0, tb.Text.Length);
+        }
+
+        private void hexUpDown_Leave(object sender, System.EventArgs e)
+        {
+            hexBox.Text = hexBox.Text.ToUpper();
+            upDown_ValueChanged(sender, e);
+        }
+
+        private void hexUpDown_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
+        {
+            TextBox tb = (TextBox)sender;
+
+            if (CheckHexBox(tb.Text))
+            {
+                upDown_ValueChanged(sender, e);
+            }
+        }
+
+        private bool CheckHexBox(String checkHex)
+        {
+            int num;
+        
+            try
+            {
+                num = int.Parse(checkHex, System.Globalization.NumberStyles.HexNumber);
+            }
+
+            catch (FormatException)
+            {
+                return false;
+            }
+
+            catch (OverflowException)
+            {
+                return false;
+            }
+        
+            if ((num <= 16777215) && (num >= 0))
+            {
+                return true;
+            }   
+            else
+            {
+                return false;
+            }
         }
 
         private void upDown_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
@@ -844,11 +965,11 @@ namespace PaintDotNet
                 switch (WhichUserColor)
                 {
                     case WhichUserColor.Foreground:
-                        OnUserForeColorChanged(ColorBgra.FromBgra(lastForeColor.B, lastForeColor.G, lastForeColor.R, (byte)alphaTrackBar.Value), false);
+                        OnUserForeColorChanged(ColorBgra.FromBgra(lastForeColor.B, lastForeColor.G, lastForeColor.R, (byte)alphaTrackBar.Value));
                         break;
 
                     case WhichUserColor.Background:
-                        OnUserBackColorChanged(ColorBgra.FromBgra(lastBackColor.B, lastBackColor.G, lastBackColor.R, (byte)alphaTrackBar.Value), false);
+                        OnUserBackColorChanged(ColorBgra.FromBgra(lastBackColor.B, lastBackColor.G, lastBackColor.R, (byte)alphaTrackBar.Value));
                         break;
 
                     default:
@@ -857,8 +978,7 @@ namespace PaintDotNet
 
                 PopIgnoreChangedEvents();
             }
-            else
-                if (IgnoreChangedEvents)
+            else if (IgnoreChangedEvents)
             {
                 return;
             }
@@ -868,20 +988,78 @@ namespace PaintDotNet
 
                 if (sender == redUpDown || sender == greenUpDown || sender == blueUpDown)
                 {
+                    string hexText = GetHexNumericUpDownValue((int)redUpDown.Value, (int)greenUpDown.Value, (int)blueUpDown.Value);
+                    hexBox.Text = hexText;
+
                     ColorBgra rgbColor = ColorBgra.FromBgra((byte)blueUpDown.Value, (byte)greenUpDown.Value, (byte)redUpDown.Value, (byte)alphaUpDown.Value);
+                
                     SyncHsvFromRgb(rgbColor);
-                    OnUserColorChanged(rgbColor, false);
+                    OnUserColorChanged(rgbColor);
+                }
+                else if (sender == hexBox)
+                {
+                    int hexInt = 0;
+
+                    if (hexBox.Text.Length > 0)
+                    {
+                        try
+                        {
+                            hexInt = int.Parse(hexBox.Text,System.Globalization.NumberStyles.HexNumber);
+                        }
+
+                        // Needs to be changed so it reads what the RGB values were last
+                        catch (FormatException)
+                        {
+                            hexInt = 0;
+                            hexBox.Text = "";
+                        }
+
+                        catch (OverflowException)
+                        {
+                            hexInt = 16777215;
+                            hexBox.Text = "FFFFFF";
+                        }
+        
+                        if (!((hexInt <= 16777215) && (hexInt >= 0)))
+                        {
+                            hexInt = 16777215;
+                            hexBox.Text = "FFFFFF";
+                        }   
+                    }
+
+                    int newRed = ((hexInt & 0xff0000) >> 16);
+                    int newGreen = ((hexInt & 0x00ff00) >> 8);
+                    int newBlue = (hexInt & 0x0000ff);
+                
+                    Utility.SetNumericUpDownValue(redUpDown, newRed);
+                    Utility.SetNumericUpDownValue(greenUpDown, newGreen);
+                    Utility.SetNumericUpDownValue(blueUpDown, newBlue);             
+
+                    ColorBgra rgbColor = ColorBgra.FromBgra((byte)newBlue, (byte)newGreen, (byte)newRed, (byte)alphaUpDown.Value);
+                    SyncHsvFromRgb(rgbColor);
+                    OnUserColorChanged(rgbColor);
                 }
                 else if (sender == hueUpDown || sender == saturationUpDown || sender == valueUpDown)
                 {
-                    HsvColor hsvColor = new HsvColor((int)hueUpDown.Value, (int)saturationUpDown.Value, (int)valueUpDown.Value);
-                    colorWheel.HsvColor = hsvColor;
-                    colorGradientControl.Value = (int)(2.55 * hsvColor.Value);
-                    colorGradientControl.TopColor = new HsvColor(hsvColor.Hue, hsvColor.Saturation, 100).ToColor();
-                    colorGradientControl.BottomColor = new HsvColor(hsvColor.Hue, hsvColor.Saturation, 0).ToColor();
-                    SyncRgbFromHsv(hsvColor);
-                    RgbColor rgbColor = hsvColor.ToRgb();
-                    OnUserColorChanged(ColorBgra.FromBgra((byte)rgbColor.Blue, (byte)rgbColor.Green, (byte)rgbColor.Red, (byte)alphaUpDown.Value), false);
+                    HsvColor oldHsvColor = colorWheel.HsvColor;
+                    HsvColor newHsvColor = new HsvColor((int)hueUpDown.Value, (int)saturationUpDown.Value, (int)valueUpDown.Value);
+
+                    if (oldHsvColor != newHsvColor)
+                    {
+                        colorWheel.HsvColor = newHsvColor;
+
+                        if (((colorGradientControl.Value * 100) / 255) != newHsvColor.Value)
+                        {
+                            colorGradientControl.Value = (newHsvColor.Value * 255) / 100;
+                        }
+
+                        colorGradientControl.TopColor = new HsvColor(newHsvColor.Hue, newHsvColor.Saturation, 100).ToColor();
+                        colorGradientControl.BottomColor = new HsvColor(newHsvColor.Hue, newHsvColor.Saturation, 0).ToColor();
+
+                        SyncRgbFromHsv(newHsvColor);
+                        RgbColor rgbColor = newHsvColor.ToRgb();
+                        OnUserColorChanged(ColorBgra.FromBgra((byte)rgbColor.Blue, (byte)rgbColor.Green, (byte)rgbColor.Red, (byte)alphaUpDown.Value));
+                    }
                 }
 
                 PopIgnoreChangedEvents();
@@ -901,17 +1079,26 @@ namespace PaintDotNet
         private void alphaTrackBar_ValueChanged(object sender, System.EventArgs e)
         {
             if (alphaUpDown.Value != (decimal)alphaTrackBar.Value)
-			{
-				ColorBgra rgbColor = ColorBgra.FromBgra((byte)blueUpDown.Value, (byte)greenUpDown.Value, (byte)redUpDown.Value, (byte)alphaUpDown.Value);
-				OnUserColorChanged(rgbColor, true);
-				alphaUpDown.Value = (decimal)alphaTrackBar.Value;  
+            {
+                ColorBgra rgbColor = ColorBgra.FromBgra((byte)blueUpDown.Value, (byte)greenUpDown.Value, (byte)redUpDown.Value, (byte)alphaTrackBar.Value);
+                OnUserColorChanged(rgbColor);
+                OnRelinquishFocus();
+                alphaUpDown.Value = (decimal)alphaTrackBar.Value;
             }
         }
 
         private void moreLessButton_Click(object sender, System.EventArgs e)
         {
-			//hack: This makes ColorsForm lose focus
-			redUpDown.Value = redUpDown.Value;
+            OnRelinquishFocus();
+
+            if (!haveDoneInitStyles)
+            {
+                EnableStyles(this);
+                haveDoneInitStyles = true;
+            }
+
+            this.SuspendLayout();
+
             if (this.inMoreState)
             {
                 this.inMoreState = false;
@@ -955,6 +1142,8 @@ namespace PaintDotNet
 
                 this.Size = moreSize;
             }
+
+            this.ResumeLayout(false);
         }
 
         private bool IgnoreChangedEvents
@@ -962,6 +1151,16 @@ namespace PaintDotNet
             get
             {
                 return ignoreChangedEvents.Count != 0;
+            }
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize (e);
+
+            if (this.AttachControl != null)
+            {
+                this.RepositionForm(this, e);
             }
         }
     }

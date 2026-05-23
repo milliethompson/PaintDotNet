@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using PaintDotNet;
 using PaintDotNet.Effects;
 using System;
@@ -8,12 +16,13 @@ namespace PaintDotNet.Effects
     /// <summary>
     /// Summary description for EmbossEffect.
     /// </summary>
+    [EffectTypeHint(EffectTypeHint.Fast)]
     public class EmbossEffect
         : Effect, 
           IConfigurableEffect
     {
         public EmbossEffect()
-            : base("Emboss", "Embosses the image.", Utility.GetImageResource("Icons.EmbossEffect.bmp"), System.Windows.Forms.Shortcut.CtrlShiftE)
+            : base("Emboss", "Embosses the image.", Utility.GetImageResource("Icons.EmbossEffect.bmp"))
         {
         }
 

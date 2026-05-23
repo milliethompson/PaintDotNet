@@ -1,5 +1,14 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
+using System.Windows.Forms;
 
 namespace PaintDotNet
 {
@@ -7,38 +16,8 @@ namespace PaintDotNet
 	/// The HistoryStack class for the History "concept".  
 	/// Serves as the undo and redo stacks.  
 	/// </summary>
-	/// Parameters: Overloaded 1) document workspace or 2) undo stack, redo stack
-	/// Properties: Limit, RedoStack, UndoStack
-	/// Returns: nothing
-	/// Outstanding: Stack is now a misnomer and probably should be changed to reflect the object type used in the History implementation.
-	/// Initial Conception: Paint.NET v1.0 Team
-	/// ..Alterations: provided the History "stack" concept to the History Control
-	/// Changes: Michael Kelsey
-	/// ..Alterations: changed to an ArrayList to accomodate Limited History Length
-	/// ..Alterations: modified the following:
-	///    public Stack UndoStack -> public ArrayList UndoStack
-	///    public Stack RedoStack -> public ArrayList RedoStack
-	///    public HistoryStack(DocumentWorkspace workspace)
-	///    private HistoryStack(Stack undoStack, Stack redoStack) -> private HistoryStack(ArrayList undoStack, ArrayList redoStack)
-	///    public void PushNewAction(HistoryAction value)
-	///    public void StepForward()
-	///    public void StepBackward()
-	///    public void ClearAll()
-	///    public void ClearRedoStack()
-	/// ..Alterations: added the following:
-	///    public event EventHandler HistoryTruncated
-	///       Purpose: provides an event handler to which delegates can subscribe
-	///	   protected void OnHistoryTruncated()
-	///	      Purpose: provides a manual invocation of the HistoryTruncated event
-	///	   public void Truncate()
-	///	      Purpose: truncates the UndoStack and RedoStack to the value held in limit.
-	///    private int limit
-	///       Purpose: holds the limit as configured by the HistoryLimitDialog
-	///    public int Limit
-	///       Purpose: property for setting limit
     [Serializable]
     public class HistoryStack
-        : ICloneable
     {
         private ArrayList undoStack;
         private ArrayList redoStack;
@@ -102,6 +81,15 @@ namespace PaintDotNet
             }
         }
 
+        public event EventHandler Changing;
+        protected void OnChanging()
+        {
+            if (Changing != null)
+            {
+                Changing(this, EventArgs.Empty);
+            }
+        }
+
         public event EventHandler HistoryFlushed;
         protected void OnHistoryFlushed()
         {
@@ -143,21 +131,20 @@ namespace PaintDotNet
         /// </summary>
         public void PushNewAction(HistoryAction value)
         {
-			Utility.GCFullCollect();
+            OnChanging();
 
 			ClearRedoStack();
             undoStack.Add(value);
 			OnNewHistoryAction();
 
+            OnChanged();
+
 			if ((undoStack.Count > limit) && (limit > 1))
 			{
 				Truncate();
 			}
-			else
-			{
-				OnChanged();
-			}
-			Utility.GCFullCollect();
+
+            value.Flush();
         }
 
         /// <summary>
@@ -166,10 +153,12 @@ namespace PaintDotNet
         /// </summary>
         public void StepForward()
         {
+            OnChanging();
             Tool oldTool = workspace.Environment.Tool;
             workspace.Environment.SetTool(null);
 
-            HistoryAction undoAction = ((HistoryAction)redoStack[0]).PerformUndo();
+            HistoryAction redoAction = (HistoryAction)redoStack[0];
+            HistoryAction undoAction = redoAction.PerformUndo();
 			
             redoStack.RemoveAt(0);
             undoStack.Add(undoAction);
@@ -177,6 +166,8 @@ namespace PaintDotNet
             OnChanged();
             OnSteppedForward();
 
+            undoAction.Flush();
+            //redoAction.Flush();
             workspace.Environment.SetTool(oldTool);
         }
 
@@ -186,35 +177,62 @@ namespace PaintDotNet
         /// </summary>
         public void StepBackward()
         {
-            Tool oldTool = workspace.Environment.Tool;
-            workspace.Environment.SetTool(null);
+            OnChanging();
+            HistoryAction topAction = (HistoryAction)undoStack[undoStack.Count - 1];
 
+            Tool oldTool = null;
+            if (!(topAction is SentinelHistoryAction))
+            {                                                    
+                oldTool = workspace.Environment.Tool;
+                workspace.Environment.SetTool(null);
+            }
+
+            HistoryAction undoAction = (HistoryAction)undoStack[undoStack.Count - 1];
             HistoryAction redoAction = ((HistoryAction)undoStack[undoStack.Count - 1]).PerformUndo();
             undoStack.RemoveAt(undoStack.Count - 1);
-            redoStack.Insert(0,redoAction);
+            redoStack.Insert(0, redoAction);
 
             OnChanged();
             OnSteppedBackward();
 
-            workspace.Environment.SetTool(oldTool);
+            redoAction.Flush();
+
+            if (oldTool != null)
+            {
+                workspace.Environment.SetTool(oldTool);
+            }
         }
 
         public void ClearAll()
         {
-			Utility.GCFullCollect();        
-			undoStack = new ArrayList();
+            OnChanging();
+
+            foreach (HistoryAction ha in undoStack)
+            {
+                ha.Flush();
+            }
+
+            foreach (HistoryAction ha in redoStack)
+            {
+                ha.Flush();
+            }
+
+            undoStack = new ArrayList();
             redoStack = new ArrayList();
             OnChanged();
             OnHistoryFlushed();
-            Utility.GCFullCollect();        
         }
 
         public void ClearRedoStack()
         {
-			Utility.GCFullCollect();        
-			redoStack = new ArrayList();
+            foreach (HistoryAction ha in redoStack)
+            {
+                ha.Flush();
+            }
+
+            OnChanging();
+            redoStack = new ArrayList();
             OnChanged();
-            Utility.GCFullCollect();        
         }
 
 		/// <summary>
@@ -237,10 +255,16 @@ namespace PaintDotNet
 				redoToDrop--;
 			}
 
-			undoStack.RemoveRange(0, undoToDrop);
-			OnHistoryTruncated();
-			Utility.GCFullCollect();  
+            OnChanging();
 
+            for (int i = 0; i < undoToDrop; ++i)
+            {
+                ((HistoryAction)undoStack[i]).Flush();
+            }
+
+			undoStack.RemoveRange(0, undoToDrop);
+            OnChanged();
+			OnHistoryTruncated();
 		}
 
 		/// <summary>
@@ -263,14 +287,5 @@ namespace PaintDotNet
 				return(limit);
 			}
 		}
-
-        #region ICloneable Members
-
-        public object Clone()
-        {
-            return new HistoryStack(undoStack, redoStack);
-        }
-
-        #endregion
     }
 }

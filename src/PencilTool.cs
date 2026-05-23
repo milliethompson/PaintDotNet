@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.Drawing;
@@ -23,17 +31,9 @@ namespace PaintDotNet
         private ArrayList tracePoints;
 		private Pen pen;
 		private PdnRegion clipRegion;
-
 		private Point lastPoint;
 		private Point difference;
-
-		public override char HotKey
-		{
-			get
-			{
-				return 'p';
-			}
-		}
+        private Cursor pencilToolCursor;
 
         protected override void OnActivate()
         {
@@ -100,39 +100,15 @@ namespace PaintDotNet
 
 
 		// Draws a point, but first intersects it with the selections
-		// This code was ripped off from the clone stamp tool
 		private void DrawPoint(RenderArgs ra, Point p, ColorBgra color)
 		{
-			if (Utility.IsPointInRectangle(p, ra.Surface.Bounds))
-			{
-				Rectangle[] rectSelRegions;
-
-				if (Workspace.Environment.IsSelectionEmpty)
-				{
-					rectSelRegions = 
-						new Rectangle [] {
-											 new Rectangle(0,0,
-											 this.Workspace.Document.Width,
-											 this.Workspace.Document.Height)
-										 };
-				}
-				else
-				{
-					rectSelRegions = clipRegion.GetRegionScansInt();
-				}
-
-				foreach (Rectangle rectSel in rectSelRegions)
-				{
-					Rectangle rectBrushArea =   new Rectangle(p.X,p.Y,1,1);
-				
-					if (rectBrushArea.IntersectsWith(rectSel))
-					{
-						rectBrushArea.Intersect(rectSel);
-						ra.Surface[p.X, p.Y] = color;
-					}
-				}
-			}
-			
+            if (Utility.IsPointInRectangle(p, ra.Surface.Bounds))
+            {
+                if (ra.Graphics.IsVisible(p))
+                {
+                    ra.Surface[p.X, p.Y] = color;
+                }
+            }
 		}
 
         private void DrawLines(RenderArgs ra, ArrayList points, int startIndex, int length, Pen pen, Point currentMouse)
@@ -215,8 +191,11 @@ namespace PaintDotNet
             if (mouseDown && ((e.Button & mouseButton) != MouseButtons.None))
             {
                 Point mouseXY = new Point(e.X, e.Y);
-				if(lastPoint == Point.Empty)
-					lastPoint = mouseXY;
+
+                if (lastPoint == Point.Empty)
+                {
+                    lastPoint = mouseXY;
+                }
 
 				difference = new Point(mouseXY.X - lastPoint.X, mouseXY.Y - lastPoint.Y);
 
@@ -228,6 +207,7 @@ namespace PaintDotNet
 						return;
 					}
 				}
+
                 if (pen == null)
                 {
                     PenInfo pi = Workspace.Environment.PenInfo;
@@ -265,12 +245,11 @@ namespace PaintDotNet
                     }
 
                     saveRect.Inflate(2,2);
-
                     saveRect.Intersect(Workspace.ActiveLayer.Bounds);
 
                     // drawing outside of the canvas is a no-op, so don't do anything in that case!
                     // also make sure it's within the clipping bounds
-                    if (saveRect.Width > 0 && saveRect.Height > 0 && renderArgs.Graphics.Clip.IsVisible(saveRect))
+                    if (saveRect.Width > 0 && saveRect.Height > 0 && renderArgs.Graphics.IsVisible(saveRect))
                     {
                         pen.LineJoin = LineJoin.Round;
                         PlacedSurface savedPI = new PlacedSurface(renderArgs.Surface, saveRect);
@@ -335,7 +314,8 @@ namespace PaintDotNet
 
                     savedSurfaces.Clear();
 
-                    HistoryAction ha = bitmapLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
+                    //HistoryAction ha = bitmapLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
+                    HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, simplifiedRegion);
                     DrawLines(renderArgs, tracePoints, 0, tracePoints.Count, pen,new Point(e.X,e.Y));
                     bitmapLayer.Invalidate(simplifiedRegion);
                     Workspace.History.PushNewAction(ha);
@@ -351,16 +331,35 @@ namespace PaintDotNet
         }
 
         public PencilTool(DocumentWorkspace parent)
-            : base(parent)
+            : base(parent,
+                   Utility.GetImageResource("Icons.PencilToolIcon.bmp"),
+                   "Pencil",
+                   "Draws a freeform, one-pixel wide line.",
+                   "Left click to draw freeform, one-pixel wide lines with the foreground color, right click to use the background color",
+                   'p')
         {
-            toolBarImage = Utility.GetImageResource("Icons.PencilToolIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.PencilToolCursor.cur"));
-            name = "Pencil";
-            description = "Draws a freeform, one-pixel wide line.";
-			helpText = "Left click to draw freeform, one-pixel wide lines with the foreground color, right click to use the background color";
+            this.pencilToolCursor = new Cursor(Utility.GetResourceStream("Cursors.PencilToolCursor.cur"));
+            this.Cursor = this.pencilToolCursor;
 
             // initialize any state information you need
             mouseDown = false;
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose (disposing);
+
+            if (disposing)
+            {
+                DisposeImage();
+
+                if (this.pencilToolCursor != null)
+                {
+                    this.pencilToolCursor.Dispose();
+                    this.pencilToolCursor = null;
+                }
+            }
+        }
+
     }
 }

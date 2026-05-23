@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -6,14 +14,15 @@ using System.Runtime.CompilerServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-[assembly: AssemblyTitle("Rotate / Zoom")]
-[assembly: AssemblyDescription("Rotate / Zoom Effect Plugin for Paint.NET")]
-[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyTitle("Paint.NET v2.1 Rotate/Zoom")]
+[assembly: AssemblyDescription("Rotate/Zoom Adjustment for Paint.NET. Demonstration for plug-in system.")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("")]
-[assembly: AssemblyCopyright("Copyright © 2004 Rick Brewster")]
+[assembly: AssemblyProduct("Paint.NET v2.1")]
+[assembly: AssemblyCopyright("Copyright © 2004, 2005 Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2004, 2005 Microsoft Corporation. All Rights Reserved.")]
 [assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]     
+[assembly: AssemblyCulture("")]
+
+   
 
 //
 // Version information for an assembly consists of the following four values:
@@ -26,7 +35,7 @@ using System.Runtime.CompilerServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("2.0.*")]
+[assembly: AssemblyVersion("2.1.*")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 

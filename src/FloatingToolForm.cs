@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Collections;
@@ -9,109 +17,139 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for FloatingToolForm.
     /// </summary>
-	public class FloatingToolForm 
-		: PdnBaseForm
-	{
-		private System.ComponentModel.IContainer components = null;
+    public class FloatingToolForm 
+        : PdnBaseForm
+    {
+        private System.ComponentModel.IContainer components = null;
 
-		private ControlEventHandler controlAddedDelegate;
-		private ControlEventHandler controlRemovedDelegate;
-		private KeyEventHandler keyUpDelegate;
-		private bool repositionMe;
+        private ControlEventHandler controlAddedDelegate;
+        private ControlEventHandler controlRemovedDelegate;
+        private KeyEventHandler keyUpDelegate;
+        private bool repositionMe;
+        private int leftXOffset;
+        private int upperYOffset;
 
-		//Snap bounds variables
-		private WhichEdge snapToEdge;
-		private DocumentView attachControl;
-		public const int snapThreshold = 6;
-		
+        //Snap bounds variables
+        private WhichEdge snapToEdge;
+        private DocumentView attachControl;
+        private const int snapThreshold = 6;
 
-		// The control that it needs to snap to
-		public DocumentView AttachControl
-		{
-			get
-			{
-				return attachControl;
-			}
-			set
-			{
-				this.attachControl = value;
-				
-				if(value != null)
-				{
-					this.attachControl.Resize +=new EventHandler(attachControl_Resize);
-					// hook up event handlers
-				}
-			}
-		}
+        /// <summary>
+        /// Occurs when it is appropriate for the parent to steal focus.
+        /// </summary>
+        public event EventHandler RelinquishFocus;
+        protected virtual void OnRelinquishFocus()
+        {
+            if (RelinquishFocus != null)
+            {
+                RelinquishFocus(this, EventArgs.Empty);
+            }
+        }
 
-		public WhichEdge Reposition
-		{
-			get
-			{
-				return snapToEdge;
-			}
-			set
-			{ 
-				repositionMe = true;
+        // The control that it needs to snap to
+        public DocumentView AttachControl
+        {
+            get
+            {
+                return attachControl;
+            }
 
-				this.SnapToEdge = value;
+            set
+            {
+                if (this.attachControl != null)
+                {
+                    this.attachControl.Resize -= new EventHandler(RepositionForm);
+                    this.attachControl.Layout -= new LayoutEventHandler(LayoutRepositionForm);
+                }
 
-				repositionMe = false;
-			}
-		}
-		// Snaps the edge to the value given
-		public WhichEdge SnapToEdge
-		{
-			get
-			{
-				return snapToEdge;
-			}
-			set
-			{ 
-				if((snapToEdge != value && this.Focused == false))
-					if(repositionMe == false)
-					return;
+                this.attachControl = value;
+                
+                if (this.attachControl != null)
+                {
+                    this.attachControl.Resize += new EventHandler(RepositionForm);
+                    this.attachControl.Layout += new LayoutEventHandler(LayoutRepositionForm);
+                }
+            }
+        }
 
-				this.snapToEdge = value;
-				switch(this.snapToEdge)
-				{
-					case WhichEdge.TopLeft:
-						this.Location = GetTopLeft();
-						break;
+        // Used to force the floater to reposition
+        // This should only be used when you click windows -> Reset window locations
+        public WhichEdge Reposition
+        {
+            get
+            {
+                return snapToEdge;
+            }
+            set
+            { 
+                repositionMe = true;
+                this.SnapToEdge = value;
+                repositionMe = false;
+            }
+        }
 
-					case WhichEdge.Top:
-						this.Location = GetTop();
-						break;
+        // Snaps the edge to the value given
+        // Should only be set in DocumentWorkspace.cs, and should only be set once on initialization
+        // After that, the rest of the logic is taken care of in here
+        public WhichEdge SnapToEdge
+        {
+            get
+            {
+                return snapToEdge;
+            }
 
-					case WhichEdge.TopRight:
-						this.Location = GetTopRight();
-						break;
+            set
+            { 
+                // Only allow the floaters to snap if they have focus.. Unless it is
+                // a forced command by windows -> reset window locations
+                if (snapToEdge != value && !this.Focused)
+                {
+                    if (!repositionMe)
+                    {
+                        return;
+                    }
+                }
 
-					case WhichEdge.Right:
-						this.Location = GetRight();
-						break;
+                this.snapToEdge = value;
+                switch(this.snapToEdge)
+                {
+                    case WhichEdge.TopLeft:
+                        this.Location = GetTopLeft();
+                        break;
 
-					case WhichEdge.BottomRight:
-						this.Location = GetBottomRight();
-						break;
+                    case WhichEdge.Top:
+                        this.Location = GetTop();
+                        break;
 
-					case WhichEdge.Bottom:
-						this.Location = GetBottom();
-						break;
+                    case WhichEdge.TopRight:
+                        this.Location = GetTopRight();
+                        break;
 
-					case WhichEdge.BottomLeft:
-						this.Location = GetBottomLeft();
-						break;
+                    case WhichEdge.Right:
+                        this.Location = GetRight();
+                        break;
 
-					case WhichEdge.Left:
-						this.Location = GetLeft();
-						break;
+                    case WhichEdge.BottomRight:
+                        this.Location = GetBottomRight();
+                        break;
 
-					case WhichEdge.None:
-						break;			
-				}
-			}
-		}
+                    case WhichEdge.Bottom:
+                        this.Location = GetBottom();
+                        break;
+
+                    case WhichEdge.BottomLeft:
+                        this.Location = GetBottomLeft();
+                        break;
+
+                    case WhichEdge.Left:
+                        this.Location = GetLeft();
+                        break;
+
+                    case WhichEdge.None:
+                        break;          
+                }
+            }
+        }
 
         public FloatingToolForm()
         {
@@ -120,11 +158,11 @@ namespace PaintDotNet
             controlRemovedDelegate = new ControlEventHandler(ControlRemovedHandler);
             keyUpDelegate = new KeyEventHandler(KeyUpHandler);
 
-            this.ControlAdded += controlAddedDelegate;
+            this.ControlAdded += controlAddedDelegate; // we don't override OnControlAdded so we can re-use the method (see code below for ControlAdded)
             this.ControlRemoved += controlRemovedDelegate;
 
-			attachControl = null;
-			
+            attachControl = null;
+
             //
             // Required for Windows Form Designer support
             //
@@ -162,16 +200,17 @@ namespace PaintDotNet
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
         #region Windows Form Designer generated code
@@ -181,20 +220,19 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-			// 
-			// FloatingToolForm
-			// 
-			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-			this.ClientSize = new System.Drawing.Size(292, 271);
-			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
-			this.MaximizeBox = false;
-			this.MinimizeBox = false;
-			this.Name = "FloatingToolForm";
-			this.ShowInTaskbar = false;
-			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
-			this.Text = "FloatingToolForm";
-
-		}
+            // 
+            // FloatingToolForm
+            // 
+            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.ClientSize = new System.Drawing.Size(292, 271);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "FloatingToolForm";
+            this.ShowInTaskbar = false;
+            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
+            this.Text = "FloatingToolForm";
+        }
         #endregion
 
         private void ControlAddedHandler(object sender, ControlEventArgs e)
@@ -219,259 +257,347 @@ namespace PaintDotNet
             }
         }
 
-		//Checks if a form is in the area of a snap point
-		private WhichEdge InArea(int x, int y)
-		{
-			Point myLocation = new Point(x,y);
+        //Checks if a form is in the area of a snap point
+        private WhichEdge InArea(int x, int y)
+        {
+            Point myLocation = new Point(x, y);
 
-			// All the points where the form can snap to
-			Point topRight = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Right - this.Width, AttachControl.ClientRectangle2.Top ));
-			Point bottomRight = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Right - this.Width ,AttachControl.ClientRectangle2.Bottom - this.Height ));
-			Point topLeft = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left ,AttachControl.ClientRectangle2.Top ));			
-			Point bottomLeft = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left , AttachControl.ClientRectangle2.Bottom - this.Height ));
-			Point left = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left,AttachControl.ClientRectangle2.Top + (AttachControl.ClientRectangle2.Height/2) - (this.Height/2)));
-			Point bottom = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left + (AttachControl.ClientRectangle2.Width/2) - (this.Width/2),AttachControl.ClientRectangle2.Bottom  - this.Height));
-			Point top = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left + (AttachControl.ClientRectangle2.Width/2) - (this.Width/2),AttachControl.ClientRectangle2.Top ));
-			Point right = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Right - this.Width , AttachControl.ClientRectangle2.Top + (AttachControl.ClientRectangle2.Height/2) - (this.Height/2)));
+            // All the points where the form can snap to
+            Rectangle attachedRect = AttachControl.ClientRectangle2;
 
-			int testTop = AttachControl.ClientRectangle2.Location.Y;
-			int testBottom = new Point(AttachControl.ClientRectangle2.Left,AttachControl.ClientRectangle2.Bottom).Y;
+            Point topLeft = AttachControl.PointToScreen(new Point(attachedRect.Left, attachedRect.Top));            
+            if (Math.Abs(myLocation.X - topLeft.X) <= snapThreshold &&
+                Math.Abs(myLocation.Y - topLeft.Y) <= snapThreshold)
+            {
+                return WhichEdge.TopLeft;
+            }
 
-			int testLeft = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left ,AttachControl.ClientRectangle2.Top )).X;
-			int testRight = new Point(AttachControl.ClientRectangle2.Right,AttachControl.ClientRectangle2.Bottom).X;
+            Point bottomLeft = AttachControl.PointToScreen(new Point(attachedRect.Left, attachedRect.Bottom - this.Height));
+            if (Math.Abs(myLocation.X - bottomLeft.X) <= snapThreshold &&
+                Math.Abs(myLocation.Y - bottomLeft.Y) <= snapThreshold)
+            {
+                return WhichEdge.BottomLeft;
+            }
 
-			if(Math.Abs(myLocation.X - topLeft.X) <= snapThreshold &&
-			   Math.Abs(myLocation.Y - topLeft.Y) <= snapThreshold)
-			{
+            Point topRight = AttachControl.PointToScreen(new Point(attachedRect.Right - this.Width, attachedRect.Top));
+            if (Math.Abs(myLocation.X - topRight.X) <= snapThreshold &&
+                Math.Abs(myLocation.Y - topRight.Y) <= snapThreshold)
+            {
+                return WhichEdge.TopRight;
+            }
 
-				return WhichEdge.TopLeft;
-			}
-			else
-				if(Math.Abs(myLocation.X - bottomLeft.X) <= snapThreshold &&
-				Math.Abs(myLocation.Y - bottomLeft.Y) <= snapThreshold)
-			{
+            Point bottomRight = AttachControl.PointToScreen(new Point(attachedRect.Right - this.Width, attachedRect.Bottom - this.Height ));
+            if (Math.Abs(myLocation.X - bottomRight.X) <= snapThreshold &&
+                Math.Abs(myLocation.Y - bottomRight.Y) <= snapThreshold)
+            {
+                return WhichEdge.BottomRight;
+            }
 
-				return WhichEdge.BottomLeft;
-			}
-			else
-				if(Math.Abs(myLocation.X - topRight.X) <= snapThreshold &&
-				Math.Abs(myLocation.Y - topRight.Y) <= snapThreshold)
-			{
-				return WhichEdge.TopRight;
-			}
-			else
-				if(Math.Abs(myLocation.X - bottomRight.X) <= snapThreshold &&
-				Math.Abs(myLocation.Y - bottomRight.Y) <= snapThreshold)
-			{
-				return WhichEdge.BottomRight;
-			}
-			else
-				if(Math.Abs(myLocation.Y - top.Y) <= snapThreshold &&
-				(myLocation.X > testLeft) && (myLocation.X < testRight))
-			{
-				return WhichEdge.Top;
-			}
-			else
-				if(Math.Abs(myLocation.X - left.X) <= snapThreshold &&
-				(myLocation.Y > testTop) && (myLocation.Y < testBottom))
-			{
-				return WhichEdge.Left;
-			}
-			else
-				if(Math.Abs(myLocation.X - right.X) <= snapThreshold &&
-				(myLocation.Y > testTop) && (myLocation.Y < testBottom))
-			{
-				return WhichEdge.Right;
-			}
-			else
-				if(Math.Abs(myLocation.Y - bottom.Y) <= snapThreshold &&
-				(myLocation.X > testLeft) && (myLocation.X < testRight))
-			{
-				return WhichEdge.Bottom;
-			}
-			else
-			{
-				return WhichEdge.None;
-			}
-		}
+            Point left = AttachControl.PointToScreen(new Point(attachedRect.Left, attachedRect.Top + (attachedRect.Height / 2) - (this.Height / 2)));
+            Point bottom = AttachControl.PointToScreen(new Point(attachedRect.Left + (attachedRect.Width / 2) - (this.Width / 2), attachedRect.Bottom  - this.Height));
+            Point top = AttachControl.PointToScreen(new Point(attachedRect.Left + (attachedRect.Width / 2) - (this.Width / 2), attachedRect.Top));
+            Point right = AttachControl.PointToScreen(new Point(attachedRect.Right - this.Width, attachedRect.Top + (attachedRect.Height / 2) - (this.Height / 2)));
 
-		// The following functions return the spot that the form is supposed to be snapping to
-		// 8 snap points:
-		// topleft, top, topright, right, bottomright, bottom, bottomleft, left
-		private Point GetTopLeft()
-		{
-			Point topLeft = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left + 3,AttachControl.ClientRectangle2.Top + 3));
+            int testTop = attachedRect.Top;
+            int testBottom = attachedRect.Bottom;
+            int testLeft = attachedRect.Left;
+            int testRight = attachedRect.Right;
 
-			return new Point(topLeft.X,topLeft.Y);
-		}
+            if (Math.Abs(myLocation.Y - top.Y) <= snapThreshold &&
+                myLocation.X > testLeft && 
+                myLocation.X < testRight)
+            {
+                return WhichEdge.Top;
+            }
 
-		private Point GetTop()
-		{
-			int testLeft = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left ,AttachControl.ClientRectangle2.Top )).X;			
-			int testRight = new Point(AttachControl.ClientRectangle2.Right,AttachControl.ClientRectangle2.Bottom).X;
-			Point top = AttachControl.PointToScreen(new Point(0,AttachControl.ClientRectangle2.Top + 3));
-					
-			if(this.Location.X < testLeft)
-				top.X = testLeft;
-			else
-				if(this.Location.X > testRight)
-				top.X = testRight;
-			else
-				top.X = this.Location.X;
+            if (Math.Abs(myLocation.X - left.X) <= snapThreshold &&
+                myLocation.Y > testTop && 
+                myLocation.Y < testBottom)
+            {
+                return WhichEdge.Left;
+            }
 
-			return top;
-		}
+            if (Math.Abs(myLocation.X - right.X) <= snapThreshold &&
+                myLocation.Y > testTop && 
+                myLocation.Y < testBottom)
+            {
+                return WhichEdge.Right;
+            }
 
-		private Point GetBottom()
-		{
-			int testLeft = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left ,AttachControl.ClientRectangle2.Top )).X;			
-			int testRight = new Point(AttachControl.ClientRectangle2.Right,AttachControl.ClientRectangle2.Bottom).X;
-			Point bottom = AttachControl.PointToScreen(new Point(0,AttachControl.ClientRectangle2.Bottom - 3 - this.Height));
-					
-			if(this.Location.X < testLeft)
-				bottom.X = testLeft;
-			else
-				if(this.Location.X > testRight)
-				bottom.X = testRight;
-			else
-				bottom.X = this.Location.X;
+            if (Math.Abs(myLocation.Y - bottom.Y) <= snapThreshold &&
+                myLocation.X > testLeft && 
+                myLocation.X < testRight)
+            {
+                return WhichEdge.Bottom;
+            }
+            else
+            {
+                return WhichEdge.None;
+            }
+        }
 
-			return bottom;
-		}
+        // The following functions return the spot that the form is supposed to be snapping to
+        // 8 snap points:
+        // topleft, top, topright, right, bottomright, bottom, bottomleft, left
+        private Point GetTopLeft()
+        {
+            Point topLeft = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left + 3, 
+                                                                  AttachControl.ClientRectangle2.Top + 3));
 
-		private Point GetTopRight()
-		{
-			Point topRight = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Right - this.Width - 3, AttachControl.ClientRectangle2.Top + 3));
+            return topLeft;
+        }
 
-			return new Point(topRight.X, topRight.Y);
-		}
+        private Point GetTop()
+        {
+            int testLeft = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left,
+                                                                 AttachControl.ClientRectangle2.Top )).X;
 
-		private Point GetRight()
-		{
-			int testTop = AttachControl.ClientRectangle2.Location.Y;
-			int testRight= new Point(AttachControl.ClientRectangle2.Left,AttachControl.ClientRectangle2.Bottom).Y;
-			Point right = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Right - this.Width - 3, 0));
-					
-			if(this.Location.Y < testTop)
-				right.Y = testTop;
-			else
-				if(this.Location.Y > testRight)
-				right.Y = testRight;
-			else
-				right.Y = this.Location.Y;
+            int testRight = new Point(AttachControl.ClientRectangle2.Right, 
+                                      AttachControl.ClientRectangle2.Bottom).X;
 
-			return new Point(right.X,right.Y);
-		}
+            Point top = AttachControl.PointToScreen(new Point(0, AttachControl.ClientRectangle2.Top + 3));
+                    
+            if (this.Left < testLeft)
+            {
+                top.X = testLeft;
+            }
+            else if (this.Left > testRight)
+            {
+                top.X = testRight;
+            }
+            else
+            {
+                top.X = this.Location.X;
+            }
 
-		private Point GetBottomRight()
-		{
-			Point bottomRight = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Right - this.Width - 3,AttachControl.ClientRectangle2.Bottom - this.Height - 3));
+            // Do some offset checking, make sure it moves with the form properly
+            if (this.leftXOffset > 0)
+            {
+                top = new Point(AttachControl.PointToScreen(new Point(this.leftXOffset, 0)).X, top.Y);
+            }
 
-			return new Point(bottomRight.X,bottomRight.Y);
-		}
+            // Keep it bounded
+            Point topRight = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Right - this.Width - 3, 
+                                                                   AttachControl.ClientRectangle2.Top + 3));
 
-		private Point GetBottomLeft()
-		{
-			Point bottomLeft = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left + 3, AttachControl.ClientRectangle2.Bottom - this.Height - 3));
+            if (top.X >= topRight.X)
+            {
+                top = topRight;
+            }
 
-			return new Point(bottomLeft.X,bottomLeft.Y);
-		}
+            return top;
+        }
 
-		private Point GetLeft()
-		{
-			int testTop = AttachControl.ClientRectangle2.Location.Y;
-			int testBottom = new Point(AttachControl.ClientRectangle2.Left,AttachControl.ClientRectangle2.Bottom).Y;
-			Point left = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left + 3,0));
-					
-			if(this.Location.Y < testTop)
-				left.Y = testTop;
-			else
-				if(this.Location.Y > testBottom)
-					left.Y = testBottom;
-			else
-				left.Y = this.Location.Y;
+        private Point GetBottom()
+        {
+            int testLeft = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left,
+                                                                 AttachControl.ClientRectangle2.Top )).X;
 
-			return new Point(left.X,left.Y);
-		}
+            int testRight = new Point(AttachControl.ClientRectangle2.Right,
+                                      AttachControl.ClientRectangle2.Bottom).X;
 
+            Point bottom = AttachControl.PointToScreen(new Point(0, AttachControl.ClientRectangle2.Bottom - 3 - this.Height));
+                    
+            if (this.Left < testLeft)
+            {
+                bottom.X = testLeft;
+            }
+            else if (this.Left > testRight)
+            {
+                bottom.X = testRight;
+            }
+            else
+            {
+                bottom.X = this.Location.X;
+            }
 
-		// Snaps the form if it needs it
-		protected override void OnMove(System.EventArgs e)
-		{
-			base.OnMove(e);
+            // Do some offset checking, make sure it moves with the form properly
+            if (this.leftXOffset > 0)
+            {
+                bottom = new Point(AttachControl.PointToScreen(new Point(this.leftXOffset,0)).X, bottom.Y);
+            }
 
-			if(this.attachControl != null)
-			{
-				WhichEdge where = InArea(this.Location.X,this.Location.Y);
-				this.SnapToEdge = where;
-			}
+            // Keep it bounded
+            Point bottomRight = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Right - this.Width - 3, 
+                                                                      AttachControl.ClientRectangle2.Bottom - this.Height - 3));
 
-		}
+            if (bottom.X >= bottomRight.X)
+            {
+                bottom = bottomRight;
+            }
 
-		private void attachControl_Resize(object sender, EventArgs e)
-		{
-			if(this.snapToEdge != WhichEdge.None)
-			{
-				this.SnapToEdge = this.snapToEdge;
-			}
-		}
+            return bottom;
+        }
 
-		protected override void OnMoving(MovingEventArgs mea)
-		{
-			base.OnMoving(mea);
+        private Point GetTopRight()
+        {
+            Point topRight = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Right - this.Width - 3, AttachControl.ClientRectangle2.Top + 3));
+            return topRight;
+        }
 
-			// If it is in area to where the rectangle wants to move
-			WhichEdge where = InArea(mea.Rectangle.X,mea.Rectangle.Y);
+        private Point GetRight()
+        {
+            int testTop = AttachControl.ClientRectangle2.Location.Y;
+            int testRight= new Point(AttachControl.ClientRectangle2.Left,AttachControl.ClientRectangle2.Bottom).Y;
+            Point right = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Right - this.Width - 3, 0));
+                    
+            if (this.Location.Y < testTop)
+            {
+                right.Y = testTop;
+            }
+            else if (this.Location.Y > testRight)
+            {
+                right.Y = testRight;
+            }
+            else
+            {
+                right.Y = this.Location.Y;
+            }
 
-			Point placeMe = new Point(mea.Rectangle.X,mea.Rectangle.Y);
+            // Do some offset checking, make sure it moves with the form properly
+            if (this.upperYOffset > 0)
+            {
+                right = new Point(right.X, AttachControl.PointToScreen(new Point(0, this.upperYOffset)).Y);
+            }
 
-			switch(where)
-			{
-				case WhichEdge.TopLeft:
-					placeMe = GetTopLeft();
-					break;
+            // Keep it bounded
+            Point bottomRight = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Right - this.Width - 3, 
+                                                                      AttachControl.ClientRectangle2.Bottom - this.Height - 3));
 
-				case WhichEdge.Top:
-					placeMe = GetTop();
-					placeMe.X = mea.Rectangle.X;
-					break;
+            if (right.Y > bottomRight.Y)
+            {
+                right = bottomRight;
+            }
 
-				case WhichEdge.TopRight:
-					placeMe = GetTopRight();
-					break;
+            return right;
+        }
 
-				case WhichEdge.Right:
-					placeMe = GetRight();
-					placeMe.Y = mea.Rectangle.Y;
-					break;
+        private Point GetBottomRight()
+        {
+            Point bottomRight = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Right - this.Width - 3, 
+                                                                      AttachControl.ClientRectangle2.Bottom - this.Height - 3));
+            return bottomRight;
+        }
 
-				case WhichEdge.BottomRight:
-					placeMe = GetBottomRight();
-					break;
+        private Point GetBottomLeft()
+        {
+            Point bottomLeft = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left + 3, 
+                                                                     AttachControl.ClientRectangle2.Bottom - this.Height - 3));
+            return bottomLeft;
+        }
 
-				case WhichEdge.Bottom:
-					placeMe = GetBottom();
-					placeMe.X = mea.Rectangle.X;
-					break;
+        private Point GetLeft()
+        {
+            int testTop = AttachControl.ClientRectangle2.Location.Y;
+            int testBottom = new Point(AttachControl.ClientRectangle2.Left, AttachControl.ClientRectangle2.Bottom).Y;
+            Point left = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left + 3, 0));
+                    
+            if (this.Location.Y < testTop)
+            {
+                left.Y = testTop;
+            }
+            else if (this.Location.Y > testBottom)
+            {
+                left.Y = testBottom;
+            }
+            else
+            {
+                left.Y = this.Location.Y;
+            }
 
-				case WhichEdge.BottomLeft:
-					placeMe = GetBottomLeft();
-					break;
+            // Do some offset checking, make sure it moves with the form properly
+            if (this.upperYOffset > 0)
+            {
+                left = new Point(left.X, AttachControl.PointToScreen(new Point(0, this.upperYOffset)).Y);
+            }
 
-				case WhichEdge.Left:
-					placeMe = GetLeft();
-					placeMe.Y = mea.Rectangle.Y;
-					break;
+            // Keep it bounded
+            Point bottomLeft = AttachControl.PointToScreen(new Point(AttachControl.ClientRectangle2.Left + 3, 
+                                                                     AttachControl.ClientRectangle2.Bottom - this.Height - 3));
 
-				case WhichEdge.None:
-					break;			
-			}
+            if (left.Y > bottomLeft.Y)
+            {
+                left = bottomLeft;
+            }
 
-			Rectangle rect = new Rectangle(placeMe.X,placeMe.Y,this.Width,this.Height);
-			this.snapToEdge = where;
-			mea.Rectangle = rect;
-		}
-	}
+            return left;
+        }
+
+        protected override void OnMoving(MovingEventArgs mea)
+        {
+            base.OnMoving(mea);
+
+            // If it is in area to where the rectangle wants to move
+            WhichEdge where = InArea(mea.Rectangle.X,mea.Rectangle.Y);
+
+            Point placeMe = new Point(mea.Rectangle.X,mea.Rectangle.Y);
+
+            // Set the offsets to zero
+            this.upperYOffset = this.leftXOffset = 0;
+
+            switch(where)
+            {
+                case WhichEdge.TopLeft:
+                    placeMe = GetTopLeft();
+                    break;
+
+                case WhichEdge.Top:
+                    placeMe = GetTop();
+                    this.leftXOffset = placeMe.X = mea.Rectangle.X;
+                    break;
+
+                case WhichEdge.TopRight:
+                    placeMe = GetTopRight();
+                    break;
+
+                case WhichEdge.Right:
+                    placeMe = GetRight();
+                    this.upperYOffset = placeMe.Y = mea.Rectangle.Y;
+                    break;
+
+                case WhichEdge.BottomRight:
+                    placeMe = GetBottomRight();
+                    break;
+
+                case WhichEdge.Bottom:
+                    placeMe = GetBottom();
+                    this.leftXOffset = placeMe.X = mea.Rectangle.X;
+                    break;
+
+                case WhichEdge.BottomLeft:
+                    placeMe = GetBottomLeft();
+                    break;
+
+                case WhichEdge.Left:
+                    placeMe = GetLeft();
+                    this.upperYOffset = placeMe.Y = mea.Rectangle.Y;
+                    break;
+
+                case WhichEdge.None:
+                    break;          
+            }
+
+            // Convert both of them to client coords, might as well do it at the same time, yea?
+            Point temp = AttachControl.PointToClient(new Point(leftXOffset,upperYOffset));
+            leftXOffset = temp.X;
+            upperYOffset = temp.Y;
+
+            Rectangle rect = new Rectangle(placeMe.X,placeMe.Y,this.Width,this.Height);
+            this.snapToEdge = where;
+            mea.Rectangle = rect;
+        }
+
+        public void LayoutRepositionForm(object sender, LayoutEventArgs e)
+        {
+            //RepositionForm(sender, e);
+        }
+
+        public void RepositionForm(object sender, EventArgs e)
+        {
+            if (this.snapToEdge != WhichEdge.None)
+            {
+                this.SnapToEdge = this.snapToEdge;
+            }
+        }
+    }
 }
-
-

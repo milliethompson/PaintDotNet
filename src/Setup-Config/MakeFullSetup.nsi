@@ -1,3 +1,11 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Paint.NET
+;; Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+;;               Craig Taylor, Chris Trevino, and Luke Walker
+;; Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+;; See src;setup;License.rtf for complete licensing and attribution information.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ; MakeFullSetup.nsi
 ;
 ; Copies files necessary to do a "full" Paint.NET installation.
@@ -24,11 +32,11 @@ InstallDir $TEMP\PdnSetup
 SilentInstall silent
 
 VIAddVersionKey ProductName "Paint.NET Full Setup"
-VIAddVersionKey ProductVersion "2.0.0.0"
-VIAddVersionKey FileVersion "2.0.0.0"
-VIAddVersionKey LegalCopyright "Copyright © 2004 Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker"
+VIAddVersionKey ProductVersion "2.1.0.0"
+VIAddVersionKey FileVersion "2.1.0.0"
+VIAddVersionKey LegalCopyright "Copyright © 2004, 2005 Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2004, 2005 Microsoft Corporation. All Rights Reserved."
 VIAddVersionKey FileDescription "Installs .NET Framework 1.1 and Paint.NET."
-VIProductVersion "2.0.0.0"
+VIProductVersion "2.1.0.0"
 
 ; The file to write
 !ifdef Debug

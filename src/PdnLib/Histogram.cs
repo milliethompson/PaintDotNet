@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 
@@ -10,7 +18,7 @@ namespace PaintDotNet
 	/// </summary>
 	public class Histogram
 	{
-		private int [,] hist = new int[3, 256];
+		private long [,] hist = new long[3, 256];
 
 		public event EventHandler HistogramChanged;
 		private void OnHistogramUpdated()
@@ -21,29 +29,32 @@ namespace PaintDotNet
 			}
 		}
 
-		public int GetOccurrences(int channel, byte val) 
+		public long GetOccurrences(int channel, byte val) 
 		{
 			if (channel < 0 || channel >= 3) 
 			{
 				throw new ArgumentOutOfRangeException("channel", channel, "Channel must be between 0 and 2");
 			}
+
 			//val does not need to be bounds-checked because it
 			//has been intentionally limited to a byte.
 			return hist[channel, val];
 		}
 
-		public int GetMax() 
+		public long GetMax() 
 		{
 			return Math.Max(Math.Max(GetMax(0), GetMax(1)), GetMax(2));
 		}
 
-		public int GetMax(int channel) 
+		public long GetMax(int channel) 
 		{
 			if (channel < 0 || channel >= 3) 
 			{
 				throw new ArgumentOutOfRangeException("channel", channel, "Channel must be between 0 and 2");
 			}
-			int peak = -1, max = -1;
+
+			long peak = -1, max = -1;
+
 			for (int v = 0; v < 256; v++) 
 			{
 				if (max < hist[channel, v]) 
@@ -58,16 +69,21 @@ namespace PaintDotNet
 		public ColorBgra GetMeanColor() 
 		{
 			ColorBgra ret = new ColorBgra();
+
 			for (int i = 0; i < 3; i++) 
 			{
-				int avg = 0, sum = 1;
+				long avg = 0;
+                long sum = 1;
+
 				for (int j = 0; j < 256; j++) 
 				{
 					avg += j * hist[i, j];
 					sum += hist[i, j];
 				}
+
 				ret[i] = (byte)(avg / sum);
 			}
+
 			ret.A = 255;
 			return ret;
 		}
@@ -78,14 +94,18 @@ namespace PaintDotNet
 
 			for (int i = 0; i < 3; i++) 
 			{
-				int sum = 0, len = 0;
+				long sum = 0;
+                long len = 0;
+
 				for (int j = 0; j < 256; j++) 
 				{
 					len += hist[i, j];
 				}
+
 				for (int j = 0; j < 256; j++)
 				{
 					sum += hist[i, j];
+
 					if (sum > len * fraction) 
 					{
 						ret[i] = (byte)j;
@@ -93,6 +113,7 @@ namespace PaintDotNet
 					}
 				}
 			}
+
 			ret.A = 255;
 			return ret;
 		}
@@ -126,24 +147,23 @@ namespace PaintDotNet
 			{
 				throw new ArgumentNullException("roi", "roi must reference a valid PdnRegion.");
 			}
+
 			Clear();
+
 			foreach (Rectangle r in roi.GetRegionScansReadOnlyInt()) 
 			{
-				for (int y = r.Top; y < r.Bottom; ++y)
-				{
-					unsafe
-					{
-						ColorBgra *pixelPtr = surface.GetRowAddress(y);
-						for (int x = r.Left; x < r.Right; ++x)
-						{
-							hist[0, (*pixelPtr)[0]]++;
-							hist[1, (*pixelPtr)[1]]++;
-							hist[2, (*pixelPtr)[2]]++;
-							pixelPtr++;
-						}
-					}
-				}
+                for (int y = r.Top; y < r.Bottom; ++y)
+                {
+                    for (int x = r.Left; x < r.Right; ++x)
+                    {
+                        ColorBgra pixel = surface[x, y];
+                        ++hist[0, pixel.B];
+                        ++hist[1, pixel.G];
+                        ++hist[2, pixel.R];
+                    }
+                }
 			}
+
 			OnHistogramUpdated();
 		}
 
@@ -153,13 +173,17 @@ namespace PaintDotNet
 			{
 				return;
 			}
+
 			Clear();
+
 			for (int v = 0; v <= 255; v ++)
 			{
 				ColorBgra after = ColorBgra.FromRgb((byte)v, (byte)v, (byte)v);
 				float [] before = new float[3];
 				float [] slopes = new float[3];
+
 				upo.UnApply(after, before, slopes);
+
 				for (int c = 0; c < 3; c++) 
 				{
 					if (after[c] > upo.ColorOutHigh[c]
@@ -173,6 +197,7 @@ namespace PaintDotNet
 					else if (before[c] <= upo.ColorInLow[c]) 
 					{
 						hist[c, v] = 0;
+
 						for (int i = 0; i <= upo.ColorInLow[c]; i++)
 						{
 							hist[c, v] += inputHistogram.hist[c, i];
@@ -181,6 +206,7 @@ namespace PaintDotNet
 					else if (before[c] >= upo.ColorInHigh[c])
 					{
 						hist[c, v] = 0;
+
 						for (int i = upo.ColorInHigh[c]; i < 256; i++)
 						{
 							hist[c, v] += inputHistogram.hist[c, i];
@@ -195,15 +221,18 @@ namespace PaintDotNet
 					}
 				}
 			}
+
 			OnHistogramUpdated();
 		}
 
 		public UnaryPixelOps.Level MakeLevelsAuto() 
 		{
 			ColorBgra lo, md, hi;
+
 			lo = GetPercentileColor(0.005f);
 			md = GetMeanColor();
 			hi = GetPercentileColor(0.995f);
+
 			return UnaryPixelOps.Level.AutoFromLoMdHi(lo, md, hi);
 		}
 	}

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 
@@ -9,31 +17,30 @@ namespace PaintDotNet
     public class NewLayerHistoryAction
         : HistoryAction
     {
-        private Layer layer;
+        private int layerIndex;
         private DocumentWorkspace workspace;
-
-        public Layer Layer
-        {
-            get
-            {
-                return layer;
-            }
-        }
 
         protected override HistoryAction OnUndo()
         {
-            DeleteLayerHistoryAction ha = new DeleteLayerHistoryAction(Name, Image, workspace, layer);
+            DeleteLayerHistoryAction ha = new DeleteLayerHistoryAction(Name, Image, workspace, (Layer)workspace.Document.Layers[layerIndex]);
             ha.ID = this.ID;
-            workspace.Document.Layers.Remove(layer);
+            workspace.Document.Layers.RemoveAt(layerIndex);
             workspace.Document.Invalidate();
             return ha;
         }
 
-        public NewLayerHistoryAction(string name, Image image, DocumentWorkspace workspace, Layer layer)
+        /// <summary>
+        /// Creates a NewLayerHistoryAction instnace.
+        /// </summary>
+        /// <param name="name">The friendly name of this history action.</param>
+        /// <param name="image">A 16x16 icon for this history action</param>
+        /// <param name="workspace">The DocumentWorkspace.</param>
+        /// <param name="layerIndex">The index that you are about to insert a layer at.</param>
+        public NewLayerHistoryAction(string name, Image image, DocumentWorkspace workspace, int layerIndex)
             : base(name, image)
         {
             this.workspace = workspace;
-            this.layer = layer;
+            this.layerIndex = layerIndex;
         }
     }
 }

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Collections.Specialized;
@@ -11,21 +19,24 @@ namespace PaintDotNet
         : HistoryAction
     {
         private object properties;
-        private Layer layer;
+        private DocumentWorkspace workspace;
+        private int layerIndex;
 
         protected override HistoryAction OnUndo()
         {
-            HistoryAction ha = new LayerPropertyHistoryAction(Name, Image, layer);
+            HistoryAction ha = new LayerPropertyHistoryAction(Name, Image, workspace, layerIndex);
+            Layer layer = (Layer)workspace.Document.Layers[layerIndex];
             layer.LoadProperties(properties, true);
             layer.PerformPropertyChanged();
             return ha;
         }
 
-        public LayerPropertyHistoryAction(string name, Image image, Layer layer)
+        public LayerPropertyHistoryAction(string name, Image image, DocumentWorkspace workspace, int layerIndex)
             : base(name, image)
         {
-            this.layer = layer;
-            this.properties = layer.SaveProperties();
+            this.workspace = workspace;
+            this.layerIndex = layerIndex;
+            this.properties = ((Layer)workspace.Document.Layers[layerIndex]).SaveProperties();
         }
     }
 }

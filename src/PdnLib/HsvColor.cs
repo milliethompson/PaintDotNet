@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 
@@ -7,15 +15,12 @@ namespace PaintDotNet
     /// Adapted from: 
     /// "A Primer on Building a Color Picker User Control with GDI+ in Visual Basic .NET or C#"
     /// http://www.msdnaa.net/Resources/display.aspx?ResID=2460
-    /// 
-    /// This class is only used by the ColorsForm and ColorWheel. Nothing else in this program
-    /// should be using it!
     /// </summary>
     public struct HsvColor
     {
-        public int Hue; //0-360
-        public int Saturation;//0-100
-        public int Value;//0-100
+        public int Hue; // 0-360
+        public int Saturation; // 0-100
+        public int Value; // 0-100
 
         public static bool operator== (HsvColor lhs, HsvColor rhs)
         {
@@ -43,14 +48,29 @@ namespace PaintDotNet
 
         public override int GetHashCode()
         {
-            return base.GetHashCode();//(Hue + (Saturation << 8) + (Value << 16)).GetHashCode();
+            return (Hue + (Saturation << 8) + (Value << 16)).GetHashCode();;
         }
 
-        public HsvColor(int H, int S, int V) 
+        public HsvColor(int hue, int saturation, int value) 
         {
-            Hue = H;
-            Saturation = S;
-            Value = V;
+            if (hue < 0 || hue > 360)
+            {
+                throw new ArgumentOutOfRangeException("hue", "must be in the range [0, 360]");
+            }
+
+            if (saturation < 0 || saturation > 100)
+            {
+                throw new ArgumentOutOfRangeException("saturation", "must be in the range [0, 100]");
+            }
+
+            if (value < 0 || value > 100)
+            {
+                throw new ArgumentOutOfRangeException("value", "must be in the range [0, 100]");
+            }
+
+            Hue = hue;
+            Saturation = saturation;
+            Value = value;
         }
 
         public static HsvColor FromColor(Color color)
@@ -83,7 +103,7 @@ namespace PaintDotNet
             s = (double) Saturation / 100;
             v = (double) Value / 100;
 
-            if ( s == 0 ) 
+            if (s == 0)
             {
                 // If s is 0, all colors are the same.
                 // This is some flavor of gray.

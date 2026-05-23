@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.Drawing;
@@ -26,17 +34,9 @@ namespace PaintDotNet
 		private BitmapLayer bitmapLayer;
 		private Cursor cursorMouseDown, cursorMouseUp;
 
-		public override char HotKey
-		{
-			get
-			{
-				return 'b';
-			}
-		}
-
 		protected override bool SupportsInk
-		{
-			get
+        {
+		    get
 			{
 				return true;
 			}
@@ -66,6 +66,8 @@ namespace PaintDotNet
 				bitmapLayer = null;
 				renderArgs = null;
 			}
+
+            mouseDown = false;
 		}
 
 		protected override void OnDeactivate()
@@ -119,15 +121,20 @@ namespace PaintDotNet
 			if (((e.Button & MouseButtons.Left) == MouseButtons.Left) ||
                 ((e.Button & MouseButtons.Right) == MouseButtons.Right))
             {
-				mouseButton = e.Button;
+                mouseButton = e.Button;
+
 				if ((mouseButton & MouseButtons.Left) == MouseButtons.Left)
 				{
 					brush = Workspace.Environment.CreateBrush(false);
 				}
-				else// if ((mouseButton & MouseButtons.Right) == MouseButtons.Right)
+				else if ((mouseButton & MouseButtons.Right) == MouseButtons.Right)
 				{
 					brush = Workspace.Environment.CreateBrush(true);
 				}
+
+                lastMouseXY.X = e.Fx;
+                lastMouseXY.Y = e.Fy;
+
 				mouseDown = true;
 				mouseButton = e.Button;
 
@@ -144,7 +151,7 @@ namespace PaintDotNet
 				}
 
 				renderArgs.Graphics.SetClip(clipRegion, CombineMode.Replace);
-				this.OnStylusMove(new StylusEventArgs(e.Button, e.Clicks, e.fX + 0.01f, e.fY, e.Delta, e.Pressure));
+				this.OnStylusMove(new StylusEventArgs(e.Button, e.Clicks, e.Fx + 0.01f, e.Fy, e.Delta, e.Pressure));
 			}
 		}
 
@@ -152,6 +159,7 @@ namespace PaintDotNet
 		{
 			PointF dirA = new PointF(a.X - b.X, a.Y - b.Y);
 			PointF dirB = new PointF(c.X - d.X, c.Y - d.Y);
+
 			//Swap points as necessary to keep the polygon winding one direction
 			if (dirA.X * dirB.X + dirA.Y * dirB.Y > 0)
 			{
@@ -167,110 +175,110 @@ namespace PaintDotNet
 		{
 			if (e.Button != MouseButtons.None) 
 			{
-				/*This is done so that if drawing falls behind due to a
+				/* This is done so that if drawing falls behind due to a
 				 * large queue of stylus inputs, it won't do any updates
 				 * until it's done. This is accomplished by only updating
 				 * when a MouseMove is caught */
 				Workspace.Update();
 			}
+
 			base.OnMouseMove (e);
 		}
 
         protected override void OnStylusMove(StylusEventArgs e)
         {
             base.OnStylusMove(e);
-			PointF currMouseXY = new PointF(e.fX, e.fY);
+			PointF currMouseXY = new PointF(e.Fx, e.Fy);
 
-			if (mouseDown && ((e.Button & mouseButton) != MouseButtons.None))
-			{
-				if (lastMouseXY == currMouseXY)
-				{
-					return;
-				}
+            if (mouseDown && ((e.Button & mouseButton) != MouseButtons.None))
+            {
+                if (lastMouseXY == currMouseXY)
+                {
+                    return;
+                }
 
-				float pressure = GetWidth(e.Pressure), length;
+                float pressure = GetWidth(e.Pressure), length;
                 PointF a = lastMouseXY;
                 PointF b = currMouseXY;
-				PointF dir = new PointF(b.X - a.X, b.Y - a.Y);
-				PointF norm;
-				PointF [] poly = new PointF[4];
+                PointF dir = new PointF(b.X - a.X, b.Y - a.Y);
+                PointF norm;
+                PointF [] poly = new PointF[4];
 
-				//save direction before normalizing
-				lastDir = dir;
+                // save direction before normalizing
+                lastDir = dir;
 
-				//normalize
-				length = Utility.Magnitude(dir);
-				dir.X /= length;
-				dir.Y /= length;
+                // normalize
+                length = Utility.Magnitude(dir);
+                dir.X /= length;
+                dir.Y /= length;
 				
-				//compute normal vector, calculate perpendicular offest from stroke for width
-				norm = new PointF(dir.Y, -dir.X);
-				norm.X *= pressure;
-				norm.Y *= pressure;
+                // compute normal vector, calculate perpendicular offest from stroke for width
+                norm = new PointF(dir.Y, -dir.X);
+                norm.X *= pressure;
+                norm.Y *= pressure;
 
-				a.X -= dir.X * 0.1666f;
-				a.Y -= dir.Y * 0.1666f;
+                a.X -= dir.X * 0.1666f;
+                a.Y -= dir.Y * 0.1666f;
 
-				poly = MakePolygon(
-					new PointF(a.X - lastNorm.X, a.Y - lastNorm.Y),
-					new PointF(a.X + lastNorm.X, a.Y + lastNorm.Y),
-					new PointF(b.X + norm.X, b.Y + norm.Y),
-					new PointF(b.X - norm.X, b.Y - norm.Y));
+                lastNorm = norm;
 
-				lastNorm = norm;
-				lastMouseXY = currMouseXY;				
+                poly = MakePolygon(
+                    new PointF(a.X - lastNorm.X, a.Y - lastNorm.Y),
+                    new PointF(a.X + lastNorm.X, a.Y + lastNorm.Y),
+                    new PointF(b.X + norm.X, b.Y + norm.Y),
+                    new PointF(b.X - norm.X, b.Y - norm.Y));
 
-                if (Workspace.ActiveLayer is BitmapLayer)
+                lastNorm = norm;
+                lastMouseXY = currMouseXY;				
+
+                RectangleF dotRect = Utility.RectFromCenter(currMouseXY, Math.Max((pressure - 0.5f), 0.0f));
+                RectangleF saveRect = RectangleF.Union(
+                    dotRect,
+                    RectangleF.Union(
+                    Utility.PointsToRectangle(poly[0], poly[1]),
+                    Utility.PointsToRectangle(poly[2], poly[3])));
+
+                if (renderArgs.Graphics.SmoothingMode == SmoothingMode.AntiAlias)
                 {
-					RectangleF dotRect = Utility.RectFromCenter(currMouseXY, Math.Max((pressure - 0.5f), 0.0f));
-					RectangleF saveRect = RectangleF.Union(
-						dotRect,
-						RectangleF.Union(
-							Utility.PointsToRectangle(poly[0], poly[1]),
-							Utility.PointsToRectangle(poly[2], poly[3])));
-
-                    if (renderArgs.Graphics.SmoothingMode == SmoothingMode.AntiAlias)
-                    {
-                        saveRect.Inflate(1.0f, 1.0f);
-                    }
-
-                    saveRect.Intersect(Workspace.ActiveLayer.Bounds);
-
-                    // drawing outside of the canvas is a no-op, so don't do anything in that case!
-                    // also make sure we're within the clip region
-                    if (saveRect.Width > 0 && saveRect.Height > 0 && renderArgs.Graphics.Clip.IsVisible(saveRect))
-                    {
-						Rectangle saveRectRounded = new Rectangle(
-							(int)saveRect.Left, (int)saveRect.Top,
-							(int)Math.Ceiling(saveRect.Right - (int)saveRect.Left),
-							(int)Math.Ceiling(saveRect.Bottom - (int)saveRect.Top));
-                        PlacedSurface savedPS = new PlacedSurface(renderArgs.Surface, saveRectRounded);
-                        savedSurfaces.Add(savedPS);
-
-                        if (Workspace.Environment.AntiAliasing)
-                        {
-                            renderArgs.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                        }
-                        else
-                        {
-                            renderArgs.Graphics.SmoothingMode = SmoothingMode.None;
-                        }
-
-                        renderArgs.Graphics.CompositingMode = CompositingMode.SourceOver;
-
-						renderArgs.Graphics.FillPolygon(brush, poly, FillMode.Winding);
-						renderArgs.Graphics.FillEllipse(brush, dotRect);
-
-                        bitmapLayer.Invalidate(saveRectRounded);
-                        //Workspace.Update();
-                    }
+                    saveRect.Inflate(1.0f, 1.0f);
                 }
-			}
+
+                saveRect.Intersect(Workspace.ActiveLayer.Bounds);
+
+                // drawing outside of the canvas is a no-op, so don't do anything in that case!
+                // also make sure we're within the clip region
+                if (saveRect.Width > 0 && saveRect.Height > 0 && renderArgs.Graphics.IsVisible(saveRect))
+                {
+                    Rectangle saveRectRounded = new Rectangle(
+                        (int)saveRect.Left, (int)saveRect.Top,
+                        (int)Math.Ceiling(saveRect.Right - (int)saveRect.Left),
+                        (int)Math.Ceiling(saveRect.Bottom - (int)saveRect.Top));
+
+                    PlacedSurface savedPS = new PlacedSurface(renderArgs.Surface, saveRectRounded);
+                    savedSurfaces.Add(savedPS);
+
+                    if (Workspace.Environment.AntiAliasing)
+                    {
+                        renderArgs.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    }
+                    else
+                    {
+                        renderArgs.Graphics.SmoothingMode = SmoothingMode.None;
+                    }
+
+                    renderArgs.Graphics.CompositingMode = CompositingMode.SourceOver;
+
+                    renderArgs.Graphics.FillPolygon(brush, poly, FillMode.Winding);
+                    renderArgs.Graphics.FillEllipse(brush, dotRect);
+
+                    bitmapLayer.Invalidate(saveRectRounded);
+                }
+            }
             else
             {
-				lastMouseXY = currMouseXY;
-				lastNorm = PointF.Empty;
-				lastDir = PointF.Empty;
+                lastMouseXY = currMouseXY;
+                lastNorm = PointF.Empty;
+                lastDir = PointF.Empty;
             }
         }
 
@@ -307,7 +315,7 @@ namespace PaintDotNet
 
                             savedSurfaces.Clear();
 
-                            HistoryAction ha = bitmapLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
+                            HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, simplifiedRegion);
                             weDrewThis.Draw(bitmapLayer.Surface);
                             Workspace.History.PushNewAction(ha);
                         }
@@ -317,22 +325,43 @@ namespace PaintDotNet
 		}
 
 		public PaintBrushTool(DocumentWorkspace parent)
-			: base(parent)
-		{
-			toolBarImage = Utility.GetImageResource("Icons.PaintBrushToolIcon.bmp");
-			name = "Paintbrush";
-			description = "Draws a freeform, arbitrarily wide line in a variety of styles.";
-			helpText = "Left click to draw with foreground color, right click to draw with background color";
-
-			autoScroll = false;
-
+			: base(parent,
+			       Utility.GetImageResource("Icons.PaintBrushToolIcon.bmp"),
+			       "Paintbrush",
+			       "Draws a freeform, arbitrarily wide line in a variety of styles.",
+			       "Left click to draw with foreground color, right click to draw with background color",
+                   'b')
+        {
 			// separate cursor assignements
-			cursorMouseUp   = new Cursor(Utility.GetResourceStream("Cursors.PaintBrushToolCursor.cur"));
+			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.PaintBrushToolCursor.cur"));
 			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.PaintBrushToolCursorMouseDown.cur"));
 			Cursor = cursorMouseUp;
 
 			// initialize any state information you need
 			mouseDown = false;
 		}
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose (disposing);
+
+            if (disposing)
+            {
+                DisposeImage();
+
+                if (cursorMouseUp != null)
+                {
+                    cursorMouseUp.Dispose();
+                    cursorMouseUp = null;
+                }
+
+                if (cursorMouseDown != null)
+                {
+                    cursorMouseDown.Dispose();
+                    cursorMouseDown = null;
+                }
+            }
+        }
+
 	}
 }

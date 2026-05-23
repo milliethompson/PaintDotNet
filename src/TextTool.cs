@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -34,15 +42,8 @@ namespace PaintDotNet
         private const int cursorInterval = 300;
         private bool pulseEnabled;
         private System.DateTime startTime;
-		private bool lastPulseCursorState;
-
-		public override char HotKey
-		{
-			get
-			{
-				return 'x';
-			}
-		}
+        private bool lastPulseCursorState;
+        private Cursor textToolCursor;
 
         #region Event Handlers
 
@@ -514,7 +515,7 @@ namespace PaintDotNet
         #endregion
 
         #region Private Position Class
-        private class Position
+        private sealed class Position
         {
             private int line;
             public int Line
@@ -587,7 +588,8 @@ namespace PaintDotNet
 
                 if (!hitTest.IsEmpty())
                 {
-                    Workspace.History.PushNewAction(((BitmapLayer)Workspace.ActiveLayer).CreateHistoryAction(name, Image, saved));
+                    Workspace.History.PushNewAction(new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, saved));
+                        //((BitmapLayer)Workspace.ActiveLayer).CreateHistoryAction(name, Image, saved));
                 }
 
                 hitTest.Dispose();
@@ -720,8 +722,8 @@ namespace PaintDotNet
         {
             if (mode != EditingMode.NotEditing)
             {
-				e.Handled = true;
-				if (mode == EditingMode.EmptyEdit)
+                e.Handled = true;
+                if (mode == EditingMode.EmptyEdit)
                 {
                     mode = EditingMode.Editing;
                 }
@@ -733,12 +735,12 @@ namespace PaintDotNet
                     RedrawText(true);
                 }
             }
-			base.OnKeyPress (e);
+            base.OnKeyPress (e);
         }
 
         protected override void OnKeyPress(Keys keyData)
         {
-			bool keyHandled = true;
+            bool keyHandled = true;
             Keys key = keyData & Keys.KeyCode;
             Keys modifier = keyData & Keys.Modifiers;
 
@@ -836,9 +838,9 @@ namespace PaintDotNet
 
                         textPos = ((string)lines[linePos]).Length;
                         break;
-					default:
-						keyHandled = false;
-						break;
+                    default:
+                        keyHandled = false;
+                        break;
                 }
 
                 this.startTime = DateTime.Now;
@@ -847,12 +849,12 @@ namespace PaintDotNet
                 {
                     RedrawText(true);
                 }
-			}
+            }
 
-			if (!keyHandled) 
-			{
-				base.OnKeyPress (keyData);
-			}
+            if (!keyHandled) 
+            {
+                base.OnKeyPress (keyData);
+            }
         }
 
         PointF TextPositionToPoint(Position p)
@@ -936,7 +938,7 @@ namespace PaintDotNet
                 {
                     Rectangle bounds = Utility.GetRegionBounds(saved.Region);
 
-                    if (Utility.IsPointInRectangle(new Point(e.X, e.Y), bounds))
+                    if (Utility.IsPointInRectangle(e.X, e.Y, bounds))
                     {
                         Position p = PointToTextPosition(new PointF(e.X, e.Y + (font.Height / 2)));
                         linePos = p.Line;
@@ -1019,14 +1021,14 @@ namespace PaintDotNet
 
                 foreach (char c in text)
                 {
-					if (c == '\n')
-					{
-						this.PerformEnter();
-					}
-					else
-					{
-						this.PerformKeyPress(new KeyPressEventArgs(c));
-					}
+                    if (c == '\n')
+                    {
+                        this.PerformEnter();
+                    }
+                    else
+                    {
+                        this.PerformKeyPress(new KeyPressEventArgs(c));
+                    }
                 }
 
                 handled = true;
@@ -1039,13 +1041,15 @@ namespace PaintDotNet
         }
 
         public TextTool(DocumentWorkspace parent)
-            : base(parent)
+            : base(parent,
+                   Utility.GetImageResource("Icons.TextToolIcon.bmp"),
+                   "Text",
+                   "Draws Text",
+                   "Left click to place the text cursor, and type to enter text. The text color is the foreground color",
+                   't')
         {
-            toolBarImage = Utility.GetImageResource("Icons.TextToolIcon.bmp");
-            cursor = Cursors.IBeam;
-            name = "Text";
-            description = "Draws Text";
-			helpText = "Left click to place the text cursor, and type to enter text. The text color is the foreground color";
+            this.textToolCursor = new Cursor(Utility.GetResourceStream("Cursors.TextToolCursor.cur"));
+            this.Cursor = this.textToolCursor;
 
             fontChangedDelegate = new EventHandler(FontChangedHandler);
             alignmentChangedDelegate = new EventHandler(AlignmentChangedHandler);
@@ -1053,5 +1057,22 @@ namespace PaintDotNet
             antiAliasChangedDelegate = new EventHandler(AntiAliasChangedHandler);
             foreColorChangedDelegate = new EventHandler(ForeColorChangedHandler);
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose (disposing);
+
+            if (disposing)
+            {
+                DisposeImage();
+
+                if (textToolCursor != null)
+                {
+                    textToolCursor.Dispose();
+                    textToolCursor = null;
+                }
+            }
+        }
+
     }
 }

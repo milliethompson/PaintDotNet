@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -101,16 +109,18 @@ namespace PaintDotNet
 		/// <summary>
 		/// Clean up any resources being used.
 		/// </summary>
-		protected override void Dispose( bool disposing )
+		protected override void Dispose(bool disposing)
 		{
-			if( disposing )
+			if (disposing)
 			{
 				if (components != null) 
 				{
 					components.Dispose();
-				}
+                    components = null;
+                }
 			}
-			base.Dispose( disposing );
+
+			base.Dispose(disposing);
 		}
 
 		#region Designer generated code
@@ -185,7 +195,7 @@ namespace PaintDotNet
 			this.Name = "PdnMessageBox";
 			this.ShowInTaskbar = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-			this.Resize += new System.EventHandler(this.PdnMessageBox_Resize);
+			this.Resize += new System.EventHandler(this.PdnMessageBox_Resize); // TODO: use OnResize instead
 			this.Controls.SetChildIndex(this.pnlButtons, 0);
 			this.Controls.SetChildIndex(this.lblMessage, 0);
 			this.Controls.SetChildIndex(this.pnlOptions, 0);
@@ -229,7 +239,7 @@ namespace PaintDotNet
 				messageBox.InitMessages(question, options);
 				messageBox.Result = result;
 
-                DialogResult dialogResult = messageBox.ShowDialog(owner);
+                DialogResult dialogResult = Utility.ShowDialog(messageBox, owner);
 				result = messageBox.Result;
 
 				return dialogResult;

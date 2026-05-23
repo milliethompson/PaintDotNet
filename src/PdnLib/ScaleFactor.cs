@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 
@@ -5,103 +13,185 @@ namespace PaintDotNet
 {
     /// <summary>
     /// Encapsulates functionality for zooming/scaling coordinates.
-    /// Includes functionality for Size[F]'s, Point[F]'s, Rectangle[F]'s,
+    /// Includes methods for Size[F]'s, Point[F]'s, Rectangle[F]'s,
     /// and various scalars
     /// </summary>
     public struct ScaleFactor
     {
-		private float factor;
+        private int denominator;
+        private int numerator;
 
-		public int Denominator 
-		{
-			get 
-			{
-				return (int)Math.Ceiling(1.0f / factor);
-			}
-		}
-
-		public int Numerator 
-		{
-			get 
-			{
-				return (int)Math.Ceiling(factor);
-			}
-		}
-
-        public static readonly ScaleFactor OneToOne = new ScaleFactor(1.0f);
-		public const float MinZoom = 0.01f, MaxZoom = 16.0f;
-		private void Clamp() 
-		{
-			factor = Utility.Clamp(factor, MinZoom, MaxZoom);
-		}
-
-        public static bool operator== (ScaleFactor lhs, ScaleFactor rhs)
+        public int Denominator 
         {
-            return lhs.factor == rhs.factor;
+            get 
+            {
+                return denominator;
+            }
         }
 
-        public static bool operator!= (ScaleFactor lhs, ScaleFactor rhs)
+        public int Numerator 
         {
-            return !(lhs == rhs);
-        }
-
-        public override bool Equals(object obj)
-        {
-			if (obj is ScaleFactor) 
-			{
-				ScaleFactor rhs = (ScaleFactor)obj;
-				return factor == rhs.factor;
-			}
-			else
-				return false;
-        } 
-
-        public override int GetHashCode()
-        {
-            return factor.GetHashCode();
-        }
-
-        public override string ToString()
-        {
-			return Math.Round(100 * factor).ToString() + "%";
+            get 
+            {
+                return numerator;
+            }
         }
 
         public double Ratio
         {
             get
             {
-                return factor;
+                return (double)numerator / (double)denominator;
             }
+        }
+
+        public static readonly ScaleFactor OneToOne = new ScaleFactor(1, 1);
+        public static readonly ScaleFactor MinValue = new ScaleFactor(1, 100);
+        public static readonly ScaleFactor MaxValue = new ScaleFactor(32, 1);
+
+        private void Clamp() 
+        {
+            if (this < MinValue)
+            {
+                this = MinValue;
+            }
+            else if (this > MaxValue)
+            {
+                this = MaxValue;
+            }
+        }
+
+        public static ScaleFactor UseIfValid(int numerator, int denominator, ScaleFactor lastResort)
+        {
+            if (numerator <= 0 || denominator <= 0)
+            {
+                return lastResort;
+            }
+            else
+            {
+                return new ScaleFactor(numerator, denominator);
+            }
+        }
+
+        public static ScaleFactor Min(int n1, int d1, int n2, int d2, ScaleFactor lastResort)
+        {
+            ScaleFactor a = UseIfValid(n1, d1, lastResort);
+            ScaleFactor b = UseIfValid(n2, d2, lastResort);
+            return ScaleFactor.Min(a, b);
+        }
+
+        public static ScaleFactor Max(int n1, int d1, int n2, int d2, ScaleFactor lastResort)
+        {
+            ScaleFactor a = UseIfValid(n1, d1, lastResort);
+            ScaleFactor b = UseIfValid(n2, d2, lastResort);
+            return ScaleFactor.Max(a, b);
+        }
+
+        public static ScaleFactor Min(ScaleFactor lhs, ScaleFactor rhs)
+        {
+            if (lhs < rhs)
+            {
+                return lhs;
+            }
+            else
+            {
+                return rhs;
+            }
+        }
+
+        public static ScaleFactor Max(ScaleFactor lhs, ScaleFactor rhs)
+        {
+            if (lhs > rhs)
+            {
+                return lhs;
+            }
+            else
+            {
+                return lhs;
+            }
+        }
+
+        public static bool operator==(ScaleFactor lhs, ScaleFactor rhs)
+        {
+            return (lhs.numerator * rhs.denominator) == (rhs.numerator * lhs.denominator);
+        }
+
+        public static bool operator!=(ScaleFactor lhs, ScaleFactor rhs)
+        {
+            return !(lhs == rhs);
+        }
+
+        public static bool operator<(ScaleFactor lhs, ScaleFactor rhs)
+        {
+            return (lhs.numerator * rhs.denominator) < (rhs.numerator * lhs.denominator);
+        }
+
+        public static bool operator<=(ScaleFactor lhs, ScaleFactor rhs)
+        {
+            return (lhs.numerator * rhs.denominator) <= (rhs.numerator * lhs.denominator);
+        }
+
+        public static bool operator>(ScaleFactor lhs, ScaleFactor rhs)
+        {
+            return (lhs.numerator * rhs.denominator) > (rhs.numerator * lhs.denominator);
+        }
+
+        public static bool operator>=(ScaleFactor lhs, ScaleFactor rhs)
+        {
+            return (lhs.numerator * rhs.denominator) >= (rhs.numerator * lhs.denominator);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is ScaleFactor) 
+            {
+                ScaleFactor rhs = (ScaleFactor)obj;
+                return this == rhs;
+            }
+            else
+            {
+                return false;
+            }
+        } 
+
+        public override int GetHashCode()
+        {
+            return numerator.GetHashCode() ^ denominator.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return Math.Round(100 * Ratio).ToString() + "%";
         }
 
         public int ScaleScalar(int x)
         {
-            return (int)Math.Round(x * factor);
+            return (x * numerator) / denominator;
         }
 
         public int UnscaleScalar(int x)
         {
-            return (int)Math.Round(x / factor);
+            return (x * denominator) / numerator;
         }
 
         public float ScaleScalar(float x)
         {
-            return x * factor;
+            return (x * (float)numerator) / (float)denominator;
         }
 
         public float UnscaleScalar(float x)
         {
-            return x / factor;
+            return (x * (float)denominator) / (float)numerator;
         }
 
         public double ScaleScalar(double x)
         {
-            return x * factor;
+            return (x * (double)numerator) / (double)denominator;
         }
 
         public double UnscaleScalar(double x)
         {
-            return x / factor;
+            return (x * (double)denominator) / (double)numerator;
         }
 
         public PointF ScalePoint(PointF p)
@@ -204,31 +294,66 @@ namespace PaintDotNet
             return new Rectangle(UnscalePoint(rect.Location), UnscaleSize(rect.Size));
         }
 
+        /// <summary>
+        /// Rounds the current scaling factor up to the next power of two.
+        /// </summary>
+        /// <returns>The new ScaleFactor value.</returns>
         public ScaleFactor GetNextLarger()
         {
-			double log = Math.Log(factor, 2.0f), newzoom;
-			log = Math.Ceiling(log + 0.25);
-			newzoom = Math.Pow(2.0, log);
-			if (newzoom > MaxZoom)
-				newzoom = MaxZoom;
-			return new ScaleFactor((float)newzoom);
+            //Add 0.01 so that we zoom in by at least 0.5%, regardless of rounding
+            double log = Math.Log(Ratio + 0.005, 2.0f);
+            double newLog = Math.Floor(log + 1); 
+            double newzoom = Math.Pow(2.0, newLog);
+
+            if (newzoom > MaxValue.Ratio)
+            {
+                newzoom = MaxValue.Ratio;
+            }
+
+            return ScaleFactor.FromDouble(newzoom);
         }
 
         public ScaleFactor GetNextSmaller()
-		{
-			double log = Math.Log(factor, 2.0f), newzoom;
-			log = Math.Floor(log - 0.25);
-			newzoom = Math.Pow(2.0, log);
-			if (newzoom < MinZoom) 
-				newzoom = MinZoom;
-			return new ScaleFactor((float)newzoom);
-		}
+        {
+            //Add 0.01 so that we zoom out by at least 0.5%, regardless of rounding
+            double log = Math.Log(Ratio - 0.005, 2.0f);
+            double newLog = Math.Ceiling(log - 1);
+            double newzoom = Math.Pow(2.0, newLog);
 
-		public ScaleFactor(float ratio) 
-		{
-			factor = Utility.Clamp(ratio, MinZoom, MaxZoom);
-			this.Clamp();
-		}
+            if (newzoom < MinValue.Ratio)
+            {
+                newzoom = MinValue.Ratio;
+            }
+
+            return ScaleFactor.FromDouble(newzoom);
+        }
+
+        private static ScaleFactor Reduce(int numerator, int denominator)
+        {
+            int factor = 2;
+
+            while (factor < denominator && factor < numerator)
+            {
+                if ((numerator % factor) == 0 && (denominator % factor) == 0)
+                {
+                    numerator /= factor;
+                    denominator /= factor;
+                }
+                else
+                {
+                    ++factor;
+                }
+            }
+
+            return new ScaleFactor(numerator, denominator);
+        }
+
+        public static ScaleFactor FromDouble(double scalar)
+        {
+            int numerator = (int)(Math.Floor(scalar * 1000.0));
+            int denominator = 1000;
+            return Reduce(numerator, denominator);
+        }
 
         public ScaleFactor(int numerator, int denominator)
         {
@@ -237,12 +362,14 @@ namespace PaintDotNet
                 throw new ArgumentOutOfRangeException("denominator", "must be greater than 0");
             }
 
-            if (numerator <= 0)
+            if (numerator < 0)
             {
                 throw new ArgumentOutOfRangeException("numerator", "must be greater than 0");
             }
-			factor = (float)numerator / (float)denominator;
-			this.Clamp();
+
+            this.numerator = numerator;
+            this.denominator = denominator;
+            this.Clamp();
         }
     }
 }

@@ -1,9 +1,16 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Data;
 using System.Windows.Forms;
 
 namespace PaintDotNet
@@ -30,6 +37,7 @@ namespace PaintDotNet
 			{
 				return GetValue(0);
 			}
+
 			set
 			{
 				SetValue(0, value);
@@ -42,12 +50,14 @@ namespace PaintDotNet
 			{
 				return vals.Length;
 			}
+
 			set 
 			{
 				if (value < 0 || value > 16) 
 				{
 					throw new ArgumentOutOfRangeException("value", value, "Count must be between 0 and 16");
 				}
+
 				vals = new int[value];
 				if (value > 1) 
 				{
@@ -60,6 +70,7 @@ namespace PaintDotNet
 				{
 					vals[0] = 128;
 				}
+
 				OnValueChanged(0);
 				Invalidate();
 			}
@@ -77,6 +88,7 @@ namespace PaintDotNet
 		public void SetValue(int index, int val)
 		{
 			int min = -1, max = 256;
+
 			if (index < 0 || index >= vals.Length) 
 			{
 				throw new ArgumentOutOfRangeException("index", index, "Index must be within the bounds of the array");
@@ -86,24 +98,28 @@ namespace PaintDotNet
 			{
 				min = vals[index - 1];
 			}
+
 			if (index + 1 < vals.Length) 
 			{
 				max = vals[index + 1];
 			}
+
 			if (vals[index] != val) 
 			{
 				vals[index] = Utility.Clamp(val, min+1, max-1);
 				OnValueChanged(index);
 				Invalidate();
 			}
+
+            Update();
 		}
 
-        public event EventHandler ValueChanged;
+        public event IndexEventHandler ValueChanged;
         protected virtual void OnValueChanged(int index)
         {
             if (ValueChanged != null)
             {
-                ValueChanged(this, new ColorGradientEventArgs(index));
+                ValueChanged(this, new IndexEventArgs(index));
             }
         }
 
@@ -117,8 +133,11 @@ namespace PaintDotNet
 
             set
             {
-                topColor = value;
-                Invalidate();
+                if (topColor != value)
+                {
+                    topColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -132,8 +151,11 @@ namespace PaintDotNet
             
             set
             {
-                bottomColor = value;
-                Invalidate();
+                if (bottomColor != value)
+                {
+                    bottomColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -175,11 +197,8 @@ namespace PaintDotNet
 			{
 				int valueY = ValueToPosition(vals[i]);
 				Brush brush;
-				if (i == tracking) 
-				{
-					brush = Brushes.White;
-				} 
-				else if (i == highlight) 
+
+                if (i == highlight) 
 				{
 					brush = Brushes.Blue;
 				} 
@@ -216,16 +235,17 @@ namespace PaintDotNet
         /// <summary> 
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
 		int PositionToValue(int position)
@@ -254,6 +274,7 @@ namespace PaintDotNet
 			}
 			return bestIndex;
 		}
+
 		protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown (e);
@@ -290,6 +311,7 @@ namespace PaintDotNet
 			{
 				int oldHighlight = highlight;
 				highlight = WhichTriangle(e.Y);
+
 				if (highlight != oldHighlight) 
 				{
 					this.InvalidateTriangle(oldHighlight);

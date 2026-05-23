@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 
@@ -14,7 +22,6 @@ namespace PaintDotNet
             SelectionHistoryAction sha = new SelectionHistoryAction(name, null, Workspace);
             ReplaceDocumentHistoryAction rdha = new ReplaceDocumentHistoryAction(name, null, Workspace);
             Rectangle boundingBox;
-            //RectangleF[] inverseRegionRectsF = null;
             Rectangle[] inverseRegionRects = null;
 
             if (Workspace.Environment.IsSelectionEmpty)
@@ -40,7 +47,7 @@ namespace PaintDotNet
             Document newDocument = new Document(boundingBox.Width, boundingBox.Height);
             
             // copy the document's meta data over
-           newDocument.CopyProperties(oldDocument);
+            newDocument.CopyPropertiesFrom(oldDocument);
 
             foreach (Layer layer in oldDocument.Layers)
             {
@@ -50,11 +57,12 @@ namespace PaintDotNet
                     Surface croppedSurface = oldLayer.Surface.CreateWindow(boundingBox);
                     BitmapLayer newLayer = new BitmapLayer(croppedSurface);
 
-                    UnaryPixelOp op = new UnaryPixelOps.Constant(ColorBgra.FromBgra(255, 255, 255, 0));
+                    ColorBgra clearWhite = ColorBgra.White.NewAlpha(0);
+                    //newLayer.Surface.Clear(clearWhite);
 
                     foreach (Rectangle rect in inverseRegionRects)
                     {
-                        op.Apply(newLayer.Surface, rect);
+                        newLayer.Surface.Clear(clearWhite, rect);
                     }
 
                     newLayer.LoadProperties(oldLayer.SaveProperties());

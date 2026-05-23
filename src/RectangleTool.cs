@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.Drawing;
@@ -15,15 +23,7 @@ namespace PaintDotNet
     public class RectangleTool
         : ShapeTool 
     {
-        protected override void OnActivate()
-        {
-            base.OnActivate ();
-        }
-
-        protected override void OnDeactivate()
-        {
-            base.OnDeactivate ();
-        }
+        private Cursor rectangleToolCursor;
 
         protected override ArrayList TrimShapePath(ArrayList points)
         {
@@ -42,11 +42,21 @@ namespace PaintDotNet
             return array;
         }
 
-        protected override PdnGraphicsPath CreateShapePath(Point[] points)
+        public override PixelOffsetMode GetPixelOffsetMode()
         {
-            Point a = points[0];
-            Point b = points[points.Length - 1];
-            Rectangle rect;
+            if (Workspace.Environment.PenInfo.Width == 1.0f)
+            {
+                return PixelOffsetMode.None;
+            }
+
+            return base.GetPixelOffsetMode ();
+        }
+
+        protected override PdnGraphicsPath CreateShapePath(PointF[] points)
+        {
+            PointF a = points[0];
+            PointF b = points[points.Length - 1];
+            RectangleF rect;
 
             if ((ModifierKeys & Keys.Shift) != 0)
             {
@@ -65,13 +75,30 @@ namespace PaintDotNet
         }
 
         public RectangleTool(DocumentWorkspace parent)
-            : base(parent)
+            : base(parent,
+                   Utility.GetImageResource("Icons.RectangleToolIcon.bmp"),
+                   "Rectangle",
+                   "Draws a rectangle",
+                   "Click and drag to draw a rectangle (right click for background color). Hold shift to constrain to a square.")
         {
-            toolBarImage = Utility.GetImageResource("Icons.RectangleToolIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.RectangleToolCursor.cur"));
-            name = "Rectangle";
-            description = "Draws a rectangle";
-			helpText = "Left click to draw a rectangle with the foreground color, right click to use the background color";
+            rectangleToolCursor = new Cursor(Utility.GetResourceStream("Cursors.RectangleToolCursor.cur"));
+            this.Cursor = rectangleToolCursor;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose (disposing);
+
+            if (disposing)
+            {
+                DisposeImage();
+
+                if (rectangleToolCursor != null)
+                {
+                    rectangleToolCursor.Dispose();
+                    rectangleToolCursor = null;
+                }
+            }
         }
     }
 }

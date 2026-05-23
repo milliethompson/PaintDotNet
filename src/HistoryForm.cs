@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Collections;
@@ -6,34 +14,6 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for HistoryForm.
-    /// </summary>
-    // Outstanding: correct comment header block for legacy code prior to version 2.0
-	// Modifications to support Limited History length: Michael Kelsey
-	// Parameters: none
-	// Properties: HistoryControl
-	// Initial Conception: Paint.NET v1.0 team
-	// ..Alterations: provide a form for the History "concept"
-	// Changes: Michael Kelsey
-	// ..Alterations: modified HistoryForm to support Limited History feature of version 2.0
-	// ..Alterations: add the following:
-	//    private DotNetWidgets.DotNetToolbarButtonItem limitButton
-	//		Purpose: it's the limit button on the .NET toolbar on the History Form
-	//    public event EventHandler LimitButtonClicked
-	//      Purpose: the event handler invoked when the limit button is clicked
-	//    protected virtual void OnLimitButtonClicked()
-	//      Purpose: the manual event trigger method for the event handler
-	//    public void PerformLimitButtonClick()
-	//      Purpose: the customary Paint.NET "perform" wrapper to the manual event trigger method
-	// ..Alterations: modified the following:
-	//    public class HistoryForm : FloatingToolForm
-	//    private void dotNetToolbar_ButtonClick(object sender, DotNetWidgets.DotNetToolbarItemClickEventArgs e)
-	//    private void historyControl_HistoryChanged(object sender, System.EventArgs e)
-	// Most Recent Changes: Michael Kelsey
-	// ..Alterations: add comment header block
-
-
     public class HistoryForm
         : FloatingToolForm
     {
@@ -92,19 +72,26 @@ namespace PaintDotNet
             }
         }
 
+        protected override void OnEnableStyles()
+        {
+            //base.OnEnableStyles ();
+        }
+
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if ( disposing )
+            if (disposing)
             {
                 if (components != null)
                 {
                     components.Dispose();
+                    components = null;
                 }
             }
-            base.Dispose( disposing );
+
+            base.Dispose(disposing);
         }
 
         #region Windows Form Designer generated code
@@ -319,10 +306,8 @@ namespace PaintDotNet
 
         private void historyControl_HistoryChanged(object sender, System.EventArgs e)
         {
-            if (AttachControl != null) 
-            {
-                AttachControl.Focus();
-            }
+            // TODO: remove this abomination
+            OnRelinquishFocus();
 
             // Find reasons to disable the rewind and undo buttons
             if (historyControl.HistoryStack.UndoStack.Count <= 1)

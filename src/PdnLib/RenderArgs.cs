@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 
@@ -109,12 +117,15 @@ namespace PaintDotNet
             }
         }
 
+        /// <summary>
+        /// Creates an instance of the RenderArgs class.
+        /// </summary>
+        /// <param name="surface">The Surface to associate with this instance. This instance of RenderArgs does not take ownership of this Surface.</param>
         public RenderArgs(Surface surface)
         {
             this.surface = surface;
             this.bitmap = null;
             this.graphics = null;
-            return;
         }
 
         #region IDisposable Members
@@ -125,6 +136,14 @@ namespace PaintDotNet
         }
 
         private bool disposed = false;
+
+        /// <summary>
+        /// Disposes of the contained Bitmap and Graphics instances, if necessary.
+        /// </summary>
+        /// <remarks>
+        /// Note that since this class does not take ownership of the Surface, it
+        /// is not disposed.
+        /// </remarks>
         public void Dispose()
         {
             Dispose(true);

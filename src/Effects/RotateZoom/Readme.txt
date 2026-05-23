@@ -1,5 +1,5 @@
 Rotate / Zoom Effect DLL for Paint.NET (v1.1 and later)
-----------------------------------------
+-------------------------------------------------------
 This project serves as an example of how to create a Paint.NET Effect
 Plugin.
 

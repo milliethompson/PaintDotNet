@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Threading;
@@ -7,7 +15,7 @@ namespace PaintDotNet
 {
     public class CallbackWithProgressDialog
     {
-        private ProgressDialog pd;
+        private ProgressDialog dialog;
         private string dialogTitle;
         private string dialogDescription;
         private int progress;
@@ -60,14 +68,14 @@ namespace PaintDotNet
             set
             {
                 progress = value;
-                pd.BeginInvoke(new VoidVoidDelegate(DoProgressUpdate), null);
+                dialog.BeginInvoke(new VoidVoidDelegate(DoProgressUpdate), null);
             }
         }
 
         private void DoProgressUpdate()
         {
-            pd.Value = progress;
-            pd.Update();
+            dialog.Value = progress;
+            dialog.Update();
         }
 
         private void BackgroundCallback()
@@ -79,18 +87,16 @@ namespace PaintDotNet
                 threadCallback();
             }
 
-#if !DEBUG
             catch (Exception ex)
             {
                 this.exception = ex;
             }
-#endif
 
             finally
             {
                 try
                 {
-                    pd.BeginInvoke(new VoidVoidDelegate(pd.ExternalFinish), null);
+                    dialog.BeginInvoke(new VoidVoidDelegate(dialog.ExternalFinish), null);
                 }
 
                 catch
@@ -104,7 +110,6 @@ namespace PaintDotNet
             this.owner = owner;
             this.dialogTitle = dialogTitle;
             this.dialogDescription = dialogDescription;
-            this.threadCallback = threadCallback;
         }
 
         protected DialogResult ShowDialog(bool Cancellable, ThreadStart callback)
@@ -112,34 +117,34 @@ namespace PaintDotNet
             this.threadCallback = callback;
             DialogResult dr = DialogResult.Cancel;
             
-            using (pd = new ProgressDialog())
+            using (dialog = new ProgressDialog())
             {
-                pd.Text = dialogTitle;
-                pd.Description = dialogDescription;
+                dialog.Text = dialogTitle;
+                dialog.Description = dialogDescription;
 
                 if (icon != null)
                 {
-                    pd.Icon = icon;
+                    dialog.Icon = icon;
                 }
 
-                EventHandler leh = new EventHandler(pd_Load);
-                pd.Load += leh;
-                pd.Cancellable = Cancellable;
+                EventHandler leh = new EventHandler(dialog_Load);
+                dialog.Load += leh;
+                dialog.Cancellable = Cancellable;
                 thread = new Thread(new ThreadStart(BackgroundCallback));
                 Progress = 0;
             
                 if (setStartPos)
                 {
-                    pd.Location = new Point(StartPos.X - (pd.Width / 2), StartPos.Y);;
-                    pd.StartPosition = FormStartPosition.Manual;
+                    dialog.Location = new Point(StartPos.X - (dialog.Width / 2), StartPos.Y);;
+                    dialog.StartPosition = FormStartPosition.Manual;
                 }
                 else
                 {
-                    pd.StartPosition = FormStartPosition.CenterParent;
+                    dialog.StartPosition = FormStartPosition.CenterParent;
                 }
 
-                dr = pd.ShowDialog(owner);
-                pd.Load -= leh;
+                dr = Utility.ShowDialog(dialog, owner);
+                dialog.Load -= leh;
 
                 if (exception != null)
                 {
@@ -150,7 +155,7 @@ namespace PaintDotNet
             return dr;
         }
 
-        private void pd_Load(object sender, EventArgs e)
+        private void dialog_Load(object sender, EventArgs e)
         {
             thread.Start();
         }

@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using PaintDotNet;
 using PaintDotNet.Effects;
 using System;
@@ -12,6 +20,7 @@ namespace PaintDotNet.Effects
     /// function (RenderColorDifferenceEffect) called from Render in each
     /// derived class.
     /// It is also limited to 3x3 kernels.
+    /// (Chris Crosetto)
     /// </summary>
     public unsafe abstract class ColorDifferenceEffect
         : Effect
@@ -40,8 +49,15 @@ namespace PaintDotNet.Effects
                         int fxStart = 0;
                         int fxEnd = 3;
 
-                        if (x == src.Bounds.Left) fxStart = 1;
-                        if (x == src.Bounds.Right - 1) fxEnd = 2;
+                        if (x == src.Bounds.Left)
+                        {
+                            fxStart = 1;
+                        }
+
+                        if (x == src.Bounds.Right - 1) 
+                        {
+                            fxEnd = 2;
+                        }
 
                         // loop through each weight
                         double rSum = 0.0;
@@ -54,6 +70,7 @@ namespace PaintDotNet.Effects
                             {
                                 double weight = weights[fy, fx];
                                 ColorBgra c = src[x - 1 + fx, y - 1 + fy];
+
                                 rSum += weight * (double)c.R;
                                 gSum += weight * (double)c.G;
                                 bSum += weight * (double)c.B;

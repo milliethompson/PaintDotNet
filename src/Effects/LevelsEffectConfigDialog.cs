@@ -1,52 +1,60 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-	/// <summary>
-	/// Summary description for LevelsEffectConfigDialog.
-	/// </summary>
-	public class LevelsEffectConfigDialog : EffectConfigDialog
-	{
-		private PaintDotNet.ColorGradientControl gradientOutput;
-		private System.Windows.Forms.NumericUpDown numericUpDown5;
-		private System.Windows.Forms.GroupBox grpOutput;
-		private System.Windows.Forms.NumericUpDown txtOutputHi;
-		private System.Windows.Forms.NumericUpDown txtOutputLo;
-		private System.Windows.Forms.NumericUpDown txtOutputGamma;
-		private PaintDotNet.HistogramControl histogramOutput;
-		private System.Windows.Forms.Panel panelOutput;
-		private uint ignore = 0;
-		private ColorBgra mask;
-		private System.Windows.Forms.Panel swatchOutHigh;
-		private System.Windows.Forms.Panel swatchOutLow;
-		private System.Windows.Forms.Panel panelMask;
-		private System.Windows.Forms.CheckBox chkRedMask;
-		private System.Windows.Forms.CheckBox chkGreenMask;
-		private System.Windows.Forms.CheckBox chkBlueMask;
-		private System.Windows.Forms.Button okButton;
-		private System.Windows.Forms.Button cancelButton;
-		private System.Windows.Forms.Button btnAuto;
-		private System.Windows.Forms.Button btnReset;
-		private System.Windows.Forms.Panel panelInput;
-		private PaintDotNet.HistogramControl histogramInput;
-		private System.Windows.Forms.GroupBox grpInput;
-		private System.Windows.Forms.Panel swatchInHigh;
-		private System.Windows.Forms.NumericUpDown txtInputLo;
-		private System.Windows.Forms.NumericUpDown txtInputHi;
-		private PaintDotNet.ColorGradientControl gradientInput;
-		private System.Windows.Forms.Panel swatchInLow;
-		private System.Windows.Forms.Panel panelAdjustments;
-		private System.Windows.Forms.ToolTip tooltipProvider;
-		private System.ComponentModel.IContainer components;
-		private System.Windows.Forms.GroupBox grpOutputHistogram;
-		private System.Windows.Forms.GroupBox grpInputHistogram;
-		private System.Windows.Forms.Panel swatchOutMid;
-		
-	
-		private void InitializeComponent()
-		{
+    /// <summary>
+    /// Summary description for LevelsEffectConfigDialog.
+    /// </summary>
+    public class LevelsEffectConfigDialog 
+        : EffectConfigDialog
+    {
+        private PaintDotNet.ColorGradientControl gradientOutput;
+        private System.Windows.Forms.NumericUpDown numericUpDown5;
+        private System.Windows.Forms.GroupBox grpOutput;
+        private System.Windows.Forms.NumericUpDown txtOutputHi;
+        private System.Windows.Forms.NumericUpDown txtOutputLo;
+        private System.Windows.Forms.NumericUpDown txtOutputGamma;
+        private PaintDotNet.HistogramControl histogramOutput;
+        private System.Windows.Forms.Panel panelOutput;
+        private uint ignore = 0;
+        private ColorBgra mask;
+        private System.Windows.Forms.Panel swatchOutHigh;
+        private System.Windows.Forms.Panel swatchOutLow;
+        private System.Windows.Forms.Panel panelMask;
+        private System.Windows.Forms.CheckBox chkRedMask;
+        private System.Windows.Forms.CheckBox chkGreenMask;
+        private System.Windows.Forms.CheckBox chkBlueMask;
+        private System.Windows.Forms.Button okButton;
+        private System.Windows.Forms.Button cancelButton;
+        private System.Windows.Forms.Button btnAuto;
+        private System.Windows.Forms.Button btnReset;
+        private System.Windows.Forms.Panel panelInput;
+        private PaintDotNet.HistogramControl histogramInput;
+        private System.Windows.Forms.GroupBox grpInput;
+        private System.Windows.Forms.Panel swatchInHigh;
+        private System.Windows.Forms.NumericUpDown txtInputLo;
+        private System.Windows.Forms.NumericUpDown txtInputHi;
+        private PaintDotNet.ColorGradientControl gradientInput;
+        private System.Windows.Forms.Panel swatchInLow;
+        private System.Windows.Forms.Panel panelAdjustments;
+        private System.Windows.Forms.ToolTip tooltipProvider;
+        private System.ComponentModel.IContainer components;
+        private System.Windows.Forms.GroupBox grpOutputHistogram;
+        private System.Windows.Forms.GroupBox grpInputHistogram;
+        private System.Windows.Forms.Panel swatchOutMid;
+    
+        private void InitializeComponent()
+        {
 			this.components = new System.ComponentModel.Container();
 			this.gradientOutput = new PaintDotNet.ColorGradientControl();
 			this.txtOutputHi = new System.Windows.Forms.NumericUpDown();
@@ -107,7 +115,7 @@ namespace PaintDotNet.Effects
 			this.gradientOutput.TabIndex = 0;
 			this.gradientOutput.TopColor = System.Drawing.Color.White;
 			this.gradientOutput.Value = 0;
-			this.gradientOutput.ValueChanged += new System.EventHandler(this.gradientOutput_ValueChanged);
+			this.gradientOutput.ValueChanged += new IndexEventHandler(this.gradientOutput_ValueChanged);
 			// 
 			// txtOutputHi
 			// 
@@ -126,6 +134,7 @@ namespace PaintDotNet.Effects
 																	  0,
 																	  0,
 																	  0});
+			this.txtOutputHi.Validated += new System.EventHandler(this.txtOutputHi_ValueChanged);
 			this.txtOutputHi.ValueChanged += new System.EventHandler(this.txtOutputHi_ValueChanged);
 			// 
 			// numericUpDown5
@@ -147,6 +156,7 @@ namespace PaintDotNet.Effects
 			this.txtOutputLo.Name = "txtOutputLo";
 			this.txtOutputLo.Size = new System.Drawing.Size(48, 20);
 			this.txtOutputLo.TabIndex = 1;
+			this.txtOutputLo.Validated += new System.EventHandler(this.txtOutputLo_ValueChanged);
 			this.txtOutputLo.ValueChanged += new System.EventHandler(this.txtOutputLo_ValueChanged);
 			// 
 			// grpOutput
@@ -167,7 +177,7 @@ namespace PaintDotNet.Effects
 			this.grpOutput.TabIndex = 2;
 			this.grpOutput.TabStop = false;
 			this.grpOutput.Text = "Output";
-			this.grpOutput.Resize += new System.EventHandler(this.grpOutput_Resize);
+			this.grpOutput.Layout += new System.Windows.Forms.LayoutEventHandler(this.grpOutput_Layout);
 			// 
 			// txtOutputGamma
 			// 
@@ -198,6 +208,7 @@ namespace PaintDotNet.Effects
 																		 0,
 																		 0,
 																		 0});
+			this.txtOutputGamma.Validated += new System.EventHandler(this.txtOutputGamma_ValueChanged);
 			this.txtOutputGamma.ValueChanged += new System.EventHandler(this.txtOutputGamma_ValueChanged);
 			// 
 			// swatchOutHigh
@@ -283,7 +294,7 @@ namespace PaintDotNet.Effects
 			this.panelAdjustments.Name = "panelAdjustments";
 			this.panelAdjustments.Size = new System.Drawing.Size(480, 192);
 			this.panelAdjustments.TabIndex = 7;
-			this.panelAdjustments.Resize += new System.EventHandler(this.panelAdjustments_Resize);
+			this.panelAdjustments.Layout += new System.Windows.Forms.LayoutEventHandler(this.panelAdjustments_Layout);
 			// 
 			// panelInput
 			// 
@@ -362,6 +373,7 @@ namespace PaintDotNet.Effects
 			this.txtInputLo.Name = "txtInputLo";
 			this.txtInputLo.Size = new System.Drawing.Size(48, 20);
 			this.txtInputLo.TabIndex = 1;
+			this.txtInputLo.Validated += new System.EventHandler(this.txtInputLo_ValueChanged);
 			this.txtInputLo.ValueChanged += new System.EventHandler(this.txtInputLo_ValueChanged);
 			// 
 			// txtInputHi
@@ -380,6 +392,7 @@ namespace PaintDotNet.Effects
 																	 0,
 																	 0,
 																	 0});
+			this.txtInputHi.Validated += new System.EventHandler(this.txtInputHi_ValueChanged);
 			this.txtInputHi.ValueChanged += new System.EventHandler(this.txtInputHi_ValueChanged);
 			// 
 			// gradientInput
@@ -394,7 +407,7 @@ namespace PaintDotNet.Effects
 			this.gradientInput.TabIndex = 0;
 			this.gradientInput.TopColor = System.Drawing.Color.White;
 			this.gradientInput.Value = 0;
-			this.gradientInput.ValueChanged += new System.EventHandler(this.gradientInput_ValueChanged);
+			this.gradientInput.ValueChanged += new IndexEventHandler(this.gradientInput_ValueChanged);
 			// 
 			// swatchInLow
 			// 
@@ -515,9 +528,7 @@ namespace PaintDotNet.Effects
 			this.MaximizeBox = true;
 			this.MinimumSize = new System.Drawing.Size(439, 231);
 			this.Name = "LevelsEffectConfigDialog";
-			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
 			this.Text = "Levels Adjustment";
-			this.Resize += new System.EventHandler(this.LevelsEffectConfigDialog_Resize);
 			this.Load += new System.EventHandler(this.LevelsEffectConfigDialog_Load);
 			this.Controls.SetChildIndex(this.panelAdjustments, 0);
 			this.Controls.SetChildIndex(this.btnReset, 0);
@@ -542,433 +553,500 @@ namespace PaintDotNet.Effects
 			this.ResumeLayout(false);
 
 		}
-	
-		public LevelsEffectConfigDialog()
-		{
-			mask = ColorBgra.FromColor(Color.White);
-			InitializeComponent();
-		}
+    
+        public LevelsEffectConfigDialog()
+        {
+            mask = ColorBgra.FromColor(Color.White);
+            InitializeComponent();
+        }
 
-		private void MaskChanged() 
+        private void MaskChanged() 
+        {
+            if ((mask.Bgra & 0x00ffffff) == 0) 
+            {
+                grpInput.Enabled = false;
+                grpOutput.Enabled = false;
+            }           
+            else
+            {
+                grpInput.Enabled = true;
+                grpOutput.Enabled = true;
+            }
+
+            Color top = mask.ToColor();
+
+            gradientInput.TopColor = top;
+            gradientOutput.TopColor = top;
+
+            histogramInput.Mask = mask;
+            histogramOutput.Mask = mask;
+
+            ignore++;
+            InitDialogFromToken();
+            ignore--;
+        }
+
+        private int MaskAvg(ColorBgra before) 
+        {
+            int count = 0, total = 0;   
+
+            for (int c = 0; c < 3; c++) 
+            {
+                if (mask[c] != 0) 
+                {
+                    total += before[c];
+                    count++;
+                }
+            }
+
+            if (count > 0) 
+            {
+                return total / count;
+            } 
+            else
+            {
+                return 0;
+            }
+        }
+
+        private ColorBgra UpdateByMask(ColorBgra before, byte val) 
+        {
+            ColorBgra after = before;
+            int average = -1, oldaverage = -1;
+
+            if ((mask.Bgra & 0x00ffffff) == 0)
+            {
+                return before;
+            }
+
+            do
+            {
+                float factor;
+
+                oldaverage = average;
+                average = MaskAvg(after);
+
+                if (average == 0)
+                {
+                    break;
+                }
+                factor = (float)val / average;
+
+                for (int c = 0; c < 3; c++) 
+                {
+                    if (mask[c] != 0) 
+                    {
+                        after[c] = (byte)Utility.ClampToByte(after[c] * factor);
+                    }
+                }
+            } while (average != val && oldaverage != average);
+
+            while (average != val) 
+            {
+                average = MaskAvg(after);
+                int diff = val - average;
+
+                for (int c = 0; c < 3; c++) 
+                {
+                    if (mask[c] != 0) 
+                    {
+                        after[c] = (byte)Utility.ClampToByte(after[c] + diff);
+                    }
+                }
+            }
+
+            after.A = 255;
+            return after;           
+        }
+
+        private void LevelsEffectConfigDialog_Load(object sender, System.EventArgs e)
+        {
+            histogramInput.Histogram.UpdateHistogram(this.EffectSourceSurface, this.Selection);
+            mask.B = 255;
+            mask.G = 255;
+            mask.R = 255;
+            MaskChanged();
+            UpdateOutputHistogram();
+        }
+
+        private void UpdateOutputHistogram() 
+        {
+            this.histogramOutput.Histogram.SetFromLeveledHistogram(this.histogramInput.Histogram, ((LevelsEffectConfigToken)this.theEffectToken).Levels);
+            this.histogramOutput.Update();
+        }
+
+        protected override void InitialInitToken()
+        {
+            theEffectToken = new LevelsEffectConfigToken();
+        }
+
+        private void UpdateGammaByMask(UnaryPixelOps.Level levels, float val) 
+        {
+            float average = -1;
+
+            if ((mask.Bgra & 0x00ffffff) == 0)
+            {
+                return;
+            }
+
+            do
+            {
+                average = MaskGamma(levels);
+                float factor = val / average;
+
+                for (int c = 0; c < 3; c++) 
+                {
+                    if (mask[c] != 0) 
+                    {
+                        levels.SetGamma(c, factor * levels.GetGamma(c));
+                    }
+                }
+            } while (Math.Abs(val - average) > 0.001);
+        }
+
+        protected override void InitTokenFromDialog()
+        {
+            UnaryPixelOps.Level levels = ((LevelsEffectConfigToken)theEffectToken).Levels;
+
+            levels.ColorOutHigh = UpdateByMask(levels.ColorOutHigh, (byte)txtOutputHi.Value);
+            levels.ColorOutLow = UpdateByMask(levels.ColorOutLow, (byte)txtOutputLo.Value);
+
+            levels.ColorInHigh = UpdateByMask(levels.ColorInHigh, (byte)txtInputHi.Value);
+            levels.ColorInLow = UpdateByMask(levels.ColorInLow, (byte)txtInputLo.Value);
+
+            UpdateGammaByMask(levels, (float)txtOutputGamma.Value);
+
+            swatchInHigh.BackColor = levels.ColorInHigh.ToColor();
+            swatchInHigh.Invalidate();
+
+            swatchInLow.BackColor = levels.ColorInLow.ToColor();
+            swatchInLow.Invalidate();
+
+            swatchOutHigh.BackColor = levels.ColorOutHigh.ToColor();
+            swatchOutHigh.Invalidate();
+
+            swatchOutMid.BackColor = levels.Apply(histogramInput.Histogram.GetMeanColor()).ToColor();
+            swatchOutMid.Invalidate();
+
+            swatchOutLow.BackColor = levels.ColorOutLow.ToColor();
+            swatchOutLow.Invalidate();
+        }
+
+        private float MaskGamma(UnaryPixelOps.Level levels) 
+        {
+            int count = 0;
+            float total = 0;
+
+            for (int c = 0; c < 3; c++) 
+            {
+                if (mask[c] != 0)
+                {
+                    total += levels.GetGamma(c);
+                    count++;
+                }
+            }
+
+            if (count > 0) 
+            {
+                return total / count;
+            } 
+            else
+            {
+                return 1;
+            }
+    
+        }
+        protected override void InitDialogFromToken(EffectConfigToken effectToken)
+        {
+            UnaryPixelOps.Level levels = ((LevelsEffectConfigToken)effectToken).Levels;
+
+            txtOutputHi.Value = MaskAvg(levels.ColorOutHigh);
+            txtOutputLo.Value = MaskAvg(levels.ColorOutLow);
+            txtInputHi.Value = MaskAvg(levels.ColorInHigh);
+            txtInputLo.Value = MaskAvg(levels.ColorInLow);
+            
+            gradientOutput.SetValue(0, (int)txtOutputLo.Value);
+            gradientOutput.SetValue(2, (int)txtOutputHi.Value);
+            txtOutputGamma.Value = txtOutputGamma.Value;
+
+            swatchInHigh.BackColor = levels.ColorInHigh.ToColor();
+            swatchInLow.BackColor = levels.ColorInLow.ToColor();
+            swatchOutMid.BackColor = levels.Apply(histogramInput.Histogram.GetMeanColor()).ToColor();
+            swatchOutMid.Invalidate();
+            swatchOutHigh.BackColor = levels.ColorOutHigh.ToColor();
+            swatchOutLow.BackColor = levels.ColorOutLow.ToColor();
+
+            txtOutputGamma.Value = (decimal)MaskGamma(levels);
+        }
+
+        private void UpdateLevels() 
+        {   
+            UpdateToken();
+            UpdateOutputHistogram();
+        }
+
+        private void grpOutput_Layout(object sender, LayoutEventArgs e)
+        {
+            txtOutputGamma.Top = (grpOutput.Height / 2) - txtOutputGamma.Height;
+            swatchOutMid.Top = 1 + (grpOutput.Height / 2);
+        }
+
+        private void gradientOutput_ValueChanged(object sender, IndexEventArgs e)
+        {
+            if (ignore == 0) 
+            {
+                int lo = gradientOutput.GetValue(0), md, hi = gradientOutput.GetValue(2);
+                md = (int)(lo + (hi - lo) * Math.Pow(0.5, (double)txtOutputGamma.Value));
+                ignore++;
+
+                switch (e.Index) 
+                {
+                    case 0:
+                        txtOutputLo.Text = lo.ToString();
+                        break;
+
+                    case 1:
+                        md = gradientOutput.GetValue(1);
+                        txtOutputGamma.Value = (decimal)Utility.Clamp(1 / Math.Log(0.5, (float)(md - lo) / (float)(hi - lo)), 0.1, 10.0);
+                        break;
+
+                    case 2:
+                        txtOutputHi.Text = hi.ToString();
+                        break;
+                }
+
+                gradientOutput.SetValue(1, md);
+                UpdateLevels();
+                ignore--;
+            }
+        }
+
+        private void txtOutputHi_ValueChanged(object sender, System.EventArgs e)
+        {
+            if (ignore == 0) 
+            {
+                ignore++;
+                gradientOutput.SetValue(2, (int)txtOutputHi.Value);
+                UpdateLevels();
+                ignore--;
+            }
+        }
+
+        private void txtOutputGamma_ValueChanged(object sender, System.EventArgs e)
+        {
+            int lo = gradientOutput.GetValue(0);
+            int hi = gradientOutput.GetValue(2);
+            int md = (int)(lo + (hi - lo) * Math.Pow(0.5, (double)txtOutputGamma.Value));
+
+            gradientOutput.SetValue(1, md);
+
+            if (ignore == 0) 
+            {
+                ignore++;
+                UpdateLevels();
+                ignore--;
+            }
+        }
+
+        private void txtOutputLo_ValueChanged(object sender, System.EventArgs e)
+        {
+            if (ignore == 0) 
+            {
+                ignore++;
+                gradientOutput.SetValue(0, (int)txtOutputLo.Value);
+                UpdateLevels();
+                ignore--;
+            }
+        }
+
+        private void gradientInput_ValueChanged(object sender, IndexEventArgs e)
+        {
+            if (ignore == 0) 
+            {
+                int lo = gradientInput.GetValue(0), hi = gradientInput.GetValue(1);
+                ignore++;
+
+                switch (e.Index) 
+                {
+                    case 0:
+                        txtInputLo.Text = lo.ToString();
+                        break;
+
+                    case 1:
+                        txtInputHi.Text = hi.ToString();
+                        break;
+                }
+
+                UpdateLevels();
+                ignore--;
+            }
+        }
+
+        private void txtInputHi_ValueChanged(object sender, System.EventArgs e)
+        {
+            gradientInput.SetValue(1, (int)txtInputHi.Value);
+
+            if (ignore == 0) 
+            {
+                ignore++;
+                UpdateLevels();
+                ignore--;
+            }
+        }
+
+        private void txtInputLo_ValueChanged(object sender, System.EventArgs e)
+        {
+            gradientInput.SetValue(0, (int)txtInputLo.Value);
+
+            if (ignore == 0) 
+            {
+                ignore++;
+                UpdateLevels();
+                ignore--;
+            }
+        }
+
+		protected override void OnLayout(LayoutEventArgs levent)
 		{
-			if ((mask.Bgra & 0x00ffffff) == 0) 
+			base.OnLayout (levent);
+			if (levent.AffectedControl == this && panelMask != null)
 			{
-				grpInput.Enabled = false;
-				grpOutput.Enabled = false;
-			}			
-			else
-			{
-				grpInput.Enabled = true;
-				grpOutput.Enabled = true;
-			}
-			Color top = mask.ToColor();
-			gradientInput.TopColor = top;
-			gradientOutput.TopColor = top;
-			histogramInput.Mask = mask;
-			histogramOutput.Mask = mask;
-			ignore++;
-			InitDialogFromToken();
-			ignore--;
-		}
-
-		private int MaskAvg(ColorBgra before) 
-		{
-			int count = 0, total = 0;	
-			for (int c = 0; c < 3; c++) 
-			{
-				if (mask[c] != 0) 
-				{
-					total += before[c];
-					count++;
-				}
-			}
-			if (count > 0) 
-			{
-				return total / count;
-			} 
-			else
-			{
-				return 0;
-			}
-		}
-
-		private ColorBgra UpdateByMask(ColorBgra before, byte val) 
-		{
-			ColorBgra after = before;
-			int average = -1, oldaverage = -1;
-			if ((mask.Bgra & 0x00ffffff) == 0)
-			{
-				return before;
-			}
-			do
-			{
-				float factor;
-				oldaverage = average;
-				average = MaskAvg(after);
-				if (average == 0)
-					break;
-				factor = (float)val / average;
-				for (int c = 0; c < 3; c++) 
-				{
-					if (mask[c] != 0) 
-					{
-						after[c] = (byte)Utility.ClampToByte(after[c] * factor);
-					}
-				}
-			} while (average != val && oldaverage != average);
-			while (average != val) 
-			{
-				average = MaskAvg(after);
-				
-				int diff = val - average;
-				for (int c = 0; c < 3; c++) 
-				{
-					if (mask[c] != 0) 
-					{
-						after[c] = (byte)Utility.ClampToByte(after[c] + diff);
-					}
-				}
-			}
-			after.A = 255;
-			return after;			
-		}
-
-		private void LevelsEffectConfigDialog_Load(object sender, System.EventArgs e)
-		{
-			histogramInput.Histogram.UpdateHistogram(this.EffectSourceSurface, this.Selection);
-			mask[0] = mask[1] = mask[2] = 255;
-			MaskChanged();
-			UpdateOutputHistogram();
-		}
-
-		private void UpdateOutputHistogram() 
-		{
-			this.histogramOutput.Histogram.SetFromLeveledHistogram(this.histogramInput.Histogram, ((LevelsEffectConfigToken)this.theEffectToken).Levels);
-			this.histogramOutput.Update();
-		}
-
-		protected override void InitialInitToken()
-		{
-			theEffectToken = new LevelsEffectConfigToken();
-		}
-
-		private void UpdateGammaByMask(UnaryPixelOps.Level levels, float val) 
-		{
-			float average = -1;
-			if ((mask.Bgra & 0x00ffffff) == 0)
-			{
-				return;
-			}
-			do
-			{
-				average = MaskGamma(levels);
-
-				float factor = val / average;
-				for (int c = 0; c < 3; c++) 
-				{
-					if (mask[c] != 0) 
-					{
-						levels.SetGamma(c, factor * levels.GetGamma(c));
-					}
-				}
-			} while (Math.Abs(val - average) > 0.001);
-		}
-
-		protected override void InitTokenFromDialog()
-		{
-			UnaryPixelOps.Level levels = ((LevelsEffectConfigToken)theEffectToken).Levels;
-			levels.ColorOutHigh = UpdateByMask(levels.ColorOutHigh, (byte)txtOutputHi.Value);
-			levels.ColorOutLow = UpdateByMask(levels.ColorOutLow, (byte)txtOutputLo.Value);
-			levels.ColorInHigh = UpdateByMask(levels.ColorInHigh, (byte)txtInputHi.Value);
-			levels.ColorInLow = UpdateByMask(levels.ColorInLow, (byte)txtInputLo.Value);
-			UpdateGammaByMask(levels, (float)txtOutputGamma.Value);
-
-			swatchInHigh.BackColor = levels.ColorInHigh.ToColor();
-			swatchInHigh.Invalidate();
-			swatchInLow.BackColor = levels.ColorInLow.ToColor();
-			swatchInLow.Invalidate();
-			swatchOutHigh.BackColor = levels.ColorOutHigh.ToColor();
-			swatchOutHigh.Invalidate();
-			swatchOutMid.BackColor = levels.Apply(histogramInput.Histogram.GetMeanColor()).ToColor();
-			swatchOutMid.Invalidate();
-			swatchOutLow.BackColor = levels.ColorOutLow.ToColor();
-			swatchOutLow.Invalidate();
-		}
-
-		private float MaskGamma(UnaryPixelOps.Level levels) 
-		{
-			int count = 0;
-			float total = 0;
-			for (int c = 0; c < 3; c++) 
-			{
-				if (mask[c] != 0)
-				{
-					total += levels.GetGamma(c);
-					count++;
-				}
-			}
-			if (count > 0) 
-			{
-				return total / count;
-			} 
-			else
-			{
-				return 1;
-			}
-	
-		}
-		protected override void InitDialogFromToken(EffectConfigToken effectToken)
-		{
-			UnaryPixelOps.Level levels = ((LevelsEffectConfigToken)effectToken).Levels;
-
-			txtOutputHi.Value = MaskAvg(levels.ColorOutHigh);
-			txtOutputLo.Value = MaskAvg(levels.ColorOutLow);
-			txtInputHi.Value = MaskAvg(levels.ColorInHigh);
-			txtInputLo.Value = MaskAvg(levels.ColorInLow);
-			
-			gradientOutput.SetValue(0, (int)txtOutputLo.Value);
-			gradientOutput.SetValue(2, (int)txtOutputHi.Value);
-			txtOutputGamma.Value = txtOutputGamma.Value;
-
-			swatchInHigh.BackColor = levels.ColorInHigh.ToColor();
-			swatchInLow.BackColor = levels.ColorInLow.ToColor();
-			swatchOutMid.BackColor = levels.Apply(histogramInput.Histogram.GetMeanColor()).ToColor();
-			swatchOutMid.Invalidate();
-			swatchOutHigh.BackColor = levels.ColorOutHigh.ToColor();
-			swatchOutLow.BackColor = levels.ColorOutLow.ToColor();
-
-			txtOutputGamma.Value = (decimal)MaskGamma(levels);
-		}
-
-		private void UpdateLevels() 
-		{	
-			UpdateToken();
-			UpdateOutputHistogram();
-		}
-
-		private void grpOutput_Resize(object sender, System.EventArgs e)
-		{
-			txtOutputGamma.Top = grpOutput.Height / 2 - txtOutputGamma.Height ;
-			swatchOutMid.Top = grpOutput.Height / 2 + 1;
-		}
-
-		private void gradientOutput_ValueChanged(object sender, System.EventArgs e)
-		{
-			if (ignore == 0) 
-			{
-				int lo = gradientOutput.GetValue(0), md, hi = gradientOutput.GetValue(2);
-				md = (int)(lo + (hi - lo) * Math.Pow(0.5, (double)txtOutputGamma.Value));
-				ignore++;
-				switch (((ColorGradientEventArgs)e).Index) 
-				{
-					case 0:
-						txtOutputLo.Text = lo.ToString();
-						break;
-					case 1:
-						md = gradientOutput.GetValue(1);
-						txtOutputGamma.Value = (decimal)Utility.Clamp(1 / Math.Log(0.5, (float)(md - lo) / (float)(hi - lo)), 0.1, 10.0);
-						break;
-					case 2:
-						txtOutputHi.Text = hi.ToString();
-						break;
-				}
-				gradientOutput.SetValue(1, md);
-				UpdateLevels();
-				ignore--;
-			}
-		}
-
-		private void txtOutputHi_ValueChanged(object sender, System.EventArgs e)
-		{
-			if (ignore == 0) 
-			{
-				ignore++;
-				gradientOutput.SetValue(2, (int)txtOutputHi.Value);
-				UpdateLevels();
-				ignore--;
-			}
-		}
-
-		private void txtOutputGamma_ValueChanged(object sender, System.EventArgs e)
-		{
-			int lo = gradientOutput.GetValue(0), md, hi = gradientOutput.GetValue(2);
-			md = (int)(lo + (hi - lo) * Math.Pow(0.5, (double)txtOutputGamma.Value));
-			gradientOutput.SetValue(1, md);
-			if (ignore == 0) 
-			{
-				ignore++;
-				UpdateLevels();
-				ignore--;
-			}
-		}
-
-		private void txtOutputLo_ValueChanged(object sender, System.EventArgs e)
-		{
-			if (ignore == 0) 
-			{
-				ignore++;
-				gradientOutput.SetValue(0, (int)txtOutputLo.Value);
-				UpdateLevels();
-				ignore--;
-			}
-		}
-
-		private void gradientInput_ValueChanged(object sender, System.EventArgs e)
-		{
-			if (ignore == 0) 
-			{
-				int lo = gradientInput.GetValue(0), hi = gradientInput.GetValue(1);
-				ignore++;
-				switch (((ColorGradientEventArgs)e).Index) 
-				{
-					case 0:
-						txtInputLo.Text = lo.ToString();
-						break;
-					case 1:
-						txtInputHi.Text = hi.ToString();
-						break;
-				}
-				UpdateLevels();
-				ignore--;
-			}
-		}
-
-		private void txtInputHi_ValueChanged(object sender, System.EventArgs e)
-		{
-			gradientInput.SetValue(1, (int)txtInputHi.Value);
-			if (ignore == 0) 
-			{
-				ignore++;
-				UpdateLevels();
-				ignore--;
-			}
-		}
-
-		private void txtInputLo_ValueChanged(object sender, System.EventArgs e)
-		{
-			gradientInput.SetValue(0, (int)txtInputLo.Value);
-			if (ignore == 0) 
-			{
-				ignore++;
-				UpdateLevels();
-				ignore--;
-			}
-		}
-
-		private void LevelsEffectConfigDialog_Resize(object sender, System.EventArgs e)
-		{
-			panelMask.Left = (this.ClientSize.Width - panelMask.Width) / 2;
-		}
-
-		private void panelAdjustments_Resize(object sender, System.EventArgs e)
-		{
-			panelInput.Width = this.ClientSize.Width / 2;
-		}
-
-		private void okButton_Click(object sender, System.EventArgs e)
-		{
-			this.DialogResult = DialogResult.OK;
-			this.Close();
-		}
-
-		private void cancelButton_Click(object sender, System.EventArgs e)
-		{
-			this.Close();
-		}
-
-		private void btnReset_Click(object sender, System.EventArgs e)
-		{
-			((LevelsEffectConfigToken)this.EffectToken).Levels = new UnaryPixelOps.Level();
-			ignore++;
-			InitDialogFromToken();
-			ignore--;
-			UpdateLevels();		
-		}
-
-		private void btnAuto_Click(object sender, System.EventArgs e)
-		{
-			((LevelsEffectConfigToken)this.EffectToken).Levels = histogramInput.Histogram.MakeLevelsAuto();
-
-			ignore++;
-			InitDialogFromToken();
-			ignore--;
-			UpdateLevels();
-		}
-
-		private void swatch_DoubleClick(object sender, System.EventArgs e)
-		{
-			UnaryPixelOps.Level levels = ((LevelsEffectConfigToken)theEffectToken).Levels;
-			ColorDialog cd = new ColorDialog();
-			if ((sender is Panel)) 
-			{
-				cd.Color = ((Panel)sender).BackColor;
-				cd.AnyColor = true;
-				if (cd.ShowDialog() == DialogResult.OK) 
-				{
-					ColorBgra col = ColorBgra.FromColor(cd.Color);
-					if (sender == swatchInLow) 
-					{
-						levels.ColorInLow = col;
-					}
-					else if (sender == swatchInHigh) 
-					{
-						levels.ColorInHigh = col;
-					}
-					else if (sender == swatchOutLow) 
-					{
-						levels.ColorOutLow = col;
-					}
-					else if (sender == swatchOutMid)
-					{
-						ColorBgra lo = levels.ColorInLow, md = histogramInput.Histogram.GetMeanColor(), hi = levels.ColorInHigh;
-						ColorBgra out_lo = levels.ColorOutLow, out_hi = levels.ColorOutHigh;
-						for (int i = 0; i < 3; i++) 
-						{
-							levels.SetGamma
-								(
-									i, 
-									(float)Utility.Clamp
-									(
-										Math.Log
-										(
-											(float)(col[i] - out_lo[i]) / (out_hi[i] - out_lo[i]),
-											(float)(md[i] - lo[i]) / (float)(hi[i] - lo[i])
-										),
-										0.1,
-										10.0
-									)
-								);
-						}
-					}
-					else if (sender == swatchOutHigh) 
-					{
-						levels.ColorOutHigh = col;
-					}
-					else if (sender == swatchInHigh) 
-					{
-						levels.ColorInHigh = col;
-					}
-					InitDialogFromToken();
-				}
+				panelMask.Left = (this.ClientSize.Width - panelMask.Width) / 2;
 			}
 		}
 
-		private void chkBlueMask_CheckedChanged(object sender, System.EventArgs e)
-		{
-			mask.B = (byte)(chkBlueMask.Checked ? 255 : 0);
-			MaskChanged();
-		}
+        private void panelAdjustments_Layout(object sender, LayoutEventArgs e)
+        {
+            panelInput.Width = this.ClientSize.Width / 2;
+        }
 
-		private void chkGreenMask_CheckedChanged(object sender, System.EventArgs e)
-		{
-			mask.G = (byte)(chkGreenMask.Checked ? 255 : 0);
-			MaskChanged();
-		}
+        private void okButton_Click(object sender, System.EventArgs e)
+        {
+            this.DialogResult = DialogResult.OK;
+            this.Close();
+        }
 
-		private void chkRedMask_CheckedChanged(object sender, System.EventArgs e)
-		{
-			mask.R = (byte)(chkRedMask.Checked ? 255 : 0);
-			MaskChanged();
-		}
-	}
+        private void cancelButton_Click(object sender, System.EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void btnReset_Click(object sender, System.EventArgs e)
+        {
+            ((LevelsEffectConfigToken)this.EffectToken).Levels = new UnaryPixelOps.Level();
+            ignore++;
+            InitDialogFromToken();
+            ignore--;
+            UpdateLevels();     
+        }
+
+        private void btnAuto_Click(object sender, System.EventArgs e)
+        {
+            ((LevelsEffectConfigToken)this.EffectToken).Levels = histogramInput.Histogram.MakeLevelsAuto();
+
+            ignore++;
+            InitDialogFromToken();
+            ignore--;
+            UpdateLevels();
+        }
+
+        private void swatch_DoubleClick(object sender, System.EventArgs e)
+        {
+            UnaryPixelOps.Level levels = ((LevelsEffectConfigToken)theEffectToken).Levels;
+
+            using (ColorDialog cd = new ColorDialog())
+            {
+                if ((sender is Panel)) 
+                {
+                    cd.Color = ((Panel)sender).BackColor;
+                    cd.AnyColor = true;
+
+                    if (cd.ShowDialog(this) == DialogResult.OK) 
+                    {
+                        ColorBgra col = ColorBgra.FromColor(cd.Color);
+
+                        if (sender == swatchInLow) 
+                        {
+                            levels.ColorInLow = col;
+                        }
+                        else if (sender == swatchInHigh) 
+                        {
+                            levels.ColorInHigh = col;
+                        }
+                        else if (sender == swatchOutLow) 
+                        {
+                            levels.ColorOutLow = col;
+                        }
+                        else if (sender == swatchOutMid)
+                        {
+                            ColorBgra lo = levels.ColorInLow, md = histogramInput.Histogram.GetMeanColor(), hi = levels.ColorInHigh;
+                            ColorBgra out_lo = levels.ColorOutLow, out_hi = levels.ColorOutHigh;
+
+                            for (int i = 0; i < 3; i++) 
+                            {
+                                levels.SetGamma(i, 
+                                    (float)Utility.Clamp(Math.Log((float)(col[i] - out_lo[i]) / (out_hi[i] - out_lo[i]),
+                                    (float)(md[i] - lo[i]) / (float)(hi[i] - lo[i])),
+                                    0.1,
+                                    10.0));
+                            }
+                        }
+                        else if (sender == swatchOutHigh) 
+                        {
+                            levels.ColorOutHigh = col;
+                        }
+                        else if (sender == swatchInHigh) 
+                        {
+                            levels.ColorInHigh = col;
+                        }
+
+                        InitDialogFromToken();
+                    }
+                }
+            }
+        }
+
+        private void chkBlueMask_CheckedChanged(object sender, System.EventArgs e)
+        {
+            mask.B = (byte)(chkBlueMask.Checked ? 255 : 0);
+            MaskChanged();
+        }
+
+        private void chkGreenMask_CheckedChanged(object sender, System.EventArgs e)
+        {
+            mask.G = (byte)(chkGreenMask.Checked ? 255 : 0);
+            MaskChanged();
+        }
+
+        private void chkRedMask_CheckedChanged(object sender, System.EventArgs e)
+        {
+            mask.R = (byte)(chkRedMask.Checked ? 255 : 0);
+            MaskChanged();
+        }
+
+        private void txtInputHi_Validating(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            txtInputHi_ValueChanged(sender, EventArgs.Empty);
+        }
+
+        private void txtOutputHi_Validating(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            txtOutputHi_ValueChanged(sender, EventArgs.Empty);      
+        }
+
+        private void txtInputLo_Validating(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            txtInputLo_ValueChanged(sender, EventArgs.Empty);       
+        }
+
+        private void txtOutputLo_Validating(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            txtOutputLo_ValueChanged(sender, EventArgs.Empty);      
+        }
+
+        private void txtOutputGamma_Validating(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            txtInputHi_ValueChanged(sender, EventArgs.Empty);       
+        }
+    }
 }

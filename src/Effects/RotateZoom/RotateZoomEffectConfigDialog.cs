@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using PaintDotNet;
 using System;
 using System.Drawing;
@@ -41,7 +49,7 @@ namespace PaintDotNet.Effects
 
         protected override void InitialInitToken()
         {
-            theEffectToken = new RotateZoomEffectConfigToken(0, 1.0f, new Point(0, 0), false);
+            theEffectToken = new RotateZoomEffectConfigToken(0, 1.0f, false);
         }
 
         protected override void InitDialogFromToken(EffectConfigToken effectToken)
@@ -53,7 +61,7 @@ namespace PaintDotNet.Effects
 
         protected override void InitTokenFromDialog()
         {
-            ((RotateZoomEffectConfigToken)theEffectToken).Angle = angleChooserControl.ValueDouble;
+            ((RotateZoomEffectConfigToken)theEffectToken).Angle = (float)angleChooserControl.ValueDouble;
             ((RotateZoomEffectConfigToken)theEffectToken).Zoom = 1.0f / ((float)zoomSlider.Value / 100.0f);
             ((RotateZoomEffectConfigToken)theEffectToken).SourceAsBackground = keepBackgroundCheckBox.Checked;
         }
@@ -61,16 +69,17 @@ namespace PaintDotNet.Effects
 		/// <summary>
 		/// Clean up any resources being used.
 		/// </summary>
-		protected override void Dispose( bool disposing )
+		protected override void Dispose(bool disposing)
 		{
-			if ( disposing )
+			if (disposing)
 			{
 				if (components != null)
 				{
 					components.Dispose();
-				}
+                    components = null;
+                }
 			}
-			base.Dispose( disposing );
+			base.Dispose(disposing);
 		}
 
 		#region Windows Form Designer generated code
@@ -284,6 +293,8 @@ namespace PaintDotNet.Effects
 
         private void angleUpDown_Leave(object sender, System.EventArgs e)
         {
+            Utility.ClipNumericUpDown(angleUpDown);
+
             if (Utility.CheckNumericUpDown(angleUpDown))
             {
                 angleUpDown.Value = decimal.Parse(angleUpDown.Text);

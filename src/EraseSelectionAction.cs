@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Drawing;
 
@@ -9,6 +17,14 @@ namespace PaintDotNet
     public class EraseSelectionAction
         : DocumentAction
     {
+        public static string StaticName
+        {
+            get
+            {
+                return "Erase Selection";
+            }
+        }
+
         public override HistoryAction PerformAction()
         {
             if (Workspace.Environment.IsSelectionEmpty)
@@ -26,8 +42,7 @@ namespace PaintDotNet
             BitmapLayer layer = ((BitmapLayer)Workspace.ActiveLayer);
             PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(region);
 
-            HistoryAction ha = layer.CreateHistoryAction(name, null, simplifiedRegion);
-            //new UnaryPixelOps.SetChannel(ColorBgra.AlphaChannel, 0).Apply(layer.Surface, region);
+            HistoryAction ha = new BitmapHistoryAction(Name, null, Workspace, Workspace.ActiveLayerIndex, simplifiedRegion);
             new UnaryPixelOps.Constant(ColorBgra.FromBgra(255, 255, 255, 0)).Apply(layer.Surface, region);
             layer.Invalidate(simplifiedRegion);
 
@@ -41,11 +56,11 @@ namespace PaintDotNet
             Workspace.Environment.PerformSelectedPathChanged();
             Workspace.Environment.SetTool(oldToolType, Workspace);
 
-            return new CompoundHistoryAction(this.Name, null, new HistoryAction[] { ha, sha });
+            return new CompoundHistoryAction(this.Name, Utility.GetImageResource("Icons.MenuEditEraseSelectionIcon.bmp"), new HistoryAction[] { ha, sha });
         }
 
         public EraseSelectionAction(DocumentWorkspace workspace)
-            : base(workspace, "Clear Selection")
+            : base(workspace, StaticName)
         {
         }
     }

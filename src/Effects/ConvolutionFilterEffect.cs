@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.Drawing;
@@ -18,7 +26,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private class FExtentKey
+        private sealed class FExtentKey
         {
             private int srcLength;
             private int weightsLength;
@@ -211,24 +219,20 @@ namespace PaintDotNet.Effects
 							blueSum += c.B * weight;
 							greenSum += c.G * weight;
 							alphaSum += c.A * weight;
-/*
-                            redSum += c.R * weight;
-                            greenSum += c.G * weight;
-                            blueSum += c.B * weight;
-                            alphaSum += c.A * weight;
-  */
 
                             ++srcPixel;
                         }
                     }
 
 					colorFactor /= 256;
+
 					if (colorFactor != 0)
 					{
 						redSum /= colorFactor;
 						greenSum /= colorFactor;
 						blueSum /= colorFactor;
-					}                   
+					}
+
 					if (alphaFactor != 0)
 					{
 						alphaSum /= alphaFactor;

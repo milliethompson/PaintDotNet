@@ -1,3 +1,12 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.Diagnostics;
@@ -16,12 +25,11 @@ namespace PaintDotNet
 	/// hasn't really done anything there should be no HistoryAction emitted.
 	/// </summary>
 	public class Tool
+        : IDisposable
 	{
-		protected Image toolBarImage;
-		protected Cursor cursor;
-		protected string name;
-		protected string description;
-		protected string helpText;
+		private Image toolBarImage;
+		private Cursor cursor;
+        private ToolInfo toolInfo;
 
 		private DocumentWorkspace workspace;
 		private EventHandler selectionChangedDelegate;
@@ -30,18 +38,29 @@ namespace PaintDotNet
 		protected bool autoScroll = true;
 		private Hashtable keysThatAreDown = new Hashtable();
 		MouseButtons lastButton = MouseButtons.None;
+        private Surface scratchSurface;
 
-		private class KeyTimeInfo
+        protected Surface ScratchSurface
+        {
+            get
+            {
+                return scratchSurface;
+            }
+        }
+
+		private sealed class KeyTimeInfo
 		{
 			public DateTime KeyDownTime;
 			public DateTime LastKeyPressPulse;
 			private int repeats = 0;
+
 			public int Repeats 
 			{
 				get 
 				{
 					return repeats;
 				}
+
 				set 
 				{
 					repeats = value;
@@ -90,6 +109,15 @@ namespace PaintDotNet
 			}
 		}
 
+        protected void DisposeImage()
+        {
+            if (this.toolBarImage != null)
+            {
+                this.toolBarImage.Dispose();
+                this.toolBarImage = null;
+            }
+        }
+
 		public event EventHandler CursorChanging;
 
 		protected virtual void OnCursorChanging()
@@ -130,13 +158,13 @@ namespace PaintDotNet
 		}
 
 		/// <summary>
-		/// The name of the Tool. For instance, "Pencil"
+		/// The name of the Tool. For instance, "Pencil". This name should *not* end in "Tool", e.g. "Pencil Tool"
 		/// </summary>
 		public string Name
 		{
 			get
 			{
-				return name;
+				return toolInfo.Name;
 			}
 		}
 
@@ -147,7 +175,7 @@ namespace PaintDotNet
 		{
 			get
 			{
-				return description;
+				return toolInfo.Description;
 			}
 		}
 
@@ -158,9 +186,17 @@ namespace PaintDotNet
 		{
 			get
 			{
-				return helpText;
+				return toolInfo.HelpText;
 			}
 		}
+
+        public ToolInfo Info
+        {
+            get
+            {
+                return toolInfo;
+            }
+        }
 
 		/// <summary>
 		/// Specifies whether or not an inherited tool should take Ink commands
@@ -173,11 +209,11 @@ namespace PaintDotNet
 			}
 		}
 
-		public virtual char HotKey
+		public char HotKey
 		{
 			get
 			{
-				return '\0';
+				return toolInfo.HotKey;
 			}
 		}
 
@@ -206,7 +242,7 @@ namespace PaintDotNet
 		private bool IsOverflow(MouseEventArgs e) 
 		{
 			PointF clientPt = workspace.DocumentView.DocumentToClient(new PointF(e.X, e.Y));
-			return (clientPt.X < -16384 || clientPt.Y < -16384);
+			return clientPt.X < -16384 || clientPt.Y < -16384;
 		}
 
 		public void PerformMouseMove(MouseEventArgs e)
@@ -215,19 +251,19 @@ namespace PaintDotNet
 			{
 				return;
 			}
+
 			if (e is StylusEventArgs)
 			{
 				if (this.SupportsInk) 
 				{
 					OnStylusMove(e as StylusEventArgs);
 				}
-			}
+
+                // if the tool does not claim ink support, discard
+            }
 			else
 			{
-				//if (!this.SupportsInk)
-				{
-					OnMouseMove(e);
-				}
+				OnMouseMove(e);
 			}
 		}
 
@@ -237,12 +273,15 @@ namespace PaintDotNet
 			{
 				return;
 			}
+
 			if (e is StylusEventArgs) 
 			{
 				if (this.SupportsInk) 
 				{
 					OnStylusDown(e as StylusEventArgs);
 				}
+
+                // if the tool does not claim ink support, discard
 			}
 			else
 			{
@@ -263,13 +302,16 @@ namespace PaintDotNet
 			{
 				return;
 			}
+
 			if (e is StylusEventArgs) 
 			{
 				if (this.SupportsInk) 
 				{
 					OnStylusUp(e as StylusEventArgs);
 				}
-			}
+
+                // if the tool does not claim ink support, discard
+            }
 			else
 			{
 				OnMouseUp(e);
@@ -324,11 +366,14 @@ namespace PaintDotNet
 		/// </summary>
 		protected virtual void OnActivate()
 		{
+            Debug.Assert(active != true, "already active!");
+
+            this.scratchSurface = Workspace.ScratchSurface;
+            Workspace.ScratchSurface = null;
+
 			active = true;
 			Workspace.Environment.SelectedPathChanging += selectionChangingDelegate;
 			Workspace.Environment.SelectedPathChanged += selectionChangedDelegate;
-//			Workspace.Widgets.MainToolBar.ToleranceSliderWidget.ToleranceChanged += new ToleranceEventHandler(ToleranceSliderWidget_ToleranceChanged);
-//			tolerance = Workspace.Widgets.MainToolBar.Tolerance;
 		}
 
 		/// <summary>
@@ -338,6 +383,11 @@ namespace PaintDotNet
 		/// </summary>
 		protected virtual void OnDeactivate()
 		{
+            Debug.Assert(active != false, "not active!");
+
+            Workspace.ScratchSurface = this.scratchSurface;
+            this.scratchSurface = null;
+
 			active = false;
 			Workspace.Environment.SelectedPathChanging -= selectionChangingDelegate;
 			Workspace.Environment.SelectedPathChanged -= selectionChangedDelegate;
@@ -358,6 +408,7 @@ namespace PaintDotNet
 		protected virtual void OnStylusUp(StylusEventArgs e)
 		{
 		}
+
 		/// <summary>
 		/// This method is called when the Tool is active and the mouse is moving within
 		/// the document canvas area.
@@ -369,6 +420,7 @@ namespace PaintDotNet
 			{
 				ScrollIfNecessary(new PointF(e.X, e.Y));
 			}
+
 			lastButton = e.Button;
 		}
 
@@ -410,44 +462,45 @@ namespace PaintDotNet
 		{
 			if (!e.Handled && workspace.DocumentView.Focused) 
 			{
-				Type [] toolTypes = Workspace.Tools;
+				ToolInfo[] toolInfos = Workspace.ToolInfos;
 				Type currentToolType = Workspace.Environment.Tool.GetType();
 				int currentTool = 0;
 
-				for (int t = 0; t < toolTypes.Length; t++) 
+				for (int t = 0; t < toolInfos.Length; t++) 
 				{
-					if (toolTypes[t] == currentToolType)
+					if (toolInfos[t].ToolType == currentToolType)
 					{
 						currentTool = t;
 						break;
 					}
 				}
-				for (int t = 0; t < toolTypes.Length; t++) 
-				{
-					int newTool = (t + currentTool + 1) % toolTypes.Length;
-					Type toolType = toolTypes[newTool];
-					Tool tool = Tool.CreateTool(toolType, Workspace);
 
-					if (char.ToLower(tool.HotKey) == char.ToLower(e.KeyChar)) 
-					{
-						Workspace.Widgets.MainToolBar.SelectTool(toolType);
-						e.Handled = true;
-						return;
-					}
+				for (int t = 0; t < toolInfos.Length; t++) 
+				{
+					int newTool = (t + currentTool + 1) % toolInfos.Length;
+					ToolInfo toolInfo = toolInfos[newTool];
+
+                    if (char.ToLower(toolInfo.HotKey) == char.ToLower(e.KeyChar))
+                    {
+                        Workspace.Widgets.MainToolBar.SelectTool(toolInfo.ToolType);
+                        e.Handled = true;
+                        return;
+                    }
 				}
 			}
 		}
 
-		/// <summary>
-		/// This method is called when the tool is active and a keyboard key is pressed
-		/// and released that is not representable with a regular Unicode chararacter.
-		/// An example would be the arrow keys.
-		/// </summary>
 		private DateTime lastKeyboardMove = DateTime.MinValue;
 		private Keys lastKey;
 		private int keyboardMoveSpeed = 1;
 		private int keyboardMoveRepeats = 0;
-		protected virtual void OnKeyPress(Keys key)
+
+        /// <summary>
+        /// This method is called when the tool is active and a keyboard key is pressed
+        /// and released that is not representable with a regular Unicode chararacter.
+        /// An example would be the arrow keys.
+        /// </summary>
+        protected virtual void OnKeyPress(Keys key)
 		{
 			Point dir = Point.Empty;
 
@@ -455,20 +508,25 @@ namespace PaintDotNet
 			{
 				lastKeyboardMove = DateTime.MinValue;
 			}
+
 			lastKey = key;
 
-			switch (key) {
+			switch (key) 
+            {
 				case Keys.Left:
-					dir.X--;
+					--dir.X;
 					break;
+
 				case Keys.Right:
-					dir.X++;
+					++dir.X;
 					break;
+
 				case Keys.Up:
-					dir.Y--;
+					--dir.Y;
 					break;
+
 				case Keys.Down:
-					dir.Y++;
+					++dir.Y;
 					break;				
 			}
 
@@ -484,23 +542,29 @@ namespace PaintDotNet
 				else
 				{
 					keyboardMoveRepeats++;
-					if (keyboardMoveRepeats > 15 && keyboardMoveRepeats % 4 == 0)
-						keyboardMoveSpeed++;
+
+                    if (keyboardMoveRepeats > 15 && (keyboardMoveRepeats % 4) == 0)
+                    {
+                        keyboardMoveSpeed++;
+                    }
 				}
+
 				lastKeyboardMove = DateTime.Now;
 				
-				int offset = workspace.DocumentView.ScaleFactor.Numerator * keyboardMoveSpeed;
+				int offset = (int)(Math.Ceiling(workspace.DocumentView.ScaleFactor.Ratio) * (double)keyboardMoveSpeed);
 				Cursor.Position = new Point(Cursor.Position.X + offset * dir.X, Cursor.Position.Y + offset * dir.Y);
 				
 				Point location = workspace.DocumentView.PointToScreen(Point.Truncate(workspace.DocumentView.DocumentToClient(PointF.Empty)));
-				PointF stylusLoc = new PointF(
-					(float)Cursor.Position.X - (float)location.X,
-					(float)Cursor.Position.Y - (float)location.Y);
+
+				PointF stylusLocF = new PointF((float)Cursor.Position.X - (float)location.X, (float)Cursor.Position.Y - (float)location.Y);
+                Point stylusLoc = new Point(Cursor.Position.X - location.X, Cursor.Position.Y - location.Y);
 
 				stylusLoc = workspace.DocumentView.ScaleFactor.UnscalePoint(stylusLoc);
-				workspace.DocumentView.PerformDocumentMouseMove(new MouseEventArgs(lastButton, 1, (int)stylusLoc.X, (int)stylusLoc.Y, 0));
-				workspace.DocumentView.PerformDocumentMouseMove(new StylusEventArgs(lastButton, 1, stylusLoc.X, stylusLoc.Y, 0, 1.0f));
-			}
+                stylusLocF = workspace.DocumentView.ScaleFactor.UnscalePoint(stylusLocF);
+
+				workspace.DocumentView.PerformDocumentMouseMove(new StylusEventArgs(lastButton, 1, stylusLocF.X, stylusLocF.Y, 0, 1.0f));
+                workspace.DocumentView.PerformDocumentMouseMove(new MouseEventArgs(lastButton, 1, stylusLoc.X, stylusLoc.Y, 0));
+            }
 		}
 
 		/// <summary>
@@ -521,16 +585,10 @@ namespace PaintDotNet
 		{
 			if (!e.Handled)
 			{
-				try
-				{
-					keysThatAreDown.Add(e.KeyData, new KeyTimeInfo());
-				}
-
-				catch (ArgumentException)
-				{
-					// item was already in the hashtable
-					// exception is ignored because we don't really care
-				}
+                if (!keysThatAreDown.Contains(e.KeyData))
+                {
+                    keysThatAreDown.Add(e.KeyData, new KeyTimeInfo());
+                }
 
 				// arrow keys are processed in another way
 				// we get their KeyDown but no KeyUp, so they can not be handled
@@ -598,18 +656,9 @@ namespace PaintDotNet
 		/// </summary>
 		protected virtual void OnPulse()
 		{
-			uint kbDelay;
-			uint kbRepeat;
+			int kbDelay = Keyboard.GetRepeatDelay();
+			int kbRepeat = Keyboard.GetRepeatSpeed();
 			DateTime now = DateTime.Now;
-
-			unsafe
-			{
-				uint *kbDelayPtr = &kbDelay;
-				uint *kbRepeatPtr = &kbRepeat;
-
-				NativeMethods.SystemParametersInfo(NativeMethods.SpiConstants.SPI_GETKEYBOARDDELAY, 0, kbDelayPtr, 0);
-				NativeMethods.SystemParametersInfo(NativeMethods.SpiConstants.SPI_GETKEYBOARDSPEED, 0, kbRepeatPtr, 0);
-			}
 
 			TimeSpan kbDelaySpan = new TimeSpan (0, 0, 0, 0, ((int)kbDelay + 1) * 250);
 			TimeSpan kbRepeatSpan = new TimeSpan(0, 0, 0, 0, (12 * (int)kbRepeat) + 33);
@@ -645,7 +694,51 @@ namespace PaintDotNet
 			}
 		}
 
-		private void SelectionChangingHandler(object sender, EventArgs e)
+        protected bool ScrollIfNecessary(PointF position) 
+        {
+            if (!autoScroll) 
+            {
+                return false;
+            }
+
+            Rectangle visible = Workspace.DocumentView.VisibleDocumentRectangle;
+            PointF lastScrollPosition = Workspace.DocumentView.DocumentScrollPosition;
+            PointF delta = PointF.Empty, zoomedPoint = PointF.Empty;
+
+            zoomedPoint.X = Utility.Lerp((visible.Left + visible.Right) / 2.0f, position.X, 1.02f);
+            zoomedPoint.Y = Utility.Lerp((visible.Top + visible.Bottom) / 2.0f, position.Y, 1.02f);
+
+            if (zoomedPoint.X < visible.Left) 
+            {
+                delta.X = zoomedPoint.X - visible.Left;
+            }
+            else if (zoomedPoint.X > visible.Right) 
+            {
+                delta.X = zoomedPoint.X - visible.Right;
+            } 
+            if (zoomedPoint.Y < visible.Top) 
+            {
+                delta.Y = zoomedPoint.Y - visible.Top;
+            } 
+            else if (zoomedPoint.Y > visible.Bottom) 
+            {
+                delta.Y = zoomedPoint.Y - visible.Bottom;
+            }
+            if (!delta.IsEmpty) 
+            {
+                lastScrollPosition.X += delta.X;
+                lastScrollPosition.Y += delta.Y;
+                Workspace.DocumentView.DocumentScrollPosition = lastScrollPosition;
+                Workspace.DocumentView.Update();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        
+        private void SelectionChangingHandler(object sender, EventArgs e)
 		{
 			OnSelectionChanging();
 		}
@@ -655,13 +748,16 @@ namespace PaintDotNet
 			OnSelectionChanged();
 		}
 
-		public Tool(DocumentWorkspace workspace)
+		public Tool(DocumentWorkspace workspace,
+                    Image toolBarImage,
+                    string name,
+                    string description,
+                    string helpText,
+                    char hotKey)
 		{
 			this.workspace = workspace;
-			this.toolBarImage = null;
-			this.name = string.Empty;
-			this.description = string.Empty;
-			this.helpText = "No help available";
+			this.toolBarImage = toolBarImage;
+            this.toolInfo = new ToolInfo(name, description, helpText, toolBarImage, hotKey, this.GetType());
 			this.selectionChangingDelegate = new EventHandler(SelectionChangingHandler);
 			this.selectionChangedDelegate = new EventHandler(SelectionChangedHandler);
 		}
@@ -671,51 +767,21 @@ namespace PaintDotNet
 			ConstructorInfo ci = toolType.GetConstructor(new Type[] { typeof(DocumentWorkspace) });
 			Tool tool = (Tool)ci.Invoke(new object[] { workspace });
 			return tool;
-		}
+        }
 
-		protected bool ScrollIfNecessary(PointF position) 
-		{
-			if (!autoScroll) 
-			{
-				return false;
-			}
+        ~Tool()
+        {
+            Dispose(false);
+        }
 
-			Rectangle visible = Workspace.DocumentView.VisibleDocumentRectangle;
-			PointF lastScrollPosition = Workspace.DocumentView.DocumentScrollPosition;
-			PointF delta = PointF.Empty, zoomedPoint = PointF.Empty;
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
-			zoomedPoint.X = Utility.Lerp((visible.Left + visible.Right) / 2.0f, position.X, 1.02f);
-			zoomedPoint.Y = Utility.Lerp((visible.Top + visible.Bottom) / 2.0f, position.Y, 1.02f);
-
-			if (zoomedPoint.X < visible.Left) 
-			{
-				delta.X = zoomedPoint.X - visible.Left;
-			}
-			else if (zoomedPoint.X > visible.Right) 
-			{
-				delta.X = zoomedPoint.X - visible.Right;
-			} 
-			if (zoomedPoint.Y < visible.Top) 
-			{
-				delta.Y = zoomedPoint.Y - visible.Top;
-			} 
-			else if (zoomedPoint.Y > visible.Bottom) 
-			{
-				delta.Y = zoomedPoint.Y - visible.Bottom;
-			}
-			if (!delta.IsEmpty) 
-			{
-				lastScrollPosition.X += delta.X;
-				lastScrollPosition.Y += delta.Y;
-				Workspace.DocumentView.DocumentScrollPosition = lastScrollPosition;
-				Workspace.DocumentView.Update();
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-
-	}
+        protected virtual void Dispose(bool disposing)
+        {
+        }
+    }
 }

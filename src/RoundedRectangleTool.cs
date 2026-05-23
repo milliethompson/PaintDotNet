@@ -1,3 +1,11 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
+//               Craig Taylor, Chris Trevino, and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections;
 using System.Drawing;
@@ -10,22 +18,14 @@ using System.Windows.Forms;
 namespace PaintDotNet
 {
     /// <summary>
-    /// Summary description for RectangleTool.
+    /// Summary description for RoundedRectangleTool.
     /// </summary>
     public class RoundedRectangleTool
         : ShapeTool 
     {
-        protected override void OnActivate()
-        {
-            base.OnActivate ();
-        }
+        private Cursor roundedRectangleCursor;
 
-        protected override void OnDeactivate()
-        {
-            base.OnDeactivate ();
-        }
-
-        protected override RectangleF[] GetOptimizedShapeOutlineRegion(Point[] points, PdnGraphicsPath path)
+        protected override RectangleF[] GetOptimizedShapeOutlineRegion(PointF[] points, PdnGraphicsPath path)
         {
             return Utility.SimplifyTrace(path.PathPoints);
         }
@@ -47,10 +47,10 @@ namespace PaintDotNet
             return array;
         }
 
-        protected override PdnGraphicsPath CreateShapePath(Point[] points)
+        protected override PdnGraphicsPath CreateShapePath(PointF[] points)
         {
-            Point a = points[0];
-            Point b = points[points.Length - 1];
+            PointF a = points[0];
+            PointF b = points[points.Length - 1];
             RectangleF rect;
             float radius = 10;
 
@@ -76,17 +76,17 @@ namespace PaintDotNet
         }
 
         public RoundedRectangleTool(DocumentWorkspace parent)
-            : base(parent)
+            : base(parent,
+                   Utility.GetImageResource("Icons.RoundedRectangleToolIcon.bmp"),
+                   "Rounded Rectangle",
+                   "Draws a rounded rectangle",
+			       "Click and drag to draw a rounded rectangle (right click for background color). Hold shift to constrain.")
         {
-            toolBarImage = Utility.GetImageResource("Icons.RoundedRectangleToolIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.RoundedRectangleToolCursor.cur"));
-            name = "Rounded Rectangle";
-            description = "Draws a rounded rectangle";
-			helpText = "Left click to draw a rounded rectangle with the foreground color, right click to use the background color";
+            this.roundedRectangleCursor = new Cursor(Utility.GetResourceStream("Cursors.RoundedRectangleToolCursor.cur"));
+            this.Cursor = this.roundedRectangleCursor;
         }
 
         // credit for the this function is given to Aaron Reginald http://www.codeproject.com/cs/media/ExtendedGraphics.asp
-        #region Get the desired Rounded Rectangle path. 
         protected PdnGraphicsPath GetRoundedRect(RectangleF baseRect, float radius) 
         {
             // if corner radius is less than or equal to zero, 
@@ -132,10 +132,8 @@ namespace PaintDotNet
             path.CloseFigure(); 
             return path; 
         } 
-        #endregion 
 
         // credit for the this function is given to Aaron Reginald http://www.codeproject.com/cs/media/ExtendedGraphics.asp
-        #region Gets the desired Capsular path.
         private PdnGraphicsPath GetCapsule(RectangleF baseRect) 
         { 
             float diameter; 
@@ -145,7 +143,8 @@ namespace PaintDotNet
             try 
             { 
                 if (baseRect.Width>baseRect.Height) 
-                {   // return horizontal capsule 
+                {   
+                    // return horizontal capsule 
                     diameter = baseRect.Height; 
                     SizeF sizeF = new SizeF(diameter, diameter);
                     arc = new RectangleF(baseRect.Location, sizeF); 
@@ -154,10 +153,11 @@ namespace PaintDotNet
                     path.AddArc(arc, 270, 180); 
                 } 
                 else if (baseRect.Width < baseRect.Height) 
-                {   // return vertical capsule 
+                {   
+                    // return vertical capsule 
                     diameter = baseRect.Width;
                     SizeF sizeF = new SizeF(diameter, diameter);
-                    arc = new RectangleF( baseRect.Location, sizeF ); 
+                    arc = new RectangleF(baseRect.Location, sizeF);
                     path.AddArc(arc, 180, 180); 
                     arc.Y = baseRect.Bottom-diameter; 
                     path.AddArc(arc, 0, 180); 
@@ -180,6 +180,5 @@ namespace PaintDotNet
 
             return path; 
         } 
-        #endregion
     }
 }
