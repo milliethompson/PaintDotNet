@@ -104,12 +104,60 @@ namespace PaintDotNet.SystemLayer
 
         public static bool IsDotNetVersionInstalled(int major, int minor, int build)
         {
+            bool result = false;
+            
+            if (!result)
+            {
+                result |= IsDotNet2VersionInstalled(major, minor, build);
+            }
+
+            if (!result)
+            {
+                result |= IsDotNet3VersionInstalled(major, minor, build);
+            }
+
+            return result;
+        }
+
+        private static bool IsDotNet2VersionInstalled(int major, int minor, int build)
+        {
             const string regKeyNameFormat = "Software\\Microsoft\\NET Framework Setup\\NDP\\v{0}.{1}.{2}";
             const string regValueName = "Install";
 
             string regKeyName = string.Format(regKeyNameFormat, major.ToString(CultureInfo.InvariantCulture),
                 minor.ToString(CultureInfo.InvariantCulture), build.ToString(CultureInfo.InvariantCulture));
 
+            return CheckForRegValueEquals1(regValueName, regKeyName);
+        }
+
+        private static bool IsDotNet3VersionInstalled(int major, int minor, int build)
+        {
+            bool result = false;
+
+            const string regValueName = "InstallSuccess";
+
+            if (!result)
+            {
+                const string regKeyNameFormat = "Software\\Microsoft\\NET Framework Setup\\NDP\\v{0}.{1}\\Setup";
+                string regKeyName = string.Format(regKeyNameFormat, major, minor);
+
+                result |= CheckForRegValueEquals1(regKeyName, regValueName);
+            }
+
+            if (!result)
+            {
+                // There seems to be a bug in x64 .NET 3.0 where it only records its success in the 32-bit section of the registry.
+                const string regKeyNameFormat2 = "Software\\Wow6432Node\\Microsoft\\NET Framework Setup\\NDP\\v{0}.{1}\\Setup";
+                string regKeyName2 = string.Format(regKeyNameFormat2, major, minor);
+
+                result |= CheckForRegValueEquals1(regKeyName2, regValueName);
+            }
+
+            return result;
+        }
+
+        private static bool CheckForRegValueEquals1(string regKeyName, string regValueName)
+        {
             using (RegistryKey key = Registry.LocalMachine.OpenSubKey(regKeyName, false))
             {
                 object value = null;

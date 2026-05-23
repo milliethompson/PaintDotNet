@@ -133,8 +133,13 @@ namespace PaintDotNet.SystemLayer
 
         private delegate void EnableThumbnailViewDelegate(FileDialog fileDialog);
 
-        public DialogResult ShowDialog(Control owner)
+        public DialogResult ShowDialog(Control owner, IFileDialogUICallbacks uiCallbacks)
         {
+            if (uiCallbacks == null)
+            {
+                throw new ArgumentNullException("uiCallbacks");
+            }
+
             Cursor.Current = Cursors.WaitCursor;
 
             while ((Control.ModifierKeys & Keys.Shift) != 0)

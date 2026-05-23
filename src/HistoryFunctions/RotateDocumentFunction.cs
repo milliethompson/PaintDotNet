@@ -194,8 +194,11 @@ namespace PaintDotNet.HistoryFunctions
         // TODO: because of ProgressDialog's incorrect code, ActionFlags.Cancellable doesn't work right
         //       fix this post-3.0. it is not a priority right now because this is the only action that
         //       uses this flag right now.
+        //       Also had to disable progress reporting as there are some problems with running this
+        //       action in the background since it has to perform a Deselect. This then causes things
+        //       like invalidation to be performed on the wrong thread, etc. See bug #2358
         public RotateDocumentFunction(RotateType rotation)
-            : base(ActionFlags.ReportsProgress /*| ActionFlags.Cancellable*/)
+            : base(0 /*ActionFlags.ReportsProgress*/ /*| ActionFlags.Cancellable*/)
         {
             this.rotation = rotation;           
         }

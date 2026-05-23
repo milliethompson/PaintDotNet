@@ -679,21 +679,6 @@
     <value>{0}: {1}</value>
     <comment>{0} is the file being imported, {1} is the name of a layer within that file</comment>
   </data>
-  <data name="ImportLayersDialog.Text" xml:space="preserve">
-    <value>レイヤーのインポート</value>
-  </data>
-  <data name="ImportLayersDialog.AllButton.Text" xml:space="preserve">
-    <value>すべて</value>
-  </data>
-  <data name="ImportLayersDialog.NoneButton.Text" xml:space="preserve">
-    <value>なし</value>
-  </data>
-  <data name="ImportLayersDialog.LayersToInsertHeader.Text" xml:space="preserve">
-    <value>挿入するレイヤー</value>
-  </data>
-  <data name="ImportLayersDialog.PreviewHeader.Text" xml:space="preserve">
-    <value>プレビュー</value>
-  </data>
   <data name="InvertSelectionAction.Name" xml:space="preserve">
     <value>選択の切り替え</value>
   </data>
@@ -982,12 +967,9 @@
   <data name="SaveConfigDialog.DefaultsButton.Text" xml:space="preserve">
     <value>既定値(&amp;F)</value>
   </data>
-  <data name="SaveConfigDialog.FileSizeText.Text.Format" xml:space="preserve">
-    <value>ファイル サイズ: {0}</value>
+  <data name="SaveConfigDialog.PreviewHeader.Text.Format" xml:space="preserve">
+    <value>プレビュー、ファイル サイズ: {0}</value>
     <comment>{0} is a file size, or some text in parenthesis (such as SaveConfigDialog.FileSizeText.Text.Error)</comment>
-  </data>
-  <data name="SaveConfigDialog.PreviewHeader.Text" xml:space="preserve">
-    <value>プレビュー</value>
   </data>
   <data name="SaveConfigDialog.FileSizeText.Text.Computing" xml:space="preserve">
     <value>(計算中)</value>
@@ -2502,6 +2484,10 @@ PROPERTY=VALUE  -  MSI プロパティを設定します。詳細情報につい
   <data name="LaunchLink.Error" xml:space="preserve">
     <value>リンクの起動中にエラーが発生しました。</value>
   </data>
+  <data name="LaunchLink.Error.Format" xml:space="preserve">
+    <value>リンクの起動中にエラーが発生しました: {0}</value>
+    <comment>{0} is a URL.</comment>
+  </data>
   <data name="RadialBlurEffect.Name" xml:space="preserve">
     <value>放射状のぼかし</value>
   </data>
@@ -2707,8 +2693,8 @@ www.getpaint.net</value>
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.Resampling.HeaderLabel.Text">
     <value>選択ピクセルの移動</value>
   </data>
-  <data name="ChooseToolDefaultsDialog.ToolConfigRow.BrushPenShapeType.HeaderLabel.Text">
-    <value>シェイプ、ブラシおよび塗りつぶし</value>
+  <data name="ChooseToolDefaultsDialog.ToolConfigRow.BrushPenPenCapsShapeType.HeaderLabel.Text">
+    <value>シェイプ、ブラシ、スタイルおよび塗りつぶし</value>
   </data>
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.Text.HeaderLabel.Text">
     <value>テキスト</value>
@@ -2798,6 +2784,21 @@ www.getpaint.net</value>
     <value>ブラシのサイズを減少
 ショートカット キー: [ (Ctrl キーを同時に押すと 5 ずつ減少)</value>
   </data>
+  <data name="ToolConfigStrip.PenStartCapSplitButton.ToolTipText" xml:space="preserve">
+    <value>線の始点スタイルの切り替え
+ショートカット キー: ,</value>
+  </data>
+  <data name="ToolConfigStrip.PenDashStyleSplitButton.ToolTipText" xml:space="preserve">
+    <value>実線/点線スタイルの切り替え
+ショートカット キー: .</value>
+  </data>
+  <data name="ToolConfigStrip.PenEndCapSplitButton.ToolTipText" xml:space="preserve">
+    <value>線の終点スタイルの切り替え
+ショートカット キー: /</value>
+  </data>
+  <data name="ToolConfigStrip.PenStyleLabel.Text">
+    <value>スタイル:</value>
+  </data>
   <data name="Effects.Render.Submenu.Name" xml:space="preserve">
     <value>レンダ</value>
   </data>
@@ -2845,5 +2846,89 @@ www.getpaint.net</value>
   </data>
   <data name="ExpandCanvasQuestion.CancelTB.ExplanationText">
     <value>貼り付け操作をキャンセルします。</value>
+  </data>
+  <data name="LineCap2.Flat">
+    <value>フラット</value>
+  </data>
+  <data name="LineCap2.Arrow">
+    <value>矢印</value>
+  </data>
+  <data name="LineCap2.ArrowFilled">
+    <value>塗りつぶし矢印</value>
+  </data>
+  <data name="LineCap2.Rounded">
+    <value>角丸</value>
+  </data>
+  <data name="DashStyle.Custom">
+    <value>Custom_NotUsed</value>
+    <comment>This string does not need to be translated. It is not used.</comment>
+  </data>
+  <data name="DashStyle.Solid">
+    <value>実線</value>
+  </data>
+  <data name="DashStyle.Dash">
+    <value>破線</value>
+  </data>
+  <data name="DashStyle.Dot">
+    <value>点線</value>
+  </data>
+  <data name="DashStyle.DashDot">
+    <value>一点鎖線</value>
+  </data>
+  <data name="DashStyle.DashDotDot">
+    <value>二点鎖線</value>
+  </data>
+  <data name="HelpFile.Url.Format">
+    <value>{0}/doc/latest/index.html</value>
+    <comment>Note to translators: This string only needs to be changed if the UA (user assistance, aka help file, documentation) is also being translated.
+{0} is the base website address, such as http://www.getpaint.net. This string is not required to have {0} in it. So if you want to distribute a language pack that hosts the help file elsewhere (that is to say, not on the official Paint.NET website), you can do that by specifying the URL directly, e.g. "http://www.wherever.net/paintnethelp/fr/".</comment>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.TransferProgress.Title">
+    <value>転送中 ...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemText.Initializing">
+    <value>初期化中 ...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemText.Canceling">
+    <value>キャンセル中 ...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ProgressText.Format">
+    <value>{0}/{1}</value>
+    <comment>{0} is the number of the current item, {1} is the total number of items. Example: "5 of 7"</comment>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemFailureDialog.Title">
+    <value>転送エラー</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemFailureDialog.IntroText.Format" xml:space="preserve">
+    <value>イメージの転送中にエラーが発生しました:
+
+{0}</value>
+    <comment>{0} is an error message, which will be populated by the operation system in the language that it is configured for.</comment>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.RetryTB.ActionText">
+    <value>再試行(&amp;R)</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.RetryTB.ExplanationText">
+    <value>イメージの転送を再試行します。</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.SkipTB.ActionText">
+    <value>スキップ(&amp;S)</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.SkipTB.ExplanationText">
+    <value>このイメージをスキップし、次のイメージに移動します。</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.CancelTB.ActionText">
+    <value>キャンセル</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.CancelTB.ExplanationText">
+    <value>転送をキャンセルして、もう一度開くイメージを選択できます。</value>
+  </data>
+  <data name="SaveAs.OverwriteConfirmation.Title">
+    <value>名前をつけて保存の確認</value>
+  </data>
+  <data name="SaveAs.OverwriteConfirmation.Text.Format" xml:space="preserve">
+    <value>{0} は既に存在します。
+置き換えますか?</value>
+    <comment>{0} is a relative filename. e.g. "Untitled.png"</comment>
   </data>
 </root>

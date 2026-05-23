@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--      Microsoft ResX Schema           Version 2.0          The primary goals of this format is to allow a simple XML format      that is mostly human readable. The generation and parsing of the      various data types are done through the TypeConverter classes      associated with the data types.          Example:          ... ado.net/XML headers & schema ...     <resheader name="resmimetype">text/microsoft-resx</resheader>     <resheader name="version">2.0</resheader>     <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>     <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>     <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>     <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>     <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">         <value>[base64 mime encoded serialized .NET Framework object]</value>     </data>     <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>         <comment>This is a comment</comment>     </data>                      There are any number of "resheader" rows that contain simple      name/value pairs.          Each data row contains a name, and value. The row also contains a      type or mimetype. Type corresponds to a .NET class that support      text/value conversion through the TypeConverter architecture.      Classes that don't support this are serialized and stored with the      mimetype set.          The mimetype is used for serialized objects, and tells the      ResXResourceReader how to depersist the object. This is currently not      extensible. For a given mimetype the value must be set accordingly:          Note - application/x-microsoft.net.object.binary.base64 is the format      that the ResXResourceWriter will generate, however the reader can      read any of the formats listed below.          mimetype: application/x-microsoft.net.object.binary.base64     value   : The object must be serialized with              : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter             : and then encoded with base64 encoding.          mimetype: application/x-microsoft.net.object.soap.base64     value   : The object must be serialized with              : System.Runtime.Serialization.Formatters.Soap.SoapFormatter             : and then encoded with base64 encoding.      mimetype: application/x-microsoft.net.object.bytearray.base64     value   : The object must be serialized into a byte array              : using a System.ComponentModel.TypeConverter             : and then encoded with base64 encoding.     -->
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
@@ -64,11 +64,11 @@
   </data>
   <data name="Application.ProductName.Format" xml:space="preserve">
 <value>{0} v{1}{2}</value>
-    <comment>{0} is Application.ProductName.Bare. {1} is the version number (e.g., "2.6"). {2} is either an empty string, or a version tag constructed with Application.ProductNage.Format (e.g., "Beta 5")</comment>
+<comment>{0} is Application.ProductName.Bare. {1} is the version number (e.g., &quot;2.6&quot;).{2} is either an empty string, or a version tag constructed with Application.ProductNage.Format (e.g., &quot;Beta 5&quot;)</comment>
   </data>
   <data name="Application.ProductName.Tag.Format" xml:space="preserve">
     <value> {0}</value>
-    <comment>{0} is the version tag, e.g. Beta 5</comment>
+<comment>{0} is the version tag, e.g. Beta 5</comment>
   </data>
   <data name="Application.Copyright.AllRightsReserved" xml:space="preserve">
 <value>版权所有。</value>
@@ -131,20 +131,22 @@
 <value>从调色板中删除颜色</value>
   </data>
   <data name="ColorPalette.SaveHeader">
-<value>; Paint.NET 调色板文件; 以分号开始的行是注释 
-; 颜色以8位数字的形式组成:aarrggbb ; 例如, 这代表绿色:FF00FF00 
-; 阿尔法(Alpha) aa 代表颜色的透明度。FF 是完全不透明， 00 是完全透明。
-; 一个调色板必须由96种颜色组成。如果少于这个，那么剩余颜色 
-; slots将设置成白色 (FFFFFFFF).如果多于这个，那么剩余颜色将被忽略。</value>
-    <comment>Yes, this should be translated. This is written to the beginning of palette files, which are stored in text files (*.txt). They are intended to be understandable by the user.</comment>
+<value>; Paint.NET 调色板文件
+; 以分号开始的行是注释
+; 颜色写成8位16进制数:aarrggbb
+; 例如，这个定义是绿色：FF00FF00
+; 阿尔法(&apos;aa&apos;) 值定义的颜色透明度。FF 是完全不透明， 00 是完全透明。
+; 一个调色板必须由96种颜色组成。如果少于这个数字，剩余的由
+; 白色填充 (FFFFFFFF).如果多于这个，那么剩余颜色将被忽略。</value>
+<comment>Yes, this should be translated.This is written to the beginning of palette files, which are stored in text files (*.txt).They are intended to be understandable by the user.</comment>
   </data>
   <data name="SystemLayer.UserDataDirName">
 <value>Paint.NET 用户文件</value>
-    <comment>This is a directory that will be created in the My Documents folder.</comment>
+<comment>This is a directory that will be created in the My Documents folder.</comment>
   </data>
   <data name="ColorPalettes.UserDataSubDirName">
 <value>调色板</value>
-    <comment>This is a directory that will be created in the directory that SystemLayer.UserDataDirName refers to.</comment>
+<comment>This is a directory that will be created in the directory that SystemLayer.UserDataDirName refers to.</comment>
   </data>
   <data name="ColorsForm.ColorPalettesButton.ToolTipText">
 <value>管理调色板</value>
@@ -447,7 +449,8 @@
 <value>按Ctrl键的同时左击选择物体。然后按左键拖动复制</value>
   </data>
   <data name="ColorDisplayWidget.SwapIconBox.ToolTipText" xml:space="preserve">
-<value>交换颜色的快捷键:X</value>
+<value>交换颜色
+快捷键:X</value>
   </data>
   <data name="ColorDisplayWidget.BlackAndWhiteIconBox.ToolTipText" xml:space="preserve">
 <value>黑白效果</value>
@@ -514,11 +517,11 @@
   </data>
   <data name="LayerPropertyChanging.HistoryMementoNameFormat" xml:space="preserve">
 <value>图层 {0}</value>
-    <comment>{0} represents the layer index</comment>
+<comment>{0} represents the layer index</comment>
   </data>
   <data name="DocumentWorkspace.InitializeEffects.DllLoadFailed.Format" xml:space="preserve">
 <value>提取 {0} 时出现错误。它可能已被破坏或需要重新编译。</value>
-    <comment>{0} is a file name</comment>
+<comment>{0} is a file name</comment>
   </data>
   <data name="Generic.OutOfMemory">
 <value>无足够内存完成操作。</value>
@@ -528,7 +531,7 @@
   </data>
   <data name="AddNewBlankLayer.LayerName.Format" xml:space="preserve">
 <value>图层 {0}</value>
-    <comment>{0} is the number of the new layer</comment>
+<comment>{0} is the number of the new layer</comment>
   </data>
   <data name="DocumentWorkspace.DeleteLayerButtonClicked.MustHaveOneLayer" xml:space="preserve">
 <value>图像中最少需要有一个图层。</value>
@@ -616,22 +619,7 @@
   </data>
   <data name="ImportFromFileAction.ImportOneFile.NewLayer.Format" xml:space="preserve">
     <value>{0}: {1}</value>
-    <comment>{0} is the file being imported, {1} is the name of a layer within that file</comment>
-  </data>
-  <data name="ImportLayersDialog.Text" xml:space="preserve">
-<value>导入图层</value>
-  </data>
-  <data name="ImportLayersDialog.AllButton.Text" xml:space="preserve">
-<value>所有</value>
-  </data>
-  <data name="ImportLayersDialog.NoneButton.Text" xml:space="preserve">
-<value>无</value>
-  </data>
-  <data name="ImportLayersDialog.LayersToInsertHeader.Text" xml:space="preserve">
-<value>要导入的图层</value>
-  </data>
-  <data name="ImportLayersDialog.PreviewHeader.Text" xml:space="preserve">
-<value>预览</value>
+<comment>{0} is the file being imported, {1} is the name of a layer within that file</comment>
   </data>
   <data name="InvertSelectionAction.Name" xml:space="preserve">
 <value>反选</value>
@@ -737,11 +725,11 @@
   </data>
   <data name="PdnInfo.FullAppName.Format" xml:space="preserve">
     <value>{0} ({1})</value>
-    <comment>{0} is the product name ("Paint.NET"), {1} is the version string ("2.2.2000.3000")</comment>
+<comment>{0} is the product name (&quot;Paint.NET&quot;), {1} is the version string (&quot;2.2.2000.3000&quot;)</comment>
   </data>
   <data name="PdnInfo.VersionString.Format" xml:space="preserve">
-<value>{0} {1} build {2}</value>
-    <comment>{0} is the friendly version name (configuration name), such as "Beta 2" or "Final". {1} is Debug or Release. {2} is the product version.</comment>
+<value>{0} {1} 版本 {2}</value>
+<comment>{0} is the friendly version name (configuration name), such as &quot;Beta 2&quot; or &quot;Final&quot;.{1} is Debug or Release.{2} is the product version.</comment>
   </data>
   <data name="ProcessorArchitecture.X86" xml:space="preserve">
 <value>x86</value>
@@ -754,7 +742,7 @@
   </data>
   <data name="PdnInfo.FriendlyVersionString.Format" xml:space="preserve">
 <value>版本号 {0}{1}</value>
-    <comment>{0} is the version, such as "2.5". {1} is the configuration ("Beta 5") formatted via PdnInfo.FriendlyVersionString.ConfigWithSpace.Format, or it is an empty string if the configuration is "Final"</comment>
+<comment>{0} is the version, such as &quot;2.5&quot;.{1} is the configuration (&quot;Beta 5&quot;) formatted via PdnInfo.FriendlyVersionString.ConfigWithSpace.Format, or it is an empty string if the configuration is &quot;Final&quot;</comment>
   </data>
   <data name="PencilTool.Name" xml:space="preserve">
 <value>铅笔</value>
@@ -776,7 +764,7 @@
   </data>
   <data name="ProgressDialog.PercentText.Text.Format" xml:space="preserve">
     <value>{0}%</value>
-    <comment>{0} is a number from 0 to 100</comment>
+<comment>{0} is a number from 0 to 100</comment>
   </data>
   <data name="RecolorTool.Name" xml:space="preserve">
 <value>重新着色</value>
@@ -819,7 +807,7 @@
   </data>
   <data name="ResizeDialog.ResizedImageHeader.Text.Format" xml:space="preserve">
 <value>新尺寸: {0}</value>
-    <comment>{0} is a byte size, such as 3.8mb</comment>
+<comment>{0} is a byte size, such as 3.8mb</comment>
   </data>
   <data name="ResizeDialog.ResampleMethod.NearestNeighbor" xml:space="preserve">
 <value>最接近方式</value>
@@ -898,7 +886,7 @@
   </data>
   <data name="RotateAction.HistoryMementoName.Format" xml:space="preserve">
     <value>{0} {1}</value>
-    <comment>{0} is the action name ("Rotate"), {1} is the angle (90 CW)</comment>
+<comment>{0} is the action name (&quot;Rotate&quot;), {1} is the angle (90 CW)</comment>
   </data>
   <data name="RotateAction.Name" xml:space="preserve">
 <value>旋转</value>
@@ -921,12 +909,9 @@
   <data name="SaveConfigDialog.DefaultsButton.Text" xml:space="preserve">
 <value>预置(&amp;F)</value>
   </data>
-  <data name="SaveConfigDialog.FileSizeText.Text.Format" xml:space="preserve">
-<value>文件尺寸: {0}</value>
-    <comment>{0} is a file size, or some text in parenthesis (such as SaveConfigDialog.FileSizeText.Text.Error)</comment>
-  </data>
-  <data name="SaveConfigDialog.PreviewHeader.Text" xml:space="preserve">
-<value>预览</value>
+  <data name="SaveConfigDialog.PreviewHeader.Text.Format" xml:space="preserve">
+<value>预览， 文件尺寸： {0}</value>
+<comment>{0} is a file size, or some text in parenthesis (such as SaveConfigDialog.FileSizeText.Text.Error)</comment>
   </data>
   <data name="SaveConfigDialog.FileSizeText.Text.Computing" xml:space="preserve">
 <value>(计算中)</value>
@@ -936,7 +921,7 @@
   </data>
   <data name="SaveConfigDialog.FileSizeText.Text.Computing.Format" xml:space="preserve">
 <value>(计算中: {0}%)</value>
-    <comment>{0} is a number between 0 and 100</comment>
+<comment>{0} is a number between 0 and 100</comment>
   </data>
   <data name="SaveProgressDialog.Title" xml:space="preserve">
 <value>保存中</value>
@@ -960,8 +945,8 @@
 <value>开始...</value>
   </data>
   <data name="Startup.UnhandledError.Format" xml:space="preserve">
-<value>There was an unhandled error, and Paint.NET must be closed.发现一个不明错误，需要关闭Paint.NET。为了解更多的信息请查看文件 &apos;{0}&apos;，它已经被保存在你的桌面。</value>
-    <comment>{0} is a filename</comment>
+<value>发现一个不明错误，需要关闭Paint.NET。为了解更多的信息请查看文件 &apos;{0}&apos;，它已经被保存在你的桌面。</value>
+<comment>{0} is a filename</comment>
   </data>
   <data name="ToolConfigStrip.ResamplingLabel.Text">
 <value>质量:</value>
@@ -995,11 +980,11 @@
   </data>
   <data name="TextConfigWidget.Error.TooSmall.Format" xml:space="preserve">
 <value>尺寸小于 {0}</value>
-    <comment>{0} is an integer</comment>
+<comment>{0} is an integer</comment>
   </data>
   <data name="TextConfigWidget.Error.TooLarge.Format" xml:space="preserve">
 <value>尺寸大于 {0}</value>
-    <comment>{0} is an integer</comment>
+<comment>{0} is an integer</comment>
   </data>
   <data name="TextConfigWidget.FontLabel.Text" xml:space="preserve">
 <value>字体:</value>
@@ -1039,7 +1024,7 @@
   </data>
   <data name="ToleranceSliderControl.Percentage.Format" xml:space="preserve">
     <value>{0}%</value>
-    <comment>{0} is an integer</comment>
+<comment>{0} is an integer</comment>
   </data>
   <data name="WorkspaceOptionsConfigWidget.DrawGridToggleButton.ToolTipText" xml:space="preserve">
 <value>放大时显示网格</value>
@@ -1079,11 +1064,11 @@
   </data>
   <data name="ZoomConfigWidget.Percentage.Format" xml:space="preserve">
     <value>{0}%</value>
-    <comment>{0} is an integer</comment>
+<comment>{0} is an integer</comment>
   </data>
   <data name="StatusBar.Context.Help.Text.Format" xml:space="preserve">
     <value>{0}: {1}</value>
-    <comment>{0} is the tool's name, {1} is its help text</comment>
+<comment>{0} is the tool&apos;s name, {1} is its help text</comment>
   </data>
   <data name="AcquireImageAction.Name" xml:space="preserve">
 <value>取得图像</value>
@@ -1099,18 +1084,18 @@
   </data>
   <data name="StatusBar.Size.Format" xml:space="preserve">
 <value>{0}{1} x {2}{3}</value>
-    <comment>{0} is width, {1} is units (e.g. cm or px), {2} is height, {3} is units</comment>
+<comment>{0} is width, {1} is units (e.g. cm or px), {2} is height, {3} is units</comment>
   </data>
   <data name="Untitled.FriendlyName" xml:space="preserve">
 <value>无命名</value>
   </data>
   <data name="MainForm.Title.Format.Normal" xml:space="preserve">
     <value>{0} ({1}) - {2}</value>
-    <comment>{0} is friendly document name, {1} is zoom level, {2} is application name</comment>
+<comment>{0} is friendly document name, {1} is zoom level, {2} is application name</comment>
   </data>
   <data name="MainForm.Title.Format.Minimized" xml:space="preserve">
     <value>{0} - {1}</value>
-    <comment>{0} is friendly document name, {1} is application name</comment>
+<comment>{0} is friendly document name, {1} is application name</comment>
   </data>
   <data name="NewImageAction.Error.OutOfMemory" xml:space="preserve">
 <value>没有足够的内存空间建立新图像。</value>
@@ -1125,13 +1110,13 @@
 <value>无效的文件名。
 
 &quot;{0}&quot;</value>
-    <comment>{0} is a filename.</comment>
+<comment>{0} is a filename.</comment>
   </data>
   <data name="LoadImage.Error.BlankFileName" xml:space="preserve">
 <value>空文件名。</value>
   </data>
   <data name="LoadImage.Error.ArgumentException" xml:space="preserve">
-<value>打开文件时发现一个错误。</value>
+<value>打开文件时发生了一个错误。</value>
   </data>
   <data name="LoadImage.Error.UnauthorizedAccessException" xml:space="preserve">
 <value>无法访问指定文件 (没有授权的访问)。</value>
@@ -1166,8 +1151,9 @@
   <data name="SavedWithOlderVersion.Format" xml:space="preserve">
 <value>图像由老版本Paint.NET生成，如果保存将无法被老版本打开。
 
-生成的由:Paint.NET v{0} 当前版本:Paint.NET v{1}</value>
-    <comment>{0} and {1} are version numbers</comment>
+生成的由:Paint.NET v{0}
+Current version:Paint.NET v{1}</value>
+<comment>{0} and {1} are version numbers</comment>
   </data>
   <data name="FileDialog.Types.AllImages" xml:space="preserve">
 <value>所有文件类型</value>
@@ -1228,11 +1214,11 @@
   </data>
   <data name="Effects.RepeatMenuItem.Format" xml:space="preserve">
 <value>重复 {0}</value>
-    <comment>{0} is the effect name</comment>
+<comment>{0} is the effect name</comment>
   </data>
   <data name="Effects.Name.Format.Configurable" xml:space="preserve">
     <value>{0}...</value>
-    <comment>{0} is the effect name</comment>
+<comment>{0} is the effect name</comment>
   </data>
   <data name="PasteAction.Error.TransferFromClipboard" xml:space="preserve">
 <value>从剪切板读取图像时发现一个错误。</value>
@@ -1247,7 +1233,8 @@
 <value>剪切板不包含图像。</value>
   </data>
   <data name="PasteAction.Question.ExpandCanvas" xml:space="preserve">
-<value>导入图形大于当前画布尺寸。是不扩大图布?</value>
+<value>导入图形大于当前画布尺寸。
+是不扩大图布?</value>
   </data>
   <data name="NewLayerAction.Error.OutOfMemory" xml:space="preserve">
 <value>没有足够的内存建新图层。</value>
@@ -1257,15 +1244,15 @@
   </data>
   <data name="StatusBar.Progress.Percentage.Format" xml:space="preserve">
     <value>{0}%</value>
-    <comment>{0} is an integer</comment>
+<comment>{0} is an integer</comment>
   </data>
   <data name="StatusBar.Context.SelectedArea.Text.Format" xml:space="preserve">
 <value>选择区左上角:{0}{1}, {2}{3}. 边界矩形尺寸:{4}{5} x {6}{7}。区域:{8} {9} 平方</value>
-    <comment>{0} is an X coordinate, {1} is units abbreviation, {2} is Y coordinate, {3} is units abbreviation, {4} is width, {5} is units abbreviation, {6} is height, {7} is units abbreviation, {8} is the area, {9} is plural units (pixels, inches)</comment>
+<comment>{0} is an X coordinate, {1} is units abbreviation, {2} is Y coordinate, {3} is units abbreviation, {4} is width, {5} is units abbreviation, {6} is height, {7} is units abbreviation, {8} is the area, {9} is plural units (pixels, inches)</comment>
   </data>
   <data name="StatusBar.Context.SelectedArea.Text.WithAngle.Format" xml:space="preserve">
 <value>选择区左上角:{0}{1}, {2}{3}. 边界矩形尺寸:{4}{5} x {6}{7}。区域:{8} {9} 平方.角度: {10}°</value>
-    <comment>{0} is an X coordinate, {1} is units abbreviation, {2} is Y coordinate, {3} is units abbreviation, {4} is width, {5} is units abbreviation, {6} is height, {7} is units abbreviation, {8} is the area, {9} is plural units (pixels, inches), {10} is angle of rotation</comment>
+<comment>{0} is an X coordinate, {1} is units abbreviation, {2} is Y coordinate, {3} is units abbreviation, {4} is width, {5} is units abbreviation, {6} is height, {7} is units abbreviation, {8} is the area, {9} is plural units (pixels, inches), {10} is angle of rotation</comment>
   </data>
   <data name="WIA.Error.EnableMe" xml:space="preserve">
 <value>必须开启 揥indows Image Acquisition?系统服务才能执行这个功能。</value>
@@ -1274,7 +1261,7 @@
 <value>无法找到 Windows Image Acquisition (WIA) library, &quot;wiaaut.dll&quot; 。请参考帮助文件 (帮助 -&gt; 帮助主题), 在 揊requently Asked Questions</value>
   </data>
   <data name="DragDrop.OpenOrImport.Title">
-<value>Drag and Drop</value>
+<value>拖放</value>
   </data>
   <data name="DragDrop.OpenOrImport.InfoText">
 <value>怎么处理文件?</value>
@@ -1535,7 +1522,7 @@
 <value>插件(&amp;P)</value>
   </data>
   <data name="Menu.Help.About.Text" xml:space="preserve">
-<value>&amp;About</value>
+<value>关于(&amp;A)</value>
   </data>
   <data name="Menu.Help.Updates.Text" xml:space="preserve">
 <value>更新(&amp;U)</value>
@@ -1554,7 +1541,7 @@
   </data>
   <data name="ScaleFactor.Percentage.Format" xml:space="preserve">
     <value>{0}%</value>
-    <comment>{0} is an integer</comment>
+<comment>{0} is an integer</comment>
   </data>
   <data name="Utility.SizeStringFromBytes.GBFormat" xml:space="preserve">
 <value>{0} GB</value>
@@ -1656,7 +1643,7 @@
 <value>转暗</value>
   </data>
   <data name="UserBlendOps.XorBlendOp.Name" xml:space="preserve">
-<value>Xor</value>
+<value>异或</value>
   </data>
   <data name="AngleChooserConfigDialog.AngleHeader.Text" xml:space="preserve">
 <value>角度</value>
@@ -1975,7 +1962,7 @@
   </data>
   <data name="StatusBar.CursorInfo.Format" xml:space="preserve">
     <value>{0}{1}, {2}{3}</value>
-    <comment>{0} is x offset, {1} is units, {2} is y offset, {3} is units</comment>
+<comment>{0} is x offset, {1} is units, {2} is y offset, {3} is units</comment>
   </data>
   <data name="ResizeAction.ProgressDialog.Description" xml:space="preserve">
 <value>更改尺寸...</value>
@@ -2020,7 +2007,7 @@
 <value>开始检查</value>
   </data>
   <data name="UpdatesDialog.InfoText.Text.CheckingState">
-<value>Paint.NET正在栓查是否有更新的版本。</value>
+<value>正在检查是否有更新的版本。</value>
   </data>
   <data name="UpdatesDialog.ContinueButton.Text.CheckingState">
 <value>检查中</value>
@@ -2079,7 +2066,7 @@
 <value>发现了新版本 Paint.NET。您可以点击安装按钮下载并且安装，或是点击关闭（系统装重新提示您在几天后）。</value>
   </data>
   <data name="UpdatesDialog.BetaWarningLabel.Text" xml:space="preserve">
-<value>注意:这不是最终版本。它可能不稳定。</value>
+<value>注意:这是试用版本。它可能不十分稳定。</value>
   </data>
   <data name="UpdatesDialog.CloseButton.Text" xml:space="preserve">
 <value>关闭</value>
@@ -2160,7 +2147,7 @@
   </data>
   <data name="ConfirmLanguageDialog.RestartTB.ExplanationText.Format">
 <value>关闭Paint.NET然后用{0}重启。如果需要，您将被提示去保存您的工作。</value>
-    <comment>{0} is the name of the new language that has been chosen (ex, "English").</comment>
+<comment>{0} is the name of the new language that has been chosen (ex, &quot;English&quot;).</comment>
   </data>
   <data name="ConfirmLanguageDialog.CancelTB.ActionText">
 <value>取消</value>
@@ -2203,7 +2190,10 @@
 
 命令行选项:
 
-/skipConfig  -  跳过配置和安装目录选项。使用MSI属性有以下的优先性:1. 支持命令行， 2. 从HKLM\Software\Paint.NET中读取, 3. 假设值。注意:使用这个选项去接受用户许可。/auto  -  自动安装。Infers /skipConfig.不显示最终结果页。/createMsi  -  为开发(AD/GPO)目的创建MSI。所有命令已经加入MSI，不需要做任何改造。PROPERTY=VALUE  -  设置MSI属性。要了解更多的信息请在安装结束后参照帮助文件。不需要用 /saveMsi 说明属性。
+/skipConfig  -  跳过配置和安装目录选项。使用MSI属性有以下的优先性:1. 支持命令行， 2. 从HKLM\Software\Paint.NET中读取, 3. 假设值。注意:使用这个选项去接受用户许可。
+/auto  -  自动安装。Infers /skipConfig.不显示最终结果页。
+/createMsi  -  为开发(AD/GPO)目的创建MSI。所有命令已经加入MSI，不需要做任何改造。
+PROPERTY=VALUE  -  设置MSI属性。要了解更多的信息请在安装结束后参照帮助文件。不需要用 /saveMsi 说明属性。
 
 返回0代表成功，其它代表失败。</value>
   </data>
@@ -2238,7 +2228,7 @@
 <value>安装程序将帮助你安装 {0}。
 
 选择安装方案，然后点击下一步。</value>
-    <comment>{0} is the product name.</comment>
+<comment>{0} is the product name.</comment>
   </data>
   <data name="SetupWizard.IntroPage.QuickRB.Text" xml:space="preserve">
 <value>快速安装</value>
@@ -2254,7 +2244,7 @@
   </data>
   <data name="SetupWizard.IntroPage.ExpirationWarning.Format" xml:space="preserve">
 <value>注意:这测试版将在{0} 后过程。</value>
-    <comment>{0} is a date.</comment>
+<comment>{0} is a date.</comment>
   </data>
   <data name="SetupWizard.LicensePage.HeaderText" xml:space="preserve">
 <value>用户许可</value>
@@ -2434,6 +2424,10 @@
   <data name="LaunchLink.Error" xml:space="preserve">
 <value>调用连接时发生错误。</value>
   </data>
+  <data name="LaunchLink.Error.Format" xml:space="preserve">
+<value>打开连接时发生了一个错误： {0}</value>
+<comment>{0} is a URL.</comment>
+  </data>
   <data name="RadialBlurEffect.Name" xml:space="preserve">
 <value>放射模糊</value>
   </data>
@@ -2442,7 +2436,7 @@
   </data>
   <data name="WebExceptionStatus.ConnectFailure" xml:space="preserve">
 <value>无法连续移动服务。</value>
-    <comment>All of the WebExceptionStatus.* strings are copied straight from MSDN's documentation (except where explicitely noted), http://msdn.microsoft.com/library/default.asp?url=/library/en-us/cpref/html/frlrfsystemnetwebexceptionstatusclasstopic.asp</comment>
+<comment>All of the WebExceptionStatus.* strings are copied straight from MSDN&apos;s documentation (except where explicitely noted), http://msdn.microsoft.com/library/default.asp?url=/library/en-us/cpref/html/frlrfsystemnetwebexceptionstatusclasstopic.asp</comment>
   </data>
   <data name="WebExceptionStatus.ConnectionClosed" xml:space="preserve">
 <value>连接已被提前关闭。</value>
@@ -2461,14 +2455,14 @@
   </data>
   <data name="WebExceptionStatus.PipelineFailure" xml:space="preserve">
 <value>发生一个内部 .NET 错误r (WebExceptionStatus.PipelineFailure)。</value>
-    <comment>This text is different than what is in the MSDN documentation.</comment>
+<comment>This text is different than what is in the MSDN documentation.</comment>
   </data>
   <data name="WebExceptionStatus.ProtocolError" xml:space="preserve">
 <value>接收到服务器回应，但是标示协议错误。例如， HTTP 协议错误，如:访问拒绝 (401 Access Denied)。</value>
   </data>
   <data name="WebExceptionStatus.ProtocolError.Format" xml:space="preserve">
 <value>服务器反回如下错误代码:HTTP {1} ({0})</value>
-    <comment>{0} is a string name from the System.Net.HttpStatusCode enumeration. {1} is an integer, such as 404</comment>
+<comment>{0} is a string name from the System.Net.HttpStatusCode enumeration.{1} is an integer, such as 404</comment>
   </data>
   <data name="WebExceptionStatus.ProxyNameResolutionFailure" xml:space="preserve">
 <value>无法解释主机名。</value>
@@ -2478,7 +2472,7 @@
   </data>
   <data name="WebExceptionStatus.RequestCanceled" xml:space="preserve">
 <value>发生一个内部错误(WebExceptionStatus.RequestCanceled)。</value>
-    <comment>This text is different than what is in the MSDN documentation.</comment>
+<comment>This text is different than what is in the MSDN documentation.</comment>
   </data>
   <data name="WebExceptionStatus.SecureChannelFailure" xml:space="preserve">
 <value>当使用SLL连接时发生了一个错误。</value>
@@ -2544,9 +2538,10 @@
 <value>RGB</value>
   </data>
   <data name="CrashLog.HeaderText.Format" xml:space="preserve">
-<value>建立这个文本文件是因为Paint.NET非正常退出。请e-mail 这个文件到 {0} 开发组将诊断并且修理这个问题。
+<value>建立这个文本文件是因为Paint.NET非正常退出。
+请e-mail 这个文件到 {0} 开发组将诊断并且修理这个问题。
 </value>
-    <comment>{0} is an e-mail address, such as paint.net@hotmail.com</comment>
+<comment>{0} is an e-mail address, such as paint.net@hotmail.com</comment>
   </data>
   <data name="SwapLayerFunction.Name" xml:space="preserve">
 <value>交换图层</value>
@@ -2585,7 +2580,7 @@
 <value>没有保存的改变</value>
   </data>
   <data name="UnsavedChangesDialog.InfoLabel.Text">
-<value>The following images that are open have changes that have not been saved.下面打开的图像被改变过但是还没有保存。点击小图可以在主窗口中显示。 </value>
+<value>下面打开的图像被修变过但是还没有保存。点击小图可以在主窗口中显示。 </value>
   </data>
   <data name="UnsavedChangesDialog.DocumentListHeader.Text">
 <value>图像</value>
@@ -2615,8 +2610,9 @@
     <value></value>
   </data>
   <data name="ControlShadow.BetaTag.Text.Format">
-<value>这是一个试用版，荐意只用于测试目的。将于 {1} 过期。这之前一个更新版本将被放置在www.genpaint.net。</value>
-      <comment>{0} is the full application name, e.g. "Paint.NET v3.0 (Beta 1 Release build 3.0.2460.34921). {1} is a date string.</comment>
+<value>这是一个试用版，荐意只用于测试目的。将于 {1} 过期。这之前一个更新版本将被放置在
+www.getpaint.net</value>
+<comment>{0} is the full application name, e.g. &quot;Paint.NET v3.0 (Beta 1 Release build 3.0.2460.34921).{1} is a date string.</comment>
   </data>
   <data name="ToolChooserStrip.ChooseToolDefaults.Text">
 <value>选择默认值(&amp;D) ... </value>
@@ -2636,8 +2632,8 @@
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.Resampling.HeaderLabel.Text">
 <value>移动选择象素</value>
   </data>
-  <data name="ChooseToolDefaultsDialog.ToolConfigRow.BrushPenShapeType.HeaderLabel.Text">
-<value>图形，刷子和填充</value>
+  <data name="ChooseToolDefaultsDialog.ToolConfigRow.BrushPenPenCapsShapeType.HeaderLabel.Text">
+<value>图形，刷子， 式样和填充</value>
   </data>
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.Text.HeaderLabel.Text">
 <value>文本</value>
@@ -2715,14 +2711,32 @@
 <value>关闭反锯齿</value>
   </data>
   <data name="ToolsControl.ToolToolTip.Format">
-<value>{0} 快捷键: {1}</value>
-    <comment>{0} is the tool's name (e.g. "Magic Wand"). {1} is a character that is the shortcut key (e.g. "C")</comment>
+    <value>{0}
+快捷键: {1}</value>
+<comment>{0} is the tool&apos;s name (e.g. &quot;Magic Wand&quot;).{1} is a character that is the shortcut key (e.g. &quot;C&quot;)</comment>
   </data>
   <data name="ToolConfigStrip.PenSizeIncButton.ToolTipText">
-<value>增加刷子尺寸的快捷键:] (按 Ctrl键每次加 5)</value>
+<value>无效的刷子尺寸
+快捷键:] (按 Ctrl键每次加 5)</value>
   </data>
   <data name="ToolConfigStrip.PenSizeDecButton.ToolTipText">
-<value>减小刷子尺寸的快捷键:] (按 Ctrl键每次减 5)</value>
+<value>减少刷子尺寸
+快捷键:] (按 Ctrl键每次减 5)</value>
+  </data>
+  <data name="ToolConfigStrip.PenStartCapSplitButton.ToolTipText" xml:space="preserve">
+<value>选择线起点的样式
+快捷键: ,</value>
+  </data>
+  <data name="ToolConfigStrip.PenDashStyleSplitButton.ToolTipText" xml:space="preserve">
+<value>选择线的样式
+快捷键: .</value>
+  </data>
+  <data name="ToolConfigStrip.PenEndCapSplitButton.ToolTipText" xml:space="preserve">
+<value>选择线结尾的样式
+快捷键: /</value>
+  </data>
+  <data name="ToolConfigStrip.PenStyleLabel.Text">
+<value>样式:</value>
   </data>
   <data name="Effects.Render.Submenu.Name" xml:space="preserve">
 <value>渲染</value>
@@ -2771,5 +2785,89 @@
   </data>
   <data name="ExpandCanvasQuestion.CancelTB.ExplanationText">
 <value>取消粘贴操作。</value>
+  </data>
+  <data name="LineCap2.Flat">
+<value>扁头</value>
+  </data>
+  <data name="LineCap2.Arrow">
+<value>箭头</value>
+  </data>
+  <data name="LineCap2.ArrowFilled">
+<value>实心箭头</value>
+  </data>
+  <data name="LineCap2.Rounded">
+<value>圆头</value>
+  </data>
+  <data name="DashStyle.Custom">
+<value>Custom_NotUsed</value>
+<comment>This string does not need to be translated.It is not used.</comment>
+  </data>
+  <data name="DashStyle.Solid">
+<value>实线</value>
+  </data>
+  <data name="DashStyle.Dash">
+<value>虚线 样式 1</value>
+  </data>
+  <data name="DashStyle.Dot">
+<value>虚线 样式 4</value>
+  </data>
+  <data name="DashStyle.DashDot">
+<value>虚线 样式 2</value>
+  </data>
+  <data name="DashStyle.DashDotDot">
+<value>虚线 样式 3</value>
+  </data>
+  <data name="HelpFile.Url.Format">
+<value>{0}/doc/latest/index.html</value>
+<comment>Note to translators:This string only needs to be changed if the UA (user assistance, aka help file, documentation) is also being translated.
+{0} is the base website address, such as http://www.getpaint.net. This string is not required to have {0} in it.So if you want to distribute a language pack that hosts the help file elsewhere (that is to say, not on the official Paint.NET website), you can do that by specifying the URL directly, e.g. &quot;http://www.wherever.net/paintnethelp/fr/&quot;.</comment>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.TransferProgress.Title">
+<value>转换中 ...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemText.Initializing">
+<value>正在初始化 ...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemText.Canceling">
+<value>正在取消 ...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ProgressText.Format">
+<value>{0} / {1}</value>
+<comment>{0} is the number of the current item, {1} is the total number of items.Example:&quot;5 of 7&quot;</comment>
+  </data>  
+  <data name="DocumentWorkspace.ShowFileDialog.ItemFailureDialog.Title">
+<value>转换错误</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemFailureDialog.IntroText.Format" xml:space="preserve">
+<value>转换图象时发生了一个错误：
+
+{0}</value>
+<comment>{0} is an error message, which will be populated by the operation system in the language that it is configured for.</comment>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.RetryTB.ActionText">
+<value>重试(&amp;R)</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.RetryTB.ExplanationText">
+<value>重试转换图象。</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.SkipTB.ActionText">
+<value>略过(&amp;S)</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.SkipTB.ExplanationText">
+<value>略过这个图象并且移动到下一个。</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.CancelTB.ActionText">
+<value>取消</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.CancelTB.ExplanationText">
+<value>取消转换，并且由您重新选择一个图象。</value>
+  </data>
+  <data name="SaveAs.OverwriteConfirmation.Title">
+<value>确认保存为</value>
+  </data>
+  <data name="SaveAs.OverwriteConfirmation.Text.Format" xml:space="preserve">
+<value>{0} 已经存在。
+是否覆盖?</value>
+<comment>{0} is a relative filename. e.g. &quot;Untitled.png&quot;</comment>
   </data>
 </root>

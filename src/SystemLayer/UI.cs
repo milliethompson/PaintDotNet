@@ -168,6 +168,11 @@ namespace PaintDotNet.SystemLayer
             return new Size(ScaleWidth(size.Width), ScaleHeight(size.Height));
         }
 
+        public static Point ScalePoint(Point pt)
+        {
+            return new Point(ScaleWidth(pt.X), ScaleHeight(pt.Y));
+        }
+
         public static float GetXScaleFactor()
         {
             if (!initScales)
@@ -586,6 +591,38 @@ namespace PaintDotNet.SystemLayer
                 IntPtr.Zero);
 
             GC.KeepAlive(comboBox);
+        }
+
+        /// <summary>
+        /// Disables the system menu "Close" menu command, as well as the "X" close button on the window title bar.
+        /// </summary>
+        /// <remarks>
+        /// Note to implementors: This method may *not* be implemented as a no-op. The purpose is to make it so that
+        /// calling the Close() method is the only way to close a dialog, which is something that can only be done
+        /// programmatically.
+        /// </remarks>
+        public static void DisableCloseBox(IWin32Window window)
+        {
+            IntPtr hWnd = window.Handle;
+            IntPtr hMenu = SafeNativeMethods.GetSystemMenu(hWnd, false);
+
+            if (hMenu == IntPtr.Zero)
+            {
+                NativeMethods.ThrowOnWin32Error("GetSystemMenu() returned NULL");
+            }
+
+            int result = SafeNativeMethods.EnableMenuItem(
+                hMenu, 
+                NativeConstants.SC_CLOSE, 
+                NativeConstants.MF_BYCOMMAND | NativeConstants.MF_GRAYED);
+
+            bool bResult = SafeNativeMethods.DrawMenuBar(hWnd);
+            if (!bResult)
+            {
+                NativeMethods.ThrowOnWin32Error("DrawMenuBar returned FALSE");
+            }
+
+            GC.KeepAlive(window);
         }
     }
 }

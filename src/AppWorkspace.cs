@@ -631,6 +631,7 @@ namespace PaintDotNet
 
         public Image GetDocumentWorkspaceThumbnail(DocumentWorkspace dw)
         {
+            this.toolBar.DocumentStrip.SyncThumbnails();
             Image[] images = this.toolBar.DocumentStrip.DocumentThumbnails;
             DocumentWorkspace[] documents = this.toolBar.DocumentStrip.DocumentList;
 
@@ -1925,6 +1926,7 @@ namespace PaintDotNet
                     untitled.Layers.Add(bitmapLayer);
 
                     DocumentWorkspace dw = this.AddNewDocumentWorkspace();
+                    this.Widgets.DocumentStrip.LockDocumentWorkspaceDirtyValue(dw, false);
                     dw.SuspendRefresh();
 
                     try
@@ -1944,13 +1946,13 @@ namespace PaintDotNet
 
                     this.ActiveDocumentWorkspace = dw;
 
-                    this.ActiveDocumentWorkspace.SetDocumentSaveOptions(null, null, null);
-                    this.ActiveDocumentWorkspace.History.ClearAll();
-                    this.ActiveDocumentWorkspace.History.PushNewMemento(
+                    dw.SetDocumentSaveOptions(null, null, null);
+                    dw.History.ClearAll();
+                    dw.History.PushNewMemento(
                         new NullHistoryMemento(PdnResources.GetString("NewImageAction.Name"), 
                         this.FileNewIcon));
 
-                    this.ActiveDocumentWorkspace.Document.Dirty = false;
+                    dw.Document.Dirty = false;
                     dw.ResumeRefresh();
 
                     if (isInitial)
@@ -1962,6 +1964,8 @@ namespace PaintDotNet
                     {
                         this.ActiveDocumentWorkspace.Focus();
                     }
+
+                    this.Widgets.DocumentStrip.UnlockDocumentWorkspaceDirtyValue(dw);
                 }
             }
 
@@ -2030,6 +2034,7 @@ namespace PaintDotNet
                 using (new WaitCursorChanger(this))
                 {
                     DocumentWorkspace dw = AddNewDocumentWorkspace();
+                    Widgets.DocumentStrip.LockDocumentWorkspaceDirtyValue(dw, false);
 
                     try
                     {
@@ -2047,15 +2052,18 @@ namespace PaintDotNet
                     dw.ActiveLayer = (Layer)document.Layers[0];
 
                     dw.SetDocumentSaveOptions(fileName, fileType, null);
-                    this.ActiveDocumentWorkspace = dw;
-                    this.ActiveDocumentWorkspace.History.ClearAll();
 
-                    this.ActiveDocumentWorkspace.History.PushNewMemento(
+                    this.ActiveDocumentWorkspace = dw;
+
+                    dw.History.ClearAll();
+
+                    dw.History.PushNewMemento(
                         new NullHistoryMemento(
                             PdnResources.GetString("OpenImageAction.Name"),
                             this.ImageFromDiskIcon));
 
-                    this.ActiveDocumentWorkspace.Document.Dirty = false;
+                    document.Dirty = false;
+                    Widgets.DocumentStrip.UnlockDocumentWorkspaceDirtyValue(dw);
                 }
 
                 if (document != null)

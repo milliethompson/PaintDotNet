@@ -221,10 +221,9 @@ namespace PaintDotNet
         {
             if ((this.actionFlags & ActionFlags.ReportsProgress) != ActionFlags.ReportsProgress)
             {
-                throw new InvalidOperationException("This HistoryFunction does not support reporting progress, yet it called OnProgress()");
+                System.Diagnostics.Debug.WriteLine("This HistoryFunction does not support reporting progress, yet it called OnProgress()");
             }
-
-            if (Progress != null)
+            else if (Progress != null)
             {
                 this.eventSink.BeginInvoke(Progress, new object[2] { this, new ProgressEventArgs(percent) });
             }

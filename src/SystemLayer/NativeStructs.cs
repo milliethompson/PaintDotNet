@@ -14,6 +14,22 @@ namespace PaintDotNet.SystemLayer
 {
     internal static class NativeStructs
     {
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        internal struct STATSTG 
+        {  
+            public IntPtr pwcsName;  
+            public NativeConstants.STGTY type;  
+            public ulong cbSize;
+            public System.Runtime.InteropServices.ComTypes.FILETIME mtime;
+            public System.Runtime.InteropServices.ComTypes.FILETIME ctime;
+            public System.Runtime.InteropServices.ComTypes.FILETIME atime;  
+            public uint grfMode;  
+            public uint grfLocksSupported;  
+            public Guid clsid;  
+            public uint grfStateBits;  
+            public uint reserved;
+        }
+
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 4)]
         internal struct KNOWNFOLDER_DEFINITION
         {

@@ -125,7 +125,7 @@ namespace PaintDotNet.Updates
         {
             get
             {
-                Uri websiteUri = new Uri(Branding.WebsiteUrl);
+                Uri websiteUri = new Uri(InvariantStrings.WebsiteUrl);
                 string versionManifestUrl;
 
                 if (PdnInfo.IsTestMode)

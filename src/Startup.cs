@@ -271,8 +271,16 @@ namespace PaintDotNet
 
             if (locale != null)
             {
-                CultureInfo ci = new CultureInfo(locale, true);
-                Thread.CurrentThread.CurrentUICulture = ci;
+                try
+                {
+                    CultureInfo ci = new CultureInfo(locale, true);
+                    Thread.CurrentThread.CurrentUICulture = ci;
+                }
+
+                catch (Exception)
+                {
+                    // Don't want bad culture name to crash us
+                }
             }
 
             // Check system requirements
@@ -312,36 +320,6 @@ namespace PaintDotNet
 
                 // Create main window
                 this.mainForm = new MainForm(this.args);
-
-                // if the display is set to a portrait mode (tall), then orient the PDN window the same way
-                if (this.mainForm.ScreenAspect < 1.0)
-                {
-                    int width = mainForm.Width;
-                    int height = mainForm.Height;
-
-                    this.mainForm.Width = height;
-                    this.mainForm.Height = width;
-                }
-
-                // if the window opens and part of it is off screen, correct this
-                Screen screen = Screen.FromControl(this.mainForm);
-
-                Rectangle intersect = Rectangle.Intersect(screen.Bounds, mainForm.Bounds);
-                if (intersect.Width == 0 || intersect.Height == 0)
-                {
-                    mainForm.Location = new Point(screen.Bounds.Left + 16, screen.Bounds.Top + 16);
-                }
-
-                // if the window is not big enough, correct this
-                if (this.mainForm.Width < 200)
-                {
-                    this.mainForm.Width = 200; // this value was chosen arbitrarily
-                }
-
-                if (this.mainForm.Height < 200)
-                {
-                    this.mainForm.Height = 200; // this value was chosen arbitrarily
-                }
 
                 this.mainForm.SingleInstanceManager = singleInstanceManager;
                 singleInstanceManager = null; // mainForm owns it now
@@ -394,7 +372,7 @@ namespace PaintDotNet
 
         private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
         {
-            // For v3.20, we renamed PdnLib.dll to PaintDotNet.Core.dll. So we should really make
+            // For v3.05, we renamed PdnLib.dll to PaintDotNet.Core.dll. So we should really make
             // sure we stay compatible with old plugin DLL's.
             const string oldCoreName = "PdnLib";
 
@@ -439,7 +417,7 @@ namespace PaintDotNet
 
                 try
                 {
-                    header = string.Format(headerFormat, Branding.FeedbackEmail);
+                    header = string.Format(headerFormat, InvariantStrings.FeedbackEmail);
                 }
 
                 catch

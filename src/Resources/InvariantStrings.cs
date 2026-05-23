@@ -21,11 +21,11 @@ namespace PaintDotNet
         public const string CopyrightFormat = 
             "Copyright © 2007 Rick Brewster, Tom Jackson, and past contributors. Portions Copyright © 2007 Microsoft Corporation. {0}";
 
-        [Obsolete("Use SystemLayer.Branding.FeedbackEmail instead", true)]
-        public const string FeedbackEmail = "paint.net@hotmail.com";
+        public const string FeedbackEmail = 
+              You must specify an e-mail address for users to send feedback to.;
 
-        [Obsolete("Use SystemLayer.Branding.WebsiteUrl instead", true)]
-        public const string WebsiteUrl = "http://www.getpaint.net";
+        public const string WebsiteUrl = 
+              You must specify a URL for the application's website.;
 
         public const string WebsitePageHelpMenu = "/redirect/main_hm.html";
 
@@ -37,7 +37,8 @@ namespace PaintDotNet
 
         public const string DonatePageHelpMenu = "/redirect/donate_hm.html";
 
-        public const string DonateUrlSetup = "http://www.getpaint.net/redirect/donate_setup.html";
+        public const string DonateUrlSetup = 
+            You must specify a destination URL for the donate button in the setup wizard.;        
 
         public const string ExpiredPage = "redirect/pdnexpired.html";
 

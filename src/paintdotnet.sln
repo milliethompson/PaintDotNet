@@ -52,8 +52,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SetupFrontEnd", "SetupFront
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SetupShim", "SetupShim\SetupShim.vcproj", "{FD728047-99F5-4CAF-957D-54194AA8D0F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Help", "Help\Help.csproj", "{056DF4A6-8466-4D9D-81F9-F65283126285}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShellExtension_x86", "ShellExtension\ShellExtension_x86\ShellExtension_x86.vcproj", "{236A7657-45D6-46FF-A221-8E78FA447547}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShellExtension_x64", "ShellExtension\ShellExtension_x64\ShellExtension_x64.vcproj", "{36F6FD0E-C4A7-45B9-9B7C-7DFC6DE667FE}"
@@ -154,9 +152,6 @@ Global
 		{FD728047-99F5-4CAF-957D-54194AA8D0F0}.Release and Package|Any CPU.ActiveCfg = Release|Win32
 		{FD728047-99F5-4CAF-957D-54194AA8D0F0}.Release and Package|Any CPU.Build.0 = Release|Win32
 		{FD728047-99F5-4CAF-957D-54194AA8D0F0}.Release|Any CPU.ActiveCfg = Release|Win32
-		{056DF4A6-8466-4D9D-81F9-F65283126285}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{056DF4A6-8466-4D9D-81F9-F65283126285}.Release and Package|Any CPU.ActiveCfg = Release|Any CPU
-		{056DF4A6-8466-4D9D-81F9-F65283126285}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{236A7657-45D6-46FF-A221-8E78FA447547}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{236A7657-45D6-46FF-A221-8E78FA447547}.Debug|Any CPU.Build.0 = Debug|Win32
 		{236A7657-45D6-46FF-A221-8E78FA447547}.Release and Package|Any CPU.ActiveCfg = Release|Win32

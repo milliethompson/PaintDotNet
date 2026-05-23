@@ -386,7 +386,7 @@ namespace PaintDotNet
 
         public static void LaunchWebSite(IWin32Window owner, string page)
         {
-            string webSite = SystemLayer.Branding.WebsiteUrl;
+            string webSite = InvariantStrings.WebsiteUrl;
 
             Uri baseUri = new Uri(webSite);
             Uri uri;
@@ -414,7 +414,8 @@ namespace PaintDotNet
 
             if (!result)
             {
-                string message = PdnResources.GetString("LaunchLink.Error");
+                string messageFormat = PdnResources.GetString("LaunchLink.Error.Format");
+                string message = string.Format(messageFormat, url);
                 MessageBox.Show(owner, message, PdnInfo.GetBareProductName(), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 

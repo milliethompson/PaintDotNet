@@ -703,6 +703,8 @@ namespace PaintDotNet
 
         protected override void OnLoad(EventArgs e)
         {
+            EnsureFormIsOnScreen();
+
             if (killAfterInit)
             {
                 Application.Exit();

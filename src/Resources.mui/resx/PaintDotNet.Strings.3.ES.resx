@@ -679,21 +679,6 @@ Tecla de método abreviado: X</value>
     <value>{0}: {1}</value>
     <comment>{0} es el archivo que se está importando, {1} es el nombre de la capa dentro de ese archivo</comment>
   </data>
-  <data name="ImportLayersDialog.Text" xml:space="preserve">
-    <value>Importar capas</value>
-  </data>
-  <data name="ImportLayersDialog.AllButton.Text" xml:space="preserve">
-    <value>Todos</value>
-  </data>
-  <data name="ImportLayersDialog.NoneButton.Text" xml:space="preserve">
-    <value>Ninguno</value>
-  </data>
-  <data name="ImportLayersDialog.LayersToInsertHeader.Text" xml:space="preserve">
-    <value>Capas a insertar</value>
-  </data>
-  <data name="ImportLayersDialog.PreviewHeader.Text" xml:space="preserve">
-    <value>Vista previa</value>
-  </data>
   <data name="InvertSelectionAction.Name" xml:space="preserve">
     <value>Invertir la selección</value>
   </data>
@@ -982,12 +967,9 @@ Tecla de método abreviado: X</value>
   <data name="SaveConfigDialog.DefaultsButton.Text" xml:space="preserve">
     <value>&amp;Predeterminado</value>
   </data>
-  <data name="SaveConfigDialog.FileSizeText.Text.Format" xml:space="preserve">
-    <value>Tamaño del archivo: {0}</value>
+  <data name="SaveConfigDialog.PreviewHeader.Text.Format" xml:space="preserve">
+    <value>Vista previa, tamaño del archivo: {0}</value>
     <comment>{0} es el tamaño del archivo, o un texto entre paréntesis (como SaveConfigDialog.FileSizeText.Text.Error)</comment>
-  </data>
-  <data name="SaveConfigDialog.PreviewHeader.Text" xml:space="preserve">
-    <value>Vista previa</value>
   </data>
   <data name="SaveConfigDialog.FileSizeText.Text.Computing" xml:space="preserve">
     <value>(calculando)</value>
@@ -2500,6 +2482,10 @@ Haga clic en &quot;Siguiente&quot; para empezar la instalación.</value>
   <data name="LaunchLink.Error" xml:space="preserve">
     <value>Error al iniciar el vínculo.</value>
   </data>
+  <data name="LaunchLink.Error.Format" xml:space="preserve">
+    <value>Error al iniciar el vínculo: {0}</value>
+    <comment>{0} es una dirección URL.</comment>
+  </data>
   <data name="RadialBlurEffect.Name" xml:space="preserve">
     <value>Desenfocado radial</value>
   </data>
@@ -2704,8 +2690,8 @@ www.getpaint.net</value>
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.Resampling.HeaderLabel.Text">
     <value>Mover píxeles seleccionados</value>
   </data>
-  <data name="ChooseToolDefaultsDialog.ToolConfigRow.BrushPenShapeType.HeaderLabel.Text">
-    <value>Formas, pinceles  y rellenos</value>
+  <data name="ChooseToolDefaultsDialog.ToolConfigRow.BrushPenPenCapsShapeType.HeaderLabel.Text">
+    <value>Formas, pinceles y rellenos</value>
   </data>
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.Text.HeaderLabel.Text">
     <value>Texto</value>
@@ -2795,6 +2781,21 @@ Tecla de método abreviado: ] (mantenga presionada la tecla CRL para aumentar en
     <value>Disminuir tamaño del pincel
 Tecla de método abreviado: ] (mantenga presionada la tecla CRL para disminuir en 5)</value>
   </data>
+  <data name="ToolConfigStrip.PenStartCapSplitButton.ToolTipText" xml:space="preserve">
+    <value>Alterna el estilo del principio de la línea
+Tecla de método abreviado: ,</value>
+  </data>
+  <data name="ToolConfigStrip.PenDashStyleSplitButton.ToolTipText" xml:space="preserve">
+    <value>Alterna el tipo de guionado de la línea
+Tecla de método abreviado: .</value>
+  </data>
+  <data name="ToolConfigStrip.PenEndCapSplitButton.ToolTipText" xml:space="preserve">
+    <value>Alterna el estilo del final de la línea
+Tecla de método abreviado: /</value>
+  </data>
+  <data name="ToolConfigStrip.PenStyleLabel.Text">
+    <value>Estilo:</value>
+  </data>
   <data name="Effects.Render.Submenu.Name" xml:space="preserve">
     <value>Procesar</value>
   </data>
@@ -2842,5 +2843,89 @@ Tecla de método abreviado: ] (mantenga presionada la tecla CRL para disminuir e
   </data>
   <data name="ExpandCanvasQuestion.CancelTB.ExplanationText">
     <value>Cancela la acción de pegado.</value>
+  </data>
+  <data name="LineCap2.Flat">
+    <value>Línea</value>
+  </data>
+  <data name="LineCap2.Arrow">
+    <value>Flecha</value>
+  </data>
+  <data name="LineCap2.ArrowFilled">
+    <value>Flecha rellena</value>
+  </data>
+  <data name="LineCap2.Rounded">
+    <value>Redondeado</value>
+  </data>
+  <data name="DashStyle.Custom">
+    <value>Custom_NotUsed</value>
+    <comment>This string does not need to be translated. It is not used.</comment>
+  </data>
+  <data name="DashStyle.Solid">
+    <value>Sólido</value>
+  </data>
+  <data name="DashStyle.Dash">
+    <value>Guionado</value>
+  </data>
+  <data name="DashStyle.Dot">
+    <value>Punteado</value>
+  </data>
+  <data name="DashStyle.DashDot">
+    <value>Guión, punto</value>
+  </data>
+  <data name="DashStyle.DashDotDot">
+    <value>Guión, punto, punto</value>
+  </data>
+  <data name="HelpFile.Url.Format">
+    <value>{0}/doc/latest/index.html</value>
+    <comment>Note to translators: This string only needs to be changed if the UA (user assistance, aka help file, documentation) is also being translated.
+{0} is the base website address, such as http://www.getpaint.net. This string is not required to have {0} in it. So if you want to distribute a language pack that hosts the help file elsewhere (that is to say, not on the official Paint.NET website), you can do that by specifying the URL directly, e.g. &quot;http://www.wherever.net/paintnethelp/fr/&quot;.</comment>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.TransferProgress.Title">
+    <value>Transfiriendo...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemText.Initializing">
+    <value>Iniciando...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemText.Canceling">
+    <value>Cancelando...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ProgressText.Format">
+    <value>{0} de {1}</value>
+    <comment>{0} es el número del elemento actual, {1} es el número total de elementos. Ejemplo: &quot;5 de 7&quot;</comment>
+  </data>  
+  <data name="DocumentWorkspace.ShowFileDialog.ItemFailureDialog.Title">
+    <value>Error de transferencia</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemFailureDialog.IntroText.Format" xml:space="preserve">
+    <value>Error al transferir la imagen:
+
+{0}</value>
+    <comment>{0} es un mensaje de error, que el sistema operativo lanzará en el idioma en el que está configurado.</comment>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.RetryTB.ActionText">
+    <value>&amp;Reintentar</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.RetryTB.ExplanationText">
+    <value>Reintenta transferir la imagen.</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.SkipTB.ActionText">
+    <value>&amp;Omitir</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.SkipTB.ExplanationText">
+    <value>Omite esta imagen y pasa a la siguiente.</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.CancelTB.ActionText">
+    <value>Cancelar</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.CancelTB.ExplanationText">
+    <value>Cancela la transferencia y le permite volver a seleccionar qué imagen abrir.</value>
+  </data>
+  <data name="SaveAs.OverwriteConfirmation.Title">
+    <value>Confirmar Guardar como</value>
+  </data>
+  <data name="SaveAs.OverwriteConfirmation.Text.Format" xml:space="preserve">
+    <value>La imaen {0} ya existe.
+¿Desea reemplazarla?</value>
+    <comment>{0} es un nombre de imagen, por ejemplo &quot;Sin título.png&quot;</comment>
   </data>
 </root>

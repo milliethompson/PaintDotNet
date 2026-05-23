@@ -270,6 +270,7 @@
     <Compile Include="ITextConfig.cs" />
     <Compile Include="IToleranceConfig.cs" />
     <Compile Include="IToolChooser.cs" />
+    <Compile Include="LineCap2.cs" />
     <Compile Include="Menus\AdjustmentsMenu.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -308,6 +309,9 @@
     </Compile>
     <Compile Include="Menus\WindowMenu.cs">
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="TransferProgressDialog.cs">
+      <SubType>Form</SubType>
     </Compile>
     <Compile Include="PaletteCollection.cs" />
     <Compile Include="SettingNames.cs" />

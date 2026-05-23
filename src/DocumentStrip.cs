@@ -385,6 +385,18 @@ namespace PaintDotNet
             }
         }
 
+        public void UnlockDocumentWorkspaceDirtyValue(DocumentWorkspace unlockMe)
+        {
+            Item docItem = this.dw2button[unlockMe];
+            docItem.UnlockDirtyValue();
+        }
+
+        public void LockDocumentWorkspaceDirtyValue(DocumentWorkspace lockMe, bool forceDirtyValue)
+        {
+            Item docItem = this.dw2button[lockMe];
+            docItem.LockDirtyValue(forceDirtyValue);
+        }
+
         public void AddDocumentWorkspace(DocumentWorkspace addMe)
         {
             this.documents.Add(addMe);
@@ -392,7 +404,8 @@ namespace PaintDotNet
             ImageStrip.Item docButton = new ImageStrip.Item();
             docButton.Image = null;
             docButton.Tag = addMe;
-            this.AddItem(docButton);
+
+            AddItem(docButton);
             this.documentButtons.Add(docButton);
 
             addMe.CompositionUpdated += Workspace_CompositionUpdated;
@@ -402,9 +415,50 @@ namespace PaintDotNet
             if (addMe.Document != null)
             {
                 QueueThumbnailUpdate(addMe);
+                docButton.Dirty = addMe.Document.Dirty;
+                addMe.Document.DirtyChanged += Document_DirtyChanged;
             }
 
+            addMe.DocumentChanging += Workspace_DocumentChanging;
+            addMe.DocumentChanged += Workspace_DocumentChanged;
+
             OnDocumentListChanged();
+        }
+
+        private void Workspace_DocumentChanging(object sender, EventArgs<Document> e)
+        {
+            if (e.Data != null)
+            {
+                e.Data.DirtyChanged -= Document_DirtyChanged;
+            }
+        }
+
+        private void Workspace_DocumentChanged(object sender, EventArgs e)
+        {
+            DocumentWorkspace dw = (DocumentWorkspace)sender;
+            ImageStrip.Item docButton = this.dw2button[dw];
+
+            if (dw.Document != null)
+            {
+                docButton.Dirty = dw.Document.Dirty;
+                dw.Document.DirtyChanged += Document_DirtyChanged;
+            }
+            else
+            {
+                docButton.Dirty = false;
+            }
+        }
+
+        private void Document_DirtyChanged(object sender, EventArgs e)
+        {
+            for (int i = 0; i < this.documents.Count; ++i)
+            {
+                if (object.ReferenceEquals(sender, this.documents[i].Document))
+                {
+                    ImageStrip.Item docButton = this.dw2button[this.documents[i]];
+                    docButton.Dirty = ((Document)sender).Dirty;
+                }
+            }
         }
 
         private void Workspace_CompositionUpdated(object sender, EventArgs e)
@@ -420,6 +474,14 @@ namespace PaintDotNet
             if (this.selectedDocument == removeMe)
             {
                 this.selectedDocument = null;
+            }
+
+            removeMe.DocumentChanging -= Workspace_DocumentChanging;
+            removeMe.DocumentChanged -= Workspace_DocumentChanged;
+
+            if (removeMe.Document != null)
+            {
+                removeMe.Document.DirtyChanged -= Document_DirtyChanged;
             }
 
             this.documents.Remove(removeMe);

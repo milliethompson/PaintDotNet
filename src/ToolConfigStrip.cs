@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Globalization;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -56,6 +57,13 @@ namespace PaintDotNet
         private ToolStripButton penSizeDecButton;
         private ToolStripComboBox penSizeComboBox;
         private ToolStripButton penSizeIncButton;
+        private ToolStripLabel penStyleLabel;
+        private ToolStripSplitButton penStartCapSplitButton; // Tag property is used to store chosen LineCap value
+        private ToolStripSplitButton penDashStyleSplitButton; // Tag property is used to store chosen DashStyle value
+        private ToolStripSplitButton penEndCapSplitButton; // Tag property is used to store chosen LineCap value
+
+        private EnumLocalizer lineCapLocalizer = EnumLocalizer.Create(typeof(LineCap2));
+        private EnumLocalizer dashStyleLocalizer = EnumLocalizer.Create(typeof(DashStyle));
 
         private ToolStripSeparator blendingSeparator;
         private ToolStripSplitButton alphaBlendingSplitButton;
@@ -82,6 +90,25 @@ namespace PaintDotNet
         private ToolStripLabel toleranceLabel;
         private ToolStripControlHost toleranceSliderStrip;
         private ToleranceSliderControl toleranceSlider;
+
+        private LineCap2[] lineCaps =
+            new LineCap2[]
+            {
+                LineCap2.Flat,
+                LineCap2.Arrow,
+                LineCap2.ArrowFilled,
+                LineCap2.Rounded
+            };
+
+        private DashStyle[] dashStyles =
+            new DashStyle[]
+            {
+                DashStyle.Solid,
+                DashStyle.Dash,
+                DashStyle.DashDot,
+                DashStyle.DashDotDot,
+                DashStyle.Dot
+            };
 
         private const int minBrushSize = 1;
         private const int maxBrushSize = 100;
@@ -369,6 +396,16 @@ namespace PaintDotNet
             this.penSizeDecButton.Image = ImageResource.Get("Icons.MinusButtonIcon.png").Reference;
             this.penSizeIncButton.ToolTipText = PdnResources.GetString("ToolConfigStrip.PenSizeIncButton.ToolTipText");
             this.penSizeIncButton.Image = ImageResource.Get("Icons.PlusButtonIcon.png").Reference;
+            this.penStyleLabel.Text = PdnResources.GetString("ToolConfigStrip.PenStyleLabel.Text");
+            this.penStartCapSplitButton.Tag = PenInfo.DefaultLineCap;
+            this.penStartCapSplitButton.Image = GetLineCapImage(PenInfo.DefaultLineCap, true).Reference;
+            this.penStartCapSplitButton.ToolTipText = PdnResources.GetString("ToolConfigStrip.PenStartCapSplitButton.ToolTipText");
+            this.penDashStyleSplitButton.Tag = PenInfo.DefaultDashStyle;
+            this.penDashStyleSplitButton.Image = GetDashStyleImage(PenInfo.DefaultDashStyle);
+            this.penDashStyleSplitButton.ToolTipText = PdnResources.GetString("ToolConfigStrip.PenDashStyleSplitButton.ToolTipText");
+            this.penEndCapSplitButton.Tag = PenInfo.DefaultLineCap;
+            this.penEndCapSplitButton.Image = GetLineCapImage(PenInfo.DefaultLineCap, false).Reference;
+            this.penEndCapSplitButton.ToolTipText = PdnResources.GetString("ToolConfigStrip.PenEndCapSplitButton.ToolTipText");
 
             this.gradientLinearClampedButton.ToolTipText = this.gradientTypeNames.EnumValueToLocalizedName(GradientType.LinearClamped);
             this.gradientLinearClampedButton.Image = ImageResource.Get("Icons.LinearClampedGradientIcon.png").Reference;
@@ -575,6 +612,10 @@ namespace PaintDotNet
             this.penSizeDecButton = new ToolStripButton();
             this.penSizeComboBox = new ToolStripComboBox();
             this.penSizeIncButton = new ToolStripButton();
+            this.penStyleLabel = new ToolStripLabel();
+            this.penStartCapSplitButton = new ToolStripSplitButton();
+            this.penDashStyleSplitButton = new ToolStripSplitButton();
+            this.penEndCapSplitButton = new ToolStripSplitButton();
 
             this.blendingSeparator = new ToolStripSeparator();
             this.antiAliasingSplitButton = new ToolStripSplitButton();
@@ -745,11 +786,61 @@ namespace PaintDotNet
                     AddToPenSize(1.0f);
                 };
             //
+            // penStartCapLabel
+            //
+            this.penStyleLabel.Name = "penStartCapLabel";
+            //
+            // penStartCapSplitButton
+            //
+            this.penStartCapSplitButton.Name = "penStartCapSplitButton";
+            this.penStartCapSplitButton.DropDownOpening += PenCapSplitButton_DropDownOpening;
+            this.penStartCapSplitButton.DropDownClosed +=
+                delegate(object sender, EventArgs e)
+                {
+                    this.penStartCapSplitButton.DropDownItems.Clear();
+                };
+            this.penStartCapSplitButton.ButtonClick +=
+                delegate(object sender, EventArgs e)
+                {
+                    CyclePenStartCap();
+                };
+            //
+            // penDashStyleSplitButton
+            //
+            this.penDashStyleSplitButton.Name = "penDashStyleSplitButton";
+            this.penDashStyleSplitButton.ImageScaling = ToolStripItemImageScaling.None;
+            this.penDashStyleSplitButton.DropDownOpening += PenDashStyleButton_DropDownOpening;
+            this.penDashStyleSplitButton.DropDownClosed +=
+                delegate(object sender, EventArgs e)
+                {
+                    this.penDashStyleSplitButton.DropDownItems.Clear();
+                };
+            this.penDashStyleSplitButton.ButtonClick +=
+                delegate(object sender, EventArgs e)
+                {
+                    CyclePenDashStyle();
+                };
+            //
+            // penEndCapSplitButton
+            //
+            this.penEndCapSplitButton.Name = "penEndCapSplitButton";
+            this.penEndCapSplitButton.DropDownOpening += PenCapSplitButton_DropDownOpening;
+            this.penEndCapSplitButton.DropDownClosed +=
+                delegate(object sender, EventArgs e)
+                {
+                    this.penEndCapSplitButton.DropDownItems.Clear();
+                };
+            this.penEndCapSplitButton.ButtonClick +=
+                delegate(object sender, EventArgs e)
+                {
+                    CyclePenEndCap();
+                };
+            //
             // antiAliasingSplitButton
             //
             this.antiAliasingSplitButton.Name = "antiAliasingSplitButton";
             this.antiAliasingSplitButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            this.antiAliasingSplitButton.DropDownOpening += new EventHandler(AntiAliasingSplitButton_DropDownOpening);
+            this.antiAliasingSplitButton.DropDownOpening += AntiAliasingSplitButton_DropDownOpening;
             this.antiAliasingSplitButton.DropDownClosed +=
                 delegate(object sender, EventArgs e)
                 {
@@ -936,6 +1027,10 @@ namespace PaintDotNet
             this.Items.Add(this.penSizeDecButton);
             this.Items.Add(this.penSizeComboBox);
             this.Items.Add(this.penSizeIncButton);
+            this.Items.Add(this.penStyleLabel);
+            this.Items.Add(this.penStartCapSplitButton);
+            this.Items.Add(this.penDashStyleSplitButton);
+            this.Items.Add(this.penEndCapSplitButton);
 
             this.Items.Add(this.brushSeparator);
             this.Items.Add(this.brushStyleLabel);
@@ -950,6 +1045,41 @@ namespace PaintDotNet
             this.Items.Add(this.alphaBlendingSplitButton);
 
             this.ResumeLayout(false);            
+        }
+
+        public void CyclePenEndCap()
+        {
+            PenInfo newPenInfo = PenInfo.Clone();
+            newPenInfo.EndCap = NextLineCap(newPenInfo.EndCap);
+            PenInfo = newPenInfo;
+        }
+
+        public void CyclePenStartCap()
+        {
+            PenInfo newPenInfo = PenInfo.Clone();
+            newPenInfo.StartCap = NextLineCap(newPenInfo.StartCap);
+            PenInfo = newPenInfo;
+        }
+
+        public void CyclePenDashStyle()
+        {
+            PenInfo newPenInfo = PenInfo.Clone();
+            newPenInfo.DashStyle = NextDashStyle(newPenInfo.DashStyle);
+            PenInfo = newPenInfo;
+        }
+
+        private DashStyle NextDashStyle(DashStyle oldDash)
+        {
+            int dashIndex = Array.IndexOf<DashStyle>(this.dashStyles, oldDash);
+            int newDashIndex = (dashIndex + 1) % this.dashStyles.Length;
+            return this.dashStyles[newDashIndex];
+        }
+
+        private LineCap2 NextLineCap(LineCap2 oldCap)
+        {
+            int capIndex = Array.IndexOf<LineCap2>(this.lineCaps, oldCap);
+            int newCapIndex = (capIndex + 1) % this.lineCaps.Length;
+            return this.lineCaps[newCapIndex];
         }
 
         private void GradientTypeButtonClicked(object sender, EventArgs e)
@@ -1178,7 +1308,10 @@ namespace PaintDotNet
             if ((this.toolBarConfigItems & ToolBarConfigItems.Pen) == ToolBarConfigItems.Pen)
             {
                 float newWidth = Utility.Clamp(PenInfo.Width + delta, minBrushSize, maxBrushSize);
-                PenInfo = new PenInfo(PenInfo.DashStyle, newWidth);
+                PenInfo newPenInfo = PenInfo.Clone();
+                newPenInfo.Width += delta;
+                newPenInfo.Width = (float)Utility.Clamp(newPenInfo.Width, 1, 100);
+                PenInfo = newPenInfo;
             }
         }
 
@@ -1200,7 +1333,33 @@ namespace PaintDotNet
                     width = 2;
                 }
 
-                return new PenInfo(DashStyle.Solid, width);
+                LineCap2 startCap;
+
+                try
+                {
+                    startCap = (LineCap2)this.penStartCapSplitButton.Tag;
+                }
+
+                catch (Exception)
+                {
+                    startCap = PenInfo.DefaultLineCap;
+                }
+
+                LineCap2 endCap;
+
+                try
+                {
+                    endCap = (LineCap2)this.penEndCapSplitButton.Tag;
+                }
+
+                catch (Exception)
+                {
+                    endCap = PenInfo.DefaultLineCap;
+                }
+
+                DashStyle dashStyle = (DashStyle)this.penDashStyleSplitButton.Tag;
+
+                return new PenInfo(dashStyle, width, startCap, endCap, PenInfo.DefaultCapScale);
             }
 
             set
@@ -1208,6 +1367,13 @@ namespace PaintDotNet
                 if (this.PenInfo != value)
                 {
                     this.penSizeComboBox.Text = value.Width.ToString();
+                    this.penStartCapSplitButton.Tag = value.StartCap;
+                    this.penStartCapSplitButton.Image = GetLineCapImage(value.StartCap, true).Reference;
+                    this.penDashStyleSplitButton.Tag = value.DashStyle;
+                    this.penDashStyleSplitButton.Image = GetDashStyleImage(value.DashStyle);
+                    this.penEndCapSplitButton.Tag = value.EndCap;
+                    this.penEndCapSplitButton.Image = GetLineCapImage(value.EndCap, false).Reference;
+                    OnPenChanged();
                 }
             }
         }
@@ -1395,6 +1561,129 @@ namespace PaintDotNet
                     OnAntiAliasingChanged();
                 }
             }
+        }
+
+        private Image GetDashStyleImage(DashStyle dashStyle)
+        {
+            string nameFormat = "Images.DashStyleButton.{0}.png";
+            string name = string.Format(nameFormat, dashStyle.ToString());
+            ImageResource imageResource = ImageResource.Get(name);
+
+            Image returnImage;
+
+            if (UI.GetXScaleFactor() == 1.0f && UI.GetYScaleFactor() == 1.0f)
+            {
+                returnImage = imageResource.Reference;
+            }
+            else
+            {
+                returnImage = new Bitmap(imageResource.Reference, UI.ScaleSize(imageResource.Reference.Size));
+            }
+
+            return returnImage;
+        }
+
+        private ImageResource GetLineCapImage(LineCap2 lineCap, bool isStartCap)
+        {
+            string nameFormat = "Images.LineCapButton.{0}.{1}.png";
+            string name = string.Format(nameFormat, lineCap.ToString(), isStartCap ? "Start" : "End");
+            ImageResource imageResource = ImageResource.Get(name);
+            return imageResource;
+        }
+
+        private void PenDashStyleButton_DropDownOpening(object sender, EventArgs e)
+        {
+            List<ToolStripMenuItem> menuItems = new List<ToolStripMenuItem>();
+
+            foreach (DashStyle dashStyle in this.dashStyles)
+            {
+                ToolStripMenuItem mi = new ToolStripMenuItem(
+                    this.dashStyleLocalizer.EnumValueToLocalizedName(dashStyle),
+                    GetDashStyleImage(dashStyle),
+                    delegate(object sender2, EventArgs e2)
+                    {
+                        ToolStripMenuItem tsmi = (ToolStripMenuItem)sender2;
+                        DashStyle newDashStyle = (DashStyle)tsmi.Tag;
+
+                        PenInfo newPenInfo = PenInfo.Clone();
+                        newPenInfo.DashStyle = newDashStyle;
+                        PenInfo = newPenInfo;
+                    });
+
+                mi.ImageScaling = ToolStripItemImageScaling.None;
+
+                if (dashStyle == PenInfo.DashStyle)
+                {
+                    mi.Checked = true;
+                }
+
+                mi.Tag = dashStyle;
+                menuItems.Add(mi);
+            }
+
+            this.penDashStyleSplitButton.DropDownItems.Clear();
+            this.penDashStyleSplitButton.DropDownItems.AddRange(menuItems.ToArray());
+        }
+
+        private void PenCapSplitButton_DropDownOpening(object sender, EventArgs e)
+        {
+            ToolStripSplitButton splitButton = (ToolStripSplitButton)sender;
+            List<ToolStripMenuItem> menuItems = new List<ToolStripMenuItem>();
+
+            LineCap2 currentLineCap = PenInfo.DefaultLineCap;
+            bool isStartCap;
+
+            if (object.ReferenceEquals(splitButton, this.penStartCapSplitButton))
+            {
+                isStartCap = true;
+                currentLineCap = PenInfo.StartCap;
+            }
+            else if (object.ReferenceEquals(splitButton, this.penEndCapSplitButton))
+            {
+                isStartCap = false;
+                currentLineCap = PenInfo.EndCap;
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+
+            foreach (LineCap2 lineCap in this.lineCaps)
+            {
+                ToolStripMenuItem mi = new ToolStripMenuItem(
+                    this.lineCapLocalizer.EnumValueToLocalizedName(lineCap),
+                    GetLineCapImage(lineCap, isStartCap).Reference,
+                    delegate(object sender2, EventArgs e2)
+                    {
+                        ToolStripMenuItem tsmi = (ToolStripMenuItem)sender2;
+                        Pair<ToolStripSplitButton, LineCap2> data = (Pair<ToolStripSplitButton, LineCap2>)tsmi.Tag;
+
+                        PenInfo newPenInfo = PenInfo.Clone();
+
+                        if (object.ReferenceEquals(data.First, this.penStartCapSplitButton))
+                        {
+                            newPenInfo.StartCap = data.Second;
+                        }
+                        else if (object.ReferenceEquals(data.First, this.penEndCapSplitButton))
+                        {
+                            newPenInfo.EndCap = data.Second;
+                        }
+
+                        PenInfo = newPenInfo;
+                    });
+
+                mi.Tag = new Pair<ToolStripSplitButton, LineCap2>((ToolStripSplitButton)sender, lineCap);
+
+                if (lineCap == currentLineCap)
+                {
+                    mi.Checked = true;
+                }
+
+                menuItems.Add(mi);
+            }
+
+            splitButton.DropDownItems.Clear();
+            splitButton.DropDownItems.AddRange(menuItems.ToArray());
         }
 
         private void AntiAliasingSplitButton_DropDownOpening(object sender, EventArgs e)
@@ -1957,6 +2246,12 @@ namespace PaintDotNet
                 this.penSizeDecButton.Visible = showPen;
                 this.penSizeComboBox.Visible = showPen;
                 this.penSizeIncButton.Visible = showPen;
+
+                bool showPenCaps = ((value & ToolBarConfigItems.PenCaps) != ToolBarConfigItems.None);
+                this.penStyleLabel.Visible = showPenCaps;
+                this.penStartCapSplitButton.Visible = showPenCaps;
+                this.penDashStyleSplitButton.Visible = showPenCaps;
+                this.penEndCapSplitButton.Visible = showPenCaps;
 
                 bool showBrush = ((value & ToolBarConfigItems.Brush) != ToolBarConfigItems.None);
                 this.brushSeparator.Visible = showBrush;

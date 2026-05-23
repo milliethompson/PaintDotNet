@@ -196,6 +196,7 @@ namespace PaintDotNet
             // 
             this.documentStrip.BackColor = System.Drawing.SystemColors.ButtonHighlight;
             this.documentStrip.DocumentClicked += new EventHandler<Pair<DocumentWorkspace, DocumentClickAction>>(DocumentList_DocumentClicked);
+            this.documentStrip.DrawDirtyOverlay = false;
             this.documentStrip.EnsureSelectedIsVisible = false;
             this.documentStrip.ManagedFocus = true;
             this.documentStrip.Name = "documentList";

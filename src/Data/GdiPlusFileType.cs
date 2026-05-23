@@ -145,7 +145,12 @@ namespace PaintDotNet
         }
 
         public GdiPlusFileType(string name, ImageFormat imageFormat, bool supportsLayers, string[] extensions, bool savesWithProgress)
-            : base(name, supportsLayers, false, true, true, savesWithProgress, extensions)
+            : base(name, 
+                   (supportsLayers ? FileTypeFlags.SupportsLayers : 0) | 
+                       FileTypeFlags.SupportsLoading | 
+                       FileTypeFlags.SupportsSaving | 
+                       (savesWithProgress ? FileTypeFlags.SavesWithProgress : 0),
+                   extensions)
         {
             this.imageFormat = imageFormat;
         }

@@ -214,6 +214,30 @@ namespace PaintDotNet.Tools
             base.OnPulse();
         }
 
+        private const int toggleStartCapOrdinal = 0;
+        private const int toggleDashOrdinal = 1;
+        private const int toggleEndCapOrdinal = 2;
+
+        protected override bool OnWildShortcutKey(int ordinal)
+        {
+            switch (ordinal)
+            {
+                case toggleStartCapOrdinal:
+                    AppWorkspace.Widgets.ToolConfigStrip.CyclePenStartCap();
+                    return true;
+
+                case toggleDashOrdinal:
+                    AppWorkspace.Widgets.ToolConfigStrip.CyclePenDashStyle();
+                    return true;
+
+                case toggleEndCapOrdinal:
+                    AppWorkspace.Widgets.ToolConfigStrip.CyclePenEndCap();
+                    return true;
+            }
+
+            return base.OnWildShortcutKey(ordinal);
+        }
+
         private bool controlKeyDown = false;
         private DateTime controlKeyDownTime = DateTime.MinValue;
         private readonly TimeSpan controlKeyDownThreshold = new TimeSpan(0, 0, 0, 0, 400);
@@ -562,11 +586,12 @@ namespace PaintDotNet.Tools
                    ImageResource.Get("Icons.LineToolIcon.png"),
                    PdnResources.GetString("LineTool.Name"),
                    PdnResources.GetString("LineTool.HelpText"),
-                   ToolBarConfigItems.None, 
+                   ToolBarConfigItems.None | ToolBarConfigItems.PenCaps, 
                    ToolBarConfigItems.ShapeType)
         {
             this.ForceShapeDrawType = true;
             this.ForcedShapeDrawType = ShapeDrawType.Outline;
+            this.UseDashStyle = true;
         }
     }
 }

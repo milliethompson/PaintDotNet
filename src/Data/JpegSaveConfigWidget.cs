@@ -87,7 +87,7 @@ namespace PaintDotNet
             this.qualitySlider.TabIndex = 1;
             this.qualitySlider.TickFrequency = 10;
             this.qualitySlider.Value = 1;
-            this.qualitySlider.ValueChanged += new System.EventHandler(this.qualitySlider_ValueChanged);
+            this.qualitySlider.ValueChanged += new System.EventHandler(this.QualitySlider_ValueChanged);
             // 
             // qualityLabel
             // 
@@ -112,9 +112,9 @@ namespace PaintDotNet
                                                                         0,
                                                                         0,
                                                                         0});
-            this.qualityUpDown.Enter += new System.EventHandler(this.qualityUpDown_Enter);
-            this.qualityUpDown.ValueChanged += new System.EventHandler(this.qualityUpDown_ValueChanged);
-            this.qualityUpDown.Leave += new System.EventHandler(this.qualityUpDown_Leave);
+            this.qualityUpDown.Enter += new System.EventHandler(this.QualityUpDown_Enter);
+            this.qualityUpDown.ValueChanged += new System.EventHandler(this.QualityUpDown_ValueChanged);
+            this.qualityUpDown.Leave += new System.EventHandler(this.QualityUpDown_Leave);
             // 
             // JpegSaveConfigWidget
             // 
@@ -132,7 +132,7 @@ namespace PaintDotNet
         }
         #endregion
 
-        private void qualitySlider_ValueChanged(object sender, System.EventArgs e)
+        private void QualitySlider_ValueChanged(object sender, System.EventArgs e)
         {
             if (this.qualityUpDown.Value != (decimal)this.qualitySlider.Value)
             {
@@ -142,7 +142,7 @@ namespace PaintDotNet
             UpdateToken();
         }
 
-        private void qualityUpDown_ValueChanged(object sender, System.EventArgs e)
+        private void QualityUpDown_ValueChanged(object sender, System.EventArgs e)
         {
             if (this.qualitySlider.Value != (int)this.qualityUpDown.Value)
             {
@@ -150,12 +150,12 @@ namespace PaintDotNet
             }
         }
 
-        private void qualityUpDown_Leave(object sender, System.EventArgs e)
+        private void QualityUpDown_Leave(object sender, System.EventArgs e)
         {
-            qualityUpDown_ValueChanged(sender, e);
+            QualityUpDown_ValueChanged(sender, e);
         }
 
-        private void qualityUpDown_Enter(object sender, System.EventArgs e)
+        private void QualityUpDown_Enter(object sender, System.EventArgs e)
         {
             qualityUpDown.Select(0, qualityUpDown.Text.Length);
         }

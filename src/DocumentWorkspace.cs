@@ -25,6 +25,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Security;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace PaintDotNet
@@ -1476,12 +1477,22 @@ namespace PaintDotNet
         
         private ZoomBasis savedZb;
         private ScaleFactor savedSf;
+        private int savedAli;
         protected override void OnDocumentChanging(Document newDocument)
         {
             base.OnDocumentChanging(newDocument);
 
             this.savedZb = this.ZoomBasis;
             this.savedSf = ScaleFactor;
+
+            if (this.ActiveLayer != null)
+            {
+                this.savedAli = ActiveLayerIndex;
+            }
+            else
+            {
+                this.savedAli = -1;
+            }
 
             if (newDocument != null)
             {
@@ -1575,7 +1586,14 @@ namespace PaintDotNet
                 {
                     if (this.Document.Layers.Count > 0)
                     {
-                        this.ActiveLayer = (Layer)this.Document.Layers[0];
+                        if (savedAli >= 0 && savedAli < this.Document.Layers.Count)
+                        {
+                            this.ActiveLayer = (Layer)this.Document.Layers[savedAli];
+                        }
+                        else
+                        {
+                            this.ActiveLayer = (Layer)this.Document.Layers[0];
+                        }
                     }
                     else
                     {
@@ -1679,6 +1697,7 @@ namespace PaintDotNet
                 using (new WaitCursorChanger(owner))
                 {
                     dirExists = dirInfo.Exists;
+
                     if (!dirInfo.Exists)
                     {
                         initialDirectory = fd.InitialDirectory;
@@ -1688,11 +1707,13 @@ namespace PaintDotNet
 
             catch (Exception)
             {
-                initialDirectory = null;
+                initialDirectory = fd.InitialDirectory;
             }
 
             fd.InitialDirectory = initialDirectory;
-            DialogResult result = fd.ShowDialog(owner);
+
+            OurFileDialogUICallbacks ouc = new OurFileDialogUICallbacks();
+            DialogResult result = fd.ShowDialog(owner, ouc);
 
             if (result == DialogResult.OK)
             {
@@ -1700,7 +1721,16 @@ namespace PaintDotNet
                 
                 if (fd is IFileOpenDialog)
                 {
-                    fileName = ((IFileOpenDialog)fd).FileNames[0];
+                    string[] fileNames = ((IFileOpenDialog)fd).FileNames;
+
+                    if (fileNames.Length > 0)
+                    {
+                        fileName = fileNames[0];
+                    }
+                    else
+                    {
+                        fileName = null;
+                    }
                 }
                 else if (fd is IFileSaveDialog)
                 {
@@ -1710,12 +1740,359 @@ namespace PaintDotNet
                 {
                     throw new InvalidOperationException();
                 }
-                                
-                string newDir = Path.GetDirectoryName(fileName);
-                Settings.CurrentUser.SetString(SettingNames.LastFileDialogDirectory, newDir);
+
+                if (fileName != null)
+                {
+                    string newDir = Path.GetDirectoryName(fileName);
+                    Settings.CurrentUser.SetString(SettingNames.LastFileDialogDirectory, newDir);
+                }
+                else
+                {
+                    throw new FileNotFoundException();
+                }
             }
 
             return result;
+        }
+
+        private sealed class OurFileDialogUICallbacks
+            : IFileDialogUICallbacks
+        {
+            public FileOverwriteAction ShowOverwritePrompt(IWin32Window owner, string pathName)
+            {
+                FileOverwriteAction returnVal;
+
+                string title = PdnResources.GetString("SaveAs.OverwriteConfirmation.Title");
+                string textFormat = PdnResources.GetString("SaveAs.OverwriteConfirmation.Text.Format");
+                string fileName;
+
+                try
+                {
+                    fileName = Path.GetFileName(pathName);
+                }
+
+                catch (Exception)
+                {
+                    fileName = pathName;
+                }
+
+                string text = string.Format(textFormat, fileName);
+
+                DialogResult result = MessageBox.Show(owner, text, title, MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button2);
+
+                switch (result)
+                {
+                    case DialogResult.Yes:
+                        returnVal = FileOverwriteAction.Overwrite;
+                        break;
+
+                    case DialogResult.No:
+                        returnVal = FileOverwriteAction.Cancel;
+                        break;
+
+                    default:
+                        throw new InvalidEnumArgumentException();
+                }
+
+                return returnVal;
+            }
+
+            public IFileTransferProgressEvents CreateFileTransferProgressEvents()
+            {
+                return new OurProgressEvents();
+            }
+        }
+
+        private sealed class OurProgressEvents
+            : IFileTransferProgressEvents
+        {
+            private TransferProgressDialog progressDialog;
+            private ICancelable cancelSink;
+            private int itemCount = 0;
+            private int itemOrdinal = 0;
+            private string itemName = string.Empty;
+            private long totalWork;
+            private long totalProgress;
+            private const int maxPBValue = 200; // granularity of progress bar. 100 means 1%, 200 means 0.5%, etc.
+            private bool cancelRequested = false;
+
+            private ManualResetEvent operationEnded = new ManualResetEvent(false);
+
+            public OurProgressEvents()
+            {
+            }
+
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1500:VariableNamesShouldNotMatchFieldNames", MessageId = "cancelSink")]
+            public void BeginOperation(IWin32Window owner, EventHandler callWhenUIShown, ICancelable cancelSink)
+            {
+                if (this.progressDialog != null)
+                {
+                    throw new InvalidOperationException("Operation already in progress");
+                }
+
+                this.progressDialog = new TransferProgressDialog();
+                this.progressDialog.Text = PdnResources.GetString("DocumentWorkspace.ShowFileDialog.TransferProgress.Title");
+                this.progressDialog.Icon = Utility.ImageToIcon(ImageResource.Get("Icons.MenuFileOpenIcon.png").Reference);
+                this.progressDialog.ItemText = PdnResources.GetString("DocumentWorkspace.ShowFileDialog.ItemText.Initializing");
+                this.progressDialog.ProgressBar.Style = ProgressBarStyle.Marquee;
+                this.progressDialog.ProgressBar.Maximum = maxPBValue;
+
+                this.progressDialog.CancelClicked +=
+                    delegate(object sender, EventArgs e)
+                    {
+                        this.cancelRequested = true;
+                        this.cancelSink.RequestCancel();
+                        UpdateUI();
+                    };
+
+                EventHandler progressDialog_Shown =
+                    delegate(object sender, EventArgs e)
+                    {
+                        callWhenUIShown(this, EventArgs.Empty);
+                    };
+
+                this.cancelSink = cancelSink;
+                this.itemOrdinal = 0;
+                this.cancelRequested = false;
+                this.itemName = string.Empty;
+                this.itemCount = 0;
+                this.itemOrdinal = 0;
+                this.totalProgress = 0;
+                this.totalWork = 0;
+
+                this.progressDialog.Shown += progressDialog_Shown;
+                this.progressDialog.ShowDialog(owner);
+                this.progressDialog.Shown -= progressDialog_Shown;
+
+                this.progressDialog.Dispose();
+                this.progressDialog = null;
+                this.cancelSink = null;
+            }
+
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1500:VariableNamesShouldNotMatchFieldNames", MessageId = "itemCount")]
+            public void SetItemCount(int itemCount)
+            {
+                if (this.progressDialog.InvokeRequired)
+                {
+                    this.progressDialog.BeginInvoke(new Procedure<int>(SetItemCount), new object[] { itemCount });
+                }
+                else
+                {
+                    this.itemCount = itemCount;
+                    UpdateUI();
+                }
+            }
+
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1500:VariableNamesShouldNotMatchFieldNames", MessageId = "itemOrdinal")]
+            public void SetItemOrdinal(int itemOrdinal)
+            {
+                if (this.progressDialog.InvokeRequired)
+                {
+                    this.progressDialog.BeginInvoke(new Procedure<int>(SetItemOrdinal), new object[] { itemOrdinal });
+                }
+                else
+                {
+                    this.itemOrdinal = itemOrdinal;
+                    this.totalWork = 0;
+                    this.totalProgress = 0;
+                    UpdateUI();
+                }
+            }
+
+            public void SetItemInfo(string itemInfo)
+            {
+                if (this.progressDialog.InvokeRequired)
+                {
+                    this.progressDialog.BeginInvoke(new Procedure<string>(SetItemInfo), new object[] { itemInfo });
+                }
+                else
+                {
+                    this.itemName = itemInfo;
+                    UpdateUI();
+                }
+            }
+
+            public void BeginItem()
+            {
+                if (this.progressDialog.InvokeRequired)
+                {
+                    this.progressDialog.BeginInvoke(new Procedure(BeginItem), null);
+                }
+                else
+                {
+                    this.progressDialog.ProgressBar.Style = ProgressBarStyle.Continuous;
+                }
+            }
+
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1500:VariableNamesShouldNotMatchFieldNames", MessageId = "totalWork")]
+            public void SetItemWorkTotal(long totalWork)
+            {
+                if (this.progressDialog.InvokeRequired)
+                {
+                    this.progressDialog.BeginInvoke(new Procedure<long>(SetItemWorkTotal), new object[] { totalWork });
+                }
+                else
+                {
+                    this.totalWork = totalWork;
+                    UpdateUI();
+                }
+            }
+
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1500:VariableNamesShouldNotMatchFieldNames", MessageId = "totalProgress")]
+            public void SetItemWorkProgress(long totalProgress)
+            {
+                if (this.progressDialog.InvokeRequired)
+                {
+                    this.progressDialog.BeginInvoke(new Procedure<long>(SetItemWorkProgress), new object[] { totalProgress });
+                }
+                else
+                {
+                    this.totalProgress = totalProgress;
+                    UpdateUI();
+                }
+            }
+
+            public void EndItem(WorkItemResult result)
+            {
+                if (this.progressDialog.InvokeRequired)
+                {
+                    this.progressDialog.BeginInvoke(new Procedure<WorkItemResult>(EndItem), new object[] { result });
+                }
+                else
+                {
+                }
+            }
+
+            public void EndOperation(OperationResult result)
+            {
+                if (this.progressDialog.InvokeRequired)
+                {
+                    this.progressDialog.BeginInvoke(new Procedure<OperationResult>(EndOperation), new object[] { result });
+                }
+                else
+                {
+                    this.progressDialog.Close();
+                }
+            }
+
+            public WorkItemFailureAction ReportItemFailure(Exception ex)
+            {
+                if (this.progressDialog.InvokeRequired)
+                {
+                    object result = this.progressDialog.Invoke(
+                        new Function<WorkItemFailureAction, Exception>(ReportItemFailure), 
+                        new object[] { ex });
+
+                    return (WorkItemFailureAction)result;
+                }
+                else
+                {
+                    WorkItemFailureAction result;
+                    result = ShowFileTransferFailedDialog(ex);
+                    return result;
+                }
+            }
+
+            private WorkItemFailureAction ShowFileTransferFailedDialog(Exception ex)
+            {
+                WorkItemFailureAction result;
+                Icon formIcon = this.progressDialog.Icon;
+
+                string formTitle = PdnResources.GetString("DocumentWorkspace.ShowFileDialog.ItemFailureDialog.Title");
+
+                Image taskImage = ImageResource.Get("Icons.WarningIcon.png").Reference;
+
+                string introTextFormat = PdnResources.GetString("DocumentWorkspace.ShowFileDialog.ItemFailureDialog.IntroText.Format");
+                string introText = string.Format(introTextFormat, ex.Message);
+
+                TaskButton retryTB = new TaskButton(
+                    ImageResource.Get("Icons.MenuImageRotate90CWIcon.png").Reference,
+                    PdnResources.GetString("DocumentWorkspace.ShowFileDialog.RetryTB.ActionText"),
+                    PdnResources.GetString("DocumentWorkspace.ShowFileDialog.RetryTB.ExplanationText"));
+
+                TaskButton skipTB = new TaskButton(
+                    ImageResource.Get("Icons.HistoryFastForwardIcon.png").Reference,
+                    PdnResources.GetString("DocumentWorkspace.ShowFileDialog.SkipTB.ActionText"),
+                    PdnResources.GetString("DocumentWorkspace.ShowFileDialog.SkipTB.ExplanationText"));
+
+                TaskButton cancelTB = new TaskButton(
+                    ImageResource.Get("Icons.CancelIcon.png").Reference,
+                    PdnResources.GetString("DocumentWorkspace.ShowFileDialog.CancelTB.ActionText"),
+                    PdnResources.GetString("DocumentWorkspace.ShowFileDialog.CancelTB.ExplanationText"));
+
+                List<TaskButton> taskButtons = new List<TaskButton>();
+                taskButtons.Add(retryTB);
+
+                // Only have the Skip button if there is more than 1 item being transferred.
+                // If only 1 item is begin transferred, Skip and Cancel are essentially synonymous.
+                if (this.itemCount > 1)
+                {
+                    taskButtons.Add(skipTB);
+                }
+
+                taskButtons.Add(cancelTB);
+
+                int width96 = (TaskDialog.DefaultPixelWidth96Dpi * 4) / 3; // 33% wider
+
+                TaskButton clickedTB = TaskDialog.Show(
+                    this.progressDialog,
+                    formIcon,
+                    formTitle,
+                    taskImage,
+                    true,
+                    introText,
+                    taskButtons.ToArray(),
+                    retryTB,
+                    cancelTB,
+                    width96);
+
+                if (clickedTB == retryTB)
+                {
+                    result = WorkItemFailureAction.RetryItem;
+                }
+                else if (clickedTB == skipTB)
+                {
+                    result = WorkItemFailureAction.SkipItem;
+                }
+                else
+                {
+                    result = WorkItemFailureAction.CancelOperation;
+                }
+
+                return result;
+            }
+
+            private void UpdateUI()
+            {
+                int itemCount2 = Math.Max(1, this.itemCount);
+
+                double startValue = (double)this.itemOrdinal / (double)itemCount2;
+                double endValue = (double)(this.itemOrdinal + 1) / (double)itemCount2;
+
+                long totalWork2 = Math.Max(1, this.totalWork);
+                double lerp = (double)this.totalProgress / (double)totalWork2;
+
+                double newValue = Utility.Lerp(startValue, endValue, lerp);
+                int newValueInt = (int)Math.Ceiling(maxPBValue * newValue);
+
+                if (this.cancelRequested)
+                {
+                    this.progressDialog.CancelEnabled = false;
+                    this.progressDialog.ItemText = PdnResources.GetString("DocumentWorkspace.ShowFileDialog.ItemText.Canceling");
+                    this.progressDialog.OperationProgress = string.Empty;
+                    this.progressDialog.ProgressBar.Style = ProgressBarStyle.Marquee;
+                }
+                else
+                {
+                    this.progressDialog.CancelEnabled = true;
+                    this.progressDialog.ItemText = this.itemName;
+                    string progressFormat = PdnResources.GetString("DocumentWorkspace.ShowFileDialog.ProgressText.Format");
+                    string progressText = string.Format(progressFormat, this.itemOrdinal + 1, this.itemCount);
+                    this.progressDialog.OperationProgress = progressText;
+                    this.progressDialog.ProgressBar.Style = ProgressBarStyle.Continuous;
+                    this.progressDialog.ProgressBar.Value = newValueInt;
+                }
+            }
         }
 
         public static DialogResult ChooseFile(Control parent, out string fileName)

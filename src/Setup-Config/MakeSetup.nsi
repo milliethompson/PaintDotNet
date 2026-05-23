@@ -19,15 +19,17 @@ RequestExecutionLevel admin
 !ifdef Compress
   !ifdef FullInstaller
     SetCompressor /SOLID lzma
-    SetCompressorDictSize 34
+    SetCompressorDictSize 20
     ;SetCompress off
   !else
     SetCompressor /SOLID lzma
-    SetCompressorDictSize 9
+    SetCompressorDictSize 20
+    ;SetCompress off
   !endif
 !else
   SetCompress off
 !endif
+
 
 ; The name of the installer
 Name "Paint.NET SFX"
@@ -43,11 +45,11 @@ InstallDir $TEMP\PdnSetup
 Icon ..\Resources\Icons\PaintDotNet.ico
 
 VIAddVersionKey ProductName "Paint.NET Setup"
-VIAddVersionKey ProductVersion "3.05.0.0"
-VIAddVersionKey FileVersion "3.05.0.0"
+VIAddVersionKey ProductVersion "3.07.0.0"
+VIAddVersionKey FileVersion "3.07.0.0"
 VIAddVersionKey LegalCopyright "Copyright © 2007 Rick Brewster, Tom Jackson, and past contributors. Portions Copyright © 2007 Microsoft Corporation. All Rights Reserved."
 VIAddVersionKey FileDescription "Installs Paint.NET."
-VIProductVersion "3.05.0.0"
+VIProductVersion "3.07.0.0"
 
 ; The file to write
 !ifdef Debug
@@ -108,13 +110,15 @@ Section "" ;No components page, name is not important
   ; Ordering these files is important so that files that are similar
   ; are next to each other and can be compressed together via the
   ; solid archive compression.
-  File /r /x CVS ..\..\programs\dotnet_2_0\*.ini
-  File /r /x CVS ..\..\programs\dotnet_2_0\*.txt
-  File /r /x CVS ..\..\programs\dotnet_2_0\*.dll
-  File /r /x CVS ..\..\programs\dotnet_2_0\*.exe
-  File /r /x CVS ..\..\programs\dotnet_2_0\*.bmp
-  File /r /x CVS ..\..\programs\dotnet_2_0\*.msi
-  File /r /x CVS ..\..\programs\dotnet_2_0\*.cab
+  File /r /x CVS ..\..\programs\dotnet_3_0\*.dat
+  File /r /x CVS ..\..\programs\dotnet_3_0\*.exe
+  File /r /x CVS ..\..\programs\dotnet_3_0\*.dll
+  File /r /x CVS ..\..\programs\dotnet_3_0\*.rtf
+  File /r /x CVS ..\..\programs\dotnet_3_0\*.bmp
+  File /r /x CVS ..\..\programs\dotnet_3_0\*.sdb
+  File /r /x CVS ..\..\programs\dotnet_3_0\*.msi
+  File /r /x CVS ..\..\programs\dotnet_3_0\*.pdi
+  File /r /x CVS ..\..\programs\dotnet_3_0\*.sdb
 !endif
   
 !ifdef FullInstaller

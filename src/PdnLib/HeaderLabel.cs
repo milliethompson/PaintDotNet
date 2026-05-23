@@ -50,17 +50,24 @@ namespace PaintDotNet
             {
                 if (this.groupBox != null)
                 {
+                    string newText;
+
                     if (value == null)
                     {
-                        this.groupBox.Text = string.Empty;
+                        newText = string.Empty;
                     }
                     else if (value.Length >= 1)
                     {
-                        this.groupBox.Text = value + "  ";
+                        newText = value + "  ";
                     }
                     else
                     {
-                        this.groupBox.Text = string.Empty;
+                        newText = string.Empty;
+                    }
+
+                    if (newText != this.groupBox.Text)
+                    {
+                        this.groupBox.Text = newText;
                     }
                 }
             }

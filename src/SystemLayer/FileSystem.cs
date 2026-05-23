@@ -508,15 +508,12 @@ namespace PaintDotNet.SystemLayer
 
                 if (cleanUp)
                 {
-                    string[] filesToCleanUp = Directory.GetFiles(oldDirPath, "*.");
+                    string[] filesToCleanUp = Directory.GetFiles(oldDirPath, "*");
 
                     foreach (string fileToCleanUp in filesToCleanUp)
                     {
                         try
                         {
-                            // The only files we create have filenames that are parseable to integers
-                            // So we only delete those files
-                            int theInt = int.Parse(Path.GetFileName(fileToCleanUp), CultureInfo.InvariantCulture);
                             File.Delete(fileToCleanUp);
                         }
 
@@ -647,6 +644,13 @@ namespace PaintDotNet.SystemLayer
             }
 
             return returnPath;
+        }
+
+        public static string GetTempPathName(string fileName)
+        {
+            string fileName2 = Path.GetFileName(fileName);
+            string pathName = Path.Combine(tempDir, fileName2);
+            return pathName;
         }
     }
 }

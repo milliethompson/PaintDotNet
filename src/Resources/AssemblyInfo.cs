@@ -39,7 +39,7 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("3.05.*")]
+[assembly: AssemblyVersion("3.07.*")]
 
 // Change this to say "Final" for final builds. Otherwise the titlebar will contain
 // a long version string. Final versions should just say the ApplicationProduct

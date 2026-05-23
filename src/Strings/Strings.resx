@@ -679,21 +679,6 @@ Shortcut key: X</value>
     <value>{0}: {1}</value>
     <comment>{0} is the file being imported, {1} is the name of a layer within that file</comment>
   </data>
-  <data name="ImportLayersDialog.Text" xml:space="preserve">
-    <value>Import Layers</value>
-  </data>
-  <data name="ImportLayersDialog.AllButton.Text" xml:space="preserve">
-    <value>All</value>
-  </data>
-  <data name="ImportLayersDialog.NoneButton.Text" xml:space="preserve">
-    <value>None</value>
-  </data>
-  <data name="ImportLayersDialog.LayersToInsertHeader.Text" xml:space="preserve">
-    <value>Layers to insert</value>
-  </data>
-  <data name="ImportLayersDialog.PreviewHeader.Text" xml:space="preserve">
-    <value>Preview</value>
-  </data>
   <data name="InvertSelectionAction.Name" xml:space="preserve">
     <value>Invert Selection</value>
   </data>
@@ -982,12 +967,9 @@ Shortcut key: X</value>
   <data name="SaveConfigDialog.DefaultsButton.Text" xml:space="preserve">
     <value>De&amp;faults</value>
   </data>
-  <data name="SaveConfigDialog.FileSizeText.Text.Format" xml:space="preserve">
-    <value>File size: {0}</value>
+  <data name="SaveConfigDialog.PreviewHeader.Text.Format" xml:space="preserve">
+    <value>Preview, file size: {0}</value>
     <comment>{0} is a file size, or some text in parenthesis (such as SaveConfigDialog.FileSizeText.Text.Error)</comment>
-  </data>
-  <data name="SaveConfigDialog.PreviewHeader.Text" xml:space="preserve">
-    <value>Preview</value>
   </data>
   <data name="SaveConfigDialog.FileSizeText.Text.Computing" xml:space="preserve">
     <value>(computing)</value>
@@ -2500,6 +2482,10 @@ Click "Next" to start the installation.</value>
   <data name="LaunchLink.Error" xml:space="preserve">
     <value>There was an error launching the link.</value>
   </data>
+  <data name="LaunchLink.Error.Format" xml:space="preserve">
+    <value>There was an error launching the link: {0}</value>
+    <comment>{0} is a URL.</comment>
+  </data>
   <data name="RadialBlurEffect.Name" xml:space="preserve">
     <value>Radial Blur</value>
   </data>
@@ -2704,8 +2690,8 @@ www.getpaint.net</value>
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.Resampling.HeaderLabel.Text">
     <value>Move Selected Pixels</value>
   </data>
-  <data name="ChooseToolDefaultsDialog.ToolConfigRow.BrushPenShapeType.HeaderLabel.Text">
-    <value>Shapes, Brushes and Fill</value>
+  <data name="ChooseToolDefaultsDialog.ToolConfigRow.BrushPenPenCapsShapeType.HeaderLabel.Text">
+    <value>Shape, Brush, Style, and Fill</value>
   </data>
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.Text.HeaderLabel.Text">
     <value>Text</value>
@@ -2795,6 +2781,21 @@ Shortcut key: ] (hold Ctrl to increase by 5)</value>
     <value>Decrease brush size
 Shortcut key: [ (hold Ctrl to decrease by 5)</value>
   </data>
+  <data name="ToolConfigStrip.PenStartCapSplitButton.ToolTipText" xml:space="preserve">
+    <value>Toggle start cap for line style
+Shortcut key: ,</value>
+  </data>
+  <data name="ToolConfigStrip.PenDashStyleSplitButton.ToolTipText" xml:space="preserve">
+    <value>Toggle dash type for line style
+Shortcut key: .</value>
+  </data>
+  <data name="ToolConfigStrip.PenEndCapSplitButton.ToolTipText" xml:space="preserve">
+    <value>Toggle end cap for line style
+Shortcut key: /</value>
+  </data>
+  <data name="ToolConfigStrip.PenStyleLabel.Text">
+    <value>Style:</value>
+  </data>
   <data name="Effects.Render.Submenu.Name" xml:space="preserve">
     <value>Render</value>
   </data>
@@ -2842,5 +2843,89 @@ Shortcut key: [ (hold Ctrl to decrease by 5)</value>
   </data>
   <data name="ExpandCanvasQuestion.CancelTB.ExplanationText">
     <value>Cancels the paste action.</value>
+  </data>
+  <data name="LineCap2.Flat">
+    <value>Flat</value>
+  </data>
+  <data name="LineCap2.Arrow">
+    <value>Arrow</value>
+  </data>
+  <data name="LineCap2.ArrowFilled">
+    <value>Filled Arrow</value>
+  </data>
+  <data name="LineCap2.Rounded">
+    <value>Rounded</value>
+  </data>
+  <data name="DashStyle.Custom">
+    <value>Custom_NotUsed</value>
+    <comment>This string does not need to be translated. It is not used.</comment>
+  </data>
+  <data name="DashStyle.Solid">
+    <value>Solid</value>
+  </data>
+  <data name="DashStyle.Dash">
+    <value>Dashes</value>
+  </data>
+  <data name="DashStyle.Dot">
+    <value>Dotted</value>
+  </data>
+  <data name="DashStyle.DashDot">
+    <value>Dash, Dot</value>
+  </data>
+  <data name="DashStyle.DashDotDot">
+    <value>Dash, Dot, Dot</value>
+  </data>
+  <data name="HelpFile.Url.Format">
+    <value>{0}/doc/latest/index.html</value>
+    <comment>Note to translators: This string only needs to be changed if the UA (user assistance, aka help file, documentation) is also being translated.
+{0} is the base website address, such as http://www.getpaint.net. This string is not required to have {0} in it. So if you want to distribute a language pack that hosts the help file elsewhere (that is to say, not on the official Paint.NET website), you can do that by specifying the URL directly, e.g. "http://www.wherever.net/paintnethelp/fr/".</comment>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.TransferProgress.Title">
+    <value>Transferring ...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemText.Initializing">
+    <value>Initializing ...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemText.Canceling">
+    <value>Canceling ...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ProgressText.Format">
+    <value>{0} of {1}</value>
+    <comment>{0} is the number of the current item, {1} is the total number of items. Example: "5 of 7"</comment>
+  </data>  
+  <data name="DocumentWorkspace.ShowFileDialog.ItemFailureDialog.Title">
+    <value>Transfer Error</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemFailureDialog.IntroText.Format" xml:space="preserve">
+    <value>There was an error transferring the image:
+
+{0}</value>
+    <comment>{0} is an error message, which will be populated by the operation system in the language that it is configured for.</comment>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.RetryTB.ActionText">
+    <value>&amp;Retry</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.RetryTB.ExplanationText">
+    <value>Retries transferring the image.</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.SkipTB.ActionText">
+    <value>&amp;Skip</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.SkipTB.ExplanationText">
+    <value>Skips this image, and moves on to the next one.</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.CancelTB.ActionText">
+    <value>Cancel</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.CancelTB.ExplanationText">
+    <value>Cancels the transfer, and lets you reselect which images to open.</value>
+  </data>
+  <data name="SaveAs.OverwriteConfirmation.Title">
+    <value>Confirm Save As</value>
+  </data>
+  <data name="SaveAs.OverwriteConfirmation.Text.Format" xml:space="preserve">
+    <value>{0} already exists.
+Do you want to replace it?</value>
+    <comment>{0} is a relative filename. e.g. "Untitled.png"</comment>
   </data>
 </root>

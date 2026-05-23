@@ -7,6 +7,8 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using System;
+
 namespace PaintDotNet.SystemLayer
 {
     /// <summary>
@@ -14,10 +16,13 @@ namespace PaintDotNet.SystemLayer
     /// the URL we ping for update manifests, and the e-mail address to send
     /// feedback to.
     /// </summary>
+    // TODO: remove
     public static class Branding
     {
+        [Obsolete("Use InvariantStrings.FeedbackEmail instead")]
         public const string FeedbackEmail = "paint.net@hotmail.com";
 
+        [Obsolete("Use InvariantStrings.WebsiteUrl instead")]
         public const string WebsiteUrl = "http://www.getpaint.net";
     }
 }

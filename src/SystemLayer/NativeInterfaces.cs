@@ -10,6 +10,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace PaintDotNet.SystemLayer
 {
@@ -17,44 +18,267 @@ namespace PaintDotNet.SystemLayer
 
     internal static class NativeInterfaces
     {
-        internal class IIDGuid
-        {
-            // IID GUID strings for relevant COM interfaces
-            internal const string IModalWindow = "b4db1657-70d7-485e-8e3e-6fcb5a5c1802";
-            internal const string IFileDialog = "42f85136-db7e-439c-85f1-e4075d135fc8";
-            internal const string IFileOpenDialog = "d57c7288-d4ad-4768-be02-9d969532d960";
-            internal const string IFileSaveDialog = "84bccd23-5fde-4cdb-aea4-af64b83d78ab";
-            internal const string IFileDialogEvents = "973510DB-7D7F-452B-8975-74A85828D354";
-            internal const string IFileDialogControlEvents = "36116642-D713-4b97-9B83-7484A9D00433";
-            internal const string IFileDialogCustomize = "8016b7b3-3d49-4504-a0aa-2a37494e606f";
-            internal const string IShellItem = "43826D1E-E718-42EE-BC55-A1E261C37BFE";
-            internal const string IShellItemArray = "B63EA76D-1F85-456F-A19C-48159EFA858B";
-            internal const string IKnownFolder = "38521333-6A87-46A7-AE10-0F16706816C3";
-            internal const string IKnownFolderManager = "44BEAAEC-24F4-4E90-B3F0-23D258FBB146";
-            internal const string IPropertyStore = "886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99";
-        }
-
-        internal class CLSIDGuid
-        {
-            // CLSID GUID strings for relevant coclasses
-            internal const string FileOpenDialog = "DC1C5A9C-E88A-4dde-A5A1-60F82A20AEF7";
-            internal const string FileSaveDialog = "C0B4E2F3-BA21-4773-8DBA-335EC946EB8B";
-            internal const string KnownFolderManager = "4df0c730-df9d-4ae3-9153-aa6b82e9795a";
-        }
-
-        [ComImport()]
-        [Guid(IIDGuid.IModalWindow)]
+        [ComImport]
+        [Guid(NativeConstants.IID_IOleWindow)]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        internal interface IModalWindow
+        public interface IOleWindow
+        {
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void GetWindow(out IntPtr phwnd);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void ContextSensitiveHelp([MarshalAs(UnmanagedType.Bool)] bool fEnterMode);
+        }
+
+        [ComImport]
+        [Guid(NativeConstants.IID_IFileOperationProgressSink)]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IFileOperationProgressSink
+        {
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void StartOperations();
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void FinishOperations(int hResult);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void PreRenameItem(
+                uint dwFlags,
+                IShellItem psiItem,
+                string pszNewName);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void PostRenameItem( 
+                uint dwFlags,
+                IShellItem psiItem,
+                string pszNewName,
+                int hrRename,
+                IShellItem psiNewlyCreated);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void PreMoveItem( 
+                uint dwFlags,
+                IShellItem psiItem,
+                IShellItem psiDestinationFolder,
+                string pszNewName);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void PostMoveItem( 
+                uint dwFlags,
+                IShellItem psiItem,
+                IShellItem psiDestinationFolder,
+                string pszNewName,
+                int hrMove,
+                IShellItem psiNewlyCreated);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void PreCopyItem( 
+                uint dwFlags,
+                IShellItem psiItem,
+                IShellItem psiDestinationFolder,
+                string pszNewName);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void PostCopyItem( 
+                uint dwFlags,
+                IShellItem psiItem,
+                IShellItem psiDestinationFOlder,
+                string pszNewName,
+                int hrCopy,
+                IShellItem psiNewlyCreated);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void PreDeleteItem(
+                uint dwFlags,
+                IShellItem psiItem);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void PostDeleteItem( 
+                uint dwFlags,
+                IShellItem psiItem,
+                int hrDelete,
+                IShellItem psiNewlyCreated);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void PreNewItem( 
+                uint dwFlags,
+                IShellItem psiDestinationFolder,
+                string pszNewName);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void PostNewItem( 
+                uint dwFlags,
+                IShellItem psiDestinationFolder,
+                string pszNewName,
+                string pszTemplateName,
+                uint dwFileAttributes,
+                int hrNew,
+                IShellItem psiNewItem);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void UpdateProgress( 
+                uint iWorkTotal,
+                uint iWorkSoFar);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void ResetTimer();
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void PauseTimer();
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void ResumeTimer();
+        }
+
+        [ComImport]
+        [Guid(NativeConstants.IID_IFileOperation)]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IFileOperation
+        {
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void Advise(IFileOperationProgressSink pfops, out uint pdwCookie);
+        
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void Unadvise(uint dwCookie);
+        
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void SetOperationFlags(NativeConstants.FOF dwOperationFlags);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void SetProgressMessage([MarshalAs(UnmanagedType.LPWStr)] string pszMessage);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void SetProgressDialog(IntPtr popd);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void SetProperties(IntPtr pproparray);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void SetOwnerWindow(IntPtr hwndParent);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void ApplyPropertiesToItem(IShellItem psiItem);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void ApplyPropertiesToItems(IntPtr punkItems);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void RenameItem(
+                IShellItem psiItem,
+                [MarshalAs(UnmanagedType.LPWStr)] string pszNewName,
+                IFileOperationProgressSink pfopsItem);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void RenameItems(IntPtr pUnkItems, [MarshalAs(UnmanagedType.LPWStr)] string pszNewName);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void MoveItem(
+                IShellItem psiItem, 
+                IShellItem psiDestinationFolder, 
+                [MarshalAs(UnmanagedType.LPWStr)] string pszNewName, 
+                IFileOperationProgressSink pfopsItem);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void MoveItems(IntPtr punkItems, IShellItem psiDestinationFolder);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void CopyItem(
+                IShellItem psiItem,
+                IShellItem psiDestinationFolder,
+                [MarshalAs(UnmanagedType.LPWStr)] string pszCopyName,
+                IFileOperationProgressSink pfopsItem);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void CopyItems(object punkItems, IShellItem psiDestinationFolder);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void DeleteItem(IShellItem psiItem, IFileOperationProgressSink pfopsItem);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void DeleteItems(object punkItems);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void NewItem(
+                IShellItem psiDestinationFolder,
+                uint dwFileAttributes,
+                [MarshalAs(UnmanagedType.LPWStr)] string pszName,
+                [MarshalAs(UnmanagedType.LPWStr)] string pszTemplateName,
+                IFileOperationProgressSink pfopsItem);
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime), PreserveSig]
+            int PerformOperations();
+            
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void GetAnyOperationsAborted(out bool pfAnyOperationsAborted);
+        }
+
+        [ComImport]
+        [Guid(NativeConstants.IID_ISequentialStream)]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface ISequentialStream
+        {
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void Read(IntPtr pv, uint cb, out uint pcbRead);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void Write(IntPtr pv, uint cb, out uint pcbWritten);
+        }
+
+        [ComImport]
+        [Guid(NativeConstants.IID_IStream)]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IStream
+            : ISequentialStream
+        {
+            // Defined on ISequentialStream - repeated here due to requirements of COM interop layer
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            new void Read(IntPtr pv, uint cb, out uint pcbRead);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            new void Write(IntPtr pv, uint cb, out uint pcbWritten);
+
+            // IStream-specific interface members
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void Seek(ulong dlibMove, uint dwOrigin, out ulong plibNewPosition);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void SetSize(ulong libNewSize);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void CopyTo(IStream pstm, ulong cb, out ulong pcbRead, out ulong pcbWritten);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void Commit(NativeConstants.STGC grfCommitFlags);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void Revert();
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void LockRegion(ulong libOffset, ulong cb, uint dwLockType);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void UnlockRegion(ulong libOffset, ulong cb, uint dwLockType);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void Stat(out NativeStructs.STATSTG pstatstg, NativeConstants.STATFLAG grfStatFlag);
+
+            [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+            void Clone(out IStream ppstm);
+        }
+
+        [ComImport]
+        [Guid(NativeConstants.IID_IModalWindow)]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IModalWindow
         {
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime), PreserveSig]
             int Show([In] IntPtr parent);
         }
 
-        [ComImport()]
-        [Guid(IIDGuid.IFileDialog)]
+        [ComImport]
+        [Guid(NativeConstants.IID_IFileDialog)]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        internal interface IFileDialog : IModalWindow
+        public interface IFileDialog : IModalWindow
         {
             // Defined on IModalWindow - repeated here due to requirements of COM interop layer
             // --------------------------------------------------------------------------------
@@ -136,10 +360,10 @@ namespace PaintDotNet.SystemLayer
             void SetFilter([MarshalAs(UnmanagedType.Interface)] IntPtr pFilter);
         }
 
-        [ComImport()]
-        [Guid(IIDGuid.IFileOpenDialog)]
+        [ComImport]
+        [Guid(NativeConstants.IID_IFileOpenDialog)]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        internal interface IFileOpenDialog : IFileDialog
+        public interface IFileOpenDialog : IFileDialog
         {
             // Defined on IModalWindow - repeated here due to requirements of COM interop layer
             // --------------------------------------------------------------------------------
@@ -228,10 +452,10 @@ namespace PaintDotNet.SystemLayer
             void GetSelectedItems([MarshalAs(UnmanagedType.Interface)] out IShellItemArray ppsai);
         }
 
-        [ComImport()]
-        [Guid(IIDGuid.IFileSaveDialog)]
+        [ComImport]
+        [Guid(NativeConstants.IID_IFileSaveDialog)]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        internal interface IFileSaveDialog : IFileDialog
+        public interface IFileSaveDialog : IFileDialog
         {
             // Defined on IModalWindow - repeated here due to requirements of COM interop layer
             // --------------------------------------------------------------------------------
@@ -335,9 +559,9 @@ namespace PaintDotNet.SystemLayer
         }
 
         [ComImport]
-        [Guid(IIDGuid.IFileDialogEvents)]
+        [Guid(NativeConstants.IID_IFileDialogEvents)]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        internal interface IFileDialogEvents
+        public interface IFileDialogEvents
         {
             // NOTE: some of these callbacks are cancelable - returning S_FALSE means that 
             // the dialog should not proceed (e.g. with closing, changing folder); to 
@@ -372,13 +596,13 @@ namespace PaintDotNet.SystemLayer
         }
 
         [ComImport]
-        [Guid(IIDGuid.IShellItem)]
+        [Guid(NativeConstants.IID_IShellItem)]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        internal interface IShellItem
+        public interface IShellItem
         {
             // Not supported: IBindCtx
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-            void BindToHandler([In, MarshalAs(UnmanagedType.Interface)] IntPtr pbc, [In] ref Guid bhid, [In] ref Guid riid, out IntPtr ppv);
+            void BindToHandler(IntPtr pbc, [In] ref Guid bhid, [In] ref Guid riid, out IStream ppv);
 
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
             void GetParent([MarshalAs(UnmanagedType.Interface)] out IShellItem ppsi);
@@ -387,16 +611,16 @@ namespace PaintDotNet.SystemLayer
             void GetDisplayName([In] NativeConstants.SIGDN sigdnName, [MarshalAs(UnmanagedType.LPWStr)] out string ppszName);
 
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-            void GetAttributes([In] uint sfgaoMask, out uint psfgaoAttribs);
+            void GetAttributes([In] NativeConstants.SFGAO sfgaoMask, out NativeConstants.SFGAO psfgaoAttribs);
 
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
             void Compare([In, MarshalAs(UnmanagedType.Interface)] IShellItem psi, [In] uint hint, out int piOrder);
         }
 
         [ComImport]
-        [Guid(IIDGuid.IShellItemArray)]
+        [Guid(NativeConstants.IID_IShellItemArray)]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        internal interface IShellItemArray
+        public interface IShellItemArray
         {
             // Not supported: IBindCtx
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
@@ -409,7 +633,7 @@ namespace PaintDotNet.SystemLayer
             void GetPropertyDescriptionList([In] ref NativeStructs.PROPERTYKEY keyType, [In] ref Guid riid, out IntPtr ppv);
 
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-            void GetAttributes([In] NativeConstants.SIATTRIBFLAGS dwAttribFlags, [In] uint sfgaoMask, out uint psfgaoAttribs);
+            void GetAttributes([In] NativeConstants.SIATTRIBFLAGS dwAttribFlags, [In] NativeConstants.SFGAO sfgaoMask, out NativeConstants.SFGAO psfgaoAttribs);
 
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
             void GetCount(out uint pdwNumItems);
@@ -423,9 +647,9 @@ namespace PaintDotNet.SystemLayer
         }
 
         [ComImport]
-        [Guid(IIDGuid.IKnownFolder)]
+        [Guid(NativeConstants.IID_IKnownFolder)]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        internal interface IKnownFolder
+        public interface IKnownFolder
         {
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
             void GetId(out Guid pkfid);
@@ -460,9 +684,9 @@ namespace PaintDotNet.SystemLayer
         }
         
         [ComImport]
-        [Guid(IIDGuid.IKnownFolderManager)]
+        [Guid(NativeConstants.IID_IKnownFolderManager)]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        internal interface IKnownFolderManager
+        public interface IKnownFolderManager
         {
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
             void FolderIdFromCsidl([In] int nCsidl, out Guid pfid);
@@ -496,9 +720,9 @@ namespace PaintDotNet.SystemLayer
         }
 
         [ComImport]
-        [Guid(IIDGuid.IFileDialogCustomize)]
+        [Guid(NativeConstants.IID_IFileDialogCustomize)]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        internal interface IFileDialogCustomize
+        public interface IFileDialogCustomize
         {
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
             void EnableOpenDropDown([In] int dwIDCtl);
@@ -580,9 +804,9 @@ namespace PaintDotNet.SystemLayer
         }
 
         [ComImport]
-        [Guid(IIDGuid.IFileDialogControlEvents)]
+        [Guid(NativeConstants.IID_IFileDialogControlEvents)]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        internal interface IFileDialogControlEvents
+        public interface IFileDialogControlEvents
         {
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
             void OnItemSelected([In, MarshalAs(UnmanagedType.Interface)] IFileDialogCustomize pfdc, [In] int dwIDCtl, [In] int dwIDItem);
@@ -598,9 +822,9 @@ namespace PaintDotNet.SystemLayer
         }
 
         [ComImport]
-        [Guid(IIDGuid.IPropertyStore)]
+        [Guid(NativeConstants.IID_IPropertyStore)]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        internal interface IPropertyStore
+        public interface IPropertyStore
         {
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
             void GetCount([Out] out uint cProps);
@@ -624,23 +848,30 @@ namespace PaintDotNet.SystemLayer
         // straightforward way. Behind the scenes, the C# compiler
         // morphs all 'new CoClass()' calls to 'new CoClassWrapper()'
         [ComImport]
-        [Guid(IIDGuid.IFileOpenDialog)]
+        [Guid(NativeConstants.IID_IFileOperation)]
+        [CoClass(typeof(FileOperationRCW))]
+        public interface NativeFileOperation : IFileOperation
+        {
+        }
+
+        [ComImport]
+        [Guid(NativeConstants.IID_IFileOpenDialog)]
         [CoClass(typeof(FileOpenDialogRCW))]
-        internal interface NativeFileOpenDialog : IFileOpenDialog
+        public interface NativeFileOpenDialog : IFileOpenDialog
         {
         }
 
         [ComImport]
-        [Guid(IIDGuid.IFileSaveDialog)]
+        [Guid(NativeConstants.IID_IFileSaveDialog)]
         [CoClass(typeof(FileSaveDialogRCW))]
-        internal interface NativeFileSaveDialog : IFileSaveDialog
+        public interface NativeFileSaveDialog : IFileSaveDialog
         {
         }
 
         [ComImport]
-        [Guid(IIDGuid.IKnownFolderManager)]
+        [Guid(NativeConstants.IID_IKnownFolderManager)]
         [CoClass(typeof(KnownFolderManagerRCW))]
-        internal interface KnownFolderManager : IKnownFolderManager
+        public interface KnownFolderManager : IKnownFolderManager
         {
         }
 
@@ -649,24 +880,32 @@ namespace PaintDotNet.SystemLayer
         [ComImport]
         [ClassInterface(ClassInterfaceType.None)]
         [TypeLibType(TypeLibTypeFlags.FCanCreate)]
-        [Guid(CLSIDGuid.FileOpenDialog)]
-        internal class FileOpenDialogRCW
+        [Guid(NativeConstants.CLSID_FileOperation)]
+        public class FileOperationRCW
         {
         }
 
         [ComImport]
         [ClassInterface(ClassInterfaceType.None)]
         [TypeLibType(TypeLibTypeFlags.FCanCreate)]
-        [Guid(CLSIDGuid.FileSaveDialog)]
-        internal class FileSaveDialogRCW
+        [Guid(NativeConstants.CLSID_FileOpenDialog)]
+        public class FileOpenDialogRCW
         {
         }
 
         [ComImport]
         [ClassInterface(ClassInterfaceType.None)]
         [TypeLibType(TypeLibTypeFlags.FCanCreate)]
-        [Guid(CLSIDGuid.KnownFolderManager)]
-        internal class KnownFolderManagerRCW
+        [Guid(NativeConstants.CLSID_FileSaveDialog)]
+        public class FileSaveDialogRCW
+        {
+        }
+
+        [ComImport]
+        [ClassInterface(ClassInterfaceType.None)]
+        [TypeLibType(TypeLibTypeFlags.FCanCreate)]
+        [Guid(NativeConstants.CLSID_KnownFolderManager)]
+        public class KnownFolderManagerRCW
         {
         }
     }

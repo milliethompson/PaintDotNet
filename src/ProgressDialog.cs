@@ -240,6 +240,7 @@ namespace PaintDotNet
             // 
             // descriptionLabel
             // 
+            this.descriptionLabel.AutoEllipsis = true;
             this.descriptionLabel.Location = new System.Drawing.Point(16, 8);
             this.descriptionLabel.Name = "descriptionLabel";
             this.descriptionLabel.Size = new System.Drawing.Size(184, 16);

@@ -90,7 +90,7 @@ namespace PaintDotNet.Menus
             // menuLayersDeleteLayer
             // 
             this.menuLayersDeleteLayer.Name = "DeleteLayer";
-            this.menuLayersDeleteLayer.ShortcutKeys = Keys.Shift | Keys.Delete;
+            this.menuLayersDeleteLayer.ShortcutKeys = Keys.Control | Keys.Shift | Keys.Delete;
             this.menuLayersDeleteLayer.Click += new System.EventHandler(this.MenuLayersDeleteLayer_Click);
             // 
             // menuLayersDuplicateLayer

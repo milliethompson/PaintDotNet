@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+#pragma strict_gs_check(on)
 #define _WIN32_WINNT 0x0501
 #include <tchar.h>
 #include <windows.h>
@@ -44,12 +45,12 @@ const TCHAR *g_szNetfxInstallRebootRequired =
        "\n"
        "[Deutsch] Sie müssen ihren Computer nun neu starten bevor sie mit der Installation von Paint.NET fortfahren können.");
 
-const TCHAR *g_szNetfx20x86DownloadUrl = _T("http://www.microsoft.com/downloads/details.aspx?FamilyID=0856eacb-4362-4b0d-8edd-aab15c5e04f5");
-const TCHAR *g_szNetfx20x64DownloadUrl = _T("http://www.microsoft.com/downloads/details.aspx?FamilyID=b44a0000-acf8-4fa1-affb-40e78d788b00");
-const TCHAR *g_szNetfx20DispatchDownloadUrl = _T("http://msdn.microsoft.com/netframework/downloads/updates/default.aspx");
+const TCHAR *g_szNetfx20x86DownloadUrl = _T("http://www.microsoft.com/downloads/details.aspx?FamilyId=10CC340B-F857-4A14-83F5-25634C3BF043");
+const TCHAR *g_szNetfx20x64DownloadUrl = _T("http://www.microsoft.com/downloads/details.aspx?FamilyId=10CC340B-F857-4A14-83F5-25634C3BF043");
+const TCHAR *g_szNetfx20DispatchDownloadUrl = _T("http://www.microsoft.com/downloads/details.aspx?FamilyId=10CC340B-F857-4A14-83F5-25634C3BF043");
 
-const TCHAR *g_szNetfx20x86InstallerFileName = _T("x86\\install.exe");
-const TCHAR *g_szNetfx20x64InstallerFileName = _T("x64\\install.exe");
+const TCHAR *g_szNetfx20x86InstallerFileName = _T("x86x64\\setup.exe");
+const TCHAR *g_szNetfx20x64InstallerFileName = _T("x86x64\\setup.exe");
 
 const TCHAR *g_szPdnInstallerFileName = _T("SetupFrontEnd.exe");
 

@@ -46,7 +46,7 @@ namespace PaintDotNet
 
             using (RenderArgs ra = new RenderArgs(scratchSurface))
             {
-                input.Render(ra, true);
+                input.Render(ra, false);
             }
             
             using (Bitmap bitmap = scratchSurface.CreateAliasedBitmap())

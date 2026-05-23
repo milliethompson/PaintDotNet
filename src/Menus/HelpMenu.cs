@@ -331,9 +331,6 @@ namespace PaintDotNet.Menus
                 // Revert to the old language
                 PdnResources.SetNewCulture(oldLocaleName);
             }
-
-            //string message = PdnResources.GetString("SetLanguage.PleaseRestartApplication");
-            //MessageBox.Show(owner, message, PdnInfo.GetBareProductName(), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void MenuHelpSendFeedback_Click(object sender, EventArgs e)

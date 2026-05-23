@@ -679,21 +679,6 @@ Touche de raccourci : X</value>
     <value>{0} : {1}</value>
     <comment>{0} is the file being imported, {1} is the name of a layer within that file</comment>
   </data>
-  <data name="ImportLayersDialog.Text" xml:space="preserve">
-    <value>Importer des calques</value>
-  </data>
-  <data name="ImportLayersDialog.AllButton.Text" xml:space="preserve">
-    <value>Tout</value>
-  </data>
-  <data name="ImportLayersDialog.NoneButton.Text" xml:space="preserve">
-    <value>Aucun</value>
-  </data>
-  <data name="ImportLayersDialog.LayersToInsertHeader.Text" xml:space="preserve">
-    <value>Calques à insérer</value>
-  </data>
-  <data name="ImportLayersDialog.PreviewHeader.Text" xml:space="preserve">
-    <value>Aperçu</value>
-  </data>
   <data name="InvertSelectionAction.Name" xml:space="preserve">
     <value>Inverser la sélection</value>
   </data>
@@ -982,12 +967,9 @@ Touche de raccourci : X</value>
   <data name="SaveConfigDialog.DefaultsButton.Text" xml:space="preserve">
     <value>&amp;Valeurs par défaut</value>
   </data>
-  <data name="SaveConfigDialog.FileSizeText.Text.Format" xml:space="preserve">
-    <value>Taille du fichier : {0}</value>
+  <data name="SaveConfigDialog.PreviewHeader.Text.Format" xml:space="preserve">
+    <value>Aperçu, taille de fichier : {0}</value>
     <comment>{0} is a file size, or some text in parenthesis (such as SaveConfigDialog.FileSizeText.Text.Error)</comment>
-  </data>
-  <data name="SaveConfigDialog.PreviewHeader.Text" xml:space="preserve">
-    <value>Aperçu</value>
   </data>
   <data name="SaveConfigDialog.FileSizeText.Text.Computing" xml:space="preserve">
     <value>(calcul en cours)</value>
@@ -1532,7 +1514,7 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
     <value>&amp;Propriétés du calque...</value>
   </data>
   <data name="Menu.Effects.Text" xml:space="preserve">
-    <value>E&amp;ffets</value>
+    <value>Effe&amp;ts</value>
   </data>
   <data name="Menu.Tools.Text" xml:space="preserve">
     <value>&amp;Outils</value>
@@ -2501,6 +2483,10 @@ Cliquez sur Suivant pour commencer l'installation.</value>
   <data name="LaunchLink.Error" xml:space="preserve">
     <value>Une erreur s'est produite lors du lancement du lien.</value>
   </data>
+  <data name="LaunchLink.Error.Format" xml:space="preserve">
+    <value>Une erreur s'est produite lors du lancement du lien : {0}</value>
+    <comment>{0} is a URL.</comment>
+  </data>
   <data name="RadialBlurEffect.Name" xml:space="preserve">
     <value>Flou radial</value>
   </data>
@@ -2706,8 +2692,8 @@ www.getpaint.net</value>
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.Resampling.HeaderLabel.Text">
     <value>Déplacer les pixels sélectionnés</value>
   </data>
-  <data name="ChooseToolDefaultsDialog.ToolConfigRow.BrushPenShapeType.HeaderLabel.Text">
-    <value>Formes, pinceaux et remplissage</value>
+  <data name="ChooseToolDefaultsDialog.ToolConfigRow.BrushPenPenCapsShapeType.HeaderLabel.Text">
+    <value>Forme, pinceau, style et remplissage</value>
   </data>
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.Text.HeaderLabel.Text">
     <value>Texte</value>
@@ -2797,6 +2783,21 @@ Touche de raccourci : ] (maintenez la touche Ctrl enfoncée pour augmenter de 5)
     <value>Diminuer la largeur du pinceau
 Touche de raccourci : [ (maintenez la touche Ctrl enfoncée pour diminuer de 5)</value>
   </data>
+  <data name="ToolConfigStrip.PenStartCapSplitButton.ToolTipText" xml:space="preserve">
+    <value>Changer le style du début de ligne
+Touche de raccourci : ,</value>
+  </data>
+  <data name="ToolConfigStrip.PenDashStyleSplitButton.ToolTipText" xml:space="preserve">
+    <value>Changer le style de pointillé de ligne
+Touche de raccourci : .</value>
+  </data>
+  <data name="ToolConfigStrip.PenEndCapSplitButton.ToolTipText" xml:space="preserve">
+    <value>Changer le style de fin de ligne
+Touche de raccourci : /</value>
+  </data>
+  <data name="ToolConfigStrip.PenStyleLabel.Text">
+    <value>Style :</value>
+  </data>
   <data name="Effects.Render.Submenu.Name" xml:space="preserve">
     <value>Rendu</value>
   </data>
@@ -2844,5 +2845,89 @@ Touche de raccourci : [ (maintenez la touche Ctrl enfoncée pour diminuer de 5)<
   </data>
   <data name="ExpandCanvasQuestion.CancelTB.ExplanationText">
     <value>Annule l'action Coller.</value>
+  </data>
+  <data name="LineCap2.Flat">
+    <value>Plat</value>
+  </data>
+  <data name="LineCap2.Arrow">
+    <value>Flèche</value>
+  </data>
+  <data name="LineCap2.ArrowFilled">
+    <value>Flèche pleine</value>
+  </data>
+  <data name="LineCap2.Rounded">
+    <value>Arrondi</value>
+  </data>
+  <data name="DashStyle.Custom">
+    <value>Custom_NotUsed</value>
+    <comment>This string does not need to be translated. It is not used.</comment>
+  </data>
+  <data name="DashStyle.Solid">
+    <value>Solide</value>
+  </data>
+  <data name="DashStyle.Dash">
+    <value>Tirets</value>
+  </data>
+  <data name="DashStyle.Dot">
+    <value>Pointillés</value>
+  </data>
+  <data name="DashStyle.DashDot">
+    <value>Tiret, point</value>
+  </data>
+  <data name="DashStyle.DashDotDot">
+    <value>Tiret, point, point</value>
+  </data>
+  <data name="HelpFile.Url.Format">
+    <value>{0}/doc/latest/index.html</value>
+    <comment>Note to translators: This string only needs to be changed if the UA (user assistance, aka help file, documentation) is also being translated.
+{0} is the base website address, such as http://www.getpaint.net. This string is not required to have {0} in it. So if you want to distribute a language pack that hosts the help file elsewhere (that is to say, not on the official Paint.NET website), you can do that by specifying the URL directly, e.g. "http://www.wherever.net/paintnethelp/fr/".</comment>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.TransferProgress.Title">
+    <value>Transfert en cours...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemText.Initializing">
+    <value>Initialisation en cours...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemText.Canceling">
+    <value>Annulation en cours...</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ProgressText.Format">
+    <value>{0} sur {1}</value>
+    <comment>{0} is the number of the current item, {1} is the total number of items. Example: "5 of 7"</comment>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemFailureDialog.Title">
+    <value>Erreur de transfert</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.ItemFailureDialog.IntroText.Format" xml:space="preserve">
+    <value>Une erreur s'est produite lors du transfert de l'image:
+
+{0}</value>
+    <comment>{0} is an error message, which will be populated by the operation system in the language that it is configured for.</comment>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.RetryTB.ActionText">
+    <value>&amp;Recommencer</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.RetryTB.ExplanationText">
+    <value>Réessaye de transférer l'image.</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.SkipTB.ActionText">
+    <value>&amp;Ignorer</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.SkipTB.ExplanationText">
+    <value>Ignore cette image et passe à la suivante.</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.CancelTB.ActionText">
+    <value>Annuler</value>
+  </data>
+  <data name="DocumentWorkspace.ShowFileDialog.CancelTB.ExplanationText">
+    <value>Annule le transfert, et vous laisse resélectionner quelles images ouvrir.</value>
+  </data>
+  <data name="SaveAs.OverwriteConfirmation.Title">
+    <value>Confirmer Enregistrer sous</value>
+  </data>
+  <data name="SaveAs.OverwriteConfirmation.Text.Format" xml:space="preserve">
+    <value>{0} existe déjà.
+Voulez-vous le remplacer ?</value>
+    <comment>{0} is a relative filename. e.g. "Untitled.png"</comment>
   </data>
 </root>

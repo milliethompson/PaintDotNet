@@ -25,7 +25,7 @@ namespace PaintDotNet.Actions
 
         public override void PerformAction(AppWorkspace appWorkspace)
         {
-            string email = SystemLayer.Branding.FeedbackEmail;
+            string email = InvariantStrings.FeedbackEmail;
             string subjectFormat = PdnResources.GetString("SendFeedback.Email.Subject.Format");
             string subject = string.Format(subjectFormat, PdnInfo.GetFullAppName());
             string body = PdnResources.GetString("SendFeedback.Email.Body");

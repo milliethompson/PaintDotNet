@@ -38,11 +38,11 @@ namespace PaintDotNet
             GifSaveConfigToken gsct = (GifSaveConfigToken)token;
 
             // Flatten and pre-process the image
-            scratchSurface.Clear(ColorBgra.FromBgra(255, 255, 255, 0));
+            scratchSurface.Clear(ColorBgra.Transparent);
 
             using (RenderArgs ra = new RenderArgs(scratchSurface))
             {
-                input.Render(ra, true);
+                input.Render(ra, false);
             }
 
             for (int y = 0; y < scratchSurface.Height; ++y)

@@ -18,6 +18,21 @@ namespace PaintDotNet.SystemLayer
     [SuppressUnmanagedCodeSecurity]
     internal static class SafeNativeMethods
     {
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool DrawMenuBar(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = false)]
+        internal static extern IntPtr GetSystemMenu(
+            IntPtr hWnd,
+            [MarshalAs(UnmanagedType.Bool)] bool bRevert);
+
+        [DllImport("user32.dll", SetLastError = false)]
+        internal static extern int EnableMenuItem(
+            IntPtr hMenu,
+            uint uIDEnableItem,
+            uint uEnable);
+
         [DllImport("user32.dll", SetLastError = false)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool FlashWindow(

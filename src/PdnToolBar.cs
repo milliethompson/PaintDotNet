@@ -309,7 +309,7 @@ namespace PaintDotNet
             int preferredMinTscWidth = Math.Max(widthRow1, widthRow2);
 
             // Throw in the documentListButton if necessary
-            bool showDlb = this.documentStrip.DocumentCount > 1;
+            bool showDlb = this.documentStrip.DocumentCount > 0;
 
             this.documentListButton.Visible = showDlb;
             this.documentListButton.Enabled = showDlb;
@@ -592,7 +592,7 @@ namespace PaintDotNet
 
         public void ShowDocumentList()
         {
-            if (this.documentStrip.DocumentCount < 2)
+            if (this.documentStrip.DocumentCount < 1)
             {
                 return;
             }

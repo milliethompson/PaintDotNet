@@ -80,6 +80,7 @@
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
+    <Reference Include="System.Data" />
     <Reference Include="System.Drawing">
       <Name>System.Drawing</Name>
     </Reference>
@@ -139,6 +140,7 @@
     <Compile Include="FileType.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FileTypeFlags.cs" />
     <Compile Include="FileTypeCollection.cs">
       <SubType>Code</SubType>
     </Compile>

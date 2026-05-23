@@ -744,7 +744,7 @@ namespace PaintDotNet
             this.primaryColor = ColorBgra.FromBgra(0, 0, 0, 255);
             this.secondaryColor = ColorBgra.FromBgra(255, 255, 255, 255);
             this.gradientInfo = new GradientInfo(GradientType.LinearClamped, false);
-            this.penInfo = new PenInfo(DashStyle.Solid, 2.0f);
+            this.penInfo = new PenInfo(PenInfo.DefaultDashStyle, 2.0f, PenInfo.DefaultLineCap, PenInfo.DefaultLineCap, PenInfo.DefaultCapScale);
             this.brushInfo = new BrushInfo(BrushType.Solid, HatchStyle.BackwardDiagonal);
 
             try

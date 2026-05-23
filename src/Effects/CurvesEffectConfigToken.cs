@@ -24,13 +24,13 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return controlPoints;
+                return this.controlPoints;
             }
 
             set
             {
-                uop = null;
-                controlPoints = value;
+                this.uop = null;
+                this.controlPoints = value;
             }
         }
 
@@ -39,31 +39,33 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return colorTransferMode;
+                return this.colorTransferMode;
             }
 
             set
             {
-                uop = null;
-                colorTransferMode = value;
+                this.uop = null;
+                this.colorTransferMode = value;
             }
         }
 
-        protected UnaryPixelOp uop;
+        [NonSerialized]
+        private UnaryPixelOp uop;
+
         public UnaryPixelOp Uop
         {
             get
             {
-                if (uop == null)
+                if (this.uop == null)
                 {
-                    uop = MakeUop();
+                    this.uop = MakeUop();
                 }
 
                 return uop;
             }
         }
 
-        protected UnaryPixelOp MakeUop()
+        private UnaryPixelOp MakeUop()
         {
             UnaryPixelOp uopRet;
             byte[][] transferCurves;

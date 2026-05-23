@@ -370,6 +370,7 @@ namespace PaintDotNet.Updates
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.CancelButton = this.closeButton;
             this.ClientSize = new System.Drawing.Size(343, 172);
             this.Controls.Add(this.progressLabel);
             this.Controls.Add(this.newVersionLabel);
@@ -387,7 +388,6 @@ namespace PaintDotNet.Updates
             this.Name = "UpdatesDialog";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "paint.net Updates";
             this.ResumeLayout(false);
             this.PerformLayout();
 

@@ -27,9 +27,10 @@ namespace PaintDotNet
         ColorPickerBehavior = 8,
         Gradient = 16,
         Pen = 32,
-        ShapeType = 64,
-        Resampling = 128,
-        Text = 256,     
-        Tolerance = 512,
+        PenCaps = 64,
+        ShapeType = 128,
+        Resampling = 256,
+        Text = 512,     
+        Tolerance = 1024,
     }
 }

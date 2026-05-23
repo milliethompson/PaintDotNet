@@ -50,9 +50,6 @@ namespace PaintDotNet.Setup
         {
             g.Clear(Color.White);
 
-            // Draw black outline
-            g.DrawRectangle(Pens.Black, new Rectangle(rect.Left, rect.Top, rect.Width - 1, rect.Height - 1));
-
             // Draw the PayPal icon
             Image payPalDonate = PdnResources.GetImage("Images.PayPalDonate.gif");
 
@@ -63,17 +60,6 @@ namespace PaintDotNet.Setup
                 payPalDonate.Height);
 
             g.DrawImage(payPalDonate, payPalRect, new Rectangle(0, 0, payPalDonate.Width, payPalDonate.Height), GraphicsUnit.Pixel);
-
-            // Draw the PDN icon
-            Image pdnIcon = PdnResources.GetImage("Images.Icon50x50.png");
-
-            Rectangle pdnIconRect = new Rectangle(
-                rect.Left + (rect.Height - pdnIcon.Width) / 2,
-                rect.Top + (rect.Height - pdnIcon.Height) / 2,
-                pdnIcon.Width,
-                pdnIcon.Height);
-
-            g.DrawImage(pdnIcon, pdnIconRect, new Rectangle(0, 0, pdnIcon.Width, pdnIcon.Height), GraphicsUnit.Pixel);
 
             // Draw inset text
             using (StringFormat sf = (StringFormat)StringFormat.GenericTypographic.Clone())
@@ -87,9 +73,9 @@ namespace PaintDotNet.Setup
                     int insetMargin = 2;
 
                     Rectangle textRect = new Rectangle(
-                        pdnIconRect.Right,
+                        insetMargin,
                         rect.Top + insetMargin,
-                        rect.Width - insetMargin - (rect.Right - payPalRect.Left) - (pdnIcon.Width + insetMargin) - ((rect.Right - payPalRect.Left) - payPalDonate.Width),
+                        rect.Width - insetMargin - (rect.Right - payPalRect.Left) - insetMargin - ((rect.Right - payPalRect.Left) - payPalDonate.Width),
                         rect.Height - insetMargin * 2);
 
                     g.DrawString(insetText, donateFont, Brushes.Blue, textRect, sf);
@@ -202,11 +188,6 @@ namespace PaintDotNet.Setup
 
         private void ShowBanners()
         {
-            if (this.topBanner.Image != null && this.bottomBanner.Image == null)
-            {
-                this.topBanner.Location = this.bottomBanner.Location;
-            }
-
             if (this.topBanner.Image != null)
             {
                 this.topBanner.Enabled = true;
@@ -317,6 +298,22 @@ namespace PaintDotNet.Setup
                     {
                         File.Delete(filePath);
                     }
+                }
+
+                // if PdnLib.dll is left over from an old version, delete it. see bug #2368
+                string pdnlibPathName = Path.Combine(targetDir, "PdnLib.dll");
+
+                try
+                {
+                    if (File.Exists(pdnlibPathName))
+                    {
+                        File.Delete(pdnlibPathName);
+                    }
+                }
+
+                catch (Exception)
+                {
+                    // Ignore any errors
                 }
 
                 // Run "ngen.exe executeQueuedItems", aka "Optimizing performance for your system..."

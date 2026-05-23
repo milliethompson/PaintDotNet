@@ -118,7 +118,6 @@ namespace PaintDotNet.SystemLayer
             }
         }
 
-        // TODO: this should be a property, not a function
         /// <summary>
         /// Determines whether the user is running within a remoted session (Terminal Server, Remote Desktop).
         /// </summary>

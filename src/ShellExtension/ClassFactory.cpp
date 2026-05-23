@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+#pragma strict_gs_check(on)
 #pragma warning (disable: 4530)
 #include "ClassFactory.h"
 #include "PdnShell.h"

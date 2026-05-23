@@ -964,6 +964,13 @@ namespace PaintDotNet
         private const char incPenSizeBy5Shortcut = (char)29; // Ctrl ] but must also test that Ctrl is down
         private const char swapColorsShortcut = 'x';
         private const char swapPrimarySecondaryChoice = 'c';
+        private char[] wildShortcuts = new char[] { ',', '.', '/' };
+
+        // Return true if the key is handled, false if not.
+        protected virtual bool OnWildShortcutKey(int ordinal)
+        {
+            return false;
+        }
 
         /// <summary>
         /// This method is called when the tool is active and a keyboard key is pressed
@@ -973,7 +980,13 @@ namespace PaintDotNet
         {
             if (!e.Handled && DocumentWorkspace.Focused)
             {
-                if (e.KeyChar == swapColorsShortcut)
+                int wsIndex = Array.IndexOf<char>(wildShortcuts, e.KeyChar);
+
+                if (wsIndex != -1)
+                {
+                    e.Handled = OnWildShortcutKey(wsIndex);
+                }
+                else if (e.KeyChar == swapColorsShortcut)
                 {
                     AppWorkspace.Widgets.ColorsForm.SwapUserColors();
                     e.Handled = true;

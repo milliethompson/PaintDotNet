@@ -647,6 +647,17 @@ namespace PaintDotNet
             }
         }
 
+        [field: NonSerialized]
+        public event EventHandler DirtyChanged;
+
+        private void OnDirtyChanged()
+        {
+            if (DirtyChanged != null)
+            {
+                DirtyChanged(this, EventArgs.Empty);
+            }
+        }
+
         /// <summary>
         /// Keeps track of whether the document has changed at all since it was last opened
         /// or saved. This is something that is not reset to true by any method in the Document
@@ -672,7 +683,11 @@ namespace PaintDotNet
                     throw new ObjectDisposedException("Document");
                 }
 
-                this.dirty = value;
+                if (this.dirty != value)
+                {
+                    this.dirty = value;
+                    OnDirtyChanged();
+                }
             }
         }
 

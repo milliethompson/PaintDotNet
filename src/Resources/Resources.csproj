@@ -403,6 +403,25 @@
   <ItemGroup>
     <EmbeddedResource Include="Icons\PencilSketchEffectIcon.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Images\LineCapButton.Flat.End.png" />
+    <EmbeddedResource Include="Images\LineCapButton.Flat.Start.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Images\LineCapButton.Arrow.End.png" />
+    <EmbeddedResource Include="Images\LineCapButton.Arrow.Start.png" />
+    <EmbeddedResource Include="Images\LineCapButton.ArrowFilled.End.png" />
+    <EmbeddedResource Include="Images\LineCapButton.ArrowFilled.Start.png" />
+    <EmbeddedResource Include="Images\LineCapButton.Rounded.End.png" />
+    <EmbeddedResource Include="Images\LineCapButton.Rounded.Start.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Images\DashStyleButton.Dash.png" />
+    <EmbeddedResource Include="Images\DashStyleButton.DashDot.png" />
+    <EmbeddedResource Include="Images\DashStyleButton.DashDotDot.png" />
+    <EmbeddedResource Include="Images\DashStyleButton.Dot.png" />
+    <EmbeddedResource Include="Images\DashStyleButton.Solid.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>

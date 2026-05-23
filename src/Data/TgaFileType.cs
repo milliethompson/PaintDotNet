@@ -772,12 +772,10 @@ namespace PaintDotNet.Data
         }
 
         public TgaFileType()
-            : base("TGA", 
-                   false,  // does not support layers
-                   false,  // does not support custom headers
-                   true,   // does support saving
-                   true,   // does support loading
-                   true,   // does save with progress
+            : base("TGA",
+                   FileTypeFlags.SavesWithProgress |
+                       FileTypeFlags.SupportsLoading |
+                       FileTypeFlags.SupportsSaving,
                    new string[] { ".tga" })
         {
         }

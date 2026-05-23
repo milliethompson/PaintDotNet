@@ -52,6 +52,13 @@ namespace PaintDotNet.SystemLayer
             set; 
         }
 
-        DialogResult ShowDialog(Control owner);
+        /// <summary>
+        /// Shows the common file dialog.
+        /// </summary>
+        /// <param name="owner">The owning window for this dialog.</param>
+        /// <param name="uiCallbacks">
+        /// A reference to an object that implements the IFileDialogUICallbacks interface. This
+        /// may not be null.</param>
+        DialogResult ShowDialog(Control owner, IFileDialogUICallbacks uiCallbacks);
     }
 }

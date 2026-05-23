@@ -17,7 +17,13 @@ namespace PaintDotNet
         : FileType
     {
         public PdnFileType()
-            : base(PdnInfo.GetBareProductName(), true, true, true, true, true, new string[] { ".pdn" })
+            : base(PdnInfo.GetProductName(),
+                   FileTypeFlags.SavesWithProgress | 
+                       FileTypeFlags.SupportsCustomHeaders |
+                       FileTypeFlags.SupportsLayers |
+                       FileTypeFlags.SupportsLoading |
+                       FileTypeFlags.SupportsSaving,
+                   new string[] { ".pdn" })
         {
         }
 

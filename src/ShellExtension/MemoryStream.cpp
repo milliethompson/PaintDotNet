@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+#pragma strict_gs_check(on)
 #include "MemoryStream.h"
 #include "PdnShell.h"
 #include <limits.h>

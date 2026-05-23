@@ -99,6 +99,8 @@
     <Compile Include="ClassicFileOpenDialog.cs" />
     <Compile Include="ClassicFileSaveDialog.cs" />
     <Compile Include="CommonDialogs.cs" />
+    <Compile Include="FileOverwriteAction.cs" />
+    <Compile Include="ICancelable.cs" />
     <Compile Include="IFileDialog.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -112,9 +114,13 @@
     <Compile Include="FormEx.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="IFileDialogUICallbacks.cs" />
     <Compile Include="IFileOpenDialog.cs" />
     <Compile Include="IFileSaveDialog.cs" />
+    <Compile Include="IFileTransferProgressEvents.cs" />
+    <Compile Include="IProgressEvents.cs" />
     <Compile Include="NativeInterfaces.cs" />
+    <Compile Include="OperationResult.cs" />
     <Compile Include="SingleInstaceManager.cs" />
     <Compile Include="ISimpleCollection.cs" />
     <Compile Include="IInkHooks.cs">
@@ -207,6 +213,9 @@
     <Compile Include="WaitHandleArray.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Win32Window.cs" />
+    <Compile Include="WorkItemFailureAction.cs" />
+    <Compile Include="WorkItemResult.cs" />
     <EmbeddedResource Include="PropertyItem.png" />
   </ItemGroup>
   <ItemGroup>

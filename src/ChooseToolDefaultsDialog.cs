@@ -142,7 +142,8 @@ namespace PaintDotNet
                     newAppEnvironment.GradientInfo = row.ToolConfigStrip.GradientInfo;
                 }
 
-                if ((row.ToolBarConfigItems & ToolBarConfigItems.Pen) != 0)
+                if ((row.ToolBarConfigItems & ToolBarConfigItems.Pen) != 0 ||
+                    (row.ToolBarConfigItems & ToolBarConfigItems.PenCaps) != 0)
                 {
                     newAppEnvironment.PenInfo = row.ToolConfigStrip.PenInfo;
                 }
@@ -194,7 +195,7 @@ namespace PaintDotNet
 
             InitializeComponent();
 
-            this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.ShapeType | ToolBarConfigItems.Brush | ToolBarConfigItems.Pen));
+            this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.ShapeType | ToolBarConfigItems.Brush | ToolBarConfigItems.Pen | ToolBarConfigItems.PenCaps));
             this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.Text));
             this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.Gradient));
             this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.Tolerance));
@@ -212,6 +213,14 @@ namespace PaintDotNet
             PerformLayout();
 
             this.toolChooserStrip.SetTools(DocumentWorkspace.ToolInfos);
+
+            PdnBaseForm.RegisterFormHotKey(
+                Keys.Escape,
+                delegate(Keys keys)
+                {
+                    this.cancelButton.PerformClick();
+                    return true;
+                });
         }
 
         protected override void OnLoad(EventArgs e)

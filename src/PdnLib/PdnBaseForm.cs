@@ -936,5 +936,82 @@ namespace PaintDotNet
                 return snapManager;
             }
         }
+
+
+        public void EnsureFormIsOnScreen()
+        {
+            if (this.WindowState == FormWindowState.Maximized)
+            {
+                return;
+            }
+
+            if (this.WindowState == FormWindowState.Minimized)
+            {
+                return;
+            }
+
+            Screen ourScreen;
+
+            try
+            {
+                ourScreen = Screen.FromControl(this);
+            }
+
+            catch (Exception)
+            {
+                ourScreen = null;
+            }
+
+            if (ourScreen == null)
+            {
+                ourScreen = Screen.PrimaryScreen;
+            }
+
+            Rectangle currentBounds = Bounds;
+            Rectangle newBounds = EnsureRectIsOnScreen(ourScreen, currentBounds);
+            Bounds = newBounds;
+        }
+
+        public static Rectangle EnsureRectIsOnScreen(Screen screen, Rectangle bounds)
+        {
+            Rectangle newBounds = bounds;
+            Rectangle screenBounds = screen.WorkingArea;
+
+            // Make sure the bottom and right do not fall off the edge, by moving the bounds
+            if (newBounds.Right > screenBounds.Right)
+            {
+                newBounds.X -= (newBounds.Right - screenBounds.Right);
+            }
+
+            if (newBounds.Bottom > screenBounds.Bottom)
+            {
+                newBounds.Y -= (newBounds.Bottom - screenBounds.Bottom);
+            }
+
+            // Make sure the top and left haven't fallen off, by moving
+            if (newBounds.Left < screenBounds.Left)
+            {
+                newBounds.X = screenBounds.Left;
+            }
+
+            if (newBounds.Top < screenBounds.Top)
+            {
+                newBounds.Y = screenBounds.Top;
+            }
+
+            // Make sure that we are not too wide / tall, by resizing
+            if (newBounds.Right > screenBounds.Right)
+            {
+                newBounds.Width -= (newBounds.Right - screenBounds.Right);
+            }
+
+            if (newBounds.Bottom > screenBounds.Bottom)
+            {
+                newBounds.Height -= (newBounds.Bottom - screenBounds.Bottom);
+            }
+
+            // All done.
+            return newBounds;
+        }
     }
 }

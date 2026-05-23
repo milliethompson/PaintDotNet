@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -20,6 +21,172 @@ namespace PaintDotNet
     public class SaveConfigDialog 
         : PdnBaseDialog
     {
+        private static class SettingNames
+        {
+            // We store the bounds of the window relative to its owner.
+            public const string Left = "SaveConfigDialog.Left";
+            public const string Top = "SaveConfigDialog.Top";
+            public const string Width = "SaveConfigDialog.Width";
+            public const string Height = "SaveConfigDialog.Height";
+            public const string WindowState = "SaveConfigDialog.WindowState";
+        }
+
+        private void LoadPositions()
+        {
+            FormWindowState newFws;
+            int newLeft;
+            int newTop;
+            int newWidth;
+            int newHeight;
+
+            Size minSize = UI.ScaleSize(new Size(700, 500));
+            Rectangle defaultRelativeBounds; 
+
+            // Load the relative bounds for the dialog
+            Form owner = Owner;
+
+            if (owner != null)
+            {
+                // Default is centered to parent.
+                defaultRelativeBounds = new Rectangle(
+                    (owner.ClientSize.Width - minSize.Width) / 2,
+                    (owner.ClientSize.Height - minSize.Height) / 2,
+                    minSize.Width, minSize.Height);
+            }
+            else
+            {
+                defaultRelativeBounds = new Rectangle(0, 0, minSize.Width, minSize.Height);
+            }
+
+            try
+            {
+                string newFwsString = Settings.CurrentUser.GetString(SettingNames.WindowState, FormWindowState.Normal.ToString());
+                newFws = (FormWindowState)Enum.Parse(typeof(FormWindowState), newFwsString);
+
+                newLeft = Settings.CurrentUser.GetInt32(SettingNames.Left, defaultRelativeBounds.Left);
+                newTop = Settings.CurrentUser.GetInt32(SettingNames.Top, defaultRelativeBounds.Top);
+                newWidth = Math.Max(minSize.Width, Settings.CurrentUser.GetInt32(SettingNames.Width, defaultRelativeBounds.Width));
+                newHeight = Math.Max(minSize.Height, Settings.CurrentUser.GetInt32(SettingNames.Height, defaultRelativeBounds.Height));
+            }
+
+            catch (Exception)
+            {
+                newLeft = defaultRelativeBounds.X;
+                newTop = defaultRelativeBounds.Y;
+                newWidth = defaultRelativeBounds.Width;
+                newHeight = defaultRelativeBounds.Height;
+                newFws = FormWindowState.Normal;
+            }
+
+            // Apply the values. Bounds are converted from owner-client-rect space to screen space
+
+            WindowState = newFws;
+
+            Point origin;
+
+            if (owner != null)
+            {
+                origin = owner.RectangleToScreen(owner.ClientRectangle).Location;
+            }
+            else
+            {
+                origin = new Point(0, 0);
+            }
+
+            Rectangle defaultBounds = new Rectangle(
+                origin.X + defaultRelativeBounds.X,
+                origin.Y + defaultRelativeBounds.Y,
+                defaultRelativeBounds.Width,
+                defaultRelativeBounds.Height);
+
+            Rectangle newBounds;
+
+            if (newFws != FormWindowState.Maximized)
+            {
+                Rectangle newBounds1 = new Rectangle(origin.X + newLeft, origin.Y + newTop, newWidth, newHeight);
+                Rectangle newBounds2 = ValidateAndAdjustNewBounds(owner, newBounds1, defaultBounds);
+
+                newBounds = newBounds2;
+            }
+            else
+            {
+                newBounds = defaultBounds;
+            }
+
+            Bounds = newBounds;
+        }
+
+        private Rectangle ValidateAndAdjustNewBounds(Form owner, Rectangle newBounds, Rectangle defaultBounds)
+        {
+            Rectangle returnBounds;
+
+            // Ensure that the bounds they want are in bounds *somewhere*
+            bool intersects = false;
+            foreach (Screen screen in Screen.AllScreens)
+            {
+                intersects |= screen.Bounds.IntersectsWith(newBounds);
+            }
+
+            Rectangle newBounds2;
+
+            if (intersects)
+            {
+                newBounds2 = newBounds;
+            }
+            else
+            {
+                newBounds2 = defaultBounds;
+            }
+
+            Screen ourScreen;
+            if (owner != null)
+            {
+                ourScreen = Screen.FromControl(owner);
+            }
+            else
+            {
+                ourScreen = Screen.PrimaryScreen;
+            }
+
+            // Now make sure that the bounds are forced to be on the same screen as the owner window
+            Rectangle onScreenBounds = EnsureRectIsOnScreen(ourScreen, newBounds2);
+
+            returnBounds = onScreenBounds;
+
+            return returnBounds;
+        }
+
+        private void SavePositions()
+        {
+            if (WindowState != FormWindowState.Minimized)
+            {
+                Form owner = Owner;
+                Point origin;
+
+                if (owner != null)
+                {
+                    Rectangle ownerClientBounds = owner.RectangleToScreen(owner.ClientRectangle);
+                    origin = owner.Location;
+                }
+                else
+                {
+                    origin = new Point(0, 0);
+                }
+
+                Settings.CurrentUser.SetInt32(SettingNames.Left, Left - origin.X);
+                Settings.CurrentUser.SetInt32(SettingNames.Top, Top - origin.Y);
+                Settings.CurrentUser.SetInt32(SettingNames.Width, Width);
+                Settings.CurrentUser.SetInt32(SettingNames.Height, Height);
+                Settings.CurrentUser.SetString(SettingNames.WindowState, WindowState.ToString());
+            }
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            SavePositions();
+            base.OnClosing(e);
+        }
+
         private string fileSizeTextFormat;
         private System.Threading.Timer fileSizeTimer;
         private const int timerDelayTime = 100;
@@ -28,7 +195,6 @@ namespace PaintDotNet
         private Cursor handIconMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.PanToolCursorMouseDown.cur"));
         private Hashtable fileTypeToSaveToken = new Hashtable();
         private System.ComponentModel.IContainer components = null;
-        private System.Windows.Forms.Label fileSizeText;
         private FileType fileType;
         private System.Windows.Forms.Button defaultsButton;
         private Document document;
@@ -38,9 +204,7 @@ namespace PaintDotNet
         private PaintDotNet.SaveConfigWidget saveConfigWidget;
         private System.Windows.Forms.Panel saveConfigPanel;
 
-        private int previewRightMargin = -1;
         private PaintDotNet.HeaderLabel settingsHeader;
-        private int previewBottomMargin = -1;
 
         private Surface scratchSurface;
         public Surface ScratchSurface
@@ -117,9 +281,11 @@ namespace PaintDotNet
                 newWidget.Location = this.saveConfigWidget.Location;
                 this.TokenChangedHandler(this, EventArgs.Empty);
                 this.saveConfigWidget.TokenChanged -= new EventHandler(TokenChangedHandler);
+                SuspendLayout();
                 this.saveConfigPanel.Controls.Remove(this.saveConfigWidget);
                 this.saveConfigWidget = newWidget;
                 this.saveConfigPanel.Controls.Add(this.saveConfigWidget);
+                ResumeLayout(true);
                 this.saveConfigWidget.TokenChanged += new EventHandler(TokenChangedHandler);
 
                 if (this.saveConfigWidget is NoSaveConfigWidget)
@@ -154,6 +320,8 @@ namespace PaintDotNet
                 throw new InvalidOperationException("ScratchSurface was never set: it is null");
             }
 
+            LoadPositions();
+
             base.OnShown(e);
         }
 
@@ -168,7 +336,7 @@ namespace PaintDotNet
             InitializeComponent();
 
             this.Text = PdnResources.GetString("SaveConfigDialog.Text");
-            this.fileSizeTextFormat = PdnResources.GetString("SaveConfigDialog.FileSizeText.Text.Format");
+            this.fileSizeTextFormat = PdnResources.GetString("SaveConfigDialog.PreviewHeader.Text.Format");
             this.settingsHeader.Text = PdnResources.GetString("SaveConfigDialog.SettingsHeader.Text");
             this.defaultsButton.Text = PdnResources.GetString("SaveConfigDialog.DefaultsButton.Text");
             this.previewHeader.Text = PdnResources.GetString("SaveConfigDialog.PreviewHeader.Text");
@@ -177,45 +345,56 @@ namespace PaintDotNet
 
             this.documentView.Cursor = handIcon;
 
-            this.previewBottomMargin = this.Height - this.documentView.Bottom;
-            this.previewRightMargin = this.Width - this.documentView.Right;
-
             this.MinimumSize = this.Size;
         }
 
         protected override void OnLayout(LayoutEventArgs levent)
         {
-            base.OnLayout (levent);
+            // Other stuff
+            int buttonsBottomMargin = UI.ScaleHeight(8);
+            int buttonsRightMargin = UI.ScaleWidth(8);
+            int buttonsHMargin = UI.ScaleWidth(8);
 
-            // adjust heights
-            Rectangle oldBounds = documentView.Bounds;
-            int newWidth = this.Width - oldBounds.X - this.previewRightMargin;
-            int newHeight = this.Height - oldBounds.Y - this.previewBottomMargin;
-            Rectangle newBounds = new Rectangle(oldBounds.X, oldBounds.Y, newWidth, newHeight);
-            documentView.Bounds = newBounds;
+            this.baseCancelButton.Location = new Point(
+                ClientSize.Width - this.baseOkButton.Width - buttonsRightMargin, 
+                ClientSize.Height - buttonsBottomMargin - this.baseCancelButton.Height);
 
-            int heightDelta = newBounds.Height - oldBounds.Height;
-            this.saveConfigPanel.Height += heightDelta;
+            this.baseOkButton.Location = new Point(
+                this.baseCancelButton.Left - buttonsHMargin - this.baseOkButton.Width, 
+                ClientSize.Height - buttonsBottomMargin - this.baseOkButton.Height);
 
-            this.previewHeader.Width = 1 + this.documentView.Width;
+            int previewBottomMargin = UI.ScaleHeight(8);
+
+            Point dvLocation = UI.ScalePoint(new System.Drawing.Point(200, 29));
+
+            Size dvSize = new Size(
+                this.baseCancelButton.Right - dvLocation.X,
+                this.baseCancelButton.Top - dvLocation.Y - previewBottomMargin);
+
+            this.documentView.Bounds = new Rectangle(dvLocation, dvSize);
+
+            this.defaultsButton.PerformLayout();
+            int defaultsButtonTopMargin = UI.ScaleHeight(8);
+
+            this.saveConfigPanel.Location = UI.ScalePoint(new System.Drawing.Point(9, 29));
+
+            this.saveConfigPanel.Size = new Size(
+                UI.ScaleWidth(180), 
+                this.documentView.Bottom - this.saveConfigPanel.Top - this.defaultsButton.Height - defaultsButtonTopMargin);
 
             int h2 = Math.Min(this.saveConfigWidget.Height, this.saveConfigPanel.Height);
-            this.defaultsButton.Size = this.defaultsButton.GetPreferredSize(new Size(81, 23));
-
-            int defaultsRight;
-
-            if (this.saveConfigWidget == null)
-            {
-                defaultsRight = 182;
-            }
-            else
-            {
-                defaultsRight = this.saveConfigWidget.Right;
-            }
 
             this.defaultsButton.Location = new Point(
-                defaultsRight - defaultsButton.Width, //defaultsButton.Left, 
-                8 + saveConfigPanel.Top + h2);
+                this.saveConfigPanel.Right - this.defaultsButton.Width,
+                this.saveConfigPanel.Top + h2 + defaultsButtonTopMargin);
+
+            this.previewHeader.Location = UI.ScalePoint(new System.Drawing.Point(198, 8));
+            this.previewHeader.Size = new Size(this.documentView.Right - this.previewHeader.Left, this.previewHeader.Height);
+
+            this.settingsHeader.Location = UI.ScalePoint(new System.Drawing.Point(6, 8));
+            this.settingsHeader.Size = UI.ScaleSize(new System.Drawing.Size(192, 14));
+
+            base.OnLayout(levent);
         }
 
         /// <summary>
@@ -266,7 +445,6 @@ namespace PaintDotNet
             this.saveConfigPanel = new System.Windows.Forms.Panel();
             this.defaultsButton = new System.Windows.Forms.Button();
             this.saveConfigWidget = new PaintDotNet.SaveConfigWidget();
-            this.fileSizeText = new System.Windows.Forms.Label();
             this.previewHeader = new PaintDotNet.HeaderLabel();
             this.documentView = new PaintDotNet.DocumentView();
             this.settingsHeader = new PaintDotNet.HeaderLabel();
@@ -276,7 +454,6 @@ namespace PaintDotNet
             // 
             this.baseOkButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.baseOkButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.baseOkButton.Location = new System.Drawing.Point(431, 319);
             this.baseOkButton.Name = "baseOkButton";
             this.baseOkButton.TabIndex = 2;
             this.baseOkButton.Click += new System.EventHandler(this.BaseOkButton_Click);
@@ -285,7 +462,6 @@ namespace PaintDotNet
             // 
             this.baseCancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.baseCancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.baseCancelButton.Location = new System.Drawing.Point(511, 319);
             this.baseCancelButton.Name = "baseCancelButton";
             this.baseCancelButton.TabIndex = 3;
             this.baseCancelButton.Click += new System.EventHandler(this.BaseCancelButton_Click);
@@ -293,43 +469,28 @@ namespace PaintDotNet
             // saveConfigPanel
             // 
             this.saveConfigPanel.AutoScroll = true;
-            this.saveConfigPanel.Location = new System.Drawing.Point(9, 29);
             this.saveConfigPanel.Name = "saveConfigPanel";
-            this.saveConfigPanel.Size = new System.Drawing.Size(180, 239);
             this.saveConfigPanel.TabIndex = 0;
             this.saveConfigPanel.TabStop = true;
             // 
             // defaultsButton
             // 
-            this.defaultsButton.Location = new System.Drawing.Point(101, 279);
-            this.defaultsButton.Size = new System.Drawing.Size(81, 23);
             this.defaultsButton.Name = "defaultsButton";
+            this.defaultsButton.AutoSize = true;
             this.defaultsButton.TabIndex = 1;
-            this.defaultsButton.Click += new System.EventHandler(this.defaultsButton_Click);
+            this.defaultsButton.Click += new System.EventHandler(this.DefaultsButton_Click);
             // 
             // saveConfigWidget
             // 
             this.saveConfigWidget.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.saveConfigWidget.Location = new System.Drawing.Point(0, 0);
             this.saveConfigWidget.Name = "saveConfigWidget";
-            this.saveConfigWidget.Size = new System.Drawing.Size(176, 222);
             this.saveConfigWidget.TabIndex = 9;
             this.saveConfigWidget.Token = null;
             // 
-            // fileSizeText
-            // 
-            this.fileSizeText.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.fileSizeText.Location = new System.Drawing.Point(200, 306);
-            this.fileSizeText.Name = "fileSizeText";
-            this.fileSizeText.Size = new System.Drawing.Size(160, 16);
-            this.fileSizeText.TabIndex = 8;
-            // 
             // previewHeader
             // 
-            this.previewHeader.Location = new System.Drawing.Point(198, 8);
             this.previewHeader.Name = "previewHeader";
             this.previewHeader.RightMargin = 0;
-            this.previewHeader.Size = new System.Drawing.Size(144, 14);
             this.previewHeader.TabIndex = 11;
             this.previewHeader.TabStop = false;
             this.previewHeader.Text = "Header";
@@ -338,11 +499,9 @@ namespace PaintDotNet
             // 
             this.documentView.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.documentView.Document = null;
-            this.documentView.Location = new System.Drawing.Point(200, 29);
             this.documentView.Name = "documentView";
             this.documentView.PanelAutoScroll = true;
             this.documentView.RulersEnabled = false;
-            this.documentView.Size = new System.Drawing.Size(385, 272);
             this.documentView.TabIndex = 12;
             this.documentView.DocumentMouseMove += new System.Windows.Forms.MouseEventHandler(this.DocumentView_DocumentMouseMove);
             this.documentView.DocumentMouseDown += new System.Windows.Forms.MouseEventHandler(this.DocumentView_DocumentMouseDown);
@@ -351,9 +510,7 @@ namespace PaintDotNet
             // 
             // settingsHeader
             // 
-            this.settingsHeader.Location = new System.Drawing.Point(6, 8);
             this.settingsHeader.Name = "settingsHeader";
-            this.settingsHeader.Size = new System.Drawing.Size(192, 14);
             this.settingsHeader.TabIndex = 13;
             this.settingsHeader.TabStop = false;
             this.settingsHeader.Text = "Header";
@@ -366,28 +523,26 @@ namespace PaintDotNet
             this.Controls.Add(this.defaultsButton);
             this.Controls.Add(this.settingsHeader);
             this.Controls.Add(this.previewHeader);
-            this.Controls.Add(this.fileSizeText);
             this.Controls.Add(this.documentView);
             this.Controls.Add(this.saveConfigPanel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
-            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.MaximizeBox = true;
             this.Name = "SaveConfigDialog";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Controls.SetChildIndex(this.saveConfigPanel, 0);
             this.Controls.SetChildIndex(this.documentView, 0);
-            this.Controls.SetChildIndex(this.fileSizeText, 0);
             this.Controls.SetChildIndex(this.baseOkButton, 0);
             this.Controls.SetChildIndex(this.baseCancelButton, 0);
             this.Controls.SetChildIndex(this.previewHeader, 0);
             this.Controls.SetChildIndex(this.settingsHeader, 0);
             this.Controls.SetChildIndex(this.defaultsButton, 0);
             this.ResumeLayout(false);
-
         }
         #endregion
 
-        private void defaultsButton_Click(object sender, System.EventArgs e)
+        private void DefaultsButton_Click(object sender, System.EventArgs e)
         {
             this.SaveConfigToken = this.FileType.CreateDefaultSaveConfigToken();
         }
@@ -402,7 +557,7 @@ namespace PaintDotNet
             callbackDoneEvent.Reset();
 
             string computing = PdnResources.GetString("SaveConfigDialog.FileSizeText.Text.Computing");
-            this.fileSizeText.Text = string.Format(this.fileSizeTextFormat, computing);
+            this.previewHeader.Text = string.Format(this.fileSizeTextFormat, computing);
             this.fileSizeTimer.Change(timerDelayTime, 0);
             OnProgress(0);
         }
@@ -420,13 +575,13 @@ namespace PaintDotNet
             if (tempFileName == null)
             {
                 string error = PdnResources.GetString("SaveConfigDialog.FileSizeText.Text.Error");
-                this.fileSizeText.Text = string.Format(this.fileSizeTextFormat, error);
+                this.previewHeader.Text = string.Format(this.fileSizeTextFormat, error);
             }
             else
             {
                 FileInfo fi = new FileInfo(tempFileName);
                 long fileSize = fi.Length;
-                this.fileSizeText.Text = string.Format(fileSizeTextFormat, Utility.SizeStringFromBytes(fileSize));
+                this.previewHeader.Text = string.Format(fileSizeTextFormat, Utility.SizeStringFromBytes(fileSize));
                 this.documentView.Visible = true;
 
                 // note: see comments for DocumentView.SuspendRefresh() for why we do these two backwards
@@ -501,7 +656,7 @@ namespace PaintDotNet
         {
             string computingFormat = PdnResources.GetString("SaveConfigDialog.FileSizeText.Text.Computing.Format");
             string computing = string.Format(computingFormat, percent);
-            this.fileSizeText.Text = string.Format(this.fileSizeTextFormat, computing);
+            this.previewHeader.Text = string.Format(this.fileSizeTextFormat, computing);
             int newPercent = Utility.Clamp(percent, 0, 100);
             OnProgress(newPercent);
         }

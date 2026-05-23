@@ -502,7 +502,15 @@ namespace PaintDotNet.Setup
                     cnais,
                     delegate(CultureNameAndInfo cnai)
                     {
-                        return (cnai.CultureInfo == PdnResources.Culture);
+                        // We want to either find an exact match, e.g. "fr" -> "fr", or a parent-child match, e.g. "fr-FR" -> "fr".
+                        bool equals = cnai.CultureInfo.Equals(PdnResources.Culture);
+
+                        if (!PdnResources.Culture.Parent.Equals(CultureInfo.InvariantCulture))
+                        {
+                            equals |= cnai.CultureInfo.Equals(PdnResources.Culture.Parent);
+                        }
+
+                        return equals;
                     });
 
                 if (currentCnai == null)
@@ -781,18 +789,42 @@ namespace PaintDotNet.Setup
 
         static void MainImpl(string[] args)
         {
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.EnableVisualStyles();
+            UI.EnableDpiAware();
+
+            // Set up locale / resource details
+            const string languageSettingName = "LanguageName";
+
+            string locale = Settings.CurrentUser.GetString(languageSettingName, null);
+
+            if (locale == null)
+            {
+                locale = Settings.SystemWide.GetString(languageSettingName, null);
+            }
+
+            if (locale != null)
+            {
+                try
+                {
+                    CultureInfo ci = new CultureInfo(locale, true);
+                    Thread.CurrentThread.CurrentUICulture = ci;
+                }
+
+                catch (Exception)
+                {
+                    // Don't want bad culture name to crash us.
+                }
+            }
+
+            // Uncomment to test German
+            //System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("de");                   
+
             if (!PdnInfo.HandleExpiration(null))
             {
                 return;
             }
 
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.EnableVisualStyles();
-            UI.EnableDpiAware();
-
-            // Uncomment to test German
-            //System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("de");
-                    
             bool doInstall = true;
             bool doMsiDump = false;
             bool restartPdnOnExit = false;

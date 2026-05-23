@@ -28,11 +28,7 @@ namespace PaintDotNet
     {
         private string[] extensions;
         private string name;
-        private bool supportsLayers;
-        private bool supportsCustomHeaders;
-        private bool supportsSaving;
-        private bool supportsLoading;
-        private bool savesWithProgress;
+        private FileTypeFlags flags;
 
         // should be of the format ".ext" ... like ".bmp" or ".jpg"
         // The first extension in this list is the default extension (".jpg" for JPEG, 
@@ -70,6 +66,14 @@ namespace PaintDotNet
             }
         }
 
+        public FileTypeFlags Flags
+        {
+            get
+            {
+                return this.flags;
+            }
+        }
+
         /// <summary>
         /// Gets a flag indicating whether this FileType supports layers.
         /// </summary>
@@ -81,7 +85,7 @@ namespace PaintDotNet
         {
             get
             {
-                return this.supportsLayers;
+                return (this.flags & FileTypeFlags.SupportsLayers) != 0;
             }
         }
 
@@ -96,7 +100,7 @@ namespace PaintDotNet
         {
             get
             {
-                return this.supportsCustomHeaders;
+                return (this.flags & FileTypeFlags.SupportsCustomHeaders) != 0;
             }
         }
 
@@ -110,7 +114,7 @@ namespace PaintDotNet
         {
             get
             {
-                return this.supportsSaving;
+                return (this.flags & FileTypeFlags.SupportsSaving) != 0;
             }
         }
 
@@ -124,7 +128,7 @@ namespace PaintDotNet
         {
             get
             {
-                return this.supportsLoading;
+                return (this.flags & FileTypeFlags.SupportsLoading) != 0;
             }
         }
 
@@ -138,25 +142,34 @@ namespace PaintDotNet
         {
             get
             {
-                return this.savesWithProgress;
+                return (this.flags & FileTypeFlags.SavesWithProgress) != 0;
             }
         }
 
+        [Obsolete("Use the FileType(string, FileTypeFlags, string[]) overload instead", true)]
         public FileType(string name, bool supportsLayers, bool supportsCustomHeaders, string[] extensions)
             : this(name, supportsLayers, supportsCustomHeaders, true, true, false, extensions)
         {
         }
 
+        [Obsolete("Use the FileType(string, FileTypeFlags, string[]) overload instead", true)]
         public FileType(string name, bool supportsLayers, bool supportsCustomHeaders, bool supportsSaving, 
             bool supportsLoading, bool savesWithProgress, string[] extensions)
+            : this(name, 
+                   (supportsLayers ? FileTypeFlags.SupportsLayers : 0) |
+                       (supportsCustomHeaders ? FileTypeFlags.SupportsCustomHeaders : 0) |
+                       (supportsSaving ? FileTypeFlags.SupportsSaving : 0) |
+                       (supportsLoading ? FileTypeFlags.SupportsLoading : 0) |
+                       (savesWithProgress ? FileTypeFlags.SavesWithProgress : 0),
+                   extensions)
+        {
+        }
+
+        public FileType(string name, FileTypeFlags flags, string[] extensions)
         {
             this.name = name;
-            this.supportsLayers = supportsLayers;
-            this.supportsCustomHeaders = supportsCustomHeaders;
-            this.supportsLoading = supportsLoading;
-            this.supportsSaving = supportsSaving;
-            this.savesWithProgress = savesWithProgress;
-            this.extensions = extensions;
+            this.flags = flags;
+            this.extensions = (string[])extensions.Clone();
         }
 
         public bool SupportsExtension(string ext)

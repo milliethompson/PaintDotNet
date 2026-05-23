@@ -9,6 +9,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -19,8 +21,39 @@ namespace PaintDotNet.SystemLayer
     {
         private DialogResult dialogResult = DialogResult.None;
         private NativeInterfaces.IFileDialog fileDialog;
+        private NativeInterfaces.IFileDialogEvents fileDialogEvents;
+        private IFileDialogUICallbacks uiCallbacks = null;
         private string initialDirectory = null;
         private string filter = null;
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        protected NativeInterfaces.IFileDialogEvents FileDialogEvents
+        {
+            get
+            {
+                return this.fileDialogEvents;
+            }
+
+            set
+            {
+                if (this.fileDialogEvents == null)
+                {
+                    this.fileDialogEvents = value;
+                }
+                else
+                {
+                    throw new InvalidOperationException("May only set this property once");
+                }
+            }
+        }
+
+        protected IFileDialogUICallbacks FileDialogUICallbacks
+        {
+            get
+            {
+                return this.uiCallbacks;
+            }
+        }
 
         protected NativeInterfaces.IFileDialog FileDialog
         {
@@ -66,22 +99,15 @@ namespace PaintDotNet.SystemLayer
             return masked == flags;
         }
 
-        protected NativeInterfaces.IShellItem GetShellItem(string path)
+        private NativeInterfaces.IShellItem GetShellItem(string path)
         {
-            Guid IID_IShellItem = new Guid(NativeInterfaces.IIDGuid.IShellItem);
+            Guid iid_IShellItem = new Guid(NativeConstants.IID_IShellItem);
             IntPtr ppv = IntPtr.Zero;
-            NativeMethods.SHCreateItemFromParsingName(path, IntPtr.Zero, ref IID_IShellItem, out ppv);
+            NativeMethods.SHCreateItemFromParsingName(path, IntPtr.Zero, ref iid_IShellItem, out ppv);
             object iUnknown = Marshal.GetObjectForIUnknown(ppv);
             NativeInterfaces.IShellItem shellItem = (NativeInterfaces.IShellItem)iUnknown;
             return shellItem;
         }
-
-        protected string GetPathName(NativeInterfaces.IShellItem shellItem)
-        {
-            string pathName;
-            shellItem.GetDisplayName(NativeConstants.SIGDN.SIGDN_FILESYSPATH, out pathName);
-            return pathName;
-        }            
 
         public bool CheckPathExists
         {
@@ -186,18 +212,43 @@ namespace PaintDotNet.SystemLayer
                 this.fileDialog.SetDefaultFolder(shellItem);
             }
 
+            catch (Exception)
+            {
+                // Do nothing.
+            }
+
             finally
             {
                 if (shellItem != null)
                 {
-                    Marshal.ReleaseComObject(shellItem);
+                    try
+                    {
+                        Marshal.ReleaseComObject(shellItem);
+                    }
+
+                    catch (ArgumentException)
+                    {
+                    }
+
                     shellItem = null;
                 }
             }
         }
 
-        public DialogResult ShowDialog(Control owner)
+        protected virtual void OnAfterShow()
         {
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1500:VariableNamesShouldNotMatchFieldNames", MessageId = "uiCallbacks")]
+        public DialogResult ShowDialog(Control owner, IFileDialogUICallbacks uiCallbacks)
+        {
+            if (uiCallbacks == null)
+            {
+                throw new ArgumentNullException("uiCallbacks");
+            }
+
+            this.uiCallbacks = uiCallbacks;
+            
             IntPtr parent;
 
             if (owner == null)
@@ -211,11 +262,18 @@ namespace PaintDotNet.SystemLayer
 
             try
             {
-                this.fileDialog.ClearClientData();
+                FileDialog.ClearClientData();
             }
 
             catch (Exception)
             {
+            }
+
+            uint dwCookie = 0xdeadbeef;
+
+            if (this.fileDialogEvents != null)
+            {
+                FileDialog.Advise(this.fileDialogEvents, out dwCookie);
             }
 
             OnBeforeShow();
@@ -234,11 +292,19 @@ namespace PaintDotNet.SystemLayer
 
             this.dialogResult = result;
 
+            if (this.fileDialogEvents != null)
+            {
+                FileDialog.Unadvise(dwCookie);
+            }
+
+            OnAfterShow();
+            this.uiCallbacks = null;
+
             GC.KeepAlive(owner);
             return result;
         }
 
-        public VistaFileDialog(NativeInterfaces.IFileDialog fileDialog)
+        protected VistaFileDialog(NativeInterfaces.IFileDialog fileDialog)
         {
             this.fileDialog = fileDialog;
         }

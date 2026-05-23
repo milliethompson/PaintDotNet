@@ -43,6 +43,9 @@ namespace PaintDotNet.Tools
         private Cursor cursorMouseDown;
         private bool shapeWasCommited = true;
         private CompoundHistoryMemento chaAlreadyOnStack = null;
+        private bool useDashStyle = false; // if set to false, then the DashStyle will always be forced to DashStyle.Flat
+        private bool forceShapeType = false;
+        private ShapeDrawType forcedShapeDrawType = ShapeDrawType.Both;
 
         protected override bool SupportsInk
         {
@@ -54,34 +57,45 @@ namespace PaintDotNet.Tools
 
         // This is for shapes that should only be draw in one ShapeDrawType
         // The line shape, for instance, should only ever be drawn in ShapeDrawType.Outline
-        private bool forceShapeType = false;
-        public bool ForceShapeDrawType
+        protected bool ForceShapeDrawType
         {
             get
             {
-                return forceShapeType;
+                return this.forceShapeType;
             }
 
             set
             {
-                forceShapeType = value;
+                this.forceShapeType = value;
             }
         }
 
-        private ShapeDrawType forcedShapeDrawType = ShapeDrawType.Both;
-        public ShapeDrawType ForcedShapeDrawType
+        protected ShapeDrawType ForcedShapeDrawType
         {
             get
             {
-                return forcedShapeDrawType;
+                return this.forcedShapeDrawType;
             }
 
             set
             {
-                forcedShapeDrawType = value;
+                this.forcedShapeDrawType = value;
             }
         }
 
+        protected bool UseDashStyle
+        {
+            get
+            {
+                return this.useDashStyle;
+            }
+
+            set
+            {
+                this.useDashStyle = value;
+            }
+        }
+        
         /// <summary>
         /// Different shapes may not require all the points given to them, and as such
         /// if the user is drawing for a long time there may be lots of memory that's
@@ -303,6 +317,11 @@ namespace PaintDotNet.Tools
             {
                 outlinePen = pi.CreatePen(AppEnvironment.BrushInfo, secondary.ToColor(), primary.ToColor());
                 interiorBrush = bi.CreateBrush(primary.ToColor(), secondary.ToColor());
+            }
+
+            if (!this.useDashStyle)
+            {
+                outlinePen.DashStyle = DashStyle.Solid;
             }
 
             outlinePen.LineJoin = LineJoin.MiterClipped;

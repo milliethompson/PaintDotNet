@@ -52,6 +52,11 @@ namespace PaintDotNet
 
             private UI.ButtonState closeRenderState;
 
+            private bool dirty;
+
+            private bool lockedDirtyValue;
+            private int dirtyValueLockCount = 0;
+
             private object tag;
 
             public event EventHandler Changed;
@@ -108,6 +113,58 @@ namespace PaintDotNet
                         this.selected = value;
                         OnChanged();
                     }
+                }
+            }
+
+            public bool Dirty
+            {
+                get
+                {
+                    if (this.dirtyValueLockCount > 0)
+                    {
+                        return this.lockedDirtyValue;
+                    }
+                    else
+                    {
+                        return this.dirty;
+                    }
+                }
+
+                set
+                {
+                    if (this.dirty != value)
+                    {
+                        this.dirty = value;
+
+                        if (this.dirtyValueLockCount <= 0)
+                        {
+                            OnChanged();
+                        }
+                    }
+                }
+            }
+
+            public void LockDirtyValue(bool forceValue)
+            {
+                ++this.dirtyValueLockCount;
+
+                if (this.dirtyValueLockCount == 1)
+                {
+                    this.lockedDirtyValue = forceValue;
+                }
+            }
+
+            public void UnlockDirtyValue()
+            {
+                --this.dirtyValueLockCount;
+
+                if (this.dirtyValueLockCount == 0)
+                {
+                    OnChanged();
+                }
+                else if (this.dirtyValueLockCount < 0)
+                {
+                    throw new InvalidOperationException("Calls to UnlockDirtyValue() must be matched by a preceding call to LockDirtyValue()");
                 }
             }
 
@@ -252,6 +309,7 @@ namespace PaintDotNet
         private bool mouseDownApplyRendering = false;
 
         private bool drawShadow = true;
+        private bool drawDirtyOverlay = true;
 
         public bool DrawShadow
         {
@@ -265,6 +323,23 @@ namespace PaintDotNet
                 if (this.drawShadow != value)
                 {
                     this.drawShadow = value;
+                    Refresh();
+                }
+            }
+        }
+
+        public bool DrawDirtyOverlay
+        {
+            get
+            {
+                return this.drawDirtyOverlay;
+            }
+
+            set
+            {
+                if (this.drawDirtyOverlay != value)
+                {
+                    this.drawDirtyOverlay = value;
                     Refresh();
                 }
             }
@@ -809,6 +884,72 @@ namespace PaintDotNet
             }
         }
 
+        protected virtual void DrawItemDirtyOverlay(
+            Graphics g,
+            Item item,
+            Rectangle itemRect,
+            Rectangle dirtyOverlayRect)
+        {
+            Color outerPenColor = Color.White;
+            Color innerPenColor = Color.Orange;
+
+            const int xInset = 2;
+            int scaledXInset = UI.ScaleWidth(xInset);
+
+            const float outerPenWidth = 4.0f;
+            const float innerPenWidth = 2.0f;
+
+            float scaledOuterPenWidth = UI.ScaleWidth(outerPenWidth);
+            float scaledInnerPenWidth = UI.ScaleWidth(innerPenWidth);
+
+            SmoothingMode oldSM = g.SmoothingMode;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            int left = dirtyOverlayRect.Left + scaledXInset;
+            int top = dirtyOverlayRect.Top + scaledXInset;
+            int right = dirtyOverlayRect.Right - scaledXInset;
+            int bottom = dirtyOverlayRect.Bottom - scaledXInset;
+
+            float r = Math.Min((right - left) / 2.0f, (bottom - top) / 2.0f);
+
+            PointF centerPt = new PointF((left + right) / 2.0f, (top + bottom) / 2.0f);
+            float twoPiOver5 = (float)(Math.PI * 0.4);
+
+            PointF a = new PointF(centerPt.X + r * (float)Math.Sin(twoPiOver5), centerPt.Y - r * (float)Math.Cos(twoPiOver5));
+            PointF b = new PointF(centerPt.X + r * (float)Math.Sin(2 * twoPiOver5), centerPt.Y - r * (float)Math.Cos(2 * twoPiOver5));
+            PointF c = new PointF(centerPt.X + r * (float)Math.Sin(3 * twoPiOver5), centerPt.Y - r * (float)Math.Cos(3 * twoPiOver5));
+            PointF d = new PointF(centerPt.X + r * (float)Math.Sin(4 * twoPiOver5), centerPt.Y - r * (float)Math.Cos(4 * twoPiOver5));
+            PointF e = new PointF(centerPt.X + r * (float)Math.Sin(5 * twoPiOver5), centerPt.Y - r * (float)Math.Cos(5 * twoPiOver5));
+
+            PointF[] lines =
+                new PointF[]
+                {
+                    centerPt, a,
+                    centerPt, b,
+                    centerPt, c,
+                    centerPt, d,
+                    centerPt, e
+                }; 
+
+            using (Pen outerPen = new Pen(outerPenColor, scaledOuterPenWidth))
+            {
+                for (int i = 0; i < lines.Length; i += 2)
+                {
+                    g.DrawLine(outerPen, lines[i], lines[i + 1]);
+                }
+            }
+
+            using (Pen innerPen = new Pen(innerPenColor, scaledInnerPenWidth))
+            {
+                for (int i = 0; i < lines.Length; i += 2)
+                {
+                    g.DrawLine(innerPen, lines[i], lines[i + 1]);
+                }
+            }
+
+            g.SmoothingMode = oldSM;
+        }
+
         protected virtual void DrawItemImageShadow(
             Graphics g,
             Item item,
@@ -844,13 +985,15 @@ namespace PaintDotNet
             Rectangle imageRect;
             Rectangle imageInsetRect;
             Rectangle closeButtonRect;
+            Rectangle dirtyOverlayRect;
 
             MeasureItemPartRectangles(
                 item, 
                 out itemRect, 
                 out imageRect, 
-                out imageInsetRect, 
-                out closeButtonRect);
+                out imageInsetRect,
+                out closeButtonRect,
+                out dirtyOverlayRect);
 
             itemRect.X += offset.X;
             itemRect.Y += offset.Y;
@@ -863,6 +1006,9 @@ namespace PaintDotNet
 
             closeButtonRect.X += offset.X;
             closeButtonRect.Y += offset.Y;
+
+            dirtyOverlayRect.X += offset.X;
+            dirtyOverlayRect.Y += offset.Y;
 
             DrawItemBackground(g, item, itemRect);
 
@@ -880,6 +1026,11 @@ namespace PaintDotNet
             if (this.showCloseButtons)
             {
                 DrawItemCloseButton(g, item, itemRect, closeButtonRect);
+            }
+
+            if (this.drawDirtyOverlay && item.Dirty)
+            {
+                DrawItemDirtyOverlay(g, item, itemRect, dirtyOverlayRect);
             }
         }
 
@@ -913,30 +1064,6 @@ namespace PaintDotNet
             Point itemPt = new Point(viewPt.X - itemRect.X, viewPt.Y);
             return itemPt;
         }
-
-        /*
-        private Rectangle ViewRectangleToItemRectangle(int itemIndex, Rectangle viewRect)
-        {
-            Point itemPt = ViewPointToItemPoint(itemIndex, viewRect.Location);
-            return new Rectangle(itemPt, viewRect.Size);
-        }
-         * */
-
-        /*
-        private Point ItemPointToViewPoint(int itemIndex, Point itemPt)
-        {
-            Size itemSize = ItemSize;
-            return new Point(itemIndex * itemSize.Width + itemPt.X, itemPt.Y);
-        }
-         * */
-
-        /*
-        private Rectangle ItemRectangleToViewRectangle(int itemIndex, Rectangle itemRect)
-        {
-            Size itemSize = ItemSize;
-            return new Rectangle(itemIndex * itemSize.Width + itemRect.X, itemRect.Y, itemRect.Width, itemRect.Height);
-        }
-         * */
 
         private Rectangle ItemIndexToItemViewRectangle(int itemIndex)
         {
@@ -979,7 +1106,8 @@ namespace PaintDotNet
             out Rectangle itemRect,
             out Rectangle imageRect,
             out Rectangle imageInsetRect,
-            out Rectangle closeButtonRect)
+            out Rectangle closeButtonRect,
+            out Rectangle dirtyOverlayRect)
         {
             MeasureItemPartRectangles(out itemRect, out imageRect);
 
@@ -1014,6 +1142,12 @@ namespace PaintDotNet
                 imageInsetRectMax.Top + scaledCloseButtonPadding,
                 scaledCloseButtonLength,
                 scaledCloseButtonLength);
+
+            dirtyOverlayRect = new Rectangle(
+                imageInsetRectMax.Left + scaledCloseButtonPadding,
+                imageInsetRectMax.Top + scaledCloseButtonPadding,
+                scaledCloseButtonLength,
+                scaledCloseButtonLength);
         }
 
         private ItemPart ItemPointToItemPart(Item item, Point pt)
@@ -1022,8 +1156,15 @@ namespace PaintDotNet
             Rectangle imageRect;
             Rectangle imageInsetRect;
             Rectangle closeButtonRect;
+            Rectangle dirtyOverlayRect;
 
-            MeasureItemPartRectangles(item, out itemRect, out imageRect, out imageInsetRect, out closeButtonRect);
+            MeasureItemPartRectangles(
+                item,
+                out itemRect,
+                out imageRect,
+                out imageInsetRect,
+                out closeButtonRect,
+                out dirtyOverlayRect);
 
             if (closeButtonRect.Contains(pt))
             {

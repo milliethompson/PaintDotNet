@@ -77,7 +77,7 @@ namespace PaintDotNet.Menus
                     this.menuViewSeparator1,
                     this.menuViewGrid,
                     this.menuViewRulers,
-                    this.menuViewSeparator1,
+                    this.menuViewSeparator2,
                     this.menuViewPixels,
                     this.menuViewInches,
                     this.menuViewCentimeters,

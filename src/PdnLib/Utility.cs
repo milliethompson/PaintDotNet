@@ -2076,34 +2076,10 @@ namespace PaintDotNet
 
         public static void ShowHelp(Control parent)
         {
-            string[] locales = PdnResources.GetLocaleNameChain();
-            const string indexHtml = "index.html";
-            string baseDir = PdnInfo.GetApplicationDir();
-            string helpDir = Path.Combine(baseDir, "Help");
-
-            // Walk the chain of locale names and try to find Help/[locale]/index.html
-            // If all else fails, try Help/index.html
-            for (int i = 0; i < locales.Length; ++i)
-            {
-                string localeHelpDir = Path.Combine(helpDir, locales[i]);
-                string indexHtmlPath = Path.Combine(localeHelpDir, indexHtml);
-
-                if (File.Exists(indexHtmlPath))
-                {
-                    PdnInfo.OpenUrl(parent, indexHtmlPath);
-                    return;
-                }
-            }
-
-            string lastChancePath = Path.Combine(helpDir, indexHtml);
-            if (File.Exists(lastChancePath))
-            {
-                PdnInfo.OpenUrl(parent, lastChancePath);
-            }
-            else
-            {
-                // TODO: error
-            }
+            string helpFileUrlFormat = PdnResources.GetString("HelpFile.Url.Format");
+            string baseSiteUrl = InvariantStrings.WebsiteUrl;
+            string helpFileUrl = string.Format(helpFileUrlFormat, baseSiteUrl);
+            PdnInfo.OpenUrl(parent, helpFileUrl);
         }
 
         /// <summary>
