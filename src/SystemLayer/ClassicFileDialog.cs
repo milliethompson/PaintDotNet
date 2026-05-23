@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using System;
 using System.Reflection;
 using System.Windows.Forms;
@@ -131,10 +132,10 @@ namespace PaintDotNet.SystemLayer
             }
         }
 
-        private delegate void EnableThumbnailViewDelegate(FileDialog fileDialog);
-
-        public DialogResult ShowDialog(Control owner, IFileDialogUICallbacks uiCallbacks)
+        public DialogResult ShowDialog(IWin32Window owner, IFileDialogUICallbacks uiCallbacks)
         {
+            Control ownerAsControl = owner as Control;
+
             if (uiCallbacks == null)
             {
                 throw new ArgumentNullException("uiCallbacks");
@@ -150,9 +151,9 @@ namespace PaintDotNet.SystemLayer
 
             Cursor.Current = Cursors.Default;
 
-            if (owner.IsHandleCreated)
+            if (ownerAsControl != null && ownerAsControl.IsHandleCreated)
             {
-                owner.BeginInvoke(new EnableThumbnailViewDelegate(EnableThumbnailView), new object[] { this.fileDialog });
+                ownerAsControl.BeginInvoke(new Procedure<FileDialog>(EnableThumbnailView), new object[] { this.fileDialog });
             }
 
             DialogResult result = this.fileDialog.ShowDialog(owner);

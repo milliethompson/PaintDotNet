@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
@@ -1446,7 +1447,7 @@ namespace PaintDotNet
             SerializationFallbackBinder sfb = new SerializationFallbackBinder();
 
             sfb.AddAssembly(Assembly.GetExecutingAssembly());     // first try PaintDotNet.Data.dll
-            sfb.AddAssembly(typeof(Utility).Assembly);            // second, try PdnLib.dll
+            sfb.AddAssembly(typeof(Utility).Assembly);            // second, try PaintDotNet.Core.dll
             sfb.AddAssembly(typeof(SystemLayer.Memory).Assembly); // third, try PaintDotNet.SystemLayer.dll
             formatter.Binder = sfb;
 

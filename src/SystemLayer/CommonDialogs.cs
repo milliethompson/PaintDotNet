@@ -7,8 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-//#define NOVISTA
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,13 +17,11 @@ namespace PaintDotNet.SystemLayer
     {
         public static IFileOpenDialog CreateFileOpenDialog()
         {
-#if !NOVISTA
             if (OS.IsVistaOrLater)
             {
                 return new VistaFileOpenDialog();
             }
             else
-#endif
             {
                 return new ClassicFileOpenDialog();
             }
@@ -33,13 +29,11 @@ namespace PaintDotNet.SystemLayer
 
         public static IFileSaveDialog CreateFileSaveDialog()
         {
-#if !NOVISTA
             if (OS.IsVistaOrLater)
             {
                 return new VistaFileSaveDialog();
             }
             else
-#endif
             {
                 return new ClassicFileSaveDialog();
             }

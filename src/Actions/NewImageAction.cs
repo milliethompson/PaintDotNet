@@ -29,7 +29,7 @@ namespace PaintDotNet.Actions
                     try
                     {
                         Utility.GCFullCollect();
-                        IDataObject clipData = Clipboard.GetDataObject();
+                        IDataObject clipData = System.Windows.Forms.Clipboard.GetDataObject();
 
                         using (Image clipImage = (Image)clipData.GetData(DataFormats.Bitmap))
                         {

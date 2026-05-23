@@ -297,7 +297,11 @@ namespace PaintDotNet
 
         protected override void OnEnabledChanged(EventArgs e)
         {
-            this.snapObstacle.Enabled = this.Enabled;
+            if (this.snapObstacle != null)
+            {
+                this.snapObstacle.Enabled = this.Enabled;
+            }
+
             base.OnEnabledChanged(e);
         }
 

@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using PaintDotNet.Data;
 using PaintDotNet.Effects;
 using PaintDotNet.HistoryFunctions;

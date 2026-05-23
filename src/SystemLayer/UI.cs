@@ -200,115 +200,7 @@ namespace PaintDotNet.SystemLayer
             Pressed,
             Disabled
         }
-
-        private static IntPtr OpenTheme(Control hostControl)
-        {
-            IntPtr hTheme;
-            IntPtr hModule = SafeNativeMethods.LoadLibraryW("uxtheme.dll");
-
-            if (hModule == IntPtr.Zero)
-            {
-                hTheme = IntPtr.Zero;
-            }
-            else
-            {
-                hTheme = SafeNativeMethods.OpenThemeData(hostControl.Handle, "Button");
-                SafeNativeMethods.FreeLibrary(hModule);
-            }
-
-            GC.KeepAlive(hostControl);
-            return hTheme;
-        }
-
-        // TODO: Use VisualStyles stuff in .NET 2.0 instead
-        /// <summary>
-        /// Draws a button in the appropriate system theme (Aero vs. Luna vs. Classic).
-        /// </summary>
-        /// <remarks>
-        /// Note to implementors: This may be implemented as a simple thunk to ControlPaint.DrawButton().
-        /// </remarks>
-        public static void DrawThemedButton(
-            Control hostControl, 
-            Graphics g, 
-            int x, 
-            int y, 
-            int width, 
-            int height, 
-            UI.ButtonState state)
-        {
-            IntPtr hTheme = OpenTheme(hostControl);
-
-            if (hTheme != IntPtr.Zero)
-            {
-                NativeStructs.RECT rect = new NativeStructs.RECT();
-                rect.left = x;
-                rect.top = y;
-                rect.right = x + width;
-                rect.bottom = y + height;
-
-                int iState;
-                switch (state)
-                {
-                    case UI.ButtonState.Disabled:
-                        iState = NativeConstants.PBS_DISABLED;
-                        break;
-
-                    case UI.ButtonState.Hot:
-                        iState = NativeConstants.PBS_HOT;
-                        break;
-
-                    default:
-                    case UI.ButtonState.Normal:
-                        iState = NativeConstants.PBS_NORMAL;
-                        break;
-
-                    case UI.ButtonState.Pressed:
-                        iState = NativeConstants.PBS_PRESSED;
-                        break;
-                }
-
-                IntPtr hdc = g.GetHdc();
-
-                SafeNativeMethods.DrawThemeBackground(
-                    hTheme,
-                    hdc,
-                    NativeConstants.BP_PUSHBUTTON,
-                    iState,
-                    ref rect,
-                    ref rect);
-
-                g.ReleaseHdc(hdc);
-
-                SafeNativeMethods.CloseThemeData(hTheme);
-                hTheme = IntPtr.Zero;
-            }
-            else
-            {
-                System.Windows.Forms.ButtonState swfState;
-
-                switch (state)
-                {
-                    case UI.ButtonState.Disabled:
-                        swfState = System.Windows.Forms.ButtonState.Inactive;
-                        break;
-
-                    default:
-                    case UI.ButtonState.Hot:
-                    case UI.ButtonState.Normal:
-                        swfState = System.Windows.Forms.ButtonState.Normal;
-                        break;
-
-                    case UI.ButtonState.Pressed:
-                        swfState = System.Windows.Forms.ButtonState.Pushed;
-                        break;
-                }
-
-                ControlPaint.DrawButton(g, x, y, width, height, swfState);
-            }
-
-            GC.KeepAlive(hostControl);
-        }
-
+        
         /// <summary>
         /// This method is obsolete. Use SuspendControlPainting() and ResumeControlPainting() instead.
         /// </remarks>
@@ -448,6 +340,7 @@ namespace PaintDotNet.SystemLayer
         /// null if this could not be determined.
         /// </returns>
         /// <remarks>
+        /// This method is not thread safe.
         /// Note to implementors: This method may be implemented as a no-op. In this case, just return null.
         /// </remarks>
         public static Rectangle[] GetUpdateRegion(Control control)

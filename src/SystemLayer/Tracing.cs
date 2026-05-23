@@ -20,7 +20,7 @@ namespace PaintDotNet.SystemLayer
     /// </summary>
     /// <remarks>
     /// This class does not rely on any system-specific functionality, but is placed
-    /// in the SystemLayer assembly (as opposed to PdnLib) so that classes here may 
+    /// in the SystemLayer assembly (as opposed to Core) so that classes here may 
     /// also used it.
     /// </remarks>
     public static class Tracing

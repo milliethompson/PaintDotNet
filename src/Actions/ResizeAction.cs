@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using PaintDotNet.HistoryMementos;
 using PaintDotNet.SystemLayer;
 using PaintDotNet.Threading;

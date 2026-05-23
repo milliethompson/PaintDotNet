@@ -49,7 +49,17 @@ namespace PaintDotNet.Actions
                     string tempName = Path.GetTempFileName() + ".bmp";
                     ra.Bitmap.Save(tempName, ImageFormat.Bmp);
 
-                    ScanningAndPrinting.Print(documentWorkspace, tempName);
+                    try
+                    {
+                        ScanningAndPrinting.Print(documentWorkspace, tempName);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        Utility.ShowWiaError(documentWorkspace);
+                        Tracing.Ping(ex.ToString());
+                        // TODO: do a "better" error dialog here
+                    }
 
                     // Try to delete the temp file but don't worry if we can't
                     try
@@ -57,7 +67,7 @@ namespace PaintDotNet.Actions
                         File.Delete(tempName);
                     }
 
-                    catch
+                    catch (Exception)
                     {
                     }
                 }

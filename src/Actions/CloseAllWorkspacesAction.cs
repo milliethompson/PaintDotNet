@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -115,9 +116,9 @@ namespace PaintDotNet.Actions
                             throw new InvalidEnumArgumentException();
                     }
                 }
-
-                appWorkspace.Widgets.DocumentStrip.ThumbnailUpdateLatency = oldLatency;
             }
+
+            appWorkspace.Widgets.DocumentStrip.ThumbnailUpdateLatency = oldLatency;
 
             if (this.cancelled)
             {

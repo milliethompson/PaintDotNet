@@ -4,7 +4,7 @@ Prerequisites
 -------------
 1. Windows XP or Windows Server 2003, or newer. 
 
-2. Visual Studio .NET 2005
+2. Visual Studio .NET 2005 with Service Pack 1
    You should install the C++ x64 compiler as well, which may not come installed
    by default. 
 
@@ -23,15 +23,10 @@ Instructions
    This can be done by going to the "Build" menu, selecting "Configuration
    Manager...", selecting "Release and Package" under "Active Solution 
    Configuration:" and then clicking Close.
-
-3. Make sure the maximum # of build threads is 1. You can do this by going to
-   Tools -> Options, then under the "Projects and Solutions" node, click on
-   the "Build and Run" node. Then ensure "maximum number of parallel project
-   builds" is 1. Then click OK.
     
-4. Go to the "Build" menu and click "Rebuild Solution."
+3. Go to the "Build" menu and click "Rebuild Solution."
 
-5. Assuming all went well, the output files are now in src/Setup/Release:
+4. Assuming all went well, the output files are now in src/Setup/Release:
 
    * PaintDotNet.msi
      This is the MSI that installs Paint.NET, but you shouldn't launch it
@@ -45,9 +40,9 @@ Instructions
      just Paint.NET.             
                
    * PaintDotNet_M_m_Full.exe
-     This is the "full" installer that will install .NET 3.0 if it is not 
-     already installed. This file is larger than PaintDotNetSetup.exe but
-     provides a very convenient all-in-one installation package.
+     This is the "full" installer that will install .NET 2.0 if it is not 
+     already installed. This file is much larger than PaintDotNetSetup.exe
+     but provides a very convenient all-in-one installation package.
 
 
 For normal development work, use either the 'Release' or 'Debug' configuration.
@@ -58,7 +53,7 @@ the 'paintdotnet' project's properties. Otherwise, Paint.NET will see that some
 files are missing and attempt to repair itself. Not all of these files are 
 necessary when doing development or debugging.
 
-!!! Also, you will need to make sure that mt.exe and signtool.exe are in a
+Also, you will need to make sure that mt.exe and signtool.exe are in a
 directory that is in your PATH. These are available as part of the Windows SDK
 which can be found at Microsoft's website. Usually it's sufficient to copy
 these to %SYSTEMROOT%, which is usually C:\Windows.
@@ -68,6 +63,11 @@ Directory Layout
 ----------------
 src/
     The main folder containing all the Paint.NET source code.
+
+src/Base
+    This assembly houses base framework-style code. This assembly was introduced
+    because there was code in Core that SystemLayer could not access and thus
+    had to duplicate. 
 
 src/bin
     This is where the main Paint.NET executable and DLLs will be placed.
@@ -108,7 +108,7 @@ src/obj
     Intermediate files used during compilation go here.
 
 src/PdnLib
-    Contains the Paint.NET core "library." This is code that is plausibly usable
+    Contains the Paint.NET "library." This is code that is plausibly usable 
     either outside of Paint.NET or required for plugins to link against.
 
 src/Resources

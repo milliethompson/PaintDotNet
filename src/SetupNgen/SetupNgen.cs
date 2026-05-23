@@ -442,13 +442,15 @@ namespace PaintDotNet
                     new string[] 
                     {
                         "ICSharpCode.SharpZipLib.dll",
+                        "Interop.WIA.dll",
+                        "PaintDotNet.Base.dll",
+                        "PaintDotNet.Core.dll",
                         "PaintDotNet.Data.dll",
                         "PaintDotNet.Effects.dll",
                         "PaintDotNet.exe",
                         "PaintDotNet.Resources.dll",
                         "PaintDotNet.StylusReader.dll",
-                        "PaintDotNet.SystemLayer.dll",
-                        "PdnLib.dll"
+                        "PaintDotNet.SystemLayer.dll"
                     };
 
                 string[] names32 =

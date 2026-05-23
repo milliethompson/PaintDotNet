@@ -30,7 +30,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>bin\Debug\</OutputPath>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <BaseAddress>331350016</BaseAddress>
+    <BaseAddress>278921216</BaseAddress>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
@@ -55,7 +55,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <OutputPath>bin\Release\</OutputPath>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <BaseAddress>331350016</BaseAddress>
+    <BaseAddress>278921216</BaseAddress>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
@@ -351,6 +351,10 @@
     <EmbeddedResource Include="Icons\OutlineEffectIcon.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Base\Base.csproj">
+      <Project>{05C4C721-F8E3-42E1-B817-9D165DA1A9FB}</Project>
+      <Name>Base</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SystemLayer\SystemLayer.csproj">
       <Project>{80572820-93A5-4278-A513-D902BEA2639C}</Project>
       <Name>SystemLayer</Name>

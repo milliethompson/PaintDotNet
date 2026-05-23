@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -45,22 +46,22 @@ namespace PaintDotNet.Updates
             {
                 if (this.updatesStateMachine != null)
                 {
-                    this.updatesStateMachine.StateBegin -= new EventHandler<State>(UpdatesStateMachine_StateBegin);
-                    this.updatesStateMachine.StateMachineBegin -= new EventHandler(UpdatesStateMachine_StateMachineBegin);
-                    this.updatesStateMachine.StateMachineFinished -= new EventHandler(UpdatesStateMachine_StateMachineFinished);
-                    this.updatesStateMachine.StateProgress -= new ProgressEventHandler(UpdatesStateMachine_StateProgress);
-                    this.updatesStateMachine.StateWaitingForInput -= new EventHandler<State>(UpdatesStateMachine_StateWaitingForInput);
+                    this.updatesStateMachine.StateBegin -= UpdatesStateMachine_StateBegin;
+                    this.updatesStateMachine.StateMachineBegin -= UpdatesStateMachine_StateMachineBegin;
+                    this.updatesStateMachine.StateMachineFinished -= UpdatesStateMachine_StateMachineFinished;
+                    this.updatesStateMachine.StateProgress -= UpdatesStateMachine_StateProgress;
+                    this.updatesStateMachine.StateWaitingForInput -= UpdatesStateMachine_StateWaitingForInput;
                 }
 
                 this.updatesStateMachine = value;
 
                 if (this.updatesStateMachine != null)
                 {
-                    this.updatesStateMachine.StateBegin += new EventHandler<State>(UpdatesStateMachine_StateBegin);
-                    this.updatesStateMachine.StateMachineBegin += new EventHandler(UpdatesStateMachine_StateMachineBegin);
-                    this.updatesStateMachine.StateMachineFinished += new EventHandler(UpdatesStateMachine_StateMachineFinished);
-                    this.updatesStateMachine.StateProgress += new ProgressEventHandler(UpdatesStateMachine_StateProgress);
-                    this.updatesStateMachine.StateWaitingForInput += new EventHandler<State>(UpdatesStateMachine_StateWaitingForInput);
+                    this.updatesStateMachine.StateBegin += UpdatesStateMachine_StateBegin;
+                    this.updatesStateMachine.StateMachineBegin += UpdatesStateMachine_StateMachineBegin;
+                    this.updatesStateMachine.StateMachineFinished += UpdatesStateMachine_StateMachineFinished;
+                    this.updatesStateMachine.StateProgress += UpdatesStateMachine_StateProgress;
+                    this.updatesStateMachine.StateWaitingForInput += UpdatesStateMachine_StateWaitingForInput;
                 }
 
                 UpdateDynamicUI();

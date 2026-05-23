@@ -187,23 +187,6 @@ namespace PaintDotNet.SystemLayer
             IntPtr hRgn, 
             [MarshalAs(UnmanagedType.Bool)] bool bErase);
 
-        [DllImport("uxtheme.dll", PreserveSig = false, SetLastError = false)]
-        internal static extern void DrawThemeBackground(
-            IntPtr hTheme,
-            IntPtr hdc,
-            int iPartId,
-            int iStateId,
-            ref NativeStructs.RECT pRect,
-            ref NativeStructs.RECT pClipRect);
-
-        [DllImport("uxtheme.dll", CharSet = CharSet.Unicode, SetLastError = false)]
-        internal static extern IntPtr OpenThemeData(
-            IntPtr hwnd,
-            [MarshalAs(UnmanagedType.LPWStr)] string pszClassList);
-
-        [DllImport("uxtheme.dll", PreserveSig = false)]
-        internal static extern void CloseThemeData(IntPtr hTheme);
-
         [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         internal static extern IntPtr FindWindowExW(
             IntPtr hwndParent, 
@@ -397,14 +380,6 @@ namespace PaintDotNet.SystemLayer
             void *HeapInformation,
             uint HeapInformationLength
             );
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        internal static extern IntPtr LoadLibraryW(
-            [MarshalAs(UnmanagedType.LPWStr)] string lpFileName);
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool FreeLibrary(IntPtr hModule);
 
         [DllImport("winhttp.dll", CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]

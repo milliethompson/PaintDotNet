@@ -7,16 +7,11 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using System;
 
 namespace PaintDotNet
 {
-    public enum DocumentClickAction
-    {
-        Select,
-        Close
-    }
-
     public interface IDocumentList
     {
         /// <summary>

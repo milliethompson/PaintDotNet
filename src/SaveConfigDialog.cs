@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
@@ -29,6 +30,7 @@ namespace PaintDotNet
             public const string Width = "SaveConfigDialog.Width";
             public const string Height = "SaveConfigDialog.Height";
             public const string WindowState = "SaveConfigDialog.WindowState";
+            public const string ShowDonate = "SaveConfigDialog.ShowDonate";
         }
 
         private void LoadPositions()
@@ -204,6 +206,9 @@ namespace PaintDotNet
         private PaintDotNet.SaveConfigWidget saveConfigWidget;
         private System.Windows.Forms.Panel saveConfigPanel;
 
+        private PictureBox donateImage;
+        //private LinkLabel donateLink;
+
         private PaintDotNet.HeaderLabel settingsHeader;
 
         private Surface scratchSurface;
@@ -340,16 +345,67 @@ namespace PaintDotNet
             this.settingsHeader.Text = PdnResources.GetString("SaveConfigDialog.SettingsHeader.Text");
             this.defaultsButton.Text = PdnResources.GetString("SaveConfigDialog.DefaultsButton.Text");
             this.previewHeader.Text = PdnResources.GetString("SaveConfigDialog.PreviewHeader.Text");
+            //this.donateLink.Text = "Hello!"; //PdnResources.GetString("
 
             this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileSaveIcon.png"));
+
+            this.donateImage.Image = ImageResource.Get("Images.PayPalDonate.gif").Reference;
 
             this.documentView.Cursor = handIcon;
 
             this.MinimumSize = this.Size;
         }
 
+        private bool ShouldShowDonate()
+        {
+            bool shouldShow = true;
+
+            try
+            {
+                shouldShow = Settings.SystemWide.GetBoolean(SettingNames.ShowDonate, shouldShow);
+            }
+
+            catch (Exception)
+            {
+            }
+
+            try
+            {
+                shouldShow = Settings.CurrentUser.GetBoolean(SettingNames.ShowDonate, shouldShow);
+            }
+
+            catch (Exception)
+            {
+            }
+
+            return shouldShow;
+        }
+
         protected override void OnLayout(LayoutEventArgs levent)
         {
+            // Donate button
+            if (this.donateImage.Image != null)
+            {
+                this.donateImage.Size = UI.ScaleSize(this.donateImage.Image.Size);
+                this.donateImage.Visible = true & ShouldShowDonate();
+                //this.donateLink.Visible = true & ShouldShowDonate();
+            }
+            else
+            {
+                this.donateImage.Size = new Size(1, 1);
+                this.donateImage.Visible = false;
+                //this.donateLink.Visible = false;
+            }
+
+            int donateBottomMargin = UI.ScaleHeight(8);
+            int donateLeftMargin = UI.ScaleWidth(8);
+            int donateHorizSpacing = UI.ScaleWidth(8);
+
+            this.donateImage.Location = new Point(donateLeftMargin, ClientSize.Height - this.donateImage.Height - donateBottomMargin);
+
+            //this.donateLink.PerformLayout();
+            //this.donateLink.Location = new Point(this.donateImage.Right + donateHorizSpacing, this.donateImage.Top + (this.donateImage.Height - this.donateLink.Height) / 2);
+
             // Other stuff
             int buttonsBottomMargin = UI.ScaleHeight(8);
             int buttonsRightMargin = UI.ScaleWidth(8);
@@ -448,6 +504,8 @@ namespace PaintDotNet
             this.previewHeader = new PaintDotNet.HeaderLabel();
             this.documentView = new PaintDotNet.DocumentView();
             this.settingsHeader = new PaintDotNet.HeaderLabel();
+            this.donateImage = new PictureBox();
+            //this.donateLink = new LinkLabel();
             this.SuspendLayout();
             // 
             // baseOkButton
@@ -514,6 +572,19 @@ namespace PaintDotNet
             this.settingsHeader.TabIndex = 13;
             this.settingsHeader.TabStop = false;
             this.settingsHeader.Text = "Header";
+            //
+            // donateImage
+            //
+            this.donateImage.Name = "donateImage";
+            this.donateImage.SizeMode = PictureBoxSizeMode.StretchImage;
+            this.donateImage.Cursor = Cursors.Hand;
+            this.donateImage.Click += new EventHandler(DonateImage_Click);
+            //
+            // donateLink
+            //
+            //this.donateLink.Name = "donateLink";
+            //this.donateLink.AutoSize = true;
+            //this.donateLink.LinkClicked += new LinkLabelLinkClickedEventHandler(DonateLink_LinkClicked);
             // 
             // SaveConfigDialog
             // 
@@ -525,6 +596,8 @@ namespace PaintDotNet
             this.Controls.Add(this.previewHeader);
             this.Controls.Add(this.documentView);
             this.Controls.Add(this.saveConfigPanel);
+            this.Controls.Add(this.donateImage);
+            //this.Controls.Add(this.donateLink);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
             this.MinimizeBox = false;
             this.MaximizeBox = true;
@@ -538,9 +611,28 @@ namespace PaintDotNet
             this.Controls.SetChildIndex(this.previewHeader, 0);
             this.Controls.SetChildIndex(this.settingsHeader, 0);
             this.Controls.SetChildIndex(this.defaultsButton, 0);
+            this.Controls.SetChildIndex(this.donateImage, 0);
+            //this.Controls.SetChildIndex(this.donateLink, 0);
             this.ResumeLayout(false);
         }
         #endregion
+
+        /*
+        private void DonateLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            DonateClicked();
+        }
+         * */
+
+        private void DonateImage_Click(object sender, EventArgs e)
+        {
+            DonateClicked();
+        }
+
+        private void DonateClicked()
+        {
+            PdnInfo.LaunchWebSite(this, InvariantStrings.DonateSaveConfigDialogPage);
+        }
 
         private void DefaultsButton_Click(object sender, System.EventArgs e)
         {

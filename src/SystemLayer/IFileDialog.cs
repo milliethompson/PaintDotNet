@@ -59,6 +59,6 @@ namespace PaintDotNet.SystemLayer
         /// <param name="uiCallbacks">
         /// A reference to an object that implements the IFileDialogUICallbacks interface. This
         /// may not be null.</param>
-        DialogResult ShowDialog(Control owner, IFileDialogUICallbacks uiCallbacks);
+        DialogResult ShowDialog(IWin32Window owner, IFileDialogUICallbacks uiCallbacks);
     }
 }

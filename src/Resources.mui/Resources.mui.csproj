@@ -49,13 +49,20 @@
     <Content Include="PaintDotNet.Strings.3.ZH-CN.resources">
     </Content>
     <Content Include="Resources\de\Files.AboutCredits.rtf" />
+    <Content Include="Resources\de\Images.PayPalDonate.gif" />
     <Content Include="Resources\es\Files.AboutCredits.rtf" />
+    <Content Include="Resources\es\Icons.FontBoldIcon.png" />
+    <Content Include="Resources\es\Icons.FontItalicIcon.png" />
+    <Content Include="Resources\es\Icons.FontUnderlineIcon.png" />
+    <Content Include="Resources\es\Images.PayPalDonate.gif" />
     <Content Include="Resources\fr\Files.AboutCredits.rtf" />
     <Content Include="Resources\fr\Images.PayPalDonate.gif" />
     <Content Include="Resources\ja\Files.AboutCredits.rtf" />
+    <Content Include="Resources\ja\Images.PayPalDonate.gif" />
     <Content Include="Resources\ko\Files.AboutCredits.rtf" />
     <Content Include="Resources\pt-br\Files.AboutCredits.rtf" />
     <Content Include="Resources\zh-cn\Files.AboutCredits.rtf" />
+    <Content Include="Resources\zh-cn\Images.PayPalDonate.gif" />
     <None Include="resx\PaintDotNet.Strings.3.DE.resx">
       <SubType>Designer</SubType>
     </None>

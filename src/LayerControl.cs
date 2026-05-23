@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -209,7 +210,7 @@ namespace PaintDotNet
             elementClickDelegate = new EventHandler(ElementClickHandler);
             elementDoubleClickDelegate = new EventHandler(ElementDoubleClickHandler);
             documentChangedDelegate = new EventHandler(DocumentChangedHandler);
-            documentChangingDelegate = new EventHandler<Document>(DocumentChangingHandler);
+            documentChangingDelegate = DocumentChangingHandler;
             layerInsertedDelegate = new IndexEventHandler(LayerInsertedHandler);
             layerRemovedDelegate = new IndexEventHandler(LayerRemovedHandler);
             layerChangedDelegate = new EventHandler(LayerChangedHandler);

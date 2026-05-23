@@ -95,14 +95,19 @@ namespace PaintDotNet.Actions
             }
 
             if (surfaceForClipboard == null && 
-                clipData.GetDataPresent(DataFormats.Bitmap))
+                (clipData.GetDataPresent(DataFormats.Bitmap, true) || clipData.GetDataPresent(DataFormats.EnhancedMetafile, true)))
             {
                 Image image;
 
                 try
                 {
                     Utility.GCFullCollect();
-                    image = (Image)clipData.GetData(DataFormats.Bitmap);
+                    image = (Image)clipData.GetData(DataFormats.Bitmap, true);
+
+                    if (image == null)
+                    {
+                        image = SystemLayer.Clipboard.GetEmfFromClipboard(this.documentWorkspace);
+                    }
                 }
 
                 catch (OutOfMemoryException)
@@ -136,6 +141,7 @@ namespace PaintDotNet.Actions
                     {
                         bitmap = new Bitmap(image);
                         image.Dispose();
+                        image = null;
                     }
 
                     surface = Surface.CopyFromBitmap(bitmap);

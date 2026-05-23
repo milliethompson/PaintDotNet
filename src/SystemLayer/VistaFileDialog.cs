@@ -240,7 +240,7 @@ namespace PaintDotNet.SystemLayer
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1500:VariableNamesShouldNotMatchFieldNames", MessageId = "uiCallbacks")]
-        public DialogResult ShowDialog(Control owner, IFileDialogUICallbacks uiCallbacks)
+        public DialogResult ShowDialog(IWin32Window owner, IFileDialogUICallbacks uiCallbacks)
         {
             if (uiCallbacks == null)
             {

@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using PaintDotNet.Menus;
 using PaintDotNet.SystemLayer;
 using System;
@@ -471,7 +472,7 @@ namespace PaintDotNet
             this.documentStrip.TabIndex = 5;
             this.documentStrip.ShowScrollButtons = true;
             this.documentStrip.DocumentListChanged += new EventHandler(DocumentStrip_DocumentListChanged);
-            this.documentStrip.DocumentClicked += new EventHandler<Pair<DocumentWorkspace, DocumentClickAction>>(DocumentStrip_DocumentClicked);
+            this.documentStrip.DocumentClicked += DocumentStrip_DocumentClicked;
             this.documentStrip.ManagedFocus = true;
             //
             // documentListButton
@@ -485,7 +486,7 @@ namespace PaintDotNet
             //
             this.imageListMenu.Name = "imageListMenu";
             this.imageListMenu.Closed += new EventHandler(ImageListMenu_Closed);
-            this.imageListMenu.ItemClicked += new EventHandler<ImageListMenu.Item>(ImageListMenu_ItemClicked);
+            this.imageListMenu.ItemClicked += ImageListMenu_ItemClicked;
             //
             // PdnToolBar
             //
@@ -587,7 +588,11 @@ namespace PaintDotNet
         private void ImageListMenu_ItemClicked(object sender, EventArgs<ImageListMenu.Item> e)
         {
             DocumentWorkspace dw = (DocumentWorkspace)e.Data.Tag;
-            this.documentStrip.SelectedDocument = dw;
+
+            if (!dw.IsDisposed)
+            {
+                this.documentStrip.SelectedDocument = dw;
+            }
         }
 
         public void ShowDocumentList()

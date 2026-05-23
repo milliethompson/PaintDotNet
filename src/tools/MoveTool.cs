@@ -379,7 +379,7 @@ namespace PaintDotNet.Tools
             PdnRegion simplifiedPasteRegion = Utility.SimplifyAndInflateRegion(pasteRegion);
 
             HistoryMemento bitmapAction = new BitmapHistoryMemento(Name, Image, 
-                DocumentWorkspace, ActiveLayerIndex, simplifiedPasteRegion);
+                DocumentWorkspace, ActiveLayerIndex, simplifiedPasteRegion); // SLOW (110ms)
 
             this.currentHistoryMementos.Add(bitmapAction);
 
@@ -434,7 +434,7 @@ namespace PaintDotNet.Tools
             this.context.startMouseXY = new Point(70000, 70000);
 
             OnMouseDown(mea1);
-            OnMouseMove(mea2);
+            OnMouseMove(mea2); // SLOW (200ms)
             OnMouseUp(mea2);
         }
 

@@ -15,6 +15,21 @@ namespace PaintDotNet.SystemLayer
 {
     internal static class NativeMethods
     {
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool OpenClipboard(IntPtr hWndNewOwner);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CloseClipboard();
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr GetClipboardData(uint format);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsClipboardFormatAvailable(uint format);
+
         [DllImport("shell32.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
         internal static extern void SHCreateItemFromParsingName(
             [MarshalAs(UnmanagedType.LPWStr)] string pszPath,

@@ -87,7 +87,11 @@
       <Name>System.Windows.Forms</Name>
     </Reference>
     <Reference Include="System.Xml" />
-    <ProjectReference Include="..\PdnLib\Core.csproj">
+    <ProjectReference Include="..\Base\Base.csproj">
+      <Project>{05C4C721-F8E3-42E1-B817-9D165DA1A9FB}</Project>
+      <Name>Base</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Core\Core.csproj">
       <Project>{1EADE568-A866-4DD4-9898-0A151E3F0E26}</Project>
       <Name>Core</Name>
     </ProjectReference>

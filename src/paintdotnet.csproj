@@ -96,6 +96,10 @@
       <Name>System.Windows.Forms</Name>
     </Reference>
     <Reference Include="System.Xml" />
+    <ProjectReference Include="Base\Base.csproj">
+      <Project>{05C4C721-F8E3-42E1-B817-9D165DA1A9FB}</Project>
+      <Name>Base</Name>
+    </ProjectReference>
     <ProjectReference Include="Data\Data.csproj">
       <Name>Data</Name>
       <Project>{66681BB0-955D-451D-A466-94C045B1CF4A}</Project>
@@ -106,7 +110,7 @@
       <Project>{2E4E8805-00F7-4B18-A967-C23994BBCE75}</Project>
       <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
     </ProjectReference>
-    <ProjectReference Include="PdnLib\Core.csproj">
+    <ProjectReference Include="Core\Core.csproj">
       <Name>Core</Name>
       <Project>{1EADE568-A866-4DD4-9898-0A151E3F0E26}</Project>
       <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
@@ -155,6 +159,7 @@
     <Compile Include="Actions\ResizeAction.cs" />
     <Compile Include="CanvasControl.cs">
     </Compile>
+    <Compile Include="DocumentClickAction.cs" />
     <Compile Include="GradientInfo.cs" />
     <Compile Include="GradientType.cs" />
     <Compile Include="HistoryFunctions\FillSelectionFunction.cs" />

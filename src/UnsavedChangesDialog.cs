@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -28,9 +29,9 @@ namespace PaintDotNet
         private DocumentStrip documentStrip;
         private HeaderLabel documentListHeader;
         private System.Windows.Forms.HScrollBar hScrollBar;
-        private CommandLink saveButton;
-        private CommandLink dontSaveButton;
-        private CommandLink cancelButton;
+        private CommandButton saveButton;
+        private CommandButton dontSaveButton;
+        private CommandButton cancelButton;
         private System.Windows.Forms.Label infoLabel;
 
         private DocumentWorkspace[] documents;
@@ -138,7 +139,7 @@ namespace PaintDotNet
             int afterInfoLabelVMargin = UI.ScaleHeight(8);
             int afterDocumentListHeaderVMargin = UI.ScaleHeight(8);
             int afterDocumentListVMargin = UI.ScaleHeight(8);
-            int commandLinkVMargin = UI.ScaleHeight(8);
+            int commandButtonVMargin = UI.ScaleHeight(0);
             int insetWidth = ClientSize.Width - leftMargin - rightMargin;
 
             int y = topMargin;
@@ -161,17 +162,17 @@ namespace PaintDotNet
             this.saveButton.Location = new Point(leftMargin, y);
             this.saveButton.Width = insetWidth;
             this.saveButton.PerformLayout();
-            y += this.saveButton.Height + commandLinkVMargin;
+            y += this.saveButton.Height + commandButtonVMargin;
 
             this.dontSaveButton.Location = new Point(leftMargin, y);
             this.dontSaveButton.Width = insetWidth;
             this.dontSaveButton.PerformLayout();
-            y += this.dontSaveButton.Height + commandLinkVMargin;
+            y += this.dontSaveButton.Height + commandButtonVMargin;
 
             this.cancelButton.Location = new Point(leftMargin, y);
             this.cancelButton.Width = insetWidth;
             this.cancelButton.PerformLayout();
-            y += this.cancelButton.Height + commandLinkVMargin;
+            y += this.cancelButton.Height + bottomMargin;
 
             this.ClientSize = new Size(ClientSize.Width, y);
             base.OnLayout(levent);
@@ -186,16 +187,16 @@ namespace PaintDotNet
             this.documentStrip = new PaintDotNet.DocumentStrip();
             this.documentListHeader = new PaintDotNet.HeaderLabel();
             this.hScrollBar = new System.Windows.Forms.HScrollBar();
-            this.saveButton = new PaintDotNet.CommandLink();
-            this.dontSaveButton = new PaintDotNet.CommandLink();
-            this.cancelButton = new PaintDotNet.CommandLink();
+            this.saveButton = new PaintDotNet.CommandButton();
+            this.dontSaveButton = new PaintDotNet.CommandButton();
+            this.cancelButton = new PaintDotNet.CommandButton();
             this.infoLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // documentStrip
             // 
             this.documentStrip.BackColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.documentStrip.DocumentClicked += new EventHandler<Pair<DocumentWorkspace, DocumentClickAction>>(DocumentList_DocumentClicked);
+            this.documentStrip.DocumentClicked += DocumentList_DocumentClicked;
             this.documentStrip.DrawDirtyOverlay = false;
             this.documentStrip.EnsureSelectedIsVisible = false;
             this.documentStrip.ManagedFocus = true;

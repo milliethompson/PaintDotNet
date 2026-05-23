@@ -22,10 +22,13 @@ namespace PaintDotNet
             "Copyright © 2007 Rick Brewster, Tom Jackson, and past contributors. Portions Copyright © 2007 Microsoft Corporation. {0}";
 
         public const string FeedbackEmail = 
-              You must specify an e-mail address for users to send feedback to.;
+              "" <-- You must specify an e-mail address for users to send feedback to.;
+
+        public const string CrashlogEmail =
+              "" <-- You must specify a contact e-mail address to be placed in the crash log.;
 
         public const string WebsiteUrl = 
-              You must specify a URL for the application's website.;
+              "" <-- You must specify a URL for the application's website.;
 
         public const string WebsitePageHelpMenu = "/redirect/main_hm.html";
 
@@ -39,6 +42,8 @@ namespace PaintDotNet
 
         public const string DonateUrlSetup = 
             You must specify a destination URL for the donate button in the setup wizard.;        
+
+        public const string DonateSaveConfigDialogPage = "/redirect/donate_scd.html";
 
         public const string ExpiredPage = "redirect/pdnexpired.html";
 

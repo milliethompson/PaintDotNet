@@ -150,6 +150,7 @@ namespace PaintDotNet
                 {
                     "ICSharpCode.SharpZipLib.dll",
                     "Interop.WIA.dll",
+                    "PaintDotNet.Base.dll",
                     "PaintDotNet.Core.dll",
                     "PaintDotNet.Data.dll",
                     "PaintDotNet.Effects.dll",
@@ -417,7 +418,7 @@ namespace PaintDotNet
 
                 try
                 {
-                    header = string.Format(headerFormat, InvariantStrings.FeedbackEmail);
+                    header = string.Format(headerFormat, InvariantStrings.CrashlogEmail);
                 }
 
                 catch

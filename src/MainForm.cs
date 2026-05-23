@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using PaintDotNet.Actions;
 using PaintDotNet.Effects;
 using PaintDotNet.Menus;

@@ -144,12 +144,44 @@ namespace PaintDotNet
             foreach (Type type in fileTypeFactories)
             {
                 ConstructorInfo ci = type.GetConstructor(System.Type.EmptyTypes);
-                IFileTypeFactory factory = (IFileTypeFactory)ci.Invoke(null);
-                FileType[] fileTypes = factory.GetFileTypeInstances();
+                IFileTypeFactory factory;
 
-                foreach (FileType fileType in fileTypes)
+                try
                 {
-                    allFileTypes.Add(fileType);
+                    factory = (IFileTypeFactory)ci.Invoke(null);
+                }
+
+                catch (Exception)
+                {
+#if DEBUG
+                    throw;
+#else                    
+                    continue;
+#endif
+                }
+
+                FileType[] fileTypes;
+
+                try
+                {
+                    fileTypes = factory.GetFileTypeInstances();
+                }
+
+                catch (Exception)
+                {
+#if DEBUG
+                    throw;
+#else
+                    continue;
+#endif
+                }
+
+                if (fileTypes != null)
+                {
+                    foreach (FileType fileType in fileTypes)
+                    {
+                        allFileTypes.Add(fileType);
+                    }
                 }
             }
 

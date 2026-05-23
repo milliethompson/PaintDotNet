@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 namespace PaintDotNet
 {
@@ -219,28 +220,28 @@ namespace PaintDotNet
 
                     if (vector.X == 0 && vector.Y == 0)
                     {
-                        SystemLayer.UI.DrawThemedButton(this, e.Graphics, left, top, width, height, SystemLayer.UI.ButtonState.Pressed);
+                        ButtonRenderer.DrawButton(e.Graphics, new Rectangle(left, top, width, height), PushButtonState.Pressed);
                         e.Graphics.DrawImage(this.centerImage, left + 3, top + 3, width - 6, height - 6);
                     }
                     else 
                     {
-                        SystemLayer.UI.ButtonState state;
+                        PushButtonState state;
 
                         if (drawHotPush && x == this.hotAnchorButton.X && y == this.hotAnchorButton.Y)
                         {
-                            state = SystemLayer.UI.ButtonState.Pressed;
+                            state = PushButtonState.Pressed;
                         }
                         else
                         {
-                            state = SystemLayer.UI.ButtonState.Normal;
+                            state = PushButtonState.Normal;
 
                             if (!mouseDown && mouseAnchorX == x && mouseAnchorY == y)
                             {
-                                state = SystemLayer.UI.ButtonState.Hot;
+                                state = PushButtonState.Hot;
                             }
                         }
 
-                        SystemLayer.UI.DrawThemedButton(this, e.Graphics, left, top, width, height, state);
+                        ButtonRenderer.DrawButton(e.Graphics, new Rectangle(left, top, width, height), state);
 
                         if (vector.X <= 1 && vector.X >= -1 && vector.Y <= 1 && vector.Y >= -1)
                         {

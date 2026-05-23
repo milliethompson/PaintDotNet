@@ -14,6 +14,8 @@ namespace PaintDotNet.SystemLayer
 {
     internal static class NativeConstants
     {
+        public const uint CF_ENHMETAFILE = 14; 
+
         public static Guid BHID_Stream
         {
             get

@@ -45,11 +45,11 @@ InstallDir $TEMP\PdnSetup
 Icon ..\Resources\Icons\PaintDotNet.ico
 
 VIAddVersionKey ProductName "Paint.NET Setup"
-VIAddVersionKey ProductVersion "3.07.0.0"
-VIAddVersionKey FileVersion "3.07.0.0"
+VIAddVersionKey ProductVersion "3.08.0.0"
+VIAddVersionKey FileVersion "3.08.0.0"
 VIAddVersionKey LegalCopyright "Copyright © 2007 Rick Brewster, Tom Jackson, and past contributors. Portions Copyright © 2007 Microsoft Corporation. All Rights Reserved."
 VIAddVersionKey FileDescription "Installs Paint.NET."
-VIProductVersion "3.07.0.0"
+VIProductVersion "3.08.0.0"
 
 ; The file to write
 !ifdef Debug
@@ -97,6 +97,7 @@ Section "" ;No components page, name is not important
   File ..\SetupFrontEnd\bin\Release\PaintDotNet.SystemLayer.dll
   ;File ..\SetupFrontEnd\bin\Release\PaintDotNet.SystemLayer.Native.x86.dll
   ;File ..\SetupFrontEnd\bin\Release\PaintDotNet.SystemLayer.Native.x64.dll
+  File ..\SetupFrontEnd\bin\Release\PaintDotNet.Base.dll
   File ..\SetupFrontEnd\bin\Release\PaintDotNet.Core.dll
   File /nonfatal ..\Resources.mui\*.resources
   File /nonfatal /r /x CVS ..\Resources.mui\*.rtf
@@ -136,6 +137,7 @@ Section "" ;No components page, name is not important
   Delete $INSTDIR\PaintDotNet.SystemLayer.dll
   ;Delete $INSTDIR\PaintDotNet.SystemLayer.Native.x86.dll
   ;Delete $INSTDIR\PaintDotNet.SystemLayer.Native.x64.dll
+  Delete $INSTDIR\PaintDotNet.Base.dll
   Delete $INSTDIR\PaintDotNet.Core.dll
   Delete $INSTDIR\PaintDotNet.msi
   
