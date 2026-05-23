@@ -45,7 +45,7 @@
                 <Config
                     Name = "Release"
                     AllowUnsafeBlocks = "true"
-                    BaseAddress = "285212672"
+                    BaseAddress = "314572800"
                     CheckForOverflowUnderflow = "false"
                     ConfigurationOverrideFile = ""
                     DefineConstants = "TRACE"
@@ -85,9 +85,14 @@
                     Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
                 />
                 <Reference
-                    Name = "Skybound.VisualStyles"
-                    AssemblyName = "Skybound.VisualStyles"
-                    HintPath = "..\Skybound.VisualStyles\Skybound.VisualStyles.dll"
+                    Name = "ICSharpCode.SharpZipLib"
+                    AssemblyName = "ICSharpCode.SharpZipLib"
+                    HintPath = "..\SharpZipLib\ICSharpCode.SharpZipLib.dll"
+                />
+                <Reference
+                    Name = "Resources"
+                    Project = "{0B173113-1F9B-4939-A62F-A176336F13AC}"
+                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
                 />
                 <Reference
                     Name = "System.Data"
@@ -98,11 +103,6 @@
                     Name = "System.XML"
                     AssemblyName = "System.Xml"
                     HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.XML.dll"
-                />
-                <Reference
-                    Name = "ICSharpCode.SharpZipLib"
-                    AssemblyName = "ICSharpCode.SharpZipLib"
-                    HintPath = "..\SharpZipLib\ICSharpCode.SharpZipLib.dll"
                 />
             </References>
         </Build>
@@ -149,6 +149,16 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "BoolVoidDelegate.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "BoxedConstants.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "ColorBgra.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -184,6 +194,21 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "EnumWrapper.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "HeaderLabel.cs"
+                    SubType = "Component"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "HeaderLabel.resx"
+                    DependentUpon = "HeaderLabel.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
                     RelPath = "Histogram.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -197,6 +222,16 @@
                     RelPath = "HistogramControl.resx"
                     DependentUpon = "HistogramControl.cs"
                     BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "HistogramLuminosity.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "HistogramRgb.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
                 />
                 <File
                     RelPath = "HsvColor.cs"
@@ -259,8 +294,23 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "MaskedSurface.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "MeasurementUnit.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "MemoryBlock.cs"
                     SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "MenuItemWithTag.cs"
+                    SubType = "Component"
                     BuildAction = "Compile"
                 />
                 <File
@@ -285,7 +335,7 @@
                 />
                 <File
                     RelPath = "PanelEx.cs"
-                    SubType = "Component"
+                    SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
@@ -344,6 +394,11 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "PersistedObjectLocker.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "PixelOp.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -375,6 +430,11 @@
                 />
                 <File
                     RelPath = "PropertyEventHandler.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "RectangleVector.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -424,6 +484,11 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "Selection.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "Set.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -454,7 +519,22 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "Tracing.cs"
+                    RelPath = "SurfaceBoxBaseRenderer.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "SurfaceBoxGridRenderer.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "SurfaceBoxRenderer.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "SurfaceBoxRendererList.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -466,6 +546,26 @@
                 <File
                     RelPath = "UnaryPixelOps.cs"
                     SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "UnitsComboBox.cs"
+                    SubType = "UserControl"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "UnitsComboBox.resx"
+                    DependentUpon = "UnitsComboBox.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "UnitsDisplayType.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "UserControl2.cs"
+                    SubType = "UserControl"
                     BuildAction = "Compile"
                 />
                 <File
@@ -485,6 +585,11 @@
                 />
                 <File
                     RelPath = "WaitCursorChanger.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "WorkerThreadException.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

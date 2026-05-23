@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -18,7 +19,8 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for AngleChooserControl.
     /// </summary>
-    public class AngleChooserControl : System.Windows.Forms.UserControl
+    public class AngleChooserControl 
+        : System.Windows.Forms.UserControl
     {
         /// <summary> 
         /// Required designer variable.
@@ -26,7 +28,6 @@ namespace PaintDotNet
         private System.ComponentModel.Container components = null;
         private bool tracking = false;
         private Point lastMouseXY;
-        private Bitmap renderSurface = null; // used for double-buffering
 
         public event EventHandler ValueChanged;
         protected virtual void OnValueChanged()
@@ -38,45 +39,45 @@ namespace PaintDotNet
         }
 
         public double angleValue;
-		public int Value
-		{
-			get
-			{
-				return (int)angleValue;
-			}
+        public int Value
+        {
+            get
+            {
+                return (int)angleValue;
+            }
 
-			set
-			{
-				double v = value % 360;
-				if (angleValue != v)
-				{
-					angleValue = v;
-					OnValueChanged();
-					Invalidate();
-				}
-			}
-		}
-		/// <summary>
-		/// ValueDouble exposes the double-precision angle
-		/// </summary>
-		public double ValueDouble
-		{
-			get
-			{
-				return angleValue;
-			}
+            set
+            {
+                double v = value % 360;
+                if (angleValue != v)
+                {
+                    angleValue = v;
+                    OnValueChanged();
+                    Invalidate();
+                }
+            }
+        }
+        /// <summary>
+        /// ValueDouble exposes the double-precision angle
+        /// </summary>
+        public double ValueDouble
+        {
+            get
+            {
+                return angleValue;
+            }
 
-			set
-			{
-				double v = Math.IEEERemainder(value, 360.0);
-				if (angleValue != v)
-				{
-					angleValue = v;
-					OnValueChanged();
-					Invalidate();
-				}
-			}
-		}
+            set
+            {
+                double v = Math.IEEERemainder(value, 360.0);
+                if (angleValue != v)
+                {
+                    angleValue = v;
+                    OnValueChanged();
+                    Invalidate();
+                }
+            }
+        }
 
         private void DrawToGraphics(Graphics g)
         {
@@ -84,7 +85,6 @@ namespace PaintDotNet
             g.SmoothingMode = SmoothingMode.AntiAlias;
             Rectangle ourRect = Rectangle.Inflate(ClientRectangle, -2, -2);
             int diameter = Math.Min(ourRect.Width, ourRect.Height);
-
 
             Point center = new Point(ourRect.X + (diameter / 2), ourRect.Y + (diameter / 2));
             double radius = ((double)diameter / 2);
@@ -99,35 +99,9 @@ namespace PaintDotNet
             g.DrawLine(SystemPens.ControlText, center, endPoint);
         }
 
-        private void CheckRenderSurface()
-        {
-            if (renderSurface == null || renderSurface.Size != Size)
-            {
-                renderSurface = new Bitmap(Width, Height);
-
-                using (Graphics g = Graphics.FromImage(renderSurface))
-                {
-                    DrawToGraphics(g);
-                }
-            }
-        }
-
-        private void DoPaint(Graphics g)
-        {
-            CheckRenderSurface();
-            g.DrawImage(renderSurface, ClientRectangle, ClientRectangle, GraphicsUnit.Pixel);
-        }
-
         protected override void OnPaint(PaintEventArgs e)
         {
-            base.OnPaint (e);
-            renderSurface = null;
-            DoPaint(e.Graphics);
-        }
-
-        protected override void OnPaintBackground(PaintEventArgs pevent)
-        {
-            DoPaint(pevent.Graphics);
+            DrawToGraphics(e.Graphics);
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -184,7 +158,8 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            this.ResizeRedraw = true;   
+            this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | 
+                ControlStyles.DoubleBuffer | ControlStyles.ResizeRedraw, true);
         }
 
         /// <summary> 

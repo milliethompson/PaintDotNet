@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -28,7 +29,25 @@ namespace PaintDotNet
         /// </summary>
         private System.ComponentModel.Container components = null;
 
-        private Orientation orientation;
+        private MeasurementUnit measurementUnit = MeasurementUnit.Inch;
+        public MeasurementUnit MeasurementUnit
+        {
+            get
+            {
+                return measurementUnit;
+            }
+
+            set
+            {
+                if (value != measurementUnit)
+                {
+                    measurementUnit = value;
+                    Invalidate();
+                }
+            }
+        }
+
+        private Orientation orientation = Orientation.Horizontal;
 
         [DefaultValue(Orientation.Horizontal)]
         public Orientation Orientation
@@ -48,8 +67,29 @@ namespace PaintDotNet
             }
         }
 
-        private ScaleFactor scaleFactor;
+        private double dpu = 96;
 
+        [DefaultValue(96.0)]
+        public double Dpu 
+        {
+            get
+            {
+                return dpu;
+            }
+
+            set
+            {
+                if (value != dpu)
+                {
+                    dpu = value;
+                    Invalidate();
+                }
+            }
+        }
+
+        private ScaleFactor scaleFactor = ScaleFactor.OneToOne;
+
+        [Browsable(false)]
         public ScaleFactor ScaleFactor
         {
             get
@@ -67,10 +107,10 @@ namespace PaintDotNet
             }
         }
 
-        private int offset;
+        private float offset = 0;
 
         [DefaultValue(0)]
-        public int Offset
+        public float Offset
         {
             get
             {
@@ -87,10 +127,10 @@ namespace PaintDotNet
             }
         }
 
-        private int value;
+        private float value = 0.0f;
 
         [DefaultValue(0)]
-        public int Value
+        public float Value
         {
             get
             {
@@ -101,132 +141,293 @@ namespace PaintDotNet
             {
                 if (this.value != value)
                 {
+                    float oldStart = this.scaleFactor.ScaleScalar(this.value - offset) - 1;
+                    float oldEnd = this.scaleFactor.ScaleScalar(this.value + 1 - offset) + 1;
+                    RectangleF oldRect;
+
+                    if (this.orientation == Orientation.Horizontal)
+                    {
+                        oldRect = new RectangleF(oldStart, this.ClientRectangle.Top, oldEnd - oldStart, this.ClientRectangle.Height);
+                    }
+                    else // if (this.orientation == Orientation.Vertical)
+                    {
+                        oldRect = new RectangleF(this.ClientRectangle.Left, oldStart, this.ClientRectangle.Width, oldEnd - oldStart);
+                    }
+                    
+                    float newStart = this.scaleFactor.ScaleScalar(value - offset);
+                    float newEnd = this.scaleFactor.ScaleScalar(value + 1 - offset);
+                    RectangleF newRect;
+
+                    if (this.orientation == Orientation.Horizontal)
+                    {
+                        newRect = new RectangleF(newStart, this.ClientRectangle.Top, newEnd - newStart, this.ClientRectangle.Height);
+                    }
+                    else // if (this.orientation == Orientation.Vertical)
+                    {
+                        newRect = new RectangleF(this.ClientRectangle.Left, newStart, this.ClientRectangle.Width, newEnd - newStart);
+                    }
+                    
                     this.value = value;
-                    Invalidate();
+
+                    Invalidate(Utility.RoundRectangle(oldRect));
+                    Invalidate(Utility.RoundRectangle(newRect));
                 }
             }
         }
 
-        private int majorDivisionLength;
-
-        [DefaultValue(100)]
-        public int MajorDivisionLength
+        private float highlightStart = 0.0f;
+        public float HighlightStart
         {
             get
             {
-                return (int)(100 * Math.Pow(0.5, Math.Round(Math.Log(ScaleFactor.Ratio, 2.0))));
+                return this.highlightStart;
             }
 
             set
             {
-                if (majorDivisionLength != value)
+                if (this.highlightStart != value)
                 {
-                    majorDivisionLength = value;
+                    this.highlightStart = value;
                     Invalidate();
                 }
             }
         }
 
-        private int mediumDivisionCount;
-
-        [DefaultValue(2)]
-        public int MediumDivisionCount
+        private float highlightLength = 0.0f;
+        public float HighlightLength
         {
             get
             {
-                return mediumDivisionCount;
+                return this.highlightLength;
             }
 
             set
             {
-                if (mediumDivisionCount != value)
+                if (this.highlightLength != value)
                 {
-                    mediumDivisionCount = value;
+                    this.highlightLength = value;
                     Invalidate();
                 }
             }
         }
 
-
-        private int minorDivisionCount;
-
-        [DefaultValue(10)]
-        public int MinorDivisionCount
+        private bool highlightEnabled = false;
+        public bool HighlightEnabled
         {
             get
             {
-                return minorDivisionCount;
+                return this.highlightEnabled;
             }
 
             set
             {
-                if (minorDivisionCount != value)
+                if (this.highlightEnabled != value)
                 {
-                    minorDivisionCount = value;
+                    this.highlightEnabled = value;
                     Invalidate();
                 }
             }
         }
-
-        private Bitmap renderSurface = null;
 
         public Ruler()
         {
-            scaleFactor = new ScaleFactor(1, 1);
-            majorDivisionLength = 100;
-            mediumDivisionCount = 2;
-            minorDivisionCount = 10;
-            offset = 0;
-            value = 0;
-            orientation = Orientation.Horizontal;
+            SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
 
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
-
-            renderSurface = new Bitmap(Width, Height, PixelFormat.Format32bppArgb);
-
-            this.ResizeRedraw = true;
-        }
-
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize (e);
-
-            if (renderSurface != null)
-            {
-                renderSurface.Dispose();
-            }
-
-            renderSurface = new Bitmap(Math.Max(1, Width), Math.Max(1, Height), PixelFormat.Format24bppRgb);
-        }
-
-        protected override void OnPaintBackground(PaintEventArgs pevent)
-        {
-            // do nothing so as to avoid flickering effect
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            // double buffered rendering prevents any type of flicker
-            using (Graphics g = Graphics.FromImage(renderSurface))
+            float valueStart = this.scaleFactor.ScaleScalar(this.value - offset);
+            float valueEnd = this.scaleFactor.ScaleScalar(this.value + 1.0f - offset);
+            float highlightStart = this.scaleFactor.ScaleScalar(this.highlightStart - offset);
+            float highlightEnd = this.scaleFactor.ScaleScalar(this.highlightStart + this.highlightLength - offset);
+
+            RectangleF highlightRect;
+            RectangleF valueRect;
+
+            if (this.orientation == Orientation.Horizontal)
             {
-                using (PaintEventArgs e2 = new PaintEventArgs(g, e.ClipRectangle))
+                valueRect = new RectangleF(valueStart, this.ClientRectangle.Top, valueEnd - valueStart, this.ClientRectangle.Height);
+                highlightRect = new RectangleF(highlightStart, this.ClientRectangle.Top, highlightEnd - highlightStart, this.ClientRectangle.Height);
+            }
+            else // if (this.orientation == Orientation.Vertical)
+            {
+                valueRect = new RectangleF(this.ClientRectangle.Left, valueStart, this.ClientRectangle.Width, valueEnd - valueStart);
+                highlightRect = new RectangleF(this.ClientRectangle.Left, highlightStart, this.ClientRectangle.Width, highlightEnd - highlightStart);
+            }
+
+            if (!this.highlightEnabled)
+            {
+                highlightRect = RectangleF.Empty;
+            }
+
+            if (this.orientation == Orientation.Horizontal)
+            {
+                e.Graphics.DrawLine(SystemPens.WindowText, 15, ClientRectangle.Top, 15, ClientRectangle.Bottom);
+                string abbStringName = "MeasurementUnit." + this.MeasurementUnit.ToString() + ".Abbreviation";
+                string abbString = PdnResources.GetString(abbStringName);
+                e.Graphics.DrawString(abbString, Font, SystemBrushes.WindowText, -2, 0);
+            }
+
+            Region clipRegion = new Region(highlightRect);
+            clipRegion.Xor(valueRect);
+
+            if (this.orientation == Orientation.Horizontal)
+            {
+                clipRegion.Exclude(new Rectangle(0, 0, 16, ClientRectangle.Height));
+            }
+
+            e.Graphics.SetClip(clipRegion, CombineMode.Replace);
+            DrawRuler(e, true);
+
+            clipRegion.Xor(this.ClientRectangle);
+
+            if (this.orientation == Orientation.Horizontal)
+            {
+                clipRegion.Exclude(new Rectangle(0, 0, 16, ClientRectangle.Height - 1));
+            }
+
+            e.Graphics.SetClip(clipRegion, CombineMode.Replace);
+            DrawRuler(e, false);
+        }
+
+        static readonly float[] majorDivisors = new float[] {
+                                                                2.0f, 
+                                                                2.5f, 
+                                                                2.0f
+                                                            };
+
+        protected int[] GetSubdivs(MeasurementUnit unit)
+        {
+            switch (unit)
+            {
+                case MeasurementUnit.Centimeter:
                 {
-                    DrawRuler (e2);
-                    PdnGraphics.DrawBitmap(e.Graphics, new Rectangle(0, 0, renderSurface.Width, renderSurface.Height), renderSurface);
+                    return new int[] { 2, 5 };
+                }
+
+                case MeasurementUnit.Inch:
+                {
+                    return new int[] { 2 };
+                }
+
+                default:
+                {
+                    return null;
                 }
             }
         }
 
-        protected void DrawRuler(PaintEventArgs e)
+        void SubdivideX(
+            Graphics g,
+            Pen pen,
+            float x,
+            float delta,
+            int index,
+            float y,
+            float height,
+            int[] subdivs)
         {
-            e.Graphics.Clear(BackColor);
+            g.DrawLine(pen, x, y, x, y + height);
 
-            Pen pen = new Pen(ForeColor);
-            Brush textBrush = new SolidBrush (ForeColor);
+            if (index > 10)
+            {
+                return;
+            }
+
+            float div;
+
+            if (subdivs != null && index >= 0)
+            {
+                div = subdivs[index % subdivs.Length];
+            }
+            else if (index < 0)
+            {
+                div = majorDivisors[(-index - 1) % majorDivisors.Length];
+            }
+            else
+            {
+                return;
+            }
+
+            for (int i = 0; i < div; i++)
+            {
+                if ((delta / div) > 3.5)
+                {
+                    SubdivideX(g, pen, x + delta * i / div, delta / div, index + 1, y, height / div + 0.5f, subdivs);
+                }
+            }
+        }
+
+        void SubdivideY(
+            Graphics g,
+            Pen pen,
+            float y,
+            float delta,
+            int index,
+            float x,
+            float width,
+            int[] subdivs)
+        {
+            g.DrawLine(pen, x, y, x + width, y);
+
+            if (index > 10)
+            {
+                return;
+            }
+
+            float div;
+
+            if (subdivs != null && index >= 0)
+            {
+                div = subdivs[index % subdivs.Length];
+            }
+            else if (index < 0)
+            {
+                div = majorDivisors[(-index - 1) % majorDivisors.Length];
+            }
+            else
+            {
+                return;
+            }
+
+            for (int i = 0; i < div; i++)
+            {
+                if ((delta / div) > 3.5)
+                {
+                    SubdivideY(g, pen, y + delta * i / div, delta / div, index + 1, x, width / div + 0.5f, subdivs);
+                }
+            }   
+        }
+
+        protected void DrawRuler(PaintEventArgs e, bool highlighted)
+        {
+            Pen pen;
+            Brush cursorBrush;
+            Brush textBrush;
             StringFormat textFormat = new StringFormat();
-            float mediumMarkSize = (float)MajorDivisionLength / (float)mediumDivisionCount;
             int maxPixel;
+            Color cursorColor;
+
+            if (highlighted)
+            {
+                e.Graphics.Clear(SystemColors.Highlight);
+                pen = SystemPens.HighlightText;
+                textBrush = SystemBrushes.HighlightText;
+                cursorColor = SystemColors.Window;
+            }
+            else
+            {
+                e.Graphics.Clear(SystemColors.Window);
+                pen = SystemPens.WindowText;
+                textBrush = SystemBrushes.WindowText;
+                cursorColor = SystemColors.Highlight;
+            }
+
+            cursorColor = Color.FromArgb(128, cursorColor);
+            cursorBrush = new SolidBrush(cursorColor);
 
             if (orientation == Orientation.Horizontal)
             {
@@ -234,105 +435,90 @@ namespace PaintDotNet
                 textFormat.Alignment = StringAlignment.Near;
                 textFormat.LineAlignment = StringAlignment.Far;
             }
-            else
-            {   // orientation == Orientation.Vertical
+            else // if (orientation == Orientation.Vertical)
+            {   
                 maxPixel = ScaleFactor.UnscaleScalar(ClientRectangle.Height);
                 textFormat.Alignment = StringAlignment.Near;
                 textFormat.LineAlignment = StringAlignment.Near;
                 textFormat.FormatFlags |= StringFormatFlags.DirectionVertical;
             }
 
-            int majorMarks = (int)(((float)maxPixel + (float)MajorDivisionLength)) / MajorDivisionLength;
-            int startMajor = (offset / MajorDivisionLength) - 1;
-            int endMajor = ((offset + maxPixel) / MajorDivisionLength) + 1;
-
-            for (int major = startMajor; major < endMajor; ++major)
-            {
-                int majorMarkPos = (major * MajorDivisionLength) - offset;
-                string majorText = (major * MajorDivisionLength).ToString();
-
-                if (orientation == Orientation.Horizontal)
-                {
-                    Point a = ScaleFactor.ScalePointJustX(new Point(ClientRectangle.Left + majorMarkPos, ClientRectangle.Top));
-                    Point b = ScaleFactor.ScalePointJustX(new Point(ClientRectangle.Left + majorMarkPos, ClientRectangle.Bottom));
-                    e.Graphics.DrawLine(pen, a, b);
-                    e.Graphics.DrawString(majorText, Font, textBrush, new PointF(a.X, b.Y), textFormat);
-                }
-                else
-                if (orientation == Orientation.Vertical)
-                {
-                    Point a = ScaleFactor.ScalePointJustY(new Point(ClientRectangle.Left, ClientRectangle.Top + majorMarkPos));
-                    Point b = ScaleFactor.ScalePointJustY(new Point(ClientRectangle.Right, ClientRectangle.Top + majorMarkPos));
-                    e.Graphics.DrawLine(pen, a, b);
-                    e.Graphics.DrawString(majorText, Font, textBrush, new PointF(a.X, b.Y), textFormat);
-                }
-
-                for (int medium = 0; medium < mediumDivisionCount; ++medium)
-                {
-                    int mediumMarkPos = (MajorDivisionLength * medium) / mediumDivisionCount;
-
-                    if (orientation == Orientation.Horizontal)
-                    {
-                        Point a = ScaleFactor.ScalePointJustX(new Point(ClientRectangle.Left + majorMarkPos + mediumMarkPos, ClientRectangle.Top));
-                        Point b = ScaleFactor.ScalePointJustX(new Point(ClientRectangle.Left + majorMarkPos + mediumMarkPos, ClientRectangle.Top + (ClientRectangle.Height / 2)));
-                        e.Graphics.DrawLine (pen, a, b);
-                    }
-                    else
-                    if (orientation == Orientation.Vertical)
-                    {
-                        Point a = ScaleFactor.ScalePointJustY(new Point(ClientRectangle.Left, ClientRectangle.Top + majorMarkPos + mediumMarkPos));
-                        Point b = ScaleFactor.ScalePointJustY(new Point(ClientRectangle.Left + (ClientRectangle.Width / 2), ClientRectangle.Top + majorMarkPos + mediumMarkPos));
-                        e.Graphics.DrawLine (pen, a, b);
-                    }
-                }
-
-                for (int minor = 0; minor < minorDivisionCount; ++minor)
-                {
-                    int minorMarkPos = (MajorDivisionLength * minor) / minorDivisionCount;
-
-                    if (orientation == Orientation.Horizontal)
-                    {
-                        Point a = ScaleFactor.ScalePointJustX(new Point(ClientRectangle.Left + majorMarkPos + minorMarkPos, ClientRectangle.Top));
-                        Point b = ScaleFactor.ScalePointJustX(new Point(ClientRectangle.Left + majorMarkPos + minorMarkPos, ClientRectangle.Top + (ClientRectangle.Height / 4)));
-                        e.Graphics.DrawLine (pen, a, b);
-                    }
-                    else
-                    if (orientation == Orientation.Vertical)
-                    {
-                        Point a = ScaleFactor.ScalePointJustY(new Point(ClientRectangle.Left, ClientRectangle.Top + majorMarkPos + minorMarkPos));
-                        Point b = ScaleFactor.ScalePointJustY(new Point(ClientRectangle.Left + (ClientRectangle.Width / 4), ClientRectangle.Top + majorMarkPos + minorMarkPos));
-                        e.Graphics.DrawLine (pen, a, b);
-                    }
-                }
-            }
+            float majorSkip = 1;
+            int majorSkipPower = 0;
+            float majorDivisionLength = (float)dpu;
+            float majorDivisionPixels = (float)ScaleFactor.ScaleScalar(majorDivisionLength);
+            int[] subdivs = GetSubdivs(measurementUnit);
+            float offsetPixels = ScaleFactor.ScaleScalar((float)offset);
+            int startMajor = (int)(offset / majorDivisionLength) - 1;
+            int endMajor = (int)((offset + maxPixel) / majorDivisionLength) + 1;
 
             if (orientation == Orientation.Horizontal)
             {
                 // draw Value
-                Point a = ScaleFactor.ScalePointJustX(new Point(ClientRectangle.Left + Value - Offset, ClientRectangle.Top));
-                Point b = ScaleFactor.ScalePointJustX(new Point(ClientRectangle.Left + Value - Offset, ClientRectangle.Bottom));
-                e.Graphics.DrawLine (pen, a, b);
+                if (!highlighted)
+                {
+                    PointF pt = scaleFactor.ScalePointJustX(new PointF(ClientRectangle.Left + Value - Offset, ClientRectangle.Top));
+                    SizeF size = new SizeF(Math.Max(1, scaleFactor.ScaleScalar(1.0f)), ClientRectangle.Height);
+                
+                    pt.X -= 0.5f;
+
+                    CompositingMode oldCM = e.Graphics.CompositingMode;
+                    e.Graphics.CompositingMode = CompositingMode.SourceOver;
+                    e.Graphics.FillRectangle(cursorBrush, new RectangleF(pt, size));
+                    e.Graphics.CompositingMode = oldCM;
+                }
 
                 // draw border
-                e.Graphics.DrawLine (pen, new Point(ClientRectangle.Left, ClientRectangle.Bottom - 1),
-                                          new Point(ClientRectangle.Right - 1, ClientRectangle.Bottom - 1));
+                e.Graphics.DrawLine(SystemPens.WindowText, new Point(ClientRectangle.Left, ClientRectangle.Bottom - 1),
+                    new Point(ClientRectangle.Right - 1, ClientRectangle.Bottom - 1));
             }
-            else
-            if (orientation == Orientation.Vertical)
+            else if (orientation == Orientation.Vertical)
             {
                 // draw Value
-                Point a = ScaleFactor.ScalePointJustY(new Point(ClientRectangle.Left, ClientRectangle.Top + Value - Offset));
-                Point b = ScaleFactor.ScalePointJustY(new Point(ClientRectangle.Right, ClientRectangle.Top + Value - Offset));
-                e.Graphics.DrawLine (pen, a, b);
+                if (!highlighted)
+                {
+                    PointF pt = scaleFactor.ScalePointJustY(new PointF(ClientRectangle.Left, ClientRectangle.Top + Value - Offset));
+                    SizeF size = new SizeF(ClientRectangle.Width, Math.Max(1, scaleFactor.ScaleScalar(1.0f)));
+
+                    pt.Y -= 0.5f;
+
+                    CompositingMode oldCM = e.Graphics.CompositingMode;
+                    e.Graphics.CompositingMode = CompositingMode.SourceOver;
+                    e.Graphics.FillRectangle(cursorBrush, new RectangleF(pt, size));
+                    e.Graphics.CompositingMode = oldCM;
+                }
 
                 // draw border
-                e.Graphics.DrawLine (pen, new Point(ClientRectangle.Right - 1, ClientRectangle.Top),
-                                          new Point(ClientRectangle.Right - 1, ClientRectangle.Bottom - 1));
+                e.Graphics.DrawLine(SystemPens.WindowText, new Point(ClientRectangle.Right - 1, ClientRectangle.Top),
+                    new Point(ClientRectangle.Right - 1, ClientRectangle.Bottom - 1));
             }
 
-            textBrush.Dispose();
+            while (majorDivisionPixels * majorSkip < 60)
+            {
+                majorSkip *= majorDivisors[majorSkipPower % majorDivisors.Length];
+                ++majorSkipPower;
+            }
+
+            startMajor = (int)(majorSkip * Math.Floor(startMajor / (double)majorSkip));
+
+            for (int major = startMajor; major <= endMajor; major += (int)majorSkip)
+            {
+                float majorMarkPos = (major * majorDivisionPixels) - offsetPixels;
+                string majorText = (major).ToString();
+
+                if (orientation == Orientation.Horizontal)
+                {
+                    SubdivideX(e.Graphics, pen, ClientRectangle.Left + majorMarkPos, majorDivisionPixels * majorSkip, -majorSkipPower, ClientRectangle.Top, ClientRectangle.Height, subdivs);
+                    e.Graphics.DrawString(majorText, Font, textBrush, new PointF(ClientRectangle.Left + majorMarkPos, ClientRectangle.Bottom), textFormat);
+                }
+                else // if (orientation == Orientation.Vertical)
+                {
+                    SubdivideY(e.Graphics, pen, ClientRectangle.Top + majorMarkPos, majorDivisionPixels * majorSkip, -majorSkipPower, ClientRectangle.Left, ClientRectangle.Width, subdivs);
+                    e.Graphics.DrawString(majorText, Font, textBrush, new PointF(ClientRectangle.Left, ClientRectangle.Top + majorMarkPos), textFormat);
+                }
+            }
+
             textFormat.Dispose();
-            pen.Dispose();
         }
 
         /// <summary> 
@@ -348,6 +534,7 @@ namespace PaintDotNet
                     components = null;
                 }
             }
+
             base.Dispose(disposing);
         }
 

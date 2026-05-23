@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -15,79 +16,105 @@ using System.Collections;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Ctrl left-click to select an origin, left click to place it
-	/// </summary>
-	public class CloneStampTool
-		: Tool
-	{
-		private static Point takeFrom = Point.Empty;
-		private static Point lastMoved = Point.Empty;
+    /// <summary>
+    /// Ctrl left-click to select an origin, left click to place it
+    /// </summary>
+    public class CloneStampTool
+        : Tool
+    {
+        private class StaticData
+        {
+            public Point takeFrom;
+            public Point lastMoved;
+            public bool updateSrcPreview;
+            public WeakReference wr;
+        }
 
-		private static WeakReference wr;
-		private BitmapLayer takeFromLayer;
+        private new StaticData GetStaticData()
+        {
+            object staticData = base.GetStaticData();
 
-		private bool switchedTo = false;
-		private EventHandler documentChangedDelegate;
-		private Rectangle undoRegion = Rectangle.Empty;
-		private PlacedSurface savedSurface;
-		private RenderArgs ra;
-		private bool mouseUp = true;
-		private ArrayList historySections;
-		private bool antialiasing;
-		private PdnRegion clipRegion;
+            if (staticData == null)
+            {
+                staticData = new StaticData();
+                base.SetStaticData(staticData);
+            }
 
-		// private bool added by MK for "clone source" cursor transition
-		private bool mouseDownSettingCloneSource;
+            return (StaticData)staticData;
+        }
 
-		private Cursor cursorMouseDown, cursorMouseUp, cursorMouseDownSetSource;
+        private BitmapLayer takeFromLayer;
 
-		private bool IsShiftDown()
-		{
-			return ModifierKeys == Keys.Shift;
-		}
+        private bool switchedTo = false;
+        private EventHandler documentChangedDelegate;
+        private Rectangle undoRegion = Rectangle.Empty;
+        private PdnRegion savedRegion;
+        private RenderArgs ra;
+        private bool mouseUp = true;
+        private RectangleVector historyRects;
+        private bool antialiasing;
+        private PdnRegion clipRegion;
 
-		private bool IsCtrlDown()
-		{
-			return ModifierKeys == Keys.Control;
-		}
+        private BrushPreviewRenderer rendererDst;
+        private BrushPreviewRenderer rendererSrc;
 
-		/// <summary>
-		/// Button down mouse left.  Returns true if only the left mouse button is depressed.
-		/// </summary>
-		/// <param name="e"></param>
-		/// <returns></returns>
-		private bool IsMouseLeftDown(MouseEventArgs e)
-		{
-			return e.Button == MouseButtons.Left;
-		}
+        // private bool added by MK for "clone source" cursor transition
+        private bool mouseDownSettingCloneSource;
 
-		/// <summary>
-		/// Button down mouse right.  Returns true if only the right mouse is depressed.
-		/// </summary>
-		/// <param name="e"></param>
-		/// <returns></returns>
-		private bool IsMouseRightDown(MouseEventArgs e)
-		{
-			return e.Button == MouseButtons.Right;
-		}
+        private Cursor cursorMouseDown, cursorMouseUp, cursorMouseDownSetSource;
 
-		public CloneStampTool(DocumentWorkspace parent) 
+        private bool IsShiftDown()
+        {
+            return ModifierKeys == Keys.Shift;
+        }
+
+        private bool IsCtrlDown()
+        {
+            return ModifierKeys == Keys.Control;
+        }
+
+        /// <summary>
+        /// Button down mouse left.  Returns true if only the left mouse button is depressed.
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        private bool IsMouseLeftDown(MouseEventArgs e)
+        {
+            return e.Button == MouseButtons.Left;
+        }
+
+        /// <summary>
+        /// Button down mouse right.  Returns true if only the right mouse is depressed.
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        private bool IsMouseRightDown(MouseEventArgs e)
+        {
+            return e.Button == MouseButtons.Right;
+        }
+
+        protected override void OnMouseEnter()
+        {
+            this.rendererDst.Visible = true;
+            base.OnMouseEnter();
+        }
+
+        protected override void OnMouseLeave()
+        {
+            this.rendererDst.Visible = false;
+            base.OnMouseLeave();
+        }
+
+        public CloneStampTool(DocumentWorkspace parent) 
             : base(parent,
-                   Utility.GetImageResource("Icons.CloneStampToolIcon.bmp"),
-                   "Clone Stamp",
-                   "Copies a section of the picture",
-                   "Hold Ctrl and left click to select an origin. Afterwards, left click and draw to copy",
+                   PdnResources.GetImage("Icons.CloneStampToolIcon.bmp"),
+                   PdnResources.GetString("CloneStampTool.Name"),
+                   PdnResources.GetString("CloneStampTool.HelpText"),
                    'c')
-		{
-			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.GenericToolCursorMouseDown.cur"));
-			cursorMouseDownSetSource = new Cursor(Utility.GetResourceStream("Cursors.CloneStampToolCursorSetSource.cur"));
-			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.CloneStampToolCursor.cur"));
-			this.Cursor = cursorMouseUp;
-
-			documentChangedDelegate = new EventHandler(CloneStamp_DocumentChangedHandler);
-			Workspace.DocumentChanged += documentChangedDelegate;
-		}
+        {
+            documentChangedDelegate = new EventHandler(CloneStamp_DocumentChangedHandler);
+            Workspace.DocumentChanged += documentChangedDelegate;
+        }
 
         protected override void Dispose(bool disposing)
         {
@@ -96,144 +123,190 @@ namespace PaintDotNet
             if (disposing)
             {
                 DisposeImage();
-
-                if (cursorMouseDown != null)
-                {
-                    cursorMouseDown.Dispose();
-                    cursorMouseDown = null;
-                }
-
-                if (cursorMouseUp != null)
-                {
-                    cursorMouseUp.Dispose();
-                    cursorMouseUp = null;
-                }
-
-                if (cursorMouseDownSetSource != null)
-                {
-                    cursorMouseDownSetSource.Dispose();
-                    cursorMouseDownSetSource = null;
-                }
             }
         }
 
+        private void CloneStamp_DocumentChangedHandler(object sender, EventArgs e)
+        {
+            GetStaticData().takeFrom = Point.Empty;
+            GetStaticData().lastMoved = Point.Empty;
+            takeFromLayer = null;
+        }
 
-		private void CloneStamp_DocumentChangedHandler(object sender, EventArgs e)
-		{
-			takeFrom = Point.Empty;
-			lastMoved = Point.Empty;
-			takeFromLayer = null;
-		}
+        protected override void OnPulse()
+        {
+            double time = (double)new SystemLayer.Timing().GetTickCount();
+            double sin = Math.Sin(time / 300.0);
+            int alpha = (int)Math.Ceiling((((sin + 1.0) / 2.0) * 224.0) + 31.0);
+            this.rendererSrc.BrushAlpha = alpha;
+            base.OnPulse();
+        }
 
-		protected override void OnActivate()
-		{
-			base.OnActivate();
-			
-			if (Workspace.ActiveLayer != null)
-			{
-				switchedTo = true;
-				historySections = new ArrayList();
+        protected override void OnActivate()
+        {
+            base.OnActivate();
+            
+            cursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.GenericToolCursorMouseDown.cur"));
+            cursorMouseDownSetSource = new Cursor(PdnResources.GetResourceStream("Cursors.CloneStampToolCursorSetSource.cur"));
+            cursorMouseUp = new Cursor(PdnResources.GetResourceStream("Cursors.CloneStampToolCursor.cur"));
+            this.Cursor = cursorMouseUp;
 
-				if ((wr != null) && (wr.IsAlive))
-				{
-					takeFromLayer = (BitmapLayer)wr.Target;
-				}
-				else
-				{
-					takeFromLayer = null;
-				}
-			}
-			
-		}
+            this.rendererDst = new BrushPreviewRenderer(this.Renderers);
+            this.Renderers.Add(this.rendererDst, false);
 
-		protected override void OnKeyDown(KeyEventArgs e)
-		{
-			if (IsCtrlDown() && mouseUp)
-			{
-				Cursor = cursorMouseDownSetSource;
-				mouseDownSettingCloneSource = true;
-			}
-		}
+            this.rendererSrc = new BrushPreviewRenderer(this.Renderers);
+            this.rendererSrc.BrushLocation = GetStaticData().takeFrom;
+            this.rendererSrc.BrushSize = Workspace.Environment.PenInfo.Width / 2.0f;
+            this.rendererSrc.Visible = (GetStaticData().takeFrom != Point.Empty);
+            this.Renderers.Add(this.rendererSrc, false);
 
-		protected override void OnKeyUp(KeyEventArgs e)
-		{
-			// this isn't likely the best way to check to see if
-			// the CTRL key has been let up.  If it's not, version
-			// 2.1 can address the discrepancy.
-			if (!IsCtrlDown() && mouseDownSettingCloneSource)
-			{
-				Cursor = cursorMouseUp;
-				mouseDownSettingCloneSource = false;
-			}
-		}
-				
-		protected override void OnMouseUp(MouseEventArgs e)
-		{
-			mouseUp = true;
+            if (Workspace.ActiveLayer != null)
+            {
+                switchedTo = true;
+                historyRects = new RectangleVector();
 
-			if (!mouseDownSettingCloneSource)
-			{
-				Cursor = cursorMouseUp; 
-			}
+                if (GetStaticData().wr != null && GetStaticData().wr.IsAlive)
+                {
+                    takeFromLayer = (BitmapLayer)GetStaticData().wr.Target;
+                }
+                else
+                {
+                    takeFromLayer = null;
+                }
+            }
 
-			// Slap down that undo action
-			if (IsMouseLeftDown(e))
-			{
-				if (savedSurface != null)
-				{
-					savedSurface.Draw(ra.Surface);
-					Workspace.ActiveLayer.Invalidate(savedSurface.Bounds);
-					savedSurface.Dispose();
-					savedSurface = null;
-					Workspace.Update();
-				}
+            Workspace.Environment.PenInfoChanged += new EventHandler(Environment_PenInfoChanged);
+        }
 
-                if (takeFrom == Point.Empty || lastMoved == Point.Empty)
+        protected override void OnDeactivate()
+        {
+            Workspace.Environment.PenInfoChanged -= new EventHandler(Environment_PenInfoChanged);
+
+            this.Renderers.Remove(this.rendererDst);
+            this.rendererDst.Dispose();
+            this.rendererDst = null;
+
+            this.Renderers.Remove(this.rendererSrc);
+            this.rendererSrc.Dispose();
+            this.rendererSrc = null;
+
+            if (cursorMouseDown != null)
+            {
+                cursorMouseDown.Dispose();
+                cursorMouseDown = null;
+            }
+
+            if (cursorMouseUp != null)
+            {
+                cursorMouseUp.Dispose();
+                cursorMouseUp = null;
+            }
+
+            if (cursorMouseDownSetSource != null)
+            {
+                cursorMouseDownSetSource.Dispose();
+                cursorMouseDownSetSource = null;
+            }
+            
+            base.OnDeactivate();
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (IsCtrlDown() && mouseUp)
+            {
+                Cursor = cursorMouseDownSetSource;
+                mouseDownSettingCloneSource = true;
+            }
+
+            base.OnKeyDown(e);
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            // this isn't likely the best way to check to see if
+            // the CTRL key has been let up.  If it's not, version
+            // 2.1 can address the discrepancy.
+            if (!IsCtrlDown() && mouseDownSettingCloneSource)
+            {
+                Cursor = cursorMouseUp;
+                mouseDownSettingCloneSource = false;
+            }
+
+            base.OnKeyUp(e);
+        }
+                
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            mouseUp = true;
+
+            if (!mouseDownSettingCloneSource)
+            {
+                Cursor = cursorMouseUp; 
+            }
+
+            if (IsMouseLeftDown(e))
+            {
+                this.rendererDst.Visible = true;
+
+                if (savedRegion != null)
+                {
+                    //RestoreRegion(this.savedRegion);
+                    Workspace.ActiveLayer.Invalidate(this.savedRegion.GetBoundsInt());
+                    savedRegion.Dispose();
+                    savedRegion = null;
+                    Update();
+                }
+
+                if (GetStaticData().takeFrom == Point.Empty || GetStaticData().lastMoved == Point.Empty)
                 {
                     return;
                 }
 
-				if (historySections.Count > 0)
-				{
-					PdnRegion saveMeRegion = new PdnRegion();
-					saveMeRegion.MakeEmpty();
+                if (historyRects.Count > 0)
+                {
+                    PdnRegion saveMeRegion;
 
-					foreach (PlacedSurface pi1 in historySections)
-					{
-						saveMeRegion.Union(pi1.Bounds);
-					}
+                    Rectangle[] rectsRO;
+                    int rectsROLength;
+                    this.historyRects.GetRectangleArrayReadOnly(out rectsRO, out rectsROLength);
+                    saveMeRegion = Utility.RectanglesToRegion(rectsRO, 0, rectsROLength);
 
-					PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(saveMeRegion);
+                    PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(saveMeRegion);
+                    SaveRegion(simplifiedRegion, simplifiedRegion.GetBoundsInt());
 
-					using (IrregularSurface weDrewThis = new IrregularSurface(ra.Surface, simplifiedRegion))
-					{
-						for (int i = historySections.Count - 1; i >= 0; --i)
-						{
-							PlacedSurface ps = (PlacedSurface)historySections[i];
-							ps.Draw(ra.Surface);
-							ps.Dispose();
-						}
+                    //using (IrregularSurface weDrewThis = new IrregularSurface(ra.Surface, simplifiedRegion))
+                    {
+                        /*
+                        for (int i = historySections.Count - 1; i >= 0; --i)
+                        {
+                            PlacedSurface ps = (PlacedSurface)historySections[i];
+                            ps.Draw(ra.Surface);
+                            ps.Dispose();
+                        }
+                        */
 
-						historySections.Clear();
-						historySections = null;
-						historySections = new ArrayList();
+                        historyRects = new RectangleVector();
 
-						//HistoryAction ha = ((BitmapLayer)Workspace.ActiveLayer).CreateHistoryAction(Name, Image, simplifiedRegion);
-                        HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, simplifiedRegion);
-						weDrewThis.Draw(((BitmapLayer)Workspace.ActiveLayer).Surface);
-						Workspace.History.PushNewAction(ha);
-					}
-				}
-			}
-		}
+                        //SaveRegion(simplifiedRegion, simplifiedRegion.GetBoundsInt());
+                        HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, 
+                            simplifiedRegion, this.ScratchSurface);
 
-		private unsafe void DrawACircle(PointF pt, Surface srfSrc, Surface srfDst, Point difference, Rectangle rect) 
-		{
-			float bw = Workspace.Environment.PenInfo.Width / 2;
-			float envAlpha = Workspace.Environment.ForeColor.A / 255.0f;
+                        //weDrewThis.Draw(((BitmapLayer)Workspace.ActiveLayer).Surface);
+                        Workspace.History.PushNewAction(ha);
+                        this.ClearSavedMemory();
+                    }
+                }
+            }
+        }
 
-			rect.Intersect(new Rectangle(difference, srfSrc.Size));
-			rect.Intersect(srfDst.Bounds);
+        private unsafe void DrawACircle(PointF pt, Surface srfSrc, Surface srfDst, Point difference, Rectangle rect) 
+        {
+            float bw = Workspace.Environment.PenInfo.Width / 2;
+            float envAlpha = Workspace.Environment.ForeColor.A / 255.0f;
+
+            rect.Intersect(new Rectangle(difference, srfSrc.Size));
+            rect.Intersect(srfDst.Bounds);
 
             if (rect.Width == 0 || rect.Height == 0)
             {
@@ -241,8 +314,8 @@ namespace PaintDotNet
             }
 
             // envAlpha = envAlpha^4
-			envAlpha *= envAlpha;
-			envAlpha *= envAlpha;
+            envAlpha *= envAlpha;
+            envAlpha *= envAlpha;
 
             for (int y = rect.Top; y < rect.Bottom; y++) 
             {
@@ -276,214 +349,239 @@ namespace PaintDotNet
             }
 
             rect.Inflate(1, 1);
-			Workspace.Document.Invalidate(rect);
-		}
+            Workspace.Document.Invalidate(rect);
+        }
 
-		private void DrawCloneLine(Point currentMouse, Point lastMoved, Point lastTakeFrom, Surface surfaceSource, Surface surfaceDest)
-		{
-			Rectangle[] rectSelRegions;
-			Rectangle rectBrushArea;
-			int penWidth = (int)Workspace.Environment.PenInfo.Width;
-			int ceilingPenWidth = (int)Math.Ceiling((double)penWidth);
+        private void DrawCloneLine(Point currentMouse, Point lastMoved, Point lastTakeFrom, Surface surfaceSource, Surface surfaceDest)
+        {
+            Rectangle[] rectSelRegions;
+            Rectangle rectBrushArea;
+            int penWidth = (int)Workspace.Environment.PenInfo.Width;
+            int ceilingPenWidth = (int)Math.Ceiling((double)penWidth);
 
-			if (mouseUp || switchedTo)
-			{
-				lastMoved = currentMouse;
-				lastTakeFrom = takeFrom;
-				mouseUp = false;
-				switchedTo = false;
-			}
+            if (mouseUp || switchedTo)
+            {
+                lastMoved = currentMouse;
+                lastTakeFrom = GetStaticData().takeFrom;
+                mouseUp = false;
+                switchedTo = false;
+            }
 
-			Point difference = new Point(currentMouse.X - takeFrom.X, currentMouse.Y - takeFrom.Y);
-			Point direction = new Point(currentMouse.X - lastMoved.X, currentMouse.Y - lastMoved.Y);
-			float length = Utility.Magnitude(direction);
-			float bw = 1 + Workspace.Environment.PenInfo.Width / 2;
-						
-			if (Workspace.Environment.IsSelectionEmpty)
-			{
-				rectSelRegions = new Rectangle [] { Workspace.Document.Bounds };
-			}
-			else
-			{
-				rectSelRegions = clipRegion.GetRegionScansReadOnlyInt();
-			}
-	
-			Rectangle rect = Utility.PointsToRectangle(lastMoved, currentMouse);
-			rect.Inflate(penWidth / 2 + 1, penWidth / 2 + 1);
-			rect.Intersect(new Rectangle(difference, surfaceSource.Size));
-			rect.Intersect(surfaceDest.Bounds);
-			
+            Point difference = new Point(currentMouse.X - GetStaticData().takeFrom.X, currentMouse.Y - GetStaticData().takeFrom.Y);
+            Point direction = new Point(currentMouse.X - lastMoved.X, currentMouse.Y - lastMoved.Y);
+            float length = Utility.Magnitude(direction);
+            float bw = 1 + Workspace.Environment.PenInfo.Width / 2;
+                        
+            rectSelRegions = clipRegion.GetRegionScansReadOnlyInt();
+        
+            Rectangle rect = Utility.PointsToRectangle(lastMoved, currentMouse);
+            rect.Inflate(penWidth / 2 + 1, penWidth / 2 + 1);
+            rect.Intersect(new Rectangle(difference, surfaceSource.Size));
+            rect.Intersect(surfaceDest.Bounds);
+            
             if (rect.Width == 0 || rect.Height == 0)
             {
                 return;
             }
 
-			PlacedSurface savedPS = new PlacedSurface(ra.Surface, rect);
-			historySections.Add(savedPS);
+            //PlacedSurface savedPS = new PlacedSurface(ra.Surface, rect);
+            //historySections.Add(savedPS);
+            SaveRegion(null, rect);
+            historyRects.Add(rect);
 
-			// Follow the line to draw the clone... line
+            // Follow the line to draw the clone... line
             float fInc = (float)Math.Sqrt(bw) / length;
-			for (float f = 0; f < 1; f += fInc) 
-			{
-				// Do intersects with each of the rectangles in a selection
-				foreach (Rectangle rectSel in rectSelRegions)
-				{
-					PointF p = new PointF(currentMouse.X * (1 - f) + f * lastMoved.X,
-						currentMouse.Y * (1 - f) + f * lastMoved.Y);
-
-					rectBrushArea = new Rectangle((int)(p.X - bw), (int)(p.Y - bw), (int)(bw * 2 + 1), (int)(bw * 2 + 1));
-
-					if (rectBrushArea.IntersectsWith(rectSel))
-					{
-						rectBrushArea.Intersect(rectSel);
-						DrawACircle(p, surfaceSource, surfaceDest, difference, rectBrushArea);
-					}
-				}
-			}
-		}
-
-		protected override void OnMouseMove(MouseEventArgs e)
-		{			
-			base.OnMouseMove(e);
-
-			if (!(Workspace.ActiveLayer is BitmapLayer) || (takeFromLayer == null))
-			{
-				return;
-			}
-
-			if ((IsMouseLeftDown(e)) && (takeFrom != Point.Empty) && !IsCtrlDown())
-			{
-				Point currentMouse = new Point(e.X,e.Y);
-				Point lastTakeFrom = Point.Empty;
-
-				if (lastMoved != Point.Empty)
-				{
-					Point difference = new Point(currentMouse.X - lastMoved.X, currentMouse.Y - lastMoved.Y);
-					lastTakeFrom = takeFrom;
-					takeFrom = new Point(takeFrom.X + difference.X,takeFrom.Y + difference.Y);
-				}
-				else
-				{
-					lastTakeFrom = takeFrom;
-					lastMoved = currentMouse;
-				}
-
-				int penWidth = (int)Workspace.Environment.PenInfo.Width;
-				Rectangle rect;
-
-                if (penWidth != 1)
+            for (float f = 0; f < 1; f += fInc) 
+            {
+                // Do intersects with each of the rectangles in a selection
+                foreach (Rectangle rectSel in rectSelRegions)
                 {
-                    rect = new Rectangle(new Point(takeFrom.X - penWidth / 2,takeFrom.Y - penWidth / 2), new Size(penWidth+  1, penWidth + 1));
+                    PointF p = new PointF(currentMouse.X * (1 - f) + f * lastMoved.X,
+                        currentMouse.Y * (1 - f) + f * lastMoved.Y);
+
+                    rectBrushArea = new Rectangle((int)(p.X - bw), (int)(p.Y - bw), (int)(bw * 2 + 1), (int)(bw * 2 + 1));
+                    
+                    Rectangle rectBrushArea2 = new Rectangle(
+                        rectBrushArea.X - difference.X,
+                        rectBrushArea.Y - difference.Y,
+                        rectBrushArea.Width,
+                        rectBrushArea.Height);
+
+                    if (rectBrushArea.IntersectsWith(rectSel))
+                    {
+                        rectBrushArea.Intersect(rectSel);
+                        SaveRegion(null, rectBrushArea);
+                        SaveRegion(null, rectBrushArea2);
+                        DrawACircle(p, surfaceSource, surfaceDest, difference, rectBrushArea);
+                        //ra.Graphics.DrawRectangle(Pens.Red, rectBrushArea);
+                    }
+                }
+            }
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {           
+            base.OnMouseMove(e);
+
+            this.rendererDst.BrushLocation = new Point(e.X, e.Y);
+            this.rendererDst.BrushSize = Workspace.Environment.PenInfo.Width / 2.0f;
+
+            if (!(Workspace.ActiveLayer is BitmapLayer) || (takeFromLayer == null))
+            {
+                return;
+            }
+
+            if (GetStaticData().updateSrcPreview)
+            {
+                Point currentMouse = new Point(e.X, e.Y);
+                Point difference = new Point(currentMouse.X - GetStaticData().lastMoved.X, currentMouse.Y - GetStaticData().lastMoved.Y);
+                this.rendererSrc.BrushLocation = new Point(GetStaticData().takeFrom.X + difference.X, GetStaticData().takeFrom.Y + difference.Y);;
+                this.rendererSrc.BrushSize = Workspace.Environment.PenInfo.Width / 2.0f;
+            }
+            
+            if ((IsMouseLeftDown(e)) && (GetStaticData().takeFrom != Point.Empty) && !IsCtrlDown())
+            {
+                Point currentMouse = new Point(e.X, e.Y);
+                Point lastTakeFrom = Point.Empty;
+
+                lastTakeFrom = GetStaticData().takeFrom;
+                if (GetStaticData().lastMoved != Point.Empty)
+                {
+                    Point difference = new Point(currentMouse.X - GetStaticData().lastMoved.X, currentMouse.Y - GetStaticData().lastMoved.Y);
+                    GetStaticData().takeFrom = new Point(GetStaticData().takeFrom.X + difference.X, GetStaticData().takeFrom.Y + difference.Y);
                 }
                 else
                 {
-                    rect = new Rectangle(new Point(takeFrom.X - penWidth, takeFrom.Y - penWidth), new Size(1 + (2 * penWidth), 1 + (2 * penWidth)));
+                    GetStaticData().lastMoved = currentMouse;
                 }
 
-				Rectangle boundRect = new Rectangle(takeFrom, new Size(1, 1));
+                int penWidth = (int)Workspace.Environment.PenInfo.Width;
+                Rectangle rect;
 
-				// If the takeFrom area escapes the boundary
-				if (!Workspace.ActiveLayer.Bounds.Contains(boundRect))
-				{
-					lastMoved = currentMouse;
-					lastTakeFrom = takeFrom;
-				}
+                if (penWidth != 1)
+                {
+                    rect = new Rectangle(new Point(GetStaticData().takeFrom.X - penWidth / 2, GetStaticData().takeFrom.Y - penWidth / 2), new Size(penWidth + 1, penWidth + 1));
+                }
+                else
+                {
+                    rect = new Rectangle(new Point(GetStaticData().takeFrom.X - penWidth, GetStaticData().takeFrom.Y - penWidth), new Size(1 + (2 * penWidth), 1 + (2 * penWidth)));
+                }
 
-				if (savedSurface != null)
-				{
-					savedSurface.Draw(ra.Surface);
-					Workspace.ActiveLayer.Invalidate(savedSurface.Bounds);
-					savedSurface.Dispose();
-					savedSurface = null;
-				}
-				
-				rect.Intersect(takeFromLayer.Surface.Bounds);
+                Rectangle boundRect = new Rectangle(GetStaticData().takeFrom, new Size(1, 1));
+
+                // If the takeFrom area escapes the boundary
+                if (!Workspace.ActiveLayer.Bounds.Contains(boundRect))
+                {
+                    GetStaticData().lastMoved = currentMouse;
+                    lastTakeFrom = GetStaticData().takeFrom;
+                }
+
+                if (this.savedRegion != null)
+                {
+                    //RestoreRegion(this.savedRegion);
+                    //savedSurface.Draw(ra.Surface);
+                    Workspace.ActiveLayer.Invalidate(savedRegion.GetBoundsInt());
+                    this.savedRegion.Dispose();
+                    this.savedRegion = null;
+                }
+                
+                rect.Intersect(takeFromLayer.Surface.Bounds);
 
                 if (rect.Width == 0 || rect.Height == 0)
                 {
                     return;
                 }
 
-				savedSurface = new PlacedSurface(ra.Surface,rect);
+                //savedSurface = new PlacedSurface(ra.Surface, rect);
+                this.savedRegion = new PdnRegion(rect);
+                SaveRegion(this.savedRegion, rect);
 
-				// Draw that clone line
-				DrawCloneLine(currentMouse, lastMoved, lastTakeFrom, takeFromLayer.Surface, ((BitmapLayer)Workspace.ActiveLayer).Surface);
-
-				// Draw the "source" ellipse
-				Pen blackPen = new Pen(Color.Black,1);
-
-                if (penWidth != 1)
+                // Draw that clone line
+                Surface takeFromSurface;
+                if (object.ReferenceEquals(takeFromLayer, Workspace.ActiveLayer))
                 {
-                    penWidth /= 2;
+                    takeFromSurface = this.ScratchSurface;
+                }
+                else
+                {
+                    takeFromSurface = takeFromLayer.Surface;
                 }
 
-				ra.Graphics.DrawEllipse(blackPen, takeFrom.X - penWidth, takeFrom.Y - penWidth, 2 * penWidth, 2 * penWidth);
-				Workspace.ActiveLayer.Invalidate(savedSurface.Bounds);
-				Workspace.Update();
-				
-				lastMoved = currentMouse;
-			}
-		}
+                DrawCloneLine(currentMouse, GetStaticData().lastMoved, lastTakeFrom, takeFromSurface, ((BitmapLayer)Workspace.ActiveLayer).Surface);
 
-		protected override void OnMouseDown(MouseEventArgs e)
-		{
-			base.OnMouseDown(e);
+                this.rendererSrc.BrushLocation = GetStaticData().takeFrom;
 
-			if (!(Workspace.ActiveLayer is BitmapLayer))
-			{
-				return;
-			}
+                Workspace.ActiveLayer.Invalidate(rect);
+                Update();
+                
+                GetStaticData().lastMoved = currentMouse;
+            }
+        }
 
-			Cursor = cursorMouseDown;
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
 
-			if (IsMouseLeftDown(e) && IsCtrlDown())
-			{
-				takeFrom = new Point(e.X,e.Y);
-				wr = new WeakReference(((BitmapLayer)Workspace.ActiveLayer));
-				takeFromLayer = (BitmapLayer)(wr.Target);
-				//takeFromLayer = ((BitmapLayer)Workspace.ActiveLayer);
-				lastMoved = Point.Empty;
-				ra = new RenderArgs(((BitmapLayer)Workspace.ActiveLayer).Surface);
-			}
-			else if (IsMouseLeftDown(e) && !IsCtrlDown())
-			{
-				// Determine if there is something to work if, if there isn't return
-				if (takeFrom == Point.Empty)
-				{
-					return;
-				}
+            if (!(Workspace.ActiveLayer is BitmapLayer))
+            {
+                return;
+            }
 
-				if (!wr.IsAlive || takeFromLayer == null)
-				{
-					takeFrom = Point.Empty;
-					lastMoved = Point.Empty;
-					return;
-					
-				}
+            Cursor = cursorMouseDown;
 
-				// Make sure the layer is still there!
-				if (takeFromLayer != null && !Workspace.Document.Layers.Contains(takeFromLayer))
-				{	
-					takeFrom = Point.Empty;
-					lastMoved = Point.Empty;
-					return;
-				}
+            if (IsMouseLeftDown(e))
+            {
+                this.rendererDst.Visible = false;
 
-				if (!Workspace.Environment.IsSelectionEmpty)
-				{
-					clipRegion = Workspace.Environment.CreateSelectedRegion();
-				}
-				else
-				{
-					clipRegion = new PdnRegion();
-					clipRegion.MakeInfinite();
-				}
+                if (IsCtrlDown())
+                {
+                    GetStaticData().takeFrom = new Point(e.X, e.Y);
 
-				antialiasing = Workspace.Environment.AntiAliasing;
-				ra = new RenderArgs(((BitmapLayer)Workspace.ActiveLayer).Surface);
-				ra.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-				OnMouseMove(e);
-			}
-		}
-	}
+                    this.rendererSrc.BrushLocation = new Point(e.X, e.Y);
+                    this.rendererSrc.BrushSize = Workspace.Environment.PenInfo.Width / 2.0f;
+                    this.rendererSrc.Visible = true;
+                    GetStaticData().updateSrcPreview = false;
+
+                    GetStaticData().wr = new WeakReference(((BitmapLayer)Workspace.ActiveLayer));
+                    takeFromLayer = (BitmapLayer)(GetStaticData().wr.Target);
+                    GetStaticData().lastMoved = Point.Empty;
+                    ra = new RenderArgs(((BitmapLayer)Workspace.ActiveLayer).Surface);
+                }
+                else
+                {
+                    GetStaticData().updateSrcPreview = true;
+
+                    // Determine if there is something to work if, if there isn't return
+                    if (GetStaticData().takeFrom == Point.Empty)
+                    {
+                    }
+                    else if (!GetStaticData().wr.IsAlive || takeFromLayer == null)
+                    {
+                        GetStaticData().takeFrom = Point.Empty;
+                        GetStaticData().lastMoved = Point.Empty;
+                    }
+                    // Make sure the layer is still there!
+                    else if (takeFromLayer != null && !Workspace.Document.Layers.Contains(takeFromLayer))
+                    {   
+                        GetStaticData().takeFrom = Point.Empty;
+                        GetStaticData().lastMoved = Point.Empty;
+                    }
+                    else
+                    {
+                        clipRegion = Workspace.Environment.Selection.CreateRegion();
+                        antialiasing = Workspace.Environment.AntiAliasing;
+                        ra = new RenderArgs(((BitmapLayer)Workspace.ActiveLayer).Surface);
+                        ra.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        OnMouseMove(e);
+                    }
+                }
+            }
+        }
+
+        private void Environment_PenInfoChanged(object sender, EventArgs e)
+        {
+            this.rendererSrc.BrushSize = Workspace.Environment.PenInfo.Width / 2.0f;
+            this.rendererDst.BrushSize = Workspace.Environment.PenInfo.Width / 2.0f;
+        }
+    }
 }

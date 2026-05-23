@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -18,9 +19,11 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for FillTool.
     /// </summary>
-    abstract public class FloodTool
+    public abstract class FloodTool
         : Tool
     {
+        private bool contiguous;
+
         private bool limitToSelection = true;
         protected bool LimitToSelection
         {
@@ -34,16 +37,10 @@ namespace PaintDotNet
             }
         }
 
-        public FloodTool(DocumentWorkspace workspace,
-            Image toolBarImage,
-            string name,
-            string description,
-            string helpText,
-            char hotKey)
-            : base(workspace, toolBarImage, name, description, helpText, hotKey)
+        public FloodTool(DocumentWorkspace workspace, Image toolBarImage, string name, string helpText, char hotKey)
+            : base(workspace, toolBarImage, name, helpText, hotKey)
         {
         }
-
 
         private static bool CheckColor(ColorBgra a, ColorBgra b, int tolerance)
         {
@@ -63,19 +60,16 @@ namespace PaintDotNet
 
             return (sum <= tolerance * tolerance * 4);
         }
-        
-        public unsafe static void FillStencilFromPoint(Surface surface, IBitVector2D stencil, Point start, int tolerance, out Rectangle boundingBox, PdnRegion limitRegion, bool limitToSelection)
+
+        public unsafe static void FillStencilByColor(Surface surface, IBitVector2D stencil, ColorBgra cmp, int tolerance, out Rectangle boundingBox, PdnRegion limitRegion, bool limitToSelection)
         {
-            ColorBgra cmp = surface[start];
-            int added;
-            int length = 0;
-			int top = int.MaxValue;
-			int bottom = int.MinValue;
-			int left = int.MaxValue;
-			int right = int.MinValue;
-			Rectangle[] scans;
+            int top = int.MaxValue;
+            int bottom = int.MinValue;
+            int left = int.MaxValue;
+            int right = int.MinValue;
+            Rectangle[] scans;
             
-			stencil.Clear(false);
+            stencil.Clear(false);
             if (limitToSelection)
             {
                 using (PdnRegion excluded = new PdnRegion(new Rectangle(0, 0, stencil.Width, stencil.Height)))
@@ -89,14 +83,92 @@ namespace PaintDotNet
                 scans = new Rectangle[0];
             }
 
-			foreach (Rectangle rect in scans)
-			{
-				stencil.Set(rect, true);
-			}
+            foreach (Rectangle rect in scans)
+            {
+                stencil.Set(rect, true);
+            }
 
+            for (int y = 0; y < surface.Height; ++y)
+            {
+                bool foundPixelInRow = false;
+                ColorBgra *ptr = surface.GetRowAddressUnchecked(y);
+            
+                for (int x = 0; x < surface.Width; ++x)
+                {
+                    if (CheckColor(cmp, *ptr, tolerance))
+                    {
+                        stencil.SetUnchecked(x, y, true);
 
-			Queue queue = new Queue(1024, 4.0f);
-			queue.Enqueue(start);
+                        if (x < left)
+                        {
+                            left = x;
+                        }
+
+                        if (x > right)
+                        {
+                            right = x;
+                        }
+
+                        foundPixelInRow = true;
+                    }
+                    ++ptr;
+                }
+
+                if (foundPixelInRow)
+                {
+                    if (y < top)
+                    {
+                        top = y;
+                    }
+
+                    if (y >= bottom)
+                    {
+                        bottom = y;
+                    }
+                }
+            }
+
+            foreach (Rectangle rect in scans)
+            {
+                stencil.Set(rect, false);
+            }
+
+            boundingBox = Rectangle.FromLTRB(left, top, right + 1, bottom + 1);
+        }
+
+        
+        public unsafe static void FillStencilFromPoint(Surface surface, IBitVector2D stencil, Point start, int tolerance, out Rectangle boundingBox, PdnRegion limitRegion, bool limitToSelection)
+        {
+            int added;
+            int length = 0;
+            ColorBgra cmp = surface[start];
+            int top = int.MaxValue;
+            int bottom = int.MinValue;
+            int left = int.MaxValue;
+            int right = int.MinValue;
+            Rectangle[] scans;
+            
+            stencil.Clear(false);
+            if (limitToSelection)
+            {
+                using (PdnRegion excluded = new PdnRegion(new Rectangle(0, 0, stencil.Width, stencil.Height)))
+                {
+                    excluded.Xor(limitRegion);
+                    scans = excluded.GetRegionScansReadOnlyInt();
+                }
+            }
+            else
+            {
+                scans = new Rectangle[0];
+            }
+
+            foreach (Rectangle rect in scans)
+            {
+                stencil.Set(rect, true);
+            }
+
+            Queue queue = new Queue(1024);
+            queue.Enqueue(start);
 
             do
             {
@@ -114,21 +186,21 @@ namespace PaintDotNet
 
                         if (pt.X > 0)
                         {
-					        if (pt.X - 1 < left)
-					        {
-						        left = pt.X - 1;
-					        }
+                            if (pt.X - 1 < left)
+                            {
+                                left = pt.X - 1;
+                            }
                             
-					        added++;
+                            added++;
                             queue.Enqueue(new Point(pt.X - 1, pt.Y));
                         }
 
                         if (pt.Y > 0)
                         {
-					        if (pt.Y - 1 < top)
-					        {
-						        top = pt.Y - 1;
-					        }
+                            if (pt.Y - 1 < top)
+                            {
+                                top = pt.Y - 1;
+                            }
 
                             added++;
                             queue.Enqueue(new Point(pt.X, pt.Y - 1));
@@ -136,10 +208,10 @@ namespace PaintDotNet
 
                         if (pt.X < surface.Width - 1)
                         {
-					        if (pt.X + 1 > right)
-					        {
-						        right = pt.X + 1;
-					        }
+                            if (pt.X + 1 > right)
+                            {
+                                right = pt.X + 1;
+                            }
 
                             added++;
                             queue.Enqueue(new Point(pt.X + 1, pt.Y));
@@ -147,10 +219,10 @@ namespace PaintDotNet
 
                         if (pt.Y < surface.Height - 1)
                         {
-					        if (pt.Y + 1 > bottom)
-					        {
-						        bottom = pt.Y + 1;
-					        }
+                            if (pt.Y + 1 > bottom)
+                            {
+                                bottom = pt.Y + 1;
+                            }
 
                             added++;
                             queue.Enqueue(new Point(pt.X, pt.Y + 1));
@@ -160,20 +232,20 @@ namespace PaintDotNet
                         {
                             left = pt.X;
                         }
-        				
-				        if (pt.X > right)
+                        
+                        if (pt.X > right)
                         {
                             right = pt.X;
                         }
 
                         if (pt.Y < top)
                         {
-					        top = pt.Y;
+                            top = pt.Y;
                         }
-        				
-				        if (pt.Y > bottom)
+                        
+                        if (pt.Y > bottom)
                         {
-					        bottom = pt.Y;
+                            bottom = pt.Y;
                         }
                     }
                 }
@@ -181,15 +253,19 @@ namespace PaintDotNet
 
             foreach (Rectangle rect in scans)
             {
-				stencil.Set(rect, false);
+                stencil.Set(rect, false);
             }
 
-			boundingBox = Rectangle.FromLTRB(left, top, right + 1, bottom + 1);
+            boundingBox = Rectangle.FromLTRB(left, top, right + 1, bottom + 1);
         }
+
+        protected abstract void PerimeterFound(Point[][] polygonSet);
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
             Point pos = new Point(e.X, e.Y);
+            
+            this.contiguous = ((ModifierKeys & Keys.Shift) == 0);
 
             if (Utility.IsPointInRectangle(pos, Workspace.Document.Bounds))
             {
@@ -197,17 +273,7 @@ namespace PaintDotNet
                 PdnRegion currentRegion;
 
                 // Create the Current Region
-                if (!Workspace.Environment.IsSelectionEmpty)
-                {
-                    currentRegion = Workspace.Environment.CreateSelectedRegion();
-                }
-                else
-                {
-                    currentRegion = new PdnRegion();
-                    currentRegion.MakeInfinite();
-                }
-
-                currentRegion.Intersect(Workspace.Document.Bounds);
+                currentRegion = Workspace.Environment.Selection.CreateRegion();
 
                 // See if the mouse click is valid
                 if (!currentRegion.IsVisible(pos) && limitToSelection)
@@ -224,30 +290,23 @@ namespace PaintDotNet
 
                 Rectangle boundingBox;
                 int tolerance = (int)(Workspace.Environment.Tolerance * Workspace.Environment.Tolerance * 256);
-                FillStencilFromPoint(surface, stencilBuffer, pos, tolerance, out boundingBox, currentRegion, limitToSelection);
-                
-                using (PdnGraphicsPath fillPerimeter = PdnGraphicsPath.PathFromStencil(stencilBuffer, boundingBox))
-                {
-                    PerimeterFound(fillPerimeter);
 
-                    using (PdnRegion fillRegion = new PdnRegion(fillPerimeter))
-                    {
-                        RegionSelected(fillRegion, boundingBox);
-                    }
+                if (contiguous)
+                {
+                    FillStencilFromPoint(surface, stencilBuffer, pos, tolerance, out boundingBox, currentRegion, limitToSelection);
                 }
+                else
+                {
+                    FillStencilByColor(surface, stencilBuffer, surface[pos], tolerance, out boundingBox, currentRegion, limitToSelection);
+                }
+
+                Point[][] polygonSet = PdnGraphicsPath.PolygonSetFromStencil(stencilBuffer, boundingBox, 0, 0);
+                PerimeterFound(polygonSet);
             }
 
             base.OnMouseDown(e);
         }
-
-        protected virtual void RegionSelected(PdnRegion fillRegion, Rectangle boundingBox)
-        {
-        }
-
-        protected virtual void PerimeterFound(PdnGraphicsPath path)
-        {
-        }
-
+       
         protected override void Dispose(bool disposing)
         {
             base.Dispose (disposing);

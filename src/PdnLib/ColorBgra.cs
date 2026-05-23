@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -30,10 +31,10 @@ namespace PaintDotNet
         [FieldOffset(2)] public byte R;
         [FieldOffset(3)] public byte A;
 
-		/// <summary>
-		/// Lets you change B, G, R, and A at the same time.
-		/// </summary>
-		[FieldOffset(0)] 
+        /// <summary>
+        /// Lets you change B, G, R, and A at the same time.
+        /// </summary>
+        [FieldOffset(0)] 
         [CLSCompliant(false)]
         public uint Bgra;
 
@@ -91,30 +92,30 @@ namespace PaintDotNet
         /// <returns>A value in the range 0 to 255 inclusive.</returns>
         public byte GetIntensityByte()
         {
-            return (byte)((0.114 * (double)B) + (0.587 * (double)G) + (0.299 * (double)R));
+            return (byte)((7471 * R + 38470 * G + 19595 * B) >> 16);
         }
 
         /// <summary>
         /// Compares two ColorBgra instance to determine if they are equal.
         /// </summary>
         public static bool operator == (ColorBgra lhs, ColorBgra rhs)
-		{
-			return lhs.Bgra == rhs.Bgra;
-		}
+        {
+            return lhs.Bgra == rhs.Bgra;
+        }
 
         /// <summary>
         /// Compares two ColorBgra instance to determine if they are not equal.
         /// </summary>
         public static bool operator != (ColorBgra lhs, ColorBgra rhs)
-		{
-			return lhs.Bgra != rhs.Bgra;
-		}
+        {
+            return lhs.Bgra != rhs.Bgra;
+        }
 
         /// <summary>
         /// Compares two ColorBgra instance to determine if they are equal.
         /// </summary>
         public override bool Equals(object obj)
-		{
+        {
             
             if (obj != null && obj is ColorBgra && ((ColorBgra)obj).Bgra == this.Bgra)
             {
@@ -124,19 +125,19 @@ namespace PaintDotNet
             {
                 return false;
             }
-		}
+        }
 
         /// <summary>
         /// Returns a hash code for this color value.
         /// </summary>
         /// <returns></returns>
-    	public override int GetHashCode()
-		{
+        public override int GetHashCode()
+        {
             unchecked
             {
                 return (int)Bgra;
             }
-		}
+        }
 
         /// <summary>
         /// Gets the equivalent GDI+ PixelFormat.
@@ -189,13 +190,48 @@ namespace PaintDotNet
         public static ColorBgra FromBgra(byte b, byte g, byte r, byte a)
         {
             ColorBgra color = new ColorBgra();
-
-            color.B = b;
-            color.G = g;
-            color.R = r;
-            color.A = a;
-
+            color.Bgra = BgraToUInt32(b, g, r, a);
             return color;        
+        }
+
+        /// <summary>
+        /// Creates a new ColorBgra instance with the given color and alpha values.
+        /// </summary>
+        public static ColorBgra FromBgraClamped(int b, int g, int r, int a)
+        {
+            return FromBgra(
+                Utility.ClampToByte(b),
+                Utility.ClampToByte(g),
+                Utility.ClampToByte(r),
+                Utility.ClampToByte(a));
+        }
+
+        /// <summary>
+        /// Creates a new ColorBgra instance with the given color and alpha values.
+        /// </summary>
+        public static ColorBgra FromBgraClamped(float b, float g, float r, float a)
+        {
+            return FromBgra(
+                Utility.ClampToByte(b),
+                Utility.ClampToByte(g),
+                Utility.ClampToByte(r),
+                Utility.ClampToByte(a));
+        }
+
+        /// <summary>
+        /// Packs color and alpha values into a 32-bit integer.
+        /// </summary>
+        public static UInt32 BgraToUInt32(byte b, byte g, byte r, byte a)
+        {
+            return (uint)b + ((uint)g << 8) + ((uint)r << 16) + ((uint)a << 24);
+        }
+
+        /// <summary>
+        /// Packs color and alpha values into a 32-bit integer.
+        /// </summary>
+        public static UInt32 BgraToUInt32(int b, int g, int r, int a)
+        {
+            return (uint)b + ((uint)g << 8) + ((uint)r << 16) + ((uint)a << 24);
         }
 
         /// <summary>
@@ -239,17 +275,17 @@ namespace PaintDotNet
         /// <param name="from">The color value that represents 0 on the lerp number line.</param>
         /// <param name="to">The color value that represents 1 on the lerp number line.</param>
         /// <param name="frac">A value in the range [0, 1].</param>
-		public static ColorBgra Lerp(ColorBgra from, ColorBgra to, float frac) 
-		{
-			ColorBgra ret = new ColorBgra();
+        public static ColorBgra Lerp(ColorBgra from, ColorBgra to, float frac) 
+        {
+            ColorBgra ret = new ColorBgra();
 
-			ret.B = (byte)Utility.ClampToByte(Utility.Lerp(from.B, to.B, frac));
-			ret.G = (byte)Utility.ClampToByte(Utility.Lerp(from.G, to.G, frac));
-			ret.R = (byte)Utility.ClampToByte(Utility.Lerp(from.R, to.R, frac));
-			ret.A = (byte)Utility.ClampToByte(Utility.Lerp(from.A, to.A, frac));
+            ret.B = (byte)Utility.ClampToByte(Utility.Lerp(from.B, to.B, frac));
+            ret.G = (byte)Utility.ClampToByte(Utility.Lerp(from.G, to.G, frac));
+            ret.R = (byte)Utility.ClampToByte(Utility.Lerp(from.R, to.R, frac));
+            ret.A = (byte)Utility.ClampToByte(Utility.Lerp(from.A, to.A, frac));
 
-			return ret;
-		}
+            return ret;
+        }
 
         /// <summary>
         /// Linearly interpolates between two color values.
@@ -267,12 +303,12 @@ namespace PaintDotNet
             ret.A = (byte)Utility.ClampToByte(Utility.Lerp(from.A, to.A, frac));
 
             return ret;
-		}
+        }
 
-		public override string ToString()
-		{
-			return "B: " + B + ", G: " + G + ", R: " + R + ", A: " + A;
-		}
+        public override string ToString()
+        {
+            return "B: " + B + ", G: " + G + ", R: " + R + ", A: " + A;
+        }
 
         /// <summary>
         /// Casts a ColorBgra to a UInt32.

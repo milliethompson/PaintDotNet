@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -11,9 +12,9 @@ using System.Runtime.InteropServices;
 
 namespace PaintDotNet.SystemLayer
 {
-	/// <summary>
-	/// Provides static methods and properties related to the CPU.
-	/// </summary>
+    /// <summary>
+    /// Provides static methods and properties related to the CPU.
+    /// </summary>
     public sealed class Processor
     {
         private Processor()
@@ -35,6 +36,9 @@ namespace PaintDotNet.SystemLayer
         /// It may be set to another number for testing and benchmarking purposes. It is
         /// recommended that you use this property instead of ConcreteLogicalCpuCount for the
         /// purposes of optimizing thread usage.
+        /// The maximum value for this property is 32 when running as a 32-bit process, or
+        /// 64 for a 64-bit process. Note that this implies the maximum is 32 for a process
+        /// even when running on a 64-bit system.
         /// </remarks>
         public static int LogicalCpuCount
         {

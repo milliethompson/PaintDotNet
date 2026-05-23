@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -16,27 +17,37 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-	/// <summary>
-	/// Summary description for AngleChooserConfigDialog.
-	/// </summary>
-	public class AngleChooserConfigDialog 
+    /// <summary>
+    /// Summary description for AngleChooserConfigDialog.
+    /// </summary>
+    public class AngleChooserConfigDialog 
         : EffectConfigDialog
-	{
-
+    {
         private AngleChooserControl angleChooserControl;
-        private System.Windows.Forms.GroupBox angleGroupBox;
         private System.Windows.Forms.NumericUpDown angleUpDown;
-        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label degreeLabel;
         private System.Windows.Forms.Button okButton;
         private System.Windows.Forms.Button cancelButton;
+        private PaintDotNet.HeaderLabel angleHeader;
 
         private System.ComponentModel.Container components = null;
 
-		public AngleChooserConfigDialog()
-		{
-			// Required for Windows Form Designer support
-			InitializeComponent();
-		}
+        public AngleChooserConfigDialog()
+        {
+            // Required for Windows Form Designer support
+            InitializeComponent();
+            this.cancelButton.Text = PdnResources.GetString("Form.CancelButton.Text");
+            this.okButton.Text = PdnResources.GetString("Form.OkButton.Text");
+            this.angleHeader.Text = PdnResources.GetString("AngleChooserConfigDialog.AngleHeader.Text");
+            this.degreeLabel.Text = PdnResources.GetString("AngleChooserConfigDialog.DegreeLabel.Text");
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            this.angleUpDown.Select();
+            this.angleUpDown.Select(0, this.angleUpDown.Text.Length);
+            base.OnLoad (e);
+        }
 
         // create default config token with angle 45 degress
         protected override void InitialInitToken()
@@ -55,135 +66,132 @@ namespace PaintDotNet.Effects
             angleChooserControl.ValueDouble = token.Angle;
         }
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose(bool disposing)
-		{
-			if (disposing)
-			{
-				if (components != null)
-				{
-					components.Dispose();
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (components != null)
+                {
+                    components.Dispose();
                     components = null;
-				}
-			}
+                }
+            }
 
-			base.Dispose(disposing);
-		}
+            base.Dispose(disposing);
+        }
 
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
-			this.okButton = new System.Windows.Forms.Button();
-			this.angleGroupBox = new System.Windows.Forms.GroupBox();
-			this.angleUpDown = new System.Windows.Forms.NumericUpDown();
-			this.label3 = new System.Windows.Forms.Label();
-			this.angleChooserControl = new PaintDotNet.AngleChooserControl();
-			this.cancelButton = new System.Windows.Forms.Button();
-			this.angleGroupBox.SuspendLayout();
-			((System.ComponentModel.ISupportInitialize)(this.angleUpDown)).BeginInit();
-			this.SuspendLayout();
-			// 
-			// okButton
-			// 
-			this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.okButton.Location = new System.Drawing.Point(16, 96);
-			this.okButton.Name = "okButton";
-			this.okButton.TabIndex = 0;
-			this.okButton.Text = "OK";
-			this.okButton.Click += new System.EventHandler(this.okButton_Click);
-			// 
-			// angleGroupBox
-			// 
-			this.angleGroupBox.Controls.Add(this.angleUpDown);
-			this.angleGroupBox.Controls.Add(this.label3);
-			this.angleGroupBox.Controls.Add(this.angleChooserControl);
-			this.angleGroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.angleGroupBox.Location = new System.Drawing.Point(8, 8);
-			this.angleGroupBox.Name = "angleGroupBox";
-			this.angleGroupBox.Size = new System.Drawing.Size(168, 80);
-			this.angleGroupBox.TabIndex = 12;
-			this.angleGroupBox.TabStop = false;
-			this.angleGroupBox.Text = "Angle";
-			// 
-			// angleUpDown
-			// 
-			this.angleUpDown.DecimalPlaces = 2;
-			this.angleUpDown.Location = new System.Drawing.Point(72, 24);
-			this.angleUpDown.Maximum = new System.Decimal(new int[] {
-																		180,
-																		0,
-																		0,
-																		0});
-			this.angleUpDown.Minimum = new System.Decimal(new int[] {
-																		180,
-																		0,
-																		0,
-																		-2147483648});
-			this.angleUpDown.Name = "angleUpDown";
-			this.angleUpDown.Size = new System.Drawing.Size(72, 20);
-			this.angleUpDown.TabIndex = 0;
-			this.angleUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-			this.angleUpDown.Enter += new System.EventHandler(this.angleUpDown_Enter);
-			this.angleUpDown.ValueChanged += new System.EventHandler(this.angleUpDown_ValueChanged);
-			this.angleUpDown.Leave += new System.EventHandler(this.angleUpDown_Leave);
-			// 
-			// label3
-			// 
-			this.label3.Location = new System.Drawing.Point(144, 24);
-			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(8, 16);
-			this.label3.TabIndex = 4;
-			this.label3.Text = "°";
-			this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-			// 
-			// angleChooserControl
-			// 
-			this.angleChooserControl.Location = new System.Drawing.Point(8, 16);
-			this.angleChooserControl.Name = "angleChooserControl";
-			this.angleChooserControl.Size = new System.Drawing.Size(56, 56);
-			this.angleChooserControl.TabIndex = 0;
-			this.angleChooserControl.TabStop = false;
-			this.angleChooserControl.Value = 16;
-			this.angleChooserControl.ValueDouble = 16;
-			this.angleChooserControl.ValueChanged += new System.EventHandler(this.angleChooserControl_ValueChanged);
-			// 
-			// cancelButton
-			// 
-			this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-			this.cancelButton.Location = new System.Drawing.Point(104, 96);
-			this.cancelButton.Name = "cancelButton";
-			this.cancelButton.TabIndex = 13;
-			this.cancelButton.Text = "Cancel";
-			this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
-			// 
-			// AngleChooserConfigDialog
-			// 
-			this.AcceptButton = this.okButton;
-			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-			this.CancelButton = this.cancelButton;
-			this.ClientSize = new System.Drawing.Size(186, 128);
-			this.Controls.Add(this.cancelButton);
-			this.Controls.Add(this.angleGroupBox);
-			this.Controls.Add(this.okButton);
-			this.Location = new System.Drawing.Point(0, 0);
-			this.Name = "AngleChooserConfigDialog";
-			this.Text = "AngleChooser";
-			this.Controls.SetChildIndex(this.okButton, 0);
-			this.Controls.SetChildIndex(this.angleGroupBox, 0);
-			this.Controls.SetChildIndex(this.cancelButton, 0);
-			this.angleGroupBox.ResumeLayout(false);
-			((System.ComponentModel.ISupportInitialize)(this.angleUpDown)).EndInit();
-			this.ResumeLayout(false);
+        #region Windows Form Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            this.okButton = new System.Windows.Forms.Button();
+            this.angleUpDown = new System.Windows.Forms.NumericUpDown();
+            this.degreeLabel = new System.Windows.Forms.Label();
+            this.angleChooserControl = new PaintDotNet.AngleChooserControl();
+            this.cancelButton = new System.Windows.Forms.Button();
+            this.angleHeader = new PaintDotNet.HeaderLabel();
+            ((System.ComponentModel.ISupportInitialize)(this.angleUpDown)).BeginInit();
+            this.SuspendLayout();
+            // 
+            // okButton
+            // 
+            this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.okButton.Location = new System.Drawing.Point(24, 94);
+            this.okButton.Name = "okButton";
+            this.okButton.Size = new System.Drawing.Size(75, 24);
+            this.okButton.TabIndex = 0;
+            this.okButton.Click += new System.EventHandler(this.okButton_Click);
+            // 
+            // angleUpDown
+            // 
+            this.angleUpDown.DecimalPlaces = 2;
+            this.angleUpDown.Location = new System.Drawing.Point(88, 37);
+            this.angleUpDown.Maximum = new System.Decimal(new int[] {
+                                                                        180,
+                                                                        0,
+                                                                        0,
+                                                                        0});
+            this.angleUpDown.Minimum = new System.Decimal(new int[] {
+                                                                        180,
+                                                                        0,
+                                                                        0,
+                                                                        -2147483648});
+            this.angleUpDown.Name = "angleUpDown";
+            this.angleUpDown.Size = new System.Drawing.Size(72, 20);
+            this.angleUpDown.TabIndex = 0;
+            this.angleUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.angleUpDown.Enter += new System.EventHandler(this.angleUpDown_Enter);
+            this.angleUpDown.ValueChanged += new System.EventHandler(this.angleUpDown_ValueChanged);
+            this.angleUpDown.Leave += new System.EventHandler(this.angleUpDown_Leave);
+            // 
+            // degreeLabel
+            // 
+            this.degreeLabel.Location = new System.Drawing.Point(161, 37);
+            this.degreeLabel.Name = "degreeLabel";
+            this.degreeLabel.Size = new System.Drawing.Size(16, 23);
+            this.degreeLabel.TabIndex = 15;
+            // 
+            // angleChooserControl
+            // 
+            this.angleChooserControl.Location = new System.Drawing.Point(16, 29);
+            this.angleChooserControl.Name = "angleChooserControl";
+            this.angleChooserControl.Size = new System.Drawing.Size(56, 56);
+            this.angleChooserControl.TabIndex = 0;
+            this.angleChooserControl.TabStop = false;
+            this.angleChooserControl.Value = 16;
+            this.angleChooserControl.ValueDouble = 16;
+            this.angleChooserControl.ValueChanged += new System.EventHandler(this.angleChooserControl_ValueChanged);
+            // 
+            // cancelButton
+            // 
+            this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.cancelButton.Location = new System.Drawing.Point(105, 94);
+            this.cancelButton.Name = "cancelButton";
+            this.cancelButton.Size = new System.Drawing.Size(75, 24);
+            this.cancelButton.TabIndex = 13;
+            this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
+            // 
+            // angleHeader
+            // 
+            this.angleHeader.Location = new System.Drawing.Point(8, 8);
+            this.angleHeader.Name = "angleHeader";
+            this.angleHeader.Size = new System.Drawing.Size(176, 14);
+            this.angleHeader.TabIndex = 14;
+            this.angleHeader.TabStop = false;
+            this.angleHeader.Text = "Header";
+            // 
+            // AngleChooserConfigDialog
+            // 
+            this.AcceptButton = this.okButton;
+            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.CancelButton = this.cancelButton;
+            this.ClientSize = new System.Drawing.Size(186, 124);
+            this.Controls.Add(this.angleHeader);
+            this.Controls.Add(this.cancelButton);
+            this.Controls.Add(this.okButton);
+            this.Controls.Add(this.degreeLabel);
+            this.Controls.Add(this.angleChooserControl);
+            this.Controls.Add(this.angleUpDown);
+            this.Location = new System.Drawing.Point(0, 0);
+            this.Name = "AngleChooserConfigDialog";
+            this.Controls.SetChildIndex(this.angleUpDown, 0);
+            this.Controls.SetChildIndex(this.angleChooserControl, 0);
+            this.Controls.SetChildIndex(this.degreeLabel, 0);
+            this.Controls.SetChildIndex(this.okButton, 0);
+            this.Controls.SetChildIndex(this.cancelButton, 0);
+            this.Controls.SetChildIndex(this.angleHeader, 0);
+            ((System.ComponentModel.ISupportInitialize)(this.angleUpDown)).EndInit();
+            this.ResumeLayout(false);
 
-		}
-		#endregion
+        }
+        #endregion
 
         private void angleChooserControl_ValueChanged(object sender, System.EventArgs e)
         {
@@ -233,6 +241,5 @@ namespace PaintDotNet.Effects
             NumericUpDown nud = (NumericUpDown)sender;
             nud.Select(0, nud.Text.Length);
         }
-
     }
 }

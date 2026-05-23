@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -18,7 +19,7 @@ namespace PaintDotNet.Effects
     public unsafe abstract class ConvolutionFilterEffect
         : Effect
     {
-        public void RenderConvolutionFilter(int[,] weights, int offset, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public void RenderConvolutionFilter(int[][] weights, int offset, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
         {
             foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
             {
@@ -118,55 +119,66 @@ namespace PaintDotNet.Effects
             return extent;
         }
 
-		/// <summary>
-		/// Normalizes the weight matrix so that it does not overflow an int when
-		/// multiplied with a 1-byte channel intensity, and a 1-byte alpha. In
-		/// order to do this, the sum and maximum must be less than 32768. The
-		/// values of the matrix will be scaled by a power of two to be just below 32768
-		/// </summary>
-		/// <param name="weights">The weight matrix to be normalized.</param>
-		protected void NormalizeWeightMatrix(int [,] weights) 
-		{
-			int max = 0, sum = 0;
-			int shift = 0;
-			//Find the magnitude sum and maximum of the weights matrix
-			for (int x = 0; x < weights.GetLength(0); x++) 
-			{
-				for (int y = 0; y < weights.GetLength(1); y++) 
-				{
-					int mag = Math.Abs(weights[x, y]);
-					max = Math.Max(max, mag);
-					sum += mag;
-				}
-			}
+        /// <summary>
+        /// Normalizes the weight matrix so that it does not overflow an int when
+        /// multiplied with a 1-byte channel intensity, and a 1-byte alpha. In
+        /// order to do this, the sum and maximum must be less than 32768. The
+        /// values of the matrix will be scaled by a power of two to be just below 32768
+        /// </summary>
+        /// <param name="weights">The weight matrix to be normalized.</param>
+        protected void NormalizeWeightMatrix(int[][] weights) 
+        {
+            int max = 0;
+            int sum = 0;
+            int shift = 0;
+            int width = weights[0].Length;
+            int height = weights.Length;
 
-			max = Math.Max(sum, max);
-			while ((1 << shift) < max)
-				shift++;
-			shift = 15 - shift;
-			//shift it so that it's less than 32768
-			for (int x = 0; x < weights.GetLength(0); x++) 
-			{
-				for (int y = 0; y < weights.GetLength(1); y++) 
-				{
-					if (shift < 0) 
-					{
-						weights[x, y] >>= -shift;
-					} 
-					else if (shift > 0)
-					{
-						weights[x, y] <<= shift;
-					}
-				}
-			}
-		}
+            // Find the magnitude sum and maximum of the weights matrix
+            for (int y = 0; y < weights.Length; y++) 
+            {
+                int[] row = weights[y];
 
-        public void RenderConvolutionFilter(int[,] weights, int offset, RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle roi)
+                for (int x = 0; x < row.Length; x++) 
+                {
+                    int mag = Math.Abs(row[x]);
+                    max = Math.Max(max, mag);
+                    sum += mag;
+                }
+            }
+
+            max = Math.Max(sum, max);
+            while ((1 << shift) < max)
+            {
+                shift++;
+            }
+
+            shift = 15 - shift;
+            //shift it so that it's less than 32768
+            for (int y = 0; y < weights.Length; y++) 
+            {
+                int[] row = weights[y];
+
+                for (int x = 0; x < row.Length; x++) 
+                {
+                    if (shift < 0) 
+                    {
+                        row[x] >>= -shift;
+                    } 
+                    else if (shift > 0)
+                    {
+                        row[x] <<= shift;
+                    }
+                }
+            }
+        }
+
+        public void RenderConvolutionFilter(int[][] weights, int offset, RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle roi)
         {
             base.Render (dstArgs, srcArgs, roi);
 
-            int weightsWidth = weights.GetLength(1);
-            int weightsHeight = weights.GetLength(0);
+            int weightsWidth = weights[0].Length;
+            int weightsHeight = weights.Length;
 
             int fYOffset = -(weightsHeight / 2);
             int fXOffset = -(weightsWidth / 2);
@@ -190,9 +202,9 @@ namespace PaintDotNet.Effects
                     int redSum = 0;
                     int greenSum = 0;
                     int blueSum = 0;
-					int alphaSum = 0;
+                    int alphaSum = 0;
                     int colorFactor = 0;
-					int alphaFactor = 0;
+                    int alphaFactor = 0;
                     int fxStart = fxExtent.fStarts[x];
                     int fxEnd = fxExtent.fEnds[x];
 
@@ -202,43 +214,54 @@ namespace PaintDotNet.Effects
                         int srcX1 = x + fXOffset + fxStart;
 
                         ColorBgra *srcPixel = srcArgs.Surface.GetPointAddress(srcX1, srcY);
+                        int[] wRow = weights[fy];
 
                         for (int fx = fxStart; fx < fxEnd; ++fx)
                         {
                             int srcX = fx + srcX1;
-                            int weight = weights[fy,fx];
+                            int weight = wRow[fx];
 
                             ColorBgra c = *srcPixel;
 
-							alphaFactor += weight;
-							weight = weight * (c.A + 1);
-							colorFactor += weight;
-							weight /= 256;
+                            alphaFactor += weight;
+                            weight = weight * (c.A + (c.A >> 7));
+                            colorFactor += weight;
+                            weight >>= 8;
 
-							redSum += c.R * weight;
-							blueSum += c.B * weight;
-							greenSum += c.G * weight;
-							alphaSum += c.A * weight;
+                            redSum += c.R * weight;
+                            blueSum += c.B * weight;
+                            greenSum += c.G * weight;
+                            alphaSum += c.A * weight;
 
                             ++srcPixel;
                         }
                     }
 
-					colorFactor /= 256;
+                    colorFactor /= 256;
 
-					if (colorFactor != 0)
-					{
-						redSum /= colorFactor;
-						greenSum /= colorFactor;
-						blueSum /= colorFactor;
-					}
+                    if (colorFactor != 0)
+                    {
+                        redSum /= colorFactor;
+                        greenSum /= colorFactor;
+                        blueSum /= colorFactor;
+                    }
+                    else
+                    {
+                        redSum = 0;
+                        greenSum = 0;
+                        blueSum = 0;
+                    }
 
-					if (alphaFactor != 0)
-					{
-						alphaSum /= alphaFactor;
-					}
+                    if (alphaFactor != 0)
+                    {
+                        alphaSum /= alphaFactor;
+                    }
+                    else
+                    {
+                        alphaSum = 0;
+                    }
 
-					redSum += offset;
+                    redSum += offset;
                     greenSum += offset;
                     blueSum += offset;
                     alphaSum += offset;
@@ -291,14 +314,27 @@ namespace PaintDotNet.Effects
             }
         }
 
-		public ConvolutionFilterEffect(string name, string description, Image image)
-			: base(name, description, image)
-		{
-		}
 
-		public ConvolutionFilterEffect(string name, string description, Image image, System.Windows.Forms.Shortcut shortcut)
-			: base(name, description, image, shortcut)
-		{
-		}
+        [Obsolete("The description property is obsolete.", true)]
+        public ConvolutionFilterEffect(string name, string description, Image image)
+            : this(name, image)
+        {
+        }
+
+        public ConvolutionFilterEffect(string name, Image image)
+            : this(name, image, System.Windows.Forms.Shortcut.None)
+        {
+        }
+
+        [Obsolete("The description property is obsolete.", true)]
+        public ConvolutionFilterEffect(string name, string description, Image image, System.Windows.Forms.Shortcut shortcut)
+            : base(name, image, shortcut)
+        {
+        }
+
+        public ConvolutionFilterEffect(string name, Image image, System.Windows.Forms.Shortcut shortcut)
+            : base(name, image, shortcut)
+        {
+        }
     }
 }

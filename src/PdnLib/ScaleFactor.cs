@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -159,9 +160,10 @@ namespace PaintDotNet
             return numerator.GetHashCode() ^ denominator.GetHashCode();
         }
 
+        private static string percentageFormat = PdnResources.GetString("ScaleFactor.Percentage.Format");
         public override string ToString()
         {
-            return Math.Round(100 * Ratio).ToString() + "%";
+            return string.Format(percentageFormat, Math.Round(100 * Ratio));
         }
 
         public int ScaleScalar(int x)
@@ -194,6 +196,11 @@ namespace PaintDotNet
             return (x * (double)denominator) / (double)numerator;
         }
 
+        public Point ScalePoint(Point p)
+        {
+            return new Point(ScaleScalar(p.X), ScaleScalar(p.Y));
+        }
+
         public PointF ScalePoint(PointF p)
         {
             return new PointF(ScaleScalar(p.X), ScaleScalar(p.Y));
@@ -222,11 +229,6 @@ namespace PaintDotNet
         public PointF UnscalePointJustY(PointF p)
         {
             return new PointF(p.X, UnscaleScalar(p.Y));
-        }
-
-        public Point ScalePoint(Point p)
-        {
-            return new Point(ScaleScalar(p.X), ScaleScalar(p.Y));
         }
 
         public Point ScalePointJustX(Point p)

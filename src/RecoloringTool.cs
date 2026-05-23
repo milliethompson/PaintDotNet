@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -24,6 +25,7 @@ namespace PaintDotNet
         private RenderArgs renderArgs;
         private BitmapLayer bitmapLayer;
         private ArrayList savedSurfaces;
+        private BrushPreviewRenderer previewRenderer;
 
         private float penWidth;
         private int ceilingPenWidth;
@@ -92,10 +94,30 @@ namespace PaintDotNet
             }
         }
 
-        // ripped off...er copied from v1.1 PaintBrushTool.cs code
+        protected override void OnMouseEnter()
+        {
+            this.previewRenderer.Visible = true;
+            base.OnMouseEnter();
+        }
+
+        protected override void OnMouseLeave()
+        {
+            this.previewRenderer.Visible = false;
+            base.OnMouseLeave();
+        }
+
         protected override void OnActivate()
         {
             base.OnActivate();
+
+            // initialize any state information you need
+            cursorMouseUp = new Cursor(PdnResources.GetResourceStream("Cursors.RecoloringToolCursor.cur"));
+            cursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.GenericToolCursorMouseDown.cur"));
+            cursorMouseDownPickColor = new Cursor(PdnResources.GetResourceStream("Cursors.RecoloringToolCursorPickColor.cur"));
+            cursorMouseDownAdjustColor = new Cursor(PdnResources.GetResourceStream("Cursors.RecoloringToolCursorAdjustColor.cur"));
+
+            this.previewRenderer = new BrushPreviewRenderer(this.Renderers);
+            this.Renderers.Add(this.previewRenderer, false);
 
             Cursor = cursorMouseUp;
             mouseDown = false;
@@ -133,6 +155,10 @@ namespace PaintDotNet
         {
             base.OnDeactivate();
 
+            this.Renderers.Remove(this.previewRenderer);
+            this.previewRenderer.Dispose();
+            this.previewRenderer = null;
+
             if (mouseDown)
             {
                 OnMouseUp(new MouseEventArgs(mouseButton, 0, lastMouseXY.X, lastMouseXY.Y, 0));
@@ -158,6 +184,37 @@ namespace PaintDotNet
             aaPoints = null;
             renderArgs = null;
             bitmapLayer = null;
+
+            if (clipRegion != null)
+            {
+                clipRegion.Dispose();
+                clipRegion = null;
+            }
+
+
+            if (cursorMouseUp != null)
+            {
+                cursorMouseUp.Dispose();
+                cursorMouseUp = null;
+            }
+
+            if (cursorMouseDown != null)
+            {
+                cursorMouseDown.Dispose();
+                cursorMouseDown = null;
+            }
+
+            if (cursorMouseDownPickColor != null)
+            {
+                cursorMouseDownPickColor.Dispose();
+                cursorMouseDownPickColor = null;
+            }
+
+            if (cursorMouseDownAdjustColor != null)
+            {
+                cursorMouseDownAdjustColor.Dispose();
+                cursorMouseDownAdjustColor = null;
+            }
         }
 
         private ColorBgra LiftColor(int x, int y)
@@ -224,7 +281,6 @@ namespace PaintDotNet
             returnColor.B = AdjustColorByte(oldColor.B, newColor.B, basisColor.B);
             returnColor.G = AdjustColorByte(oldColor.G, newColor.G, basisColor.G);
             returnColor.R = AdjustColorByte(oldColor.R, newColor.R, basisColor.R);
-            //returnColor.A = AdjustColorByte(oldColor.A, newColor.A, basisColor.A);
 
             return returnColor;
         }
@@ -294,7 +350,6 @@ namespace PaintDotNet
             {
                 if (penWidth <= 1.0f)
                 {
-                    //brushRenderArgs.Bitmap.SetPixel(1, 1, System.Drawing.Color.Black);
                     brush.Surface[1, 1] = ColorBgra.Black;
                 }
                 else
@@ -323,9 +378,9 @@ namespace PaintDotNet
             // special condition for a canvas with no active selection
             // create an array of rectangles with a single rectangle 
             // specifying the size of the canvas
-            if (Workspace.Environment.IsSelectionEmpty)
+            if (Workspace.Environment.Selection.IsEmpty)
             {
-                rectSelRegions = new Rectangle [] { Workspace.Document.Bounds };
+                rectSelRegions = new Rectangle[] { Workspace.Document.Bounds };
             }
             else
             {
@@ -475,12 +530,12 @@ namespace PaintDotNet
 
         private bool KeyDownShiftOnly()
         {
-            return(ModifierKeys == Keys.Shift);
+            return ModifierKeys == Keys.Shift;
         }
 
         private bool KeyDownControlOnly()
         {
-            return(ModifierKeys == Keys.Control);
+            return ModifierKeys == Keys.Control;
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -498,10 +553,13 @@ namespace PaintDotNet
                     {
                         Cursor = cursorMouseDownPickColor;
                     }
-
-                    if (KeyDownShiftOnly())
+                    else if (KeyDownShiftOnly())
                     {
                         Cursor = cursorMouseDownAdjustColor;
+                    }
+                    else
+                    {
+                        base.OnKeyDown(e);
                     }
                 }
             }
@@ -511,13 +569,14 @@ namespace PaintDotNet
         {
             if (!KeyDownControlOnly() && !KeyDownShiftOnly())
             {
-
                 if (!mouseDown)
                 {
                     modifierDown = 0;
                     Cursor = cursorMouseUp;
                 }
             }
+
+            base.OnKeyUp(e);
         }
 
         /// <summary>
@@ -551,6 +610,8 @@ namespace PaintDotNet
 
             if (BtnDownMouseLeft(e) || BtnDownMouseRight(e))
             {
+                this.previewRenderer.Visible = false;
+
                 mouseDown = true;
                 Cursor = cursorMouseDown;
                 
@@ -561,19 +622,15 @@ namespace PaintDotNet
                     lastMouseXY.X = e.X;
                     lastMouseXY.Y = e.Y;
 
-                    // code copied (and slightly modified) from v1.1 PaintBrush
                     // parses and establishes the active selection area
-                    if (!Workspace.Environment.IsSelectionEmpty)
+                    if (clipRegion != null)
                     {
-                        clipRegion = Workspace.Environment.CreateSelectedRegion();
-                    }
-                    else
-                    {
-                        clipRegion = new PdnRegion();
-                        clipRegion.MakeInfinite();
+                        clipRegion.Dispose();
+                        clipRegion = null;
                     }
 
-                    renderArgs.Graphics.SetClip(clipRegion, CombineMode.Replace);
+                    clipRegion = Workspace.Environment.Selection.CreateRegion();
+                    renderArgs.Graphics.SetClip(clipRegion.GetRegionReadOnly(), CombineMode.Replace);
 
                     // find the replacement color and the color to replace
                     colorReplacing = Workspace.Environment.ForeColor;
@@ -619,6 +676,8 @@ namespace PaintDotNet
 
             if (mouseDown)
             {
+                this.previewRenderer.Visible = true;
+
                 OnMouseMove(e);
 
                 if (savedSurfaces.Count > 0)
@@ -646,20 +705,15 @@ namespace PaintDotNet
 
                         if (hasDrawn)
                         {
-                            //HistoryAction ha = bitmapLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
                             HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, simplifiedRegion);
                             weDrewThis.Draw(bitmapLayer.Surface);
                             Workspace.History.PushNewAction(ha);
                         }
                     }
                 }
+
                 mouseDown = false;
                 modifierDown = 0;
-            }
-            // dispose added by MK
-            if (clipRegion != null)
-            {
-                clipRegion.Dispose();
             }
 
             if (brushRenderArgs != null)
@@ -675,9 +729,12 @@ namespace PaintDotNet
         {
             base.OnMouseMove(e);
 
+            this.previewRenderer.BrushLocation = new Point(e.X, e.Y);
+            this.previewRenderer.BrushSize = Workspace.Environment.PenInfo.Width / 2.0f;
+
             if (mouseDown)
             {
-                if (BtnDownMouseLeft(e) | BtnDownMouseRight(e))
+                if (BtnDownMouseLeft(e) || BtnDownMouseRight(e))
                 {
                     if (modifierDown == 0)
                     {
@@ -731,7 +788,7 @@ namespace PaintDotNet
                             }
 
                             bitmapLayer.Invalidate(inspectionRect);
-                            Workspace.Update();
+                            Update();
                         }
 
                         // update the lastMouseXY so we know how to "connect the dots"
@@ -741,10 +798,12 @@ namespace PaintDotNet
                     {
                         switch (modifierDown & (Keys.Control | Keys.Shift))
                         {
-                            case Keys.Control: PickColor(e);
+                            case Keys.Control: 
+                                PickColor(e);
                                 break;
 
-                            case Keys.Shift: AdjustDrawingColor(e);
+                            case Keys.Shift: 
+                                AdjustDrawingColor(e);
                                 break;
 
                             default: 
@@ -757,17 +816,11 @@ namespace PaintDotNet
 
         public RecolorTool(DocumentWorkspace parent)
             : base(parent,
-                   Utility.GetImageResource("Icons.RecoloringToolIcon.bmp"),
-                   "Recolor",
-                   "Replaces the color under the brush with an alternate color",
-                   "Left click to replace the background color with the foreground color.",
+                   PdnResources.GetImage("Icons.RecoloringToolIcon.bmp"),
+                   PdnResources.GetString("RecolorTool.Name"), 
+                   PdnResources.GetString("RecolorTool.HelpText"),
                    'r')
         {
-            // initialize any state information you need
-            cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.RecoloringToolCursor.cur"));
-            cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.GenericToolCursorMouseDown.cur"));
-            cursorMouseDownPickColor = new Cursor(Utility.GetResourceStream("Cursors.RecoloringToolCursorPickColor.cur"));
-            cursorMouseDownAdjustColor = new Cursor(Utility.GetResourceStream("Cursors.RecoloringToolCursorAdjustColor.cur"));
         }
 
         protected override void Dispose(bool disposing)
@@ -777,32 +830,7 @@ namespace PaintDotNet
             if (disposing)
             {
                 DisposeImage();
-
-                if (cursorMouseUp != null)
-                {
-                    cursorMouseUp.Dispose();
-                    cursorMouseUp = null;
-                }
-
-                if (cursorMouseDown != null)
-                {
-                    cursorMouseDown.Dispose();
-                    cursorMouseDown = null;
-                }
-
-                if (cursorMouseDownPickColor != null)
-                {
-                    cursorMouseDownPickColor.Dispose();
-                    cursorMouseDownPickColor = null;
-                }
-
-                if (cursorMouseDownAdjustColor != null)
-                {
-                    cursorMouseDownAdjustColor.Dispose();
-                    cursorMouseDownAdjustColor = null;
-                }
             }
         }
-
     }
 }

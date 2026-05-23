@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -15,183 +16,183 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for HistogramControl.
-	/// </summary>
-	public class HistogramControl : System.Windows.Forms.UserControl
-	{
-		/// <summary> 
-		/// Required designer variable.
-		/// </summary>
-		private Surface renderedHistogram = new Surface(100, 258);
-		public Histogram Histogram = new Histogram();
-		private bool isValid = false;
-
-		private ColorBgra mask;
-		public ColorBgra Mask 
-		{
-			get 
-			{
-				return mask;
-			}
-			set 
-			{
-				if (mask != value) 
-				{
-					isValid = false;
-					mask = value;
-					this.Invalidate();
-				}
-			}
-		}
-
-		private bool flipHorizontal;
-		public bool FlipHorizontal
-		{
-			get 
-			{
-				return flipHorizontal;
-			}
-			set 
-			{
-				flipHorizontal = value;
-			}
-		}
-
-		private bool flipVertical;
-		public bool FlipVertical
-		{
-			get 
-			{
-				return flipVertical;
-			}
-			set 
-			{
-				flipVertical = value;
-			}
-		}
-
-		public HistogramControl()
-		{
-			Histogram.HistogramChanged += new EventHandler(Histogram_HistogramChanged);
-		}
-
-		protected override void Dispose(bool disposing)
-		{
-			if (disposing) 
-			{
-				renderedHistogram.Dispose();
-			}
-			base.Dispose (disposing);
-		}
-
-		private const int tickSize = 4;
-		unsafe private void UpdateRenderedHistogram() 
-		{
-			long max = Histogram.GetMax() + 1;
-			mean = Histogram.GetMeanColor();
-			ColorBgra *ptr;
-
-			for (int y = 0; y < renderedHistogram.Height; y++) 
-			{
-				ptr = renderedHistogram.GetRowAddress(y);
-
-				for (int x = 0; x < renderedHistogram.Width; x++) 
-				{
-					ptr[x].Bgra = 0x000000;
-				}
-			}
-			for (int c = 0; c < 3; c++) 
-			{
-				byte onColor = 255;
-
-				if (mask[c] == 0) 
-				{
-					onColor /= 4;
-				}
-
-				for (int v = 0; v <= 255; v++) 
-				{
-					long cutoff = Histogram.GetOccurrences(c, (byte)v) * renderedHistogram.Width / max, x;
-
-					if (flipVertical) 
-					{
-						ptr = renderedHistogram.GetRowAddress(1 + v);
-					}
-					else
-					{
-						ptr = renderedHistogram.GetRowAddress(256 - v);
-					}
-					if (flipHorizontal) 
-					{
-						for (x = renderedHistogram.Width - cutoff; x < renderedHistogram.Width; x++) 
-						{
-							ptr[x].A = 255;
-							ptr[x][c] = onColor;
-						}
-					}
-					else 
-					{
-						for (x = 0; x < cutoff; x++) 
-						{
-							ptr[x].A = 255;
-							ptr[x][c] = onColor;
-						}
-					}
-				}
-			}
-
-			this.isValid = true;
-		}
-
-		private ColorBgra mean;
-		protected override void OnPaint(PaintEventArgs e)
-		{
-			base.OnPaint (e);
-
-			if (!isValid) 
-			{
-				UpdateRenderedHistogram();
-			}
-
-            using (Bitmap bmp = renderedHistogram.CreateAliasedBitmap())
+    /// <summary>
+    /// Summary description for HistogramControl.
+    /// </summary>
+    public class HistogramControl : System.Windows.Forms.UserControl
+    {
+        /// <summary> 
+        /// Required designer variable.
+        /// </summary>
+        protected Histogram histogram;
+        public Histogram Histogram
+        {
+            get
             {
-                if (this.Height < 256) 
+                return histogram;
+            }
+            
+            set
+            {
+                if (histogram != value)
                 {
-                    e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                } 
-                else 
-                {
-                    e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-                }
+                    if (histogram != null)
+                    {
+                        histogram.HistogramChanged -= histogramChangedDelegate;
+                    }
+                    histogram = value;
+                    histogram.HistogramChanged += histogramChangedDelegate;
 
-                e.Graphics.DrawImage(bmp, Rectangle.Inflate(this.ClientRectangle, -1, -1), renderedHistogram.Bounds, GraphicsUnit.Pixel);
-                e.Graphics.DrawRectangle(Pens.Black, 0, 0, ClientRectangle.Width - 1, ClientRectangle.Height - 1);
+                    int channels = histogram.Channels;
 
-                for (int c = 0; c < 3; c++)
-                {
-                    int x = flipHorizontal ? 0 : this.Width;
-                    int y = flipVertical ? mean[c] + 1 : 256 - mean[c];
-                    y = (y * this.Height) / 258;
-                    Point l, t, r, b;
+                    if (selected == null || channels != selected.GetLength(0))
+                    {
+                        selected = new bool[channels];
+                    }
 
-                    ColorBgra col = ColorBgra.FromBgr(0, 0, 0);
-
-                    col[c] = 255;
-                    l = new Point(x - tickSize, y);
-                    t = new Point(x, y - tickSize);
-                    r = new Point(x + tickSize, y);
-                    b = new Point(x, y + tickSize);
-
-                    e.Graphics.FillPolygon(new SolidBrush(col.ToColor()), new Point[] {l, t, r, b});
+                    Invalidate();
                 }
             }
-		}
+        }
 
-		private void Histogram_HistogramChanged(object sender, EventArgs e)
-		{
-			isValid = false;
-			Invalidate();
-		}
-	}
+        private bool[] selected;
+
+        public void SetSelected(int channel, bool val)
+        {
+            selected[channel] = val;
+        }
+
+        public bool GetSelected(int channel)
+        {
+            return selected[channel];
+        }
+
+        private bool flipHorizontal;
+        public bool FlipHorizontal
+        {
+            get 
+            {
+                return flipHorizontal;
+            }
+            set 
+            {
+                flipHorizontal = value;
+            }
+        }
+
+        private bool flipVertical;
+        public bool FlipVertical
+        {
+            get 
+            {
+                return flipVertical;
+            }
+            set 
+            {
+                flipVertical = value;
+            }
+        }
+
+        public EventHandler histogramChangedDelegate;
+        public HistogramControl()
+        {
+            histogramChangedDelegate = new EventHandler(Histogram_HistogramChanged);
+
+            this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | 
+                ControlStyles.DoubleBuffer | ControlStyles.ResizeRedraw, true);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose (disposing);
+        }
+
+        private const int tickSize = 4;
+
+        private void RenderChannel(Graphics g, ColorBgra color, int channel, long max, float mean)
+        {
+            Rectangle innerRect = ClientRectangle;
+
+            int l = innerRect.Left;
+            int t = innerRect.Top;
+            int b = innerRect.Bottom;
+            int r = innerRect.Right;
+            int channels = histogram.Channels;
+            int entries = histogram.Entries;
+            long[,] hist = Histogram.HistogramValues;
+
+            ++max;
+
+            if (flipHorizontal)
+            {
+                Utility.Swap(ref l, ref r);
+            }
+
+            if (!flipVertical)
+            {
+                Utility.Swap(ref t, ref b);
+            }
+
+            PointF[] points = new PointF[entries + 2];
+
+            points[entries] = new PointF(Utility.Lerp(l, r, -1), Utility.Lerp(t, b, 20));
+            points[entries + 1] = new PointF(Utility.Lerp(l, r, -1), Utility.Lerp(b, t, 20));
+
+            for (int i = 0; i < entries; i += entries - 1)
+            {
+                points[i] = new PointF(
+                    Utility.Lerp(l, r, (float)hist[channel, i] / (float)max),
+                    Utility.Lerp(t, b, (float)i / (float)entries));
+            }
+
+            long sum3 = hist[channel, 0] + hist[channel, 1];
+            
+            for (int i = 1; i < entries - 1; ++i)
+            {
+                sum3 += hist[channel, i + 1];
+                points[i] = new PointF(
+                    Utility.Lerp(l, r, (float)(sum3) / (float)(max * 3.1f)),
+                    Utility.Lerp(t, b, (float)i / (float)entries));
+                sum3 -= hist[channel, i - 1];
+            }
+
+            float intensity = selected[channel] ? 0.375f : 0.125f;
+            ColorBgra colorPen = ColorBgra.Lerp(ColorBgra.Black, color, intensity);
+            ColorBgra colorBrush = color;
+            
+            colorBrush.A = (byte)(255 * intensity);
+
+            Pen pen = new Pen(colorPen.ToColor(), 1.3f);
+            SolidBrush brush = new SolidBrush(colorBrush.ToColor());
+            
+            g.FillPolygon(brush, points, FillMode.Alternate);
+            g.DrawPolygon(pen, points);
+        }
+
+        private void RenderHistogram(Graphics g)
+        {
+            long max = histogram.GetMax();
+            float[] mean = histogram.GetMean();
+
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.Clear(BackColor);
+            int channels = histogram.Channels;
+            for (int i = 0; i < channels; ++i)
+            {
+                RenderChannel(g, histogram.GetVisualColor(i), i, max, mean[i]);
+            }
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint (e);
+
+            RenderHistogram(e.Graphics);
+        }
+
+        private void Histogram_HistogramChanged(object sender, EventArgs e)
+        {
+            Invalidate();
+        }
+    }
 }

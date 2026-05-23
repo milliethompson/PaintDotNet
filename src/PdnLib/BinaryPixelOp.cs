@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -118,6 +119,49 @@ namespace PaintDotNet
         public override void Apply(Surface dst, Point dstOffset, Surface src, Point srcOffset, int roiLength)
         {
             Apply(dst.GetPointAddress(dstOffset), src.GetPointAddress(srcOffset), roiLength);
+        }
+
+        public void Apply(Surface dst, Surface src)
+        {
+            if (dst.Size != src.Size)
+            {
+                throw new ArgumentException("dst.Size != src.Size");
+            }
+
+            unsafe
+            {
+                for (int y = 0; y < dst.Height; ++y)
+                {
+                    ColorBgra *dstPtr = dst.GetRowAddressUnchecked(y);
+                    ColorBgra *srcPtr = src.GetRowAddressUnchecked(y);
+                    Apply(dstPtr, srcPtr, dst.Width);
+                }
+            }
+        }
+
+        public void Apply(Surface dst, Surface lhs, Surface rhs)
+        {
+            if (dst.Size != lhs.Size)
+            {
+                throw new ArgumentException("dst.Size != lhs.Size");
+            }
+
+            if (lhs.Size != rhs.Size)
+            {
+                throw new ArgumentException("lhs.Size != rhs.Size");
+            }
+
+            unsafe
+            {
+                for (int y = 0; y < dst.Height; ++y)
+                {
+                    ColorBgra *dstPtr = dst.GetRowAddressUnchecked(y);
+                    ColorBgra *lhsPtr = lhs.GetRowAddressUnchecked(y);
+                    ColorBgra *rhsPtr = lhs.GetRowAddressUnchecked(y);
+
+                    Apply(dstPtr, lhsPtr, rhsPtr, dst.Width);
+                }
+            }
         }
 
         public BinaryPixelOp()

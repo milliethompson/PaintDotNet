@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -12,6 +13,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using System.Security;
 
 namespace PaintDotNet
@@ -22,14 +24,16 @@ namespace PaintDotNet
     /// right now is to work around some bugs in System.Drawing.Region,
     /// especially the memory leak in GetRegionScans().
     /// </summary>
+    [Serializable]
     public sealed class PdnRegion
-        : MarshalByRefObject,
+        : ISerializable,
           IDisposable
     {
         private object lockObject = new object();
         private Region gdiRegion;
-        bool changed = true;
+        private bool changed = true;
         private int cachedArea = -1;
+        private Rectangle cachedBounds = Rectangle.Empty;
         private RectangleF[] cachedRectsF = null;
         private Rectangle[] cachedRects = null;
 
@@ -43,7 +47,7 @@ namespace PaintDotNet
 
         public int GetArea()
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 int theCachedArea = cachedArea;
 
@@ -77,35 +81,35 @@ namespace PaintDotNet
 
         private bool IsChanged()
         {
-            return changed;
+            return this.changed;
         }
 
         private void Changed()
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
-                changed = true;
-                cachedArea = -1;
+                this.changed = true;
+                this.cachedArea = -1;
+                this.cachedBounds = Rectangle.Empty;
             }
         }
 
         private void ResetChanged()
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
-                changed = false;
+                this.changed = false;
             }
         }
 
-        #region Construction
         public PdnRegion()
         {
-            gdiRegion = new Region();
+            this.gdiRegion = new Region();
         }
 
         public PdnRegion(GraphicsPath path)
         {
-            gdiRegion = new Region(path);
+            this.gdiRegion = new Region(path);
         }
 
         public PdnRegion(PdnGraphicsPath pdnPath)
@@ -115,27 +119,39 @@ namespace PaintDotNet
 
         public PdnRegion(Rectangle rect)
         {
-            gdiRegion = new Region(rect);
+            this.gdiRegion = new Region(rect);
         }
 
         public PdnRegion(RectangleF rectF)
         {
-            gdiRegion = new Region(rectF);
+            this.gdiRegion = new Region(rectF);
         }
 
         public PdnRegion(RegionData regionData)
         {
-            gdiRegion = new Region(regionData);
+            this.gdiRegion = new Region(regionData);
+        }
+
+        public PdnRegion(Region region, bool takeOwnership)
+        {
+            if (takeOwnership)
+            {
+                this.gdiRegion = region;
+            }
+            else
+            {
+                this.gdiRegion = region.Clone();
+            }
         }
 
         public PdnRegion(Region region)
+            : this(region, false)
         {
-            gdiRegion = region.Clone();
         }
 
         private PdnRegion(PdnRegion pdnRegion)
         {
-            lock (pdnRegion.lockObject)
+            lock (pdnRegion.SyncRoot)
             {
                 this.gdiRegion = pdnRegion.gdiRegion.Clone();
                 this.changed = pdnRegion.changed;
@@ -154,10 +170,7 @@ namespace PaintDotNet
         [Obsolete]
         private PdnRegion(IntPtr hrgn)
         {
-            lock (lockObject)
-            {
-                gdiRegion = Region.FromHrgn(hrgn);
-            }
+            gdiRegion = Region.FromHrgn(hrgn);
         }
 
         public static PdnRegion CreateEmpty()
@@ -174,13 +187,37 @@ namespace PaintDotNet
             return pdnRegion;
         }
 
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            RegionData regionData = this.gdiRegion.GetRegionData();
+            byte[] data = regionData.Data;
+            info.AddValue("data", data);
+        }
+
+        public PdnRegion(SerializationInfo info, StreamingContext context)
+        {
+            byte[] data = (byte[])info.GetValue("data", typeof(byte[]));
+
+            using (Region region = new Region())
+            {
+                RegionData regionData = region.GetRegionData();
+                regionData.Data = data;
+                this.gdiRegion = new Region(regionData);
+            }
+
+            this.lockObject = new object();
+            this.cachedArea = -1;
+            this.cachedBounds = Rectangle.Empty;
+            this.changed = true;
+            this.cachedRects = null;
+            this.cachedRectsF = null;
+        }
+
         public PdnRegion Clone()
         {
             return new PdnRegion(this);
         }
-        #endregion
 
-        #region Destruction
         ~PdnRegion()
         {
             Dispose(false);
@@ -207,20 +244,26 @@ namespace PaintDotNet
                 disposed = true;
             }
         }
-        #endregion
 
+        /*
         public static implicit operator Region(PdnRegion convert)
         {
-            lock (convert.lockObject)
+            lock (convert.SyncRoot)
             {
                 convert.changed = true;
                 return convert.gdiRegion;
             }
         }
+        */
+
+        public Region GetRegionReadOnly()
+        {
+            return this.gdiRegion;
+        }
 
         public void Complement(GraphicsPath path)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Complement(path);
@@ -229,7 +272,7 @@ namespace PaintDotNet
 
         public void Complement(Rectangle rect)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Complement(rect);
@@ -238,7 +281,7 @@ namespace PaintDotNet
 
         public void Complement(RectangleF rectF)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Complement(rectF);
@@ -247,7 +290,7 @@ namespace PaintDotNet
 
         public void Complement(Region region)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Complement(region);
@@ -256,7 +299,7 @@ namespace PaintDotNet
 
         public void Complement(PdnRegion region2)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Complement(region2.gdiRegion);
@@ -265,7 +308,7 @@ namespace PaintDotNet
 
         public bool Equals(Region region, Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.Equals(region, g);
             }
@@ -273,7 +316,7 @@ namespace PaintDotNet
 
         public bool Equals(PdnRegion region2, Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.Equals(region2.gdiRegion, g);
             }
@@ -281,7 +324,7 @@ namespace PaintDotNet
 
         public void Exclude(GraphicsPath path)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 gdiRegion.Exclude(path);
             }
@@ -289,7 +332,7 @@ namespace PaintDotNet
 
         public void Exclude(Rectangle rect)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 gdiRegion.Exclude(rect);
             }
@@ -297,7 +340,7 @@ namespace PaintDotNet
 
         public void Exclude(RectangleF rectF)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 gdiRegion.Exclude(rectF);
             }
@@ -305,7 +348,7 @@ namespace PaintDotNet
 
         public void Exclude(Region region)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 gdiRegion.Exclude(region);
             }
@@ -313,7 +356,7 @@ namespace PaintDotNet
 
         public void Exclude(PdnRegion region2)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 gdiRegion.Exclude(region2.gdiRegion);
             }
@@ -327,7 +370,7 @@ namespace PaintDotNet
 
         public RectangleF GetBounds(Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.GetBounds(g);
             }
@@ -335,7 +378,7 @@ namespace PaintDotNet
 
         public RectangleF GetBounds()
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 using (SystemLayer.NullGraphics nullGraphics = new SystemLayer.NullGraphics())
                 {
@@ -344,21 +387,32 @@ namespace PaintDotNet
             }
         }
 
-        // TODO: optimize this to cache the bounds
         public Rectangle GetBoundsInt()
         {
-            Rectangle[] rects = GetRegionScansReadOnlyInt();
+            Rectangle bounds;
+
+            lock (SyncRoot)
+            {
+                bounds = this.cachedBounds;
+
+                if (bounds == Rectangle.Empty)
+                {
+                    Rectangle[] rects = GetRegionScansReadOnlyInt();
             
-            if (rects.Length == 0)
-            {
-                return Rectangle.Empty;
-            }
+                    if (rects.Length == 0)
+                    {
+                        return Rectangle.Empty;
+                    }
 
-            Rectangle bounds = rects[0];
+                    bounds = rects[0];
 
-            for (int i = 1; i < rects.Length; ++i)
-            {
-                bounds = Rectangle.Union(bounds, rects[i]);
+                    for (int i = 1; i < rects.Length; ++i)
+                    {
+                        bounds = Rectangle.Union(bounds, rects[i]);
+                    }
+
+                    this.cachedBounds = bounds;
+                }
             }
 
             return bounds;
@@ -367,7 +421,7 @@ namespace PaintDotNet
         [Obsolete]
         public IntPtr GetHrgn(Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.GetHrgn(g);
             }
@@ -375,7 +429,7 @@ namespace PaintDotNet
 
         public RegionData GetRegionData()
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.GetRegionData();
             }
@@ -401,20 +455,20 @@ namespace PaintDotNet
         /// <returns></returns>
         public RectangleF[] GetRegionScansReadOnly()
         {
-            lock (lockObject)
+            lock (this.SyncRoot)
             {
-                if (changed)
+                if (this.changed)
                 {
                     UpdateCachedRegionScans();
                 }
 
-                if (cachedRectsF == null)
+                if (this.cachedRectsF == null)
                 {
-                    cachedRectsF = new RectangleF[cachedRects.Length];
+                    this.cachedRectsF = new RectangleF[cachedRects.Length];
 
-                    for (int i = 0; i < cachedRectsF.Length; ++i)
+                    for (int i = 0; i < this.cachedRectsF.Length; ++i)
                     {
-                        cachedRectsF[i] = (RectangleF)cachedRects[i];
+                        this.cachedRectsF[i] = (RectangleF)this.cachedRects[i];
                     }
                 }
 
@@ -435,9 +489,9 @@ namespace PaintDotNet
 
         public Rectangle[] GetRegionScansReadOnlyInt()
         {
-            lock (lockObject)
+            lock (this.SyncRoot)
             {
-                if (changed)
+                if (this.changed)
                 {
                     UpdateCachedRegionScans();
                 }
@@ -448,16 +502,14 @@ namespace PaintDotNet
 
         private unsafe void UpdateCachedRegionScans()
         {
-            lock (lockObject)
-            {
-                SystemLayer.PdnGraphics.GetRegionScans(this.gdiRegion, out cachedRects, out cachedArea);
-                this.cachedRectsF = null; // only update this when specifically asked for it
-            }
+            // Assumes we are in a lock(SyncRoot){} block
+            SystemLayer.PdnGraphics.GetRegionScans(this.gdiRegion, out cachedRects, out cachedArea);
+            this.cachedRectsF = null; // only update this when specifically asked for it
         }
                 
         public void Intersect(GraphicsPath path)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Intersect(path);
@@ -466,7 +518,7 @@ namespace PaintDotNet
 
         public void Intersect(Rectangle rect)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Intersect(rect);
@@ -475,7 +527,7 @@ namespace PaintDotNet
 
         public void Intersect(RectangleF rectF)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Intersect(rectF);
@@ -484,7 +536,7 @@ namespace PaintDotNet
 
         public void Intersect(Region region)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Intersect(region);
@@ -493,7 +545,7 @@ namespace PaintDotNet
 
         public void Intersect(PdnRegion region2)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Intersect(region2.gdiRegion);
@@ -502,7 +554,7 @@ namespace PaintDotNet
 
         public bool IsEmpty(Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsEmpty(g);
             }
@@ -515,7 +567,7 @@ namespace PaintDotNet
 
         public bool IsInfinite(Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsInfinite(g);
             }
@@ -523,7 +575,7 @@ namespace PaintDotNet
 
         public bool IsVisible(Point point)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(point);
             }
@@ -531,7 +583,7 @@ namespace PaintDotNet
 
         public bool IsVisible(PointF pointF)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(pointF);
             }
@@ -539,7 +591,7 @@ namespace PaintDotNet
 
         public bool IsVisible(Rectangle rect)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(rect);
             }
@@ -547,7 +599,7 @@ namespace PaintDotNet
 
         public bool IsVisible(RectangleF rectF)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(rectF);
             }
@@ -555,7 +607,7 @@ namespace PaintDotNet
 
         public bool IsVisible(Point point, Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(point, g);
             }
@@ -563,7 +615,7 @@ namespace PaintDotNet
         
         public bool IsVisible(PointF pointF, Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(pointF, g);
             }
@@ -571,7 +623,7 @@ namespace PaintDotNet
 
         public bool IsVisible(Rectangle rect, Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(rect, g);
             }
@@ -579,7 +631,7 @@ namespace PaintDotNet
 
         public bool IsVisible(RectangleF rectF, Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(rectF, g);
             }
@@ -587,7 +639,7 @@ namespace PaintDotNet
 
         public bool IsVisible(float x, float y)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(x, y);
             }
@@ -595,7 +647,7 @@ namespace PaintDotNet
 
         public bool IsVisible(int x, int y, Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(x, y, g);
             }
@@ -603,7 +655,7 @@ namespace PaintDotNet
 
         public bool IsVisible(float x, float y, Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(x, y, g);
             }
@@ -611,7 +663,7 @@ namespace PaintDotNet
 
         public bool IsVisible(int x, int y, int width, int height)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(x, y, width, height);
             }
@@ -619,7 +671,7 @@ namespace PaintDotNet
 
         public bool IsVisible(float x, float y, float width, float height)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(x, y, width, height);
             }
@@ -627,7 +679,7 @@ namespace PaintDotNet
 
         public bool IsVisible(int x, int y, int width, int height, Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(x, y, width, height, g);
             }
@@ -635,7 +687,7 @@ namespace PaintDotNet
 
         public bool IsVisible(float x, float y, float width, float height, Graphics g)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 return gdiRegion.IsVisible(x, y, width, height, g);
             }
@@ -643,7 +695,7 @@ namespace PaintDotNet
 
         public void MakeEmpty()
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.MakeEmpty();
@@ -652,7 +704,7 @@ namespace PaintDotNet
 
         public void MakeInfinite()
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.MakeInfinite();
@@ -661,7 +713,7 @@ namespace PaintDotNet
 
         public void Transform(Matrix matrix)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Transform(matrix);
@@ -670,7 +722,7 @@ namespace PaintDotNet
 
         public void Union(GraphicsPath path)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Union(path);
@@ -679,7 +731,7 @@ namespace PaintDotNet
 
         public void Union(Rectangle rect)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Union(rect);
@@ -688,7 +740,7 @@ namespace PaintDotNet
 
         public void Union(RectangleF rectF)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Union(rectF);
@@ -697,7 +749,7 @@ namespace PaintDotNet
 
         public void Union(RectangleF[] rectsF)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
 
@@ -710,7 +762,7 @@ namespace PaintDotNet
 
         public void Union(Region region)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Union(region);
@@ -719,7 +771,7 @@ namespace PaintDotNet
 
         public void Union(PdnRegion region2)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Union(region2.gdiRegion);
@@ -728,7 +780,7 @@ namespace PaintDotNet
 
         public void Xor(Rectangle rect)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Xor(rect);
@@ -737,7 +789,7 @@ namespace PaintDotNet
 
         public void Xor(RectangleF rectF)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Xor(rectF);
@@ -746,7 +798,7 @@ namespace PaintDotNet
 
         public void Xor(Region region)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Xor(region);
@@ -755,7 +807,7 @@ namespace PaintDotNet
 
         public void Xor(PdnRegion region2)
         {
-            lock (lockObject)
+            lock (SyncRoot)
             {
                 Changed();
                 gdiRegion.Xor(region2.gdiRegion);

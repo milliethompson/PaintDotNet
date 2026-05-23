@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -16,12 +17,12 @@ using System.Runtime.InteropServices;
 
 namespace PaintDotNet.SystemLayer
 {
-	/// <summary>
-	/// These methods are used because we found some bugs in GDI+ / WinForms. Some
-	/// were the cause of major flickering with the transparent toolforms.
-	/// Other implementations of this class, or more generic implementations, may safely 
-	/// thunk straight to equivelants in System.Drawing.Graphics.
-	/// </summary>
+    /// <summary>
+    /// These methods are used because we found some bugs in GDI+ / WinForms. Some
+    /// were the cause of major flickering with the transparent toolforms.
+    /// Other implementations of this class, or more generic implementations, may safely 
+    /// thunk straight to equivelants in System.Drawing.Graphics.
+    /// </summary>
     public sealed class PdnGraphics
     {
         private PdnGraphics()
@@ -29,29 +30,10 @@ namespace PaintDotNet.SystemLayer
         }
 
         /// <summary>
-        /// Loads and returns the application's main icon.
-        /// </summary>
-        /// <returns>An Icon instance. You must Dispose() this when you no longer need it.</returns>
-        /// <remarks>
-        /// This will load the icon that is displayed in Explorer for the application. This method
-        /// is provided so that the icon can be retrieved without duplicating it as an embedded
-        /// resource. This allows the executable size to be smaller.
-        /// </remarks>
-        public static Icon LoadApplicationIcon()
-        {
-            IntPtr hModule = SafeNativeMethods.GetModuleHandleW(null);
-            IntPtr hIcon = SafeNativeMethods.LoadIconW(hModule, (IntPtr)NativeConstants.IDI_APPLICATION);
-            Icon icon = Icon.FromHandle(hIcon);
-            SafeNativeMethods.DeleteObject(hIcon);
-
-            return icon;
-        }
-      
-        /// <summary>
         /// Retrieves the properties stored within an Image instance.
         /// </summary>
         /// <param name="image"></param>
-        /// <returns>An array containing Object instances that must be cast to System.Drawing.Imaging.PropertyItem instances.</returns>
+        /// <returns>An array containing Object instances, each of which must be cast to a System.Drawing.Imaging.PropertyItem.</returns>
         /// <remarks>
         /// System.Drawing.Image.get_PropertyItems has a bug where it will throw a null-reference exception
         /// if an image contains an EXIF tag with Len=0. So we reach around its back and get the property
@@ -62,6 +44,7 @@ namespace PaintDotNet.SystemLayer
         {
             // Major HACK: We use reflection to sort of reach behind the Image class' back and snag its 'native' GDI+ handle
             // If Image.get_PropertyItems worked correctly, this function would only have to do the following: return image.PropertyItems;
+            // TODO: When we upgrade to .NET 2.0, see if this bug has been regressed. If so, remove this hack.
             Type imageType = image.GetType();
             FieldInfo fi = imageType.GetField("nativeImage", BindingFlags.Instance | BindingFlags.NonPublic);
             object nativeImageObject = fi.GetValue(image);
@@ -124,7 +107,6 @@ namespace PaintDotNet.SystemLayer
                     GC.KeepAlive(image);
                 }
             }
-
         }
 
         public static void SetPropertyItems(Image image, PropertyItem[] items)
@@ -142,18 +124,53 @@ namespace PaintDotNet.SystemLayer
             }
         }
 
+        /// <summary>
+        /// Creates a new, zero-filled PropertyItem.
+        /// </summary>
+        /// <returns>A PropertyItem that is zero-filled.</returns>
         public static PropertyItem CreatePropertyItem()
         {
             PropertyItem2 pi2 = new PropertyItem2(0, 0, 0, new byte[0]);
             return pi2.ToPropertyItem();
         }
 
+        /// <summary>
+        /// Copies the given PropertyItem.
+        /// </summary>
+        /// <param name="pi">The PropertyItem to clone.</param>
+        /// <returns>A copy of the given PropertyItem.</returns>
+        public static PropertyItem ClonePropertyItem(PropertyItem pi)
+        {
+            PropertyItem2 pi2 = new PropertyItem2(pi.Id, pi.Len, pi.Type, (byte[])pi.Value.Clone());
+            return pi2.ToPropertyItem();
+        }
+
+        /// <summary>
+        /// Serializes a PropertyItem into a string blob.
+        /// </summary>
+        /// <param name="pi">The PropertyItem to serialize.</param>
+        /// <returns>A string that may be later deserialized using DeserializePropertyItem.</returns>
+        /// <remarks>
+        /// Note to implementors: The format for the serialized data is intentionally opaque for programmatic users
+        /// of this class. However, since this data goes into .PDN files, it must be carefully maintained. See
+        /// the PropertyItem2 class for details.
+        /// </remarks>
         public static string SerializePropertyItem(PropertyItem pi)
         {
             PropertyItem2 pi2 = PropertyItem2.FromPropertyItem(pi);
             return pi2.ToBlob();
         }
 
+        /// <summary>
+        /// Deserializes a PropertyItem from a string previously returned from SerializePropertyItem.
+        /// </summary>
+        /// <param name="piBlob">The string data to deserialize.</param>
+        /// <returns>A PropertyItem instance.</returns>
+        /// <remarks>
+        /// Note to implementors: The format for the serialized data is intentionally opaque for programmatic users
+        /// of this class. However, since this data goes into .PDN files, it must be carefully maintained. See
+        /// the PropertyItem2 class for details.
+        /// </remarks>
         public static PropertyItem DeserializePropertyItem(string piBlob)
         {
             PropertyItem2 pi2 = PropertyItem2.FromBlob(piBlob);
@@ -161,32 +178,31 @@ namespace PaintDotNet.SystemLayer
         }
 
         /// <summary>
-        /// Draws a Bitmap onto a Graphics at the specify Rectangle.
+        /// Draws a bitmap to a Graphics context.
         /// </summary>
-        /// <param name="dst">The destination surface.</param>
-        /// <param name="dstRect">The destination rectangle.</param>
-        /// <param name="srcBitmap">The source bitmap.</param>
-        /// <remarks>This method uses Win32 GDI functions and avoids flickering.</remarks>
-        public static void DrawBitmap(Graphics dst, Rectangle dstRect, Bitmap srcBitmap)
+        /// <param name="dst">The Graphics context to draw the bitmap on to.</param>
+        /// <param name="dstRect">The clipping rectangle in destination coordinates.</param>
+        /// <param name="dstMatrix">The transformation matrix to apply. This is only used to transform the upper-left corner of dstRect.</param>
+        /// <param name="srcBitmapHandle">The handle to the bitmap obtained from Memory.AllocateBitmap().</param>
+        /// <param name="srcWidth">The full width of the bitmap.</param>
+        /// <param name="srcHeight">The full height of the bitmap.</param>
+        /// <param name="srcOffsetX">The left edge of the source bitmap to draw from.</param>
+        /// <param name="srcOffsetY">The top edge of the source bitmap to draw from.</param>
+        public unsafe static void DrawBitmap(
+            Graphics dst,
+            Rectangle dstRect,
+            Matrix dstMatrix,
+            IntPtr srcBitmapHandle,
+            int srcWidth,
+            int srcHeight,
+            int srcOffsetX,
+            int srcOffsetY)
         {
-            DrawBitmap(dst, dstRect, srcBitmap, new Point(0, 0));
-        }
+            if (srcBitmapHandle == IntPtr.Zero)
+            {
+                throw new ArgumentNullException("srcBitmapHandle");
+            }
 
-        /// <summary>
-        /// Draws a Bitmap onto a Graphics at the specified Rectangle.
-        /// </summary>
-        /// <param name="dst">The destination surface.</param>
-        /// <param name="dstRect">The destination rectangle.</param>
-        /// <param name="srcBitmap">The source bitmap.</param>
-        /// <remarks>This method uses Win32 GDI functions and avoids flickering.</remarks>
-        public static void DrawBitmap(Graphics dst, Rectangle dstRect, Bitmap srcBitmap, Point srcOffset)
-        {
-            Matrix dstMatrix = dst.Transform;
-            DrawBitmap(dst, dstRect, dstMatrix, srcBitmap, srcOffset);
-        }
-		
-        public static void DrawBitmap(Graphics dst, Rectangle dstRect, Matrix dstMatrix, Bitmap srcBitmap, Point srcOffset)
-        {
             Point[] points = new Point[] { dstRect.Location };
             dstMatrix.TransformPoints(points);
             dstRect.Location = points[0];
@@ -199,10 +215,10 @@ namespace PaintDotNet.SystemLayer
             try
             {
                 hdc = dst.GetHdc();
-                hbitmap = srcBitmap.GetHbitmap();
                 chdc = SafeNativeMethods.CreateCompatibleDC(hdc);
-                old = SafeNativeMethods.SelectObject(chdc, hbitmap);
-                SafeNativeMethods.BitBlt(hdc, dstRect.Left, dstRect.Top, dstRect.Width, dstRect.Height, chdc, srcOffset.X, srcOffset.Y, NativeConstants.SRCCOPY);
+                old = SafeNativeMethods.SelectObject(chdc, srcBitmapHandle);
+                SafeNativeMethods.BitBlt(hdc, dstRect.Left, dstRect.Top, dstRect.Width, 
+                    dstRect.Height, chdc, srcOffsetX, srcOffsetY, NativeConstants.SRCCOPY);
             }
 
             finally
@@ -218,177 +234,91 @@ namespace PaintDotNet.SystemLayer
                     SafeNativeMethods.DeleteDC(chdc);
                     chdc = IntPtr.Zero;
                 }
-			
-                if (hbitmap != IntPtr.Zero)
-                {
-                    SafeNativeMethods.DeleteObject(hbitmap);
-                    hbitmap = IntPtr.Zero;
-                }
-
+            
                 if (hdc != IntPtr.Zero)
                 {
                     dst.ReleaseHdc(hdc);
                     hdc = IntPtr.Zero;
                 }
             }
-        }
 
-        /// <summary>
-        /// Draws a Bitmap onto a Graphics at the specify Rectangle, and stretches to fit using nearest neighbor resampling.
-        /// </summary>
-        /// <param name="dst">The destination surface.</param>
-        /// <param name="dstRect">The destination rectangle.</param>
-        /// <param name="srcBitmap">The source bitmap.</param>
-        /// <param name="srcRect">The source rectangle.</param>
-        /// <remarks>This method uses Win32 GDI functions and avoids flickering.</remarks>
-        public static void DrawBitmap(Graphics dst, Rectangle dstRect, Bitmap srcBitmap, Rectangle srcRect)
-        {
-            Point[] points = new Point[] { dstRect.Location };
-            dst.Transform.TransformPoints(points);
-            dstRect.Location = points[0];
-
-            IntPtr hdc = IntPtr.Zero;
-            IntPtr hbitmap = IntPtr.Zero;
-            IntPtr chdc = IntPtr.Zero;
-            IntPtr old = IntPtr.Zero;
-
-            try
-            {
-                hdc = dst.GetHdc();
-                hbitmap = srcBitmap.GetHbitmap();
-                chdc = SafeNativeMethods.CreateCompatibleDC(hdc);
-                old = SafeNativeMethods.SelectObject(chdc, hbitmap);
-
-                SafeNativeMethods.SetStretchBltMode(hdc, NativeConstants.COLORONCOLOR);
-                SafeNativeMethods.StretchBlt(hdc, dstRect.Left, dstRect.Top, dstRect.Width, dstRect.Height,
-                    chdc, srcRect.Left, srcRect.Top, srcRect.Width, srcRect.Height, NativeConstants.SRCCOPY);
-            }
-
-            finally
-            {
-                if (old != IntPtr.Zero)
-                {
-                    SafeNativeMethods.SelectObject(chdc, old);
-                    old = IntPtr.Zero;
-                }
-
-                if (chdc != IntPtr.Zero)
-                {
-                    SafeNativeMethods.DeleteDC(chdc);
-                    chdc = IntPtr.Zero;
-                }
-			
-                if (hbitmap != IntPtr.Zero)
-                {
-                    SafeNativeMethods.DeleteObject(hbitmap);
-                    hbitmap = IntPtr.Zero;
-                }
-
-                if (hdc != IntPtr.Zero)
-                {
-                    dst.ReleaseHdc(hdc);
-                    hdc = IntPtr.Zero;
-                }
-            }
+            GC.KeepAlive(dst);
         }
         
-        public static void DrawGrid(Graphics g, Rectangle rect, PointFPointFDelegate surfaceToClient)
+        internal unsafe static void GetRegionScans(IntPtr hRgn, out Rectangle[] scans, out int area)
         {
-            IntPtr hdc = IntPtr.Zero;
-            IntPtr pen = IntPtr.Zero;
-            IntPtr oldObject = IntPtr.Zero;
-
-            PointF topLeft = new PointF(rect.Left, rect.Top);
-            PointF topLeftSurface = surfaceToClient(topLeft);
-            PointF topLeftRight1 = new PointF(rect.Left + 1, rect.Top);
-            PointF topLeftRight1Surface = surfaceToClient(topLeftRight1);
-            PointF topLeftDown1 = new PointF(rect.Left, rect.Top + 1);
-            PointF topLeftDown1Surface = surfaceToClient(topLeftDown1);
-
-            float dx = topLeftRight1Surface.X - topLeftSurface.X;
-            float dy = topLeftDown1Surface.Y - topLeftSurface.Y;
-
-            // We use some native Win32 GDI voodoo to make the grid drawing waaaaaaaay faster
-            try
+            uint bytes = 0;
+            int countdown = screwUpMax;
+                    
+            // HACK: It seems that sometimes the GetRegionData will return ERROR_INVALID_HANDLE
+            //       even though the handle (the HRGN) is fine. Maybe the function is not
+            //       re-entrant? I'm not sure, but trying it again seems to fix it.
+            while (countdown > 0)
             {
-                using (Matrix matrix = g.Transform)
-                {                
-                    hdc = g.GetHdc();
-                    float xOffset = matrix.OffsetX;
-                    float yOffset = matrix.OffsetY;
+                bytes = SafeNativeMethods.GetRegionData(hRgn, 0, (NativeStructs.RGNDATA *)IntPtr.Zero);
 
-                    NativeStructs.LOGBRUSH logbrush = new NativeStructs.LOGBRUSH();
-                    logbrush.lbColor = 0xff808080;
-                    logbrush.lbHatch = 0;
-                    logbrush.lbStyle = NativeConstants.BS_SOLID;
-
-                    unsafe
-                    {
-                        pen = SafeNativeMethods.ExtCreatePen(NativeConstants.PS_COSMETIC | NativeConstants.PS_ALTERNATE, 1, ref logbrush, 0, null);
-                    }
-
-                    oldObject = SafeNativeMethods.SelectObject(hdc, pen);
-                    NativeStructs.POINT point; // not used except as 'out' param for MoveToEx
-
-                    //for (int x = rect.Left; x <= rect.Right; x++) 
-                    for (int x = 0; x <= rect.Width; ++x)
-                    {
-                        PointF start = new PointF(xOffset + topLeftSurface.X + (x * dx), yOffset + topLeftSurface.Y);
-                        PointF end = new PointF(start.X, yOffset + topLeftSurface.Y + (rect.Height * dy));
-                        Point clientStart = Point.Truncate(start);
-                        Point clientEnd = Point.Truncate(end);
-
-                        if (0 == SafeNativeMethods.MoveToEx(hdc, clientStart.X, clientStart.Y, out point))
-                        {
-                            NativeMethods.ThrowOnWin32Error();
-                        }
-
-                        if (0 == SafeNativeMethods.LineTo(hdc, clientEnd.X, clientEnd.Y))
-                        {
-                            NativeMethods.ThrowOnWin32Error();
-                        }
-                    }
-
-                    for (int y = 0; y <= rect.Height; ++y)
-                    {
-                        PointF start = new PointF(xOffset + topLeftSurface.X, yOffset + topLeftSurface.Y + (y * dy));
-                        PointF end = new PointF(xOffset + topLeftSurface.X + (rect.Width * dx), start.Y);
-                        Point clientStart = Point.Truncate(start);
-                        Point clientEnd = Point.Truncate(end);
-
-                        if (0 == SafeNativeMethods.MoveToEx(hdc, clientStart.X, clientStart.Y, out point))
-                        {
-                            NativeMethods.ThrowOnWin32Error();
-                        }
-
-                        if (0 == SafeNativeMethods.LineTo(hdc, clientEnd.X, clientEnd.Y))
-                        {
-                            NativeMethods.ThrowOnWin32Error();
-                        }
-                    }
+                if (bytes == 0)
+                {
+                    --countdown;
+                    System.Threading.Thread.Sleep(5);
+                }
+                else
+                {
+                    break;
                 }
             }
 
+            // But if we retry several times and it still messes up then we will finally give up.
+            if (bytes == 0)
+            {
+                int error = Marshal.GetLastWin32Error();
+                throw new Win32Exception(error, "GetRegionData returned " + bytes.ToString() + ", GetLastError() = " + error.ToString());
+            }
+
+            byte *data;
+                        
+            // Up to 512 bytes, allocate on the stack. Otherwise allocate from the heap.
+            if (bytes <= 512)
+            {
+                byte *data1 = stackalloc byte[(int)bytes];
+                data = data1;
+            }
+            else
+            {
+                data = (byte *)Memory.Allocate(bytes).ToPointer();
+            }                        
+
+            try
+            {
+                NativeStructs.RGNDATA *pRgnData = (NativeStructs.RGNDATA *)data;
+                uint result = SafeNativeMethods.GetRegionData(hRgn, bytes, pRgnData);
+
+                if (result != bytes)
+                {
+                    throw new OutOfMemoryException("SafeNativeMethods.GetRegionData returned 0");
+                }
+
+                NativeStructs.RECT *pRects = NativeStructs.RGNDATA.GetRectsPointer(pRgnData);
+                scans = new Rectangle[pRgnData->rdh.nCount];
+                area = 0;
+            
+                for (int i = 0; i < scans.Length; ++i)
+                {
+                    scans[i] = Rectangle.FromLTRB(pRects[i].left, pRects[i].top, pRects[i].right, pRects[i].bottom);
+                    area += scans[i].Width * scans[i].Height;
+                }
+
+                pRects = null;
+                pRgnData = null;
+            }
+            
             finally
             {
-                if (oldObject != IntPtr.Zero)
+                if (bytes > 512)
                 {
-                    SafeNativeMethods.SelectObject(hdc, oldObject);
-                    oldObject = IntPtr.Zero;
+                    Memory.Free(new IntPtr(data));
                 }
-
-                if (pen != IntPtr.Zero)
-                {
-                    SafeNativeMethods.DeleteObject(pen);
-                    pen = IntPtr.Zero;
-                }
-
-                if (hdc != IntPtr.Zero)
-                {
-                    g.ReleaseHdc(hdc);
-                    hdc = IntPtr.Zero;
-                }
-            }        
+            }
         }
 
         private const int screwUpMax = 10;
@@ -397,97 +327,31 @@ namespace PaintDotNet.SystemLayer
         /// Retrieves an array of rectangles that approximates a region, and computes the
         /// pixel area of it. This method is necessary to work around some bugs in .NET
         /// and to increase performance for the way in which we typically use this data.
-        /// Generic implementations may safely thunk to Region.GetRegionScans().
         /// </summary>
         /// <param name="region">The Region to retrieve data from.</param>
         /// <param name="scans">An array of Rectangle to put the scans into.</param>
         /// <param name="area">An integer to write the computed area of the region into.</param>
+        /// <remarks>
+        /// Note to implementors: Simple implementations may simple call region.GetRegionScans()
+        /// and process the data for the 'out' variables.</remarks>
         public static void GetRegionScans(Region region, out Rectangle[] scans, out int area)
         {
-            unsafe
+            using (NullGraphics nullGraphics = new NullGraphics())
             {
-                using (NullGraphics nullGraphics = new NullGraphics())
-                {
-                    IntPtr hRgn = IntPtr.Zero;
+                IntPtr hRgn = IntPtr.Zero;
                 
-                    try
+                try
+                {
+                    hRgn = region.GetHrgn(nullGraphics.Graphics);
+                    GetRegionScans(hRgn, out scans, out area);
+                }
+
+                finally
+                {
+                    if (hRgn != IntPtr.Zero)
                     {
-                        hRgn = region.GetHrgn(nullGraphics.Graphics);
-                        HandleRef hRgnRef = new HandleRef(region, hRgn);
-
-                        uint bytes = 0;
-                        int countdown = screwUpMax;
-                    
-                        // HACK: It seems that someimtes the GetRegionData will return ERROR_INVALID_HANDLE
-                        //       even though the handle (the HRGN) is fine. Maybe the function is not
-                        //       re-entrant? I'm not sure, but trying it again seems to fix it.
-                        while (countdown > 0)
-                        {
-                            bytes = SafeNativeMethods.GetRegionData(hRgnRef, 0, (NativeStructs.RGNDATA *)IntPtr.Zero);
-
-                            if (bytes == 0)
-                            {
-                                --countdown;
-                                System.Threading.Thread.Sleep(5);
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-
-                        // But if we retry several times and it still messes up then we will finally give up.
-                        if (bytes == 0)
-                        {
-                            int error = Marshal.GetLastWin32Error();
-                            throw new Win32Exception(error, "GetRegionData returned " + bytes.ToString() + ", GetLastError() = " + error.ToString());
-                        }
-
-                        byte *data;
-                        
-                        if (bytes <= 512)
-                        {
-                            byte *data1 = stackalloc byte[(int)bytes];
-                            data = data1;
-                        }
-                        else
-                        {
-                            data = (byte *)Memory.Allocate(bytes).ToPointer();
-                        }                        
-
-                        NativeStructs.RGNDATA *pRgnData = (NativeStructs.RGNDATA *)data;
-                        uint result = SafeNativeMethods.GetRegionData(hRgnRef, bytes, pRgnData);
-
-                        if (result != bytes)
-                        {
-                            throw new OutOfMemoryException("SafeNativeMethods.GetRegionData returned 0");
-                        }
-
-                        NativeStructs.RECT *pRects = NativeStructs.RGNDATA.GetRectsPointer(pRgnData);
-                        scans = new Rectangle[pRgnData->rdh.nCount];
-                        area = 0;
-            
-                        for (int i = 0; i < scans.Length; ++i)
-                        {
-                            scans[i] = Rectangle.FromLTRB(pRects[i].left, pRects[i].top, pRects[i].right, pRects[i].bottom);
-                            area += scans[i].Width * scans[i].Height;
-                        }
-
-                        pRects = null;
-                        pRgnData = null;
-
-                        if (bytes > 512)
-                        {
-                            Memory.Free(new IntPtr(data));
-                        }
-                    }
-
-                    finally
-                    {
-                        if (hRgn != IntPtr.Zero)
-                        {
-                            SafeNativeMethods.DeleteObject(hRgn);
-                        }
+                        SafeNativeMethods.DeleteObject(hRgn);
+                        hRgn = IntPtr.Zero;
                     }
                 }
             }
@@ -496,12 +360,30 @@ namespace PaintDotNet.SystemLayer
         }
 
         /// <summary>
-        /// Draws a polygon. The last point is not joined to the beginning point.
+        /// Draws a polygon. The last point is not joined to the beginning point. If there is an error while
+        /// trying to draw, it is discarded and ignored.
         /// </summary>
         /// <param name="g">The Graphics context to draw to.</param>
         /// <param name="points">The points to draw. Lines are drawn between every point N to point N+1.</param>
         /// <param name="color">The color to draw with.</param>
+        /// <remarks>
+        /// Note to implementors: This method is used to avoid drawing with GDI+, which avoids flickering
+        /// with our transparent toolforms. Implementations may thunk straight to g.DrawLines().
+        /// </remarks>
         public static void DrawPolyLine(Graphics g, Color color, Point[] points)
+        {
+            try
+            {
+                DrawPolyLineImpl(g, color, points);
+            }
+
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Exception while executing PdnGraphics.DrawPolyLine: " + ex.ToString());
+            }
+        }
+
+        private static void DrawPolyLineImpl(Graphics g, Color color, Point[] points)
         {
             if (points.Length < 1)
             {
@@ -565,15 +447,35 @@ namespace PaintDotNet.SystemLayer
                     hdc = IntPtr.Zero;
                 }
             }
+
+            GC.KeepAlive(g);
         }
 
         /// <summary>
-        /// Draws several filled rectangles using the same color.
+        /// Draws several filled rectangles using the same color. If there is an error while trying to draw,
+        /// it is discarded and ignored.
         /// </summary>
         /// <param name="g">The Graphics context to draw to.</param>
         /// <param name="rects">A list of rectangles to draw.</param>
         /// <param name="color">The color to fill the rectangles with.</param>
+        /// <remarks>
+        /// Note to implementors: This method is used to avoid drawing with GDI+, which avoids flickering
+        /// with our transparent toolforms. Implementations may thunk straight to g.FillRectangle().
+        /// </remarks>
         public static void FillRectangles(Graphics g, Color color, Rectangle[] rects)
+        {
+            try
+            {
+                FillRectanglesImpl(g, color, rects);
+            }
+
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Exception while executing PdnGraphics.FillRectangles: " + ex.ToString());
+            }
+        }
+
+        private static void FillRectanglesImpl(Graphics g, Color color, Rectangle[] rects)
         {
             uint nativeColor = (uint)(color.R  + (color.G << 8) + (color.B << 16));
 
@@ -631,7 +533,9 @@ namespace PaintDotNet.SystemLayer
                     hdc = IntPtr.Zero;
                 }
             }
+
+            GC.KeepAlive(g);
         }
-	}
+    }
 }
 

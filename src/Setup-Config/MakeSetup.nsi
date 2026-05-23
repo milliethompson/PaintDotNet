@@ -1,0 +1,151 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Paint.NET
+;; Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+;;               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+;;               and Luke Walker
+;; Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+;; See src;setup;License.rtf for complete licensing and attribution information.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; MakeSetup.nsi
+;
+; Copies files necessary to do a Paint.NET installation.
+; After the PDN setup completes, the temp files will be deleted.
+
+;--------------------------------
+
+; The name of the installer
+Name "PaintDotNet Setup SFX"
+
+; The default installation directory
+InstallDir $TEMP\PdnSetup
+
+SilentInstall silent
+
+VIAddVersionKey ProductName "Paint.NET Setup"
+VIAddVersionKey ProductVersion "2.5.0.0"
+VIAddVersionKey FileVersion "2.5.0.0"
+VIAddVersionKey LegalCopyright "Copyright © 2005 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2005 Microsoft Corporation. All Rights Reserved."
+VIAddVersionKey FileDescription "Installs Paint.NET."
+VIProductVersion "2.5.0.0"
+
+; The file to write
+!ifdef Debug
+
+!ifdef FullInstaller
+  OutFile "..\Setup\Debug\PaintDotNetFullSetup.exe"
+!else
+  OutFile "..\Setup\Debug\PaintDotNetSetup.exe"
+!endif
+
+!else
+
+!ifdef FullInstaller
+  OutFile "..\Setup\Release\PaintDotNetFullSetup.exe"
+!else
+  OutFile "..\Setup\Release\PaintDotNetSetup.exe"
+!endif 
+
+!endif
+
+;--------------------------------
+
+; Pages
+
+;Page directory
+;Page instfiles
+
+Var "Args"
+
+;--------------------------------
+
+; The stuff to install
+Section "" ;No components page, name is not important
+    
+  ; Set output path to the installation directory.
+  SetOutPath $INSTDIR
+  
+  ; Command-line parameters
+  Call GetParameters
+  Pop $Args
+  
+  ; Put file there
+!ifdef Debug
+  File ..\Setup\Debug\PaintDotNet.msi
+  File ..\SetupFrontEnd\bin\Debug\PaintDotNet.Resources.dll
+  File ..\SetupFrontEnd\bin\Debug\PaintDotNet.Strings.*.resources
+  File ..\SetupFrontEnd\bin\Debug\PaintDotNet.Strings.resources
+  File ..\SetupFrontEnd\bin\Debug\SetupFrontEnd.exe
+  File ..\SetupShim\Debug\SetupShim.exe
+!else
+  File ..\Setup\Release\PaintDotNet.msi
+  File ..\SetupFrontEnd\bin\Release\PaintDotNet.Resources.dll
+  File ..\SetupFrontEnd\bin\Release\PaintDotNet.Strings.*.resources
+  File ..\SetupFrontEnd\bin\Release\PaintDotNet.Strings.resources
+  File ..\SetupFrontEnd\bin\Release\SetupFrontEnd.exe
+  File ..\SetupShim\Release\SetupShim.exe
+!endif
+
+!ifdef FullInstaller
+  File ..\..\programs\dotnetfx.exe
+  File ..\..\programs\dotnet_1_1_SP1\NDP1.1sp1-KB867460-X86.exe
+  File ..\..\programs\dotnet_1_1_SP1\WindowsServer2003-KB867460-x86-ENU.EXE
+!endif
+  
+  ExecWait "SetupShim.exe $Args"
+
+!ifdef FullInstaller
+  Delete $INSTDIR\dotnetfx.exe
+  Delete $INSTDIR\NDP1.1sp1-KB867460-X86.exe
+  Delete $INSTDIR\WindowsServer2003-KB867460-x86-ENU.EXE
+!endif
+  Delete $INSTDIR\SetupShim.exe
+  Delete $INSTDIR\SetupFrontEnd.exe
+  Delete $INSTDIR\PaintDotNet.Strings.resources
+  Delete $INSTDIR\PaintDotNet.Strings.de.resources
+  Delete $INSTDIR\PaintDotNet.Resources.dll
+  Delete $INSTDIR\PaintDotNet.msi
+  RMDir $INSTDIR
+  
+SectionEnd ; end the section
+
+; GetParameters
+; input, none
+; output, top of stack (replaces, with e.g. whatever)
+; modifies no other variables.
+Function GetParameters
+
+    Push $R0
+    Push $R1
+    Push $R2
+    Push $R3
+
+    StrCpy $R2 1
+    StrLen $R3 $CMDLINE
+
+    ;Check for quote or space
+    StrCpy $R0 $CMDLINE $R2
+    StrCmp $R0 '"' 0 +3
+        StrCpy $R1 '"'
+        Goto loop
+    StrCpy $R1 " "
+
+    loop:
+        IntOp $R2 $R2 + 1
+        StrCpy $R0 $CMDLINE 1 $R2
+        StrCmp $R0 $R1 get
+        StrCmp $R2 $R3 get
+        Goto loop
+
+    get:
+        IntOp $R2 $R2 + 1
+        StrCpy $R0 $CMDLINE 1 $R2
+        StrCmp $R0 " " get
+        StrCpy $R0 $CMDLINE "" $R2
+
+    Pop $R3
+    Pop $R2
+    Pop $R1
+    Exch $R0
+
+FunctionEnd

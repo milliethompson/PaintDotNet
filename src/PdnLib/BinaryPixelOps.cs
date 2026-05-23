@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -18,13 +19,6 @@ namespace PaintDotNet
     public sealed class BinaryPixelOps
     {
         private BinaryPixelOps()
-        {
-        }
-
-        // Provided for compatability with some older 1.x beta builds
-        [Obsolete]
-        [Serializable]
-        public class AlphaFromRhsBlend : AlphaBlend
         {
         }
 
@@ -45,22 +39,27 @@ namespace PaintDotNet
         {
             public static ColorBgra ApplyStatic(ColorBgra lhs, ColorBgra rhs)
             {
-                int rhsA = rhs.A + 1;
-                int invRhsA = 256 - rhsA;
-                int lhsA = lhs.A + 1;
-                int invLhsA = 256 - lhsA;
+                int rhsA = rhs.A + (rhs.A >> 7);
+                int lhsA = lhs.A + (lhs.A >> 7);
+                int lhsAMult = (256 - rhsA) * lhsA;
+                int totalA = ((lhsA * (256 - rhsA)) >> 8) + rhsA;
+                ColorBgra ret;
 
-                int r = (((invRhsA * (lhsA * lhs.R)) / 256) + (rhsA * rhs.R)) / 256;
-                int g = (((invRhsA * (lhsA * lhs.G)) / 256) + (rhsA * rhs.G)) / 256;
-                int b = (((invRhsA * (lhsA * lhs.B)) / 256) + (rhsA * rhs.B)) / 256;
-                int a = ComputeAlpha(lhs.A, rhs.A);
+                if (totalA == 0)
+                {
+                    ret = ColorBgra.FromUInt32(0);
+                }
+                else
+                {
+                    int b = (((lhsAMult * lhs.B) >> 8) + (rhsA * rhs.B)) / totalA;
+                    int g = (((lhsAMult * lhs.G) >> 8) + (rhsA * rhs.G)) / totalA;
+                    int r = (((lhsAMult * lhs.R) >> 8) + (rhsA * rhs.R)) / totalA;
+                    int a = ComputeAlpha(lhs.A, rhs.A);
 
-                return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
-            }
+                    ret = ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
+                }
 
-            public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
-            {
-                return AlphaBlend.ApplyStatic(lhs, rhs);
+                return ret;
             }
 
             [CLSCompliant(false)]
@@ -68,17 +67,24 @@ namespace PaintDotNet
             {
                 while (length > 0)
                 {
-                    int rhsA = rhs->A + 1;
-                    int invRhsA = 256 - rhsA;
-                    int lhsA = lhs->A + 1;
-                    int invLhsA = 256 - lhsA;
+                    int rhsA = rhs->A + (rhs->A >> 7);
+                    int lhsA = lhs->A + (lhs->A >> 7);
+                    int lhsAMult = (256 - rhsA) * lhsA;
+                    int totalA = ((lhsA * (256 - rhsA)) >> 8) + rhsA;
 
-                    int r = (((invRhsA * (lhsA * lhs->R)) / 256) + (rhsA * rhs->R)) / 256;
-                    int g = (((invRhsA * (lhsA * lhs->G)) / 256) + (rhsA * rhs->G)) / 256;
-                    int b = (((invRhsA * (lhsA * lhs->B)) / 256) + (rhsA * rhs->B)) / 256;
-                    int a = ComputeAlpha(lhs->A, rhs->A);
-                
-                    dst->Bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)a << 24));
+                    if (totalA == 0)
+                    {
+                        dst->Bgra = 0;
+                    }
+                    else
+                    {
+                        int b = (((lhsAMult * lhs->B) >> 8) + (rhsA * rhs->B)) / totalA;
+                        int g = (((lhsAMult * lhs->G) >> 8) + (rhsA * rhs->G)) / totalA;
+                        int r = (((lhsAMult * lhs->R) >> 8) + (rhsA * rhs->R)) / totalA;
+                        int a = ComputeAlpha(lhs->A, rhs->A);
+
+                        dst->Bgra = ColorBgra.BgraToUInt32(b, g, r, a);
+                    }
 
                     ++dst;
                     ++lhs;
@@ -88,26 +94,35 @@ namespace PaintDotNet
             }
 
             [CLSCompliant(false)]
-            protected override unsafe void Apply(ColorBgra *dst, ColorBgra *lhs, ColorBgra *rhs, int length)
-            {
-                AlphaBlend.ApplyStatic(dst, lhs, rhs, length);
-            }
-
-            [CLSCompliant(false)]
             public static unsafe void ApplyStatic(ColorBgra *dst, ColorBgra *src, int length)
             {
                 while (length > 0)
                 {
-                    int srcA = src->A + 1;
-                    int invSrcA = 256 - srcA;
-                    int dstA = dst->A + 1;
+                    if (src->A == 255)
+                    {
+                        *dst = *src;
+                    }
+                    else
+                    {
+                        int srcA = src->A + (src->A >> 7);
+                        int dstA = dst->A + (dst->A >> 7);
+                        int dstAMult = (256 - srcA) * dstA;
+                        int totalA = ((dstA * (256 - srcA)) >> 8) + srcA;
 
-                    int r = (((invSrcA * (dstA * dst->R)) / 256) + (srcA * src->R)) / 256;
-                    int g = (((invSrcA * (dstA * dst->G)) / 256) + (srcA * src->G)) / 256;
-                    int b = (((invSrcA * (dstA * dst->B)) / 256) + (srcA * src->B)) / 256;
-                    int a = ComputeAlpha(dst->A, src->A);
-                
-                    dst->Bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)a << 24));
+                        if (totalA == 0)
+                        {
+                            dst->Bgra = 0;
+                        }
+                        else
+                        {
+                            int b = (((dstAMult * dst->B) >> 8) + (srcA * src->B)) / totalA;
+                            int g = (((dstAMult * dst->G) >> 8) + (srcA * src->G)) / totalA;
+                            int r = (((dstAMult * dst->R) >> 8) + (srcA * src->R)) / totalA;
+                            int a = ComputeAlpha(dst->A, src->A);
+
+                            dst->Bgra = ColorBgra.BgraToUInt32(b, g, r, a);
+                        }
+                    }
 
                     ++dst;
                     ++src;
@@ -119,6 +134,17 @@ namespace PaintDotNet
             protected override unsafe void Apply(ColorBgra *dst, ColorBgra *src, int length)
             {
                 AlphaBlend.ApplyStatic(dst, src, length);
+            }
+
+            [CLSCompliant(false)]
+            protected override unsafe void Apply(ColorBgra *dst, ColorBgra *lhs, ColorBgra *rhs, int length)
+            {
+                AlphaBlend.ApplyStatic(dst, lhs, rhs, length);
+            }
+
+            public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
+            {
+                return AlphaBlend.ApplyStatic(lhs, rhs);
             }
         }
 

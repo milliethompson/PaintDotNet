@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -75,15 +76,40 @@ namespace PaintDotNet
             return path;
         }
 
+        protected override void OnActivate()
+        {
+            this.roundedRectangleCursor = new Cursor(PdnResources.GetResourceStream("Cursors.RoundedRectangleToolCursor.cur"));
+            this.Cursor = this.roundedRectangleCursor;
+            base.OnActivate();
+        }
+
+        protected override void OnDeactivate()
+        {
+            if (this.roundedRectangleCursor != null)
+            {
+                this.roundedRectangleCursor.Dispose();
+                this.roundedRectangleCursor = null;
+            }
+
+            base.OnDeactivate();
+        }
+
         public RoundedRectangleTool(DocumentWorkspace parent)
             : base(parent,
-                   Utility.GetImageResource("Icons.RoundedRectangleToolIcon.bmp"),
-                   "Rounded Rectangle",
-                   "Draws a rounded rectangle",
-			       "Click and drag to draw a rounded rectangle (right click for background color). Hold shift to constrain.")
+                   PdnResources.GetImage("Icons.RoundedRectangleToolIcon.bmp"),
+                   PdnResources.GetString("RoundedRectangleTool.Name"),
+                   PdnResources.GetString("RoundedRectangleTool.HelpText"))
         {
-            this.roundedRectangleCursor = new Cursor(Utility.GetResourceStream("Cursors.RoundedRectangleToolCursor.cur"));
-            this.Cursor = this.roundedRectangleCursor;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                DisposeImage();
+            }
+
+            base.Dispose (disposing);
         }
 
         // credit for the this function is given to Aaron Reginald http://www.codeproject.com/cs/media/ExtendedGraphics.asp

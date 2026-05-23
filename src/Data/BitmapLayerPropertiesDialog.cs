@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -14,20 +15,25 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class BitmapLayerPropertiesDialog : PaintDotNet.LayerPropertiesDialog
+    public class BitmapLayerPropertiesDialog 
+        : PaintDotNet.LayerPropertiesDialog
     {
-        private System.Windows.Forms.GroupBox blendingGroupBox;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label opacityLabel;
+        private System.Windows.Forms.Label blendModeLabel;
         private System.Windows.Forms.ComboBox blendOpComboBox;
         private System.Windows.Forms.NumericUpDown opacityUpDown;
         private System.Windows.Forms.TrackBar opacityTrackBar;
+        private PaintDotNet.HeaderLabel blendingHeader;
         private System.ComponentModel.IContainer components = null;
 
         public BitmapLayerPropertiesDialog()
         {
             // This call is required by the Windows Form Designer.
             InitializeComponent();
+
+            this.blendingHeader.Text = PdnResources.GetString("BitmapLayerPropertiesDialog.BlendingHeader.Text");
+            this.blendModeLabel.Text = PdnResources.GetString("BitmapLayerPropertiesDialog.BlendModeLabel.Text");
+            this.opacityLabel.Text = PdnResources.GetString("BitmapLayerPropertiesDialog.OpacityLabel.Text");
 
             // populate the blendOpComboBox with all the blend modes they're allowed to use
             foreach (Type type in UserBlendOps.GetBlendOps())
@@ -95,29 +101,26 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            this.blendingGroupBox = new System.Windows.Forms.GroupBox();
-            this.label3 = new System.Windows.Forms.Label();
+            this.blendModeLabel = new System.Windows.Forms.Label();
             this.blendOpComboBox = new System.Windows.Forms.ComboBox();
             this.opacityUpDown = new System.Windows.Forms.NumericUpDown();
             this.opacityTrackBar = new System.Windows.Forms.TrackBar();
-            this.label2 = new System.Windows.Forms.Label();
-            this.groupBox1.SuspendLayout();
-            this.blendingGroupBox.SuspendLayout();
+            this.opacityLabel = new System.Windows.Forms.Label();
+            this.blendingHeader = new PaintDotNet.HeaderLabel();
             ((System.ComponentModel.ISupportInitialize)(this.opacityUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.opacityTrackBar)).BeginInit();
             this.SuspendLayout();
             // 
             // visibleCheckBox
             // 
+            this.visibleCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.visibleCheckBox.Location = new System.Drawing.Point(8, 48);
             this.visibleCheckBox.Name = "visibleCheckBox";
             // 
-            // label1
+            // nameLabel
             // 
-            this.label1.Name = "label1";
-            // 
-            // groupBox1
-            // 
-            this.groupBox1.Name = "groupBox1";
+            this.nameLabel.Location = new System.Drawing.Point(6, 27);
+            this.nameLabel.Name = "nameLabel";
             // 
             // nameBox
             // 
@@ -125,42 +128,26 @@ namespace PaintDotNet
             // 
             // cancelButton
             // 
-            this.cancelButton.Location = new System.Drawing.Point(208, 176);
+            this.cancelButton.Location = new System.Drawing.Point(193, 152);
             this.cancelButton.Name = "cancelButton";
             // 
             // okButton
             // 
             this.okButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.okButton.Location = new System.Drawing.Point(128, 176);
+            this.okButton.Location = new System.Drawing.Point(112, 152);
             this.okButton.Name = "okButton";
             // 
-            // blendingGroupBox
+            // blendModeLabel
             // 
-            this.blendingGroupBox.Controls.Add(this.label3);
-            this.blendingGroupBox.Controls.Add(this.blendOpComboBox);
-            this.blendingGroupBox.Controls.Add(this.opacityUpDown);
-            this.blendingGroupBox.Controls.Add(this.opacityTrackBar);
-            this.blendingGroupBox.Controls.Add(this.label2);
-            this.blendingGroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.blendingGroupBox.Location = new System.Drawing.Point(8, 80);
-            this.blendingGroupBox.Name = "blendingGroupBox";
-            this.blendingGroupBox.Size = new System.Drawing.Size(272, 80);
-            this.blendingGroupBox.TabIndex = 7;
-            this.blendingGroupBox.TabStop = false;
-            this.blendingGroupBox.Text = "Blending";
-            // 
-            // label3
-            // 
-            this.label3.Location = new System.Drawing.Point(14, 19);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(40, 23);
-            this.label3.TabIndex = 4;
-            this.label3.Text = "Mode:";
+            this.blendModeLabel.Location = new System.Drawing.Point(6, 92);
+            this.blendModeLabel.Name = "blendModeLabel";
+            this.blendModeLabel.Size = new System.Drawing.Size(50, 23);
+            this.blendModeLabel.TabIndex = 4;
             // 
             // blendOpComboBox
             // 
             this.blendOpComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.blendOpComboBox.Location = new System.Drawing.Point(56, 16);
+            this.blendOpComboBox.Location = new System.Drawing.Point(64, 88);
             this.blendOpComboBox.Name = "blendOpComboBox";
             this.blendOpComboBox.Size = new System.Drawing.Size(121, 21);
             this.blendOpComboBox.TabIndex = 4;
@@ -168,7 +155,7 @@ namespace PaintDotNet
             // 
             // opacityUpDown
             // 
-            this.opacityUpDown.Location = new System.Drawing.Point(71, 46);
+            this.opacityUpDown.Location = new System.Drawing.Point(64, 116);
             this.opacityUpDown.Maximum = new System.Decimal(new int[] {
                                                                           255,
                                                                           0,
@@ -187,35 +174,52 @@ namespace PaintDotNet
             // 
             this.opacityTrackBar.AutoSize = false;
             this.opacityTrackBar.LargeChange = 32;
-            this.opacityTrackBar.Location = new System.Drawing.Point(136, 45);
+            this.opacityTrackBar.Location = new System.Drawing.Point(129, 114);
             this.opacityTrackBar.Maximum = 255;
             this.opacityTrackBar.Name = "opacityTrackBar";
-            this.opacityTrackBar.Size = new System.Drawing.Size(128, 24);
+            this.opacityTrackBar.Size = new System.Drawing.Size(146, 24);
             this.opacityTrackBar.TabIndex = 6;
             this.opacityTrackBar.TickStyle = System.Windows.Forms.TickStyle.None;
             this.opacityTrackBar.ValueChanged += new System.EventHandler(this.opacityTrackBar_ValueChanged);
             // 
-            // label2
+            // opacityLabel
             // 
-            this.label2.Location = new System.Drawing.Point(14, 48);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(48, 16);
-            this.label2.TabIndex = 0;
-            this.label2.Text = "Opacity:";
+            this.opacityLabel.Location = new System.Drawing.Point(6, 118);
+            this.opacityLabel.Name = "opacityLabel";
+            this.opacityLabel.Size = new System.Drawing.Size(48, 16);
+            this.opacityLabel.TabIndex = 0;
+            // 
+            // blendingHeader
+            // 
+            this.blendingHeader.Location = new System.Drawing.Point(6, 72);
+            this.blendingHeader.Name = "blendingHeader";
+            this.blendingHeader.Size = new System.Drawing.Size(269, 14);
+            this.blendingHeader.TabIndex = 8;
+            this.blendingHeader.TabStop = false;
             // 
             // BitmapLayerPropertiesDialog
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.ClientSize = new System.Drawing.Size(290, 205);
-            this.Controls.Add(this.blendingGroupBox);
+            this.ClientSize = new System.Drawing.Size(274, 181);
+            this.Controls.Add(this.blendingHeader);
+            this.Controls.Add(this.blendOpComboBox);
+            this.Controls.Add(this.opacityUpDown);
+            this.Controls.Add(this.opacityLabel);
+            this.Controls.Add(this.blendModeLabel);
+            this.Controls.Add(this.opacityTrackBar);
             this.Location = new System.Drawing.Point(0, 0);
             this.Name = "BitmapLayerPropertiesDialog";
-            this.Controls.SetChildIndex(this.blendingGroupBox, 0);
-            this.Controls.SetChildIndex(this.groupBox1, 0);
+            this.Controls.SetChildIndex(this.opacityTrackBar, 0);
+            this.Controls.SetChildIndex(this.blendModeLabel, 0);
+            this.Controls.SetChildIndex(this.opacityLabel, 0);
+            this.Controls.SetChildIndex(this.opacityUpDown, 0);
+            this.Controls.SetChildIndex(this.blendOpComboBox, 0);
+            this.Controls.SetChildIndex(this.nameLabel, 0);
+            this.Controls.SetChildIndex(this.visibleCheckBox, 0);
+            this.Controls.SetChildIndex(this.nameBox, 0);
+            this.Controls.SetChildIndex(this.blendingHeader, 0);
             this.Controls.SetChildIndex(this.cancelButton, 0);
             this.Controls.SetChildIndex(this.okButton, 0);
-            this.groupBox1.ResumeLayout(false);
-            this.blendingGroupBox.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.opacityUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.opacityTrackBar)).EndInit();
             this.ResumeLayout(false);

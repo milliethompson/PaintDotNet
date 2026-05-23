@@ -32,7 +32,7 @@
                     DocumentationFile = ""
                     DebugSymbols = "true"
                     FileAlignment = "4096"
-                    IncrementalBuild = "false"
+                    IncrementalBuild = "true"
                     NoStdLib = "false"
                     NoWarn = ""
                     Optimize = "false"
@@ -45,7 +45,7 @@
                 <Config
                     Name = "Release"
                     AllowUnsafeBlocks = "true"
-                    BaseAddress = "285212672"
+                    BaseAddress = "306184192"
                     CheckForOverflowUnderflow = "false"
                     ConfigurationOverrideFile = ""
                     DefineConstants = "TRACE"
@@ -85,13 +85,13 @@
                     HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Windows.Forms.dll"
                 />
                 <Reference
-                    Name = "SystemLayer"
-                    Project = "{80572820-93A5-4278-A513-D902BEA2639C}"
-                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+                    Name = "ICSharpCode.SharpZipLib"
+                    AssemblyName = "ICSharpCode.SharpZipLib"
+                    HintPath = "..\SharpZipLib\ICSharpCode.SharpZipLib.dll"
                 />
                 <Reference
-                    Name = "Effects"
-                    Project = "{2E4E8805-00F7-4B18-A967-C23994BBCE75}"
+                    Name = "Resources"
+                    Project = "{0B173113-1F9B-4939-A62F-A176336F13AC}"
                     Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
                 />
                 <Reference
@@ -100,9 +100,19 @@
                     HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.XML.dll"
                 />
                 <Reference
-                    Name = "ICSharpCode.SharpZipLib"
-                    AssemblyName = "ICSharpCode.SharpZipLib"
-                    HintPath = "..\SharpZipLib\ICSharpCode.SharpZipLib.dll"
+                    Name = "SystemLayer"
+                    Project = "{80572820-93A5-4278-A513-D902BEA2639C}"
+                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+                />
+                <Reference
+                    Name = "System.Runtime.Serialization.Formatters.Soap"
+                    AssemblyName = "System.Runtime.Serialization.Formatters.Soap"
+                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Runtime.Serialization.Formatters.Soap.dll"
+                />
+                <Reference
+                    Name = "System.Data"
+                    AssemblyName = "System.Data"
+                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Data.dll"
                 />
             </References>
         </Build>
@@ -120,7 +130,7 @@
                 />
                 <File
                     RelPath = "BitmapLayerPropertiesDialog.cs"
-                    SubType = "Form"
+                    SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
@@ -140,7 +150,7 @@
                 />
                 <File
                     RelPath = "DocumentView.cs"
-                    SubType = "UserControl"
+                    SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
@@ -149,22 +159,27 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
+                    RelPath = "Exif.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ExifTagID.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ExifTagType.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "FileType.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "FileTypeCollection.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FileTypeFactory.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FileTypes.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -179,7 +194,22 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "ISaveWithProgress.cs"
+                    RelPath = "GifSaveConfigToken.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "GifSaveConfigWidget.cs"
+                    SubType = "UserControl"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "GifSaveConfigWidget.resx"
+                    DependentUpon = "GifSaveConfigWidget.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "IFileTypeFactory.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -215,7 +245,7 @@
                 />
                 <File
                     RelPath = "LayerPropertiesDialog.cs"
-                    SubType = "Form"
+                    SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
@@ -279,16 +309,17 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "Icons\LayerPropertiesIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
                     RelPath = "Quantize\OctreeQuantizer.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "Quantize\PaletteQuantizer.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Quantize\PaletteTable.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

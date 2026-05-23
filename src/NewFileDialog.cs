@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -14,51 +15,13 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// New File Dialog By Chris Trevino
-    /// </summary>
     public class NewFileDialog 
-        : PdnBaseDialog
+        : ResizeDialog
     {
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
-        public System.Windows.Forms.NumericUpDown widthUpDown;
-        public System.Windows.Forms.NumericUpDown heightUpDown;
-        private System.Windows.Forms.GroupBox fileSizeGroupBox;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label4;
-
         /// <summary>
         /// Required designer variable.
         /// </summary>
         private System.ComponentModel.Container components = null;
-
-        public int NewWidth 
-        {
-            get
-            {
-                return (int)widthUpDown.Value;
-            }
-
-            set
-            {
-                widthUpDown.Value = (int)Math.Ceiling((double)value);
-                SetImageSizeLabel();
-            }
-        }
-
-        public int NewHeight
-        {
-            get
-            {
-                return (int)heightUpDown.Value;
-            }
-            set
-            {
-                heightUpDown.Value = (int)Math.Ceiling((double)value);
-                SetImageSizeLabel();
-            }
-        }
 
         /// <summary>
         /// Clean up any resources being used.
@@ -73,13 +36,16 @@ namespace PaintDotNet
                     components = null;
                 }
             }
+
             base.Dispose(disposing);
         }
 
         public NewFileDialog()
         {
             InitializeComponent();
-            this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.MenuFileNewIcon.bmp"), Color.FromArgb(192, 192, 192));
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileNewIcon.bmp"), Color.FromArgb(192, 192, 192));
+
+            this.Text = PdnResources.GetString("NewFileDialog.Text"); // "New";
         }
 
         #region Windows Form Designer generated code
@@ -89,226 +55,189 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.widthUpDown = new System.Windows.Forms.NumericUpDown();
-            this.heightUpDown = new System.Windows.Forms.NumericUpDown();
-            this.fileSizeGroupBox = new System.Windows.Forms.GroupBox();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.widthUpDown)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.heightUpDown)).BeginInit();
-            this.fileSizeGroupBox.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.percentUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.resolutionUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pixelWidthUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pixelHeightUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.printWidthUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.printHeightUpDown)).BeginInit();
             this.SuspendLayout();
             // 
-            // baseOkButton
+            // constrainCheckBox
             // 
-            this.baseOkButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.baseOkButton.Location = new System.Drawing.Point(30, 96);
-            this.baseOkButton.Name = "baseOkButton";
-            this.baseOkButton.Click += new System.EventHandler(this.baseOkButton_Click);
+            this.constrainCheckBox.Location = new System.Drawing.Point(8, 28);
+            this.constrainCheckBox.Name = "constrainCheckBox";
             // 
-            // baseCancelButton
+            // okButton
             // 
-            this.baseCancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.baseCancelButton.Location = new System.Drawing.Point(110, 96);
-            this.baseCancelButton.Name = "baseCancelButton";
-            this.baseCancelButton.Click += new System.EventHandler(this.baseCancelButton_Click);
+            this.okButton.Location = new System.Drawing.Point(123, 217);
+            this.okButton.Name = "okButton";
             // 
-            // label1
+            // cancelButton
             // 
-            this.label1.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.label1.Location = new System.Drawing.Point(8, 47);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(40, 16);
-            this.label1.TabIndex = 4;
-            this.label1.Text = "Height:";
-            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.cancelButton.Location = new System.Drawing.Point(201, 217);
+            this.cancelButton.Name = "cancelButton";
             // 
-            // label2
+            // percentSignLabel
             // 
-            this.label2.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.label2.Location = new System.Drawing.Point(8, 20);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(40, 16);
-            this.label2.TabIndex = 5;
-            this.label2.Text = "Width:";
-            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.percentSignLabel.Enabled = false;
+            this.percentSignLabel.Location = new System.Drawing.Point(520, 48);
+            this.percentSignLabel.Name = "percentSignLabel";
+            this.percentSignLabel.Visible = false;
             // 
-            // widthUpDown
+            // percentUpDown
             // 
-            this.widthUpDown.Location = new System.Drawing.Point(50, 20);
-            this.widthUpDown.Maximum = new System.Decimal(new int[] {
-                                                                        65535,
-                                                                        0,
-                                                                        0,
-                                                                        0});
-            this.widthUpDown.Name = "widthUpDown";
-            this.widthUpDown.Size = new System.Drawing.Size(72, 20);
-            this.widthUpDown.TabIndex = 0;
-            this.widthUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.widthUpDown.Enter += new System.EventHandler(this.upDown_Enter);
-            this.widthUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
-            this.widthUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
-            this.widthUpDown.Leave += new System.EventHandler(this.upDown_Leave);
+            this.percentUpDown.Location = new System.Drawing.Point(440, 48);
+            this.percentUpDown.Name = "percentUpDown";
+            this.percentUpDown.Visible = false;
             // 
-            // heightUpDown
+            // absoluteRB
             // 
-            this.heightUpDown.Location = new System.Drawing.Point(50, 46);
-            this.heightUpDown.Maximum = new System.Decimal(new int[] {
-                                                                         65535,
-                                                                         0,
-                                                                         0,
-                                                                         0});
-            this.heightUpDown.Name = "heightUpDown";
-            this.heightUpDown.Size = new System.Drawing.Size(72, 20);
-            this.heightUpDown.TabIndex = 1;
-            this.heightUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.heightUpDown.Enter += new System.EventHandler(this.upDown_Enter);
-            this.heightUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
-            this.heightUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
-            this.heightUpDown.Leave += new System.EventHandler(this.upDown_Leave);
+            this.absoluteRB.Enabled = false;
+            this.absoluteRB.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.absoluteRB.Location = new System.Drawing.Point(328, 72);
+            this.absoluteRB.Name = "absoluteRB";
+            this.absoluteRB.Visible = false;
             // 
-            // fileSizeGroupBox
+            // percentRB
             // 
-            this.fileSizeGroupBox.Controls.Add(this.label6);
-            this.fileSizeGroupBox.Controls.Add(this.label4);
-            this.fileSizeGroupBox.Controls.Add(this.label2);
-            this.fileSizeGroupBox.Controls.Add(this.widthUpDown);
-            this.fileSizeGroupBox.Controls.Add(this.heightUpDown);
-            this.fileSizeGroupBox.Controls.Add(this.label1);
-            this.fileSizeGroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.fileSizeGroupBox.Location = new System.Drawing.Point(8, 8);
-            this.fileSizeGroupBox.Name = "fileSizeGroupBox";
-            this.fileSizeGroupBox.Size = new System.Drawing.Size(176, 76);
-            this.fileSizeGroupBox.TabIndex = 10;
-            this.fileSizeGroupBox.TabStop = false;
-            this.fileSizeGroupBox.Text = "groupBox1";
+            this.percentRB.Enabled = false;
+            this.percentRB.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.percentRB.Location = new System.Drawing.Point(328, 40);
+            this.percentRB.Name = "percentRB";
+            this.percentRB.Visible = false;
             // 
-            // label6
+            // asteriskTextLabel
             // 
-            this.label6.Location = new System.Drawing.Point(127, 47);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(40, 16);
-            this.label6.TabIndex = 12;
-            this.label6.Text = "pixels";
-            this.label6.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.asteriskTextLabel.Enabled = false;
+            this.asteriskTextLabel.Location = new System.Drawing.Point(328, 280);
+            this.asteriskTextLabel.Name = "asteriskTextLabel";
             // 
-            // label4
+            // asteriskLabel
             // 
-            this.label4.Location = new System.Drawing.Point(127, 20);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(40, 16);
-            this.label4.TabIndex = 11;
-            this.label4.Text = "pixels";
-            this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.asteriskLabel.Enabled = false;
+            this.asteriskLabel.Location = new System.Drawing.Point(592, 16);
+            this.asteriskLabel.Name = "asteriskLabel";
+            // 
+            // resizedImageHeader
+            // 
+            this.resizedImageHeader.Name = "resizedImageHeader";
+            this.resizedImageHeader.Size = new System.Drawing.Size(274, 16);
+            // 
+            // resolutionLabel
+            // 
+            this.resolutionLabel.Location = new System.Drawing.Point(16, 118);
+            this.resolutionLabel.Name = "resolutionLabel";
+            // 
+            // unitsComboBox2
+            // 
+            this.unitsComboBox2.Location = new System.Drawing.Point(184, 117);
+            this.unitsComboBox2.Name = "unitsComboBox2";
+            // 
+            // unitsComboBox1
+            // 
+            this.unitsComboBox1.Location = new System.Drawing.Point(184, 160);
+            this.unitsComboBox1.Name = "unitsComboBox1";
+            // 
+            // resolutionUpDown
+            // 
+            this.resolutionUpDown.Location = new System.Drawing.Point(104, 117);
+            this.resolutionUpDown.Name = "resolutionUpDown";
+            // 
+            // newWidthLabel1
+            // 
+            this.newWidthLabel1.Location = new System.Drawing.Point(16, 70);
+            this.newWidthLabel1.Name = "newWidthLabel1";
+            // 
+            // newHeightLabel1
+            // 
+            this.newHeightLabel1.Location = new System.Drawing.Point(16, 94);
+            this.newHeightLabel1.Name = "newHeightLabel1";
+            // 
+            // pixelsLabel1
+            // 
+            this.pixelsLabel1.Location = new System.Drawing.Point(184, 70);
+            this.pixelsLabel1.Name = "pixelsLabel1";
+            // 
+            // newWidthLabel2
+            // 
+            this.newWidthLabel2.Location = new System.Drawing.Point(16, 161);
+            this.newWidthLabel2.Name = "newWidthLabel2";
+            // 
+            // newHeightLabel2
+            // 
+            this.newHeightLabel2.Location = new System.Drawing.Point(16, 185);
+            this.newHeightLabel2.Name = "newHeightLabel2";
+            // 
+            // pixelsLabel2
+            // 
+            this.pixelsLabel2.Location = new System.Drawing.Point(184, 94);
+            this.pixelsLabel2.Name = "pixelsLabel2";
+            // 
+            // unitsLabel1
+            // 
+            this.unitsLabel1.Location = new System.Drawing.Point(184, 186);
+            this.unitsLabel1.Name = "unitsLabel1";
+            // 
+            // pixelWidthUpDown
+            // 
+            this.pixelWidthUpDown.Location = new System.Drawing.Point(104, 69);
+            this.pixelWidthUpDown.Name = "pixelWidthUpDown";
+            // 
+            // pixelHeightUpDown
+            // 
+            this.pixelHeightUpDown.Location = new System.Drawing.Point(104, 93);
+            this.pixelHeightUpDown.Name = "pixelHeightUpDown";
+            // 
+            // printWidthUpDown
+            // 
+            this.printWidthUpDown.Location = new System.Drawing.Point(104, 160);
+            this.printWidthUpDown.Name = "printWidthUpDown";
+            // 
+            // printHeightUpDown
+            // 
+            this.printHeightUpDown.Location = new System.Drawing.Point(104, 184);
+            this.printHeightUpDown.Name = "printHeightUpDown";
+            // 
+            // pixelSizeHeader
+            // 
+            this.pixelSizeHeader.Location = new System.Drawing.Point(6, 50);
+            this.pixelSizeHeader.Name = "pixelSizeHeader";
+            // 
+            // printSizeHeader
+            // 
+            this.printSizeHeader.Location = new System.Drawing.Point(6, 141);
+            this.printSizeHeader.Name = "printSizeHeader";
+            // 
+            // resamplingLabel
+            // 
+            this.resamplingLabel.Enabled = false;
+            this.resamplingLabel.Location = new System.Drawing.Point(320, 24);
+            this.resamplingLabel.Name = "resamplingLabel";
+            this.resamplingLabel.Visible = false;
+            // 
+            // resamplingAlgorithmComboBox
+            // 
+            this.resamplingAlgorithmComboBox.Enabled = false;
+            this.resamplingAlgorithmComboBox.Location = new System.Drawing.Point(440, 16);
+            this.resamplingAlgorithmComboBox.Name = "resamplingAlgorithmComboBox";
+            this.resamplingAlgorithmComboBox.Visible = false;
             // 
             // NewFileDialog
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.ClientSize = new System.Drawing.Size(192, 128);
-            this.Controls.Add(this.fileSizeGroupBox);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
+            this.ClientSize = new System.Drawing.Size(279, 246);
+            this.Location = new System.Drawing.Point(0, 0);
             this.Name = "NewFileDialog";
-            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "New";
-            this.Controls.SetChildIndex(this.baseCancelButton, 0);
-            this.Controls.SetChildIndex(this.baseOkButton, 0);
-            this.Controls.SetChildIndex(this.fileSizeGroupBox, 0);
-            ((System.ComponentModel.ISupportInitialize)(this.widthUpDown)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.heightUpDown)).EndInit();
-            this.fileSizeGroupBox.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.percentUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.resolutionUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pixelWidthUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pixelHeightUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.printWidthUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.printHeightUpDown)).EndInit();
             this.ResumeLayout(false);
 
         }
         #endregion
-
-        private void baseOkButton_Click(object sender, System.EventArgs e)
-        {
-            DialogResult = DialogResult.OK;
-            Close();
-        }
-
-        private void baseCancelButton_Click(object sender, System.EventArgs e)
-        {
-            this.Close();
-        }
-
-        private void SetImageSizeLabel()
-        {
-            long fileSize = (long)NewWidth * (long)NewHeight * (long)ColorBgra.SizeOf;
-            fileSizeGroupBox.Text = "File Size: " + Utility.SizeStringFromBytes(fileSize);
-        }
-
-        private void upDown_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
-        {
-            bool numberIsOk = Utility.CheckNumericUpDown((NumericUpDown)sender);
-
-            if (numberIsOk)
-            {
-                SetImageSizeLabel();
-                SetOkEnable();
-            }
-
-            SetImageSizeLabel();
-        }
-
-        protected override void OnLoad(EventArgs e)
-        {
-            base.OnLoad (e);
-            SetOkEnable();
-            this.widthUpDown.Select();
-            this.widthUpDown.Select(0, widthUpDown.Text.Length);
-        }
-
-        /// <summary>
-        /// Enables the OK button if width and height are valid and non-zero
-        /// Otherwise disables it.
-        /// </summary>
-        private void SetOkEnable()
-        {
-            bool enabled = true;
-
-            try
-            {
-                int width = int.Parse(widthUpDown.Text);
-                int height = int.Parse(heightUpDown.Text);
-                
-                if (width > 0 && height > 0)
-                {
-                    enabled = true;
-                }
-                else
-                {
-                    enabled = false;
-                }
-            }
-
-            catch
-            {
-                enabled = false;
-            }
-
-            baseOkButton.Enabled = enabled;
-        }
-
-        private void upDown_ValueChanged(object sender, System.EventArgs e)
-        {
-            SetImageSizeLabel();
-            SetOkEnable();
-        }
-
-        private void upDown_Enter(object sender, System.EventArgs e)
-        {
-            NumericUpDown nud = (NumericUpDown)sender;
-            nud.Select(0, nud.Text.Length);
-        }
-
-        private void upDown_Leave(object sender, System.EventArgs e)
-        {
-            upDown_ValueChanged(sender, e);
-        }
     }
 }

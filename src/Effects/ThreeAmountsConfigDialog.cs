@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -10,16 +11,16 @@ using System;
 
 namespace PaintDotNet.Effects
 {
-	/// <summary>
-	/// Summary description for ThreeAmountsConfigDialog.
-	/// </summary>
-	public class ThreeAmountsConfigDialog
+    /// <summary>
+    /// Summary description for ThreeAmountsConfigDialog.
+    /// </summary>
+    public class ThreeAmountsConfigDialog
         : TwoAmountsConfigDialog
-	{
-        private System.Windows.Forms.GroupBox amount3GroupBox;
+    {
         private System.Windows.Forms.Button amount3Reset;
         private System.Windows.Forms.NumericUpDown amount3UpDown;
         private System.Windows.Forms.TrackBar amount3Slider;
+        private PaintDotNet.HeaderLabel amount3Header;
     
         private int amount3Default = 0;
 
@@ -72,12 +73,12 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return amount3GroupBox.Text;
+                return amount3Header.Text;
             }
 
             set
             {
-                amount3GroupBox.Text = value;
+                amount3Header.Text = value;
             }
         }
 
@@ -100,59 +101,46 @@ namespace PaintDotNet.Effects
 
         private void InitializeComponent()
         {
-            this.amount3GroupBox = new System.Windows.Forms.GroupBox();
             this.amount3Reset = new System.Windows.Forms.Button();
             this.amount3UpDown = new System.Windows.Forms.NumericUpDown();
             this.amount3Slider = new System.Windows.Forms.TrackBar();
-            this.amount3GroupBox.SuspendLayout();
+            this.amount3Header = new PaintDotNet.HeaderLabel();
             ((System.ComponentModel.ISupportInitialize)(this.amount3UpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.amount3Slider)).BeginInit();
             this.SuspendLayout();
             // 
             // okButton
             // 
-            this.okButton.Location = new System.Drawing.Point(86, 248);
+            this.okButton.Location = new System.Drawing.Point(108, 219);
             this.okButton.Name = "okButton";
+            this.okButton.TabIndex = 9;
             // 
             // cancelButton
             // 
-            this.cancelButton.Location = new System.Drawing.Point(174, 248);
+            this.cancelButton.Location = new System.Drawing.Point(189, 219);
             this.cancelButton.Name = "cancelButton";
-            // 
-            // amount3GroupBox
-            // 
-            this.amount3GroupBox.Controls.Add(this.amount3Reset);
-            this.amount3GroupBox.Controls.Add(this.amount3UpDown);
-            this.amount3GroupBox.Controls.Add(this.amount3Slider);
-            this.amount3GroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.amount3GroupBox.Location = new System.Drawing.Point(9, 168);
-            this.amount3GroupBox.Name = "amount3GroupBox";
-            this.amount3GroupBox.Size = new System.Drawing.Size(240, 70);
-            this.amount3GroupBox.TabIndex = 9;
-            this.amount3GroupBox.TabStop = false;
-            this.amount3GroupBox.Text = "amount3";
+            this.cancelButton.TabIndex = 10;
             // 
             // amount3Reset
             // 
-            this.amount3Reset.Location = new System.Drawing.Point(168, 41);
+            this.amount3Reset.Location = new System.Drawing.Point(188, 188);
             this.amount3Reset.Name = "amount3Reset";
-            this.amount3Reset.Size = new System.Drawing.Size(64, 20);
-            this.amount3Reset.TabIndex = 7;
-            this.amount3Reset.Text = "Reset";
+            this.amount3Reset.Size = new System.Drawing.Size(76, 20);
+            this.amount3Reset.TabIndex = 8;
             this.amount3Reset.Click += new System.EventHandler(this.amount3Reset_Click);
             // 
             // amount3UpDown
             // 
             this.amount3UpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.amount3UpDown.Location = new System.Drawing.Point(168, 16);
+            this.amount3UpDown.Location = new System.Drawing.Point(188, 164);
             this.amount3UpDown.Minimum = new System.Decimal(new int[] {
                                                                           100,
                                                                           0,
                                                                           0,
                                                                           -2147483648});
             this.amount3UpDown.Name = "amount3UpDown";
-            this.amount3UpDown.Size = new System.Drawing.Size(64, 20);
-            this.amount3UpDown.TabIndex = 6;
+            this.amount3UpDown.Size = new System.Drawing.Size(76, 20);
+            this.amount3UpDown.TabIndex = 7;
             this.amount3UpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.amount3UpDown.Enter += new System.EventHandler(this.amount3UpDown_Enter);
             this.amount3UpDown.ValueChanged += new System.EventHandler(this.amount3UpDown_ValueChanged);
@@ -161,38 +149,52 @@ namespace PaintDotNet.Effects
             // amount3Slider
             // 
             this.amount3Slider.LargeChange = 20;
-            this.amount3Slider.Location = new System.Drawing.Point(8, 16);
+            this.amount3Slider.Location = new System.Drawing.Point(1, 164);
             this.amount3Slider.Maximum = 100;
             this.amount3Slider.Minimum = -100;
             this.amount3Slider.Name = "amount3Slider";
-            this.amount3Slider.Size = new System.Drawing.Size(152, 45);
-            this.amount3Slider.TabIndex = 4;
+            this.amount3Slider.Size = new System.Drawing.Size(175, 42);
+            this.amount3Slider.TabIndex = 6;
             this.amount3Slider.TickFrequency = 10;
             this.amount3Slider.ValueChanged += new System.EventHandler(this.amount3Slider_ValueChanged);
+            // 
+            // amount3Header
+            // 
+            this.amount3Header.Location = new System.Drawing.Point(6, 148);
+            this.amount3Header.Name = "amount3Header";
+            this.amount3Header.Size = new System.Drawing.Size(266, 14);
+            this.amount3Header.TabIndex = 11;
+            this.amount3Header.TabStop = false;
+            this.amount3Header.Text = "Header 3";
             // 
             // ThreeAmountsConfigDialog
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.ClientSize = new System.Drawing.Size(258, 280);
-            this.Controls.Add(this.amount3GroupBox);
+            this.ClientSize = new System.Drawing.Size(270, 248);
+            this.Controls.Add(this.amount3Header);
+            this.Controls.Add(this.amount3Slider);
+            this.Controls.Add(this.amount3Reset);
+            this.Controls.Add(this.amount3UpDown);
             this.Location = new System.Drawing.Point(0, 0);
             this.Name = "ThreeAmountsConfigDialog";
+            this.Controls.SetChildIndex(this.amount3UpDown, 0);
+            this.Controls.SetChildIndex(this.amount3Reset, 0);
+            this.Controls.SetChildIndex(this.amount3Slider, 0);
             this.Controls.SetChildIndex(this.okButton, 0);
             this.Controls.SetChildIndex(this.cancelButton, 0);
-            this.Controls.SetChildIndex(this.amount3GroupBox, 0);
-            this.amount3GroupBox.ResumeLayout(false);
+            this.Controls.SetChildIndex(this.amount3Header, 0);
             ((System.ComponentModel.ISupportInitialize)(this.amount3UpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.amount3Slider)).EndInit();
             this.ResumeLayout(false);
 
         }
     
-		public ThreeAmountsConfigDialog()
+        public ThreeAmountsConfigDialog()
             : base()
-		{
+        {
             InitializeComponent();
-		}
-
+            this.amount3Reset.Text = PdnResources.GetString("TwoAmountsConfigDialog.Reset.Text");
+        }
 
         private void amount3Slider_ValueChanged(object sender, System.EventArgs e)
         {
@@ -237,6 +239,5 @@ namespace PaintDotNet.Effects
             amount3UpDown_Leave(sender, e);
             base.OnOkButtonClicked(sender, e);
         }
-
-	}
+    }
 }

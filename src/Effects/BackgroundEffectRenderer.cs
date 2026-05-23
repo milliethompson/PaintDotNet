@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -151,30 +152,45 @@ namespace PaintDotNet.Effects
 
         public void ThreadFunction()
         {
-            bool finished = true;
+            if (this.srcArgs.Surface.Scan0.MaySetAllowWrites)
+            {
+                this.srcArgs.Surface.Scan0.AllowWrites = false;
+            }
 
             try
             {
                 if (tileCount > 0)
                 {
-                    IConfigurableEffect ice = this.effect as IConfigurableEffect;
-                    PdnRegion subRegion = this.tileRegions[0];
+                    ThreadPriority oldTP = Thread.CurrentThread.Priority;
+                    Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-                    if (ice != null)
+                    try
                     {
-                        ice.Render(this.effectTokenCopy, this.dstArgs, this.srcArgs, subRegion);
-                    }
-                    else
-                    {
-                        this.effect.Render(this.dstArgs, this.srcArgs, subRegion);
+                        IConfigurableEffect ice = this.effect as IConfigurableEffect;
+                        PdnRegion subRegion = this.tileRegions[0];
+
+                        if (ice != null)
+                        {
+                            ice.Render(this.effectTokenCopy, this.dstArgs, this.srcArgs, subRegion);
+                        }
+                        else
+                        {
+                            this.effect.Render(this.dstArgs, this.srcArgs, subRegion);
+                        }
+
+                        OnRenderedTile(new RenderedTileEventArgs(subRegion, this.tileCount, 0));
                     }
 
-                    OnRenderedTile(new RenderedTileEventArgs(subRegion, this.tileCount, 0));
+                    finally
+                    {
+                        Thread.CurrentThread.Priority = oldTP;
+                    }
                 }
 
                 EffectConfigToken[] tokens = new EffectConfigToken[workerThreads];
 
-                for (int i = 0; i < workerThreads; ++i)
+                int i;
+                for (i = 0; i < workerThreads; ++i)
                 {
                     if (this.threadShouldStop)
                     {
@@ -193,21 +209,36 @@ namespace PaintDotNet.Effects
                     RendererContext rc = new RendererContext(this, tokens[i], i, (i == 0) ? 1 : 0);
                     threadPool.QueueUserWorkItem(new WaitCallback(rc.Renderer2));
                 }
+
+                if (i == workerThreads)
+                {
+                    threadPool.Drain();
+                    OnFinishedRendering();
+                }
             }
 
             catch (Exception ex)
             {
                 exceptions.Add(ex);
-                finished = false;
             }
 
             finally
             {
                 threadPool.Drain();
 
-                if (finished)
+                Exception[] exceptions = threadPool.Exceptions;
+
+                if (exceptions.Length > 0)
                 {
-                    this.OnFinishedRendering();
+                    foreach (Exception exception in exceptions)
+                    {
+                        this.exceptions.Add(exception);
+                    }
+                }
+
+                if (this.srcArgs.Surface.Scan0.MaySetAllowWrites)
+                {
+                    this.srcArgs.Surface.Scan0.AllowWrites = true;
                 }
             }
         }
@@ -253,13 +284,13 @@ namespace PaintDotNet.Effects
 
             if (exceptions.Count > 0)
             {
-                throw new ApplicationException("Worker thread threw an exception", (Exception)exceptions[0]);
+                throw new WorkerThreadException("Worker thread threw an exception", (Exception)exceptions[0]);
             }
 
             exceptions.Clear();
         }
 
-        private PdnRegion[] SliceUpRegion(PdnRegion region, int sliceCount)
+        private PdnRegion[] SliceUpRegion(PdnRegion region, int sliceCount, Rectangle layerBounds)
         {
             PdnRegion[] slices = new PdnRegion[sliceCount];
             Rectangle[] regionRects = region.GetRegionScansReadOnlyInt();
@@ -270,8 +301,26 @@ namespace PaintDotNet.Effects
                 int beginScan = (regionScans.Length * i) / sliceCount;
                 int endScan = Math.Min(regionScans.Length, (regionScans.Length * (i + 1)) / sliceCount);
 
+                // Try to arrange it such that the maximum size of the first region
+                // is 1-pixel tall
+                if (i == 0)
+                {
+                    endScan = Math.Min(endScan, beginScan + 1);
+                }
+                else if (i == 1)
+                {
+                    beginScan = Math.Min(beginScan, 1);
+                }
+
                 Rectangle[] newRects = Utility.ScanlinesToRectangles(regionScans, beginScan, endScan - beginScan);
+
+                for (int j = 0; j < newRects.Length; ++j)
+                {
+                    newRects[j].Intersect(layerBounds);
+                }
+
                 PdnRegion newRegion = Utility.RectanglesToRegion(newRects);
+                newRegion.GetRegionScansReadOnlyInt(); // force scans to be cached
                 slices[i] = newRegion;
             }
 
@@ -292,16 +341,16 @@ namespace PaintDotNet.Effects
             this.srcArgs = srcArgs;
             this.renderRegion = renderRegion;
             this.renderRegion.Intersect(dstArgs.Bounds);
-            this.tileRegions = SliceUpRegion(renderRegion, tileCount);
+            this.tileRegions = SliceUpRegion(renderRegion, tileCount, dstArgs.Bounds);
             this.tileCount = tileCount;
             this.workerThreads = workerThreads;
 
-			if (effect.SingleThreaded)
-			{
-				this.workerThreads = 1;
-			}
+            if ((effect.EffectDirectives & EffectDirectives.SingleThreaded) != 0)
+            {
+                this.workerThreads = 1;
+            }
 
-            this.threadPool = new Threading.ThreadPool(this.workerThreads);
+            this.threadPool = new Threading.ThreadPool(this.workerThreads, false);
         }
 
         ~BackgroundEffectRenderer()

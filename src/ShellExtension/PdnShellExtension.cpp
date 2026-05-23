@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -61,12 +62,9 @@ STDMETHODIMP CPdnShellExtension::QueryInterface(REFIID iid, void **ppvObject)
     TraceEnter();
     TraceOut("riid=%S", GuidToString(iid));
 
-    if (SUCCEEDED(hr))
+    if (NULL == ppvObject)
     {
-        if (NULL == ppvObject)
-        {
-            hr = E_INVALIDARG;
-        }
+        return E_INVALIDARG;
     }
 
     if (SUCCEEDED(hr))
@@ -251,7 +249,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
     {
         TraceOut("we have a pdn3 file");
 
-        // Read + decode length
+        TraceOut("Read + decode length");
         int iLength = -1;
         if (SUCCEEDED(hr))
         {
@@ -272,7 +270,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        // Allocate buffer
+        TraceOut("Allocate buffer");
         BYTE *pbHeaderBytes = NULL;
         if (SUCCEEDED(hr))
         {
@@ -289,7 +287,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        // Read N bytes
+        TraceOut("Read N bytes");
         if (SUCCEEDED(hr))
         {
             DWORD dwBytesRead = 0;
@@ -312,10 +310,10 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        // Convert to UTF8 string
+        TraceOut("Convert to UTF8 string");
         CHAR *szHeader = (CHAR *)pbHeaderBytes;
 
-        // Search for "<thumb"
+        TraceOut("Search for \"<thumb\"");
         const CHAR *szThumbTag = "<thumb ";
         __int64 iThumbTagIndex = -1;
         if (SUCCEEDED(hr))
@@ -333,7 +331,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        // Search for "gif=\""
+        TraceOut("Search for \"gif=\"");
         const char *szGifTag = "gif=\"";
         __int64 iGifTagIndex = -1;
         if (SUCCEEDED(hr))
@@ -351,7 +349,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        // Search for "\""
+        TraceOut("Search for \"");
         const char *szQuoteEnd = "\"";
         __int64 iQuoteEndIndex = -1;
         if (SUCCEEDED(hr))
@@ -369,7 +367,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        // Stomp out the portion of the string that is the GIF in base64 format
+        TraceOut("Stomp out the portion of the string that is the GIF in base64 format");
         CHAR *szGifBase64 = NULL;
         int iGifBase64Len = -1;
         if (SUCCEEDED(hr))
@@ -379,14 +377,14 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             iGifBase64Len = (int)strlen(szGifBase64);
         }
 
-        // Get required length of byte[] array for base64->byte[] conversion
+        TraceOut("Get required length of byte[] array for base64->byte[] conversion");
         int nGifBytes = -1;
         if (SUCCEEDED(hr))
         {
             nGifBytes = Base64DecodeGetRequiredLength(iGifBase64Len);
         }
 
-        // Allocate byte buffer for base64->byte[] conversion
+        TraceOut("Allocate byte buffer for base64->byte[] conversion");
         BYTE *pbGifBytes = NULL;
         if (SUCCEEDED(hr))
         {
@@ -403,7 +401,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        // Convert from base64 to byte[]
+        TraceOut("Convert from base64 to byte[]");
         int iGifLen = -1;
         if (SUCCEEDED(hr))
         {
@@ -422,7 +420,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        // Wrap a memory stream around it
+        TraceOut("Wrap a memory stream around it");
         CMemoryStream *pMemoryStream = NULL;
         if (SUCCEEDED(hr))
         {
@@ -435,12 +433,28 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        // Startup GDI+
+        TraceOut("Startup GDI+");
         ULONG_PTR pGdiToken = NULL;
+
         if (SUCCEEDED(hr))
         {
             GdiplusStartupInput gdiplusStartupInput;
-            Status status = GdiplusStartup(&pGdiToken, &gdiplusStartupInput, NULL);
+            Status status;
+            
+            // An exception may be thrown because we delay-load gdiplus.dll and
+            // this is not installed on Win2K systems. Even if .NET is installed,
+            // gdiplus.dll is not located in the system directory and thus is not
+            // locatable by the loader.
+            __try
+            {
+                status = GdiplusStartup(&pGdiToken, &gdiplusStartupInput, NULL);
+            }
+
+            __except (EXCEPTION_EXECUTE_HANDLER)
+            {
+                hr = E_FAIL;
+                status = Win32Error;
+            }
 
             if (status != Ok)
             {
@@ -450,7 +464,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        // Load GIF
+        TraceOut("Load GIF");
         Bitmap *pBitmap = NULL;        
         if (SUCCEEDED(hr))
         {
@@ -463,7 +477,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        // Get HBITMAP from it
+        TraceOut("Get HBITMAP from it");
         HBITMAP hBitmap = NULL;
         if (SUCCEEDED(hr))
         {
@@ -471,8 +485,8 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             UINT height = pBitmap->GetHeight();
             PixelFormat pf = pBitmap->GetPixelFormat();
 
-            // HACK: if we don't do this, we get a Win32Error when we do GetHBITMAP ...
-            //       ... which is odd because this call returns Win32Error.
+            TraceOut("HACK: if we don't do this, we get a Win32Error when we do GetHBITMAP ...");
+            TraceOut("       ... which is odd because this call returns Win32Error.");
             Color color;
             Status status1 = pBitmap->GetPixel(width - 1, height - 1, &color);
 
@@ -493,13 +507,13 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        // Give bitmap to the caller!
+        TraceOut("Give bitmap to the caller!");
         if (SUCCEEDED(hr))
         {
             *phBmpImage = hBitmap;
         }
 
-        // Cleanup
+        TraceOut("Cleanup");
         if (NULL != pBitmap)
         {
             delete pBitmap;

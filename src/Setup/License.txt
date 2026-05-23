@@ -1,7 +1,9 @@
-Paint.NET v2.1b
-Copyright (c) 2004, 2005 Rick Brewster, Tom Jackson, Michael Kelsey, Brandon 
-Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. 
-Portions Copyright (c) 2004, 2005 Microsoft Corporation. All Rights Reserved.
+Paint.NET v2.5
+Copyright (c) 2005 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson,
+Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. 
+Portions Copyright (c) 2005 Microsoft Corporation. All Rights Reserved.
+
+MIT License: http://www.opensource.org/licenses/mit-license.php
 
 Permission is hereby granted, free of charge, to any person obtaining a copy 
 of this software and associated documentation files (the "Software"), to deal
@@ -20,4 +22,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
 THE SOFTWARE.
-

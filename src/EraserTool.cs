@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -29,14 +30,32 @@ namespace PaintDotNet
         private ArrayList savedSurfaces;
         private Point lastMouseXY;
         private RenderArgs renderArgs;
-		private BitmapLayer bitmapLayer;
-		private Cursor cursorMouseDown;
+        private BitmapLayer bitmapLayer;
+        private Cursor cursorMouseDown;
         private Cursor cursorMouseUp;
+        private BrushPreviewRenderer previewRenderer;
+
+        protected override void OnMouseEnter()
+        {
+            this.previewRenderer.Visible = true;
+            base.OnMouseEnter();
+        }
+
+        protected override void OnMouseLeave()
+        {
+            this.previewRenderer.Visible = false;
+            base.OnMouseLeave();
+        }
 
         protected override void OnActivate()
         {
-            base.OnActivate ();
-            
+            base.OnActivate();
+
+            // cursor-transitions
+            this.cursorMouseUp = new Cursor(PdnResources.GetResourceStream("Cursors.EraserToolCursor.cur"));
+            this.cursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.EraserToolCursorMouseDown.cur"));
+            this.Cursor = cursorMouseUp;
+           
             if (savedSurfaces != null)
             {
                 foreach (PlacedSurface ps in savedSurfaces)
@@ -57,11 +76,30 @@ namespace PaintDotNet
                 bitmapLayer = null;
                 renderArgs = null;
             }
+
+            this.previewRenderer = new BrushPreviewRenderer(this.Renderers);
+            this.Renderers.Add(this.previewRenderer, false);
         }
 
         protected override void OnDeactivate()
         {
             base.OnDeactivate ();
+
+            if (cursorMouseUp != null)
+            {
+                cursorMouseUp.Dispose();
+                cursorMouseUp = null;
+            }
+
+            if (cursorMouseDown != null)
+            {
+                cursorMouseDown.Dispose();
+                cursorMouseDown = null;
+            }
+            
+            this.Renderers.Remove(this.previewRenderer);
+            this.previewRenderer.Dispose();
+            this.previewRenderer = null;
 
             if (mouseDown)
             {
@@ -92,46 +130,37 @@ namespace PaintDotNet
         {
             base.OnMouseDown (e);
 
-			Cursor = cursorMouseDown;
+            this.Cursor = this.cursorMouseDown;
 
             if (((e.Button & MouseButtons.Left) == MouseButtons.Left) ||
                 ((e.Button & MouseButtons.Right) == MouseButtons.Right))
             {
+                this.previewRenderer.Visible = false;
+
                 mouseDown = true;
                 mouseButton = e.Button;
 
                 lastMouseXY.X = e.X;
                 lastMouseXY.Y = e.Y;
 
-                PdnRegion clipRegion;
-
-                if (!Workspace.Environment.IsSelectionEmpty)
-                {
-                    clipRegion = Workspace.Environment.CreateSelectedRegion();
-                }
-                else
-                {
-                    clipRegion = new PdnRegion();
-                    clipRegion.MakeInfinite();
-                }
-
-                renderArgs.Graphics.SetClip(clipRegion, CombineMode.Replace);
+                PdnRegion clipRegion = Workspace.Environment.Selection.CreateRegion();
+                renderArgs.Graphics.SetClip(clipRegion.GetRegionReadOnly(), CombineMode.Replace);
                 clipRegion.Dispose();
 
                 OnMouseMove(e);
             }
-
         }
 
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp (e);
 
-			Cursor = cursorMouseUp;
+            Cursor = cursorMouseUp;
 
             if (mouseDown)
             {
                 OnMouseMove(e);
+                this.previewRenderer.Visible = true;
                 mouseDown = false;
 
                 if (savedSurfaces.Count > 0)
@@ -144,50 +173,39 @@ namespace PaintDotNet
                         saveMeRegion.Union(pi1.Bounds);
                     }
 
-                    PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(saveMeRegion);
-
-                    using (IrregularSurface weDrewThis = new IrregularSurface(renderArgs.Surface, simplifiedRegion))
+                    using (PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(saveMeRegion, Utility.DefaultSimplificationFactor, 2))
                     {
-                        for (int i = savedSurfaces.Count - 1; i >= 0; --i)
+                        using (IrregularSurface weDrewThis = new IrregularSurface(renderArgs.Surface, simplifiedRegion))
                         {
-                            PlacedSurface ps = (PlacedSurface)savedSurfaces[i];
-                            ps.Draw(renderArgs.Surface);
-                            ps.Dispose();
+                            for (int i = savedSurfaces.Count - 1; i >= 0; --i)
+                            {
+                                PlacedSurface ps = (PlacedSurface)savedSurfaces[i];
+                                ps.Draw(renderArgs.Surface);
+                                ps.Dispose();
+                            }
+
+                            savedSurfaces.Clear();
+
+                            HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, 
+                                Workspace.ActiveLayerIndex, simplifiedRegion);
+
+                            weDrewThis.Draw(bitmapLayer.Surface);
+                            Workspace.History.PushNewAction(ha);
+                            bitmapLayer.Invalidate(simplifiedRegion);
                         }
-
-                        savedSurfaces.Clear();
-
-                        //HistoryAction ha = bitmapLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
-                        HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, simplifiedRegion);
-                        weDrewThis.Draw(bitmapLayer.Surface);
-                        Workspace.History.PushNewAction(ha);
                     }
                 }
             }
         }
 
-        private static void DrawCircleOverLine(Graphics g, Pen pen, Point a, Point b)
-        {
-            Point[] coords = Utility.GetLinePoints(a, b);
-            float halfPenWidth = (pen.Width / 2.0f);
-            RectangleF rectBase = new RectangleF(-halfPenWidth, -halfPenWidth, pen.Width, pen.Width);
-
-            foreach (PointF p in coords)
-            {
-                RectangleF rect = new RectangleF(new PointF(rectBase.X + p.X, rectBase.Y + p.Y), rectBase.Size);
-				g.DrawEllipse(pen,rect);
-				g.FillEllipse(pen.Brush, rect);
-            }
-        }
-
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            base.OnMouseMove (e);
+            base.OnMouseMove(e);
 
             if (mouseDown && ((e.Button & mouseButton) != MouseButtons.None))
             {
-                Pen pen = Workspace.Environment.PenInfo.CreatePen(Workspace.Environment.BrushInfo, Color.FromArgb(255, 0, 0, 0), Color.FromArgb(255, 0, 0, 0));
-				pen.Width = pen.Width / 2.0f;
+                Pen pen = Workspace.Environment.PenInfo.CreatePen(Workspace.Environment.BrushInfo, 
+                    Color.FromArgb(255, 0, 0, 0), Color.FromArgb(255, 0, 0, 0));
 
                 Point a = lastMouseXY;
                 Point b = new Point(e.X, e.Y);
@@ -221,31 +239,47 @@ namespace PaintDotNet
 
                     new UnaryPixelOps.InvertWithAlpha().Apply(renderArgs.Surface, saveRect);
                     renderArgs.Graphics.CompositingMode = CompositingMode.SourceOver;
-                    DrawCircleOverLine(renderArgs.Graphics, pen, a, b);
+
+                    if (pen.Width > 1)
+                    {
+                        renderArgs.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
+                    }
+                    else
+                    {
+                        renderArgs.Graphics.PixelOffsetMode = PixelOffsetMode.None;
+                    }
+
+                    pen.EndCap = LineCap.Round;
+                    pen.StartCap = LineCap.Round;
+                    renderArgs.Graphics.DrawLine(pen, a, b);
+                    renderArgs.Graphics.FillEllipse(pen.Brush, a.X - pen.Width / 2.0f, a.Y - pen.Width / 2.0f, pen.Width, pen.Width);
+
                     new UnaryPixelOps.InvertWithAlpha().Apply(renderArgs.Surface, saveRect);
-                    new BinaryPixelOps.SetColorChannels().Apply(renderArgs.Surface, saveRect.Location, savedPS.What, new Point(0, 0), saveRect.Size);
+
+                    new BinaryPixelOps.SetColorChannels().Apply(renderArgs.Surface, saveRect.Location, 
+                        savedPS.What, new Point(0, 0), saveRect.Size);
 
                     bitmapLayer.Invalidate(saveRect);
-                    Workspace.Update();
+                    Update();
                 }
 
                 lastMouseXY = b;
                 pen.Dispose();
             }
+            else
+            {
+                this.previewRenderer.BrushLocation = new Point(e.X, e.Y);
+                this.previewRenderer.BrushSize = Workspace.Environment.PenInfo.Width / 2.0f;
+            }
         }
         
         public EraserTool(DocumentWorkspace parent) 
             : base(parent,
-                   Utility.GetImageResource("Icons.EraserToolIcon.bmp"),
-                   "Eraser", 
-                   "Brush-like erasing tool",
-                   "Click and drag to erase a portion of the image",
+                   PdnResources.GetImage("Icons.EraserToolIcon.bmp"),
+                   PdnResources.GetString("EraserTool.Name"),
+                   PdnResources.GetString("EraserTool.HelpText"), //"Click and drag to erase a portion of the image",
                    'e')
         {
-			// cursor-transitions
-			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.EraserToolCursor.cur"));
-			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.EraserToolCursorMouseDown.cur"));
-			this.Cursor = cursorMouseUp;
         }
 
         protected override void Dispose(bool disposing)
@@ -255,18 +289,6 @@ namespace PaintDotNet
             if (disposing)
             {
                 DisposeImage();
-
-                if (cursorMouseUp != null)
-                {
-                    cursorMouseUp.Dispose();
-                    cursorMouseUp = null;
-                }
-
-                if (cursorMouseDown != null)
-                {
-                    cursorMouseDown.Dispose();
-                    cursorMouseDown = null;
-                }
             }
         }
     }

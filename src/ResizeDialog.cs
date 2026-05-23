@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -23,127 +24,499 @@ namespace PaintDotNet
     public class ResizeDialog 
         : PdnBaseForm
     {
-        protected System.Windows.Forms.CheckBox ratioCheck;
-        protected System.Windows.Forms.Label label1;
-        protected System.Windows.Forms.Label label2;
+        private sealed class ResizeConstrainer
+        {
+            private Size originalPixelSize;
+            private double newWidth;
+            private double newHeight;
+            private MeasurementUnit units;
+            private double resolution;
+            private bool constrainToAspect;
+            
+            private double OriginalAspect
+            {
+                get
+                {
+                    return (double)originalPixelSize.Width / (double)originalPixelSize.Height;
+                }
+            }
+
+            public Size OriginalPixelSize
+            {
+                get
+                {
+                    return this.originalPixelSize;
+                }
+            }
+
+            public event EventHandler NewWidthChanged;
+            private void OnNewWidthChanged()
+            {
+                if (NewWidthChanged != null)
+                {
+                    NewWidthChanged(this, EventArgs.Empty);
+                }
+            }
+
+            public double NewPixelWidth
+            {
+                get
+                {
+                    if (this.Units == MeasurementUnit.Pixel)
+                    {
+                        return this.newWidth;
+                    }
+                    else
+                    {
+                        return this.newWidth * this.resolution;
+                    }
+                }
+
+                set
+                {
+                    if (this.Units == MeasurementUnit.Pixel)
+                    {
+                        this.NewWidth = value;
+                    }
+                    else
+                    {
+                        this.NewWidth = value / this.resolution;
+                    }
+                }
+            }
+
+            public double NewWidth
+            {
+                get
+                {
+                    return this.newWidth;
+                }
+
+                set
+                {
+                    if (this.newWidth != value)
+                    {
+                        this.newWidth = value;
+                        OnNewWidthChanged();
+
+                        if (this.constrainToAspect)
+                        {
+                            double newNewHeight = value / OriginalAspect;
+
+                            if (this.newHeight != newNewHeight)
+                            {
+                                this.newHeight = newNewHeight;
+                                OnNewHeightChanged();
+                            }
+                        }
+                    }
+                }
+            }
+
+            public event EventHandler NewHeightChanged;
+            private void OnNewHeightChanged()
+            {
+                if (NewHeightChanged != null)
+                {
+                    NewHeightChanged(this, EventArgs.Empty);
+                }
+            }
+
+            public double NewPixelHeight
+            {
+                get
+                {
+                    if (this.Units == MeasurementUnit.Pixel)
+                    {
+                        return this.newHeight;
+                    }
+                    else
+                    {
+                        return this.newHeight * this.resolution;
+                    }
+                }
+
+                set
+                {
+                    if (this.Units == MeasurementUnit.Pixel)
+                    {
+                        this.NewHeight = value;
+                    }
+                    else
+                    {
+                        this.NewHeight = value / this.resolution;
+                    }
+                }
+            }
+
+            public double NewHeight
+            {
+                get
+                {
+                    return this.newHeight;
+                }
+
+                set
+                {
+                    if (this.newHeight != value)
+                    {
+                        this.newHeight = value;
+                        OnNewHeightChanged();
+
+                        if (this.constrainToAspect)
+                        {
+                            double newNewWidth = value * OriginalAspect;
+
+                            if (this.newWidth != newNewWidth)
+                            {
+                                this.newWidth = newNewWidth;
+                                OnNewWidthChanged();
+                            }
+                        }
+                    }
+                }
+            }
+
+            public event EventHandler UnitsChanged;
+            private void OnUnitsChanged()
+            {
+                if (UnitsChanged != null)
+                {
+                    UnitsChanged(this, EventArgs.Empty);
+                }
+            }
+
+            public MeasurementUnit Units
+            {
+                get
+                {
+                    return this.units;
+                }
+
+                set
+                {
+                    if (this.units != value)
+                    {
+                        switch (value)
+                        {
+                            default:
+                                throw new InvalidEnumArgumentException("value is not a valid member of the MeasurementUnit enumeration");
+
+                            // Inches or Centimers -> Pixels
+                            case MeasurementUnit.Pixel:
+                                this.newWidth *= this.resolution;
+                                this.newHeight *= this.resolution;
+                                this.units = value;
+
+                                OnUnitsChanged();
+                                OnNewWidthChanged();
+                                OnNewHeightChanged();
+                                break;
+
+                            case MeasurementUnit.Inch:
+                            {
+                                switch (this.units)
+                                {
+                                    default:
+                                        throw new InvalidEnumArgumentException("this.units is not a valid member of the MeasurementUnit enumeration");
+
+                                    // Centimeters -> Inches
+                                    case MeasurementUnit.Centimeter:
+                                        this.newWidth = Document.CentimetersToInches(this.newWidth);
+                                        this.newHeight = Document.CentimetersToInches(this.newHeight);
+                                        this.units = value;
+                                        this.resolution = Document.InchesToCentimeters(this.resolution);
+                                  
+                                        OnUnitsChanged();
+                                        OnResolutionChanged();
+                                        OnNewWidthChanged();
+                                        OnNewHeightChanged();
+                                        break;
+                                }
+                                break;
+                            }
+
+                            case MeasurementUnit.Centimeter:
+                            {
+                                switch (this.units)
+                                {
+                                    default:
+                                        throw new InvalidEnumArgumentException("this.units is not a valid member of the MeasurementUnit enumeration");
+
+                                    // Inches -> Centimeters
+                                    case MeasurementUnit.Inch:
+                                        this.newWidth = Document.InchesToCentimeters(this.newWidth);
+                                        this.newHeight = Document.InchesToCentimeters(this.newHeight);
+                                        this.units = value;
+                                        this.resolution = Document.CentimetersToInches(this.resolution);
+                                   
+                                        OnUnitsChanged();
+                                        OnResolutionChanged();
+                                        OnNewWidthChanged();
+                                        OnNewHeightChanged();
+                                        break;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            public event EventHandler ResolutionChanged;
+            private void OnResolutionChanged()
+            {
+                if (ResolutionChanged != null)
+                {
+                    ResolutionChanged(this, EventArgs.Empty);
+                }
+            }
+
+            public double Resolution
+            {
+                get
+                {
+                    return this.resolution;
+                }
+
+                set
+                {
+                    if (value <= 0.0)
+                    {
+                        throw new ArgumentOutOfRangeException("value", value, "value must be > 0.0");
+                    }
+
+                    if (this.resolution != value)
+                    {
+                        if (this.Units != MeasurementUnit.Pixel)
+                        {
+                            this.newWidth = ((double)this.newWidth * this.resolution) / value;
+                            this.newHeight = ((double)this.newHeight * this.resolution) / value;
+                        }
+
+                        this.resolution = value;
+                        OnResolutionChanged();
+
+                        if (this.Units != MeasurementUnit.Pixel)
+                        {
+                            OnNewWidthChanged();
+                            OnNewHeightChanged();
+                        }
+                    }
+                }
+            }
+
+            public event EventHandler ConstrainToAspectChanged;
+            private void OnConstrainToAspectChanged()
+            {
+                if (ConstrainToAspectChanged != null)
+                {
+                    ConstrainToAspectChanged(this, EventArgs.Empty);
+                }
+            }
+
+            public bool ConstrainToAspect
+            {
+                get
+                {
+                    return this.constrainToAspect;
+                }
+
+                set
+                {
+                    if (this.constrainToAspect != value)
+                    {
+                        if (value)
+                        {
+                            double newNewHeight = this.newWidth / this.OriginalAspect;
+
+                            if (this.newHeight != newNewHeight)
+                            {
+                                this.newHeight = newNewHeight;
+                                OnNewHeightChanged();
+                            }
+                        }
+
+                        this.constrainToAspect = value;
+                        this.OnConstrainToAspectChanged();
+                    }
+                }
+            }
+
+            public void SetByPercent(double scale)
+            {
+                bool oldConstrain = this.constrainToAspect;
+                this.constrainToAspect = false;
+                this.NewPixelWidth = (double)this.OriginalPixelSize.Width * scale;
+                this.NewPixelHeight = (double)this.OriginalPixelSize.Height * scale;
+                this.constrainToAspect = true;
+            }
+
+            public ResizeConstrainer(Size originalPixelSize)
+            {
+                this.constrainToAspect = false;
+                this.originalPixelSize = originalPixelSize;
+                this.units = Document.GetDefaultDpuUnit();
+                this.resolution = Document.GetDefaultDpu(this.units);
+                this.newWidth = (double)this.originalPixelSize.Width / this.resolution;
+                this.newHeight = (double)this.originalPixelSize.Height / this.resolution;
+            }
+        }            
+
+        protected System.Windows.Forms.CheckBox constrainCheckBox;
         protected System.Windows.Forms.Button okButton;
         protected System.Windows.Forms.Button cancelButton;
-        
-        protected System.Windows.Forms.ComboBox resamplingAlgorithmComboBox;
-        protected System.Windows.Forms.Label label3;
-
-        protected System.Windows.Forms.NumericUpDown widthUpDown;
-        protected System.Windows.Forms.NumericUpDown heightUpDown;
 
         private EventHandler upDownValueChangedDelegate;
 
-        private double ratio;
-        private bool isLocked;
         private int layers;
-        protected System.Windows.Forms.Label label5;
-        protected System.Windows.Forms.Label currentImageSize;
-        protected System.Windows.Forms.GroupBox resizedImageGroupBox;
-        protected System.Windows.Forms.Label label4;
-        protected System.Windows.Forms.Label label6;
         
         /// <summary>
         /// Required designer variable.
         /// </summary>
         private System.ComponentModel.Container components = null;
-        protected System.Windows.Forms.Label originalImageSize;
-		protected System.Windows.Forms.Label label7;
-		protected System.Windows.Forms.NumericUpDown percentUpDown;
+        protected System.Windows.Forms.Label percentSignLabel;
+        protected System.Windows.Forms.NumericUpDown percentUpDown;
         protected System.Windows.Forms.RadioButton absoluteRB;
         protected System.Windows.Forms.RadioButton percentRB;
         protected System.Windows.Forms.Label asteriskTextLabel;
         protected System.Windows.Forms.Label asteriskLabel;
+        protected PaintDotNet.HeaderLabel resizedImageHeader;
+        protected System.Windows.Forms.Label resolutionLabel;
+        protected PaintDotNet.UnitsComboBox unitsComboBox2;
+        protected PaintDotNet.UnitsComboBox unitsComboBox1;
+        protected System.Windows.Forms.NumericUpDown resolutionUpDown;
 
+        private ResizeConstrainer constrainer;
+        protected System.Windows.Forms.Label newWidthLabel1;
+        protected System.Windows.Forms.Label newHeightLabel1;
+        protected System.Windows.Forms.Label pixelsLabel1;
+        protected System.Windows.Forms.Label newWidthLabel2;
+        protected System.Windows.Forms.Label newHeightLabel2;
+        protected System.Windows.Forms.Label pixelsLabel2;
+        protected System.Windows.Forms.Label unitsLabel1;
+        protected System.Windows.Forms.NumericUpDown pixelWidthUpDown;
+        protected System.Windows.Forms.NumericUpDown pixelHeightUpDown;
+        protected System.Windows.Forms.NumericUpDown printWidthUpDown;
+        protected System.Windows.Forms.NumericUpDown printHeightUpDown;
+        protected PaintDotNet.HeaderLabel pixelSizeHeader;
+        protected PaintDotNet.HeaderLabel printSizeHeader;
+        protected System.Windows.Forms.Label resamplingLabel;
+        protected System.Windows.Forms.ComboBox resamplingAlgorithmComboBox;
+
+        /// <summary>
+        /// Gets or sets the image width, in units of pixels.
+        /// </summary>
         public int ImageWidth
         {
             get
             {
-                return (int)widthUpDown.Value;
+                return (int)Math.Round(constrainer.NewPixelWidth);
             }
 
             set
             {
-                if (value <= 0)
-                {
-                    value = 0;
-                }               
-
-                if ((int)value > (int)widthUpDown.Maximum)
-                {
-                    value = (int)widthUpDown.Maximum;
-                }
-
-                widthUpDown.Value = (decimal)value;
-                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((long)layers * (long)ColorBgra.SizeOf * (long)ImageHeight * (long)ImageWidth);
+                this.constrainer.NewPixelWidth = value;
             }
         }
 
-        private Size originalSize = Size.Empty;
-        public Size OriginalSize
-        {
-            get
-            {
-                return originalSize;
-            }
-
-            set
-            {
-				originalSize.Width = value.Width;
-				originalSize.Height = value.Height;
-                originalImageSize.Text = value.Width.ToString() + " x " + value.Height.ToString();
-            }
-        }
-
-        public double AspectRatio
-        {
-            get
-            {
-                return ratio;
-            }
-
-            set
-            {
-                ratio = value;
-            }
-        }
-
+        /// <summary>
+        /// Gets or sets the new image height, in units of pixels.
+        /// </summary>
         public int ImageHeight
         {
             get
             {
-                return (int)heightUpDown.Value;
+                return (int)Math.Round(constrainer.NewPixelHeight);
             }
 
             set
             {
-                if (value <= 0)
-                {
-                    value = 0;
-                }
-
-                if ((int)value > (int)heightUpDown.Maximum)
-                {
-                    value = (int)heightUpDown.Maximum;
-                }
-
-                heightUpDown.Value = (decimal)value; //(int)(Math.Round((double)value));    
-                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((long)layers * (long)ColorBgra.SizeOf * (long)ImageHeight * (long)ImageWidth);
-                PopulateAsteriskLabels();
+                this.constrainer.NewPixelHeight = value;
             }
         }
 
-        public long DocumentSize
+        public MeasurementUnit Units
         {
+            get
+            {
+                return this.constrainer.Units;
+            }
+
             set
             {
-                currentImageSize.Text = Utility.SizeStringFromBytes((long)value);
+                this.constrainer.Units = value;
             }
         }
 
+        public double Resolution
+        {
+            get
+            {
+                return this.constrainer.Resolution;
+            }
+
+            set
+            {
+                this.constrainer.Resolution = value;
+            }
+        }
+
+        private double originalDpu = Document.GetDefaultDpu(Document.GetDefaultDpuUnit());
+        private MeasurementUnit originalDpuUnit = Document.GetDefaultDpuUnit();
+
+        /// <summary>
+        /// Gets or sets the original image width, in units of pixels.
+        /// </summary>
+        /// <remarks>
+        /// Setting this property will reset the Resolution and Units properties.
+        /// </remarks>
+        public Size OriginalSize
+        {
+            get
+            {
+                return this.constrainer.OriginalPixelSize;
+            }
+
+            set
+            {
+                this.constrainer = new ResizeConstrainer(value);
+                SetupConstrainerEvents();
+                UpdateSizeText();
+            }
+        }
+
+        public double OriginalDpu
+        {
+            get
+            {
+                return this.originalDpu;
+            }
+
+            set
+            {
+                this.originalDpu = value;
+                UpdateSizeText();
+            }
+        }
+
+        public MeasurementUnit OriginalDpuUnit
+        {
+            get
+            {
+                return this.originalDpuUnit;
+            }
+
+            set
+            {
+                this.originalDpuUnit = value;
+                UpdateSizeText();
+            }
+        }
+
+        /// <summary>
+        /// Gets the resampling algorithm chosen by the user, or sets the resampling algorithm to populate the UI with.
+        /// </summary>
         public ResamplingAlgorithm ResamplingAlgorithm
         {
             get
@@ -158,26 +531,26 @@ namespace PaintDotNet
             }
         }
 
-        public bool IsLocked
+        public bool ConstrainToAspect
         {
             get
             {
-                return isLocked;
+                return this.constrainer.ConstrainToAspect;
             }
 
             set
             {
-                isLocked = value;
-                ratioCheck.Checked = value;
-
-                if (isLocked && ratio != 0.0)
-                {
-                    FixHeightToRatio();
-                }
+                this.constrainer.ConstrainToAspect = value;
             }
         }
 
-        public int Layers
+        /// <summary>
+        /// Gets or sets the number of layers in the image.
+        /// </summary>
+        /// <remarks>
+        /// This is used to compute the new byte size of the image that is shown to the user.
+        /// </remarks>
+        public int LayerCount
         {
             get
             {
@@ -187,10 +560,16 @@ namespace PaintDotNet
             set
             {
                 layers = value;
-                long initialSize = (long)layers * ColorBgra.SizeOf * (long)ImageHeight * (long)ImageWidth;
-                DocumentSize = initialSize;
-                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes(initialSize);
+                UpdateSizeText();
             }
+        }
+
+        private void UpdateSizeText()
+        {
+            long bytes = (long)layers * (long)ColorBgra.SizeOf * (long)constrainer.NewPixelWidth * (long)constrainer.NewPixelHeight;
+            string bytesText = Utility.SizeStringFromBytes(bytes);
+            string textFormat = PdnResources.GetString("ResizeDialog.ResizedImageHeader.Text.Format");
+            this.resizedImageHeader.Text = string.Format(textFormat, bytesText);
         }
 
         private sealed class ResampleMethod
@@ -202,13 +581,16 @@ namespace PaintDotNet
                 switch (method)
                 {
                     case ResamplingAlgorithm.NearestNeighbor:
-                        return "Nearest Neighbor";
+                        return PdnResources.GetString("ResizeDialog.ResampleMethod.NearestNeighbor");
+
+                    case ResamplingAlgorithm.Bilinear:
+                        return PdnResources.GetString("ResizeDialog.ResampleMethod.Bilinear");
 
                     case ResamplingAlgorithm.Bicubic:
-                        return "Bicubic";
+                        return PdnResources.GetString("ResizeDialog.ResampleMethod.Bicubic");
 
                     case ResamplingAlgorithm.SuperSampling:
-                        return "Best Quality";
+                        return PdnResources.GetString("ResizeDialog.ResampleMethod.SuperSampling");
 
                     default:
                         return method.ToString();
@@ -245,31 +627,69 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            ratioCheck.Checked = true;
-            resamplingAlgorithmComboBox.Items.Clear();
-            ratio = -1;
+            this.Text = PdnResources.GetString("ResizeDialog.Text");
+            this.asteriskLabel.Text = PdnResources.GetString("ResizeDialog.AsteriskLabel.Text");
+            this.percentSignLabel.Text = PdnResources.GetString("ResizeDialog.PercentSignLabel.Text");
+            this.pixelSizeHeader.Text = PdnResources.GetString("ResizeDialog.PixelSizeHeader.Text");
+            this.printSizeHeader.Text = PdnResources.GetString("ResizeDialog.PrintSizeHeader.Text");
+            this.pixelsLabel1.Text = PdnResources.GetString("ResizeDialog.PixelsLabel1.Text");
+            this.pixelsLabel2.Text = PdnResources.GetString("ResizeDialog.PixelsLabel2.Text");
+            this.resolutionLabel.Text = PdnResources.GetString("ResizeDialog.ResolutionLabel.Text");
+            this.percentRB.Text = PdnResources.GetString("ResizeDialog.PercentRB.Text");
+            this.absoluteRB.Text = PdnResources.GetString("ResizeDialog.AbsoluteRB.Text");
+            this.resamplingLabel.Text = PdnResources.GetString("ResizeDialog.ResamplingLabel.Text");
+            this.cancelButton.Text = PdnResources.GetString("Form.CancelButton.Text");
+            this.okButton.Text = PdnResources.GetString("Form.OkButton.Text");
+            this.newWidthLabel1.Text = PdnResources.GetString("ResizeDialog.NewWidthLabel1.Text");
+            this.newHeightLabel1.Text = PdnResources.GetString("ResizeDialog.NewHeightLabel1.Text");
+            this.newWidthLabel2.Text = PdnResources.GetString("ResizeDialog.NewWidthLabel1.Text");
+            this.newHeightLabel2.Text = PdnResources.GetString("ResizeDialog.NewHeightLabel1.Text");
+            this.constrainCheckBox.Text = PdnResources.GetString("ResizeDialog.ConstrainCheckBox.Text");
+            this.unitsLabel1.Text = unitsComboBox1.UnitsText;
 
             upDownValueChangedDelegate = new EventHandler(upDown_ValueChanged);
 
+            this.constrainer = new ResizeConstrainer(new Size((int)this.pixelWidthUpDown.Value, (int)this.pixelHeightUpDown.Value));
+            SetupConstrainerEvents();
+
+            resamplingAlgorithmComboBox.Items.Clear();
             resamplingAlgorithmComboBox.Items.Add(new ResampleMethod(ResamplingAlgorithm.Bicubic));
             resamplingAlgorithmComboBox.Items.Add(new ResampleMethod(ResamplingAlgorithm.Bilinear));
             resamplingAlgorithmComboBox.Items.Add(new ResampleMethod(ResamplingAlgorithm.NearestNeighbor));
             resamplingAlgorithmComboBox.Items.Add(new ResampleMethod(ResamplingAlgorithm.SuperSampling));
-
             resamplingAlgorithmComboBox.SelectedItem = new ResampleMethod(ResamplingAlgorithm.SuperSampling);
+
             layers = 1;
 
-			this.percentUpDown.Enabled = false;
+            this.percentUpDown.Enabled = false;
 
-            this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.MenuImageResizeIcon.bmp"), Color.FromArgb(192, 192, 192));
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuImageResizeIcon.bmp"), Color.FromArgb(192, 192, 192));
             PopulateAsteriskLabels();
+            OnRadioButtonCheckedChanged(this, EventArgs.Empty);    
+        }
+
+        private void SetupConstrainerEvents()
+        {
+            this.constrainer.ConstrainToAspectChanged += new EventHandler(OnConstrainerConstrainToAspectChanged);
+            this.constrainer.NewHeightChanged += new EventHandler(constrainer_NewHeightChanged);
+            this.constrainer.NewWidthChanged += new EventHandler(OnConstrainerNewWidthChanged);
+            this.constrainer.ResolutionChanged += new EventHandler(OnConstrainerResolutionChanged);
+            this.constrainer.UnitsChanged += new EventHandler(OnConstrainerUnitsChanged);
+
+            constrainCheckBox.Checked = constrainer.ConstrainToAspect;
+            pixelWidthUpDown.Value = (decimal)constrainer.NewPixelWidth;
+            pixelHeightUpDown.Value = (decimal)constrainer.NewPixelHeight;
+            printWidthUpDown.Value = (decimal)constrainer.NewWidth;
+            printHeightUpDown.Value = (decimal)constrainer.NewHeight;
+            resolutionUpDown.Value = (decimal)constrainer.Resolution;
+            unitsComboBox1.Units = constrainer.Units;
         }
 
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad (e);
-            this.widthUpDown.Select();
-            this.widthUpDown.Select(0, widthUpDown.Text.Length);
+            this.pixelWidthUpDown.Select();
+            this.pixelWidthUpDown.Select(0, pixelWidthUpDown.Text.Length);
             this.PopulateAsteriskLabels();
         }
 
@@ -296,70 +716,76 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            this.ratioCheck = new System.Windows.Forms.CheckBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
+            this.constrainCheckBox = new System.Windows.Forms.CheckBox();
+            this.newWidthLabel1 = new System.Windows.Forms.Label();
+            this.newHeightLabel1 = new System.Windows.Forms.Label();
             this.okButton = new System.Windows.Forms.Button();
             this.cancelButton = new System.Windows.Forms.Button();
-            this.resamplingAlgorithmComboBox = new System.Windows.Forms.ComboBox();
-            this.label3 = new System.Windows.Forms.Label();
-            this.widthUpDown = new System.Windows.Forms.NumericUpDown();
-            this.heightUpDown = new System.Windows.Forms.NumericUpDown();
-            this.label5 = new System.Windows.Forms.Label();
-            this.currentImageSize = new System.Windows.Forms.Label();
-            this.resizedImageGroupBox = new System.Windows.Forms.GroupBox();
+            this.pixelWidthUpDown = new System.Windows.Forms.NumericUpDown();
+            this.pixelHeightUpDown = new System.Windows.Forms.NumericUpDown();
+            this.resizedImageHeader = new PaintDotNet.HeaderLabel();
+            this.asteriskLabel = new System.Windows.Forms.Label();
+            this.asteriskTextLabel = new System.Windows.Forms.Label();
             this.absoluteRB = new System.Windows.Forms.RadioButton();
             this.percentRB = new System.Windows.Forms.RadioButton();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
+            this.pixelsLabel1 = new System.Windows.Forms.Label();
             this.percentUpDown = new System.Windows.Forms.NumericUpDown();
-            this.label7 = new System.Windows.Forms.Label();
-            this.originalImageSize = new System.Windows.Forms.Label();
-            this.asteriskTextLabel = new System.Windows.Forms.Label();
-            this.asteriskLabel = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.widthUpDown)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.heightUpDown)).BeginInit();
-            this.resizedImageGroupBox.SuspendLayout();
+            this.percentSignLabel = new System.Windows.Forms.Label();
+            this.resolutionLabel = new System.Windows.Forms.Label();
+            this.resolutionUpDown = new System.Windows.Forms.NumericUpDown();
+            this.unitsComboBox2 = new PaintDotNet.UnitsComboBox();
+            this.unitsComboBox1 = new PaintDotNet.UnitsComboBox();
+            this.printWidthUpDown = new System.Windows.Forms.NumericUpDown();
+            this.printHeightUpDown = new System.Windows.Forms.NumericUpDown();
+            this.newWidthLabel2 = new System.Windows.Forms.Label();
+            this.newHeightLabel2 = new System.Windows.Forms.Label();
+            this.pixelsLabel2 = new System.Windows.Forms.Label();
+            this.unitsLabel1 = new System.Windows.Forms.Label();
+            this.pixelSizeHeader = new PaintDotNet.HeaderLabel();
+            this.printSizeHeader = new PaintDotNet.HeaderLabel();
+            this.resamplingLabel = new System.Windows.Forms.Label();
+            this.resamplingAlgorithmComboBox = new System.Windows.Forms.ComboBox();
+            ((System.ComponentModel.ISupportInitialize)(this.pixelWidthUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pixelHeightUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.percentUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.resolutionUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.printWidthUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.printHeightUpDown)).BeginInit();
             this.SuspendLayout();
             // 
-            // ratioCheck
+            // constrainCheckBox
             // 
-            this.ratioCheck.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.ratioCheck.Location = new System.Drawing.Point(38, 118);
-            this.ratioCheck.Name = "ratioCheck";
-            this.ratioCheck.Size = new System.Drawing.Size(136, 16);
-            this.ratioCheck.TabIndex = 4;
-            this.ratioCheck.Text = "Maintain Aspect Ratio";
-            this.ratioCheck.CheckedChanged += new System.EventHandler(this.ratioCheck_CheckedChanged);
+            this.constrainCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.constrainCheckBox.Location = new System.Drawing.Point(24, 101);
+            this.constrainCheckBox.Name = "constrainCheckBox";
+            this.constrainCheckBox.Size = new System.Drawing.Size(248, 16);
+            this.constrainCheckBox.TabIndex = 25;
+            this.constrainCheckBox.CheckedChanged += new System.EventHandler(this.constrainCheckBox_CheckedChanged);
             // 
-            // label1
+            // newWidthLabel1
             // 
-            this.label1.Location = new System.Drawing.Point(35, 68);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(72, 16);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "New Width:";
-            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.newWidthLabel1.Location = new System.Drawing.Point(32, 145);
+            this.newWidthLabel1.Name = "newWidthLabel1";
+            this.newWidthLabel1.Size = new System.Drawing.Size(79, 16);
+            this.newWidthLabel1.TabIndex = 0;
+            this.newWidthLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // label2
+            // newHeightLabel1
             // 
-            this.label2.Location = new System.Drawing.Point(35, 94);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(72, 16);
-            this.label2.TabIndex = 2;
-            this.label2.Text = "New Height:";
-            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.newHeightLabel1.Location = new System.Drawing.Point(32, 169);
+            this.newHeightLabel1.Name = "newHeightLabel1";
+            this.newHeightLabel1.Size = new System.Drawing.Size(79, 16);
+            this.newHeightLabel1.TabIndex = 3;
+            this.newHeightLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // okButton
             // 
             this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.okButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.okButton.Location = new System.Drawing.Point(100, 248);
+            this.okButton.Location = new System.Drawing.Point(142, 315);
             this.okButton.Name = "okButton";
             this.okButton.Size = new System.Drawing.Size(72, 23);
-            this.okButton.TabIndex = 7;
-            this.okButton.Text = "OK";
+            this.okButton.TabIndex = 17;
             this.okButton.Click += new System.EventHandler(this.okButton_Click);
             // 
             // cancelButton
@@ -367,160 +793,118 @@ namespace PaintDotNet
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.cancelButton.Location = new System.Drawing.Point(180, 248);
+            this.cancelButton.Location = new System.Drawing.Point(220, 315);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(72, 23);
-            this.cancelButton.TabIndex = 8;
-            this.cancelButton.Text = "Cancel";
+            this.cancelButton.TabIndex = 18;
             this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
             // 
-            // resamplingAlgorithmComboBox
+            // pixelWidthUpDown
             // 
-            this.resamplingAlgorithmComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.resamplingAlgorithmComboBox.Location = new System.Drawing.Point(78, 20);
-            this.resamplingAlgorithmComboBox.Name = "resamplingAlgorithmComboBox";
-            this.resamplingAlgorithmComboBox.Size = new System.Drawing.Size(130, 21);
-            this.resamplingAlgorithmComboBox.Sorted = true;
-            this.resamplingAlgorithmComboBox.TabIndex = 0;
-            this.resamplingAlgorithmComboBox.Tag = "";
-            this.resamplingAlgorithmComboBox.SelectedIndexChanged += new System.EventHandler(this.resamplingAlgorithmComboBox_SelectedIndexChanged);
+            this.pixelWidthUpDown.Location = new System.Drawing.Point(120, 144);
+            this.pixelWidthUpDown.Maximum = new System.Decimal(new int[] {
+                                                                             2147483647,
+                                                                             0,
+                                                                             0,
+                                                                             0});
+            this.pixelWidthUpDown.Minimum = new System.Decimal(new int[] {
+                                                                             2147483647,
+                                                                             0,
+                                                                             0,
+                                                                             -2147483648});
+            this.pixelWidthUpDown.Name = "pixelWidthUpDown";
+            this.pixelWidthUpDown.Size = new System.Drawing.Size(72, 20);
+            this.pixelWidthUpDown.TabIndex = 1;
+            this.pixelWidthUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.pixelWidthUpDown.Value = new System.Decimal(new int[] {
+                                                                           4,
+                                                                           0,
+                                                                           0,
+                                                                           0});
+            this.pixelWidthUpDown.Enter += new System.EventHandler(this.OnUpDownEnter);
+            this.pixelWidthUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OnUpDownKeyUp);
+            this.pixelWidthUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.pixelWidthUpDown.Leave += new System.EventHandler(this.OnUpDownLeave);
             // 
-            // label3
+            // pixelHeightUpDown
             // 
-            this.label3.Location = new System.Drawing.Point(8, 22);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(71, 16);
-            this.label3.TabIndex = 8;
-            this.label3.Text = "Resampling:";
-            this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.pixelHeightUpDown.Location = new System.Drawing.Point(120, 168);
+            this.pixelHeightUpDown.Maximum = new System.Decimal(new int[] {
+                                                                              2147483647,
+                                                                              0,
+                                                                              0,
+                                                                              0});
+            this.pixelHeightUpDown.Minimum = new System.Decimal(new int[] {
+                                                                              2147483647,
+                                                                              0,
+                                                                              0,
+                                                                              -2147483648});
+            this.pixelHeightUpDown.Name = "pixelHeightUpDown";
+            this.pixelHeightUpDown.Size = new System.Drawing.Size(72, 20);
+            this.pixelHeightUpDown.TabIndex = 4;
+            this.pixelHeightUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.pixelHeightUpDown.Value = new System.Decimal(new int[] {
+                                                                            3,
+                                                                            0,
+                                                                            0,
+                                                                            0});
+            this.pixelHeightUpDown.Enter += new System.EventHandler(this.OnUpDownEnter);
+            this.pixelHeightUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OnUpDownKeyUp);
+            this.pixelHeightUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.pixelHeightUpDown.Leave += new System.EventHandler(this.OnUpDownLeave);
             // 
-            // widthUpDown
+            // resizedImageHeader
             // 
-            this.widthUpDown.Location = new System.Drawing.Point(115, 68);
-            this.widthUpDown.Maximum = new System.Decimal(new int[] {
-                                                                        65535,
-                                                                        0,
-                                                                        0,
-                                                                        0});
-            this.widthUpDown.Name = "widthUpDown";
-            this.widthUpDown.Size = new System.Drawing.Size(72, 20);
-            this.widthUpDown.TabIndex = 2;
-            this.widthUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.widthUpDown.Value = new System.Decimal(new int[] {
-                                                                      797,
-                                                                      0,
-                                                                      0,
-                                                                      0});
-            this.widthUpDown.Enter += new System.EventHandler(this.upDown_Enter);
-            this.widthUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
-            this.widthUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
-            this.widthUpDown.Leave += new System.EventHandler(this.upDown_Leave);
+            this.resizedImageHeader.Location = new System.Drawing.Point(6, 8);
+            this.resizedImageHeader.Name = "resizedImageHeader";
+            this.resizedImageHeader.Size = new System.Drawing.Size(290, 16);
+            this.resizedImageHeader.TabIndex = 19;
+            this.resizedImageHeader.TabStop = false;
             // 
-            // heightUpDown
+            // asteriskLabel
             // 
-            this.heightUpDown.Location = new System.Drawing.Point(115, 94);
-            this.heightUpDown.Maximum = new System.Decimal(new int[] {
-                                                                         65535,
-                                                                         0,
-                                                                         0,
-                                                                         0});
-            this.heightUpDown.Name = "heightUpDown";
-            this.heightUpDown.Size = new System.Drawing.Size(72, 20);
-            this.heightUpDown.TabIndex = 3;
-            this.heightUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.heightUpDown.Value = new System.Decimal(new int[] {
-                                                                       595,
-                                                                       0,
-                                                                       0,
-                                                                       0});
-            this.heightUpDown.Enter += new System.EventHandler(this.upDown_Enter);
-            this.heightUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
-            this.heightUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
-            this.heightUpDown.Leave += new System.EventHandler(this.upDown_Leave);
+            this.asteriskLabel.Location = new System.Drawing.Point(275, 28);
+            this.asteriskLabel.Name = "asteriskLabel";
+            this.asteriskLabel.Size = new System.Drawing.Size(13, 16);
+            this.asteriskLabel.TabIndex = 15;
+            this.asteriskLabel.Visible = false;
             // 
-            // label5
+            // asteriskTextLabel
             // 
-            this.label5.Location = new System.Drawing.Point(8, 8);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(112, 16);
-            this.label5.TabIndex = 13;
-            this.label5.Text = "Current Image Size:";
-            // 
-            // currentImageSize
-            // 
-            this.currentImageSize.Location = new System.Drawing.Point(112, 24);
-            this.currentImageSize.Name = "currentImageSize";
-            this.currentImageSize.Size = new System.Drawing.Size(112, 16);
-            this.currentImageSize.TabIndex = 14;
-            this.currentImageSize.Text = "1.92 MB";
-            // 
-            // resizedImageGroupBox
-            // 
-            this.resizedImageGroupBox.Controls.Add(this.asteriskLabel);
-            this.resizedImageGroupBox.Controls.Add(this.asteriskTextLabel);
-            this.resizedImageGroupBox.Controls.Add(this.absoluteRB);
-            this.resizedImageGroupBox.Controls.Add(this.percentRB);
-            this.resizedImageGroupBox.Controls.Add(this.widthUpDown);
-            this.resizedImageGroupBox.Controls.Add(this.heightUpDown);
-            this.resizedImageGroupBox.Controls.Add(this.label6);
-            this.resizedImageGroupBox.Controls.Add(this.label4);
-            this.resizedImageGroupBox.Controls.Add(this.label2);
-            this.resizedImageGroupBox.Controls.Add(this.label1);
-            this.resizedImageGroupBox.Controls.Add(this.resamplingAlgorithmComboBox);
-            this.resizedImageGroupBox.Controls.Add(this.label3);
-            this.resizedImageGroupBox.Controls.Add(this.ratioCheck);
-            this.resizedImageGroupBox.Controls.Add(this.percentUpDown);
-            this.resizedImageGroupBox.Controls.Add(this.label7);
-            this.resizedImageGroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.resizedImageGroupBox.Location = new System.Drawing.Point(8, 40);
-            this.resizedImageGroupBox.Name = "resizedImageGroupBox";
-            this.resizedImageGroupBox.Size = new System.Drawing.Size(240, 200);
-            this.resizedImageGroupBox.TabIndex = 15;
-            this.resizedImageGroupBox.TabStop = false;
-            this.resizedImageGroupBox.Text = "New Image Size group box";
+            this.asteriskTextLabel.Location = new System.Drawing.Point(8, 290);
+            this.asteriskTextLabel.Name = "asteriskTextLabel";
+            this.asteriskTextLabel.Size = new System.Drawing.Size(255, 16);
+            this.asteriskTextLabel.TabIndex = 16;
+            this.asteriskTextLabel.Visible = false;
             // 
             // absoluteRB
             // 
             this.absoluteRB.Checked = true;
-            this.absoluteRB.Location = new System.Drawing.Point(11, 46);
+            this.absoluteRB.Location = new System.Drawing.Point(8, 78);
             this.absoluteRB.Name = "absoluteRB";
-            this.absoluteRB.Size = new System.Drawing.Size(152, 15);
-            this.absoluteRB.TabIndex = 1;
+            this.absoluteRB.Size = new System.Drawing.Size(264, 15);
+            this.absoluteRB.TabIndex = 24;
             this.absoluteRB.TabStop = true;
-            this.absoluteRB.Text = "By Absolute Size:";
-            this.absoluteRB.Click += new System.EventHandler(this.absoluteRB_Click);
-            this.absoluteRB.CheckedChanged += new System.EventHandler(this.percentRB_CheckedChanged);
+            this.absoluteRB.CheckedChanged += new System.EventHandler(this.OnRadioButtonCheckedChanged);
             // 
             // percentRB
             // 
-            this.percentRB.Location = new System.Drawing.Point(11, 144);
+            this.percentRB.Location = new System.Drawing.Point(8, 51);
             this.percentRB.Name = "percentRB";
-            this.percentRB.TabIndex = 5;
-            this.percentRB.Text = "By Percentage:";
-            this.percentRB.Click += new System.EventHandler(this.percentRB_Click);
-            this.percentRB.CheckedChanged += new System.EventHandler(this.percentRB_CheckedChanged);
+            this.percentRB.TabIndex = 22;
+            this.percentRB.CheckedChanged += new System.EventHandler(this.OnRadioButtonCheckedChanged);
             // 
-            // label6
+            // pixelsLabel1
             // 
-            this.label6.Location = new System.Drawing.Point(189, 94);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(40, 16);
-            this.label6.TabIndex = 10;
-            this.label6.Text = "pixels";
-            this.label6.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // label4
-            // 
-            this.label4.Location = new System.Drawing.Point(189, 68);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(40, 16);
-            this.label4.TabIndex = 9;
-            this.label4.Text = "pixels";
-            this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.pixelsLabel1.Location = new System.Drawing.Point(200, 145);
+            this.pixelsLabel1.Name = "pixelsLabel1";
+            this.pixelsLabel1.Size = new System.Drawing.Size(93, 16);
+            this.pixelsLabel1.TabIndex = 2;
+            this.pixelsLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // percentUpDown
             // 
-            this.percentUpDown.Location = new System.Drawing.Point(115, 146);
+            this.percentUpDown.Location = new System.Drawing.Point(120, 54);
             this.percentUpDown.Maximum = new System.Decimal(new int[] {
                                                                           2000,
                                                                           0,
@@ -528,91 +912,312 @@ namespace PaintDotNet
                                                                           0});
             this.percentUpDown.Name = "percentUpDown";
             this.percentUpDown.Size = new System.Drawing.Size(72, 20);
-            this.percentUpDown.TabIndex = 6;
+            this.percentUpDown.TabIndex = 23;
             this.percentUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.percentUpDown.Value = new System.Decimal(new int[] {
                                                                         100,
                                                                         0,
                                                                         0,
                                                                         0});
-            this.percentUpDown.Enter += new System.EventHandler(this.upDown_Enter);
-            this.percentUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
+            this.percentUpDown.Enter += new System.EventHandler(this.OnUpDownEnter);
+            this.percentUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OnUpDownKeyUp);
             this.percentUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
-            this.percentUpDown.Leave += new System.EventHandler(this.upDown_Leave);
             // 
-            // label7
+            // percentSignLabel
             // 
-            this.label7.Location = new System.Drawing.Point(189, 147);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(16, 16);
-            this.label7.TabIndex = 13;
-            this.label7.Text = "%";
-            this.label7.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.percentSignLabel.Location = new System.Drawing.Point(200, 55);
+            this.percentSignLabel.Name = "percentSignLabel";
+            this.percentSignLabel.Size = new System.Drawing.Size(32, 16);
+            this.percentSignLabel.TabIndex = 13;
+            this.percentSignLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // originalImageSize
+            // resolutionLabel
             // 
-            this.originalImageSize.Location = new System.Drawing.Point(112, 8);
-            this.originalImageSize.Name = "originalImageSize";
-            this.originalImageSize.Size = new System.Drawing.Size(112, 16);
-            this.originalImageSize.TabIndex = 17;
-            this.originalImageSize.Text = "800 x 600";
+            this.resolutionLabel.Location = new System.Drawing.Point(32, 193);
+            this.resolutionLabel.Name = "resolutionLabel";
+            this.resolutionLabel.Size = new System.Drawing.Size(79, 16);
+            this.resolutionLabel.TabIndex = 6;
+            this.resolutionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // asteriskTextLabel
+            // resolutionUpDown
             // 
-            this.asteriskTextLabel.Location = new System.Drawing.Point(8, 176);
-            this.asteriskTextLabel.Name = "asteriskTextLabel";
-            this.asteriskTextLabel.Size = new System.Drawing.Size(224, 16);
-            this.asteriskTextLabel.TabIndex = 14;
-            this.asteriskTextLabel.Text = "* ...";
-            this.asteriskTextLabel.Visible = false;
+            this.resolutionUpDown.DecimalPlaces = 2;
+            this.resolutionUpDown.Location = new System.Drawing.Point(120, 192);
+            this.resolutionUpDown.Maximum = new System.Decimal(new int[] {
+                                                                             65535,
+                                                                             0,
+                                                                             0,
+                                                                             0});
+            this.resolutionUpDown.Minimum = new System.Decimal(new int[] {
+                                                                             1,
+                                                                             0,
+                                                                             0,
+                                                                             327680});
+            this.resolutionUpDown.Name = "resolutionUpDown";
+            this.resolutionUpDown.Size = new System.Drawing.Size(72, 20);
+            this.resolutionUpDown.TabIndex = 7;
+            this.resolutionUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.resolutionUpDown.Value = new System.Decimal(new int[] {
+                                                                           72,
+                                                                           0,
+                                                                           0,
+                                                                           0});
+            this.resolutionUpDown.Enter += new System.EventHandler(this.OnUpDownEnter);
+            this.resolutionUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OnUpDownKeyUp);
+            this.resolutionUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.resolutionUpDown.Leave += new System.EventHandler(this.OnUpDownLeave);
             // 
-            // asteriskLabel
+            // unitsComboBox2
             // 
-            this.asteriskLabel.Location = new System.Drawing.Point(213, 21);
-            this.asteriskLabel.Name = "asteriskLabel";
-            this.asteriskLabel.Size = new System.Drawing.Size(13, 16);
-            this.asteriskLabel.TabIndex = 15;
-            this.asteriskLabel.Text = "*";
-            this.asteriskLabel.Visible = false;
+            this.unitsComboBox2.Location = new System.Drawing.Point(200, 192);
+            this.unitsComboBox2.Name = "unitsComboBox2";
+            this.unitsComboBox2.PixelsAvailable = false;
+            this.unitsComboBox2.Size = new System.Drawing.Size(88, 21);
+            this.unitsComboBox2.TabIndex = 8;
+            this.unitsComboBox2.Units = PaintDotNet.MeasurementUnit.Inch;
+            this.unitsComboBox2.UnitsDisplayType = PaintDotNet.UnitsDisplayType.Ratio;
+            this.unitsComboBox2.UnitsChanged += new System.EventHandler(this.OnUnitsComboBox2UnitsChanged);
+            // 
+            // unitsComboBox1
+            // 
+            this.unitsComboBox1.Location = new System.Drawing.Point(200, 235);
+            this.unitsComboBox1.Name = "unitsComboBox1";
+            this.unitsComboBox1.PixelsAvailable = false;
+            this.unitsComboBox1.Size = new System.Drawing.Size(88, 21);
+            this.unitsComboBox1.TabIndex = 12;
+            this.unitsComboBox1.Units = PaintDotNet.MeasurementUnit.Inch;
+            this.unitsComboBox1.UnitsChanged += new System.EventHandler(this.OnUnitsComboBox1UnitsChanged);
+            // 
+            // printWidthUpDown
+            // 
+            this.printWidthUpDown.DecimalPlaces = 2;
+            this.printWidthUpDown.Location = new System.Drawing.Point(120, 235);
+            this.printWidthUpDown.Maximum = new System.Decimal(new int[] {
+                                                                             2147483647,
+                                                                             0,
+                                                                             0,
+                                                                             0});
+            this.printWidthUpDown.Minimum = new System.Decimal(new int[] {
+                                                                             2147483647,
+                                                                             0,
+                                                                             0,
+                                                                             -2147483648});
+            this.printWidthUpDown.Name = "printWidthUpDown";
+            this.printWidthUpDown.Size = new System.Drawing.Size(72, 20);
+            this.printWidthUpDown.TabIndex = 11;
+            this.printWidthUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.printWidthUpDown.Value = new System.Decimal(new int[] {
+                                                                           2,
+                                                                           0,
+                                                                           0,
+                                                                           0});
+            this.printWidthUpDown.Enter += new System.EventHandler(this.OnUpDownEnter);
+            this.printWidthUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OnUpDownKeyUp);
+            this.printWidthUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.printWidthUpDown.Leave += new System.EventHandler(this.OnUpDownLeave);
+            // 
+            // printHeightUpDown
+            // 
+            this.printHeightUpDown.DecimalPlaces = 2;
+            this.printHeightUpDown.Location = new System.Drawing.Point(120, 259);
+            this.printHeightUpDown.Maximum = new System.Decimal(new int[] {
+                                                                              2147483647,
+                                                                              0,
+                                                                              0,
+                                                                              0});
+            this.printHeightUpDown.Minimum = new System.Decimal(new int[] {
+                                                                              2147483647,
+                                                                              0,
+                                                                              0,
+                                                                              -2147483648});
+            this.printHeightUpDown.Name = "printHeightUpDown";
+            this.printHeightUpDown.Size = new System.Drawing.Size(72, 20);
+            this.printHeightUpDown.TabIndex = 14;
+            this.printHeightUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.printHeightUpDown.Value = new System.Decimal(new int[] {
+                                                                            1,
+                                                                            0,
+                                                                            0,
+                                                                            0});
+            this.printHeightUpDown.Enter += new System.EventHandler(this.OnUpDownEnter);
+            this.printHeightUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OnUpDownKeyUp);
+            this.printHeightUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
+            this.printHeightUpDown.Leave += new System.EventHandler(this.OnUpDownLeave);
+            // 
+            // newWidthLabel2
+            // 
+            this.newWidthLabel2.Location = new System.Drawing.Point(32, 236);
+            this.newWidthLabel2.Name = "newWidthLabel2";
+            this.newWidthLabel2.Size = new System.Drawing.Size(79, 16);
+            this.newWidthLabel2.TabIndex = 10;
+            this.newWidthLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // newHeightLabel2
+            // 
+            this.newHeightLabel2.Location = new System.Drawing.Point(32, 260);
+            this.newHeightLabel2.Name = "newHeightLabel2";
+            this.newHeightLabel2.Size = new System.Drawing.Size(79, 16);
+            this.newHeightLabel2.TabIndex = 13;
+            this.newHeightLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // pixelsLabel2
+            // 
+            this.pixelsLabel2.Location = new System.Drawing.Point(200, 169);
+            this.pixelsLabel2.Name = "pixelsLabel2";
+            this.pixelsLabel2.Size = new System.Drawing.Size(93, 16);
+            this.pixelsLabel2.TabIndex = 5;
+            this.pixelsLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // unitsLabel1
+            // 
+            this.unitsLabel1.Location = new System.Drawing.Point(200, 261);
+            this.unitsLabel1.Name = "unitsLabel1";
+            this.unitsLabel1.Size = new System.Drawing.Size(94, 16);
+            this.unitsLabel1.TabIndex = 15;
+            // 
+            // pixelSizeHeader
+            // 
+            this.pixelSizeHeader.Location = new System.Drawing.Point(22, 125);
+            this.pixelSizeHeader.Name = "pixelSizeHeader";
+            this.pixelSizeHeader.Size = new System.Drawing.Size(274, 14);
+            this.pixelSizeHeader.TabIndex = 26;
+            this.pixelSizeHeader.TabStop = false;
+            this.pixelSizeHeader.Text = "  ";
+            // 
+            // printSizeHeader
+            // 
+            this.printSizeHeader.Location = new System.Drawing.Point(22, 216);
+            this.printSizeHeader.Name = "printSizeHeader";
+            this.printSizeHeader.Size = new System.Drawing.Size(274, 14);
+            this.printSizeHeader.TabIndex = 9;
+            this.printSizeHeader.TabStop = false;
+            this.printSizeHeader.Text = "  ";
+            // 
+            // resamplingLabel
+            // 
+            this.resamplingLabel.Location = new System.Drawing.Point(6, 30);
+            this.resamplingLabel.Name = "resamplingLabel";
+            this.resamplingLabel.Size = new System.Drawing.Size(88, 16);
+            this.resamplingLabel.TabIndex = 20;
+            this.resamplingLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // resamplingAlgorithmComboBox
+            // 
+            this.resamplingAlgorithmComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.resamplingAlgorithmComboBox.ItemHeight = 13;
+            this.resamplingAlgorithmComboBox.Location = new System.Drawing.Point(120, 27);
+            this.resamplingAlgorithmComboBox.Name = "resamplingAlgorithmComboBox";
+            this.resamplingAlgorithmComboBox.Size = new System.Drawing.Size(152, 21);
+            this.resamplingAlgorithmComboBox.Sorted = true;
+            this.resamplingAlgorithmComboBox.TabIndex = 21;
+            this.resamplingAlgorithmComboBox.SelectedIndexChanged += new System.EventHandler(this.OnResamplingAlgorithmComboBoxSelectedIndexChanged);
             // 
             // ResizeDialog
             // 
             this.AcceptButton = this.okButton;
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
             this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(258, 277);
-            this.Controls.Add(this.originalImageSize);
-            this.Controls.Add(this.currentImageSize);
-            this.Controls.Add(this.label5);
+            this.ClientSize = new System.Drawing.Size(298, 344);
+            this.Controls.Add(this.printSizeHeader);
+            this.Controls.Add(this.pixelSizeHeader);
+            this.Controls.Add(this.unitsLabel1);
+            this.Controls.Add(this.pixelsLabel2);
+            this.Controls.Add(this.newHeightLabel2);
+            this.Controls.Add(this.newWidthLabel2);
+            this.Controls.Add(this.printHeightUpDown);
+            this.Controls.Add(this.printWidthUpDown);
+            this.Controls.Add(this.unitsComboBox1);
+            this.Controls.Add(this.unitsComboBox2);
+            this.Controls.Add(this.resolutionUpDown);
+            this.Controls.Add(this.resolutionLabel);
+            this.Controls.Add(this.resizedImageHeader);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.okButton);
-            this.Controls.Add(this.resizedImageGroupBox);
+            this.Controls.Add(this.asteriskLabel);
+            this.Controls.Add(this.asteriskTextLabel);
+            this.Controls.Add(this.absoluteRB);
+            this.Controls.Add(this.percentRB);
+            this.Controls.Add(this.pixelWidthUpDown);
+            this.Controls.Add(this.pixelHeightUpDown);
+            this.Controls.Add(this.pixelsLabel1);
+            this.Controls.Add(this.newHeightLabel1);
+            this.Controls.Add(this.newWidthLabel1);
+            this.Controls.Add(this.resamplingAlgorithmComboBox);
+            this.Controls.Add(this.resamplingLabel);
+            this.Controls.Add(this.constrainCheckBox);
+            this.Controls.Add(this.percentUpDown);
+            this.Controls.Add(this.percentSignLabel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "ResizeDialog";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Resize";
-            this.Controls.SetChildIndex(this.resizedImageGroupBox, 0);
+            this.Controls.SetChildIndex(this.percentSignLabel, 0);
+            this.Controls.SetChildIndex(this.percentUpDown, 0);
+            this.Controls.SetChildIndex(this.constrainCheckBox, 0);
+            this.Controls.SetChildIndex(this.resamplingLabel, 0);
+            this.Controls.SetChildIndex(this.resamplingAlgorithmComboBox, 0);
+            this.Controls.SetChildIndex(this.newWidthLabel1, 0);
+            this.Controls.SetChildIndex(this.newHeightLabel1, 0);
+            this.Controls.SetChildIndex(this.pixelsLabel1, 0);
+            this.Controls.SetChildIndex(this.pixelHeightUpDown, 0);
+            this.Controls.SetChildIndex(this.pixelWidthUpDown, 0);
+            this.Controls.SetChildIndex(this.percentRB, 0);
+            this.Controls.SetChildIndex(this.absoluteRB, 0);
+            this.Controls.SetChildIndex(this.asteriskTextLabel, 0);
+            this.Controls.SetChildIndex(this.asteriskLabel, 0);
             this.Controls.SetChildIndex(this.okButton, 0);
             this.Controls.SetChildIndex(this.cancelButton, 0);
-            this.Controls.SetChildIndex(this.label5, 0);
-            this.Controls.SetChildIndex(this.currentImageSize, 0);
-            this.Controls.SetChildIndex(this.originalImageSize, 0);
-            ((System.ComponentModel.ISupportInitialize)(this.widthUpDown)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.heightUpDown)).EndInit();
-            this.resizedImageGroupBox.ResumeLayout(false);
+            this.Controls.SetChildIndex(this.resizedImageHeader, 0);
+            this.Controls.SetChildIndex(this.resolutionLabel, 0);
+            this.Controls.SetChildIndex(this.resolutionUpDown, 0);
+            this.Controls.SetChildIndex(this.unitsComboBox2, 0);
+            this.Controls.SetChildIndex(this.unitsComboBox1, 0);
+            this.Controls.SetChildIndex(this.printWidthUpDown, 0);
+            this.Controls.SetChildIndex(this.printHeightUpDown, 0);
+            this.Controls.SetChildIndex(this.newWidthLabel2, 0);
+            this.Controls.SetChildIndex(this.newHeightLabel2, 0);
+            this.Controls.SetChildIndex(this.pixelsLabel2, 0);
+            this.Controls.SetChildIndex(this.unitsLabel1, 0);
+            this.Controls.SetChildIndex(this.pixelSizeHeader, 0);
+            this.Controls.SetChildIndex(this.printSizeHeader, 0);
+            ((System.ComponentModel.ISupportInitialize)(this.pixelWidthUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pixelHeightUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.percentUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.resolutionUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.printWidthUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.printHeightUpDown)).EndInit();
             this.ResumeLayout(false);
 
         }
         #endregion
 
+        // We have to delay closing the dialog after clicking OK because otherwise the
+        // numbers do not 'sync up' properly when Maintain Aspect Ratio is checked.
+        // For example, if you type 200 for width, that means the height goes from 0
+        // to 1 to 15 to 150 ... however if you press ENTER immediately after the 2nd 0 in
+        // 200, you get an image that is 20x15.
+        // See bug #1195.
+        private int okTimerInterval = 200;
+        private System.Windows.Forms.Timer okTimer = null;
+
         private void okButton_Click(object sender, System.EventArgs e)
         {
+            if (this.okTimer == null)
+            {
+                this.okTimer = new Timer();
+                this.okTimer.Interval = okTimerInterval;
+                this.okTimer.Tick += new EventHandler(okTimer_Tick);
+                this.okTimer.Enabled = true;
+            }
+        }
+
+        private void okTimer_Tick(object sender, EventArgs e)
+        {
             this.DialogResult = DialogResult.OK;
-            this.Close();           
+            this.Close();
+            this.okTimer.Dispose();
         }
 
         private void cancelButton_Click(object sender, System.EventArgs e)
@@ -621,128 +1226,189 @@ namespace PaintDotNet
             this.Close();       
         }
 
-        private void ratioCheck_CheckedChanged(object sender, System.EventArgs e)
+        private void constrainCheckBox_CheckedChanged(object sender, System.EventArgs e)
         {
-            if (ratioCheck.Checked != IsLocked)
-            {
-                IsLocked = ratioCheck.Checked;
-            }
+            this.constrainer.ConstrainToAspect = constrainCheckBox.Checked;
         }
 
-        private void FixWidthToRatio()
-        {
-            widthUpDown.ValueChanged -= upDownValueChangedDelegate;
-            ImageWidth = (int)Math.Round((double)ImageHeight * ratio);
-			widthUpDown.ValueChanged += upDownValueChangedDelegate;         
-        }
-
-        private void FixHeightToRatio()
-        {
-            heightUpDown.ValueChanged -= upDownValueChangedDelegate;      
-			ImageHeight = (int)Math.Round((double)ImageWidth * (1 / ratio));
-			heightUpDown.ValueChanged += upDownValueChangedDelegate;
-        }
-
-		private void FixPercent()
-		{
-			widthUpDown.ValueChanged -= upDownValueChangedDelegate;
-			heightUpDown.ValueChanged -= upDownValueChangedDelegate;
-
-			ImageHeight = (int)((double)OriginalSize.Height * ((double)percentUpDown.Value / 100.0));
-			ImageWidth = (int)((double)OriginalSize.Width * ((double)percentUpDown.Value / 100.0));
-		
-			widthUpDown.ValueChanged += upDownValueChangedDelegate;
-			heightUpDown.ValueChanged += upDownValueChangedDelegate;
-		}
+        private int ignoreUpDownValueChanged = 0;
+        private int getValueFromText = 0;
 
         private void upDown_ValueChanged(object sender, System.EventArgs e)
         {
-            if (IsLocked)
+            if (ignoreUpDownValueChanged > 0)
             {
-				if (sender == heightUpDown)
-				{
-					FixWidthToRatio();          
-				}
-				else if (sender == widthUpDown)
-				{
-					FixHeightToRatio();         
-				}
+                return;
             }
 
-			if (sender == percentUpDown)
-			{
-				FixPercent();
-			}
+            double val;
 
-            if (widthUpDown.Value != 0 && heightUpDown.Value != 0)
+            if (sender == percentUpDown)
             {
-                okButton.Enabled = true;
-            }
-            else
-            {
-                okButton.Enabled = false;
+                if (getValueFromText > 0)
+                {
+                    if (Utility.GetUpDownValueFromText(this.percentUpDown, out val))
+                    {
+                        this.constrainer.SetByPercent(val / 100.0);
+                    }
+                }
+                else
+                {
+                    this.constrainer.SetByPercent((double)this.percentUpDown.Value / 100.0);
+                }
             }
 
+            if (sender == pixelWidthUpDown)
+            {
+                if (getValueFromText > 0)
+                {
+                    if (Utility.GetUpDownValueFromText(this.pixelWidthUpDown, out val))
+                    {
+                        this.constrainer.NewPixelWidth = val;
+                    }
+                }
+                else
+                {
+                    this.constrainer.NewPixelWidth = (double)this.pixelWidthUpDown.Value;
+                }
+            }
+
+            if (sender == pixelHeightUpDown)
+            {
+                if (getValueFromText > 0)
+                {
+                    if (Utility.GetUpDownValueFromText(this.pixelHeightUpDown, out val))
+                    {
+                        this.constrainer.NewPixelHeight = val;
+                    }
+                }
+                else
+                {
+                    this.constrainer.NewPixelHeight = (double)this.pixelHeightUpDown.Value;
+                }
+            }
+
+            if (sender == printWidthUpDown)
+            {
+                if (getValueFromText > 0)
+                {
+                    if (Utility.GetUpDownValueFromText(this.printWidthUpDown, out val))
+                    {
+                        this.constrainer.NewWidth = val;
+                    }
+                }
+                else
+                {
+                    this.constrainer.NewWidth = (double)this.printWidthUpDown.Value;
+                }
+            }
+
+            if (sender == printHeightUpDown)
+            {
+                if (getValueFromText > 0)
+                {
+                    if (Utility.GetUpDownValueFromText(this.printHeightUpDown, out val))
+                    {
+                        this.constrainer.NewHeight = val;
+                    }
+                }
+                else
+                {
+                    this.constrainer.NewHeight = (double)this.printHeightUpDown.Value;
+                }
+            }
+
+            if (sender == resolutionUpDown)
+            {
+                if (getValueFromText > 0)
+                {
+                    if (Utility.GetUpDownValueFromText(this.resolutionUpDown, out val))
+                    {
+                        if (val > 0.0)
+                        {
+                            this.constrainer.Resolution = val;
+                        }
+                    }
+                }
+                else
+                {
+                    this.constrainer.Resolution = (double)this.resolutionUpDown.Value;
+                }
+            }
+
+            UpdateSizeText();
             PopulateAsteriskLabels();
+            TryToEnableOkButton();
         }
 
-        private void upDown_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
+        private void OnUpDownKeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
         {
-            bool numberIsOk = Utility.CheckNumericUpDown((NumericUpDown)sender);
-            okButton.Enabled = numberIsOk;
-
-            if (numberIsOk)
+            if (e.KeyCode != Keys.Tab)
             {
-                resizedImageGroupBox.Text = "New Size: " + Utility.SizeStringFromBytes((long)ImageHeight * (long)ImageWidth * (long)ColorBgra.SizeOf * (long)Layers);
-                upDown_ValueChanged(sender, e);
+                double val;
+
+                if (Utility.GetUpDownValueFromText((NumericUpDown)sender, out val))
+                {
+                    UpdateSizeText();
+
+                    ++getValueFromText;
+                    upDown_ValueChanged(sender, e);
+                    --getValueFromText;
+                }
+
+                TryToEnableOkButton();
             }
         }
 
-        private void upDown_Enter(object sender, System.EventArgs e)
+        private void OnUpDownEnter(object sender, System.EventArgs e)
         {
             NumericUpDown nud = (NumericUpDown)sender;
             nud.Select(0, nud.Text.Length);
         }
 
-        private void upDown_Leave(object sender, System.EventArgs e)
+        private void OnUpDownLeave(object sender, System.EventArgs e)
         {
-            //upDown_ValueChanged(sender, e);
+            ((NumericUpDown)sender).Value = ((NumericUpDown)sender).Value;
+            TryToEnableOkButton();
         }
 
-        private void percentRB_CheckedChanged(object sender, System.EventArgs e)
+        private void OnRadioButtonCheckedChanged(object sender, System.EventArgs e)
         {
-            if (percentRB.Checked)
+            if (this.absoluteRB.Checked)
             {
-                widthUpDown.Enabled = false;
-                heightUpDown.Enabled = false;
-                ratioCheck.Enabled = false;
-                percentUpDown.Enabled = true;
+                this.pixelWidthUpDown.Enabled = true;
+                this.pixelHeightUpDown.Enabled = true;
+                this.printWidthUpDown.Enabled = true;
+                this.printHeightUpDown.Enabled = true;
+                this.constrainCheckBox.Enabled = true;
+                this.unitsComboBox1.Enabled = true;
+                this.unitsComboBox2.Enabled = true;
+                this.resolutionUpDown.Enabled = true;
+                this.percentUpDown.Enabled = false;
             }
-            else
+            else if (this.percentRB.Checked)
             {
-                widthUpDown.Enabled = true;
-                heightUpDown.Enabled = true;
-                ratioCheck.Enabled = true;
-                percentUpDown.Enabled = false;
+                this.pixelWidthUpDown.Enabled = false;
+                this.pixelHeightUpDown.Enabled = false;
+                this.printWidthUpDown.Enabled = false;
+                this.printHeightUpDown.Enabled = false;
+                this.constrainCheckBox.Enabled = false;
+                this.unitsComboBox1.Enabled = false;
+                this.unitsComboBox2.Enabled = false;
+                this.resolutionUpDown.Enabled = false;
+                this.percentUpDown.Enabled = true;
+                this.percentUpDown.Select();
             }
-        }
-
-        private void absoluteRB_Click(object sender, System.EventArgs e)
-        {
-            absoluteRB.Checked = true;
-            percentRB.Checked = false;
-        }
-
-        private void percentRB_Click(object sender, System.EventArgs e)
-        {
-            absoluteRB.Checked = false;
-            percentRB.Checked = true;
-            FixPercent();
         }
 
         private void PopulateAsteriskLabels()
         {
-            ResampleMethod rm = (ResampleMethod)this.resamplingAlgorithmComboBox.SelectedItem;
+            ResampleMethod rm = this.resamplingAlgorithmComboBox.SelectedItem as ResampleMethod;
+
+            if (rm == null)
+            {
+                return;
+            }
 
             switch (rm.method)
             {
@@ -755,11 +1421,11 @@ namespace PaintDotNet
                     if (this.ImageWidth < this.OriginalSize.Width &&
                         this.ImageHeight < this.OriginalSize.Height)
                     {
-                        this.asteriskTextLabel.Text = "* Super Sampling will be used";
+                        this.asteriskTextLabel.Text = PdnResources.GetString("ResizeDialog.AsteriskTextLabel.SuperSampling");
                     }
                     else
                     {
-                        this.asteriskTextLabel.Text = "* Bicubic will be used";
+                        this.asteriskTextLabel.Text = PdnResources.GetString("ResizeDialog.AsteriskTextLabel.Bicubic");
                     }
 
                     if (this.resamplingAlgorithmComboBox.Visible)
@@ -772,9 +1438,136 @@ namespace PaintDotNet
             }
         }
 
-        private void resamplingAlgorithmComboBox_SelectedIndexChanged(object sender, System.EventArgs e)
+        private void OnResamplingAlgorithmComboBoxSelectedIndexChanged(object sender, System.EventArgs e)
         {
             PopulateAsteriskLabels();
+        }
+
+        private void OnUnitsComboBox1UnitsChanged(object sender, System.EventArgs e)
+        {
+            this.constrainer.Units = unitsComboBox1.Units;
+            this.unitsLabel1.Text = unitsComboBox1.UnitsText;
+            UpdateSizeText();
+            TryToEnableOkButton();
+        }
+
+        private void OnUnitsComboBox2UnitsChanged(object sender, System.EventArgs e)
+        {
+            this.unitsComboBox1.Units = this.unitsComboBox2.Units;
+            UpdateSizeText();
+            TryToEnableOkButton();
+        }
+
+        private void OnConstrainerConstrainToAspectChanged(object sender, EventArgs e)
+        {
+            this.constrainCheckBox.Checked = this.constrainer.ConstrainToAspect;
+            UpdateSizeText();
+            TryToEnableOkButton();
+        }
+
+        private void OnConstrainerNewWidthChanged(object sender, EventArgs e)
+        {
+            ++ignoreUpDownValueChanged;
+
+            double val;
+
+            if (Utility.GetUpDownValueFromText(this.pixelWidthUpDown, out val))
+            {
+                if (val != this.constrainer.NewPixelWidth)
+                {
+                    this.pixelWidthUpDown.Value = (decimal)this.constrainer.NewPixelWidth;
+                }
+            }
+
+            if (Utility.GetUpDownValueFromText(this.printWidthUpDown, out val))
+            {
+                if (val != this.constrainer.NewWidth)
+                {
+                    this.printWidthUpDown.Value = (decimal)this.constrainer.NewWidth;
+                }
+            }
+
+            --ignoreUpDownValueChanged;
+            UpdateSizeText();
+            TryToEnableOkButton();
+        }
+
+        private void constrainer_NewHeightChanged(object sender, EventArgs e)
+        {
+            ++ignoreUpDownValueChanged;
+
+            double val;
+
+            if (Utility.GetUpDownValueFromText(this.pixelHeightUpDown, out val))
+            {
+                if (val != this.constrainer.NewPixelHeight)
+                {
+                    this.pixelHeightUpDown.Value = (decimal)this.constrainer.NewPixelHeight;
+                }
+            }
+
+            if (Utility.GetUpDownValueFromText(this.printHeightUpDown, out val))
+            {
+                if (val != this.constrainer.NewHeight)
+                {
+                    this.printHeightUpDown.Value = (decimal)this.constrainer.NewHeight;
+                }
+            }
+
+            --ignoreUpDownValueChanged;
+            UpdateSizeText();
+            TryToEnableOkButton();
+        }
+
+        private void OnConstrainerResolutionChanged(object sender, EventArgs e)
+        {
+            ++ignoreUpDownValueChanged;
+
+            double val;
+
+            if (Utility.GetUpDownValueFromText(this.resolutionUpDown, out val))
+            {
+                if (val != this.constrainer.Resolution)
+                {
+                    this.resolutionUpDown.Value = (decimal)this.constrainer.Resolution;
+                }
+            }
+
+            --ignoreUpDownValueChanged;
+            UpdateSizeText();
+            TryToEnableOkButton();
+        }
+
+        private void OnConstrainerUnitsChanged(object sender, EventArgs e)
+        {
+            this.unitsComboBox1.Units = constrainer.Units;
+            this.unitsComboBox2.Units = constrainer.Units;
+            UpdateSizeText();
+            TryToEnableOkButton();
+        }
+
+        private void TryToEnableOkButton()
+        {
+            double pixelWidth;
+            double pixelHeight;
+            double printWidth;
+            double printHeight;
+            double resolution;
+
+            bool b1 = Utility.GetUpDownValueFromText(this.pixelWidthUpDown, out pixelWidth);
+            bool b2 = Utility.GetUpDownValueFromText(this.pixelHeightUpDown, out pixelHeight);
+            bool b3 = Utility.GetUpDownValueFromText(this.printWidthUpDown, out printWidth);
+            bool b4 = Utility.GetUpDownValueFromText(this.printHeightUpDown, out printHeight);
+            bool b5 = Utility.GetUpDownValueFromText(this.resolutionUpDown, out resolution);
+
+            bool b6 = pixelWidth >= 1.0 && pixelWidth <= 65535.0;
+            bool b7 = pixelHeight >= 1.0 && pixelHeight <= 65535.0;
+            bool b8 = printWidth > 0.0;
+            bool b9 = printHeight > 0.0;
+            bool b10 = resolution > 0.0 && resolution < 2000000.0;
+
+            bool enable = b1 && b2 && b3 && b4 && b5 && b6 && b7 && b8 && b9 && b10;
+            okButton.Enabled = enable;
         }
     }
 }

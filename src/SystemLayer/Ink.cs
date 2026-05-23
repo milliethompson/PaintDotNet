@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -99,9 +100,24 @@ namespace PaintDotNet.SystemLayer
                     isInkAvailable = false;
                 }
 #else
-                if (SafeNativeMethods.GetSystemMetrics(NativeConstants.SM_TABLETPC) != 0)
+                if (Environment.OSVersion.Version >= new Version(6, 0))
                 {
-                    isInkAvailable = true;
+                    // Ink appears to be causing crashes on Vista at this time
+                    // TODO: proper fix
+                    isInkAvailable = false;
+                }
+                else if (SafeNativeMethods.GetSystemMetrics(NativeConstants.SM_TABLETPC) != 0)
+                {
+                    try
+                    {
+                        Assembly inkAssembly = Assembly.Load("Microsoft.Ink, Version=1.7.2600.2180, Culture=\"\", PublicKeyToken=31bf3856ad364e35");
+                        isInkAvailable = true;
+                    }
+
+                    catch (Exception)
+                    {
+                        isInkAvailable = false;
+                    }
                 }
                 else
                 {

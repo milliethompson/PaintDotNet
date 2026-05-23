@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -18,23 +19,25 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for MainToolBar.
     /// </summary>
-	public class MainToolBar : System.Windows.Forms.UserControl
-	{
-		private ColorDisplayWidget colorDisplayWidget;
-		private DotNetWidgets.DotNetToolbar[] dotNetToolbars;
-		private ImageList imageList;
-		private DotNetWidgets.DotNetToolbar.ButtonClickEventHandler toolClickedDelegate;
-		private const int tbWidth = 2; // two buttons per line in the toolbars
-		private ToleranceSliderControl  toleranceSlider;
+    public class MainToolBar 
+        : System.Windows.Forms.UserControl
+    {
+        private ColorDisplayWidget colorDisplayWidget;
+        private DotNetWidgets.DotNetToolbar[] dotNetToolbars;
+        private ImageList imageList;
+        private DotNetWidgets.DotNetToolbar.ButtonClickEventHandler toolClickedDelegate;
+        private const int tbWidth = 2; // two buttons per line in the toolbars
+        private ToleranceSliderControl  toleranceSlider;
+        private int ignoreToolClicked = 0;
 
-		public ToleranceSliderControl ToleranceSlider
-		{
-			get
-			{
-				return toleranceSlider;
-			}
-		}
-	
+        public ToleranceSliderControl ToleranceSlider
+        {
+            get
+            {
+                return toleranceSlider;
+            }
+        }
+    
         /// <summary> 
         /// Required designer variable.
         /// </summary>
@@ -69,9 +72,12 @@ namespace PaintDotNet
         public event ToolClickedEventHandler ToolClicked;
         protected virtual void OnToolClicked(Type toolType)
         {
-            if (ToolClicked != null)
+            if (this.ignoreToolClicked <= 0)
             {
-                ToolClicked(this, new ToolClickedEventArgs(toolType));
+                if (ToolClicked != null)
+                {
+                    ToolClicked(this, new ToolClickedEventArgs(toolType));
+                }
             }
         }
 
@@ -126,19 +132,40 @@ namespace PaintDotNet
 
         public void SelectTool(Type toolType)
         {
-            foreach (DotNetToolbar dotNetToolbar in dotNetToolbars)
+            SelectTool(toolType, true);
+        }
+
+        public void SelectTool(Type toolType, bool raiseEvent)
+        {
+            if (!raiseEvent)
             {
-                foreach (DotNetToolbarButtonItemWithTag tbb in dotNetToolbar.Buttons)
-                {
-                    if ((Type)tbb.Tag == toolType)
-                    {
-                        dotNetToolbar_ButtonClick(this, new DotNetToolbarItemClickEventArgs(tbb));
-                        return;
-                    }
-                }
+                ++this.ignoreToolClicked;
             }
 
-            throw new ArgumentException("Tool type not found");
+            try
+            {
+                foreach (DotNetToolbar dotNetToolbar in dotNetToolbars)
+                {
+                    foreach (DotNetToolbarButtonItemWithTag tbb in dotNetToolbar.Buttons)
+                    {
+                        if ((Type)tbb.Tag == toolType)
+                        {
+                            dotNetToolbar_ButtonClick(this, new DotNetToolbarItemClickEventArgs(tbb));
+                            return;
+                        }
+                    }
+                }
+
+                throw new ArgumentException("Tool type not found");
+            }
+
+            finally
+            {
+                if (!raiseEvent)
+                {
+                    --this.ignoreToolClicked;
+                }
+            }
         }
 
         public int ToolbarsHeight()
@@ -157,6 +184,7 @@ namespace PaintDotNet
         {
             base.OnLoad (e);
             this.ClientSize = new Size(dotNetToolbars[0].Width, colorDisplayWidget.Height + toleranceSlider.Height + ToolbarsHeight());
+            this.colorDisplayWidget.Left = (this.ClientRectangle.Width - this.colorDisplayWidget.Width) / 2;
         }
 
         /// <summary> 
@@ -182,36 +210,36 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-			this.colorDisplayWidget = new PaintDotNet.ColorDisplayWidget();
-			this.toleranceSlider = new PaintDotNet.ToleranceSliderControl();
-			this.SuspendLayout();
-			// 
-			// colorDisplayWidget
-			// 
-			this.colorDisplayWidget.Dock = System.Windows.Forms.DockStyle.Bottom;
-			this.colorDisplayWidget.Location = new System.Drawing.Point(0, 280);
-			this.colorDisplayWidget.Name = "colorDisplayWidget";
-			this.colorDisplayWidget.TabIndex = 1;
-			// 
-			// toleranceSlider
-			// 
-			this.toleranceSlider.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-				| System.Windows.Forms.AnchorStyles.Right)));
-			this.toleranceSlider.Location = new System.Drawing.Point(2, 264);
-			this.toleranceSlider.Name = "toleranceSlider";
-			this.toleranceSlider.Size = new System.Drawing.Size(44, 16);
-			this.toleranceSlider.TabIndex = 0;
-			this.toleranceSlider.Tolerance = 0.5f;
-			// 
-			// MainToolBar
-			// 
-			this.Controls.Add(this.toleranceSlider);
-			this.Controls.Add(this.colorDisplayWidget);
-			this.Name = "MainToolBar";
-			this.Size = new System.Drawing.Size(48, 328);
-			this.ResumeLayout(false);
+            this.colorDisplayWidget = new PaintDotNet.ColorDisplayWidget();
+            this.toleranceSlider = new PaintDotNet.ToleranceSliderControl();
+            this.SuspendLayout();
+            // 
+            // colorDisplayWidget
+            // 
+            this.colorDisplayWidget.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.colorDisplayWidget.Location = new System.Drawing.Point(0, 280);
+            this.colorDisplayWidget.Name = "colorDisplayWidget";
+            this.colorDisplayWidget.TabIndex = 1;
+            // 
+            // toleranceSlider
+            // 
+            this.toleranceSlider.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+                | System.Windows.Forms.AnchorStyles.Right)));
+            this.toleranceSlider.Location = new System.Drawing.Point(2, 264);
+            this.toleranceSlider.Name = "toleranceSlider";
+            this.toleranceSlider.Size = new System.Drawing.Size(44, 16);
+            this.toleranceSlider.TabIndex = 0;
+            this.toleranceSlider.Tolerance = 0.5f;
+            // 
+            // MainToolBar
+            // 
+            this.Controls.Add(this.toleranceSlider);
+            this.Controls.Add(this.colorDisplayWidget);
+            this.Name = "MainToolBar";
+            this.Size = new System.Drawing.Size(48, 328);
+            this.ResumeLayout(false);
 
-		}
+        }
         #endregion
 
         private void dotNetToolbar_ButtonClick(object sender, DotNetWidgets.DotNetToolbarItemClickEventArgs e)

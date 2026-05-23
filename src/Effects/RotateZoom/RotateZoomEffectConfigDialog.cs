@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -11,9 +12,10 @@ using System;
 using System.Drawing;
 using System.Collections;
 using System.ComponentModel;
+using System.Reflection;
 using System.Windows.Forms;
 
-namespace PaintDotNet.Effects
+namespace PaintDotNet.Effects.RotateZoom
 {
     /// <summary>
     /// Summary description for RotateZoomEffectConfigDialog.
@@ -21,16 +23,35 @@ namespace PaintDotNet.Effects
     public class RotateZoomEffectConfigDialog 
         : EffectConfigDialog
     {
-        private PaintDotNet.AngleChooserControl angleChooserControl;
-        private System.Windows.Forms.TrackBar zoomSlider;
         private System.Windows.Forms.Button okButton;
         private System.Windows.Forms.Button cancelButton;
         private System.Windows.Forms.CheckBox keepBackgroundCheckBox;
-        private System.Windows.Forms.NumericUpDown angleUpDown;
-        private System.Windows.Forms.GroupBox angleGroupBox;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.GroupBox zoomGroupBox;
+        private System.Windows.Forms.CheckBox tileSourceCheckBox;
+        private PaintDotNet.Effects.RotateZoom.RollControl rollControl;
+        private PaintDotNet.HeaderLabel headerRoll;
+        private PaintDotNet.HeaderLabel headerPan;
+        private System.Windows.Forms.Panel panelPan;
+        private System.Windows.Forms.TrackBar trackBarZoom;
+        private PaintDotNet.Effects.RotateZoom.PanControl panControl;
+        private PaintDotNet.HeaderLabel headerZoom;
         private System.Windows.Forms.Label zoomLabel;
+        private System.Windows.Forms.Label panXLabel;
+        private System.Windows.Forms.Label panYLabel;
+        private System.Windows.Forms.Button panResetButton;
+        private System.Windows.Forms.NumericUpDown panXUpDown;
+        private System.Windows.Forms.NumericUpDown panYUpDown;
+        private System.Windows.Forms.Label angleLabel;
+        private System.Windows.Forms.NumericUpDown angleUpDown;
+        private System.Windows.Forms.Button zoomResetButton;
+        private System.Windows.Forms.Label twistAngleLabel;
+        private System.Windows.Forms.Label twistRadiusLabel;
+        private System.Windows.Forms.NumericUpDown twistAngleUpDown;
+        private System.Windows.Forms.NumericUpDown twistRadiusUpDown;
+        private System.Windows.Forms.Button rollResetButton;
+        private System.Windows.Forms.Button resetAllButton;
+        private PaintDotNet.HeaderLabel fineTuningHeader;
+        private PaintDotNet.HeaderLabel headerLabel1;
+
         /// <summary>
         /// Required designer variable.
         /// </summary>
@@ -38,240 +59,532 @@ namespace PaintDotNet.Effects
 
         public RotateZoomEffectConfigDialog()
         {
-            //
-            // Required for Windows Form Designer support
-            //
             InitializeComponent();
 
-			this.Text = RotateZoomEffect.StaticName;
-			this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.RotateZoomIcon.bmp"));
+            this.Icon = Utility.ImageToIcon(RotateZoomEffect.StaticImage);
+            this.Text = RotateZoomEffect.StaticName;
+            this.okButton.Text = PdnResources.GetString("Form.OkButton.Text");
+            this.cancelButton.Text = PdnResources.GetString("Form.CancelButton.Text");
+            this.keepBackgroundCheckBox.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.KeepBackgroundCheckBox.Text");
+            this.tileSourceCheckBox.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.TileSourceCheckBox.Text");
+            this.headerPan.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.HeaderPan.Text");
+            this.panXLabel.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.PanXLabel.Text");
+            this.panYLabel.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.PanYLabel.Text");
+            this.twistAngleLabel.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.TwistAngleLabel.Text");
+            this.twistRadiusLabel.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.TwistRadiusLabel.Text");
+            this.panResetButton.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.PanResetButton.Text");
+            this.zoomResetButton.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.ZoomResetButton.Text");
+            this.rollResetButton.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.RollResetButton.Text");
+            this.resetAllButton.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.ResetAllButton.Text");
+            this.headerRoll.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.HeaderRoll.Text");
+            this.angleLabel.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.AngleLabel.Text");
+            this.headerZoom.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.HeaderZoom.Text");
+            this.fineTuningHeader.Text = PdnResources.GetString("RotateZoomEffectConfigDialog.FineTuningHeader.Text");
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            this.angleUpDown.Select();
+            base.OnLoad(e);
         }
 
         protected override void InitialInitToken()
         {
-            theEffectToken = new RotateZoomEffectConfigToken(0, 1.0f, false);
+            theEffectToken = new RotateZoomEffectConfigToken(true, 0, 0, 0, 1.0f, PointF.Empty, false, false);
         }
 
         protected override void InitDialogFromToken(EffectConfigToken effectToken)
         {
-            angleChooserControl.ValueDouble = ((RotateZoomEffectConfigToken)effectToken).Angle;
-            zoomSlider.Value = (int)(1.0f / ((RotateZoomEffectConfigToken)effectToken).Zoom * 100.0f);
-            this.keepBackgroundCheckBox.Checked = ((RotateZoomEffectConfigToken)effectToken).SourceAsBackground;
+            RotateZoomEffectConfigToken token = (RotateZoomEffectConfigToken)effectToken;
+            double r = Math.Sin(token.Tilt) * 90;
+            double t = -token.PostRotateZ;
+
+            panControl.Position = token.Offset;
+            rollControl.Angle = (t - token.PreRotateZ) * 180 / Math.PI;
+            rollControl.RollDirection = 180 * t / Math.PI;
+            rollControl.RollAmount = r;
+            keepBackgroundCheckBox.Checked = token.SourceAsBackground;
+            tileSourceCheckBox.Checked = token.Tile;
+            trackBarZoom.Value = (int)Math.Round(512 + 128 * Math.Log(token.Zoom, 2.0));
+
+            trackBarZoom_ValueChanged(this, EventArgs.Empty);
         }
 
         protected override void InitTokenFromDialog()
         {
-            ((RotateZoomEffectConfigToken)theEffectToken).Angle = (float)angleChooserControl.ValueDouble;
-            ((RotateZoomEffectConfigToken)theEffectToken).Zoom = 1.0f / ((float)zoomSlider.Value / 100.0f);
-            ((RotateZoomEffectConfigToken)theEffectToken).SourceAsBackground = keepBackgroundCheckBox.Checked;
-        }
+            RotateZoomEffectConfigToken token = (RotateZoomEffectConfigToken)theEffectToken;
+            double angle = rollControl.RollDirection * Math.PI / 180;
+            double dist = rollControl.RollAmount;
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose(bool disposing)
-		{
-			if (disposing)
-			{
-				if (components != null)
-				{
-					components.Dispose();
-                    components = null;
-                }
-			}
-			base.Dispose(disposing);
-		}
-
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
-			this.angleChooserControl = new PaintDotNet.AngleChooserControl();
-			this.zoomSlider = new System.Windows.Forms.TrackBar();
-			this.okButton = new System.Windows.Forms.Button();
-			this.cancelButton = new System.Windows.Forms.Button();
-			this.keepBackgroundCheckBox = new System.Windows.Forms.CheckBox();
-			this.angleUpDown = new System.Windows.Forms.NumericUpDown();
-			this.angleGroupBox = new System.Windows.Forms.GroupBox();
-			this.label3 = new System.Windows.Forms.Label();
-			this.zoomGroupBox = new System.Windows.Forms.GroupBox();
-			this.zoomLabel = new System.Windows.Forms.Label();
-			((System.ComponentModel.ISupportInitialize)(this.zoomSlider)).BeginInit();
-			((System.ComponentModel.ISupportInitialize)(this.angleUpDown)).BeginInit();
-			this.angleGroupBox.SuspendLayout();
-			this.zoomGroupBox.SuspendLayout();
-			this.SuspendLayout();
-			// 
-			// angleChooserControl
-			// 
-			this.angleChooserControl.Location = new System.Drawing.Point(8, 16);
-			this.angleChooserControl.Name = "angleChooserControl";
-			this.angleChooserControl.Size = new System.Drawing.Size(56, 56);
-			this.angleChooserControl.TabIndex = 1;
-			this.angleChooserControl.TabStop = false;
-			this.angleChooserControl.Value = 0;
-			this.angleChooserControl.ValueDouble = 0;
-			this.angleChooserControl.ValueChanged += new System.EventHandler(this.angleChooserControl_ValueChanged);
-			// 
-			// zoomSlider
-			// 
-			this.zoomSlider.LargeChange = 50;
-			this.zoomSlider.Location = new System.Drawing.Point(8, 24);
-			this.zoomSlider.Maximum = 500;
-			this.zoomSlider.Name = "zoomSlider";
-			this.zoomSlider.Size = new System.Drawing.Size(177, 45);
-			this.zoomSlider.TabIndex = 1;
-			this.zoomSlider.TickFrequency = 100;
-			this.zoomSlider.Value = 1;
-			this.zoomSlider.ValueChanged += new System.EventHandler(this.zoomSlider_ValueChanged);
-			// 
-			// okButton
-			// 
-			this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.okButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.okButton.Location = new System.Drawing.Point(256, 104);
-			this.okButton.Name = "okButton";
-			this.okButton.TabIndex = 3;
-			this.okButton.Text = "OK";
-			this.okButton.Click += new System.EventHandler(this.okButton_Click);
-			// 
-			// cancelButton
-			// 
-			this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-			this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.cancelButton.Location = new System.Drawing.Point(336, 104);
-			this.cancelButton.Name = "cancelButton";
-			this.cancelButton.TabIndex = 4;
-			this.cancelButton.Text = "Cancel";
-			this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
-			// 
-			// keepBackgroundCheckBox
-			// 
-			this.keepBackgroundCheckBox.Location = new System.Drawing.Point(16, 96);
-			this.keepBackgroundCheckBox.Name = "keepBackgroundCheckBox";
-			this.keepBackgroundCheckBox.Size = new System.Drawing.Size(160, 24);
-			this.keepBackgroundCheckBox.TabIndex = 2;
-			this.keepBackgroundCheckBox.Text = "Don\'t erase background";
-			this.keepBackgroundCheckBox.CheckedChanged += new System.EventHandler(this.keepBackgroundCheckBox_CheckedChanged);
-			// 
-			// angleUpDown
-			// 
-			this.angleUpDown.DecimalPlaces = 2;
-			this.angleUpDown.Location = new System.Drawing.Point(72, 24);
-			this.angleUpDown.Maximum = new System.Decimal(new int[] {
-																		180,
-																		0,
-																		0,
-																		0});
-			this.angleUpDown.Minimum = new System.Decimal(new int[] {
-																		180,
-																		0,
-																		0,
-																		-2147483648});
-			this.angleUpDown.Name = "angleUpDown";
-			this.angleUpDown.Size = new System.Drawing.Size(72, 20);
-			this.angleUpDown.TabIndex = 0;
-			this.angleUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-			this.angleUpDown.Enter += new System.EventHandler(this.angleUpDown_Enter);
-			this.angleUpDown.ValueChanged += new System.EventHandler(this.angleUpDown_ValueChanged);
-			this.angleUpDown.Leave += new System.EventHandler(this.angleUpDown_Leave);
-			// 
-			// angleGroupBox
-			// 
-			this.angleGroupBox.Controls.Add(this.label3);
-			this.angleGroupBox.Controls.Add(this.angleChooserControl);
-			this.angleGroupBox.Controls.Add(this.angleUpDown);
-			this.angleGroupBox.Location = new System.Drawing.Point(8, 8);
-			this.angleGroupBox.Name = "angleGroupBox";
-			this.angleGroupBox.Size = new System.Drawing.Size(160, 80);
-			this.angleGroupBox.TabIndex = 7;
-			this.angleGroupBox.TabStop = false;
-			this.angleGroupBox.Text = "Angle";
-			// 
-			// label3
-			// 
-			this.label3.Location = new System.Drawing.Point(144, 24);
-			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(8, 16);
-			this.label3.TabIndex = 7;
-			this.label3.Text = "°";
-			this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-			// 
-			// zoomGroupBox
-			// 
-			this.zoomGroupBox.Controls.Add(this.zoomLabel);
-			this.zoomGroupBox.Controls.Add(this.zoomSlider);
-			this.zoomGroupBox.Location = new System.Drawing.Point(176, 8);
-			this.zoomGroupBox.Name = "zoomGroupBox";
-			this.zoomGroupBox.Size = new System.Drawing.Size(232, 80);
-			this.zoomGroupBox.TabIndex = 8;
-			this.zoomGroupBox.TabStop = false;
-			this.zoomGroupBox.Text = "Zoom";
-			// 
-			// zoomLabel
-			// 
-			this.zoomLabel.Location = new System.Drawing.Point(192, 24);
-			this.zoomLabel.Name = "zoomLabel";
-			this.zoomLabel.Size = new System.Drawing.Size(32, 23);
-			this.zoomLabel.TabIndex = 3;
-			this.zoomLabel.Text = "1.00x";
-			// 
-			// RotateZoomEffectConfigDialog
-			// 
-			this.AcceptButton = this.okButton;
-			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-			this.CancelButton = this.cancelButton;
-			this.ClientSize = new System.Drawing.Size(418, 135);
-			this.Controls.Add(this.zoomGroupBox);
-			this.Controls.Add(this.angleGroupBox);
-			this.Controls.Add(this.keepBackgroundCheckBox);
-			this.Controls.Add(this.cancelButton);
-			this.Controls.Add(this.okButton);
-			this.Location = new System.Drawing.Point(0, 0);
-			this.Name = "RotateZoomEffectConfigDialog";
-			this.Text = "Rotate / Zoom";
-			this.Controls.SetChildIndex(this.okButton, 0);
-			this.Controls.SetChildIndex(this.cancelButton, 0);
-			this.Controls.SetChildIndex(this.keepBackgroundCheckBox, 0);
-			this.Controls.SetChildIndex(this.angleGroupBox, 0);
-			this.Controls.SetChildIndex(this.zoomGroupBox, 0);
-			((System.ComponentModel.ISupportInitialize)(this.zoomSlider)).EndInit();
-			((System.ComponentModel.ISupportInitialize)(this.angleUpDown)).EndInit();
-			this.angleGroupBox.ResumeLayout(false);
-			this.zoomGroupBox.ResumeLayout(false);
-			this.ResumeLayout(false);
-
-		}
-		#endregion
-
-        private void angleChooserControl_ValueChanged(object sender, System.EventArgs e)
-        {
-            if (angleUpDown.Value != (decimal)angleChooserControl.ValueDouble)
+            if (double.IsNaN(angle))
             {
-                angleUpDown.Value = (decimal)angleChooserControl.ValueDouble;
+                angle = 0;
+                dist = 0;
             }
 
-            UpdateToken();
-            Update();
+            token.Offset = panControl.Position;
+            token.PreRotateZ = (float)(angle);
+            token.PostRotateZ = (float)(-angle - rollControl.Angle * Math.PI / 180);
+            token.Tilt = (float)Math.Asin(dist / 90);
+            token.SourceAsBackground = keepBackgroundCheckBox.Checked;
+            token.Tile = tileSourceCheckBox.Checked;
+            token.Zoom = (float)Math.Pow(2.0, (trackBarZoom.Value - 512) / 128.0);
         }
 
-        private void zoomSlider_ValueChanged(object sender, System.EventArgs e)
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose(bool disposing)
         {
-			// safety precaution such that sxul and syul in RotateZoomEffect can never 
-			// reach infinity -- this is a quick fix due to the rapidly encroaching final
-			// release date of PDN 2.0. MK
-			if (zoomSlider.Value == 0)
-			{
-				zoomSlider.Value = 1;
-			}
-            UpdateToken();
-			Update();
-			zoomLabel.Text = (1.0f / ((RotateZoomEffectConfigToken)theEffectToken).Zoom).ToString("F2") + "x";
-		}
+            if (disposing)
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                    components = null;
+                }
+            }
+
+            base.Dispose(disposing);
+        }
+
+        #region Windows Form Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            this.okButton = new System.Windows.Forms.Button();
+            this.cancelButton = new System.Windows.Forms.Button();
+            this.keepBackgroundCheckBox = new System.Windows.Forms.CheckBox();
+            this.tileSourceCheckBox = new System.Windows.Forms.CheckBox();
+            this.rollControl = new PaintDotNet.Effects.RotateZoom.RollControl();
+            this.headerRoll = new PaintDotNet.HeaderLabel();
+            this.headerPan = new PaintDotNet.HeaderLabel();
+            this.panelPan = new System.Windows.Forms.Panel();
+            this.panControl = new PaintDotNet.Effects.RotateZoom.PanControl();
+            this.headerZoom = new PaintDotNet.HeaderLabel();
+            this.trackBarZoom = new System.Windows.Forms.TrackBar();
+            this.zoomLabel = new System.Windows.Forms.Label();
+            this.panXLabel = new System.Windows.Forms.Label();
+            this.panYLabel = new System.Windows.Forms.Label();
+            this.panXUpDown = new System.Windows.Forms.NumericUpDown();
+            this.panYUpDown = new System.Windows.Forms.NumericUpDown();
+            this.panResetButton = new System.Windows.Forms.Button();
+            this.angleLabel = new System.Windows.Forms.Label();
+            this.angleUpDown = new System.Windows.Forms.NumericUpDown();
+            this.zoomResetButton = new System.Windows.Forms.Button();
+            this.twistAngleLabel = new System.Windows.Forms.Label();
+            this.twistRadiusLabel = new System.Windows.Forms.Label();
+            this.twistAngleUpDown = new System.Windows.Forms.NumericUpDown();
+            this.twistRadiusUpDown = new System.Windows.Forms.NumericUpDown();
+            this.rollResetButton = new System.Windows.Forms.Button();
+            this.resetAllButton = new System.Windows.Forms.Button();
+            this.fineTuningHeader = new PaintDotNet.HeaderLabel();
+            this.headerLabel1 = new PaintDotNet.HeaderLabel();
+            this.panelPan.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.trackBarZoom)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.panXUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.panYUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.angleUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.twistAngleUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.twistRadiusUpDown)).BeginInit();
+            this.SuspendLayout();
+            // 
+            // okButton
+            // 
+            this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.okButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.okButton.Location = new System.Drawing.Point(312, 312);
+            this.okButton.Name = "okButton";
+            this.okButton.Size = new System.Drawing.Size(72, 23);
+            this.okButton.TabIndex = 26;
+            this.okButton.Click += new System.EventHandler(this.okButton_Click);
+            // 
+            // cancelButton
+            // 
+            this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.cancelButton.Location = new System.Drawing.Point(392, 312);
+            this.cancelButton.Name = "cancelButton";
+            this.cancelButton.Size = new System.Drawing.Size(72, 23);
+            this.cancelButton.TabIndex = 27;
+            this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
+            // 
+            // keepBackgroundCheckBox
+            // 
+            this.keepBackgroundCheckBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.keepBackgroundCheckBox.Location = new System.Drawing.Point(9, 316);
+            this.keepBackgroundCheckBox.Name = "keepBackgroundCheckBox";
+            this.keepBackgroundCheckBox.Size = new System.Drawing.Size(175, 15);
+            this.keepBackgroundCheckBox.TabIndex = 24;
+            this.keepBackgroundCheckBox.CheckedChanged += new System.EventHandler(this.keepBackgroundCheckBox_CheckedChanged);
+            // 
+            // tileSourceCheckBox
+            // 
+            this.tileSourceCheckBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.tileSourceCheckBox.Location = new System.Drawing.Point(9, 298);
+            this.tileSourceCheckBox.Name = "tileSourceCheckBox";
+            this.tileSourceCheckBox.Size = new System.Drawing.Size(175, 16);
+            this.tileSourceCheckBox.TabIndex = 23;
+            this.tileSourceCheckBox.CheckedChanged += new System.EventHandler(this.tileSource_CheckedChanged);
+            // 
+            // rollControl
+            // 
+            this.rollControl.Angle = -70;
+            this.rollControl.Location = new System.Drawing.Point(16, 32);
+            this.rollControl.Name = "rollControl";
+            this.rollControl.RollAmount = 0;
+            this.rollControl.RollDirection = 0;
+            this.rollControl.Size = new System.Drawing.Size(112, 120);
+            this.rollControl.TabIndex = 3;
+            this.rollControl.TabStop = false;
+            this.rollControl.ValueChanged += new System.EventHandler(this.rollControl_ValueChanged);
+            // 
+            // headerRoll
+            // 
+            this.headerRoll.LeftMargin = 0;
+            this.headerRoll.Location = new System.Drawing.Point(8, 8);
+            this.headerRoll.Name = "headerRoll";
+            this.headerRoll.RightMargin = 0;
+            this.headerRoll.Size = new System.Drawing.Size(168, 14);
+            this.headerRoll.TabIndex = 2;
+            this.headerRoll.TabStop = false;
+            // 
+            // headerPan
+            // 
+            this.headerPan.LeftMargin = 0;
+            this.headerPan.Location = new System.Drawing.Point(199, 8);
+            this.headerPan.Name = "headerPan";
+            this.headerPan.RightMargin = 0;
+            this.headerPan.Size = new System.Drawing.Size(129, 14);
+            this.headerPan.TabIndex = 5;
+            this.headerPan.TabStop = false;
+            // 
+            // panelPan
+            // 
+            this.panelPan.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.panelPan.Controls.Add(this.panControl);
+            this.panelPan.Location = new System.Drawing.Point(200, 29);
+            this.panelPan.Name = "panelPan";
+            this.panelPan.Size = new System.Drawing.Size(128, 120);
+            this.panelPan.TabIndex = 6;
+            // 
+            // panControl
+            // 
+            this.panControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panControl.Location = new System.Drawing.Point(0, 0);
+            this.panControl.Name = "panControl";
+            this.panControl.Size = new System.Drawing.Size(124, 116);
+            this.panControl.TabIndex = 0;
+            this.panControl.TabStop = false;
+            this.panControl.PositionChanged += new System.EventHandler(this.panControl_PositionChanged);
+            // 
+            // headerZoom
+            // 
+            this.headerZoom.LeftMargin = 0;
+            this.headerZoom.Location = new System.Drawing.Point(352, 8);
+            this.headerZoom.Name = "headerZoom";
+            this.headerZoom.RightMargin = 0;
+            this.headerZoom.Size = new System.Drawing.Size(112, 14);
+            this.headerZoom.TabIndex = 7;
+            this.headerZoom.TabStop = false;
+            // 
+            // trackBarZoom
+            // 
+            this.trackBarZoom.Location = new System.Drawing.Point(352, 24);
+            this.trackBarZoom.Maximum = 1024;
+            this.trackBarZoom.Name = "trackBarZoom";
+            this.trackBarZoom.Orientation = System.Windows.Forms.Orientation.Vertical;
+            this.trackBarZoom.Size = new System.Drawing.Size(42, 131);
+            this.trackBarZoom.TabIndex = 8;
+            this.trackBarZoom.TickFrequency = 64;
+            this.trackBarZoom.Value = 512;
+            this.trackBarZoom.ValueChanged += new System.EventHandler(this.trackBarZoom_ValueChanged);
+            // 
+            // zoomLabel
+            // 
+            this.zoomLabel.Location = new System.Drawing.Point(400, 32);
+            this.zoomLabel.Name = "zoomLabel";
+            this.zoomLabel.Size = new System.Drawing.Size(48, 23);
+            this.zoomLabel.TabIndex = 9;
+            // 
+            // panXLabel
+            // 
+            this.panXLabel.Location = new System.Drawing.Point(200, 208);
+            this.panXLabel.Name = "panXLabel";
+            this.panXLabel.Size = new System.Drawing.Size(56, 16);
+            this.panXLabel.TabIndex = 18;
+            // 
+            // panYLabel
+            // 
+            this.panYLabel.Location = new System.Drawing.Point(200, 232);
+            this.panYLabel.Name = "panYLabel";
+            this.panYLabel.Size = new System.Drawing.Size(56, 16);
+            this.panYLabel.TabIndex = 19;
+            // 
+            // panXUpDown
+            // 
+            this.panXUpDown.DecimalPlaces = 3;
+            this.panXUpDown.Increment = new System.Decimal(new int[] {
+                                                                         1,
+                                                                         0,
+                                                                         0,
+                                                                         131072});
+            this.panXUpDown.Location = new System.Drawing.Point(260, 204);
+            this.panXUpDown.Maximum = new System.Decimal(new int[] {
+                                                                       1000000000,
+                                                                       0,
+                                                                       0,
+                                                                       0});
+            this.panXUpDown.Minimum = new System.Decimal(new int[] {
+                                                                       100000000,
+                                                                       0,
+                                                                       0,
+                                                                       -2147483648});
+            this.panXUpDown.Name = "panXUpDown";
+            this.panXUpDown.Size = new System.Drawing.Size(68, 20);
+            this.panXUpDown.TabIndex = 20;
+            this.panXUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.panXUpDown.Enter += new System.EventHandler(this.numericUpDown_Enter);
+            this.panXUpDown.ValueChanged += new System.EventHandler(this.panXUpDown_ValueChanged);
+            this.panXUpDown.Leave += new System.EventHandler(this.numericUpDown_Leave);
+            // 
+            // panYUpDown
+            // 
+            this.panYUpDown.DecimalPlaces = 3;
+            this.panYUpDown.Increment = new System.Decimal(new int[] {
+                                                                         1,
+                                                                         0,
+                                                                         0,
+                                                                         131072});
+            this.panYUpDown.Location = new System.Drawing.Point(260, 228);
+            this.panYUpDown.Maximum = new System.Decimal(new int[] {
+                                                                       1000000000,
+                                                                       0,
+                                                                       0,
+                                                                       0});
+            this.panYUpDown.Minimum = new System.Decimal(new int[] {
+                                                                       1000000000,
+                                                                       0,
+                                                                       0,
+                                                                       -2147483648});
+            this.panYUpDown.Name = "panYUpDown";
+            this.panYUpDown.Size = new System.Drawing.Size(68, 20);
+            this.panYUpDown.TabIndex = 21;
+            this.panYUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.panYUpDown.Enter += new System.EventHandler(this.numericUpDown_Enter);
+            this.panYUpDown.ValueChanged += new System.EventHandler(this.panYUpDown_ValueChanged);
+            this.panYUpDown.Leave += new System.EventHandler(this.numericUpDown_Leave);
+            // 
+            // panResetButton
+            // 
+            this.panResetButton.Location = new System.Drawing.Point(248, 160);
+            this.panResetButton.Name = "panResetButton";
+            this.panResetButton.Size = new System.Drawing.Size(80, 23);
+            this.panResetButton.TabIndex = 6;
+            this.panResetButton.Click += new System.EventHandler(this.panResetButton_Click);
+            // 
+            // angleLabel
+            // 
+            this.angleLabel.Location = new System.Drawing.Point(8, 208);
+            this.angleLabel.Name = "angleLabel";
+            this.angleLabel.Size = new System.Drawing.Size(88, 16);
+            this.angleLabel.TabIndex = 12;
+            // 
+            // angleUpDown
+            // 
+            this.angleUpDown.DecimalPlaces = 2;
+            this.angleUpDown.Location = new System.Drawing.Point(108, 204);
+            this.angleUpDown.Maximum = new System.Decimal(new int[] {
+                                                                        360,
+                                                                        0,
+                                                                        0,
+                                                                        0});
+            this.angleUpDown.Minimum = new System.Decimal(new int[] {
+                                                                        360,
+                                                                        0,
+                                                                        0,
+                                                                        -2147483648});
+            this.angleUpDown.Name = "angleUpDown";
+            this.angleUpDown.Size = new System.Drawing.Size(68, 20);
+            this.angleUpDown.TabIndex = 13;
+            this.angleUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.angleUpDown.Enter += new System.EventHandler(this.numericUpDown_Enter);
+            this.angleUpDown.ValueChanged += new System.EventHandler(this.angleUpDown_ValueChanged);
+            this.angleUpDown.Leave += new System.EventHandler(this.numericUpDown_Leave);
+            // 
+            // zoomResetButton
+            // 
+            this.zoomResetButton.Location = new System.Drawing.Point(384, 160);
+            this.zoomResetButton.Name = "zoomResetButton";
+            this.zoomResetButton.Size = new System.Drawing.Size(80, 23);
+            this.zoomResetButton.TabIndex = 10;
+            this.zoomResetButton.Click += new System.EventHandler(this.zoomResetButton_Click);
+            // 
+            // twistAngleLabel
+            // 
+            this.twistAngleLabel.Location = new System.Drawing.Point(8, 232);
+            this.twistAngleLabel.Name = "twistAngleLabel";
+            this.twistAngleLabel.Size = new System.Drawing.Size(88, 16);
+            this.twistAngleLabel.TabIndex = 14;
+            // 
+            // twistRadiusLabel
+            // 
+            this.twistRadiusLabel.Location = new System.Drawing.Point(8, 256);
+            this.twistRadiusLabel.Name = "twistRadiusLabel";
+            this.twistRadiusLabel.Size = new System.Drawing.Size(88, 16);
+            this.twistRadiusLabel.TabIndex = 16;
+            // 
+            // twistAngleUpDown
+            // 
+            this.twistAngleUpDown.DecimalPlaces = 2;
+            this.twistAngleUpDown.Location = new System.Drawing.Point(108, 228);
+            this.twistAngleUpDown.Maximum = new System.Decimal(new int[] {
+                                                                             360,
+                                                                             0,
+                                                                             0,
+                                                                             0});
+            this.twistAngleUpDown.Minimum = new System.Decimal(new int[] {
+                                                                             360,
+                                                                             0,
+                                                                             0,
+                                                                             -2147483648});
+            this.twistAngleUpDown.Name = "twistAngleUpDown";
+            this.twistAngleUpDown.Size = new System.Drawing.Size(68, 20);
+            this.twistAngleUpDown.TabIndex = 15;
+            this.twistAngleUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.twistAngleUpDown.Enter += new System.EventHandler(this.numericUpDown_Enter);
+            this.twistAngleUpDown.ValueChanged += new System.EventHandler(this.twistAngleUpDown_ValueChanged);
+            this.twistAngleUpDown.Leave += new System.EventHandler(this.numericUpDown_Leave);
+            // 
+            // twistRadiusUpDown
+            // 
+            this.twistRadiusUpDown.DecimalPlaces = 2;
+            this.twistRadiusUpDown.Location = new System.Drawing.Point(108, 252);
+            this.twistRadiusUpDown.Maximum = new System.Decimal(new int[] {
+                                                                              8995,
+                                                                              0,
+                                                                              0,
+                                                                              131072});
+            this.twistRadiusUpDown.Name = "twistRadiusUpDown";
+            this.twistRadiusUpDown.Size = new System.Drawing.Size(68, 20);
+            this.twistRadiusUpDown.TabIndex = 17;
+            this.twistRadiusUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.twistRadiusUpDown.Enter += new System.EventHandler(this.numericUpDown_Enter);
+            this.twistRadiusUpDown.ValueChanged += new System.EventHandler(this.twistRadiusUpDown_ValueChanged);
+            this.twistRadiusUpDown.Leave += new System.EventHandler(this.numericUpDown_Leave);
+            // 
+            // rollResetButton
+            // 
+            this.rollResetButton.Location = new System.Drawing.Point(96, 160);
+            this.rollResetButton.Name = "rollResetButton";
+            this.rollResetButton.Size = new System.Drawing.Size(80, 23);
+            this.rollResetButton.TabIndex = 4;
+            this.rollResetButton.Click += new System.EventHandler(this.rollResetButton_Click);
+            // 
+            // resetAllButton
+            // 
+            this.resetAllButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.resetAllButton.Location = new System.Drawing.Point(200, 312);
+            this.resetAllButton.Name = "resetAllButton";
+            this.resetAllButton.Size = new System.Drawing.Size(104, 23);
+            this.resetAllButton.TabIndex = 25;
+            this.resetAllButton.Click += new System.EventHandler(this.resetAllButton_Click);
+            // 
+            // fineTuningHeader
+            // 
+            this.fineTuningHeader.Location = new System.Drawing.Point(8, 184);
+            this.fineTuningHeader.Name = "fineTuningHeader";
+            this.fineTuningHeader.Size = new System.Drawing.Size(464, 14);
+            this.fineTuningHeader.TabIndex = 11;
+            this.fineTuningHeader.TabStop = false;
+            // 
+            // headerLabel1
+            // 
+            this.headerLabel1.Location = new System.Drawing.Point(8, 280);
+            this.headerLabel1.Name = "headerLabel1";
+            this.headerLabel1.Size = new System.Drawing.Size(464, 14);
+            this.headerLabel1.TabIndex = 22;
+            this.headerLabel1.TabStop = false;
+            // 
+            // RotateZoomEffectConfigDialog
+            // 
+            this.AcceptButton = this.okButton;
+            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.CancelButton = this.cancelButton;
+            this.ClientSize = new System.Drawing.Size(474, 343);
+            this.Controls.Add(this.headerLabel1);
+            this.Controls.Add(this.fineTuningHeader);
+            this.Controls.Add(this.resetAllButton);
+            this.Controls.Add(this.rollResetButton);
+            this.Controls.Add(this.twistRadiusUpDown);
+            this.Controls.Add(this.twistAngleUpDown);
+            this.Controls.Add(this.twistRadiusLabel);
+            this.Controls.Add(this.twistAngleLabel);
+            this.Controls.Add(this.zoomResetButton);
+            this.Controls.Add(this.angleUpDown);
+            this.Controls.Add(this.angleLabel);
+            this.Controls.Add(this.panResetButton);
+            this.Controls.Add(this.panYUpDown);
+            this.Controls.Add(this.panXUpDown);
+            this.Controls.Add(this.panYLabel);
+            this.Controls.Add(this.panXLabel);
+            this.Controls.Add(this.zoomLabel);
+            this.Controls.Add(this.trackBarZoom);
+            this.Controls.Add(this.panelPan);
+            this.Controls.Add(this.headerPan);
+            this.Controls.Add(this.headerRoll);
+            this.Controls.Add(this.keepBackgroundCheckBox);
+            this.Controls.Add(this.cancelButton);
+            this.Controls.Add(this.okButton);
+            this.Controls.Add(this.tileSourceCheckBox);
+            this.Controls.Add(this.rollControl);
+            this.Controls.Add(this.headerZoom);
+            this.Location = new System.Drawing.Point(0, 0);
+            this.Name = "RotateZoomEffectConfigDialog";
+            this.Load += new System.EventHandler(this.RotateZoomEffectConfigDialog_Load);
+            this.Controls.SetChildIndex(this.headerZoom, 0);
+            this.Controls.SetChildIndex(this.rollControl, 0);
+            this.Controls.SetChildIndex(this.tileSourceCheckBox, 0);
+            this.Controls.SetChildIndex(this.okButton, 0);
+            this.Controls.SetChildIndex(this.cancelButton, 0);
+            this.Controls.SetChildIndex(this.keepBackgroundCheckBox, 0);
+            this.Controls.SetChildIndex(this.headerRoll, 0);
+            this.Controls.SetChildIndex(this.headerPan, 0);
+            this.Controls.SetChildIndex(this.panelPan, 0);
+            this.Controls.SetChildIndex(this.trackBarZoom, 0);
+            this.Controls.SetChildIndex(this.zoomLabel, 0);
+            this.Controls.SetChildIndex(this.panXLabel, 0);
+            this.Controls.SetChildIndex(this.panYLabel, 0);
+            this.Controls.SetChildIndex(this.panXUpDown, 0);
+            this.Controls.SetChildIndex(this.panYUpDown, 0);
+            this.Controls.SetChildIndex(this.panResetButton, 0);
+            this.Controls.SetChildIndex(this.angleLabel, 0);
+            this.Controls.SetChildIndex(this.angleUpDown, 0);
+            this.Controls.SetChildIndex(this.zoomResetButton, 0);
+            this.Controls.SetChildIndex(this.twistAngleLabel, 0);
+            this.Controls.SetChildIndex(this.twistRadiusLabel, 0);
+            this.Controls.SetChildIndex(this.twistAngleUpDown, 0);
+            this.Controls.SetChildIndex(this.twistRadiusUpDown, 0);
+            this.Controls.SetChildIndex(this.rollResetButton, 0);
+            this.Controls.SetChildIndex(this.resetAllButton, 0);
+            this.Controls.SetChildIndex(this.fineTuningHeader, 0);
+            this.Controls.SetChildIndex(this.headerLabel1, 0);
+            this.panelPan.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.trackBarZoom)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.panXUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.panYUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.angleUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.twistAngleUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.twistRadiusUpDown)).EndInit();
+            this.ResumeLayout(false);
+
+        }
+        #endregion
+
 
         private void okButton_Click(object sender, System.EventArgs e)
         {
@@ -290,29 +603,157 @@ namespace PaintDotNet.Effects
             UpdateToken();
         }
 
-
-        private void angleUpDown_Leave(object sender, System.EventArgs e)
+        private void rollControl_ValueChanged(object sender, System.EventArgs e)
         {
-            Utility.ClipNumericUpDown(angleUpDown);
-
-            if (Utility.CheckNumericUpDown(angleUpDown))
+            if (this.angleUpDown.Value != (decimal)this.rollControl.Angle)
             {
-                angleUpDown.Value = decimal.Parse(angleUpDown.Text);
+                this.angleUpDown.Value = (decimal)this.rollControl.Angle;
             }
+
+            if (this.twistAngleUpDown.Value != -(decimal)this.rollControl.RollDirection)
+            {
+                this.twistAngleUpDown.Value = -(decimal)this.rollControl.RollDirection;
+            }
+
+            if (this.twistRadiusUpDown.Value != (decimal)this.rollControl.RollAmount)
+            {
+                this.twistRadiusUpDown.Value = (decimal)this.rollControl.RollAmount;
+            }
+
+            UpdateUpDowns();
+            UpdateToken();
         }
 
-        private void angleUpDown_Enter(object sender, System.EventArgs e)
+        private void panControl_PositionChanged(object sender, System.EventArgs e)
+        {
+            if (panXUpDown.Value != (decimal)panControl.Position.X)
+            {
+                panXUpDown.Value = (decimal)panControl.Position.X;
+            }
+
+            if (panYUpDown.Value != (decimal)panControl.Position.Y)
+            {
+                panYUpDown.Value = (decimal)panControl.Position.Y;
+            }
+
+            UpdateUpDowns();
+            UpdateToken();
+        }
+
+        private void trackBarZoom_ValueChanged(object sender, System.EventArgs e)
+        {
+            UpdateToken();
+            string zoomTextFormat = PdnResources.GetString("RotateZoomEffectConfigDialog.ZoomLabel.Text.Format");
+            string zoomText = string.Format(zoomTextFormat, ((RotateZoomEffectConfigToken)theEffectToken).Zoom.ToString("F2"));
+            this.zoomLabel.Text = zoomText;
+            UpdateUpDowns();
+        }
+
+        private void tileSource_CheckedChanged(object sender, System.EventArgs e)
+        {
+            UpdateToken();
+        }
+
+        private void numericUpDown_Enter(object sender, System.EventArgs e)
         {
             NumericUpDown nud = (NumericUpDown)sender;
             nud.Select(0, nud.Text.Length);
         }
 
+        private void numericUpDown_Leave(object sender, System.EventArgs e)
+        {
+            NumericUpDown nud = (NumericUpDown)sender;
+            Utility.ClipNumericUpDown(nud);
+
+            if (Utility.CheckNumericUpDown(nud))
+            {
+                nud.Value = decimal.Parse(nud.Text);
+            }
+        }
+
+        private void panXUpDown_ValueChanged(object sender, System.EventArgs e)
+        {
+            if (this.panControl.Position.X != (float)panXUpDown.Value)
+            {
+                this.panControl.Position = new PointF((float)panXUpDown.Value, this.panControl.Position.Y);
+                UpdateToken();
+            }
+        }
+
+        private void panYUpDown_ValueChanged(object sender, System.EventArgs e)
+        {
+            if (this.panControl.Position.Y != (float)panYUpDown.Value)
+            {
+                this.panControl.Position = new PointF(this.panControl.Position.X, (float)panYUpDown.Value);
+                UpdateToken();
+            }
+        }
+
+        private void panResetButton_Click(object sender, System.EventArgs e)
+        {
+            panXUpDown.Value = 0;
+            panYUpDown.Value = 0;
+        }
+
         private void angleUpDown_ValueChanged(object sender, System.EventArgs e)
         {
-            if (angleChooserControl.ValueDouble != (double)angleUpDown.Value)
+            if (this.rollControl.Angle != (double)angleUpDown.Value)
             {
-                angleChooserControl.ValueDouble = (double)angleUpDown.Value;
+                this.rollControl.Angle = (double)angleUpDown.Value;
+                UpdateUpDowns();
+                UpdateToken();
             }
+        }
+
+        private void zoomResetButton_Click(object sender, System.EventArgs e)
+        {
+            this.trackBarZoom.Value = 512; // 1.00
+        }
+
+        private void twistAngleUpDown_ValueChanged(object sender, System.EventArgs e)
+        {
+            if (this.rollControl.RollDirection != -(float)this.twistAngleUpDown.Value)
+            {
+                this.rollControl.RollDirection = -(float)this.twistAngleUpDown.Value;
+                UpdateToken();
+            }
+        }
+
+        private void twistRadiusUpDown_ValueChanged(object sender, System.EventArgs e)
+        {
+            if (this.rollControl.RollAmount != (float)this.twistRadiusUpDown.Value)
+            {
+                this.rollControl.RollAmount = (float)this.twistRadiusUpDown.Value;
+                UpdateToken();
+            }
+        }
+
+        private void rollResetButton_Click(object sender, System.EventArgs e)
+        {
+            this.rollControl.Angle = 0.0;
+            this.rollControl.RollAmount = 0;
+            this.rollControl.RollDirection = 0;
+        }
+
+        private void UpdateUpDowns()
+        {
+            this.twistAngleUpDown.Update();
+            this.twistRadiusUpDown.Update();
+            this.angleUpDown.Update();
+            this.panXUpDown.Update();
+            this.panYUpDown.Update();
+        }
+
+        private void resetAllButton_Click(object sender, System.EventArgs e)
+        {
+            this.panResetButton.PerformClick();
+            this.zoomResetButton.PerformClick();
+            this.rollResetButton.PerformClick();
+        }
+
+        private void RotateZoomEffectConfigDialog_Load(object sender, System.EventArgs e)
+        {
+        
         }
     }
 }

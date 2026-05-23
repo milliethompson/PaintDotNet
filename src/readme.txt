@@ -9,8 +9,8 @@ Prerequisites
 
    So, for example:
 
-      Works: c:\src\pdn_2_1_src\
-      Won't: c:\Documents and Settings\username\Desktop\pdn_2_1_src
+      Works: c:\src\pdn_2_5_src\
+      Won't: c:\Documents and Settings\username\Desktop\pdn_2_5_src
 
 2. Windows XP or Windows Server 2003, or newer. You might be fine with Windows
    2000 but this hasn't been tested.
@@ -18,11 +18,9 @@ Prerequisites
 3. Visual Studio .NET 2003 Professional
 
 4. .NET Framework 1.1 with SP1
-   Install .NET 1.1 using programs/dotnetfx.exe, and then apply SP1 with the
-   appropriate executable from the programs/dotnet_1_1_sp1 directory.
 
 5. Tablet PC SDK v1.7
-   Install this from the programs directory, or download from Microsoft:
+   Download and install this from Microsoft:
    http://www.microsoft.com/downloads/details.aspx?FamilyID=b46d4b83-a821-40bc-aa85-c9ee3d6e9699&DisplayLang=en
 
 
@@ -40,22 +38,50 @@ Instructions
 4. The output files are now in src/Setup/Release:
 
    * PaintDotNet.msi
+     This is the MSI that installs Paint.NET, but you shouldn't launch it
+     directly.
+     
+   * PaintDotNetSetup.exe
+     The "real" installer.
+     
      Suitable for web-based distribution. This is fairly small and
      installs just Paint.NET. 
             
      Successful installation requires that the following be true:
-        1. Windows XP SP1 or later is installed.
+        1. Windows 2000 or later is installed.
         2. .NET Framework 1.1 or later is installed.
-        3. The user has Administrator priviledges.
+        3. The user has Administrator privileges.
                 
    * PaintDotNetFull.exe
      This is the "full" installer that will install .NET 1.1 if it is not 
-     already installed. This file is over 20MB larger than PaintDotNet.msi,
-     but provides a very convenient "dummy-proof" installation.
+     already installed. This file is over 20MB larger than PaintDotNetSetup.exe
+     but provides a very convenient all-in-one installation package.
 
 For normal development work, use either the 'Release' or 'Debug' 
 configurations. This will skip the process of building all the setup packages,
 help file, and merge modules.
+
+
+Code Signing
+------------
+If you wish to sign your build of Paint.NET using Authenticode, you must set
+the following 3 environment variables:
+
+1. SIGNPDN=1
+2. PDNSPC=[full path to your SPC certificate file]
+3. PDNPVK=[full path to your PVK private key file]
+
+Edit signfile.bat as desired to set the package description and URL, and
+timestamp server URL.
+
+signcode.exe must be present in your PATH as well. It comes with Visual Studio.
+
+Note that this is NOT the same thing as .NET's strong naming facility.
+
+Paint.NET is written to only execute update packages that are signed.
+
+You will be prompted MANY times for your private key password during the build
+process. This is normal.
 
 
 Directory Layout
@@ -66,18 +92,7 @@ src/
 src/bin
     This is where the main Paint.NET executable and DLLs will be placed.
     When you build PDN, you should be able to run PaintDotNet.exe from this
-    directory, as all dependencies are in that directory.
-
-src/CpuCount
-    A small DLL written in C that allows us to detect the number of physical
-    processors present in a system. The reason for having this is that a
-    Pentium 4 (or Xeon) with HyperThreading normally shows up as having twice
-    as many CPUs as it actually has. So a dual-Xeon shows up as having four
-    "logical" CPUs but only two "physical" CPUs. We use this number to 
-    optimize rendering by using an appropriate number of threads.
-
-src/Cursors
-    Contains all the *.cur files used by Paint.NET, mostly for tools.
+    directory.
 
 src/Data
     Contains all data-related code, including loading and saving of images.
@@ -93,10 +108,6 @@ src/Effects
 src/Help
     Contains all the help files that are compiled into PaintDotNet.chm.
 
-src/icons
-    Contains all the *.ico and *.bmp icons that are used throughout the 
-    program.
-
 src/makechm
     A quick program that is used for compiling the help file. The reason we
     have this is that hhc.exe (the help compiler) returns 1 on success, but
@@ -108,7 +119,10 @@ src/obj
 
 src/PdnLib
     Contains the Paint.NET "library." This is code that is plausibly usable 
-    either outside of Paint.NET or required for Effects to link against.
+    either outside of Paint.NET or required for plugins to link against.
+
+src/Resources
+    Contains all the resources for Paint.NET, and some code for managing them.
 
 src/Setup
     Contains a project that is used to build PaintDotNet.msi. Note that the
@@ -119,6 +133,11 @@ src/Setup-Config
     using a VBS script so that it defaults to "Install for Everyone" instead
     of "Install for Just Me." It then packages together PaintDotNet.msi with
     dotnetfx.exe using NSIS (Nullsoft Scriptable Installation System).
+
+src/SetupFrontEnd
+    Contains our front-end to the setup MSI. This was written so that we can
+    localize (translate) the setup wizard, and also so that the installation
+    options can be preserved when updating or reinstalling.
 
 src/SetupNgen
     This is a program that is run as part of install and uninstall that "pre-
@@ -134,9 +153,15 @@ src/ShellExtension
 src/Skybound.VisualStyles
     Contains the DLL for the Skybound VisualStyles component.
 
+src/Strings
+    Contains the strings.resx for English/neutral locales.
+    
+src/Strings.de
+    Contains the strings.resx for German locales.
+
 src/SystemLayer
-    All P/Invoke and "system dependent" code goes in to the SystemLayer
-    assembly.
+    All P/Invoke and "system dependent" code, as well as hacks or workarounds,
+    go in to the SystemLayer assembly.
 
 src/tools
     Contains various tools necessary for building Paint.NET.

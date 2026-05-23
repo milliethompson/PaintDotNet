@@ -1,12 +1,14 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Collections;
 using System.Drawing;
 
 namespace PaintDotNet
@@ -21,11 +23,11 @@ namespace PaintDotNet
     public class CompoundHistoryAction
         : HistoryAction
     {
-        private HistoryAction[] actions;
+        private ArrayList actions;
 
         protected override void OnFlush()
         {
-            for (int i = 0; i < actions.Length; ++i)
+            for (int i = 0; i < actions.Count; ++i)
             {
                 if (actions[i] != null)
                 {
@@ -36,11 +38,11 @@ namespace PaintDotNet
 
         protected override HistoryAction OnUndo()
         {
-            HistoryAction[] redoActions = new HistoryAction[actions.Length];
+            ArrayList redoActions = new ArrayList(actions.Count);
 
-            for (int i = 0; i < actions.Length; ++i)
+            for (int i = 0; i < actions.Count; ++i)
             {
-                HistoryAction ha = actions[actions.Length - i - 1];
+                HistoryAction ha = (HistoryAction)actions[actions.Count - i - 1];
                 HistoryAction rha = null;
 
                 if (ha != null)
@@ -48,17 +50,28 @@ namespace PaintDotNet
                     rha = ha.PerformUndo();
                 }
 
-                redoActions[i] = rha;
+                redoActions.Add(rha);
             }
 
             CompoundHistoryAction cha = new CompoundHistoryAction(Name, Image, redoActions);
             return cha;
         }
 
+        public void PushNewAction(HistoryAction newHA)
+        {
+            actions.Add(newHA);
+        }
+
+        public CompoundHistoryAction(string name, Image image, ArrayList actions)
+            : base(name, image)
+        {
+            this.actions = (ArrayList)actions.Clone();
+        }
+
         public CompoundHistoryAction(string name, Image image, HistoryAction[] actions)
             : base(name, image)
         {
-            this.actions = (HistoryAction[])actions.Clone();
+            this.actions = new ArrayList(actions);
         }
     }
 }

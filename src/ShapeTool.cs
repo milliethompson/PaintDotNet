@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -25,16 +26,20 @@ namespace PaintDotNet
     public abstract class ShapeTool
         : Tool
     {
+        private bool moveOriginMode;
+        private PointF lastXY;
         private bool mouseDown;
         private MouseButtons mouseButton;
         private BitmapLayer bitmapLayer;
         private RenderArgs renderArgs;
-        private IrregularSurface interiorSaveSurface;
-        private IrregularSurface outlineSaveSurface;
+        private PdnRegion interiorSaveRegion;
+        private PdnRegion outlineSaveRegion;
         private ArrayList points;
-		private PdnRegion lastDrawnRegion = null;
-		private Cursor cursorMouseUp;
+        private PdnRegion lastDrawnRegion = null;
+        private Cursor cursorMouseUp;
         private Cursor cursorMouseDown;
+        private bool shapeWasCommited = true;
+        private CompoundHistoryAction chaAlreadyOnStack = null;
 
         protected override bool SupportsInk
         {
@@ -73,7 +78,6 @@ namespace PaintDotNet
                 forcedShapeDrawType = value;
             }
         }
-
 
         /// <summary>
         /// Different shapes may not require all the points given to them, and as such
@@ -114,8 +118,8 @@ namespace PaintDotNet
         {
             base.OnActivate();
 
-            outlineSaveSurface = null;
-            interiorSaveSurface = null;
+            outlineSaveRegion = null;
+            interiorSaveRegion = null;
 
             // creates a bitmap layer from the active layer
             bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
@@ -137,63 +141,89 @@ namespace PaintDotNet
                 OnStylusUp(new StylusEventArgs(mouseButton, 0, lastPoint.X, lastPoint.Y, 0));
             }
 
+            if (!this.shapeWasCommited)
+            {
+                CommitShape();
+            }
+
             bitmapLayer = null;
 
             if (renderArgs != null)
             {
                 renderArgs.Dispose();
+                renderArgs = null;
             }
 
-            renderArgs = null;
-
-            if (outlineSaveSurface != null)
+            if (outlineSaveRegion != null)
             {
-                outlineSaveSurface.Dispose();
+                outlineSaveRegion.Dispose();
+                outlineSaveRegion = null;
             }
 
-            outlineSaveSurface = null;
-
-            if (interiorSaveSurface != null)
+            if (interiorSaveRegion != null)
             {
-                interiorSaveSurface.Dispose();
+                interiorSaveRegion.Dispose();
+                interiorSaveRegion = null;
             }
-
-            interiorSaveSurface = null;
 
             points = null;
+        }
+
+        protected virtual void OnShapeBegin()
+        {
+        }
+
+        /// <summary>
+        /// Called when the shape is finished being traced by the default input handlers.
+        /// </summary>
+        /// <remarks>Do not call the base implementation of this method if you are overriding it.</remarks>
+        /// <returns>true to commit the shape immediately</returns>
+        protected virtual bool OnShapeEnd()
+        {
+            return true;
         }
 
         protected override void OnStylusDown(StylusEventArgs  e)
         {
             base.OnStylusDown(e);
 
-			cursorMouseUp = Cursor;
-			Cursor = cursorMouseDown;
+            if (!this.shapeWasCommited)
+            {
+                CommitShape();
+            }
+            
+            this.ClearSavedMemory();
+            this.ClearSavedRegion();
 
-            if (mouseDown)
+            cursorMouseUp = Cursor;
+            Cursor = cursorMouseDown;
+
+            if (mouseDown && e.Button == mouseButton)
             {
                 return;
             }
 
-            if (((e.Button & MouseButtons.Left) == MouseButtons.Left) ||
-                ((e.Button & MouseButtons.Right) == MouseButtons.Right))
+            if (mouseDown)
             {
+                moveOriginMode = true;
+                lastXY = new PointF(e.Fx, e.Fy);
+                OnStylusMove(e);
+            }
+            else if (((e.Button & MouseButtons.Left) == MouseButtons.Left) ||
+                     ((e.Button & MouseButtons.Right) == MouseButtons.Right))
+            {
+                // begin new shape
+                this.shapeWasCommited = false;
+
+                OnShapeBegin();
+
                 mouseDown = true;
                 mouseButton = e.Button;
 
-                PdnRegion clipRegion = null;
-                
-                if (!Workspace.Environment.IsSelectionEmpty)
+                using (PdnRegion clipRegion = Workspace.Environment.Selection.CreateRegion())
                 {
-                    clipRegion = Workspace.Environment.CreateSelectedRegion();
+                    renderArgs.Graphics.SetClip(clipRegion.GetRegionReadOnly(), CombineMode.Replace);
                 }
-                else
-                {
-                    clipRegion = new PdnRegion(Workspace.Document.Bounds);
-                }
-
-                renderArgs.Graphics.SetClip(clipRegion, CombineMode.Replace);
-                clipRegion.Dispose();
 
                 // reset the points we're drawing!
                 points = new ArrayList();
@@ -206,7 +236,21 @@ namespace PaintDotNet
         {
             base.OnStylusMove (e);
 
-            if (mouseDown && ((e.Button & mouseButton) != MouseButtons.None))
+            if (moveOriginMode)
+            {
+                SizeF delta = new SizeF(e.Fx - lastXY.X, e.Fy - lastXY.Y);
+
+                for (int i = 0; i < points.Count; ++i)
+                {
+                    PointF ptF = (PointF)points[i];
+                    ptF.X += delta.Width;
+                    ptF.Y += delta.Height;
+                    points[i] = ptF;
+                }
+
+                lastXY = new PointF(e.Fx, e.Fy);
+            }
+            else if (mouseDown && ((e.Button & mouseButton) != MouseButtons.None))
             {
                 PointF mouseXY = new PointF(e.Fx, e.Fy);
                 points.Add(mouseXY);
@@ -218,7 +262,19 @@ namespace PaintDotNet
             return PixelOffsetMode.Half;
         }
 
-        private void Render()
+        protected ArrayList GetTrimmedShapePath()
+        {
+            ArrayList pointsCopy = (ArrayList)this.points.Clone();
+            pointsCopy = TrimShapePath(pointsCopy);
+            return pointsCopy;
+        }
+
+        protected void SetShapePath(ArrayList newPoints)
+        {
+            this.points = newPoints;
+        }
+
+        protected void RenderShape()
         {
             // create the Pen we will use to draw with
             Pen outlinePen = null;
@@ -246,20 +302,18 @@ namespace PaintDotNet
             outlinePen.MiterLimit = 2;
 
             // redraw the old saveSurface
-            if (interiorSaveSurface != null)
+            if (interiorSaveRegion != null)
             {
-                interiorSaveSurface.Draw(bitmapLayer.Surface);
-                bitmapLayer.Invalidate(interiorSaveSurface.Region);
-                interiorSaveSurface.Dispose();
-                interiorSaveSurface = null;
+                RestoreRegion(interiorSaveRegion);
+                interiorSaveRegion.Dispose();
+                interiorSaveRegion = null;
             }
 
-            if (outlineSaveSurface != null)
+            if (outlineSaveRegion != null)
             {
-                outlineSaveSurface.Draw(bitmapLayer.Surface);
-                bitmapLayer.Invalidate(outlineSaveSurface.Region);
-                outlineSaveSurface.Dispose();
-                outlineSaveSurface = null;
+                RestoreRegion(outlineSaveRegion);
+                outlineSaveRegion.Dispose();
+                outlineSaveRegion = null;
             }
 
             // anti-aliasing? Don't mind if I do
@@ -302,8 +356,18 @@ namespace PaintDotNet
 
                 using (PdnGraphicsPath outlinePath = (PdnGraphicsPath)shapePath.Clone())
                 {
-                    outlinePath.Widen(outlinePen);
-                    outlineRegion = new PdnRegion(outlinePath);
+                    try
+                    {
+                        outlinePath.Widen(outlinePen);
+                        outlineRegion = new PdnRegion(outlinePath);
+                    }
+
+                    // Sometimes GDI+ gets cranky if we have a very small shape (e.g. all points
+                    // are coincident). 
+                    catch (OutOfMemoryException)
+                    {
+                        outlineRegion = new PdnRegion(shapePath);
+                    }
                 }
 
                 // create optimized outlineRegion for purposes of rendering, if it is possible to do so
@@ -320,7 +384,7 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    invalidOutlineRegion = Utility.SimplifyAndInflateRegion(outlineRegion, Utility.DefaultSimplificationFactor, 2);
+                    invalidOutlineRegion = Utility.SimplifyAndInflateRegion(outlineRegion, Utility.DefaultSimplificationFactor, (int)(outlinePen.Width + 2));
                 }
 
                 // create optimized interior region
@@ -330,12 +394,13 @@ namespace PaintDotNet
                 invalidRegion.MakeEmpty();
 
                 // set up alpha blending
-                renderArgs.Graphics.CompositingMode = CompositingMode.SourceOver;
+                renderArgs.Graphics.CompositingMode = Workspace.Environment.GetCompositingMode();
 
-                outlineSaveSurface = new IrregularSurface(bitmapLayer.Surface, invalidOutlineRegion);
+                SaveRegion(invalidOutlineRegion, invalidOutlineRegion.GetBoundsInt());
+                this.outlineSaveRegion = invalidOutlineRegion;
                 if ((drawType & ShapeDrawType.Outline) != 0)
                 {
-                    renderArgs.Graphics.DrawPath(outlinePen, shapePath);
+                    shapePath.Draw(renderArgs.Graphics, outlinePen);
                 }
 
                 invalidRegion.Union(invalidOutlineRegion);
@@ -343,22 +408,32 @@ namespace PaintDotNet
                 // draw shape
                 if ((drawType & ShapeDrawType.Interior) != 0)
                 {
-                    interiorSaveSurface = new IrregularSurface(bitmapLayer.Surface, invalidInteriorRegion);
+                    SaveRegion(invalidInteriorRegion, invalidInteriorRegion.GetBoundsInt());
+                    this.interiorSaveRegion = invalidInteriorRegion;
                     renderArgs.Graphics.FillPath(interiorBrush, shapePath);
                     invalidRegion.Union(invalidInteriorRegion);
+                }
+                else
+                {
+                    invalidInteriorRegion.Dispose();
+                    invalidInteriorRegion = null;
                 }
 
                 bitmapLayer.Invalidate(invalidRegion);
                 invalidRegion.Dispose();
 
-                invalidInteriorRegion.Dispose();
-                invalidOutlineRegion.Dispose();
                 outlineRegion.Dispose();
                 interiorRegion.Dispose();
             }
 
-            Workspace.Update();
-            Utility.Dispose(shapePath);
+            Update();
+
+            if (shapePath != null)
+            {
+                shapePath.Dispose();
+                shapePath = null;
+            }
+
             outlinePen.Dispose();
             interiorBrush.Dispose();
         }
@@ -370,85 +445,135 @@ namespace PaintDotNet
             // if mouse button not down then leave function
             if (mouseDown && ((e.Button & mouseButton) != MouseButtons.None))
             {
-                Render();
+                RenderShape();
             }
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (mouseDown)
+            {
+                RenderShape();
+            }
+
+            base.OnKeyDown(e);
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            if (mouseDown)
+            {
+                RenderShape();
+            }
+
+            base.OnKeyUp(e);
+        }
+
+        protected virtual void OnShapeCommitting()
+        {
+        }
+
+        protected void CommitShape()
+        {
+            OnShapeCommitting();
+
+            mouseDown = false;
+
+            ArrayList has = new ArrayList();
+            PdnRegion activeRegion = Workspace.Environment.Selection.CreateRegion();
+
+            if (outlineSaveRegion != null)
+            {
+                using (PdnRegion clipTest = activeRegion.Clone())
+                {
+                    clipTest.Intersect(outlineSaveRegion);
+                    
+                    if (!clipTest.IsEmpty())
+                    {
+                        BitmapHistoryAction bha = new BitmapHistoryAction(Name, Image, this.Workspace, 
+                            this.Workspace.ActiveLayerIndex, outlineSaveRegion, this.ScratchSurface);
+
+                        has.Add(bha);
+                        outlineSaveRegion.Dispose();
+                        outlineSaveRegion = null;
+                    }
+                }
+            }
+
+            if (interiorSaveRegion != null)
+            {
+                using (PdnRegion clipTest = activeRegion.Clone())
+                {
+                    clipTest.Intersect(interiorSaveRegion);
+                        
+                    if (!clipTest.IsEmpty())
+                    {
+                        BitmapHistoryAction bha = new BitmapHistoryAction(Name, Image, this.Workspace, 
+                            this.Workspace.ActiveLayerIndex, interiorSaveRegion, this.ScratchSurface);
+
+                        has.Add(bha);
+                        interiorSaveRegion.Dispose();
+                        interiorSaveRegion = null;
+                    }
+                }
+            }
+
+            if (has.Count > 0)
+            {
+                CompoundHistoryAction cha = new CompoundHistoryAction(Name, Image, (HistoryAction[])has.ToArray(typeof(HistoryAction)));
+
+                if (this.chaAlreadyOnStack == null)
+                {
+                    Workspace.History.PushNewAction(cha);
+                }
+                else
+                {
+                    this.chaAlreadyOnStack.PushNewAction(cha);
+                    this.chaAlreadyOnStack = null;
+                }
+            }
+
+            activeRegion.Dispose();
+            points = null;
+            Update();
+            this.shapeWasCommited = true;
         }
 
         protected override void OnStylusUp(StylusEventArgs e)
         {
             base.OnStylusUp(e);
 
-			Cursor = cursorMouseUp;
+            Cursor = cursorMouseUp;
 
-            if (mouseDown)
+            if (moveOriginMode)
             {
-                mouseDown = false;
+                moveOriginMode = false;
+            }
+            else if (mouseDown)
+            {
+                bool doCommit = OnShapeEnd();
 
-                ArrayList has = new ArrayList();
-                PdnRegion activeRegion;
-
-                if (Workspace.Environment.IsSelectionEmpty)
+                if (doCommit)
                 {
-                    activeRegion = new PdnRegion();
+                    CommitShape();
                 }
                 else
                 {
-                    activeRegion = Workspace.Environment.CreateSelectedRegion();
-                }
-
-                if (outlineSaveSurface != null)
-                {
-                    using (PdnRegion clipTest = activeRegion.Clone())
-                    {
-                        clipTest.Intersect(outlineSaveSurface.Region);
-                    
-                        if (!clipTest.IsEmpty())
-                        {
-                            //has.Add(bitmapLayer.CreateHistoryAction(Name, Image, outlineSaveSurface));
-                            has.Add(new BitmapHistoryAction(Name, Image, this.Workspace, this.Workspace.ActiveLayerIndex, outlineSaveSurface));
-                            outlineSaveSurface.Dispose();
-                            outlineSaveSurface = null;
-                        }
-                    }
-                }
-
-                if (interiorSaveSurface != null)
-                {
-                    using (PdnRegion clipTest = activeRegion.Clone())
-                    {
-                        clipTest.Intersect(interiorSaveSurface.Region);
-                        
-                        if (!clipTest.IsEmpty())
-                        {
-                            //has.Add(bitmapLayer.CreateHistoryAction(Name, Image, interiorSaveSurface));
-                            has.Add(new BitmapHistoryAction(Name, Image, this.Workspace, this.Workspace.ActiveLayerIndex, interiorSaveSurface));
-                            interiorSaveSurface.Dispose();
-                            interiorSaveSurface = null;
-                        }
-                    }
-                }
-
-                if (has.Count > 0)
-                {
-                    CompoundHistoryAction cha = new CompoundHistoryAction(Name, Image, (HistoryAction[])has.ToArray(typeof(HistoryAction)));
+                    // place a 'sentinel' history action on the stack that will be filled in later
+                    CompoundHistoryAction cha = new CompoundHistoryAction(Name, Image, new ArrayList());
                     Workspace.History.PushNewAction(cha);
+                    this.chaAlreadyOnStack = cha;
                 }
-
-                activeRegion.Dispose();
-                points = null;
-                Workspace.Update();
             }
         }
 
         public ShapeTool(DocumentWorkspace parent,
                          Image toolBarImage,
                          string name,
-                         string description,
                          string helpText)
             : this(parent,
                    toolBarImage,
                    name,
-                   description,
                    helpText,
                    'o')
         {
@@ -457,21 +582,19 @@ namespace PaintDotNet
         public ShapeTool(DocumentWorkspace parent,
                          Image toolBarImage,
                          string name,
-                         string description,
                          string helpText,
                          char hotKey)
             : base(parent,
                    toolBarImage,
                    name,
-                   description,
                    helpText,
                    hotKey)
         {
             mouseDown = false;
             points = null;
 
-			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.ShapeToolCursor.cur")); 
-			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.ShapeToolCursorMouseDown.cur"));
+            cursorMouseUp = new Cursor(PdnResources.GetResourceStream("Cursors.ShapeToolCursor.cur")); 
+            cursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.ShapeToolCursorMouseDown.cur"));
         }
 
         protected override void Dispose(bool disposing)
@@ -493,6 +616,5 @@ namespace PaintDotNet
                 }
             }
         }
-
     }
 }

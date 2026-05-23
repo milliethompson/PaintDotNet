@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -18,6 +19,14 @@ namespace PaintDotNet
     public class RotateAction
         : DocumentAction
     {
+        public static string StaticName
+        {
+            get
+            {
+                return PdnResources.GetString("RotateAction.Name");
+            }
+        }
+
         private RotateType rotation;
         
         public override HistoryAction PerformAction()
@@ -53,33 +62,33 @@ namespace PaintDotNet
             switch (rotation)
             {
                 case RotateType.Clockwise180:
-                    icon = Utility.GetImageResource("Icons.MenuImageRotate180CWIcon.bmp");
-                    suffix = "180° CW";
+                    icon = PdnResources.GetImage("Icons.MenuImageRotate180CWIcon.bmp");
+                    suffix = PdnResources.GetString("RotateAction.180CW");
                     break;
 
                 case RotateType.Clockwise270:
-                    icon = Utility.GetImageResource("Icons.MenuImageRotate270CWIcon.bmp");
-                    suffix = "270° CW";
+                    icon = PdnResources.GetImage("Icons.MenuImageRotate270CWIcon.bmp");
+                    suffix = PdnResources.GetString("RotateAction.270CW");
                     break;
 
                 case RotateType.Clockwise90:
-                    icon = Utility.GetImageResource("Icons.MenuImageRotate90CWIcon.bmp");
-                    suffix = "90° CW";
+                    icon = PdnResources.GetImage("Icons.MenuImageRotate90CWIcon.bmp");
+                    suffix = PdnResources.GetString("RotateAction.90CW");
                     break;
 
                 case RotateType.CounterClockwise180:
-                    icon = Utility.GetImageResource("Icons.MenuImageRotate180CCWIcon.bmp");
-                    suffix = "180° CCW";
+                    icon = PdnResources.GetImage("Icons.MenuImageRotate180CCWIcon.bmp");
+                    suffix = PdnResources.GetString("RotateAction.180CCW");
                     break;
 
                 case RotateType.CounterClockwise270:
-                    icon = Utility.GetImageResource("Icons.MenuImageRotate270CCWIcon.bmp");
-                    suffix = "270° CCW";
+                    icon = PdnResources.GetImage("Icons.MenuImageRotate270CCWIcon.bmp");
+                    suffix = PdnResources.GetString("RotateAction.270CCW");
                     break;
 
                 case RotateType.CounterClockwise90:
-                    icon = Utility.GetImageResource("Icons.MenuImageRotate90CCWIcon.bmp");
-                    suffix = "90° CCW";
+                    icon = PdnResources.GetImage("Icons.MenuImageRotate90CCWIcon.bmp");
+                    suffix = PdnResources.GetString("RotateAction.90CCW");
                     break;
 
                 case RotateType.NoRotation:
@@ -92,9 +101,11 @@ namespace PaintDotNet
             }
 
             // Initialize the new Doc
-            ReplaceDocumentHistoryAction rdha = new ReplaceDocumentHistoryAction(Name + " " + suffix, icon, Workspace);
+            string haNameFormat = PdnResources.GetString("RotateAction.HistoryActionName.Format");
+            string haName = string.Format(haNameFormat, this.Name, suffix);
+            ReplaceDocumentHistoryAction rdha = new ReplaceDocumentHistoryAction(haName, icon, Workspace);
             Document newDoc = new Document(newWidth, newHeight);
-            newDoc.CopyPropertiesFrom(Workspace.Document);
+            newDoc.ReplaceMetaDataFrom(Workspace.Document);
 
             foreach (Layer layer in Workspace.Document.Layers)
             {
@@ -157,7 +168,7 @@ namespace PaintDotNet
         }
 
         public RotateAction(DocumentWorkspace workspace, RotateType rotation)
-            : base(workspace, "Rotate")
+            : base(workspace, StaticName)
         {
             this.rotation = rotation;           
         }

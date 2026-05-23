@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -12,49 +13,49 @@ using System.Drawing.Drawing2D;
 
 namespace PaintDotNet.Effects
 {
-	/// <summary>
-	/// Summary description for EffectEnvironmentParameters.
-	/// </summary>
-	public class EffectEnvironmentParameters
+    /// <summary>
+    /// Summary description for EffectEnvironmentParameters.
+    /// </summary>
+    public class EffectEnvironmentParameters
         : IDisposable
-	{
-		public static EffectEnvironmentParameters DefaultParameters
-		{
-			get
-			{
-				return new EffectEnvironmentParameters(ColorBgra.FromBgra(255, 255, 255, 255),
-					                                   ColorBgra.FromBgra(0, 0, 0, 255),
-					                                   2.0f,
+    {
+        public static EffectEnvironmentParameters DefaultParameters
+        {
+            get
+            {
+                return new EffectEnvironmentParameters(ColorBgra.FromBgra(255, 255, 255, 255),
+                                                       ColorBgra.FromBgra(0, 0, 0, 255),
+                                                       2.0f,
                                                        new PdnRegion());
-			}
-		}
+            }
+        }
 
-		private ColorBgra foreColor = ColorBgra.FromBgra(0, 0, 0, 0);
-		public ColorBgra ForeColor 
-		{
-			get
-			{
-				return foreColor;
-			}
-		}
+        private ColorBgra foreColor = ColorBgra.FromBgra(0, 0, 0, 0);
+        public ColorBgra ForeColor 
+        {
+            get
+            {
+                return foreColor;
+            }
+        }
 
-		private ColorBgra backColor = ColorBgra.FromBgra(0, 0, 0, 0);
-		public ColorBgra BackColor
-		{
-			get 
-			{
-				return backColor;
-			}
-		}
+        private ColorBgra backColor = ColorBgra.FromBgra(0, 0, 0, 0);
+        public ColorBgra BackColor
+        {
+            get 
+            {
+                return backColor;
+            }
+        }
 
-		private float brushWidth = 0.0f;
-		public float BrushWidth 
-		{
-			get 
-			{
-				return brushWidth;
-			}
-		}
+        private float brushWidth = 0.0f;
+        public float BrushWidth 
+        {
+            get 
+            {
+                return brushWidth;
+            }
+        }
 
         private PdnRegion selection;
         private bool haveIntersectedSelection = false;

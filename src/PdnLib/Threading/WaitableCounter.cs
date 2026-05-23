@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -13,15 +14,15 @@ using System.Threading;
 
 namespace PaintDotNet.Threading
 {
-	/// <summary>
-	/// Threading primitive that allows you to "count" and to wait on two conditions:
-	/// 1. Empty -- this is when we have not dished out any "tokens"
-	/// 2. NotFull -- this is when we currently have 1 or more "tokens" out in the wild
-	/// Note that the tokens given by Acquire() *must* be disposed. Otherwise things
-	/// won't work right!
-	/// </summary>
-	public class WaitableCounter
-	{
+    /// <summary>
+    /// Threading primitive that allows you to "count" and to wait on two conditions:
+    /// 1. Empty -- this is when we have not dished out any "tokens"
+    /// 2. NotFull -- this is when we currently have 1 or more "tokens" out in the wild
+    /// Note that the tokens given by Acquire() *must* be disposed. Otherwise things
+    /// won't work right!
+    /// </summary>
+    public class WaitableCounter
+    {
         /// <summary>
         /// The minimum value that may be passed to the constructor for initialization.
         /// </summary>
@@ -122,5 +123,5 @@ namespace PaintDotNet.Threading
             return returnVal;
         }
 
-	}
+    }
 }

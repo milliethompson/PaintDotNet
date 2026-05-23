@@ -1,29 +1,34 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Runtime.Serialization;
 
 namespace PaintDotNet
 { 
     /// <summary>
     /// Summary description for PdnGraphicsPath.
     /// </summary>
-    public class PdnGraphicsPath
+    [Serializable]
+    public sealed class PdnGraphicsPath
         : MarshalByRefObject,
           ICloneable,
-          IDisposable
+          IDisposable,
+          ISerializable
     { 
         private GraphicsPath gdiPath;
-
+        private bool tooComplex = false;
         internal PdnRegion regionCache = null;
 
         public static implicit operator GraphicsPath(PdnGraphicsPath convert)
@@ -103,6 +108,53 @@ namespace PaintDotNet
             gdiPath = new GraphicsPath(pts, types, fillMode);
         }
 
+        public PdnGraphicsPath(SerializationInfo info, StreamingContext context)
+        {
+            int ptCount = info.GetInt32("ptCount");
+
+            PointF[] pts;
+            byte[] types;
+            
+            if (ptCount == 0)
+            {
+                pts = new PointF[0];
+                types = new byte[0];
+            }
+            else
+            {
+                pts = (PointF[])info.GetValue("pts", typeof(PointF[]));
+                types = (byte[])info.GetValue("types", typeof(byte[]));
+            }
+            
+            FillMode fillMode = (FillMode)info.GetValue("fillMode", typeof(FillMode));
+            Changed();
+
+            if (ptCount == 0)
+            {
+                gdiPath = new GraphicsPath();
+            }
+            else
+            {
+                gdiPath = new GraphicsPath(pts, types, fillMode);
+            }
+
+            this.tooComplex = false;
+            this.regionCache = null;
+        }
+
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            info.AddValue("ptCount", this.gdiPath.PointCount);
+
+            if (this.gdiPath.PointCount > 0)
+            {
+                info.AddValue("pts", this.gdiPath.PathPoints);
+                info.AddValue("types", this.gdiPath.PathTypes);
+            }
+
+            info.AddValue("fillMode", this.gdiPath.FillMode);
+        }
+
         public static PdnGraphicsPath FromRegion(PdnRegion region)
         {
             Rectangle bounds = region.GetBoundsInt();
@@ -115,7 +167,7 @@ namespace PaintDotNet
                 rect.X -= bounds.X;
                 rect.Y -= bounds.Y;
 
-                stencil.Set(rect, true);
+                stencil.SetUnchecked(rect, true);
             }
 
             PdnGraphicsPath path = PathFromStencil(stencil, new Rectangle(0, 0, stencil.Width, stencil.Height));
@@ -130,11 +182,187 @@ namespace PaintDotNet
             return path;
         }
 
+        public static PdnGraphicsPath FromRegions(PdnRegion lhs, CombineMode combineMode, PdnRegion rhs)
+        {
+            Rectangle lhsBounds = lhs.GetBoundsInt();
+            Rectangle rhsBounds = rhs.GetBoundsInt();
+            int left = Math.Min(lhsBounds.Left, rhsBounds.Left);
+            int top = Math.Min(lhsBounds.Top, rhsBounds.Top);
+            int right = Math.Max(lhsBounds.Right, rhsBounds.Right);
+            int bottom = Math.Max(lhsBounds.Bottom, rhsBounds.Bottom);
+            Rectangle bounds = Rectangle.FromLTRB(left, top, right, bottom);
+            BitVector2D stencil = new BitVector2D(bounds.Width, bounds.Height);
+            Rectangle[] lhsScans = lhs.GetRegionScansReadOnlyInt();
+            Rectangle[] rhsScans = rhs.GetRegionScansReadOnlyInt();
+
+            switch (combineMode)
+            {
+                case CombineMode.Complement:
+                case CombineMode.Intersect:
+                case CombineMode.Replace:
+                    throw new ArgumentException("combineMode can't be Complement, Intersect, or Replace");
+
+                default:
+                    break;
+            }
+
+            for (int i = 0; i < lhsScans.Length; ++i)
+            {
+                Rectangle rect = lhsScans[i];
+                rect.X -= bounds.X;
+                rect.Y -= bounds.Y;
+
+                stencil.SetUnchecked(rect, true);
+            }
+
+            for (int i = 0; i < rhsScans.Length; ++i)
+            {
+                Rectangle rect = rhsScans[i];
+                rect.X -= bounds.X;
+                rect.Y -= bounds.Y;
+
+                switch (combineMode)
+                {
+                    case CombineMode.Xor:
+                        stencil.InvertUnchecked(rect);
+                        break;
+
+                    case CombineMode.Union:
+                        stencil.SetUnchecked(rect, true);
+                        break;
+                    
+                    case CombineMode.Exclude:
+                        stencil.SetUnchecked(rect, false);
+                        break;
+                }
+            }
+
+            PdnGraphicsPath path = PathFromStencil(stencil, new Rectangle(0, 0, stencil.Width, stencil.Height));
+
+            using (Matrix matrix = new Matrix())
+            {
+                matrix.Reset();
+                matrix.Translate(bounds.X, bounds.Y);
+                path.Transform(matrix);
+            }
+
+            return path;
+        }
+
+        public unsafe static Point[][] PolygonSetFromStencil(IBitVector2D stencil, Rectangle bounds, int translateX, int translateY)
+        {
+            ArrayList polygons = new ArrayList(10);
+
+            if (!stencil.IsEmpty)
+            {
+                Point start = bounds.Location;
+                PointVector pts = new PointVector(64);
+                int count = 0;
+
+                // find all islands
+                while (true) 
+                {
+                    bool startFound = false;
+
+                    while (true)
+                    {
+                        if (stencil[start])
+                        {
+                            startFound = true;
+                            break;
+                        }
+
+                        ++start.X;
+
+                        if (start.X >= bounds.Right)
+                        {
+                            ++start.Y;
+                            start.X = bounds.Left;
+
+                            if (start.Y >= bounds.Bottom)
+                            {
+                                break;
+                            }
+                        }
+                    }
+            
+                    if (!startFound)
+                    {
+                        break;
+                    }
+
+                    pts.Clear();
+                    Point last = new Point(start.X, start.Y + 1);
+                    Point curr = new Point(start.X, start.Y);
+                    Point next = curr;
+                    Point left = Point.Empty;
+                    Point right = Point.Empty;
+            
+                    // trace island outline
+                    while (true)
+                    {
+                        left.X = ((curr.X - last.X) + (curr.Y - last.Y) + 2) / 2 + curr.X - 1;
+                        left.Y = ((curr.Y - last.Y) - (curr.X - last.X) + 2) / 2 + curr.Y - 1;
+
+                        right.X = ((curr.X - last.X) - (curr.Y - last.Y) + 2) / 2 + curr.X - 1;
+                        right.Y = ((curr.Y - last.Y) + (curr.X - last.X) + 2) / 2 + curr.Y - 1;
+
+                        if (Utility.IsPointInRectangle(left, bounds) && stencil[left])
+                        {
+                            // go left
+                            next.X += curr.Y - last.Y;
+                            next.Y -= curr.X - last.X;
+                        }
+                        else if (Utility.IsPointInRectangle(right, bounds) && stencil[right])
+                        {
+                            // go straight
+                            next.X += curr.X - last.X;
+                            next.Y += curr.Y - last.Y;
+                        }
+                        else
+                        {
+                            // turn right
+                            next.X -= curr.Y - last.Y;
+                            next.Y += curr.X - last.X;
+                        }
+
+                        if (Math.Sign(next.X - curr.X) != Math.Sign(curr.X - last.X) ||
+                            Math.Sign(next.Y - curr.Y) != Math.Sign(curr.Y - last.Y))
+                        {
+                            pts.Add(curr);
+                            ++count;
+                        }
+
+                        last = curr;
+                        curr = next;
+
+                        if (next.X == start.X && next.Y == start.Y)
+                        {
+                            break;
+                        }
+                    }
+
+                    Point[] points = pts.GetPointArray();
+                    Scanline[] scans = Utility.GetScans(points);
+
+                    foreach (Scanline scan in scans)
+                    {
+                        stencil.Invert(scan);
+                    }
+
+                    Utility.TranslatePointsInPlace(points, translateX, translateY);
+                    polygons.Add(points);
+                }
+            }
+
+            return (Point[][])polygons.ToArray(typeof(Point[]));
+        }
+
         /// <summary>
         /// Creates a graphics path from the given stencil buffer. It should be filled with 'true' values
         /// to indicate the areas that should be outlined.
         /// </summary>
-        /// <param name="stencil">The stencil buffer to read from. NOTE: The contents of this will be destroyed when this method returns.</param>param>
+        /// <param name="stencil">The stencil buffer to read from. NOTE: The contents of this will be destroyed when this method returns.</param>
         /// <param name="bounds">The bounding box within the stencil buffer to limit discovery to.</param>
         /// <returns>A PdnGraphicsPath with traces that outline the various areas from the given stencil buffer.</returns>
         public unsafe static PdnGraphicsPath PathFromStencil(IBitVector2D stencil, Rectangle bounds)
@@ -191,7 +419,6 @@ namespace PaintDotNet
                 // trace island outline
                 while (true)
                 {
-
                     left.X = ((curr.X - last.X) + (curr.Y - last.Y) + 2) / 2 + curr.X - 1;
                     left.Y = ((curr.Y - last.Y) - (curr.X - last.X) + 2) / 2 + curr.Y - 1;
 
@@ -200,19 +427,19 @@ namespace PaintDotNet
 
                     if (Utility.IsPointInRectangle(left, bounds) && stencil[left])
                     {
-                        //go left
+                        // go left
                         next.X += curr.Y - last.Y;
                         next.Y -= curr.X - last.X;
                     }
                     else if (Utility.IsPointInRectangle(right, bounds) && stencil[right])
                     {
-                        //go straight
+                        // go straight
                         next.X += curr.X - last.X;
                         next.Y += curr.Y - last.Y;
                     }
                     else
                     {
-                        //turn right
+                        // turn right
                         next.X -= curr.Y - last.Y;
                         next.Y += curr.X - last.X;
                     }
@@ -223,6 +450,7 @@ namespace PaintDotNet
                         pts.Add(curr);
                         ++count;
                     }
+
                     last = curr;
                     curr = next;
 
@@ -232,17 +460,16 @@ namespace PaintDotNet
                     }
                 }
 
-                using (PdnGraphicsPath path = new PdnGraphicsPath())
+                Point[] points = pts.GetPointArray();
+                Scanline[] scans = Utility.GetScans(points);
+
+                foreach (Scanline scan in scans)
                 {
-                    path.AddPolygon(pts.GetPointArray());
-
-                    using (PdnRegion inner = new PdnRegion(path))
-					{
-						stencil.Invert(inner);
-                    }
-
-                    ret.AddPath(path, false);
+                    stencil.Invert(scan);
                 }
+
+                ret.AddLines(points);
+                ret.CloseFigure();
             }
 
             return ret;
@@ -254,9 +481,36 @@ namespace PaintDotNet
             Dispose(false);
         }
 
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        { 
+            if (disposing)
+            { 
+                if (gdiPath != null)
+                {
+                    gdiPath.Dispose();
+                    gdiPath = null;
+                }
+
+                if (regionCache != null)
+                {
+                    regionCache.Dispose();
+                    regionCache = null;
+                }
+            }
+        }
+
         public FillMode FillMode
         { 
-            get { return gdiPath.FillMode; }
+            get 
+            { 
+                return gdiPath.FillMode; 
+            }
 
             set 
             { 
@@ -267,22 +521,34 @@ namespace PaintDotNet
 
         public PathData PathData
         { 
-            get { return gdiPath.PathData; }
+            get 
+            { 
+                return gdiPath.PathData; 
+            }
         }
 
         public PointF[] PathPoints
         { 
-            get { return gdiPath.PathPoints; }
+            get 
+            { 
+                return gdiPath.PathPoints; 
+            }
         }
 
         public byte[] PathTypes
         { 
-            get { return gdiPath.PathTypes; }
+            get 
+            { 
+                return gdiPath.PathTypes; 
+            }
         }
 
         public int PointCount
         { 
-            get { return gdiPath.PointCount; }
+            get 
+            { 
+                return gdiPath.PointCount; 
+            }
         }
 
         public void AddArc(Rectangle rect, float startAngle, float sweepAngle)
@@ -467,8 +733,11 @@ namespace PaintDotNet
 
         public void AddPath(GraphicsPath addingPath, bool connect)
         {
-            Changed();
-            gdiPath.AddPath(addingPath, connect);
+            if (addingPath.PointCount != 0)
+            {
+                Changed();
+                gdiPath.AddPath(addingPath, connect);
+            }
         }
 
         public void AddPie(Rectangle rect, float startAngle, float sweepAngle)
@@ -501,6 +770,24 @@ namespace PaintDotNet
             gdiPath.AddPolygon(points);
         }
 
+        public void AddPolygons(PointF[][] polygons)
+        {
+            foreach (PointF[] polygon in polygons)
+            {
+                AddPolygon(polygon);
+                CloseFigure();
+            }
+        }
+
+        public void AddPolygons(Point[][] polygons)
+        {
+            foreach (Point[] polygon in polygons)
+            {
+                AddPolygon(polygon);
+                CloseFigure();
+            }
+        }
+
         public void AddRectangle(Rectangle rect)
         {
             Changed();
@@ -531,20 +818,17 @@ namespace PaintDotNet
             gdiPath.AddString(s, family, style, emSize, origin, format);
         }
 
-
         public void AddString(string s, FontFamily family, int style, float emSize, PointF origin, StringFormat format)
         {
             Changed();
             gdiPath.AddString(s, family, style, emSize, origin, format);
         }
 
-
         public void AddString(string s, FontFamily family, int style, float emSize, Rectangle layoutRect, StringFormat format)
         {
             Changed();
             gdiPath.AddString(s, family, style, emSize, layoutRect, format);
         }
-
 
         public void AddString(string s, FontFamily family, int style, float emSize, RectangleF layoutRect, StringFormat format)
         {
@@ -558,9 +842,16 @@ namespace PaintDotNet
             gdiPath.ClearMarkers();
         }
 
-        public virtual object Clone()
+        object ICloneable.Clone()
         {
-            return new PdnGraphicsPath((GraphicsPath)gdiPath.Clone());
+            return Clone();
+        }
+
+        public PdnGraphicsPath Clone()
+        {
+            PdnGraphicsPath path = new PdnGraphicsPath((GraphicsPath)gdiPath.Clone());
+            path.tooComplex = this.tooComplex;
+            return path;
         }
 
         public void CloseAllFigures()
@@ -575,25 +866,44 @@ namespace PaintDotNet
             gdiPath.CloseFigure();
         }
 
-        private bool disposed = false;
-        public virtual void Dispose()
+        public void Draw(Graphics g, Pen pen)
         {
-            Changed();
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            Draw(g, pen, false);
         }
 
-        private void Dispose(bool disposing)
-        { 
-            if (!disposed)
-            { 
-                if (disposing)
-                { 
-                    gdiPath.Dispose();
-                    gdiPath = null;
-                }
+        /// <summary>
+        /// Draws the path to the given Graphics context using the given Pen.
+        /// </summary>
+        /// <param name="g">The Graphics context to draw to.</param>
+        /// <param name="pen">The Pen to draw with.</param>
+        /// <param name="presentationIntent">
+        /// If true, gives a hint that the path is being drawn to be presented to the user.
+        /// </param>
+        /// <remarks>
+        /// If the path is "too complex," and if presentationIntent is true, then the path will
+        /// not be drawn. To force the path to be drawn, set presentationIntent to false.
+        /// </remarks>
+        public void Draw(Graphics g, Pen pen, bool presentationIntent)
+        {
+            try
+            {
+                if (!tooComplex || !presentationIntent)
+                {
+                    int start = Environment.TickCount;
+                    g.DrawPath(pen, this.gdiPath);
+                    int end = Environment.TickCount;
 
-                disposed = true;
+                    if ((end - start) > 1000)
+                    {
+                        tooComplex = true;
+                    }
+                }
+            }
+
+            catch (OutOfMemoryException ex)
+            {
+                tooComplex = true;
+                Tracing.Ping("DrawPath exception: " + ex);
             }
         }
 
@@ -680,6 +990,14 @@ namespace PaintDotNet
             return gdiPath.GetLastPoint();
         }
 
+        public bool IsEmpty
+        {
+            get
+            {
+                return this.PointCount == 0;
+            }
+        }
+
         public bool IsOutlineVisible(Point point, Pen pen)
         {
             return gdiPath.IsOutlineVisible(point, pen);
@@ -763,6 +1081,7 @@ namespace PaintDotNet
         public void Reset()
         {
             Changed();
+            this.tooComplex = false;
             gdiPath.Reset();
         }
 

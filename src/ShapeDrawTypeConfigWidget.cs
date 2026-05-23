@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -44,13 +45,17 @@ namespace PaintDotNet
 
             this.dotNetToolbar.ImageList = imageList;
 
-            int outlineIndex = imageList.Images.Add(Utility.GetImageResource("Icons.ShapeOutlineIcon.bmp"), imageList.TransparentColor);
-            int bothIndex = imageList.Images.Add(Utility.GetImageResource("Icons.ShapeBothIcon.bmp"), imageList.TransparentColor);
-            int interiorIndex = imageList.Images.Add(Utility.GetImageResource("Icons.ShapeInteriorIcon.bmp"), imageList.TransparentColor);
+            int outlineIndex = imageList.Images.Add(PdnResources.GetImage("Icons.ShapeOutlineIcon.bmp"), imageList.TransparentColor);
+            int bothIndex = imageList.Images.Add(PdnResources.GetImage("Icons.ShapeBothIcon.bmp"), imageList.TransparentColor);
+            int interiorIndex = imageList.Images.Add(PdnResources.GetImage("Icons.ShapeInteriorIcon.bmp"), imageList.TransparentColor);
 
             outlineButton.ImageIndex = outlineIndex;
             interiorButton.ImageIndex = interiorIndex;
-            bothButton.ImageIndex = bothIndex;          
+            bothButton.ImageIndex = bothIndex;   
+       
+            this.outlineButton.ToolTipText = PdnResources.GetString("ShapeDrawTypeConfigWidget.OutlineButton.ToolTipText");
+            this.interiorButton.ToolTipText = PdnResources.GetString("ShapeDrawTypeConfigWidget.InteriorButton.ToolTipText");
+            this.bothButton.ToolTipText = PdnResources.GetString("ShapeDrawTypeConfigWidget.BothButton.ToolTipText");
         }
 
         public event EventHandler ShapeDrawTypeChanged;
@@ -151,21 +156,11 @@ namespace PaintDotNet
             this.dotNetToolbar.Name = "dotNetToolbar";
             this.dotNetToolbar.Size = new System.Drawing.Size(144, 26);
             this.dotNetToolbar.TabIndex = 1;
-            this.dotNetToolbar.EnabledChanged += new System.EventHandler(this.dotNetToolbar_EnabledChanged);
             this.dotNetToolbar.ButtonClick += new DotNetWidgets.DotNetToolbar.ButtonClickEventHandler(this.dotNetToolbar_ButtonClick);
             // 
             // outlineButton
             // 
             this.outlineButton.BeginGroup = true;
-            this.outlineButton.ToolTipText = "Draw shape outline";
-            // 
-            // interiorButton
-            // 
-            this.interiorButton.ToolTipText = "Draw filled shape";
-            // 
-            // bothButton
-            // 
-            this.bothButton.ToolTipText = "Draw filled shape with outline";
             // 
             // ShapeDrawTypeConfigWidget
             // 
@@ -187,17 +182,9 @@ namespace PaintDotNet
             {
                 this.ShapeDrawType = ShapeDrawType.Both;
             }
-            if (e.Button == interiorButton)
+            else if (e.Button == interiorButton)
             {
                 this.ShapeDrawType = ShapeDrawType.Interior;
-            }
-        }
-
-        private void dotNetToolbar_EnabledChanged(object sender, System.EventArgs e)
-        {
-            foreach (DotNetToolbarItem dntbi in dotNetToolbar.Buttons)
-            {
-                dntbi.Enabled = this.Enabled;
             }
         }
     

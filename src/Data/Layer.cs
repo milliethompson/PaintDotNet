@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -82,10 +83,43 @@ namespace PaintDotNet
             public bool isBackground;
             public byte opacity;
 
-            public const string IsBackgroundName = "Background Status";
-            public const string NameName = "Name";
-            public const string VisibleName = "Visibility";
-            public const string OpacityName = "Opacity";
+            private const string nameTag = "name";
+            private const string userMetaDataTag = "userMetaData";
+            private const string visibleTag = "visible";
+            private const string isBackgroundTag = "isBackground";
+            private const string opacityTag = "opacity";
+
+            public static string IsBackgroundName
+            {
+                get
+                {
+                    return PdnResources.GetString("Layer.Properties.IsBackground.Name");
+                }
+            }
+
+            public static string NameName 
+            {
+                get
+                {
+                    return PdnResources.GetString("Layer.Properties.Name.Name");
+                }
+            }
+
+            public static string VisibleName
+            {
+                get
+                {
+                    return PdnResources.GetString("Layer.Properties.Visible.Name");
+                }
+            }
+
+            public static string OpacityName 
+            {
+                get
+                {
+                    return PdnResources.GetString("Layer.Properties.Opacity.Name");
+                }
+            }
 
             public LayerProperties(string name, NameValueCollection userMetaData, bool visible, bool isBackground, byte opacity)
             {
@@ -105,32 +139,26 @@ namespace PaintDotNet
                 this.opacity = copyMe.opacity;
             }
 
-            #region ICloneable Members
-
             public object Clone()
             {
                 return new LayerProperties(this);
             }
 
-            #endregion
-
-            #region ISerializable Members
-
             public LayerProperties(SerializationInfo info, StreamingContext context)
             {
-                this.name = info.GetString("name");
-                this.userMetaData = (NameValueCollection)info.GetValue("userMetaData", typeof(NameValueCollection));
-                this.visible = info.GetBoolean("visible");
-                this.isBackground = info.GetBoolean("isBackground");
+                this.name = info.GetString(nameTag);
+                this.userMetaData = (NameValueCollection)info.GetValue(userMetaDataTag, typeof(NameValueCollection));
+                this.visible = info.GetBoolean(visibleTag);
+                this.isBackground = info.GetBoolean(isBackgroundTag);
                 
                 // This property was added with v2.1. So as to allow loading old .PDN files,
                 // this is an optional item.
-                // (History note: this property was actually moved from the BitmapLayer
+                // (Historical note: this property was actually moved from the BitmapLayer
                 //  properties to the base class because it was found to be a rather important
                 //  property for rendering regardless of layer "type")
                 try
                 {
-                    this.opacity = info.GetByte("opacity");
+                    this.opacity = info.GetByte(opacityTag);
                 }
 
                 catch (SerializationException)
@@ -141,14 +169,12 @@ namespace PaintDotNet
 
             public void GetObjectData(SerializationInfo info, StreamingContext context)
             {
-                info.AddValue("name", name);
-                info.AddValue("userMetaData", userMetaData);
-                info.AddValue("visible", visible);
-                info.AddValue("isBackground", isBackground);
-                info.AddValue("opacity", opacity);
+                info.AddValue(nameTag, name);
+                info.AddValue(userMetaDataTag, userMetaData);
+                info.AddValue(visibleTag, visible);
+                info.AddValue(isBackgroundTag, isBackground);
+                info.AddValue(opacityTag, opacity);
             }
-
-            #endregion
         }
 
         private LayerProperties properties;
@@ -622,7 +648,7 @@ namespace PaintDotNet
             // but on subsequent layers we invert transparent white -> transparent black, which shows up as white for the most part
             BitmapLayer layer = new BitmapLayer(width, height, ColorBgra.White);
 
-            layer.Name = "Background";
+            layer.Name = PdnResources.GetString("Layer.Background.Name");
 
             // tag it as a background layer
             layer.properties.isBackground = true;
@@ -643,7 +669,6 @@ namespace PaintDotNet
             Dispose(false);
         }
 
-        #region IDisposable Members
         public void Dispose()
         {
             Dispose(true);
@@ -662,6 +687,5 @@ namespace PaintDotNet
                 }
             }
         }
-        #endregion
     }
 }

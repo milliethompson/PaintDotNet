@@ -1,0 +1,754 @@
+<VisualStudioProject>
+    <CSHARP
+        ProjectType = "Local"
+        ProductVersion = "7.10.3077"
+        SchemaVersion = "2.0"
+        ProjectGuid = "{056DF4A6-8466-4D9D-81F9-F65283126285}"
+    >
+        <Build>
+            <Settings
+                ApplicationIcon = ""
+                AssemblyKeyContainerName = ""
+                AssemblyName = "Help"
+                AssemblyOriginatorKeyFile = ""
+                DefaultClientScript = "JScript"
+                DefaultHTMLPageLayout = "Grid"
+                DefaultTargetSchema = "IE50"
+                DelaySign = "false"
+                OutputType = "Exe"
+                PreBuildEvent = ""
+                PostBuildEvent = ""
+                RootNamespace = "Help"
+                RunPostBuildEvent = "OnBuildSuccess"
+                StartupObject = ""
+            >
+                <Config
+                    Name = "Debug"
+                    AllowUnsafeBlocks = "false"
+                    BaseAddress = "285212672"
+                    CheckForOverflowUnderflow = "false"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = ""
+                    DocumentationFile = ""
+                    DebugSymbols = "true"
+                    FileAlignment = "4096"
+                    IncrementalBuild = "false"
+                    NoStdLib = "false"
+                    NoWarn = ""
+                    Optimize = "false"
+                    OutputPath = "bin\Debug\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "false"
+                    WarningLevel = "1"
+                />
+                <Config
+                    Name = "Release"
+                    AllowUnsafeBlocks = "false"
+                    BaseAddress = "285212672"
+                    CheckForOverflowUnderflow = "false"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = ""
+                    DocumentationFile = ""
+                    DebugSymbols = "false"
+                    FileAlignment = "4096"
+                    IncrementalBuild = "false"
+                    NoStdLib = "false"
+                    NoWarn = ""
+                    Optimize = "false"
+                    OutputPath = "bin\Release\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "false"
+                    WarningLevel = "1"
+                />
+            </Settings>
+            <References/>
+        </Build>
+        <Files>
+            <Include>
+                <File
+                    RelPath = "index.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "stylesheet.css"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Adjustments.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\CloneStamp.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\ColorsWindow.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Edit.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Effects.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\EraserTool.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\FAQ.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Features.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\File.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Help.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\HistoryWindow.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Image.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\index.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\KeyboardMouseCommands.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Layers.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\LayersWindow.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Levels.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\License.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\LineCurve.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\MagicWand.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\MainWindow.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\MenuBar.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\MoveTools.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Paintbrush.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\PaintBucket.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\PixelTools.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\RecolorTool.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\RotateZoom.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\SelectionTools.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\ShapeTools.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\StatusBar.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\SystemRequirements.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\TextTool.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Toolbar.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Tools.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\ToolsWindow.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\UnattendedInstallation.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\View.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\WebLinks.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Window.html"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\AboutDialog.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\AcquireMenu.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\AdjustmentsMenu.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\CanvasSize.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\ColorsWindowLess.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\ColorsWindowMore.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\ComboSelect.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\ComboSelect2.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\EditMenu.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\EffectsMenu.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\filemenu.gif"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\HelpMenu.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\HistoryWindow.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\ImageMenu.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\ImportFromFile.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\LanguageMenu.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\LayerProperties.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\LayersFlipMenu.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\LayersMenu.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\LayersWindow.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\Levels1.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\Levels2.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\MainWindow.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\menubar.gif"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\MoveTools.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\NewDialog.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\PaintBucket_AfterFill.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\PaintBucket_BeforeFill.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\PencilTool_After.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\PencilTool_Before.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\PixelTools.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\PrintWizard.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\RectangleSelect.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\ResizeDialog.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\RotateZoom.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\SaveConfigDialog.gif"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\SelectionTools.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\ShapeTools.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\StatusBar.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\TextTool_using.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\Toolbar.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\Toolbar_CommonActions.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\Toolbar_DrawingControls.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\Toolbar_TextControls.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\Toolbar_ViewControls.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\ToolsMenu.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\ToolsWindow_Annotated.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\UpdatesDialog.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\UpdatesMenu.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\viewmenu.gif"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "en\Images\WindowMenu.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\aaVSnoAA.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\bmw.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\bmw_AB_vs_noAB.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\bmw_after_90_cw_rotate.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\bmw_after_canvas_shrink.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\bmw_after_canvas_size.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\bmw_after_enlarge.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\bmw_after_horiz_flip.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\bmw_after_shrink.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\bmw_irregular_cropped.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\bmw_selected.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\BrushStyles.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\CircleSelection.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\CircleSquareSelection.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\CloneStamp_Laptop.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\CloneStamp_Stump.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\ConcentricCircleSelection.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\Eraser_Part1.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\Eraser_Part2.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\Eraser_Part3.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\grid.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\InteriorAndOutline.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\InteriorOnly.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\LewistonSunset_small.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\LewistonSunset_small_AutoLevel.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\LewistonSunset_small_Brighter.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\LewistonSunset_small_BrighterAndMoreContrast.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\LewistonSunset_small_Desaturate.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\LewistonSunset_small_HueSaturation.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\LewistonSunset_small_Invert.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\LewistonSunset_small_Levels1.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\LewistonSunset_small_Levels2.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\LewistonSunset_small_MoreContrast.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\LewistonSunset_small_Sepia.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\Line_Bezier.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\Line_Spline.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\Line_Step1.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\logo.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MagicWand_Collect1.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MagicWand_Collect3.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MagicWand_Exclude1.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MagicWand_Exclude2.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MagicWand_Noncontiguous.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MagicWand_tol25.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MagicWand_tol31.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MagicWand_tol50.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MoveNubs.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MoveNubs_MovedPixels.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MoveNubs_MovedSelection.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MoveNubs_ResizedPixels.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MoveNubs_ResizedSelection.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MoveNubs_RotatedPixels.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\MoveNubs_RotatedSelection.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\OutlineOnly.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\RecoloringAfter.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\RecoloringBefore.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\RedEyeEffectAfter.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\RedEyeEffectBefore.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\RedEyeEffectSelection.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\reflect_small.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\rulers.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\SanDiego_small.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\SanDiego_small_AddNoise.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\SanDiego_small_EdgeDetect.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\SanDiego_small_Emboss.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\SanDiego_small_FrostedGlass.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\SanDiego_small_GaussianBlur.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\SanDiego_small_MotionBlur.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\SanDiego_small_OilPainting.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\SanDiego_small_Pixelate.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\SanDiego_small_RadialBlur.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\SanDiego_small_Relief.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\SanDiego_small_Sharpen.jpg"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\Shapes_Interior.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\Shapes_Outline.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\Shapes_OutlineAndInterior.png"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "images\XorSelection.png"
+                    BuildAction = "Content"
+                />
+            </Include>
+        </Files>
+    </CSHARP>
+</VisualStudioProject>
+

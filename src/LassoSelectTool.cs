@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -22,16 +23,31 @@ namespace PaintDotNet
     {
         private Cursor lassoToolCursor;
 
+        protected override void OnActivate()
+        {
+            this.lassoToolCursor = new Cursor(PdnResources.GetResourceStream("Cursors.LassoSelectToolCursor.cur"));
+            this.Cursor = this.lassoToolCursor;
+            base.OnActivate();
+        }
+
+        protected override void OnDeactivate()
+        {
+            if (this.lassoToolCursor != null)
+            {
+                this.lassoToolCursor.Dispose();
+                this.lassoToolCursor = null;
+            }
+
+            base.OnDeactivate ();
+        }
+
         public LassoSelectTool(DocumentWorkspace workspace)
             : base(workspace,
-                   Utility.GetImageResource("Icons.LassoSelectToolIcon.bmp"),
-                   "Lasso Select",
-                   "Allows you to select an arbitrary region of the image.",
-                   "Click and move the mouse to select an arbitrary region of the image",
+                   PdnResources.GetImage("Icons.LassoSelectToolIcon.bmp"),
+                   PdnResources.GetString("LassoSelectTool.Name"),
+                   PdnResources.GetString("LassoSelectTool.HelpText"),
                    's')
         {
-            this.lassoToolCursor = new Cursor(Utility.GetResourceStream("Cursors.LassoSelectToolCursor.cur"));
-            this.Cursor = this.lassoToolCursor;
         }
 
         protected override void Dispose(bool disposing)
@@ -41,12 +57,6 @@ namespace PaintDotNet
             if (disposing)
             {
                 DisposeImage();
-
-                if (this.lassoToolCursor != null)
-                {
-                    this.lassoToolCursor.Dispose();
-                    this.lassoToolCursor = null;
-                }
             }
         }
     }

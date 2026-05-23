@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -34,7 +35,6 @@ namespace PaintDotNet
         private EventHandler historySteppedForwardDelegate;
         private EventHandler historyNewActionDelegate;
         private EventHandler historyFlushedDelegate;
-		private EventHandler historyTruncatedDelegate;
         private bool scrollIntoView = true; // we use this flag for when the user clicks on a HistoryElement and we don't want to do lots of crazy scrolling and confuse the user
 
         private sealed class PanelWithLayout
@@ -127,7 +127,6 @@ namespace PaintDotNet
                     historyStack.SteppedForward -= historySteppedForwardDelegate;
                     historyStack.SteppedBackward -= historySteppedBackwardDelegate;
                     historyStack.HistoryFlushed -= historyFlushedDelegate;
-					historyStack.HistoryTruncated -= historyTruncatedDelegate;
                     historyStack.Changed -= historyChangedDelegate;
                 }
 
@@ -139,7 +138,6 @@ namespace PaintDotNet
                     historyStack.SteppedForward += historySteppedForwardDelegate;
                     historyStack.SteppedBackward += historySteppedBackwardDelegate;
                     historyStack.HistoryFlushed += historyFlushedDelegate;
-					historyStack.HistoryTruncated += historyTruncatedDelegate;
                     historyStack.Changed += historyChangedDelegate;
 
                     DrawHistory();
@@ -190,42 +188,42 @@ namespace PaintDotNet
 
         private void ClearRedoHistoryControl()
         {
-			foreach (HistoryElement hec in redoActions)
-			{
-				hec.Click -= elementClickedDelegate;
-				historyControlPanel.Controls.Remove(hec);
-				hec.Dispose();
-			}
+            foreach (HistoryElement hec in redoActions)
+            {
+                hec.Click -= elementClickedDelegate;
+                historyControlPanel.Controls.Remove(hec);
+                hec.Dispose();
+            }
 
-			redoActions = new ArrayList();
+            redoActions = new ArrayList();
         }
 
-		private void RefreshHistoryControl()
-		{
-			if ((undoActions.Count - historyStack.UndoStack.Count) > 0)
-			{
-				for (int i = 0; i < (undoActions.Count - historyStack.UndoStack.Count); i++)
-				{
-					((HistoryElement)undoActions[i]).Click -= elementClickedDelegate;
-					historyControlPanel.Controls.Remove((HistoryElement)undoActions[i]);
-				}
+        private void RefreshHistoryControl()
+        {
+            if ((undoActions.Count - historyStack.UndoStack.Count) > 0)
+            {
+                for (int i = 0; i < (undoActions.Count - historyStack.UndoStack.Count); i++)
+                {
+                    ((HistoryElement)undoActions[i]).Click -= elementClickedDelegate;
+                    historyControlPanel.Controls.Remove((HistoryElement)undoActions[i]);
+                }
 
-				undoActions.RemoveRange(0, undoActions.Count - historyStack.UndoStack.Count);
-			}
+                undoActions.RemoveRange(0, undoActions.Count - historyStack.UndoStack.Count);
+            }
 
-			if ((redoActions.Count - historyStack.RedoStack.Count) > 0)
-			{
-				for (int i = 0; i < (redoActions.Count - historyStack.RedoStack.Count); i++)
-				{
-					((HistoryElement)redoActions[i]).Click -= elementClickedDelegate;
-					historyControlPanel.Controls.Remove((HistoryElement)redoActions[i]);
-				}
+            if ((redoActions.Count - historyStack.RedoStack.Count) > 0)
+            {
+                for (int i = 0; i < (redoActions.Count - historyStack.RedoStack.Count); i++)
+                {
+                    ((HistoryElement)redoActions[i]).Click -= elementClickedDelegate;
+                    historyControlPanel.Controls.Remove((HistoryElement)redoActions[i]);
+                }
 
-				redoActions.RemoveRange(0, redoActions.Count - historyStack.RedoStack.Count);
-			}
+                redoActions.RemoveRange(0, redoActions.Count - historyStack.RedoStack.Count);
+            }
 
-			this.PerformLayout();
-		}
+            this.PerformLayout();
+        }
 
         private void ClearHistoryControl()
         {
@@ -317,11 +315,6 @@ namespace PaintDotNet
             ClearHistoryControl();
         }
 
-		private void HistoryTruncatedHandler(object sender, EventArgs e)
-		{
-			RefreshHistoryControl();
-		}
-
         private void HistoryNewActionHandler(object sender, EventArgs e)
         {
             HistoryElement hec = new HistoryElement();
@@ -361,7 +354,6 @@ namespace PaintDotNet
             elementClickedDelegate = new EventHandler(ElementClickedHandler);
             historyFlushedDelegate = new EventHandler(HistoryFlushedHandler);
             historyChangedDelegate = new EventHandler(HistoryChangedHandler);
-			historyTruncatedDelegate = new EventHandler(HistoryTruncatedHandler);
         }
 
         private void KeyUpHandler(object sender, KeyEventArgs e)

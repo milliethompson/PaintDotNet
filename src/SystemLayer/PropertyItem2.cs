@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -9,10 +10,13 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Text;
 
 namespace PaintDotNet.SystemLayer
 {
@@ -22,6 +26,12 @@ namespace PaintDotNet.SystemLayer
     [Serializable]
     internal sealed class PropertyItem2
     {
+        private const string piElementName = "exif";
+        private const string idPropertyName = "id";
+        private const string lenPropertyName = "len";
+        private const string typePropertyName = "type";
+        private const string valuePropertyName = "value";
+
         private int id;
         private int len;
         private short type;
@@ -74,11 +84,21 @@ namespace PaintDotNet.SystemLayer
 
         public string ToBlob()
         {
+            /*
             BinaryFormatter bf = new BinaryFormatter();
             MemoryStream ms = new MemoryStream();
             bf.Serialize(ms, this);
             byte[] bytes = ms.ToArray();
             string blob = Convert.ToBase64String(bytes);
+            */
+
+            string blob = string.Format("<{0} {1}=\"{2}\" {3}=\"{4}\" {5}=\"{6}\" {7}=\"{8}\" />",
+                piElementName, 
+                idPropertyName, this.id.ToString(CultureInfo.InvariantCulture),
+                lenPropertyName, this.len.ToString(CultureInfo.InvariantCulture), 
+                typePropertyName, this.type.ToString(CultureInfo.InvariantCulture),
+                valuePropertyName, Convert.ToBase64String(this.value));
+
             return blob;
         }
 
@@ -100,12 +120,45 @@ namespace PaintDotNet.SystemLayer
             return new PropertyItem2(pi.Id, pi.Len, pi.Type, pi.Value);
         }
 
+        private static string GetProperty(string blob, string propertyName)
+        {
+            string findMe = propertyName + "=\"";
+            int startIndex = blob.IndexOf(findMe) + findMe.Length;
+            int endIndex = blob.IndexOf("\"", startIndex);
+            string propertyValue = blob.Substring(startIndex, endIndex - startIndex);
+            return propertyValue;
+        }
+        
         public static PropertyItem2 FromBlob(string blob)
         {
-            byte[] bytes = Convert.FromBase64String(blob);
-            MemoryStream ms = new MemoryStream(bytes);
-            BinaryFormatter bf = new BinaryFormatter();
-            PropertyItem2 pi2 = (PropertyItem2)bf.Deserialize(ms);
+            PropertyItem2 pi2;
+
+            if (blob.Length > 0 && blob[0] == '<')
+            {
+                string idStr = GetProperty(blob, idPropertyName);
+                string lenStr = GetProperty(blob, lenPropertyName);
+                string typeStr = GetProperty(blob, typePropertyName);
+                string valueStr = GetProperty(blob, valuePropertyName);
+
+                int id = int.Parse(idStr, CultureInfo.InvariantCulture);
+                int len = int.Parse(lenStr, CultureInfo.InvariantCulture);
+                short type = short.Parse(typeStr, CultureInfo.InvariantCulture);
+                byte[] value = Convert.FromBase64String(valueStr);
+
+                pi2 = new PropertyItem2(id, len, type, value);
+            }
+            else
+            {
+                // Old way of serializing: .NET serialized!
+                byte[] bytes = Convert.FromBase64String(blob);
+                MemoryStream ms = new MemoryStream(bytes);
+                BinaryFormatter bf = new BinaryFormatter();
+                SerializationFallbackBinder sfb = new SerializationFallbackBinder();
+                sfb.AddAssembly(Assembly.GetExecutingAssembly());
+                bf.Binder = sfb;
+                pi2 = (PropertyItem2)bf.Deserialize(ms);
+            }
+
             return pi2;
         }
 

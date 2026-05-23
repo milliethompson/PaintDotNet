@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -28,14 +29,12 @@ namespace PaintDotNet
         /// Required designer variable.
         /// </summary>
         private System.ComponentModel.Container components = null;
-        private Bitmap renderBitmap = null; // what we draw to the screen
-        private Bitmap extractBitmap = null; // what we extract colors from given (x,y) mouse coords. This surface is not anti-aliased, so it won't have the background color mixed in with valid selection areas
-        private PdnRegion wheelRegion = null;
+        private Bitmap renderBitmap = null;
         private bool tracking = false;
         private Point lastMouseXY;
 
         // this number controls what you might call the tesselation of the color wheel. higher #'s = slower, lower #'s = looks worse
-        private const int colorCount = 48;
+        private const int colorCount = 64;
 
         private System.Windows.Forms.PictureBox wheelPictureBox; 
 
@@ -64,7 +63,7 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            wheelRegion = new PdnRegion();
+            //wheelRegion = new PdnRegion();
             hsvColor = new HsvColor(0, 0, 0);
         }
 
@@ -109,26 +108,26 @@ namespace PaintDotNet
 
         protected override void OnLoad(EventArgs e)
         {
-            base.OnLoad (e);
-
-            if (renderBitmap == null)
-            {
-                InitRenderSurface();
-                this.wheelPictureBox.Size = renderBitmap.Size;
-                this.wheelPictureBox.Image = renderBitmap;
-            }
+            InitRendering();
+            base.OnLoad(e);
         }
 
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            base.OnPaint (e);
+            InitRendering();
+            base.OnPaint(e);
+        }
 
-            if (renderBitmap == null)
+        private void InitRendering()
+        {
+            if (this.renderBitmap == null)
             {
                 InitRenderSurface();
-                this.wheelPictureBox.Size = renderBitmap.Size;
-                this.wheelPictureBox.Image = renderBitmap;
+                this.wheelPictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
+                int size = (int)Math.Ceiling(ComputeDiameter(this.Size));
+                this.wheelPictureBox.Size = new Size(size, size);
+                this.wheelPictureBox.Image = this.renderBitmap;
             }
         }
 
@@ -141,10 +140,10 @@ namespace PaintDotNet
             float y = (alpha * (radius - 1) * (float)Math.Sin(theta)) + radius;
 
             GraphicsContainer container = e.Graphics.BeginContainer();
-			e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-			e.Graphics.SmoothingMode = SmoothingMode.HighQuality;
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            e.Graphics.SmoothingMode = SmoothingMode.HighQuality;
             e.Graphics.DrawRectangle(Pens.Black, x - 1, y - 1, 3, 3);
-			e.Graphics.DrawRectangle(Pens.White, x, y, 1, 1);
+            e.Graphics.DrawRectangle(Pens.White, x, y, 1, 1);
             e.Graphics.EndContainer(container);
         }
 
@@ -155,40 +154,19 @@ namespace PaintDotNet
                 renderBitmap.Dispose();
             }
 
-            if (extractBitmap != null)
-            {
-                extractBitmap.Dispose();
-            }
-
             int wheelDiameter = (int)ComputeDiameter(Size);
 
-            renderBitmap = new Bitmap(Math.Max(1, wheelDiameter), Math.Max(1, wheelDiameter), PixelFormat.Format24bppRgb);
-            extractBitmap = new Bitmap(renderBitmap.Width, renderBitmap.Height);
+            renderBitmap = new Bitmap(Math.Max(1, (wheelDiameter * 4) / 3), 
+                                      Math.Max(1, (wheelDiameter * 4) / 3), PixelFormat.Format24bppRgb);
 
             using (Graphics g1 = Graphics.FromImage(renderBitmap))
             {
-                using (Surface drawMe = new Surface(renderBitmap.Width * 2, renderBitmap.Height * 2))
-                {
-                    using (RenderArgs ra = new RenderArgs(drawMe))
-                    {
-                        ra.Graphics.Clear(this.BackColor);
-                        DrawWheel (ra.Graphics, drawMe.Width, drawMe.Height, null);
-
-                        g1.Clear(this.BackColor);
-                        g1.InterpolationMode = InterpolationMode.HighQualityBilinear;
-                        g1.DrawImage(ra.Bitmap, 0, 0, renderBitmap.Width, renderBitmap.Width);
-                    }
-                }
-            }
-
-            using (Graphics g2 = Graphics.FromImage(extractBitmap))
-            {
-                g2.Clear(this.BackColor);
-                DrawWheel(g2, extractBitmap.Width, extractBitmap.Height, wheelRegion);
+                g1.Clear(this.BackColor);
+                DrawWheel(g1, renderBitmap.Width, renderBitmap.Height);
             }
         }
 
-        private void DrawWheel(Graphics g, int width, int height, PdnRegion wheelRegion)
+        private void DrawWheel(Graphics g, int width, int height)
         {
             float radius = ComputeRadius(new Size(width, height));
             PointF[] points = GetCirclePoints(Math.Max(1.0f, (float)radius - 1), new PointF(radius, radius));
@@ -200,16 +178,6 @@ namespace PaintDotNet
                 pgb.SurroundColors = GetColors();
 
                 g.FillEllipse(pgb, 0, 0, radius * 2, radius * 2);
-
-                if (wheelRegion != null)
-                {
-                    using (PdnGraphicsPath path = new PdnGraphicsPath())
-                    {
-                        path.AddEllipse(0, 0, radius * 2, radius * 2);
-                        wheelRegion.MakeEmpty();
-                        wheelRegion.Union(path);
-                    }
-                }
             }
         }
 
@@ -227,7 +195,7 @@ namespace PaintDotNet
         {
             base.OnResize (e);
 
-            if (renderBitmap != null && (ComputeRadius(Size) != ComputeRadius(extractBitmap.Size)))
+            if (renderBitmap != null && (ComputeRadius(Size) != ComputeRadius(renderBitmap.Size)))
             {
                 renderBitmap.Dispose();
                 renderBitmap = null;

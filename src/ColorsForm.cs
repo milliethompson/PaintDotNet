@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -17,17 +18,16 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for ColorsForm.
     /// </summary>
-    public class ColorsForm :
-        FloatingToolForm
+    public class ColorsForm 
+        : FloatingToolForm
     {
-        private System.Windows.Forms.GroupBox groupBox;
         private System.Windows.Forms.NumericUpDown redUpDown;
         private System.Windows.Forms.NumericUpDown greenUpDown;
         private System.Windows.Forms.NumericUpDown blueUpDown;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Label redLabel;
+        private System.Windows.Forms.Label blueLabel;
+        private System.Windows.Forms.Label greenLabel;
+        private System.Windows.Forms.Label hueLabel;
         private System.Windows.Forms.NumericUpDown hueUpDown;
         private System.Windows.Forms.NumericUpDown valueUpDown;
         private System.Windows.Forms.NumericUpDown saturationUpDown;
@@ -35,45 +35,119 @@ namespace PaintDotNet
         /// Required designer variable.
         /// </summary>
         private System.ComponentModel.Container components = null;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.Label label8;
-        private System.Windows.Forms.GroupBox rgbGroupBox;
-        private System.Windows.Forms.GroupBox hsvGroupBox;
+        private System.Windows.Forms.Label saturationLabel;
+        private System.Windows.Forms.Label valueLabel;
         private System.Windows.Forms.ComboBox whichUserColorBox;
         private ColorGradientControl colorGradientControl;
         private System.Windows.Forms.NumericUpDown alphaUpDown;
         private System.Windows.Forms.TrackBar alphaTrackBar;
         private PaintDotNet.ColorWheel colorWheel;
-        private System.Windows.Forms.GroupBox alphaGroupBox;
 
         private Stack ignoreChangedEvents = new Stack();
         private ColorBgra lastForeColor;
         private System.Windows.Forms.Button moreLessButton;
         private ColorBgra lastBackColor;
 
+        private int suspendSetWhichUserColor;
+        private string lessText;
+        private string moreText;
         private Size moreSize;
         private Size lessSize;
         private System.Windows.Forms.Control lessModeButtonSentinel;
         private System.Windows.Forms.Control moreModeButtonSentinel;
-        private System.Windows.Forms.Control lessModeGroupBoxSentinel;
-        private System.Windows.Forms.Control moreModeGroupBoxSentinel;
+        private System.Windows.Forms.Control lessModeHeaderSentinel;
+        private System.Windows.Forms.Control moreModeHeaderSentinel;
         private bool inMoreState = true;
-        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label hexLabel;
         private System.Windows.Forms.TextBox hexBox;
         private uint ignore = 0;
+        private PaintDotNet.HeaderLabel baseColorHeader;
+        private PaintDotNet.HeaderLabel rgbHeader;
+        private PaintDotNet.HeaderLabel hsvHeader;
+        private PaintDotNet.HeaderLabel alphaHeader;
 
         private bool haveDoneInitStyles = false;
+
+        private class WhichUserColorWrapper
+        {
+            private WhichUserColor whichUserColor;
+
+            public WhichUserColor WhichUserColor
+            {
+                get
+                {
+                    return this.whichUserColor;
+                }
+            }
+
+            public override int GetHashCode()
+            {
+                return this.whichUserColor.GetHashCode();
+            }
+
+            public override bool Equals(object obj)
+            {
+                WhichUserColorWrapper rhs = obj as WhichUserColorWrapper;
+
+                if (rhs == null)
+                {
+                    return false;
+                }
+
+                if (rhs.whichUserColor == this.whichUserColor)
+                {
+                    return true;
+                }
+
+                return false;
+            }
+
+            public override string ToString()
+            {
+                return PdnResources.GetString("WhichUserColor." + this.whichUserColor.ToString());
+            }
+
+            public WhichUserColorWrapper(WhichUserColor whichUserColor)
+            {
+                this.whichUserColor = whichUserColor;
+            }
+        }
+
+        public void SuspendSetWhichUserColor()
+        {
+            ++this.suspendSetWhichUserColor;
+        }
+
+        public void ResumeSetWhichUserColor()
+        {
+            --this.suspendSetWhichUserColor;
+        }
 
         public WhichUserColor WhichUserColor
         {
             get
             {
-                return (WhichUserColor)whichUserColorBox.SelectedItem;
+                return ((WhichUserColorWrapper)whichUserColorBox.SelectedItem).WhichUserColor;
             }
 
             set
             {
-                whichUserColorBox.SelectedItem = value;
+                if (this.suspendSetWhichUserColor <= 0)
+                {
+                    whichUserColorBox.SelectedItem = new WhichUserColorWrapper(value);
+                }
+            }
+        }
+
+        public void SetColorControlsRedraw(bool enabled)
+        {
+            SystemLayer.UI.SetControlRedraw(this.whichUserColorBox, enabled);
+            SystemLayer.UI.SetControlRedraw(this.colorGradientControl, enabled);
+
+            if (enabled)
+            {
+                this.whichUserColorBox.Invalidate(true);
+                this.colorGradientControl.Invalidate(true);
             }
         }
 
@@ -121,11 +195,12 @@ namespace PaintDotNet
 
                     ignore--;
                     Utility.SetNumericUpDownValue(blueUpDown, value.B);
-                    rgbGroupBox.Update();
-                    hsvGroupBox.Update();
+                    Update();
 
                     string hexText = GetHexNumericUpDownValue(value.R, value.G, value.B);
                     hexBox.Text = hexText;
+
+                    SyncHsvFromRgb(value);
                 }
             }
         }
@@ -187,16 +262,15 @@ namespace PaintDotNet
 
                     ignore--;
                     Utility.SetNumericUpDownValue(blueUpDown, value.B);
-                    rgbGroupBox.Update();
-                    hsvGroupBox.Update();
+                    Update();
 
                     string hexText = GetHexNumericUpDownValue(value.R, value.G, value.B);
                     hexBox.Text = hexText;
+
+                    SyncHsvFromRgb(value);
                 }
             }
         }
-
-
 
         /// <summary>
         /// Convenience function for ColorsForm internals. Checks the value of the
@@ -237,7 +311,7 @@ namespace PaintDotNet
                 Utility.SetNumericUpDownValue(saturationUpDown, hsvColor.Saturation);
                 Utility.SetNumericUpDownValue(valueUpDown, hsvColor.Value);
 
-                if (hsvColor.Value != ((colorGradientControl.Value * 100) / 255))
+                if (((colorGradientControl.Value * 100) / 255) != hsvColor.Value)
                 {
                     colorGradientControl.Value = (255 * hsvColor.Value) / 100;
                 }
@@ -280,12 +354,29 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            whichUserColorBox.Items.Add(WhichUserColor.Foreground);
-            whichUserColorBox.Items.Add(WhichUserColor.Background);
+            whichUserColorBox.Items.Add(new WhichUserColorWrapper(WhichUserColor.Foreground));
+            whichUserColorBox.Items.Add(new WhichUserColorWrapper(WhichUserColor.Background));
             whichUserColorBox.SelectedIndex = 0;
 
             moreSize = this.Size;
-            lessSize = new Size(4 + rgbGroupBox.PointToScreen(new Point(0, 0)).X - Left, moreSize.Height);
+            lessSize = new Size(4 + rgbHeader.PointToScreen(new Point(0, 0)).X - Left, moreSize.Height);
+
+            this.Text = PdnResources.GetString("ColorsForm.Text");
+            this.baseColorHeader.Text = PdnResources.GetString("ColorsForm.BaseColorHeader.Text");
+            this.redLabel.Text = PdnResources.GetString("ColorsForm.RedLabel.Text");
+            this.blueLabel.Text = PdnResources.GetString("ColorsForm.BlueLabel.Text");
+            this.greenLabel.Text = PdnResources.GetString("ColorsForm.GreenLabel.Text");
+            this.saturationLabel.Text = PdnResources.GetString("ColorsForm.SaturationLabel.Text");
+            this.valueLabel.Text = PdnResources.GetString("ColorsForm.ValueLabel.Text");
+            this.hueLabel.Text = PdnResources.GetString("ColorsForm.HueLabel.Text");
+            this.rgbHeader.Text = PdnResources.GetString("ColorsForm.RgbHeader.Text");
+            this.hexLabel.Text = PdnResources.GetString("ColorsForm.HexLabel.Text");
+            this.hsvHeader.Text = PdnResources.GetString("ColorsForm.HsvHeader.Text");
+            this.alphaHeader.Text = PdnResources.GetString("ColorsForm.AlphaHeader.Text");
+
+            this.lessText = "<< " + PdnResources.GetString("ColorsForm.MoreLessButton.Text.Less");
+            this.moreText = PdnResources.GetString("ColorsForm.MoreLessButton.Text.More") + " >>";
+            this.moreLessButton.Text = lessText;
         }
 
         protected override void OnLoad(EventArgs e)
@@ -294,12 +385,13 @@ namespace PaintDotNet
             haveDoneInitStyles = true;
             moreLessButton.PerformClick();
             haveDoneInitStyles = false;
-            base.OnLoad (e);
+            base.OnLoad(e);
         }
 
         protected override void OnEnableStyles()
         {
-            // do nothing
+            // do nothing else (yet)
+            EnableStyles(this.moreLessButton);
         }
 
         /// <summary>
@@ -327,75 +419,59 @@ namespace PaintDotNet
         private void InitializeComponent()
         {
             this.colorGradientControl = new PaintDotNet.ColorGradientControl();
-            this.groupBox = new System.Windows.Forms.GroupBox();
             this.colorWheel = new PaintDotNet.ColorWheel();
             this.redUpDown = new System.Windows.Forms.NumericUpDown();
             this.greenUpDown = new System.Windows.Forms.NumericUpDown();
             this.blueUpDown = new System.Windows.Forms.NumericUpDown();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label8 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
+            this.redLabel = new System.Windows.Forms.Label();
+            this.blueLabel = new System.Windows.Forms.Label();
+            this.greenLabel = new System.Windows.Forms.Label();
+            this.saturationLabel = new System.Windows.Forms.Label();
+            this.valueLabel = new System.Windows.Forms.Label();
+            this.hueLabel = new System.Windows.Forms.Label();
             this.valueUpDown = new System.Windows.Forms.NumericUpDown();
             this.saturationUpDown = new System.Windows.Forms.NumericUpDown();
             this.hueUpDown = new System.Windows.Forms.NumericUpDown();
-            this.rgbGroupBox = new System.Windows.Forms.GroupBox();
             this.hexBox = new System.Windows.Forms.TextBox();
-            this.label4 = new System.Windows.Forms.Label();
-            this.hsvGroupBox = new System.Windows.Forms.GroupBox();
+            this.hexLabel = new System.Windows.Forms.Label();
             this.whichUserColorBox = new System.Windows.Forms.ComboBox();
             this.alphaUpDown = new System.Windows.Forms.NumericUpDown();
             this.alphaTrackBar = new System.Windows.Forms.TrackBar();
-            this.alphaGroupBox = new System.Windows.Forms.GroupBox();
             this.moreLessButton = new System.Windows.Forms.Button();
             this.lessModeButtonSentinel = new System.Windows.Forms.Control();
             this.moreModeButtonSentinel = new System.Windows.Forms.Control();
-            this.lessModeGroupBoxSentinel = new System.Windows.Forms.Control();
-            this.moreModeGroupBoxSentinel = new System.Windows.Forms.Control();
-            this.groupBox.SuspendLayout();
+            this.lessModeHeaderSentinel = new System.Windows.Forms.Control();
+            this.moreModeHeaderSentinel = new System.Windows.Forms.Control();
+            this.baseColorHeader = new PaintDotNet.HeaderLabel();
+            this.rgbHeader = new PaintDotNet.HeaderLabel();
+            this.hsvHeader = new PaintDotNet.HeaderLabel();
+            this.alphaHeader = new PaintDotNet.HeaderLabel();
             ((System.ComponentModel.ISupportInitialize)(this.redUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.greenUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.blueUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.valueUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.saturationUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.hueUpDown)).BeginInit();
-            this.rgbGroupBox.SuspendLayout();
-            this.hsvGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.alphaUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.alphaTrackBar)).BeginInit();
-            this.alphaGroupBox.SuspendLayout();
             this.SuspendLayout();
             // 
             // colorGradientControl
             // 
             this.colorGradientControl.BottomColor = System.Drawing.Color.Black;
             this.colorGradientControl.Count = 1;
-            this.colorGradientControl.Location = new System.Drawing.Point(192, 16);
+            this.colorGradientControl.Location = new System.Drawing.Point(208, 56);
             this.colorGradientControl.Name = "colorGradientControl";
-            this.colorGradientControl.Size = new System.Drawing.Size(29, 216);
+            this.colorGradientControl.Size = new System.Drawing.Size(29, 200);
             this.colorGradientControl.TabIndex = 2;
             this.colorGradientControl.TabStop = false;
             this.colorGradientControl.TopColor = System.Drawing.Color.White;
             this.colorGradientControl.Value = 0;
-            this.colorGradientControl.ValueChanged += new IndexEventHandler(this.colorGradientControl_ValueChanged);
-            // 
-            // groupBox
-            // 
-            this.groupBox.Controls.Add(this.colorWheel);
-            this.groupBox.Controls.Add(this.colorGradientControl);
-            this.groupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.groupBox.Location = new System.Drawing.Point(8, 40);
-            this.groupBox.Name = "groupBox";
-            this.groupBox.Size = new System.Drawing.Size(232, 248);
-            this.groupBox.TabIndex = 3;
-            this.groupBox.TabStop = false;
-            this.groupBox.Text = "Choose Base Color";
+            this.colorGradientControl.ValueChanged += new PaintDotNet.IndexEventHandler(this.colorGradientControl_ValueChanged);
             // 
             // colorWheel
             // 
-            this.colorWheel.Location = new System.Drawing.Point(8, 32);
+            this.colorWheel.Location = new System.Drawing.Point(16, 64);
             this.colorWheel.Name = "colorWheel";
             this.colorWheel.Size = new System.Drawing.Size(184, 184);
             this.colorWheel.TabIndex = 3;
@@ -404,7 +480,7 @@ namespace PaintDotNet
             // 
             // redUpDown
             // 
-            this.redUpDown.Location = new System.Drawing.Point(80, 16);
+            this.redUpDown.Location = new System.Drawing.Point(320, 24);
             this.redUpDown.Maximum = new System.Decimal(new int[] {
                                                                       255,
                                                                       0,
@@ -412,16 +488,16 @@ namespace PaintDotNet
                                                                       0});
             this.redUpDown.Name = "redUpDown";
             this.redUpDown.Size = new System.Drawing.Size(56, 20);
-            this.redUpDown.TabIndex = 1;
+            this.redUpDown.TabIndex = 2;
             this.redUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.redUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.redUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.redUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
+            this.redUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.redUpDown.Leave += new System.EventHandler(this.upDown_Leave);
             // 
             // greenUpDown
             // 
-            this.greenUpDown.Location = new System.Drawing.Point(80, 40);
+            this.greenUpDown.Location = new System.Drawing.Point(320, 48);
             this.greenUpDown.Maximum = new System.Decimal(new int[] {
                                                                         255,
                                                                         0,
@@ -429,16 +505,16 @@ namespace PaintDotNet
                                                                         0});
             this.greenUpDown.Name = "greenUpDown";
             this.greenUpDown.Size = new System.Drawing.Size(56, 20);
-            this.greenUpDown.TabIndex = 2;
+            this.greenUpDown.TabIndex = 3;
             this.greenUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.greenUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.greenUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.greenUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
+            this.greenUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.greenUpDown.Leave += new System.EventHandler(this.upDown_Leave);
             // 
             // blueUpDown
             // 
-            this.blueUpDown.Location = new System.Drawing.Point(80, 64);
+            this.blueUpDown.Location = new System.Drawing.Point(320, 72);
             this.blueUpDown.Maximum = new System.Decimal(new int[] {
                                                                        255,
                                                                        0,
@@ -446,97 +522,88 @@ namespace PaintDotNet
                                                                        0});
             this.blueUpDown.Name = "blueUpDown";
             this.blueUpDown.Size = new System.Drawing.Size(56, 20);
-            this.blueUpDown.TabIndex = 3;
+            this.blueUpDown.TabIndex = 4;
             this.blueUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.blueUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.blueUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.blueUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
+            this.blueUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.blueUpDown.Leave += new System.EventHandler(this.upDown_Leave);
             // 
-            // label1
+            // redLabel
             // 
-            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
-            this.label1.Location = new System.Drawing.Point(32, 16);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(40, 24);
-            this.label1.TabIndex = 7;
-            this.label1.Text = "Red:";
-            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.redLabel.Location = new System.Drawing.Point(256, 24);
+            this.redLabel.Name = "redLabel";
+            this.redLabel.Size = new System.Drawing.Size(56, 24);
+            this.redLabel.TabIndex = 7;
+            this.redLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // label2
+            // blueLabel
             // 
-            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
-            this.label2.Location = new System.Drawing.Point(32, 64);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(40, 24);
-            this.label2.TabIndex = 8;
-            this.label2.Text = "Blue:";
-            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.blueLabel.Location = new System.Drawing.Point(256, 72);
+            this.blueLabel.Name = "blueLabel";
+            this.blueLabel.Size = new System.Drawing.Size(56, 24);
+            this.blueLabel.TabIndex = 8;
+            this.blueLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // label3
+            // greenLabel
             // 
-            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
-            this.label3.Location = new System.Drawing.Point(32, 40);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(40, 24);
-            this.label3.TabIndex = 9;
-            this.label3.Text = "Green:";
-            this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.greenLabel.Location = new System.Drawing.Point(256, 48);
+            this.greenLabel.Name = "greenLabel";
+            this.greenLabel.Size = new System.Drawing.Size(56, 24);
+            this.greenLabel.TabIndex = 9;
+            this.greenLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // label7
+            // saturationLabel
             // 
-            this.label7.Location = new System.Drawing.Point(8, 40);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(62, 24);
-            this.label7.TabIndex = 16;
-            this.label7.Text = "Saturation:";
-            this.label7.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.saturationLabel.Location = new System.Drawing.Point(248, 160);
+            this.saturationLabel.Name = "saturationLabel";
+            this.saturationLabel.Size = new System.Drawing.Size(62, 24);
+            this.saturationLabel.TabIndex = 16;
+            this.saturationLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // label8
+            // valueLabel
             // 
-            this.label8.Location = new System.Drawing.Point(32, 64);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(40, 24);
-            this.label8.TabIndex = 15;
-            this.label8.Text = "Value:";
-            this.label8.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.valueLabel.Location = new System.Drawing.Point(248, 184);
+            this.valueLabel.Name = "valueLabel";
+            this.valueLabel.Size = new System.Drawing.Size(64, 24);
+            this.valueLabel.TabIndex = 15;
+            this.valueLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // label6
+            // hueLabel
             // 
-            this.label6.Location = new System.Drawing.Point(32, 16);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(40, 24);
-            this.label6.TabIndex = 14;
-            this.label6.Text = "Hue:";
-            this.label6.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.hueLabel.Location = new System.Drawing.Point(248, 136);
+            this.hueLabel.Name = "hueLabel";
+            this.hueLabel.Size = new System.Drawing.Size(64, 24);
+            this.hueLabel.TabIndex = 14;
+            this.hueLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // valueUpDown
             // 
-            this.valueUpDown.Location = new System.Drawing.Point(80, 64);
+            this.valueUpDown.Location = new System.Drawing.Point(320, 184);
             this.valueUpDown.Name = "valueUpDown";
             this.valueUpDown.Size = new System.Drawing.Size(56, 20);
-            this.valueUpDown.TabIndex = 6;
+            this.valueUpDown.TabIndex = 8;
             this.valueUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.valueUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.valueUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.valueUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
+            this.valueUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.valueUpDown.Leave += new System.EventHandler(this.upDown_Leave);
             // 
             // saturationUpDown
             // 
-            this.saturationUpDown.Location = new System.Drawing.Point(80, 40);
+            this.saturationUpDown.Location = new System.Drawing.Point(320, 160);
             this.saturationUpDown.Name = "saturationUpDown";
             this.saturationUpDown.Size = new System.Drawing.Size(56, 20);
-            this.saturationUpDown.TabIndex = 5;
+            this.saturationUpDown.TabIndex = 7;
             this.saturationUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.saturationUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.saturationUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.saturationUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
+            this.saturationUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.saturationUpDown.Leave += new System.EventHandler(this.upDown_Leave);
             // 
             // hueUpDown
             // 
-            this.hueUpDown.Location = new System.Drawing.Point(80, 16);
+            this.hueUpDown.Location = new System.Drawing.Point(320, 136);
             this.hueUpDown.Maximum = new System.Decimal(new int[] {
                                                                       360,
                                                                       0,
@@ -544,37 +611,19 @@ namespace PaintDotNet
                                                                       0});
             this.hueUpDown.Name = "hueUpDown";
             this.hueUpDown.Size = new System.Drawing.Size(56, 20);
-            this.hueUpDown.TabIndex = 4;
+            this.hueUpDown.TabIndex = 6;
             this.hueUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.hueUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.hueUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.hueUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
+            this.hueUpDown.ValueChanged += new System.EventHandler(this.upDown_ValueChanged);
             this.hueUpDown.Leave += new System.EventHandler(this.upDown_Leave);
-            // 
-            // rgbGroupBox
-            // 
-            this.rgbGroupBox.Controls.Add(this.hexBox);
-            this.rgbGroupBox.Controls.Add(this.label4);
-            this.rgbGroupBox.Controls.Add(this.redUpDown);
-            this.rgbGroupBox.Controls.Add(this.greenUpDown);
-            this.rgbGroupBox.Controls.Add(this.blueUpDown);
-            this.rgbGroupBox.Controls.Add(this.label1);
-            this.rgbGroupBox.Controls.Add(this.label2);
-            this.rgbGroupBox.Controls.Add(this.label3);
-            this.rgbGroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.rgbGroupBox.Location = new System.Drawing.Point(248, 8);
-            this.rgbGroupBox.Name = "rgbGroupBox";
-            this.rgbGroupBox.Size = new System.Drawing.Size(144, 120);
-            this.rgbGroupBox.TabIndex = 17;
-            this.rgbGroupBox.TabStop = false;
-            this.rgbGroupBox.Text = "RGB";
             // 
             // hexBox
             // 
-            this.hexBox.Location = new System.Drawing.Point(80, 88);
+            this.hexBox.Location = new System.Drawing.Point(320, 96);
             this.hexBox.Name = "hexBox";
             this.hexBox.Size = new System.Drawing.Size(56, 20);
-            this.hexBox.TabIndex = 14;
+            this.hexBox.TabIndex = 5;
             this.hexBox.Text = "000000";
             this.hexBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.hexBox.TextChanged += new System.EventHandler(this.upDown_ValueChanged);
@@ -582,44 +631,26 @@ namespace PaintDotNet
             this.hexBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.hexUpDown_KeyUp);
             this.hexBox.Enter += new System.EventHandler(this.hexUpDown_Enter);
             // 
-            // label4
+            // hexLabel
             // 
-            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
-            this.label4.Location = new System.Drawing.Point(40, 88);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(32, 24);
-            this.label4.TabIndex = 13;
-            this.label4.Text = "Hex:";
-            this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
-            // hsvGroupBox
-            // 
-            this.hsvGroupBox.Controls.Add(this.label8);
-            this.hsvGroupBox.Controls.Add(this.saturationUpDown);
-            this.hsvGroupBox.Controls.Add(this.valueUpDown);
-            this.hsvGroupBox.Controls.Add(this.label6);
-            this.hsvGroupBox.Controls.Add(this.hueUpDown);
-            this.hsvGroupBox.Controls.Add(this.label7);
-            this.hsvGroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.hsvGroupBox.Location = new System.Drawing.Point(248, 136);
-            this.hsvGroupBox.Name = "hsvGroupBox";
-            this.hsvGroupBox.Size = new System.Drawing.Size(144, 96);
-            this.hsvGroupBox.TabIndex = 18;
-            this.hsvGroupBox.TabStop = false;
-            this.hsvGroupBox.Text = "HSV";
+            this.hexLabel.Location = new System.Drawing.Point(256, 96);
+            this.hexLabel.Name = "hexLabel";
+            this.hexLabel.Size = new System.Drawing.Size(56, 24);
+            this.hexLabel.TabIndex = 13;
+            this.hexLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // whichUserColorBox
             // 
             this.whichUserColorBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.whichUserColorBox.Location = new System.Drawing.Point(8, 8);
             this.whichUserColorBox.Name = "whichUserColorBox";
-            this.whichUserColorBox.Size = new System.Drawing.Size(121, 21);
+            this.whichUserColorBox.Size = new System.Drawing.Size(112, 21);
             this.whichUserColorBox.TabIndex = 0;
             this.whichUserColorBox.SelectedIndexChanged += new System.EventHandler(this.whichUserColorBox_SelectedIndexChanged);
             // 
             // alphaUpDown
             // 
-            this.alphaUpDown.Location = new System.Drawing.Point(80, 16);
+            this.alphaUpDown.Location = new System.Drawing.Point(320, 228);
             this.alphaUpDown.Maximum = new System.Decimal(new int[] {
                                                                         255,
                                                                         0,
@@ -627,7 +658,7 @@ namespace PaintDotNet
                                                                         0});
             this.alphaUpDown.Name = "alphaUpDown";
             this.alphaUpDown.Size = new System.Drawing.Size(56, 20);
-            this.alphaUpDown.TabIndex = 7;
+            this.alphaUpDown.TabIndex = 10;
             this.alphaUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.alphaUpDown.Enter += new System.EventHandler(this.upDown_Enter);
             this.alphaUpDown.KeyUp += new System.Windows.Forms.KeyEventHandler(this.upDown_KeyUp);
@@ -638,39 +669,26 @@ namespace PaintDotNet
             // 
             this.alphaTrackBar.AutoSize = false;
             this.alphaTrackBar.LargeChange = 64;
-            this.alphaTrackBar.Location = new System.Drawing.Point(8, 16);
+            this.alphaTrackBar.Location = new System.Drawing.Point(248, 228);
             this.alphaTrackBar.Maximum = 255;
             this.alphaTrackBar.Name = "alphaTrackBar";
             this.alphaTrackBar.Size = new System.Drawing.Size(64, 25);
-            this.alphaTrackBar.TabIndex = 8;
+            this.alphaTrackBar.TabIndex = 9;
             this.alphaTrackBar.TickFrequency = 64;
             this.alphaTrackBar.TickStyle = System.Windows.Forms.TickStyle.None;
             this.alphaTrackBar.ValueChanged += new System.EventHandler(this.alphaTrackBar_ValueChanged);
-            // 
-            // alphaGroupBox
-            // 
-            this.alphaGroupBox.Controls.Add(this.alphaUpDown);
-            this.alphaGroupBox.Controls.Add(this.alphaTrackBar);
-            this.alphaGroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.alphaGroupBox.Location = new System.Drawing.Point(248, 240);
-            this.alphaGroupBox.Name = "alphaGroupBox";
-            this.alphaGroupBox.Size = new System.Drawing.Size(144, 48);
-            this.alphaGroupBox.TabIndex = 20;
-            this.alphaGroupBox.TabStop = false;
-            this.alphaGroupBox.Text = "Transparency - Alpha";
             // 
             // moreLessButton
             // 
             this.moreLessButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.moreLessButton.Location = new System.Drawing.Point(165, 7);
             this.moreLessButton.Name = "moreLessButton";
-            this.moreLessButton.TabIndex = 21;
-            this.moreLessButton.Text = "<< Less";
+            this.moreLessButton.TabIndex = 1;
             this.moreLessButton.Click += new System.EventHandler(this.moreLessButton_Click);
             // 
             // lessModeButtonSentinel
             // 
-            this.lessModeButtonSentinel.Location = new System.Drawing.Point(136, 7);
+            this.lessModeButtonSentinel.Location = new System.Drawing.Point(128, 7);
             this.lessModeButtonSentinel.Name = "lessModeButtonSentinel";
             this.lessModeButtonSentinel.TabIndex = 22;
             this.lessModeButtonSentinel.Text = "we put the lessMore control here when in \"Less\" mode";
@@ -681,66 +699,131 @@ namespace PaintDotNet
             this.moreModeButtonSentinel.Location = new System.Drawing.Point(165, 7);
             this.moreModeButtonSentinel.Name = "moreModeButtonSentinel";
             this.moreModeButtonSentinel.TabIndex = 23;
-            this.moreModeButtonSentinel.Text = "control1";
             this.moreModeButtonSentinel.Visible = false;
             // 
-            // lessModeGroupBoxSentinel
+            // lessModeHeaderSentinel
             // 
-            this.lessModeGroupBoxSentinel.Location = new System.Drawing.Point(8, 40);
-            this.lessModeGroupBoxSentinel.Name = "lessModeGroupBoxSentinel";
-            this.lessModeGroupBoxSentinel.Size = new System.Drawing.Size(200, 192);
-            this.lessModeGroupBoxSentinel.TabIndex = 24;
-            this.lessModeGroupBoxSentinel.Text = "control1";
-            this.lessModeGroupBoxSentinel.Visible = false;
+            this.lessModeHeaderSentinel.Location = new System.Drawing.Point(8, 40);
+            this.lessModeHeaderSentinel.Name = "lessModeHeaderSentinel";
+            this.lessModeHeaderSentinel.Size = new System.Drawing.Size(192, 188);
+            this.lessModeHeaderSentinel.TabIndex = 24;
+            this.lessModeHeaderSentinel.Visible = false;
             // 
-            // moreModeGroupBoxSentinel
+            // moreModeHeaderSentinel
             // 
-            this.moreModeGroupBoxSentinel.Location = new System.Drawing.Point(8, 40);
-            this.moreModeGroupBoxSentinel.Name = "moreModeGroupBoxSentinel";
-            this.moreModeGroupBoxSentinel.Size = new System.Drawing.Size(232, 248);
-            this.moreModeGroupBoxSentinel.TabIndex = 25;
-            this.moreModeGroupBoxSentinel.Text = "control1";
-            this.moreModeGroupBoxSentinel.Visible = false;
+            this.moreModeHeaderSentinel.Location = new System.Drawing.Point(8, 40);
+            this.moreModeHeaderSentinel.Name = "moreModeHeaderSentinel";
+            this.moreModeHeaderSentinel.Size = new System.Drawing.Size(232, 216);
+            this.moreModeHeaderSentinel.TabIndex = 25;
+            this.moreModeHeaderSentinel.TabStop = false;
+            this.moreModeHeaderSentinel.Visible = false;
+            // 
+            // baseColorHeader
+            // 
+            this.baseColorHeader.Location = new System.Drawing.Point(8, 40);
+            this.baseColorHeader.Name = "baseColorHeader";
+            this.baseColorHeader.RightMargin = 0;
+            this.baseColorHeader.Size = new System.Drawing.Size(232, 14);
+            this.baseColorHeader.TabIndex = 26;
+            this.baseColorHeader.TabStop = false;
+            // 
+            // rgbHeader
+            // 
+            this.rgbHeader.Location = new System.Drawing.Point(248, 8);
+            this.rgbHeader.Name = "rgbHeader";
+            this.rgbHeader.RightMargin = 0;
+            this.rgbHeader.Size = new System.Drawing.Size(128, 14);
+            this.rgbHeader.TabIndex = 27;
+            this.rgbHeader.TabStop = false;
+            // 
+            // hsvHeader
+            // 
+            this.hsvHeader.Location = new System.Drawing.Point(248, 120);
+            this.hsvHeader.Name = "hsvHeader";
+            this.hsvHeader.RightMargin = 0;
+            this.hsvHeader.Size = new System.Drawing.Size(128, 14);
+            this.hsvHeader.TabIndex = 28;
+            this.hsvHeader.TabStop = false;
+            // 
+            // alphaHeader
+            // 
+            this.alphaHeader.Location = new System.Drawing.Point(248, 212);
+            this.alphaHeader.Name = "alphaHeader";
+            this.alphaHeader.RightMargin = 0;
+            this.alphaHeader.Size = new System.Drawing.Size(128, 14);
+            this.alphaHeader.TabIndex = 29;
+            this.alphaHeader.TabStop = false;
             // 
             // ColorsForm
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.ClientSize = new System.Drawing.Size(402, 296);
+            this.ClientSize = new System.Drawing.Size(386, 264);
+            this.Controls.Add(this.alphaHeader);
+            this.Controls.Add(this.hsvHeader);
+            this.Controls.Add(this.rgbHeader);
+            this.Controls.Add(this.colorWheel);
+            this.Controls.Add(this.colorGradientControl);
+            this.Controls.Add(this.baseColorHeader);
             this.Controls.Add(this.moreModeButtonSentinel);
             this.Controls.Add(this.lessModeButtonSentinel);
             this.Controls.Add(this.moreLessButton);
-            this.Controls.Add(this.hsvGroupBox);
             this.Controls.Add(this.whichUserColorBox);
-            this.Controls.Add(this.rgbGroupBox);
-            this.Controls.Add(this.groupBox);
-            this.Controls.Add(this.alphaGroupBox);
-            this.Controls.Add(this.lessModeGroupBoxSentinel);
-            this.Controls.Add(this.moreModeGroupBoxSentinel);
+            this.Controls.Add(this.lessModeHeaderSentinel);
+            this.Controls.Add(this.moreModeHeaderSentinel);
+            this.Controls.Add(this.greenLabel);
+            this.Controls.Add(this.blueLabel);
+            this.Controls.Add(this.redLabel);
+            this.Controls.Add(this.blueUpDown);
+            this.Controls.Add(this.greenUpDown);
+            this.Controls.Add(this.redUpDown);
+            this.Controls.Add(this.hexLabel);
+            this.Controls.Add(this.hexBox);
+            this.Controls.Add(this.hueUpDown);
+            this.Controls.Add(this.saturationUpDown);
+            this.Controls.Add(this.valueUpDown);
+            this.Controls.Add(this.hueLabel);
+            this.Controls.Add(this.valueLabel);
+            this.Controls.Add(this.saturationLabel);
+            this.Controls.Add(this.alphaTrackBar);
+            this.Controls.Add(this.alphaUpDown);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "ColorsForm";
-            this.Text = "Colors";
-            this.Controls.SetChildIndex(this.moreModeGroupBoxSentinel, 0);
-            this.Controls.SetChildIndex(this.lessModeGroupBoxSentinel, 0);
-            this.Controls.SetChildIndex(this.alphaGroupBox, 0);
-            this.Controls.SetChildIndex(this.groupBox, 0);
-            this.Controls.SetChildIndex(this.rgbGroupBox, 0);
+            this.Controls.SetChildIndex(this.alphaUpDown, 0);
+            this.Controls.SetChildIndex(this.alphaTrackBar, 0);
+            this.Controls.SetChildIndex(this.saturationLabel, 0);
+            this.Controls.SetChildIndex(this.valueLabel, 0);
+            this.Controls.SetChildIndex(this.hueLabel, 0);
+            this.Controls.SetChildIndex(this.valueUpDown, 0);
+            this.Controls.SetChildIndex(this.saturationUpDown, 0);
+            this.Controls.SetChildIndex(this.hueUpDown, 0);
+            this.Controls.SetChildIndex(this.hexBox, 0);
+            this.Controls.SetChildIndex(this.hexLabel, 0);
+            this.Controls.SetChildIndex(this.redUpDown, 0);
+            this.Controls.SetChildIndex(this.greenUpDown, 0);
+            this.Controls.SetChildIndex(this.blueUpDown, 0);
+            this.Controls.SetChildIndex(this.redLabel, 0);
+            this.Controls.SetChildIndex(this.blueLabel, 0);
+            this.Controls.SetChildIndex(this.greenLabel, 0);
+            this.Controls.SetChildIndex(this.moreModeHeaderSentinel, 0);
+            this.Controls.SetChildIndex(this.lessModeHeaderSentinel, 0);
             this.Controls.SetChildIndex(this.whichUserColorBox, 0);
-            this.Controls.SetChildIndex(this.hsvGroupBox, 0);
             this.Controls.SetChildIndex(this.moreLessButton, 0);
             this.Controls.SetChildIndex(this.lessModeButtonSentinel, 0);
             this.Controls.SetChildIndex(this.moreModeButtonSentinel, 0);
-            this.groupBox.ResumeLayout(false);
+            this.Controls.SetChildIndex(this.baseColorHeader, 0);
+            this.Controls.SetChildIndex(this.colorGradientControl, 0);
+            this.Controls.SetChildIndex(this.colorWheel, 0);
+            this.Controls.SetChildIndex(this.rgbHeader, 0);
+            this.Controls.SetChildIndex(this.hsvHeader, 0);
+            this.Controls.SetChildIndex(this.alphaHeader, 0);
             ((System.ComponentModel.ISupportInitialize)(this.redUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.greenUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.blueUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.valueUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.saturationUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.hueUpDown)).EndInit();
-            this.rgbGroupBox.ResumeLayout(false);
-            this.hsvGroupBox.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.alphaUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.alphaTrackBar)).EndInit();
-            this.alphaGroupBox.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -776,6 +859,8 @@ namespace PaintDotNet
             PopIgnoreChangedEvents();
 
             SyncHsvFromRgb(color);
+
+            OnRelinquishFocus();
         }
 
         private void colorWheel_ColorChanged(object sender, EventArgs e)
@@ -1103,42 +1188,44 @@ namespace PaintDotNet
             {
                 this.inMoreState = false;
                 Size newSize = lessSize;
-                this.moreLessButton.Text = "More >>";
+                this.moreLessButton.Text = this.moreText;
                 this.moreLessButton.Location = this.lessModeButtonSentinel.Location;
-                this.groupBox.Size = lessModeGroupBoxSentinel.Size;
-                this.groupBox.Top -= 4;
+                this.baseColorHeader.Size = lessModeHeaderSentinel.Size;
+                this.baseColorHeader.Top -= 4;
 
-                int widthDelta = (moreModeGroupBoxSentinel.Width - lessModeGroupBoxSentinel.Width);
+                int widthDelta = (moreModeHeaderSentinel.Width - lessModeHeaderSentinel.Width);
                 newSize.Width -= widthDelta;
                 this.colorWheel.Width -= widthDelta;
                 this.colorWheel.Height -= widthDelta;
                 this.colorGradientControl.Left -= widthDelta;
 
-                int heightDelta = (moreModeGroupBoxSentinel.Height - lessModeGroupBoxSentinel.Height);
+                int heightDelta = (moreModeHeaderSentinel.Height - lessModeHeaderSentinel.Height);
                 this.colorGradientControl.Height -= widthDelta;
-                this.colorWheel.Top -= 8;
-                this.colorGradientControl.Height -= 20;
+                this.colorWheel.Top -= 5;
+                this.colorGradientControl.Height -= 10;
                 newSize.Height -= heightDelta;
+
+                newSize.Height -= 18;
 
                 this.Size = newSize;
             }
             else
             {
                 this.inMoreState = true;
-                this.moreLessButton.Text = "<< Less";
+                this.moreLessButton.Text = this.lessText;
                 this.moreLessButton.Location = this.moreModeButtonSentinel.Location;
-                this.groupBox.Size = moreModeGroupBoxSentinel.Size;
-                this.groupBox.Top += 4;
+                this.baseColorHeader.Size = moreModeHeaderSentinel.Size;
+                this.baseColorHeader.Top += 4;
 
-                int widthDelta = (moreModeGroupBoxSentinel.Width - lessModeGroupBoxSentinel.Width);
+                int widthDelta = (moreModeHeaderSentinel.Width - lessModeHeaderSentinel.Width);
                 this.colorWheel.Width += widthDelta;
                 this.colorWheel.Height += widthDelta;
                 this.colorGradientControl.Left += widthDelta;
 
-                int heightDelta = (moreModeGroupBoxSentinel.Height - lessModeGroupBoxSentinel.Height);
+                int heightDelta = (moreModeHeaderSentinel.Height - lessModeHeaderSentinel.Height);
                 this.colorGradientControl.Height += widthDelta;
-                this.colorWheel.Top += 8;
-                this.colorGradientControl.Height += 20;
+                this.colorWheel.Top += 5;
+                this.colorGradientControl.Height += 10;
 
                 this.Size = moreSize;
             }

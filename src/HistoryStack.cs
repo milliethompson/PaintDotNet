@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -12,10 +13,10 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// The HistoryStack class for the History "concept".  
-	/// Serves as the undo and redo stacks.  
-	/// </summary>
+    /// <summary>
+    /// The HistoryStack class for the History "concept".  
+    /// Serves as the undo and redo stacks.  
+    /// </summary>
     [Serializable]
     public class HistoryStack
     {
@@ -70,7 +71,7 @@ namespace PaintDotNet
         }
                 
         /// <summary>
-		/// Event handler for when changes have been made to the history.
+        /// Event handler for when changes have been made to the history.
         /// </summary>
         public event EventHandler Changed;
         protected void OnChanged()
@@ -99,14 +100,23 @@ namespace PaintDotNet
             }
         }
 
-		public event EventHandler HistoryTruncated;
-		protected void OnHistoryTruncated()
-		{
-			if (HistoryTruncated != null)
-			{
-				HistoryTruncated(this, EventArgs.Empty);
-			}
-		}
+        public event ExecutingHistoryActionEventHandler ExecutingHistoryAction;
+        protected void OnExecutingHistoryAction(ExecutingHistoryActionEventArgs e)
+        {
+            if (ExecutingHistoryAction != null)
+            {
+                ExecutingHistoryAction(this, e);
+            }
+        }
+
+        public event ExecutedHistoryActionEventHandler ExecutedHistoryAction;
+        protected void OnExecutedHistoryAction(ExecutedHistoryActionEventArgs e)
+        {
+            if (ExecutedHistoryAction != null)
+            {
+                ExecutedHistoryAction(this, e);
+            }
+        }
 
         public void PerformChanged()
         {
@@ -131,20 +141,18 @@ namespace PaintDotNet
         /// </summary>
         public void PushNewAction(HistoryAction value)
         {
+            Utility.GCFullCollect();
+
             OnChanging();
 
-			ClearRedoStack();
+            ClearRedoStack();
             undoStack.Add(value);
-			OnNewHistoryAction();
+            OnNewHistoryAction();
 
             OnChanged();
 
-			if ((undoStack.Count > limit) && (limit > 1))
-			{
-				Truncate();
-			}
-
             value.Flush();
+            Utility.GCFullCollect();
         }
 
         /// <summary>
@@ -153,22 +161,59 @@ namespace PaintDotNet
         /// </summary>
         public void StepForward()
         {
-            OnChanging();
-            Tool oldTool = workspace.Environment.Tool;
-            workspace.Environment.SetTool(null);
+            HistoryAction topAction = (HistoryAction)(HistoryAction)redoStack[0];
+            ToolHistoryAction asToolHistoryAction = topAction as ToolHistoryAction;
 
-            HistoryAction redoAction = (HistoryAction)redoStack[0];
-            HistoryAction undoAction = redoAction.PerformUndo();
-			
-            redoStack.RemoveAt(0);
-            undoStack.Add(undoAction);
+            if (asToolHistoryAction != null && asToolHistoryAction.ToolType != workspace.Environment.GetToolType())
+            {
+                workspace.Environment.SetTool(asToolHistoryAction.ToolType, this.workspace);
+                StepForward();
+            }
+            else
+            {
+                OnChanging();
 
-            OnChanged();
-            OnSteppedForward();
+                ExecutingHistoryActionEventArgs ehaea1 = new ExecutingHistoryActionEventArgs(topAction, true, false);
 
-            undoAction.Flush();
-            //redoAction.Flush();
-            workspace.Environment.SetTool(oldTool);
+                if (asToolHistoryAction == null && (!(topAction is SentinelHistoryAction) || topAction.SeriesGuid != Guid.Empty))
+                {
+                    ehaea1.SuspendTool = true;
+                }
+
+                Tool oldTool = null;
+                OnExecutingHistoryAction(ehaea1);
+
+                if (ehaea1.SuspendTool)
+                {                                                    
+                    oldTool = workspace.Environment.Tool;
+                    workspace.Environment.SetTool(null);
+                }
+            
+                HistoryAction redoAction = (HistoryAction)redoStack[0];
+
+                // Possibly useful invariant here:
+                //     ehaea1.HistoryAction.SeriesGuid == ehaea2.HistoryAction.SeriesGuid == ehaea3.HistoryAction.SeriesGuid
+                ExecutingHistoryActionEventArgs ehaea2 = new ExecutingHistoryActionEventArgs(redoAction, false, ehaea1.SuspendTool);
+                OnExecutingHistoryAction(ehaea2);
+
+                HistoryAction undoAction = redoAction.PerformUndo();
+            
+                redoStack.RemoveAt(0);
+                undoStack.Add(undoAction);
+
+                ExecutedHistoryActionEventArgs ehaea3 = new ExecutedHistoryActionEventArgs(undoAction);
+                OnExecutedHistoryAction(ehaea3);
+
+                OnChanged();
+                OnSteppedForward();
+
+                undoAction.Flush();
+
+                if (oldTool != null)
+                {
+                    workspace.Environment.SetTool(oldTool);
+                }       
+            }
         }
 
         /// <summary>
@@ -177,29 +222,57 @@ namespace PaintDotNet
         /// </summary>
         public void StepBackward()
         {
-            OnChanging();
             HistoryAction topAction = (HistoryAction)undoStack[undoStack.Count - 1];
+            ToolHistoryAction asToolHistoryAction = topAction as ToolHistoryAction;
 
-            Tool oldTool = null;
-            if (!(topAction is SentinelHistoryAction))
-            {                                                    
-                oldTool = workspace.Environment.Tool;
-                workspace.Environment.SetTool(null);
-            }
-
-            HistoryAction undoAction = (HistoryAction)undoStack[undoStack.Count - 1];
-            HistoryAction redoAction = ((HistoryAction)undoStack[undoStack.Count - 1]).PerformUndo();
-            undoStack.RemoveAt(undoStack.Count - 1);
-            redoStack.Insert(0, redoAction);
-
-            OnChanged();
-            OnSteppedBackward();
-
-            redoAction.Flush();
-
-            if (oldTool != null)
+            if (asToolHistoryAction != null && asToolHistoryAction.ToolType != workspace.Environment.GetToolType())
             {
-                workspace.Environment.SetTool(oldTool);
+                workspace.Environment.SetTool(asToolHistoryAction.ToolType, this.workspace);
+                StepBackward();
+            }
+            else
+            {
+                OnChanging();
+
+                ExecutingHistoryActionEventArgs ehaea1 = new ExecutingHistoryActionEventArgs(topAction, true, false);
+
+                if (asToolHistoryAction == null && (topAction.SeriesGuid == Guid.Empty && !(topAction is SentinelHistoryAction)))
+                {
+                    ehaea1.SuspendTool = true;
+                }
+
+                OnExecutingHistoryAction(ehaea1);
+
+                Tool oldTool = null;
+                if (ehaea1.SuspendTool)
+                {
+                    oldTool = workspace.Environment.Tool;
+                    workspace.Environment.SetTool(null);
+                }
+
+                HistoryAction undoAction = (HistoryAction)undoStack[undoStack.Count - 1];
+
+                ExecutingHistoryActionEventArgs ehaea2 = new ExecutingHistoryActionEventArgs(undoAction, false, ehaea1.SuspendTool);
+                OnExecutingHistoryAction(ehaea2);
+
+                HistoryAction redoAction = ((HistoryAction)undoStack[undoStack.Count - 1]).PerformUndo();
+                undoStack.RemoveAt(undoStack.Count - 1);
+                redoStack.Insert(0, redoAction);
+
+                // Possibly useful invariant here:
+                //     ehaea1.HistoryAction.SeriesGuid == ehaea2.HistoryAction.SeriesGuid == ehaea3.HistoryAction.SeriesGuid
+                ExecutedHistoryActionEventArgs ehaea3 = new ExecutedHistoryActionEventArgs(redoAction);
+                OnExecutedHistoryAction(ehaea3);
+
+                OnChanged();
+                OnSteppedBackward();
+
+                redoAction.Flush();
+
+                if (oldTool != null)
+                {
+                    workspace.Environment.SetTool(oldTool);
+                }
             }
         }
 
@@ -234,58 +307,5 @@ namespace PaintDotNet
             redoStack = new ArrayList();
             OnChanged();
         }
-
-		/// <summary>
-		/// Truncates the history stack(s) to the length specified by
-		///  the Limit property.
-		/// </summary>
-		public void Truncate()
-		{
-			if (limit < 1)
-			{
-				return;
-			}
-
-			int redoToDrop = Math.Min(Math.Max(redoStack.Count + (undoStack.Count - limit), 0), redoStack.Count);
-			int undoToDrop = Math.Max(undoStack.Count - limit, 0) + redoToDrop;
-
-			while (redoToDrop > 0)
-			{
-				StepForward();
-				redoToDrop--;
-			}
-
-            OnChanging();
-
-            for (int i = 0; i < undoToDrop; ++i)
-            {
-                ((HistoryAction)undoStack[i]).Flush();
-            }
-
-			undoStack.RemoveRange(0, undoToDrop);
-            OnChanged();
-			OnHistoryTruncated();
-		}
-
-		/// <summary>
-		/// Sets or gets the limit on the HistoryStack.
-		/// </summary>
-		private int limit = -1;
-		public int Limit
-		{
-			set
-			{
-				if ((value == -1) || (value > 9))
-				{
-					limit = value;
-					Truncate();
-				}
-			}
-
-			get
-			{
-				return(limit);
-			}
-		}
     }
 }

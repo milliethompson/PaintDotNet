@@ -1,11 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using Microsoft.Win32;
 using PaintDotNet.Threading;
 using System;
 using System.Collections;
@@ -14,6 +16,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -37,25 +40,25 @@ namespace PaintDotNet
         private static DateTime startTime = DateTime.Now;
         private static DateTime lastTime = DateTime.Now;
 
-        [Obsolete("use Tracing.Ping() instead")]
-        [Conditional("DEBUG")]
-        public static void TraceMe(string message)
+        public static bool IsDotNetVersionInstalled(int major, int minor, int build)
         {
-        }
+            const string regKeyNameFormat = "Software\\Microsoft\\NET Framework Setup\\NDP\\v{0}.{1}.{2}";
+            const string regValueName = "Install";
 
-        [Obsolete("use Tracing.Ping() instead")]
-        [Conditional("DEBUG")]
-        public static void TraceMe()
-        {
-        }
+            string regKeyName = string.Format(regKeyNameFormat, major.ToString(CultureInfo.InvariantCulture),
+                minor.ToString(CultureInfo.InvariantCulture), build.ToString(CultureInfo.InvariantCulture));
 
-        public static string VersionFromFullAssemblyName(string name)
-        {
-            const string versionTag = "Version=";
-            int begin = name.IndexOf(versionTag);
-            int end = name.IndexOf(",", begin);
-            string version = name.Substring(begin + versionTag.Length, end - begin - versionTag.Length);
-            return version;
+            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(regKeyName, false))
+            {
+                object value = null;
+
+                if (key != null)
+                {
+                    value = key.GetValue(regValueName);
+                }
+
+                return (value != null && value is int && (int)value == 1);
+            }
         }
 
         public static void GCFullCollect()
@@ -132,21 +135,6 @@ namespace PaintDotNet
         {
             PropertyInfo pi = type.GetProperty("StaticName", BindingFlags.Static | BindingFlags.Public | BindingFlags.GetProperty);
             return (string)pi.GetValue(null, null);
-        }
-
-        [ThreadStatic]
-        private static PaintDotNet.Threading.ThreadPool threadPool;
-        public static PaintDotNet.Threading.ThreadPool ThreadPool
-        {
-            get
-            {
-                if (threadPool == null)
-                {
-                    threadPool = new PaintDotNet.Threading.ThreadPool();
-                }
-
-                return threadPool;
-            }
         }
 
         public static readonly float[][] Identity5x5F = new float[][] {
@@ -239,6 +227,7 @@ namespace PaintDotNet
         /// </summary>
         /// <param name="str1"></param>
         /// <returns></returns>
+        [Obsolete]
         public static string InsertSpaces(String str1)
         {
             string str2 = string.Copy(str1);
@@ -303,15 +292,17 @@ namespace PaintDotNet
             return max;
         }
 
-        public static int Sum(int[,] array)
+        public static int Sum(int[][] array)
         {
             int sum = 0;
 
-            for (int i = array.GetLowerBound(0); i <= array.GetUpperBound(0); ++i)
+            for (int i = 0; i < array.Length; ++i)
             {
-                for (int j = array.GetLowerBound(1); j <= array.GetUpperBound(1); ++j)
+                int[] row = array[i];
+
+                for (int j = 0; j < row.Length; ++j)
                 {
-                    sum += array[i,j];
+                    sum += row[j];
                 }
             }
 
@@ -327,6 +318,37 @@ namespace PaintDotNet
             else if (upDown.Value > upDown.Maximum)
             {
                 upDown.Value = upDown.Maximum;
+            }
+        }
+
+        public static bool GetUpDownValueFromText(NumericUpDown nud, out double val)
+        {
+            if (nud.Text == string.Empty)
+            {
+                val = 0;
+                return false;
+            }
+            else
+            {
+                try
+                {
+                    if (nud.DecimalPlaces == 0)
+                    {
+                        val = (double)int.Parse(nud.Text);
+                    }
+                    else
+                    {
+                        val = double.Parse(nud.Text);
+                    }
+                }
+
+                catch
+                {
+                    val = 0;
+                    return false;
+                }
+
+                return true;
             }
         }
 
@@ -412,29 +434,44 @@ namespace PaintDotNet
             return returnMe;
         }
 
+        public static void ShowNonAdminErrorBox(IWin32Window parent)
+        {
+            ErrorBox(parent, PdnResources.GetString("NonAdminErrorBox.Message"));
+        }
+
         public static void ErrorBox(IWin32Window parent, string message)
         {
-            MessageBox.Show(parent, message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(parent, message, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        public static DialogResult ErrorBoxOKCancel(IWin32Window parent, string message)
+        {
+            return MessageBox.Show(parent, message, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.OKCancel, MessageBoxIcon.Error);
         }
 
         public static void InfoBox(IWin32Window parent, string message)
         {
-            MessageBox.Show(parent, message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(parent, message, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        public static DialogResult InfoBoxOKCancel(IWin32Window parent, string message)
+        {
+            return MessageBox.Show(parent, message, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.OKCancel, MessageBoxIcon.Information);
         }
 
         public static DialogResult AskOKCancel(IWin32Window parent, string question)
         {
-            return MessageBox.Show(parent, question, Application.ProductName, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+            return MessageBox.Show(parent, question, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
         }
 
         public static DialogResult AskYesNo(IWin32Window parent, string question)
         {
-            return MessageBox.Show(parent, question, Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            return MessageBox.Show(parent, question, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         }
 
         public static DialogResult AskYesNoCancel(IWin32Window parent, string question)
         {
-            return MessageBox.Show(parent, question, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+            return MessageBox.Show(parent, question, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
         }
 
         public static Icon ImageToIcon(Image image)
@@ -512,6 +549,7 @@ namespace PaintDotNet
             return icon;
         }
 
+        [Obsolete]
         public static Image GetImageResource(string fileName)
         {
             StackTrace trace = new StackTrace();
@@ -524,6 +562,7 @@ namespace PaintDotNet
             return image;
         }
 
+        [Obsolete]
         public static Icon GetIconResource(string fileName) 
         {
             StackTrace trace = new StackTrace();
@@ -536,19 +575,52 @@ namespace PaintDotNet
             return Icon.FromHandle(((Bitmap)image).GetHicon());
         }
 
-        public static Stream GetResourceStream(string fileName)
+        private static Assembly mainAssembly;
+        private static Assembly MainAssembly
         {
-            StackTrace trace = new StackTrace();
-            StackFrame parentFrame = trace.GetFrame(1);
-            MethodBase parentMethod = parentFrame.GetMethod();
-            Type parentType = parentMethod.DeclaringType;
-            Assembly parentAssembly = parentType.Assembly;
-            return GetResourceStream(parentAssembly, parentType.Namespace, fileName);
+            get
+            {
+                if (mainAssembly == null)
+                {
+                    mainAssembly = Assembly.GetEntryAssembly();
+                }
+
+                return mainAssembly;
+            }
         }
 
+        [Obsolete]
+        public static Stream GetResourceStream(string fileName)
+        {
+            Stream stream = null;
+            
+            if (stream == null)
+            {
+                stream = GetResourceStream(MainAssembly, "PaintDotNet", fileName);
+            }
+
+            if (stream == null)
+            {
+                StackTrace trace = new StackTrace();
+                StackFrame parentFrame = trace.GetFrame(1);
+                MethodBase parentMethod = parentFrame.GetMethod();
+                Type parentType = parentMethod.DeclaringType;
+                Assembly parentAssembly = parentType.Assembly;
+                stream = GetResourceStream(parentAssembly, parentType.Namespace, fileName);
+            }
+
+            return stream;
+        }
+
+        [Obsolete]
         public static Stream GetResourceStream(Assembly assembly, string namespaceName, string fileName)
         {
             return assembly.GetManifestResourceStream(namespaceName + "." + fileName);
+        }
+
+        public static Point GetRectangleCenter(Rectangle rect)
+        {
+            return new Point((rect.Left + rect.Right) / 2, (rect.Top + rect.Bottom) / 2);
         }
 
         public static Scanline[] GetRectangleScans(Rectangle rect)
@@ -557,7 +629,7 @@ namespace PaintDotNet
 
             for (int y = 0; y < rect.Height; ++y)
             {
-                scans[y] = new Scanline(new Point(rect.X, rect.Y + y), rect.Width);
+                scans[y] = new Scanline(rect.X, rect.Y + y, rect.Width);
             }
 
             return scans;
@@ -579,7 +651,7 @@ namespace PaintDotNet
             {
                 for (int y = 0; y < rect.Height; ++y)
                 {
-                    scans[scanIndex] = new Scanline(new Point(rect.X, rect.Y + y), rect.Width);
+                    scans[scanIndex] = new Scanline(rect.X, rect.Y + y, rect.Width);
                     ++scanIndex;
                 }
             }
@@ -610,7 +682,8 @@ namespace PaintDotNet
 
             for (int i = 0; i < length; ++i)
             {
-                rects[i] = new Rectangle(scans[i + startIndex].Point, new Size(scans[i + startIndex].Length, 1));
+                Scanline scan = scans[i + startIndex];
+                rects[i] = new Rectangle(scan.X, scan.Y, scan.Length, 1);
             }
 
             return rects;
@@ -635,7 +708,7 @@ namespace PaintDotNet
 
                 for (int y = 0; y < (int)rectF.Height; ++y)
                 {
-                    scans[scanIndex] = new Scanline(new Point(rect.X, rect.Y + y), rect.Width);
+                    scans[scanIndex] = new Scanline(rect.X, rect.Y + y, rect.Width);
                     ++scanIndex;
                 }
             }
@@ -676,27 +749,28 @@ namespace PaintDotNet
 
             if (rectsF == null || rectsF.Length == 0 || length == 0)
             {
-                region = new PdnRegion();
-                region.MakeEmpty();
-                return region;
+                region = PdnRegion.CreateEmpty();
             }
-
-            using (PdnGraphicsPath path = new PdnGraphicsPath())
+            else
             {
-                path.FillMode = FillMode.Winding;
-                if (startIndex == 0 && length == rectsF.Length)
+                using (PdnGraphicsPath path = new PdnGraphicsPath())
                 {
-                    path.AddRectangles(rectsF);
-                }
-                else
-                {
-                    for (int i = startIndex; i < startIndex + length; ++i)
-                    {
-                        path.AddRectangle(rectsF[i]);
-                    }
-                }
+                    path.FillMode = FillMode.Winding;
 
-                region = new PdnRegion(path);
+                    if (startIndex == 0 && length == rectsF.Length)
+                    {
+                        path.AddRectangles(rectsF);
+                    }
+                    else
+                    {
+                        for (int i = startIndex; i < startIndex + length; ++i)
+                        {
+                            path.AddRectangle(rectsF[i]);
+                        }
+                    }
+
+                    region = new PdnRegion(path);
+                }
             }
 
             return region;
@@ -741,28 +815,28 @@ namespace PaintDotNet
 
             if (length == 0)
             {
-                region = new PdnRegion();
-                region.MakeEmpty();
-                return region;
+                region = PdnRegion.CreateEmpty();
             }
-
-            using (PdnGraphicsPath path = new PdnGraphicsPath())
+            else
             {
-                path.FillMode = FillMode.Winding;
-                if (startIndex == 0 && length == rects.Length)
+                using (PdnGraphicsPath path = new PdnGraphicsPath())
                 {
-                    path.AddRectangles(rects);
-                }
-                else
-                {
-                    for (int i = startIndex; i < startIndex + length; ++i)
+                    path.FillMode = FillMode.Winding;
+                    if (startIndex == 0 && length == rects.Length)
                     {
-                        path.AddRectangle(rects[i]);
+                        path.AddRectangles(rects);
                     }
-                }
+                    else
+                    {
+                        for (int i = startIndex; i < startIndex + length; ++i)
+                        {
+                            path.AddRectangle(rects[i]);
+                        }
+                    }
 
-                region = new PdnRegion(path);
-                path.Dispose();
+                    region = new PdnRegion(path);
+                    path.Dispose();
+                }
             }
 
             return region;
@@ -773,7 +847,7 @@ namespace PaintDotNet
             return RectanglesToRegion(rects, 0, rects.Length);
         }
 
-        public static int RegionArea(RectangleF[] rectsF)
+        public static int GetRegionArea(RectangleF[] rectsF)
         {
             int area = 0;
 
@@ -786,10 +860,22 @@ namespace PaintDotNet
             return area;
         }
 
-        public static RectangleF RectFromCenter(PointF center, float size) 
+        public static RectangleF RectangleFromCenter(PointF center, float halfSize) 
         {
             RectangleF ret = new RectangleF(center.X, center.Y, 0, 0);
-            ret.Inflate(size, size);
+            ret.Inflate(halfSize, halfSize);
+            return ret;
+        }
+
+        public static PointF[] PointArrayToPointFArray(Point[] ptArray)
+        {
+            PointF[] ret = new PointF[ptArray.Length];
+
+            for (int i = 0; i < ret.Length; ++i)
+            {
+                ret[i] = (PointF)ptArray[i];
+            }
+
             return ret;
         }
 
@@ -1047,23 +1133,6 @@ namespace PaintDotNet
 
             return bitmap;
         }
-
-        [ThreadStatic]
-        private static Pen widenPen;
-
-        public static Pen WidenPen
-        {
-            get
-            {
-                if (widenPen == null)
-                {
-                    widenPen = new Pen(Brushes.Black, 2.0f);
-                }
-
-                return widenPen;
-            }
-        }
-
 
         /// <summary>
         /// Allows you to find the bounding box for a Region object without requiring
@@ -1439,6 +1508,24 @@ namespace PaintDotNet
             }
 
             return retRects;
+        }
+
+        public static void TranslatePointsInPlace(PointF[] ptsF, float dx, float dy)
+        {
+            for (int i = 0; i < ptsF.Length; ++i)
+            {
+                ptsF[i].X += dx;
+                ptsF[i].Y += dy;
+            }
+        }
+
+        public static void TranslatePointsInPlace(Point[] pts, int dx, int dy)
+        {
+            for (int i = 0; i < pts.Length; ++i)
+            {
+                pts[i].X += dx;
+                pts[i].Y += dy;
+            }
         }
 
         public static Rectangle[] TruncateRectangles(RectangleF[] rectsF)
@@ -1950,6 +2037,11 @@ namespace PaintDotNet
             return (from * (1 - frac) + to * frac);
         }
 
+        public static PointF Lerp(PointF from, PointF to, float frac)
+        {
+            return new PointF(Lerp(from.X, to.X, frac), Lerp(from.Y, to.Y, frac));
+        }
+
         public static int ColorDifference(ColorBgra a, ColorBgra b) 
         {
             return (int)Math.Ceiling(Math.Sqrt(ColorDifferenceSquared(a, b)));
@@ -2000,23 +2092,615 @@ namespace PaintDotNet
 
         public static void ShowHelp(Control parent)
         {
-            try
-            {
-                string fileName = "PaintDotNet.chm";
-                string dirName = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-                string fullName = Path.Combine(dirName, fileName);
+            string[] locales = PdnResources.GetLocaleNameChain();
+            const string indexHtml = "index.html";
+            string baseDir = PdnInfo.GetApplicationDir();
+            string helpDir = Path.Combine(baseDir, "Help");
 
-                // HACK: This avoids some very, very weird behavior if MainForm is used as the first parameter
-                //       "This" referring to ignoring the parent parameter and using 'new Control()' instead.
-                Control control = new Control();
-                control.CreateControl();
-                Help.ShowHelp(control, fullName, HelpNavigator.TableOfContents);
+            // Walk the chain of locale names and try to find Help/[locale]/index.html
+            // If all else fails, try Help/index.html
+            for (int i = 0; i < locales.Length; ++i)
+            {
+                string localeHelpDir = Path.Combine(helpDir, locales[i]);
+                string indexHtmlPath = Path.Combine(localeHelpDir, indexHtml);
+
+                if (File.Exists(indexHtmlPath))
+                {
+                    Process.Start(indexHtmlPath);
+                    return;
+                }
             }
 
-            catch
+            string lastChancePath = Path.Combine(helpDir, indexHtml);
+            if (File.Exists(lastChancePath))
             {
-                Utility.ErrorBox(parent, "The help file could not be found.");
+                Process.Start(lastChancePath);
             }
+            else
+            {
+                // TODO: error
+            }
+        }
+
+        /// <summary>
+        /// Reads a 16-bit unsigned integer from a Stream in little-endian format.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns>-1 on failure, else the 16-bit unsigned integer that was read.</returns>
+        public static int ReadUInt16(Stream stream)
+        {
+            int byte1 = stream.ReadByte();
+
+            if (byte1 == -1)
+            {
+                return -1;
+            }
+
+            int byte2 = stream.ReadByte();
+
+            if (byte2 == -1)
+            {
+                return -1;
+            }
+
+            return byte1 + (byte2 << 8);
+        }
+
+        public static void WriteUInt16(Stream stream, UInt16 word)
+        {
+            stream.WriteByte((byte)(word & 0xff));
+            stream.WriteByte((byte)(word >> 8));
+        }
+
+        public static void WriteUInt24(Stream stream, int uint24)
+        {
+            stream.WriteByte((byte)(uint24 & 0xff));
+            stream.WriteByte((byte)((uint24 >> 8) & 0xff));
+            stream.WriteByte((byte)((uint24 >> 16) & 0xff));
+        }
+
+        public static void WriteUInt32(Stream stream, UInt32 uint32)
+        {
+            stream.WriteByte((byte)(uint32 & 0xff));
+            stream.WriteByte((byte)((uint32 >> 8) & 0xff));
+            stream.WriteByte((byte)((uint32 >> 16) & 0xff));
+            stream.WriteByte((byte)((uint32 >> 24) & 0xff));
+        }
+
+        /// <summary>
+        /// Reads a 24-bit unsigned integer from a Stream in little-endian format.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns>-1 on failure, else the 24-bit unsigned integer that was read.</returns>
+        public static int ReadUInt24(Stream stream)
+        {
+            int byte1 = stream.ReadByte();
+
+            if (byte1 == -1)
+            {
+                return -1;
+            }
+
+            int byte2 = stream.ReadByte();
+
+            if (byte2 == -1)
+            {
+                return -1;
+            }
+
+            int byte3 = stream.ReadByte();
+
+            if (byte3 == -1)
+            {
+                return -1;
+            }
+
+            return byte1 + (byte2 << 8) + (byte3 << 16);
+        }
+
+        /// <summary>
+        /// Reads a 32-bit unsigned integer from a Stream in little-endian format.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns>-1 on failure, else the 32-bit unsigned integer that was read.</returns>
+        public static long ReadUInt32(Stream stream)
+        {
+            int byte1 = stream.ReadByte();
+
+            if (byte1 == -1)
+            {
+                return -1;
+            }
+
+            int byte2 = stream.ReadByte();
+
+            if (byte2 == -1)
+            {
+                return -1;
+            }
+
+            int byte3 = stream.ReadByte();
+
+            if (byte3 == -1)
+            {
+                return -1;
+            }
+
+            int byte4 = stream.ReadByte();
+
+            if (byte4 == -1)
+            {
+                return -1;
+            }
+
+            return unchecked((long)((uint)(byte1 + (byte2 << 8) + (byte3 << 16) + (byte4 << 24))));
+        }
+
+        public static int ReadFromStream(Stream input, byte[] buffer, int offset, int count)
+        {
+            int totalBytesRead = 0;
+
+            while (totalBytesRead < count)
+            {
+                int bytesRead = input.Read(buffer, offset + totalBytesRead, count - totalBytesRead);
+
+                if (bytesRead == 0)
+                {
+                    throw new IOException("ran out of data");
+                }
+
+                totalBytesRead += bytesRead;
+            }
+
+            return totalBytesRead;
+        }
+
+        public static long CopyStream(Stream input, Stream output, long maxBytes)
+        {
+            long bytesCopied = 0;
+            byte[] buffer = new byte[4096];
+
+            while (true)
+            {
+                int bytesRead = input.Read(buffer, 0, buffer.Length);
+
+                if (bytesRead == 0)
+                {
+                    break;
+                }
+                else
+                {
+                    int bytesToCopy;
+
+                    if (maxBytes != -1 && (bytesCopied + bytesRead) > maxBytes)
+                    {
+                        bytesToCopy = (int)(maxBytes - bytesCopied);
+                    }
+                    else
+                    {
+                        bytesToCopy = bytesRead;
+                    }
+
+                    output.Write(buffer, 0, bytesRead);
+                    bytesCopied += bytesToCopy;
+
+                    if (bytesToCopy != bytesRead)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return bytesCopied;
+        }
+
+        public static long CopyStream(Stream input, Stream output)
+        {
+            return CopyStream(input, output, -1);
+        }
+
+
+        private struct Edge
+        {
+            public int miny;   // int
+            public int maxy;   // int
+            public int x;      // fixed point: 24.8
+            public int dxdy;   // fixed point: 24.8
+
+            public Edge(int miny, int maxy, int x, int dxdy)
+            {
+                this.miny = miny;
+                this.maxy = maxy;
+                this.x = x;
+                this.dxdy = dxdy;
+            }
+        }
+
+        public static Scanline[] GetScans(Point[] vertices)
+        {
+            return GetScans(vertices, 0, vertices.Length);
+        }
+
+        public static Scanline[] GetScans(Point[] vertices, int startIndex, int length)
+        {
+            if (length > vertices.Length - startIndex)
+            {
+                throw new ArgumentException("out of bounds: length > vertices.Length - startIndex");
+            }
+
+            int ymax = 0;
+
+            // Build edge table
+            Edge[] edgeTable = new Edge[length];
+            int edgeCount = 0;
+
+            for (int i = startIndex; i < startIndex + length; ++i)
+            {
+                Point top = vertices[i];
+                Point bottom = vertices[(((i + 1) - startIndex) % length) + startIndex];
+                int dy;
+
+                if (top.Y > bottom.Y)
+                {
+                    Point temp = top;
+                    top = bottom;
+                    bottom = temp;
+                }
+                
+                dy = bottom.Y - top.Y;
+
+                if (dy != 0)
+                {
+                    edgeTable[edgeCount] = new Edge(top.Y, bottom.Y, top.X << 8, (((bottom.X - top.X) << 8) / dy));
+                    ymax = Math.Max(ymax, bottom.Y);
+                    ++edgeCount;
+                }
+            }
+
+            // Sort edge table by miny
+            for (int i = 0; i < edgeCount - 1; ++i)
+            {
+                int min = i;
+
+                for (int j = i + 1; j < edgeCount; ++j)
+                {
+                    if (edgeTable[j].miny < edgeTable[min].miny)
+                    {
+                        min = j;
+                    }
+                }
+
+                if (min != i)
+                {
+                    Edge temp = edgeTable[min];
+                    edgeTable[min] = edgeTable[i];
+                    edgeTable[i] = temp;
+                }
+            }
+
+            // Compute how many scanlines we will be emitting
+            int scanCount = 0;
+            int activeLow = 0;
+            int activeHigh = 0;
+            int yscan1 = edgeTable[0].miny;
+
+            // we assume that edgeTable[0].miny == yscan
+            while (activeHigh < edgeCount - 1 && 
+                   edgeTable[activeHigh + 1].miny == yscan1)
+            {
+                ++activeHigh;
+            }
+
+            while (yscan1 <= ymax)
+            {
+                // Find new edges where yscan == miny
+                while (activeHigh < edgeCount - 1 &&
+                       edgeTable[activeHigh + 1].miny == yscan1)
+                {
+                    ++activeHigh;
+                }
+
+                int count = 0;
+                for (int i = activeLow; i <= activeHigh; ++i)
+                {
+                    if (edgeTable[i].maxy > yscan1)
+                    {
+                        ++count;
+                    }
+                }
+
+                scanCount += count / 2;
+                ++yscan1;
+
+                // Remove edges where yscan == maxy
+                while (activeLow < edgeCount - 1 &&
+                       edgeTable[activeLow].maxy <= yscan1)
+                {
+                    ++activeLow;
+                }
+
+                if (activeLow > activeHigh)
+                {
+                    activeHigh = activeLow;
+                }
+            }
+
+            // Allocate scanlines that we'll return
+            Scanline[] scans = new Scanline[scanCount];
+
+            // Active Edge Table (AET): it is indices into the Edge Table (ET)
+            int[] active = new int[edgeCount];
+            int activeCount = 0;
+            int yscan2 = edgeTable[0].miny;
+            int scansIndex = 0;
+            
+            // Repeat until both the ET and AET are empty
+            while (yscan2 <= ymax)
+            {
+                // Move any edges from the ET to the AET where yscan == miny
+                for (int i = 0; i < edgeCount; ++i)
+                {
+                    if (edgeTable[i].miny == yscan2)
+                    {
+                        active[activeCount] = i;
+                        ++activeCount;
+                    }
+                }
+
+                // Sort the AET on x
+                for (int i = 0; i < activeCount - 1; ++i)
+                {
+                    int min = i;
+
+                    for (int j = i + 1; j < activeCount; ++j)
+                    {
+                        if (edgeTable[active[j]].x < edgeTable[active[min]].x)
+                        {
+                            min = j;
+                        }
+                    }
+
+                    if (min != i)
+                    {
+                        int temp = active[min];
+                        active[min] = active[i];
+                        active[i] = temp;
+                    }
+                }
+
+                // For each pair of entries in the AET, fill in pixels between their info
+                for (int i = 0; i < activeCount; i += 2)
+                {
+                    Edge el = edgeTable[active[i]];
+                    Edge er = edgeTable[active[i + 1]];
+                    int startx = (el.x + 0xff) >> 8; // ceil(x)
+                    int endx = er.x >> 8;      // floor(x)
+
+                    scans[scansIndex] = new Scanline(startx, yscan2, endx - startx);
+                    ++scansIndex;
+                }
+
+                ++yscan2;
+
+                // Remove from the AET any edge where yscan == maxy
+                int k = 0;
+                while (k < activeCount && activeCount > 0)
+                {
+                    if (edgeTable[active[k]].maxy == yscan2)
+                    {
+                        // remove by shifting everything down one
+                        for (int j =  k + 1; j < activeCount; ++j)
+                        {
+                            active[j - 1] = active[j];
+                        }
+
+                        --activeCount;
+                    }
+                    else
+                    {
+                        ++k;
+                    }
+                }
+
+                // Update x for each entry in AET
+                for (int i = 0; i < activeCount; ++i)
+                {
+                    edgeTable[active[i]].x += edgeTable[active[i]].dxdy;
+                }
+            }
+
+            return scans;
+        }
+
+        public static PointF TransformOnePoint(Matrix matrix, PointF ptF)
+        {
+            PointF[] ptFs = new PointF[1] { ptF };
+            matrix.TransformPoints(ptFs);
+            return ptFs[0];
+        }
+
+        public static PointF TransformOneVector(Matrix matrix, PointF ptF)
+        {
+            PointF[] ptFs = new PointF[1] { ptF };
+            matrix.TransformVectors(ptFs);
+            return ptFs[0];
+        }
+
+        public static PointF NormalizeVector(PointF vecF)
+        {
+            float magnitude = Magnitude(vecF);
+            vecF.X /= magnitude;
+            vecF.Y /= magnitude;
+            return vecF;
+        }
+
+        public static PointF NormalizeVector2(PointF vecF)
+        {
+            float magnitude = Magnitude(vecF);
+
+            if (magnitude == 0)
+            {
+                vecF.X = 0;
+                vecF.Y = 0;
+            }
+            else
+            {
+                vecF.X /= magnitude;
+                vecF.Y /= magnitude;
+            }
+
+            return vecF;
+        }
+
+        public static void NormalizeVectors(PointF[] vecsF)
+        {
+            for (int i = 0; i < vecsF.Length; ++i)
+            {
+                vecsF[i] = NormalizeVector(vecsF[i]);
+            }
+        }
+
+        public static PointF RotateVector(PointF vecF, float angleDelta)
+        {
+            angleDelta *= (float)( Math.PI / 180.0);
+            float vecFLen = Magnitude(vecF);
+            float vecFAngle = angleDelta + (float)Math.Atan2(vecF.Y, vecF.X);
+            vecF.X = (float)Math.Cos(vecFAngle);
+            vecF.Y = (float)Math.Sin(vecFAngle);
+            return vecF;
+        }
+
+        public static void RotateVectors(PointF[] vecFs, float angleDelta)
+        {
+            for (int i = 0; i < vecFs.Length; ++i)
+            {
+                vecFs[i] = RotateVector(vecFs[i], angleDelta);
+            }
+        }
+
+        public static PointF MultiplyVector(PointF vecF, float scalar)
+        {
+            return new PointF(vecF.X * scalar, vecF.Y * scalar);
+        }
+
+        public static PointF AddVectors(PointF a, PointF b)
+        {
+            return new PointF(a.X + b.X, a.Y + b.Y);
+        }
+
+        public static PointF SubtractVectors(PointF lhs, PointF rhs)
+        {
+            return new PointF(lhs.X - rhs.X, lhs.Y - rhs.Y);
+        }
+
+        public static PointF NegateVector(PointF v)
+        {
+            return new PointF(-v.X, -v.Y);
+        }
+
+        public static float GetAngleOfTransform(Matrix matrix)
+        {
+            PointF[] pts = new PointF[] { new PointF(1.0f, 0.0f) };
+            matrix.TransformVectors(pts);
+            double atan2 = Math.Atan2(pts[0].Y, pts[0].X);
+            double angle = atan2 * (180.0f / Math.PI);
+
+            return (float)angle;
+        }
+
+        public static bool IsTransformFlipped(Matrix matrix)
+        {
+            PointF ptX = new PointF(1.0f, 0.0f);
+            PointF ptXT = Utility.TransformOneVector(matrix, ptX);
+            double atan2X = Math.Atan2(ptXT.Y, ptXT.X);
+            double angleX = atan2X * (180.0 / Math.PI);
+
+            PointF ptY = new PointF(0.0f, 1.0f);
+            PointF ptYT = Utility.TransformOneVector(matrix, ptY);
+            double atan2Y = Math.Atan2(ptYT.Y, ptYT.X);
+            double angleY = (atan2Y * (180.0 / Math.PI)) - 90.0;
+
+            while (angleX < 0)
+            {
+                angleX += 360;
+            }
+
+            while (angleY < 0)
+            {
+                angleY += 360;
+            }
+
+            double angleDelta = Math.Abs(angleX - angleY);
+
+            return angleDelta > 1.0 && angleDelta < 359.0;
+        }
+
+        /// <summary>
+        /// Calculates the dot product of two vectors.
+        /// </summary>
+        public static float DotProduct(PointF lhs, PointF rhs)
+        {
+            return lhs.X * rhs.X + lhs.Y * rhs.Y;
+        }
+
+        /// <summary>
+        /// Calculates the orthogonal projection of y on to u.
+        /// yhat = u * ((y dot u) / (u dot u))
+        /// z = y - yhat
+        /// Section 6.2 (pg. 381) of Linear Algebra and its Applications, Second Edition, by David C. Lay
+        /// </summary>
+        /// <param name="y">The vector to decompose</param>
+        /// <param name="u">The non-zero vector to project y on to</param>
+        /// <param name="yhat">The orthogonal projection of y onto u</param>
+        /// <param name="yhatLen">The length of yhat such that yhat = yhatLen * u</param>
+        /// <param name="z">The component of y orthogonal to u</param>
+        public static void GetProjection(PointF y, PointF u, out PointF yhat, out float yhatLen, out PointF z)
+        {
+            if (u.X == 0 && u.Y == 0)
+            {
+                yhat = new PointF(0, 0);
+                yhatLen = 0;
+                z = new PointF(0, 0);
+            }
+            else
+            {
+                float yDotU = DotProduct(y, u);
+                float uDotU = DotProduct(u, u);
+                yhatLen = yDotU / uDotU;
+                yhat = MultiplyVector(u, yhatLen);
+                z = SubtractVectors(y, yhat);
+            }
+        }
+
+        public static int GreatestCommonDivisor(int a, int b)
+        {
+            int r;
+
+            if (a < b)
+            {
+                r = a;
+                a = b;
+                b = r;
+            }
+
+            do
+            {
+                r = a % b;
+                a = b;
+                b = r;
+            }
+            while (r != 0);
+
+            return a;
+        }
+
+        public static void Swap(ref int a, ref int b)
+        {
+            int t;
+
+            t = a;
+            a = b;
+            b = t;
         }
     }
 }

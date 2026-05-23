@@ -1,12 +1,14 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Drawing.Drawing2D;
 
 namespace PaintDotNet
 {
@@ -20,18 +22,19 @@ namespace PaintDotNet
         {
             get
             {
-                return "Select All";
+                return PdnResources.GetString("SelectAllAction.Name");
             }
         }
 
         public override HistoryAction PerformAction()
         {
-            SelectionHistoryAction sha = new SelectionHistoryAction(name, Utility.GetImageResource("Icons.MenuEditSelectAllIcon.bmp"), Workspace);
+            SelectionHistoryAction sha = new SelectionHistoryAction(name, PdnResources.GetImage("Icons.MenuEditSelectAllIcon.bmp"), Workspace);
 
-            Workspace.Environment.PerformSelectedPathChanging();
-            Workspace.Environment.SelectedPath.Reset();
-            Workspace.Environment.SelectedPath.AddRectangle(Workspace.Document.Bounds);
-            Workspace.Environment.PerformSelectedPathChanged();
+            Workspace.Environment.Selection.PerformChanging();
+            Workspace.Environment.Selection.Reset();
+            Workspace.Environment.Selection.SetContinuation(Workspace.Document.Bounds, CombineMode.Replace);
+            Workspace.Environment.Selection.CommitContinuation();
+            Workspace.Environment.Selection.PerformChanged();
 
             return sha;
         }

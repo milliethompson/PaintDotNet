@@ -1,14 +1,17 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
@@ -19,12 +22,12 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for PersistedObject.
-	/// </summary>
-	public sealed class PersistedObject
+    /// <summary>
+    /// Summary description for PersistedObject.
+    /// </summary>
+    public sealed class PersistedObject
         : IDisposable
-	{
+    {
         private static ArrayList fileNames = ArrayList.Synchronized(new ArrayList());
 
         public static string[] FileNames
@@ -103,6 +106,11 @@ namespace PaintDotNet
         {
             get
             {
+                if (disposed)
+                {
+                    throw new ObjectDisposedException("PersistedObject");
+                }
+
                 if (objectRef == null)
                 {
                     return null;
@@ -114,9 +122,23 @@ namespace PaintDotNet
             }
         }
 
-        static PersistedObject()
+        /// <summary>
+        /// Ensures that the object held by this instance of PersistedObject is flushed to disk
+        /// and freed from memory.
+        /// </summary>
+        public void Flush()
         {
-            Application.ApplicationExit += new EventHandler(Application_ApplicationExit);
+            // At this point we assume the object has already been serialized to disk.
+            object obj = this.WeakObject;
+            IDisposable disposable = obj as IDisposable;
+
+            if (disposable != null)
+            {
+                disposable.Dispose();
+                disposable = null;
+            }
+
+            this.objectRef = null;
         }
 
         /// <summary>
@@ -129,10 +151,10 @@ namespace PaintDotNet
         /// Deferred serialization via IDeferredSerializable and DeferredFormatter are supported,
         /// and the compression level will be set to none (zero).
         /// </remarks>
-		public PersistedObject(object theObject)
-		{
+        public PersistedObject(object theObject)
+        {
             this.objectRef = new WeakReference(theObject);
-            string tempFileName = Path.GetTempFileName();
+            string tempFileName = FileSystem.GetTempFileName();
             fileNames.Add(tempFileName);
             this.bstrTempFileName = Marshal.StringToBSTR(tempFileName);
 
@@ -150,24 +172,6 @@ namespace PaintDotNet
         ~PersistedObject()
         {
             Dispose(false);
-        }
-
-        /// <summary>
-        /// Ensures that the object held by this instance of PersistedObject is flushed to disk
-        /// and freed from memory.
-        /// </summary>
-        public void Flush()
-        {
-            // At this point we assume the object has already been serialized to disk.
-            object obj = this.WeakObject;
-            IDisposable disposable = obj as IDisposable;
-
-            if (disposable != null)
-            {
-                disposable.Dispose();
-            }
-
-            this.objectRef = null;
         }
 
         public void Dispose()
@@ -208,6 +212,11 @@ namespace PaintDotNet
                 Marshal.FreeBSTR(this.bstrTempFileName);
                 disposed = true;
             }
+        }
+
+        static PersistedObject()
+        {
+            Application.ApplicationExit += new EventHandler(Application_ApplicationExit);
         }
 
         private static void Application_ApplicationExit(object sender, EventArgs e)

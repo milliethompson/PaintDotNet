@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -53,14 +54,14 @@ namespace PaintDotNet
 
         private void DrawColorRectangle(Graphics g, Rectangle rect, Color color)
         {
-			Rectangle colorRectangle = Rectangle.Inflate(rect, -2, -2);
-			Brush colorBrush = new LinearGradientBrush(colorRectangle, Color.FromArgb(255, color), color, 90.0f, false);
-			HatchBrush backgroundBrush = new HatchBrush(HatchStyle.LargeCheckerBoard, Color.FromArgb(128, 128, 128), Color.FromArgb(192, 192, 192));
+            Rectangle colorRectangle = Rectangle.Inflate(rect, -2, -2);
+            Brush colorBrush = new LinearGradientBrush(colorRectangle, Color.FromArgb(255, color), color, 90.0f, false);
+            HatchBrush backgroundBrush = new HatchBrush(HatchStyle.LargeCheckerBoard, Color.FromArgb(128, 128, 128), Color.FromArgb(192, 192, 192));
 
-			g.DrawRectangle(Pens.Black, 0, 0, rect.Width - 1, rect.Height - 1);
-			g.DrawRectangle(Pens.White, 1, 1, rect.Width - 3, rect.Height - 3);
+            g.DrawRectangle(Pens.Black, 0, 0, rect.Width - 1, rect.Height - 1);
+            g.DrawRectangle(Pens.White, 1, 1, rect.Width - 3, rect.Height - 3);
 
-			g.FillRectangle(backgroundBrush, colorRectangle);
+            g.FillRectangle(backgroundBrush, colorRectangle);
             g.FillRectangle(colorBrush, colorRectangle);
         }
 

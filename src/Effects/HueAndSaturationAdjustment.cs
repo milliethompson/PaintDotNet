@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -14,24 +15,37 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-	/// <summary>
-	/// Summary description for HueAndSaturationAdjustment.
-	/// </summary>
-	[EffectCategory(EffectCategory.Adjustment)]
+    /// <summary>
+    /// Summary description for HueAndSaturationAdjustment.
+    /// </summary>
+    [EffectCategory(EffectCategory.Adjustment)]
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
-	public class HueAndSaturationAdjustment
+    public class HueAndSaturationAdjustment
         : Effect,
           IConfigurableEffect  
-	{
-        public const string StaticName = "Hue / Saturation";
+    {
+        public static string StaticName
+        {
+            get
+            {
+                return PdnResources.GetString("HueAndSaturationAdjustment.Name");
+            }
+        }
 
-		public HueAndSaturationAdjustment()
-            : base(HueAndSaturationAdjustment.StaticName,
-                   "Allows you to adjust the hue, saturation, and luminance",
-                   Utility.GetImageResource("Icons.HueAndSaturationAdjustment.bmp"), 
+        public static Image StaticImage
+        {
+            get
+            {
+                return PdnResources.GetImage("Icons.HueAndSaturationAdjustment.bmp");
+            }
+        }
+
+        public HueAndSaturationAdjustment()
+            : base(StaticName,
+                   StaticImage,
                    System.Windows.Forms.Shortcut.CtrlShiftU)
-		{
-		}
+        {
+        }
 
         public EffectConfigDialog CreateConfigDialog()
         {
@@ -40,21 +54,21 @@ namespace PaintDotNet.Effects
             tacg.Text = HueAndSaturationAdjustment.StaticName;
 
             tacg.Amount1Default = 0;
-            tacg.Amount1Label = "Hue";
+            tacg.Amount1Label = PdnResources.GetString("HueAndSaturationAdjustment.Amount1Label");
             tacg.Amount1Maximum = 180;
             tacg.Amount1Minimum = -180;
 
             tacg.Amount2Default = 100;
-            tacg.Amount2Label = "Saturation";
-            tacg.Amount2Maximum = 400;
+            tacg.Amount2Label = PdnResources.GetString("HueAndSaturationAdjustment.Amount2Label");
+            tacg.Amount2Maximum = 200;
             tacg.Amount2Minimum = 0;
 
             tacg.Amount3Default = 0;
-            tacg.Amount3Label = "Lightness";
+            tacg.Amount3Label = PdnResources.GetString("HueAndSaturationAdjustment.Amount3Label");
             tacg.Amount3Maximum = 100;
-			tacg.Amount3Minimum = -100;
+            tacg.Amount3Minimum = -100;
 
-			tacg.Icon = Utility.GetIconResource("Icons.HueAndSaturationAdjustment.bmp");
+            tacg.Icon = PdnResources.GetIconFromImage("Icons.HueAndSaturationAdjustment.bmp");
 
             return tacg;
         }
@@ -65,6 +79,12 @@ namespace PaintDotNet.Effects
             int hueDelta = token.Amount1;
             int satDelta = token.Amount2;
             int lightness = token.Amount3;
+
+            // map the range [0,100] -> [0,100] and the range [101,200] -> [103,400]
+            if (satDelta > 100)
+            {
+                satDelta = ((satDelta - 100) * 3) + 100;
+            }
 
             UnaryPixelOp op;
 
@@ -80,7 +100,6 @@ namespace PaintDotNet.Effects
                 op = new UnaryPixelOps.HueSaturationLightness(hueDelta, satDelta, lightness);
             }
             
-
             foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
             {
                 op.Apply(dst, src, rect);

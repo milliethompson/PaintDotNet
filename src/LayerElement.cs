@@ -1,11 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -21,22 +23,31 @@ namespace PaintDotNet
     public class LayerElement 
         : System.Windows.Forms.UserControl
     {
+        private static bool allowRefreshPreview = true; // when non-zero, RefreshPreview() will not do anything (and will then decrement this) -- used as startup perf optimization
+
+        public static void SetAllowRefreshPreview(bool flag)
+        {
+            allowRefreshPreview = flag;
+        }
+
         private Layer layer;
         private bool isSelected;
+        public const int ThumbSize = 40;
 
         private PropertyEventHandler layerPropertyChangedDelegate;
         private System.Windows.Forms.Label layerDescription;
         private System.Windows.Forms.PictureBox icon;
         private System.Windows.Forms.CheckBox layerVisible;
-        private PaintDotNet.Threading.ThreadPool threadPool = new PaintDotNet.Threading.ThreadPool(2);
-		
-		public System.Windows.Forms.CheckBox LayerVisible
-		{
-			get
-			{
-				return this.layerVisible;
-			}
-		}
+
+        private int suspendPreviewUpdates = 0;
+
+        public System.Windows.Forms.CheckBox LayerVisible
+        {
+            get
+            {
+                return this.layerVisible;
+            }
+        }
 
         /// <summary> 
         /// Required designer variable.
@@ -47,23 +58,23 @@ namespace PaintDotNet
         {
             get
             {
-                return isSelected;
+                return this.isSelected;
             }
             set
             {
-                isSelected = value;
+                this.isSelected = value;
 
-                if (isSelected)
+                if (this.isSelected)
                 {
                     this.layerDescription.BackColor = SystemColors.Highlight;
                     this.layerDescription.ForeColor = SystemColors.HighlightText;
-                    this.layerVisible.BackColor = layerDescription.BackColor;
+                    this.layerVisible.BackColor = this.layerDescription.BackColor;
                 }
                 else // !selected
                 {               
                     this.layerDescription.ForeColor = SystemColors.WindowText;
                     this.layerDescription.BackColor = SystemColors.Window;
-                    this.layerVisible.BackColor = layerDescription.BackColor;
+                    this.layerVisible.BackColor = this.layerDescription.BackColor;
                     this.icon.BackColor = Color.White;
                 }
 
@@ -75,18 +86,18 @@ namespace PaintDotNet
         {
             get
             {
-                return icon.Image;
+                return this.icon.Image;
             }
 
             set
             {
-                if (icon.Image != null)
+                if (this.icon.Image != null)
                 {
-                    icon.Image.Dispose();
-                    icon.Image = null;
+                    this.icon.Image.Dispose();
+                    this.icon.Image = null;
                 }
 
-                icon.Image = value;
+                this.icon.Image = value;
                 Invalidate(true);
                 Update();
             }
@@ -96,7 +107,7 @@ namespace PaintDotNet
         {
             get
             {
-                return layer;
+                return this.layer;
             }
 
             set
@@ -106,29 +117,25 @@ namespace PaintDotNet
                     return;
                 }
 
-                if (layer != null)
+                if (this.layer != null)
                 {
-                    layer.PropertyChanged -= layerPropertyChangedDelegate;
-                    layer.Invalidated -= new InvalidateEventHandler(layer_Invalidated);
+                    this.layer.PropertyChanged -= this.layerPropertyChangedDelegate;
+                    this.layer.Invalidated -= new InvalidateEventHandler(layer_Invalidated);
                 }
                 
-                if (this.threadPool != null)
-                {
-                    this.threadPool.Drain();
-                }
+                this.layer = value;
 
-                layer = value;
-
-                if (layer != null)
+                if (this.layer != null)
                 {
-                    layer.PropertyChanged += layerPropertyChangedDelegate;
-                    layer.Invalidated += new InvalidateEventHandler(layer_Invalidated);
+                    this.layer.PropertyChanged += this.layerPropertyChangedDelegate;
+                    this.layer.Invalidated += new InvalidateEventHandler(layer_Invalidated);
                     this.layerPropertyChangedDelegate(layer, new PropertyEventArgs("")); // sync up
 
                     // Add italics if it's the background layer
-                    if (layer.IsBackground)
+                    if (this.layer.IsBackground)
                     {
-                        this.layerDescription.Font = new Font(layerDescription.Font.FontFamily, layerDescription.Font.Size, layerDescription.Font.Style | FontStyle.Italic);
+                        this.layerDescription.Font = new Font(this.layerDescription.Font.FontFamily, this.layerDescription.Font.Size, 
+                            this.layerDescription.Font.Style | FontStyle.Italic);
                     }
                 }
 
@@ -139,7 +146,10 @@ namespace PaintDotNet
         public LayerElement()
         {
             // This call is required by the Windows.Forms Form Designer.
+            this.SuspendLayout();
             InitializeComponent();
+            InitializeComponent2();
+            this.ResumeLayout(false);
             this.IsSelected = false;
 
             layerPropertyChangedDelegate = new PropertyEventHandler(LayerPropertyChangedHandler);
@@ -156,12 +166,6 @@ namespace PaintDotNet
             {
                 this.Layer = null;
 
-                if (threadPool != null)
-                {
-                    threadPool.Drain();
-                    threadPool = null;
-                }
-
                 if (components != null)
                 {
                     components.Dispose();
@@ -176,6 +180,14 @@ namespace PaintDotNet
         {
             this.layerDescription.Text = layer.Name;
             this.layerVisible.Checked = layer.Visible;
+        }
+
+        void InitializeComponent2()
+        {
+            this.Size = new System.Drawing.Size(200, 2 + LayerElement.ThumbSize);
+            this.layerDescription.Location = new System.Drawing.Point(this.Height, 0);
+            this.icon.Size = new System.Drawing.Size(this.Height, this.Height);
+            this.layerVisible.Size = new System.Drawing.Size(16, this.Height);
         }
 
         #region Component Designer generated code
@@ -194,11 +206,9 @@ namespace PaintDotNet
             // 
             this.layerDescription.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.layerDescription.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.layerDescription.Location = new System.Drawing.Point(34, 0);
             this.layerDescription.Name = "layerDescription";
-            this.layerDescription.Size = new System.Drawing.Size(150, 34);
+            this.layerDescription.Size = new System.Drawing.Size(150, 50);
             this.layerDescription.TabIndex = 9;
-            this.layerDescription.Text = "Layer Info";
             this.layerDescription.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.layerDescription.Click += new System.EventHandler(this.Control_Click);
             this.layerDescription.DoubleClick += new System.EventHandler(this.Control_DoubleClick);
@@ -210,7 +220,6 @@ namespace PaintDotNet
             this.icon.Dock = System.Windows.Forms.DockStyle.Left;
             this.icon.Location = new System.Drawing.Point(0, 0);
             this.icon.Name = "icon";
-            this.icon.Size = new System.Drawing.Size(34, 34);
             this.icon.TabIndex = 8;
             this.icon.TabStop = false;
             this.icon.Click += new System.EventHandler(this.Control_Click);
@@ -225,7 +234,6 @@ namespace PaintDotNet
             this.layerVisible.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.layerVisible.Location = new System.Drawing.Point(184, 0);
             this.layerVisible.Name = "layerVisible";
-            this.layerVisible.Size = new System.Drawing.Size(16, 34);
             this.layerVisible.TabIndex = 7;
             this.layerVisible.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.layerVisible_KeyPress);
             this.layerVisible.CheckStateChanged += new System.EventHandler(this.layerVisible_CheckStateChanged);
@@ -237,7 +245,6 @@ namespace PaintDotNet
             this.Controls.Add(this.icon);
             this.Controls.Add(this.layerVisible);
             this.Name = "LayerElement";
-            this.Size = new System.Drawing.Size(200, 34);
             this.ResumeLayout(false);
 
         }
@@ -255,7 +262,7 @@ namespace PaintDotNet
 
         private void layerVisible_CheckStateChanged(object sender, System.EventArgs e)
         {
-            layer.Visible = layerVisible.Checked;
+            this.layer.Visible = this.layerVisible.Checked;
             Update();
         }
 
@@ -268,10 +275,6 @@ namespace PaintDotNet
         {
             this.OnKeyUp(e);
         }
-
-        private int suspendPreviewUpdates = 0;
-        private int needToUpdatePreview = 0;
-        private object previewLock = new object();
 
         private void layer_Invalidated(object sender, InvalidateEventArgs e)
         {
@@ -294,79 +297,107 @@ namespace PaintDotNet
             base.OnHandleCreated(e);
         }
 
-
         public void RefreshPreview()
         {
+            if (!allowRefreshPreview)
+            {
+                return;
+            }
+
+            if (this.suspendPreviewUpdates > 0)
+            {
+                return;
+            }
+
             if (!this.IsHandleCreated)
             {
                 return;
             }
 
-            if (suspendPreviewUpdates == 0)
+            lock (refreshLock)
             {
-                if (1 == Interlocked.Increment(ref this.needToUpdatePreview))
+                if (layersToRefresh.Count == 0 ||
+                    !object.ReferenceEquals(layersToRefresh.Peek(), this))
                 {
-                    this.threadPool.QueueUserWorkItem(new WaitCallback(UpdatePreviewHandler), 25);
+                    layersToRefresh.Push(this);
+                }
+
+                Monitor.Pulse(refreshLock);
+            }
+        }
+
+        private static object refreshLock = new object();
+        private static Stack layersToRefresh = new Stack();
+        private static bool quitPreviewThread = false;
+        private static Thread previewThread;
+
+        private static void PreviewThread()
+        {
+            while (true)
+            {
+                LayerElement layerElement;
+
+                lock (refreshLock)
+                {
+                    while (layersToRefresh.Count == 0)
+                    {
+                        Monitor.Wait(refreshLock);
+
+                        if (quitPreviewThread)
+                        {
+                            return;
+                        }
+                    }
+
+                    layerElement = (LayerElement)layersToRefresh.Pop();
+                }
+            
+                Thread.Sleep(100);
+
+                if (layerElement.IsHandleCreated)
+                {
+                    try
+                    {
+                        layerElement.UpdatePreview();
+                    }
+
+                    catch (Exception ex)
+                    {
+                        try
+                        {
+                            Tracing.Ping("Exception in PreviewThread after calling UpdatePreview: " + ex);
+                        }
+
+                        catch
+                        {
+                        }
+                    }
                 }
             }
         }
 
-        private void UpdatePreviewHandler(object context)
+        static LayerElement()
         {
-            if (!this.IsHandleCreated)
-            {
-                return;
-            }
-
-            int delay = (int)context;
-
-            lock (previewLock) // make sure to serialize preview updates ... sometimes we get more than one in there
-            {
-                ThreadPriority oldPriority = Thread.CurrentThread.Priority;
-                bool oldIsBackground = Thread.CurrentThread.IsBackground;
-                Thread.CurrentThread.IsBackground = false;
-                Thread.CurrentThread.Priority = ThreadPriority.Lowest;
-
-                try
-                {
-                    Thread.Sleep(delay);
-                    UpdatePreview();
-                }
-
-                catch
-                {
-                }                
-
-                finally
-                {
-                    if (this.needToUpdatePreview > 1)
-                    {
-                        if (this.IsHandleCreated)
-                        {
-                            this.BeginInvoke(new VoidVoidDelegate(RefreshPreview));
-                        }
-                    }
-
-                    this.needToUpdatePreview = 0;
-
-                    Thread.CurrentThread.Priority = oldPriority;
-                    Thread.CurrentThread.IsBackground = oldIsBackground;
-                }
-            }
-        }    
+            previewThread = new Thread(new ThreadStart(PreviewThread));
+            previewThread.Priority = ThreadPriority.Lowest;
+            previewThread.IsBackground = true;
+            previewThread.Start();
+        }
 
         private void UpdatePreview()
         {
-            int previewSide = 32;
+            int previewSide = LayerElement.ThumbSize;
             Size previewSize;
 
             // decide size ... are we 'tall' or 'wide' ?
             if (layer.Width > layer.Height)
-            {   // wide
+            {   
+                // wide
                 previewSize = new Size(previewSide, Math.Max(1, (layer.Height * previewSide) / layer.Width));
             }
             else
-            {   //tall
+            {   
+                // tall
                 previewSize = new Size(Math.Max(1, (layer.Width * previewSide) / layer.Height), previewSide);
             }
 
@@ -380,14 +411,12 @@ namespace PaintDotNet
             }
             else
             {
-                // TODO: once we get double-dispatch in place (v2.2) for pairing actions and layer types, use that for this
+                // TODO: once we get double-dispatch in place (v3.0) for pairing actions and layer types, use that for this
                 // see bug #996
                 // (IResize x IBitmapLayerAction).Resize(dstRA, srcLayer)
             }
 
             previewWindow.Dispose();
-
-            //new PaintDotNet.Effects.SharpenEffect().RenderInPlace(new RenderArgs(surface), surface.Bounds);
 
             Bitmap bitmap = new Bitmap(surface.Width, surface.Height);
 
@@ -399,9 +428,6 @@ namespace PaintDotNet
                 }
             }
 
-            // We wrap this Dispose() in a try/empty-catch because it's possible we're executing after the rest
-            // of the app has shutdown. Which means that Memory's heap is destroyed and this will throw an
-            // exception. And if that throws an exception we don't want to do any of the rest of the code.
             surface.Dispose();
 
             DateTime start = DateTime.Now;
@@ -409,13 +435,25 @@ namespace PaintDotNet
             {
                 Thread.Sleep(20);
 
-                if (DateTime.Now - start > new TimeSpan(0, 0, 3))
+                if ((DateTime.Now - start) > new TimeSpan(0, 0, 0, 0, 250))
                 {
                     return;
                 }
             }
 
-            this.BeginInvoke(new VoidObjectDelegate(SetImageProperty), new object[] { bitmap });
+            // Make sure the next queued layer refresh isn't ourself. If it is, throw away our work
+            // to avoid ugly thumbnail flickering
+            lock (refreshLock)
+            {
+                if (layersToRefresh.Count > 0 && object.ReferenceEquals(this, layersToRefresh.Peek()))
+                {
+                    bitmap.Dispose();
+                }
+                else
+                {
+                    this.BeginInvoke(new VoidObjectDelegate(SetImageProperty), new object[] { bitmap });
+                }
+            }
         }
 
         private void SetImageProperty(object newValue)

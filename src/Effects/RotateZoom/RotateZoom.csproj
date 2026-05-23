@@ -16,23 +16,23 @@
                 DefaultTargetSchema = "IE50"
                 DelaySign = "false"
                 OutputType = "Library"
-                PreBuildEvent = 'rem Copy license file over&#xd;&#xa;copy "$(SolutionDir)\Setup\License.rtf" "$(ProjectDir)"'
+                PreBuildEvent = ""
                 PostBuildEvent = ""
-                RootNamespace = "PaintDotNet.Effects"
+                RootNamespace = "PaintDotNet.Effects.RotateZoom"
                 RunPostBuildEvent = "OnBuildSuccess"
                 StartupObject = ""
             >
                 <Config
                     Name = "Debug"
                     AllowUnsafeBlocks = "true"
-                    BaseAddress = "285212672"
+                    BaseAddress = "327155712"
                     CheckForOverflowUnderflow = "true"
                     ConfigurationOverrideFile = ""
                     DefineConstants = "DEBUG;TRACE"
                     DocumentationFile = ""
                     DebugSymbols = "true"
                     FileAlignment = "4096"
-                    IncrementalBuild = "false"
+                    IncrementalBuild = "true"
                     NoStdLib = "false"
                     NoWarn = ""
                     Optimize = "false"
@@ -45,7 +45,7 @@
                 <Config
                     Name = "Release"
                     AllowUnsafeBlocks = "true"
-                    BaseAddress = "285212672"
+                    BaseAddress = "327155712"
                     CheckForOverflowUnderflow = "false"
                     ConfigurationOverrideFile = ""
                     DefineConstants = "TRACE"
@@ -89,6 +89,16 @@
                     AssemblyName = "System.Windows.Forms"
                     HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Windows.Forms.dll"
                 />
+                <Reference
+                    Name = "Resources"
+                    Project = "{0B173113-1F9B-4939-A62F-A176336F13AC}"
+                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+                />
+                <Reference
+                    Name = "SystemLayer"
+                    Project = "{80572820-93A5-4278-A513-D902BEA2639C}"
+                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+                />
             </References>
         </Build>
         <Files>
@@ -99,8 +109,28 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "PanControl.cs"
+                    SubType = "UserControl"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "PanControl.resx"
+                    DependentUpon = "PanControl.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
                     RelPath = "Readme.txt"
                     BuildAction = "None"
+                />
+                <File
+                    RelPath = "RollControl.cs"
+                    SubType = "UserControl"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "RollControl.resx"
+                    DependentUpon = "RollControl.cs"
+                    BuildAction = "EmbeddedResource"
                 />
                 <File
                     RelPath = "RotateZoomEffect.cs"
@@ -109,7 +139,7 @@
                 />
                 <File
                     RelPath = "RotateZoomEffectConfigDialog.cs"
-                    SubType = "Form"
+                    SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
@@ -121,6 +151,14 @@
                     RelPath = "RotateZoomEffectConfigToken.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Cursor\HandCursor.cur"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Cursor\HandMouseDownCursor.cur"
+                    BuildAction = "EmbeddedResource"
                 />
                 <File
                     RelPath = "Icons\RotateZoomIcon.bmp"

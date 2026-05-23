@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -14,12 +15,12 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.SystemLayer
 {
-	/// <summary>
-	/// This is the same as System.Windows.Forms.Panel except for three things:
-	/// 1. It exposes a Scroll event.
-	/// 2. It allows you to disable SetFocus.
-	/// 3. It has a much simplified interface for AutoScrollPosition, exposed via the ScrollPosition property.
-	/// </summary>
+    /// <summary>
+    /// This is the same as System.Windows.Forms.Panel except for three things:
+    /// 1. It exposes a Scroll event.
+    /// 2. It allows you to disable SetFocus.
+    /// 3. It has a much simplified interface for AutoScrollPosition, exposed via the ScrollPosition property.
+    /// </summary>
     public class ScrollPanel : 
         System.Windows.Forms.Panel
     {
@@ -81,8 +82,9 @@ namespace PaintDotNet.SystemLayer
                 case NativeConstants.SBM_SETRANGE:
                 case NativeConstants.SBM_SETRANGEREDRAW:
                 case NativeConstants.SBM_SETSCROLLINFO:
+                    base.WndProc(ref m);
                     OnScroll();
-                    goto default;
+                    break;
 
                 case NativeConstants.WM_SETFOCUS:
                     if (IgnoreSetFocus)
@@ -95,9 +97,9 @@ namespace PaintDotNet.SystemLayer
                     }
 
                 default:
-                    base.WndProc (ref m);
+                    base.WndProc(ref m);
                     break;
             }
-        }
+        }        
     }
 }

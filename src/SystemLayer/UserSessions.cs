@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -13,12 +14,12 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.SystemLayer
 {
-	/// <summary>
-	/// Encapsulates information and events about the current user session.
-	/// This relates to Terminal Services in Windows.
-	/// </summary>
-	public sealed class UserSessions
-	{
+    /// <summary>
+    /// Encapsulates information and events about the current user session.
+    /// This relates to Terminal Services in Windows.
+    /// </summary>
+    public sealed class UserSessions
+    {
         private static OurControl messageControl;
         private static System.Windows.Forms.Timer win2kTsDetectionTimer; // this timer is used in Win2K so we can poll every few seconds to see if we are running in a remote session
         private static bool lastRemoteSessionValue;
@@ -74,6 +75,7 @@ namespace PaintDotNet.SystemLayer
         /// For example, if the user is currently logged in at the console, and then
         /// switches to a remote session (they use Remote Desktop from another computer),
         /// then this event will be raised.
+        /// Note to implementors: This may be implemented as a no-op.
         /// </remarks>
         public static event EventHandler SessionChanged
         {
@@ -159,6 +161,7 @@ namespace PaintDotNet.SystemLayer
         /// <remarks>
         /// You can use this to optimize the presentation of visual elements. Remote sessions
         /// are often bandwidth limited and less suitable for complex drawing.
+        /// Note to implementors: This may be implemented as a no op; in this case, always return false.
         /// </remarks>
         public static bool IsRemote()
         {

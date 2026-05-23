@@ -7,7 +7,7 @@
     >
         <Build>
             <Settings
-                ApplicationIcon = "PaintDotNet.ico"
+                ApplicationIcon = "Resources\icons\PaintDotNet.ico"
                 AssemblyKeyContainerName = ""
                 AssemblyName = "PaintDotNet"
                 AssemblyOriginatorKeyFile = ""
@@ -17,7 +17,7 @@
                 DelaySign = "false"
                 OutputType = "WinExe"
                 PreBuildEvent = ""
-                PostBuildEvent = '@rem copy manifest file over&#xd;&#xa;echo Copying manifest to target dir ...&#xd;&#xa;copy "$(SolutionDir)\PaintDotNet.exe.manifest" "$(TargetDir)\"&#xd;&#xa;&#xd;&#xa;@rem copy RotateZoom.dll over&#xd;&#xa;mkdir "$(TargetDir)\Effects"&#xd;&#xa;copy "$(SolutionDir)\Effects\RotateZoom\bin\$(ConfigurationName)\RotateZoom.dll" "$(TargetDir)\Effects"&#xd;&#xa;&#xd;&#xa;@rem create Rotate Zoom sample zip&#xd;&#xa;pushd "$(SolutionDir)"&#xd;&#xa;call MakeRZZip.bat "$(ConfigurationName)"&#xd;&#xa;popd&#xd;&#xa;&#xd;&#xa;:done'
+                PostBuildEvent = '@rem copy manifest file over&#xd;&#xa;echo Copying manifest to target dir ...&#xd;&#xa;copy "$(SolutionDir)\PaintDotNet.exe.manifest" "$(TargetDir)\"&#xd;&#xa;&#xd;&#xa;@rem copy RotateZoom.dll over&#xd;&#xa;mkdir "$(TargetDir)\Effects"&#xd;&#xa;copy "$(SolutionDir)\Effects\RotateZoom\bin\$(ConfigurationName)\RotateZoom.dll" "$(TargetDir)\Effects"&#xd;&#xa;&#xd;&#xa;@rem copy TgaFileType.dll over&#xd;&#xa;mkdir "$(TargetDir)\FileTypes"&#xd;&#xa;copy "$(SolutionDir)\Data\TgaFileType\bin\$(ConfigurationName)\TgaFileType.dll" "$(TargetDir)\FileTypes"&#xd;&#xa;&#xd;&#xa;@rem copy English strings over&#xd;&#xa;copy "$(SolutionDir)\Strings\$(ConfigurationName)\PaintDotNet.Strings.resources" "$(TargetDir)"&#xd;&#xa;&#xd;&#xa;@rem copy German strings over&#xd;&#xa;copy "$(SolutionDir)\Strings.de\$(ConfigurationName)\PaintDotNet.Strings.de.resources" "$(TargetDir)"&#xd;&#xa;&#xd;&#xa;@rem copy German resources over&#xd;&#xa;mkdir "$(TargetDir)\Resources"&#xd;&#xa;mkdir "$(TargetDir)\Resources\de"&#xd;&#xa;copy "$(SolutionDir)\Resources.de\Resources\de\*.*"  "$(TargetDir)\Resources\de"&#xd;&#xa;&#xd;&#xa;:done'
                 RootNamespace = "PaintDotNet"
                 RunPostBuildEvent = "OnBuildSuccess"
                 StartupObject = ""
@@ -32,7 +32,7 @@
                     DocumentationFile = ""
                     DebugSymbols = "true"
                     FileAlignment = "4096"
-                    IncrementalBuild = "false"
+                    IncrementalBuild = "true"
                     NoStdLib = "false"
                     NoWarn = ""
                     Optimize = "false"
@@ -45,7 +45,7 @@
                 <Config
                     Name = "Release"
                     AllowUnsafeBlocks = "true"
-                    BaseAddress = "285212672"
+                    BaseAddress = "301989888"
                     CheckForOverflowUnderflow = "false"
                     ConfigurationOverrideFile = ""
                     DefineConstants = "TRACE"
@@ -125,9 +125,14 @@
                     Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
                 />
                 <Reference
-                    Name = "System.Data"
-                    AssemblyName = "System.Data"
-                    HintPath = "..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Data.dll"
+                    Name = "ICSharpCode.SharpZipLib"
+                    AssemblyName = "ICSharpCode.SharpZipLib"
+                    HintPath = "SharpZipLib\ICSharpCode.SharpZipLib.dll"
+                />
+                <Reference
+                    Name = "Resources"
+                    Project = "{0B173113-1F9B-4939-A62F-A176336F13AC}"
+                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
                 />
                 <Reference
                     Name = "System.XML"
@@ -135,18 +140,14 @@
                     HintPath = "..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.XML.dll"
                 />
                 <Reference
-                    Name = "ICSharpCode.SharpZipLib"
-                    AssemblyName = "ICSharpCode.SharpZipLib"
-                    HintPath = "SharpZipLib\ICSharpCode.SharpZipLib.dll"
+                    Name = "System.Data"
+                    AssemblyName = "System.Data"
+                    HintPath = "..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Data.dll"
                 />
             </References>
         </Build>
         <Files>
             <Include>
-                <File
-                    RelPath = "AboutCredits.rtf"
-                    BuildAction = "EmbeddedResource"
-                />
                 <File
                     RelPath = "AboutDialog.cs"
                     SubType = "Code"
@@ -194,6 +195,11 @@
                 />
                 <File
                     RelPath = "BrushInfo.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "BrushPreviewRenderer.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -328,6 +334,11 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "DocumentMetaDataHistoryAction.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "DocumentWidgets.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -340,6 +351,16 @@
                 <File
                     RelPath = "DocumentWorkspace.resx"
                     DependentUpon = "DocumentWorkspace.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "DrawModesConfigWidget.cs"
+                    SubType = "UserControl"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "DrawModesConfigWidget.resx"
+                    DependentUpon = "DrawModesConfigWidget.cs"
                     BuildAction = "EmbeddedResource"
                 />
                 <File
@@ -369,6 +390,31 @@
                 />
                 <File
                     RelPath = "EraseSelectionAction.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ExecutedHistoryActionEventArgs.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ExecutedHistoryActionEventHandler.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ExecutingHistoryActionEventArgs.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ExecutingHistoryActionEventHandler.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "FileTypes.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -495,16 +541,6 @@
                 <File
                     RelPath = "HistoryForm.resx"
                     DependentUpon = "HistoryForm.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "HistoryLimitDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HistoryLimitDialog.resx"
-                    DependentUpon = "HistoryLimitDialog.cs"
                     BuildAction = "EmbeddedResource"
                 />
                 <File
@@ -643,10 +679,6 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "MakeRZZip.bat"
-                    BuildAction = "None"
-                />
-                <File
                     RelPath = "MostRecentFile.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -657,7 +689,22 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "MoveNubRenderer.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "MoveSelectionTool.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "MoveTool.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "MoveToolBase.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -711,25 +758,22 @@
                     BuildAction = "Content"
                 />
                 <File
-                    RelPath = "PaintDotNet.ico"
-                    BuildAction = "None"
-                />
-                <File
-                    RelPath = "PaintDotNetLogo.png"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
                     RelPath = "PanTool.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "PdnInfo.cs"
+                    RelPath = "PdnSettings.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "PdnSettings.cs"
+                    RelPath = "PdnVersionInfo.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "PdnVersionManifest.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -808,6 +852,11 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "RotateNubRenderer.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "RotateType.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -839,6 +888,11 @@
                 />
                 <File
                     RelPath = "SelectionHistoryAction.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "SelectionRenderer.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -943,9 +997,29 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "ToolHistoryAction.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "ToolInfo.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Updates.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "UpdatesDialog.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "UpdatesDialog.resx"
+                    DependentUpon = "UpdatesDialog.cs"
+                    BuildAction = "EmbeddedResource"
                 />
                 <File
                     RelPath = "WhichEdge.cs"
@@ -991,526 +1065,6 @@
                     RelPath = "ZoomTool.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Cursors\CloneStampToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\CloneStampToolCursorSetSource.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\ColorPickerToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\EllipseSelectToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\EllipseSelectToolCursorMouseDown.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\EllipseToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\EraserToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\EraserToolCursorMouseDown.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\FreeformShapeToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\GenericToolCursorMouseDown.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\LassoSelectToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\LineToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\MagicWandToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\MagicWandToolCursorMouseDown.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\MagicWandToolCursorSubtract.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\MagicWandToolCursorUnion.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\MagicWandToolCursorXor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\MoveToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\PaintBrushToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\PaintBrushToolCursorMouseDown.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\PaintBucketToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\PaintBucketToolCursorMouseDown.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\PanToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\PanToolCursorInvalid.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\PanToolCursorMouseDown.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\PencilToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\RecoloringToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\RecoloringToolCursorAdjustColor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\RecoloringToolCursorPickColor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\RectangleSelectToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\RectangleSelectToolCursorMouseDown.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\RectangleToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\RoundedRectangleToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\ShapeToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\ShapeToolCursorMouseDown.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\TextToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\ZoomInToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\ZoomOutToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\ZoomPanToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Cursors\ZoomToolCursor.cur"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\BlackAndWhiteIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\CloneStampToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\ColorPickerToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\CursorXYIcon.ico"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\EllipseSelectToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\EllipseToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\EraserToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\FontBoldIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\FontItalicIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\FontUnderlineIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\FreeformShapeToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\HistoryFastForwardIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\HistoryLimitDialogIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\HistoryLimitIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\HistoryRewindIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\ImageFromDiskIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\ImageSizeIcon.ico"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\LassoSelectToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\LineToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MagicWandToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuEditCopyIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuEditCutIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuEditDeselectIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuEditEraseSelectionIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuEditInvertSelectionIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuEditPasteIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuEditRedoIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuEditSelectAllIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuEditUndoIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuFileAcquireFromClipboardIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuFileNewIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuFileOpenIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuFilePrintIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuFilePrintPreviewIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuFileSaveIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuHelpAboutIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuHelpHelpTopicsIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuImageCanvasSizeIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuImageCropIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuImageFlattenIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuImageFlipHorizontalIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuImageFlipVerticalIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuImageResizeIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuImageRotate180CCWIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuImageRotate180CWIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuImageRotate270CCWIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuImageRotate270CWIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuImageRotate90CCWIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuImageRotate90CWIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuLayersAddNewLayerIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuLayersDeleteLayerIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuLayersDuplicateLayerIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuLayersFlipHorizontalIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuLayersFlipVerticalIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuLayersImportFromFileIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuLayersLayerPropertiesIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuLayersMoveLayerDownIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuLayersMoveLayerUpIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuToolsAntiAliasingIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuViewActualSizeIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuViewGridIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuViewRulersIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuViewZoomInIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuViewZoomOutIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuViewZoomToSelectionIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuViewZoomToWindowIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuWindowColorsIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuWindowHistoryIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuWindowLayersIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MenuWindowToolsIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\MoveToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\PaintBrushToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\PaintBucketIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\PanToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\PencilToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\RecoloringToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\RectangleSelectToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\RectangleToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\RoundedRectangleToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\SelectionIcon.ico"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\ShapeBothIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\ShapeInteriorIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\ShapeOutlineIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\StopWatchIcon.ico"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\SwapIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\TextAlignCenterIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\TextAlignLeftIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\TextAlignRightIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\TextToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Icons\ZoomToolIcon.bmp"
-                    BuildAction = "EmbeddedResource"
                 />
             </Include>
         </Files>

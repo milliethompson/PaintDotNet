@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -12,40 +13,51 @@ using PaintDotNet;
 using PaintDotNet.Effects;
 using System;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-	/// <summary>
-	/// Summary description for OilPaintingEffect.
-	/// </summary>
-	public class OilPaintingEffect
+    /// <summary>
+    /// Summary description for OilPaintingEffect.
+    /// </summary>
+    public class OilPaintingEffect
         : Effect,
           IConfigurableEffect
-	{
-		public OilPaintingEffect()
-            : base("Oil Painting",
-                   "Makes the image look like it was drawn with oil paints",
-                   Utility.GetImageResource("Icons.OilPaintingEffect.bmp"))
-		{
+    {
+        public static string StaticName
+        {
+            get
+            {
+                return PdnResources.GetString("OilPaintingEffect.Name");
+            }
+        }
+
+        public OilPaintingEffect()
+            : base(StaticName,
+                   PdnResources.GetImage("Icons.OilPaintingEffect.bmp"),
+                   Shortcut.None,
+                   null,
+                   EffectDirectives.None)
+        {
         }
 
         public EffectConfigDialog CreateConfigDialog()
         {
             TwoAmountsConfigDialog tacg = new TwoAmountsConfigDialog();
 
-            tacg.Text = "Oil Painting";
+            tacg.Text = StaticName;
 
             tacg.Amount1Minimum = 1;
             tacg.Amount1Maximum = 8;
             tacg.Amount1Default = 3;
-            tacg.Amount1Label = "Brush Size";
+            tacg.Amount1Label = PdnResources.GetString("OilPaintingEffect.ConfigDialog.Amount1Label");
             
             tacg.Amount2Minimum = 3;
             tacg.Amount2Maximum = 255;
             tacg.Amount2Default = 50;
-			tacg.Amount2Label = "Coarseness";
+            tacg.Amount2Label = PdnResources.GetString("OilPaintingEffect.ConfigDialog.Amount2Label");
 
-			tacg.Icon = Utility.GetIconResource("Icons.OilPaintingEffect.bmp");
+            tacg.Icon = PdnResources.GetIconFromImage("Icons.OilPaintingEffect.bmp");
 
             return tacg;
         }

@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -27,6 +28,11 @@ namespace PaintDotNet.Effects
         /// These types of effects are typically quick to execute. They are also preferably 
         /// "unary" (see EffectTypeHint) but are not required to be.
         /// </summary>
-        Adjustment
+        Adjustment,
+
+        /// <summary>
+        /// Signifies that this effect should not be displayed in any menu.
+        /// </summary>
+        DoNotDisplay
     }
 }

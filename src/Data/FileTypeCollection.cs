@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -56,6 +57,7 @@ namespace PaintDotNet
             foreach (FileType ft in fileTypes)
             {
                 this.fileTypes[dstIndex] = ft;
+                ++dstIndex;
             }
         }
 
@@ -83,22 +85,34 @@ namespace PaintDotNet
         /// <param name="includeAll">Whether or not to include the 'all' file type at the top</param>
         /// <param name="allName">The name of the 'all' type (example: "All images"). If this is null
         /// but includeAll is true, then this defaults to the string "All image types"</param>
-        public string ToString(bool includeAll, string allName)
+        public string ToString(bool includeAll, string allName, bool excludeCantSave, bool excludeCantLoad)
         {
             if (allName == null)
             {
-                allName = "All image types";
+                allName = PdnResources.GetString("FileTypeCollection.AllImageTypes");
             }
 
             if (includeAll)
             {
                 StringBuilder description = new StringBuilder(allName);
                 StringBuilder formats = new StringBuilder();
+                bool didFirst = false;
 
                 for (int i = 0; i < fileTypes.Length; ++i)
                 {
-                    if (i == 0)
+                    if (excludeCantSave && !fileTypes[i].SupportsSaving)
                     {
+                        continue;
+                    }
+
+                    if (excludeCantLoad && !fileTypes[i].SupportsLoading)
+                    {
+                        continue;
+                    }
+
+                    if (!didFirst)
+                    {
+                        didFirst = true;
                         description.Append(" (");
                     }
 
@@ -119,12 +133,13 @@ namespace PaintDotNet
                         }
                     }
 
-                    if (i == fileTypes.Length - 1)
-                    {
-                        description.Append(")");
-                    }
                 }    
-            
+
+                if (didFirst)
+                {
+                    description.Append(")");
+                }
+
                 string ret = description.ToString() + "|" + formats.ToString();
 
                 if (fileTypes.Length != 0)

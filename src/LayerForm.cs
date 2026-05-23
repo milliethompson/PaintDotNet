@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -52,7 +53,6 @@ namespace PaintDotNet
             base.OnVisibleChanged (e);
         }
 
-
         public LayerForm()
         {
             //
@@ -62,12 +62,12 @@ namespace PaintDotNet
 
             imageList.TransparentColor = Color.FromArgb(192, 192, 192);
 
-            int addNewLayerIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuLayersAddNewLayerIcon.bmp"), imageList.TransparentColor);
-            int deleteLayerIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuLayersDeleteLayerIcon.bmp"), imageList.TransparentColor);
-            int moveLayerUpIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuLayersMoveLayerUpIcon.bmp"), imageList.TransparentColor);
-            int moveLayerDownIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuLayersMoveLayerDownIcon.bmp"), imageList.TransparentColor);
-            int duplicateLayerIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuEditCopyIcon.bmp"), imageList.TransparentColor);
-            int propertiesIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuLayersLayerPropertiesIcon.bmp"), imageList.TransparentColor);
+            int addNewLayerIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersAddNewLayerIcon.bmp"), imageList.TransparentColor);
+            int deleteLayerIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersDeleteLayerIcon.bmp"), imageList.TransparentColor);
+            int moveLayerUpIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersMoveLayerUpIcon.bmp"), imageList.TransparentColor);
+            int moveLayerDownIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersMoveLayerDownIcon.bmp"), imageList.TransparentColor);
+            int duplicateLayerIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuEditCopyIcon.bmp"), imageList.TransparentColor);
+            int propertiesIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersLayerPropertiesIcon.bmp"), imageList.TransparentColor);
 
             addNewLayerButton.ImageIndex = addNewLayerIndex;
             deleteLayerButton.ImageIndex = deleteLayerIndex;
@@ -77,6 +77,14 @@ namespace PaintDotNet
             propertiesButton.ImageIndex = propertiesIndex;
 
             layerControl.KeyUp += new KeyEventHandler(layerControl_KeyUp);
+
+            this.Text = PdnResources.GetString("LayerForm.Text");
+            this.addNewLayerButton.ToolTipText = PdnResources.GetString("LayerForm.AddNewLayerButton.ToolTipText");
+            this.deleteLayerButton.ToolTipText = PdnResources.GetString("LayerForm.DeleteLayerButton.ToolTipText");
+            this.duplicateLayerButton.ToolTipText = PdnResources.GetString("LayerForm.DuplicateLayerButton.ToolTipText");
+            this.moveLayerUpButton.ToolTipText = PdnResources.GetString("LayerForm.MoveLayerUpButton.ToolTipText");
+            this.moveLayerDownButton.ToolTipText = PdnResources.GetString("LayerForm.MoveLayerDownButton.ToolTipText");
+            this.propertiesButton.ToolTipText = PdnResources.GetString("LayerForm.PropertiesButton.ToolTipText");
         }
 
         protected override void OnLayout(LayoutEventArgs levent)
@@ -299,30 +307,6 @@ namespace PaintDotNet
             this.dotNetToolbar.TabIndex = 6;
             this.dotNetToolbar.ButtonClick += new DotNetWidgets.DotNetToolbar.ButtonClickEventHandler(this.dotNetToolbar_ButtonClick);
             // 
-            // addNewLayerButton
-            // 
-            this.addNewLayerButton.ToolTipText = "Add New Layer";
-            // 
-            // deleteLayerButton
-            // 
-            this.deleteLayerButton.ToolTipText = "Delete Layer";
-            // 
-            // duplicateLayerButton
-            // 
-            this.duplicateLayerButton.ToolTipText = "Duplicate Layer";
-            // 
-            // moveLayerUpButton
-            // 
-            this.moveLayerUpButton.ToolTipText = "Move Layer Up";
-            // 
-            // moveLayerDownButton
-            // 
-            this.moveLayerDownButton.ToolTipText = "Move Layer Down";
-            // 
-            // propertiesButton
-            // 
-            this.propertiesButton.ToolTipText = "Layer Properties";
-            // 
             // imageList
             // 
             this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
@@ -336,11 +320,9 @@ namespace PaintDotNet
             this.Controls.Add(this.dotNetToolbar);
             this.Controls.Add(this.layerControl);
             this.Name = "LayerForm";
-            this.Text = "Layers";
             this.Controls.SetChildIndex(this.layerControl, 0);
             this.Controls.SetChildIndex(this.dotNetToolbar, 0);
             this.ResumeLayout(false);
-
         }
         #endregion
 
@@ -410,6 +392,7 @@ namespace PaintDotNet
         private void layerControl_DoubleClickedOnLayer(object sender, PaintDotNet.LayerEventArgs ce)
         {
             OnPropertiesButtonClick();
+            this.OnRelinquishFocus();
         }
 
         private void layerControl_KeyUp(object sender, KeyEventArgs e)

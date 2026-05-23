@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -11,12 +12,12 @@ using System.Drawing;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for SwapLayerHistoryAction.
-	/// </summary>
-	public class SwapLayerHistoryAction
+    /// <summary>
+    /// Summary description for SwapLayerHistoryAction.
+    /// </summary>
+    public class SwapLayerHistoryAction
         : HistoryAction
-	{
+    {
         private int layerIndex1;
         private int layerIndex2;
         private DocumentWorkspace workspace;
@@ -49,9 +50,9 @@ namespace PaintDotNet
             return slha;
         }
 
-		public SwapLayerHistoryAction(string name, Image image, DocumentWorkspace workspace, int layerIndex1, int layerIndex2)
+        public SwapLayerHistoryAction(string name, Image image, DocumentWorkspace workspace, int layerIndex1, int layerIndex2)
             : base(name, image)
-		{
+        {
             if (this.layerIndex1 < 0 || this.layerIndex2 < 0 ||
                 this.layerIndex1 >= workspace.Document.Layers.Count ||
                 this.layerIndex2 >= workspace.Document.Layers.Count)
@@ -62,6 +63,6 @@ namespace PaintDotNet
             this.workspace = workspace;
             this.layerIndex1 = layerIndex1;
             this.layerIndex2 = layerIndex2;
-		}
-	}
+        }
+    }
 }

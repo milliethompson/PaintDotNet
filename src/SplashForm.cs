@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -34,10 +35,10 @@ namespace PaintDotNet
             InitializeComponent();
 
             // Initialize logo
-            logoPicture.Image = Utility.GetImageResource("PaintDotNetLogo.png");
+            logoPicture.Image = PdnResources.GetImage("Images.Logo.png");
 
             // Fill in the status label
-            statusLabel.Text = "Starting ...";
+            statusLabel.Text = PdnResources.GetString("SplashForm.StatusLabel.Text");
 
             // Fill in the copyright label
             copyrightLabel.Text = PdnInfo.GetCopyrightString();
@@ -46,10 +47,28 @@ namespace PaintDotNet
             Size padding = new Size(panel.Size.Width - panel.ClientSize.Width, 
                 panel.Size.Height - panel.ClientSize.Height);
 
-            this.panel.ClientSize = new Size(logoPicture.Image.Width, 
-                logoPicture.Height + statusLabel.Height + copyrightLabel.Height);
+            this.panel.ClientSize = new Size(350, 
+                50 + statusLabel.Height + copyrightLabel.Height);
 
             this.Size = this.panel.ClientSize + padding;
+        }
+
+        protected override void OnLayout(LayoutEventArgs levent)
+        {
+            this.panel.Location = new System.Drawing.Point(0, 0);
+
+            this.logoPicture.Location = new System.Drawing.Point(45, 0);
+            this.logoPicture.Width = this.panel.ClientSize.Width - this.logoPicture.Left;
+            this.logoPicture.SizeMode = PictureBoxSizeMode.Normal;
+            this.logoPicture.Height = 73;
+
+            this.statusLabel.Location = new System.Drawing.Point(100, 50);
+            this.statusLabel.Width = this.panel.ClientSize.Width - this.statusLabel.Left * 2;
+
+            this.copyrightLabel.Location = new System.Drawing.Point(0, 64);
+            this.copyrightLabel.Width = this.panel.ClientSize.Width;
+            
+            base.OnLayout (levent);
         }
 
         #region Windows Form Designer generated code
@@ -68,22 +87,19 @@ namespace PaintDotNet
             // 
             // panel
             // 
+            this.panel.BackColor = Color.White;
             this.panel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panel.Controls.Add(this.copyrightLabel);
             this.panel.Controls.Add(this.statusLabel);
             this.panel.Controls.Add(this.logoPicture);
+            this.panel.Controls.Add(this.copyrightLabel);
             this.panel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel.Location = new System.Drawing.Point(0, 0);
             this.panel.Name = "panel";
-            this.panel.Size = new System.Drawing.Size(292, 128);
             this.panel.TabIndex = 3;
             // 
             // copyrightLabel
             // 
             this.copyrightLabel.BackColor = System.Drawing.Color.White;
-            this.copyrightLabel.Dock = System.Windows.Forms.DockStyle.Top;
             this.copyrightLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
-            this.copyrightLabel.Location = new System.Drawing.Point(0, 64);
             this.copyrightLabel.Name = "copyrightLabel";
             this.copyrightLabel.Size = new System.Drawing.Size(290, 48);
             this.copyrightLabel.TabIndex = 3;
@@ -92,21 +108,15 @@ namespace PaintDotNet
             // statusLabel
             // 
             this.statusLabel.BackColor = System.Drawing.Color.White;
-            this.statusLabel.Dock = System.Windows.Forms.DockStyle.Top;
             this.statusLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
-            this.statusLabel.Location = new System.Drawing.Point(0, 50);
             this.statusLabel.Name = "statusLabel";
             this.statusLabel.Size = new System.Drawing.Size(290, 14);
             this.statusLabel.TabIndex = 2;
-            this.statusLabel.Text = "Starting ...";
             this.statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // logoPicture
             // 
-            this.logoPicture.Dock = System.Windows.Forms.DockStyle.Top;
-            this.logoPicture.Location = new System.Drawing.Point(0, 0);
             this.logoPicture.Name = "logoPicture";
-            this.logoPicture.Size = new System.Drawing.Size(290, 50);
             this.logoPicture.TabIndex = 1;
             this.logoPicture.TabStop = false;
             // 
@@ -123,12 +133,10 @@ namespace PaintDotNet
             this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "SplashForm";
             this.TopMost = true;
             this.Controls.SetChildIndex(this.panel, 0);
             this.panel.ResumeLayout(false);
             this.ResumeLayout(false);
-
         }
         #endregion
 

@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -14,50 +15,51 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	public class PdnBaseDialog 
+    public class PdnBaseDialog 
         : PaintDotNet.PdnBaseForm
-	{
+    {
         protected System.Windows.Forms.Button baseOkButton;
         protected System.Windows.Forms.Button baseCancelButton;
-		private System.ComponentModel.IContainer components = null;
+        private System.ComponentModel.IContainer components = null;
 
-		public PdnBaseDialog()
-		{
-			// This call is required by the Windows Form Designer.
-			InitializeComponent();
+        public PdnBaseDialog()
+        {
+            // This call is required by the Windows Form Designer.
+            InitializeComponent();
 
-			// TODO: Add any initialization after the InitializeComponent call
-		}
+            this.baseOkButton.Text = PdnResources.GetString("Form.OkButton.Text");
+            this.baseCancelButton.Text = PdnResources.GetString("Form.CancelButton.Text");
+        }
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose(bool disposing)
-		{
-			if (disposing)
-			{
-				if (components != null) 
-				{
-					components.Dispose();
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (components != null) 
+                {
+                    components.Dispose();
                     components = null;
                 }
-			}
+            }
 
-			base.Dispose(disposing);
-		}
+            base.Dispose(disposing);
+        }
 
         public DialogResult ShowDialog(Control owner)
         {
             return Utility.ShowDialog(this, owner);
         }
 
-		#region Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.baseOkButton = new System.Windows.Forms.Button();
             this.baseCancelButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
@@ -67,7 +69,6 @@ namespace PaintDotNet
             this.baseOkButton.Location = new System.Drawing.Point(77, 128);
             this.baseOkButton.Name = "baseOkButton";
             this.baseOkButton.TabIndex = 1;
-            this.baseOkButton.Text = "OK";
             this.baseOkButton.Click += new System.EventHandler(this.baseOkButton_Click);
             // 
             // baseCancelButton
@@ -76,7 +77,6 @@ namespace PaintDotNet
             this.baseCancelButton.Location = new System.Drawing.Point(165, 128);
             this.baseCancelButton.Name = "baseCancelButton";
             this.baseCancelButton.TabIndex = 2;
-            this.baseCancelButton.Text = "Cancel";
             this.baseCancelButton.Click += new System.EventHandler(this.baseCancelButton_Click);
             // 
             // PdnBaseDialog
@@ -97,7 +97,7 @@ namespace PaintDotNet
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
         private void baseOkButton_Click(object sender, System.EventArgs e)
         {
@@ -110,6 +110,6 @@ namespace PaintDotNet
             this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
-	}
+    }
 }
 

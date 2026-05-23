@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -21,8 +22,6 @@ namespace PaintDotNet.Effects
         private System.Windows.Forms.NumericUpDown amount1UpDown;
         protected System.Windows.Forms.Button okButton;
         protected System.Windows.Forms.Button cancelButton;
-        private System.Windows.Forms.GroupBox amount1GroupBox;
-        private System.Windows.Forms.GroupBox amount2GroupBox;
         private System.Windows.Forms.NumericUpDown amount2UpDown;
         private System.Windows.Forms.TrackBar amount2Slider;
         private System.Windows.Forms.Button amount2Reset;
@@ -30,6 +29,8 @@ namespace PaintDotNet.Effects
         private System.ComponentModel.IContainer components = null;
 
         private int amount1Default = 0;
+        private PaintDotNet.HeaderLabel amount1Header;
+        private PaintDotNet.HeaderLabel amount2Header;
         private int amount2Default = 0;
 
         public int Amount1Default
@@ -81,12 +82,12 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return amount1GroupBox.Text;
+                return amount1Header.Text;
             }
 
             set
             {
-                amount1GroupBox.Text = value;
+                amount1Header.Text = value;
             }
         }
 
@@ -139,12 +140,12 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return amount2GroupBox.Text;
+                return amount2Header.Text;
             }
 
             set
             {
-                amount2GroupBox.Text = value;
+                amount2Header.Text = value;
             }
         }
 
@@ -153,6 +154,10 @@ namespace PaintDotNet.Effects
             // This call is required by the Windows Form Designer.
             InitializeComponent();
 
+            this.okButton.Text = PdnResources.GetString("Form.OkButton.Text");
+            this.cancelButton.Text = PdnResources.GetString("Form.CancelButton.Text");
+            this.amount1Reset.Text = PdnResources.GetString("TwoAmountsConfigDialog.Reset.Text");
+            this.amount2Reset.Text = PdnResources.GetString("TwoAmountsConfigDialog.Reset.Text");
         }
 
         /// <summary>
@@ -199,16 +204,14 @@ namespace PaintDotNet.Effects
             this.cancelButton = new System.Windows.Forms.Button();
             this.amount1Slider = new System.Windows.Forms.TrackBar();
             this.amount1UpDown = new System.Windows.Forms.NumericUpDown();
-            this.amount1GroupBox = new System.Windows.Forms.GroupBox();
             this.amount1Reset = new System.Windows.Forms.Button();
-            this.amount2GroupBox = new System.Windows.Forms.GroupBox();
             this.amount2Reset = new System.Windows.Forms.Button();
             this.amount2UpDown = new System.Windows.Forms.NumericUpDown();
             this.amount2Slider = new System.Windows.Forms.TrackBar();
+            this.amount1Header = new PaintDotNet.HeaderLabel();
+            this.amount2Header = new PaintDotNet.HeaderLabel();
             ((System.ComponentModel.ISupportInitialize)(this.amount1Slider)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.amount1UpDown)).BeginInit();
-            this.amount1GroupBox.SuspendLayout();
-            this.amount2GroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.amount2UpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.amount2Slider)).BeginInit();
             this.SuspendLayout();
@@ -217,10 +220,9 @@ namespace PaintDotNet.Effects
             // 
             this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.okButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.okButton.Location = new System.Drawing.Point(86, 170);
+            this.okButton.Location = new System.Drawing.Point(108, 151);
             this.okButton.Name = "okButton";
-            this.okButton.TabIndex = 2;
-            this.okButton.Text = "OK";
+            this.okButton.TabIndex = 6;
             this.okButton.Click += new System.EventHandler(this.OnOkButtonClicked);
             // 
             // cancelButton
@@ -228,97 +230,68 @@ namespace PaintDotNet.Effects
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.cancelButton.Location = new System.Drawing.Point(174, 170);
+            this.cancelButton.Location = new System.Drawing.Point(189, 151);
             this.cancelButton.Name = "cancelButton";
-            this.cancelButton.TabIndex = 3;
-            this.cancelButton.Text = "Cancel";
+            this.cancelButton.TabIndex = 7;
             this.cancelButton.Click += new System.EventHandler(this.OnCancelButtonClicked);
             // 
             // amount1Slider
             // 
             this.amount1Slider.LargeChange = 20;
-            this.amount1Slider.Location = new System.Drawing.Point(8, 16);
+            this.amount1Slider.Location = new System.Drawing.Point(1, 25);
             this.amount1Slider.Maximum = 100;
             this.amount1Slider.Minimum = -100;
             this.amount1Slider.Name = "amount1Slider";
-            this.amount1Slider.Size = new System.Drawing.Size(152, 45);
-            this.amount1Slider.TabIndex = 4;
+            this.amount1Slider.Size = new System.Drawing.Size(175, 42);
+            this.amount1Slider.TabIndex = 0;
             this.amount1Slider.TickFrequency = 10;
             this.amount1Slider.ValueChanged += new System.EventHandler(this.amount1Slider_ValueChanged);
             // 
             // amount1UpDown
             // 
             this.amount1UpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.amount1UpDown.Location = new System.Drawing.Point(168, 16);
+            this.amount1UpDown.Location = new System.Drawing.Point(188, 25);
             this.amount1UpDown.Minimum = new System.Decimal(new int[] {
                                                                           100,
                                                                           0,
                                                                           0,
                                                                           -2147483648});
             this.amount1UpDown.Name = "amount1UpDown";
-            this.amount1UpDown.Size = new System.Drawing.Size(64, 20);
-            this.amount1UpDown.TabIndex = 6;
+            this.amount1UpDown.Size = new System.Drawing.Size(76, 20);
+            this.amount1UpDown.TabIndex = 1;
             this.amount1UpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.amount1UpDown.Enter += new System.EventHandler(this.amount1UpDown_Enter);
             this.amount1UpDown.ValueChanged += new System.EventHandler(this.amount1UpDown_ValueChanged);
             this.amount1UpDown.Leave += new System.EventHandler(this.amount1UpDown_Leave);
             // 
-            // amount1GroupBox
-            // 
-            this.amount1GroupBox.Controls.Add(this.amount1Reset);
-            this.amount1GroupBox.Controls.Add(this.amount1UpDown);
-            this.amount1GroupBox.Controls.Add(this.amount1Slider);
-            this.amount1GroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.amount1GroupBox.Location = new System.Drawing.Point(8, 8);
-            this.amount1GroupBox.Name = "amount1GroupBox";
-            this.amount1GroupBox.Size = new System.Drawing.Size(240, 70);
-            this.amount1GroupBox.TabIndex = 7;
-            this.amount1GroupBox.TabStop = false;
-            this.amount1GroupBox.Text = "amount1";
-            // 
             // amount1Reset
             // 
-            this.amount1Reset.Location = new System.Drawing.Point(168, 41);
+            this.amount1Reset.Location = new System.Drawing.Point(188, 50);
             this.amount1Reset.Name = "amount1Reset";
-            this.amount1Reset.Size = new System.Drawing.Size(64, 20);
-            this.amount1Reset.TabIndex = 8;
-            this.amount1Reset.Text = "Reset";
+            this.amount1Reset.Size = new System.Drawing.Size(76, 20);
+            this.amount1Reset.TabIndex = 2;
             this.amount1Reset.Click += new System.EventHandler(this.amount1Reset_Click);
-            // 
-            // amount2GroupBox
-            // 
-            this.amount2GroupBox.Controls.Add(this.amount2Reset);
-            this.amount2GroupBox.Controls.Add(this.amount2UpDown);
-            this.amount2GroupBox.Controls.Add(this.amount2Slider);
-            this.amount2GroupBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.amount2GroupBox.Location = new System.Drawing.Point(9, 88);
-            this.amount2GroupBox.Name = "amount2GroupBox";
-            this.amount2GroupBox.Size = new System.Drawing.Size(240, 70);
-            this.amount2GroupBox.TabIndex = 8;
-            this.amount2GroupBox.TabStop = false;
-            this.amount2GroupBox.Text = "amount2";
             // 
             // amount2Reset
             // 
-            this.amount2Reset.Location = new System.Drawing.Point(168, 41);
+            this.amount2Reset.Location = new System.Drawing.Point(188, 120);
             this.amount2Reset.Name = "amount2Reset";
-            this.amount2Reset.Size = new System.Drawing.Size(64, 20);
-            this.amount2Reset.TabIndex = 7;
-            this.amount2Reset.Text = "Reset";
+            this.amount2Reset.Size = new System.Drawing.Size(76, 20);
+            this.amount2Reset.TabIndex = 5;
             this.amount2Reset.Click += new System.EventHandler(this.amount2Reset_Click);
             // 
             // amount2UpDown
             // 
             this.amount2UpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.amount2UpDown.Location = new System.Drawing.Point(168, 16);
+            this.amount2UpDown.Location = new System.Drawing.Point(188, 95);
             this.amount2UpDown.Minimum = new System.Decimal(new int[] {
                                                                           100,
                                                                           0,
                                                                           0,
                                                                           -2147483648});
             this.amount2UpDown.Name = "amount2UpDown";
-            this.amount2UpDown.Size = new System.Drawing.Size(64, 20);
-            this.amount2UpDown.TabIndex = 6;
+            this.amount2UpDown.Size = new System.Drawing.Size(76, 20);
+            this.amount2UpDown.TabIndex = 4;
             this.amount2UpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.amount2UpDown.Enter += new System.EventHandler(this.amount2UpDown_Enter);
             this.amount2UpDown.ValueChanged += new System.EventHandler(this.amount2UpDown_ValueChanged);
@@ -327,42 +300,76 @@ namespace PaintDotNet.Effects
             // amount2Slider
             // 
             this.amount2Slider.LargeChange = 20;
-            this.amount2Slider.Location = new System.Drawing.Point(8, 16);
+            this.amount2Slider.Location = new System.Drawing.Point(1, 95);
             this.amount2Slider.Maximum = 100;
             this.amount2Slider.Minimum = -100;
             this.amount2Slider.Name = "amount2Slider";
-            this.amount2Slider.Size = new System.Drawing.Size(152, 45);
-            this.amount2Slider.TabIndex = 4;
+            this.amount2Slider.Size = new System.Drawing.Size(175, 42);
+            this.amount2Slider.TabIndex = 3;
             this.amount2Slider.TickFrequency = 10;
             this.amount2Slider.ValueChanged += new System.EventHandler(this.amount2Slider_ValueChanged);
+            // 
+            // amount1Header
+            // 
+            this.amount1Header.Location = new System.Drawing.Point(6, 8);
+            this.amount1Header.Name = "amount1Header";
+            this.amount1Header.Size = new System.Drawing.Size(266, 14);
+            this.amount1Header.TabIndex = 9;
+            this.amount1Header.TabStop = false;
+            this.amount1Header.Text = "Header 1";
+            // 
+            // amount2Header
+            // 
+            this.amount2Header.Location = new System.Drawing.Point(6, 78);
+            this.amount2Header.Name = "amount2Header";
+            this.amount2Header.Size = new System.Drawing.Size(266, 14);
+            this.amount2Header.TabIndex = 10;
+            this.amount2Header.TabStop = false;
+            this.amount2Header.Text = "Header 2";
             // 
             // TwoAmountsConfigDialog
             // 
             this.AcceptButton = this.okButton;
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
             this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(258, 201);
-            this.Controls.Add(this.amount2GroupBox);
+            this.ClientSize = new System.Drawing.Size(270, 180);
+            this.Controls.Add(this.amount2Header);
+            this.Controls.Add(this.amount1Header);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.okButton);
-            this.Controls.Add(this.amount1GroupBox);
+            this.Controls.Add(this.amount2Reset);
+            this.Controls.Add(this.amount2UpDown);
+            this.Controls.Add(this.amount2Slider);
+            this.Controls.Add(this.amount1Reset);
+            this.Controls.Add(this.amount1UpDown);
+            this.Controls.Add(this.amount1Slider);
             this.Location = new System.Drawing.Point(0, 0);
             this.Name = "TwoAmountsConfigDialog";
-            this.Text = "amount1 / amount2";
-            this.Controls.SetChildIndex(this.amount1GroupBox, 0);
+            this.Controls.SetChildIndex(this.amount1Slider, 0);
+            this.Controls.SetChildIndex(this.amount1UpDown, 0);
+            this.Controls.SetChildIndex(this.amount1Reset, 0);
+            this.Controls.SetChildIndex(this.amount2Slider, 0);
+            this.Controls.SetChildIndex(this.amount2UpDown, 0);
+            this.Controls.SetChildIndex(this.amount2Reset, 0);
             this.Controls.SetChildIndex(this.okButton, 0);
             this.Controls.SetChildIndex(this.cancelButton, 0);
-            this.Controls.SetChildIndex(this.amount2GroupBox, 0);
+            this.Controls.SetChildIndex(this.amount1Header, 0);
+            this.Controls.SetChildIndex(this.amount2Header, 0);
             ((System.ComponentModel.ISupportInitialize)(this.amount1Slider)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.amount1UpDown)).EndInit();
-            this.amount1GroupBox.ResumeLayout(false);
-            this.amount2GroupBox.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.amount2UpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.amount2Slider)).EndInit();
             this.ResumeLayout(false);
 
         }
         #endregion
+
+        protected override void OnLoad(EventArgs e)
+        {
+            amount1UpDown.Select();
+            amount1UpDown.Select(0, amount1UpDown.Text.Length);
+            base.OnLoad (e);
+        }
 
         protected virtual void OnOkButtonClicked(object sender, System.EventArgs e)
         {

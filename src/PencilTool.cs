@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -24,20 +25,25 @@ namespace PaintDotNet
         : Tool 
     {
         private bool mouseDown = false;
+        private ColorBgra color;
         private MouseButtons mouseButton;
         private ArrayList savedSurfaces;
         private BitmapLayer bitmapLayer;
         private RenderArgs renderArgs;
         private ArrayList tracePoints;
-		private Pen pen;
-		private PdnRegion clipRegion;
-		private Point lastPoint;
-		private Point difference;
+        private PdnRegion clipRegion;
+        private Point lastPoint;
+        private Point difference;
         private Cursor pencilToolCursor;
+        private BinaryPixelOp blendOp = new BinaryPixelOps.AlphaBlend();
+        private BinaryPixelOp copyOp = new BinaryPixelOps.AssignFromRhs();
 
         protected override void OnActivate()
         {
             base.OnActivate();
+
+            this.pencilToolCursor = new Cursor(PdnResources.GetResourceStream("Cursors.PencilToolCursor.cur"));
+            this.Cursor = this.pencilToolCursor;
 
             savedSurfaces = new ArrayList();
 
@@ -46,20 +52,24 @@ namespace PaintDotNet
                 bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
                 renderArgs = new RenderArgs(bitmapLayer.Surface);
                 tracePoints = new ArrayList();
-                pen = null;
             }
             else
             {
                 bitmapLayer = null;
                 Utility.Dispose(renderArgs);
                 renderArgs = null;
-                pen = null;
             }
         }
 
         protected override void OnDeactivate()
         {
             base.OnDeactivate();
+
+            if (this.pencilToolCursor != null)
+            {
+                this.pencilToolCursor.Dispose();
+                this.pencilToolCursor = null;
+            }
 
             if (mouseDown)
             {
@@ -89,65 +99,57 @@ namespace PaintDotNet
 
             mouseDown = false;
 
-            if (pen != null)
-            {
-                pen.Dispose();
-                pen = null;
-            }
-
-			Utility.Dispose(clipRegion);
+            Utility.Dispose(clipRegion);
         }
 
-
-		// Draws a point, but first intersects it with the selections
-		private void DrawPoint(RenderArgs ra, Point p, ColorBgra color)
-		{
+        // Draws a point, but first intersects it with the selection
+        private void DrawPoint(RenderArgs ra, Point p, ColorBgra color)
+        {
             if (Utility.IsPointInRectangle(p, ra.Surface.Bounds))
             {
                 if (ra.Graphics.IsVisible(p))
                 {
-                    ra.Surface[p.X, p.Y] = color;
+                    BinaryPixelOp op = Workspace.Environment.AlphaBlending ? blendOp : copyOp;
+                    ra.Surface[p.X, p.Y] = op.Apply(ra.Surface[p.X, p.Y], color);
                 }
             }
-		}
+        }
 
-        private void DrawLines(RenderArgs ra, ArrayList points, int startIndex, int length, Pen pen, Point currentMouse)
+        private void DrawLines(RenderArgs ra, ArrayList points, int startIndex, int length, ColorBgra color)
         {
-			// Draw a point in the line
-			if (points.Count == 0)
-			{
-				return;
-			}
-			else if (points.Count == 1)
-			{
-				Point p = (Point)points[0];
+            // Draw a point in the line
+            if (points.Count == 0)
+            {
+                return;
+            }
+            else if (points.Count == 1)
+            {
+                Point p = (Point)points[0];
 
-				if (Utility.IsPointInRectangle(p, ra.Surface.Bounds))
-				{
-					DrawPoint(ra,p,ColorBgra.FromColor(pen.Color));
-				}
-			}
-			else
-			{
-				ColorBgra color = ColorBgra.FromColor(pen.Color);
+                if (Utility.IsPointInRectangle(p, ra.Surface.Bounds))
+                {
+                    DrawPoint(ra, p, color);
+                }
+            }
+            else
+            {
+                for (int i = 1; i < points.Count; ++i)
+                {
+                    Point[] linePoints = Utility.GetLinePoints((Point)points[i - 1], (Point)points[i]);
+                    int startPoint = 0;
 
-				for (int i = 1; i < points.Count; ++i)
-				{
-					Point[] linePoints = Utility.GetLinePoints((Point)points[i - 1], (Point)points[i]);
-					int startPoint = 0;
+                    if (i != 1)
+                    {
+                        startPoint = 1;
+                    }
 
-					if (i != 1)
-					{
-						startPoint = 1;
-					}
-
-					for (int pi = startPoint; pi < linePoints.Length; ++pi)
-					{
-						Point p = linePoints[pi];
-						DrawPoint(ra,p,color);
-					}
-				}
-			}		
+                    for (int pi = startPoint; pi < linePoints.Length; ++pi)
+                    {
+                        Point p = linePoints[pi];
+                        DrawPoint(ra, p, color);
+                    }
+                }
+            }       
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -168,18 +170,14 @@ namespace PaintDotNet
                 bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
                 renderArgs = new RenderArgs(bitmapLayer.Surface);
 
-
-                if (!Workspace.Environment.IsSelectionEmpty)
+                if (clipRegion != null)
                 {
-                    clipRegion = Workspace.Environment.CreateSelectedRegion();
-                }
-                else
-                {
-                    clipRegion = new PdnRegion();
-                    clipRegion.MakeInfinite();
+                    clipRegion.Dispose();
+                    clipRegion = null;
                 }
 
-                renderArgs.Graphics.SetClip(clipRegion, CombineMode.Replace);
+                clipRegion = Workspace.Environment.Selection.CreateRegion();
+                renderArgs.Graphics.SetClip(clipRegion.GetRegionReadOnly(), CombineMode.Replace);
                 OnMouseMove(e);
             }
         }
@@ -197,34 +195,26 @@ namespace PaintDotNet
                     lastPoint = mouseXY;
                 }
 
-				difference = new Point(mouseXY.X - lastPoint.X, mouseXY.Y - lastPoint.Y);
+                difference = new Point(mouseXY.X - lastPoint.X, mouseXY.Y - lastPoint.Y);
 
-				if (tracePoints.Count > 0) 
-				{
-					Point lastMouseXY = (Point)tracePoints[tracePoints.Count - 1];
-					if (lastMouseXY == mouseXY) 
-					{
-						return;
-					}
-				}
-
-                if (pen == null)
+                if (tracePoints.Count > 0) 
                 {
-                    PenInfo pi = Workspace.Environment.PenInfo;
-                    pi.Width = 1.0f;
-
-                    if ((mouseButton & MouseButtons.Left) == MouseButtons.Left)
+                    Point lastMouseXY = (Point)tracePoints[tracePoints.Count - 1];
+                    if (lastMouseXY == mouseXY) 
                     {
-                        pen = pi.CreatePen(new BrushInfo(BrushType.Solid, HatchStyle.BackwardDiagonal),
-                            Workspace.Environment.ForeColor.ToColor(), Workspace.Environment.BackColor.ToColor());
-                    }
-                    else if ((mouseButton & MouseButtons.Right) == MouseButtons.Right)
-                    {   // right mouse button = swap foreground/background
-                        pen = pi.CreatePen(new BrushInfo(BrushType.Solid, HatchStyle.BackwardDiagonal),
-                            Workspace.Environment.BackColor.ToColor(), Workspace.Environment.ForeColor.ToColor());
+                        return;
                     }
                 }
 
+                if ((mouseButton & MouseButtons.Left) == MouseButtons.Left)
+                {
+                    this.color = Workspace.Environment.ForeColor;
+                }
+                else // if ((mouseButton & MouseButtons.Right) == MouseButtons.Right)
+                {   
+                    // right mouse button = swap foreground/background
+                    this.color = Workspace.Environment.BackColor;
+                }
 
                 if (!(tracePoints.Count > 0 && mouseXY == (Point)tracePoints[tracePoints.Count - 1]))
                 {
@@ -240,7 +230,8 @@ namespace PaintDotNet
                         saveRect = Utility.PointsToRectangle(mouseXY, mouseXY);
                     }
                     else
-                    {   // >1 points
+                    {   
+                        // >1 points
                         saveRect = Utility.PointsToRectangle((Point)tracePoints[tracePoints.Count - 1], (Point)tracePoints[tracePoints.Count - 2]);
                     }
 
@@ -251,7 +242,6 @@ namespace PaintDotNet
                     // also make sure it's within the clipping bounds
                     if (saveRect.Width > 0 && saveRect.Height > 0 && renderArgs.Graphics.IsVisible(saveRect))
                     {
-                        pen.LineJoin = LineJoin.Round;
                         PlacedSurface savedPI = new PlacedSurface(renderArgs.Surface, saveRect);
                         savedSurfaces.Add(savedPI);
 
@@ -269,17 +259,17 @@ namespace PaintDotNet
                             length = 2;
                         }
 
-                        DrawLines(this.renderArgs, tracePoints, startIndex, length, pen, mouseXY);
+                        DrawLines(this.renderArgs, tracePoints, startIndex, length, color);
 
                         bitmapLayer.Invalidate(saveRect);
-                        Workspace.Update();
+                        Update();
                     }
                 }
                 else
                 {
                     // will have to do something here if we add other layer types besides BitmapLayer
                 }
-				lastPoint = mouseXY;
+                lastPoint = mouseXY;
             }
         }
 
@@ -314,9 +304,8 @@ namespace PaintDotNet
 
                     savedSurfaces.Clear();
 
-                    //HistoryAction ha = bitmapLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
                     HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, simplifiedRegion);
-                    DrawLines(renderArgs, tracePoints, 0, tracePoints.Count, pen,new Point(e.X,e.Y));
+                    DrawLines(renderArgs, tracePoints, 0, tracePoints.Count, color);
                     bitmapLayer.Invalidate(simplifiedRegion);
                     Workspace.History.PushNewAction(ha);
 
@@ -325,22 +314,16 @@ namespace PaintDotNet
                 }
 
                 tracePoints = null;
-                Utility.Dispose(pen);
-                pen = null;
             }
         }
 
         public PencilTool(DocumentWorkspace parent)
             : base(parent,
-                   Utility.GetImageResource("Icons.PencilToolIcon.bmp"),
-                   "Pencil",
-                   "Draws a freeform, one-pixel wide line.",
-                   "Left click to draw freeform, one-pixel wide lines with the foreground color, right click to use the background color",
+                   PdnResources.GetImage("Icons.PencilToolIcon.bmp"),
+                   PdnResources.GetString("PencilTool.Name"),
+                   PdnResources.GetString("PencilTool.HelpText"),
                    'p')
         {
-            this.pencilToolCursor = new Cursor(Utility.GetResourceStream("Cursors.PencilToolCursor.cur"));
-            this.Cursor = this.pencilToolCursor;
-
             // initialize any state information you need
             mouseDown = false;
         }
@@ -352,12 +335,6 @@ namespace PaintDotNet
             if (disposing)
             {
                 DisposeImage();
-
-                if (this.pencilToolCursor != null)
-                {
-                    this.pencilToolCursor.Dispose();
-                    this.pencilToolCursor = null;
-                }
             }
         }
 

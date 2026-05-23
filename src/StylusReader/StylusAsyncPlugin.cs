@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -17,9 +18,9 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for StylusAsyncPlugin.
-	/// </summary>
+    /// <summary>
+    /// Summary description for StylusAsyncPlugin.
+    /// </summary>
     internal sealed class StylusAsyncPlugin
         : IStylusAsyncPlugin
     {
@@ -34,7 +35,7 @@ namespace PaintDotNet
             this.ratio = new PointF(g.DpiX / 2540.0f, g.DpiY / 2540.0f);
             this.subject = subject;
         }
-	
+    
         private PointF HimetricToPointF(int x, int y) 
         {
             return new PointF(x * ratio.X, y * ratio.Y);
@@ -42,17 +43,17 @@ namespace PaintDotNet
 
         private MouseButtons StatusToMouseButtons(int status) 
         {
-			if ((status & 0x1) != 0) 
+            if ((status & 0x1) != 0) 
             {
-				if ((status & 0x8) != 0) 
-				{
-					return MouseButtons.Right;
-				}
-				else if ((status & 0x2) != 0)
-				{
-					return MouseButtons.Middle;
-				}
-				else
+                if ((status & 0x8) != 0) 
+                {
+                    return MouseButtons.Right;
+                }
+                else if ((status & 0x2) != 0)
+                {
+                    return MouseButtons.Middle;
+                }
+                else
                 {
                     return MouseButtons.Left;
                 }

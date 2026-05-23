@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -42,36 +43,70 @@ namespace PaintDotNet
             base.OnMouseUp (e);
         }
 
-        protected override void RegionSelected(PdnRegion fillRegion, Rectangle boundingBox)
+        protected override void PerimeterFound(Point[][] polygonSet)
         {
-            Surface surface = ((BitmapLayer)Workspace.ActiveLayer).Surface;
-            RenderArgs ra = new RenderArgs(surface);
-            HistoryAction ha;
-
-            using (PdnRegion affected = Utility.SimplifyAndInflateRegion(fillRegion))
+            using (PdnGraphicsPath path = new PdnGraphicsPath())
             {
-                ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, affected);
+                path.AddPolygons(polygonSet);
+
+                using (PdnRegion fillRegion = new PdnRegion(path))
+                {
+                    Rectangle boundingBox = fillRegion.GetBoundsInt();
+
+                    Surface surface = ((BitmapLayer)Workspace.ActiveLayer).Surface;
+                    RenderArgs ra = new RenderArgs(surface);
+                    HistoryAction ha;
+
+                    using (PdnRegion affected = Utility.SimplifyAndInflateRegion(fillRegion))
+                    {
+                        ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, affected);
+                    }
+
+                    ra.Graphics.CompositingMode = Workspace.Environment.GetCompositingMode();
+                    ra.Graphics.FillRegion(brush, fillRegion.GetRegionReadOnly());
+
+                    Workspace.History.PushNewAction(ha);
+                    Workspace.ActiveLayer.Invalidate(boundingBox);
+                    Update();
+                }
+            }
+        }
+
+        protected override void OnActivate()
+        {
+            // cursor-transitions
+            cursorMouseUp = new Cursor(PdnResources.GetResourceStream("Cursors.PaintBucketToolCursor.cur"));
+            cursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.PaintBucketToolCursorMouseDown.cur"));
+            Cursor = cursorMouseUp;
+
+            base.OnActivate();
+        }
+
+        protected override void OnDeactivate()
+        {
+            if (cursorMouseUp != null)
+            {
+                cursorMouseUp.Dispose();
+                cursorMouseUp = null;
             }
 
-            ra.Graphics.FillRegion(brush, fillRegion);
+            if (cursorMouseDown != null)
+            {
+                cursorMouseDown.Dispose();
+                cursorMouseDown = null;
+            }
 
-            Workspace.History.PushNewAction(ha);
-            Workspace.ActiveLayer.Invalidate(boundingBox);
-            Workspace.Update();
+            base.OnDeactivate ();
         }
+
 
         public PaintBucketTool(DocumentWorkspace parent) 
             : base(parent,
-                   Utility.GetImageResource("Icons.PaintBucketIcon.bmp"),
-                   "Paint Bucket",
-                   "Fills a Homogenous Color Region",
-                   "Left click to fill a region with the foreground color, right click to fill with the background color",
+                   PdnResources.GetImage("Icons.PaintBucketIcon.bmp"),
+                   PdnResources.GetString("PaintBucketTool.Name"),
+                   PdnResources.GetString("PaintBucketTool.HelpText"),
                    'f')
         {
-            // cursor-transitions
-            cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.PaintBucketToolCursor.cur"));
-            cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.PaintBucketToolCursorMouseDown.cur"));
-            Cursor = cursorMouseUp;
         }
 
         protected override void Dispose(bool disposing)
@@ -86,18 +121,6 @@ namespace PaintDotNet
                 {
                     brush.Dispose();
                     brush = null;
-                }
-
-                if (cursorMouseUp != null)
-                {
-                    cursorMouseUp.Dispose();
-                    cursorMouseUp = null;
-                }
-
-                if (cursorMouseDown != null)
-                {
-                    cursorMouseDown.Dispose();
-                    cursorMouseDown = null;
                 }
             }
         }

@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -21,8 +22,7 @@ namespace PaintDotNet
         : PdnBaseForm
     {
         protected System.Windows.Forms.CheckBox visibleCheckBox;
-        protected System.Windows.Forms.Label label1;
-        protected System.Windows.Forms.GroupBox groupBox1;
+        protected System.Windows.Forms.Label nameLabel;
         protected System.Windows.Forms.TextBox nameBox;
         protected System.Windows.Forms.Button cancelButton;
         protected System.Windows.Forms.Button okButton;
@@ -30,7 +30,8 @@ namespace PaintDotNet
         /// Required designer variable.
         /// </summary>
         private System.ComponentModel.Container components = null;
-        private object originalProperties = null;        
+        private object originalProperties = null;
+        private PaintDotNet.HeaderLabel generalHeader;        
 
         private Layer layer;
 
@@ -74,7 +75,14 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.LayerPropertiesIcon.bmp"), Color.FromArgb(192, 192, 192));
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuLayersLayerPropertiesIcon.bmp"), Color.FromArgb(192, 192, 192));
+
+            this.Text = PdnResources.GetString("LayerPropertiesDialog.Text");
+            this.visibleCheckBox.Text = PdnResources.GetString("LayerPropertiesDialog.VisibleCheckBox.Text");
+            this.nameLabel.Text = PdnResources.GetString("LayerPropertiesDialog.NameLabel.Text");
+            this.generalHeader.Text = PdnResources.GetString("LayerPropertiesDialog.GeneralHeader.Text");
+            this.cancelButton.Text = PdnResources.GetString("Form.CancelButton.Text");
+            this.okButton.Text = PdnResources.GetString("Form.OkButton.Text");
         }
 
         /// <summary>
@@ -94,6 +102,13 @@ namespace PaintDotNet
             base.Dispose(disposing);
         }
 
+        protected override void OnLoad(EventArgs e)
+        {
+            this.nameBox.Select();
+            this.nameBox.Select(0, this.nameBox.Text.Length);
+            base.OnLoad(e);
+        }
+
         #region Windows Form Designer generated code
         /// <summary>
         /// Required method for Designer support - do not modify
@@ -103,95 +118,87 @@ namespace PaintDotNet
         {
             this.visibleCheckBox = new System.Windows.Forms.CheckBox();
             this.nameBox = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.nameLabel = new System.Windows.Forms.Label();
             this.cancelButton = new System.Windows.Forms.Button();
             this.okButton = new System.Windows.Forms.Button();
-            this.groupBox1.SuspendLayout();
+            this.generalHeader = new PaintDotNet.HeaderLabel();
             this.SuspendLayout();
             // 
             // visibleCheckBox
             // 
-            this.visibleCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.visibleCheckBox.Location = new System.Drawing.Point(16, 40);
+            this.visibleCheckBox.Location = new System.Drawing.Point(14, 43);
             this.visibleCheckBox.Name = "visibleCheckBox";
-            this.visibleCheckBox.Size = new System.Drawing.Size(72, 16);
+            this.visibleCheckBox.Size = new System.Drawing.Size(90, 16);
             this.visibleCheckBox.TabIndex = 3;
-            this.visibleCheckBox.Text = "Visible";
+            this.visibleCheckBox.TextAlign = System.Drawing.ContentAlignment.TopLeft;
             this.visibleCheckBox.CheckedChanged += new System.EventHandler(this.visibleCheckBox_CheckedChanged);
             // 
             // nameBox
             // 
-            this.nameBox.Location = new System.Drawing.Point(56, 16);
+            this.nameBox.Location = new System.Drawing.Point(64, 24);
             this.nameBox.Name = "nameBox";
             this.nameBox.Size = new System.Drawing.Size(200, 20);
             this.nameBox.TabIndex = 2;
-            this.nameBox.Text = "Background";
+            this.nameBox.Text = "";
             this.nameBox.Enter += new System.EventHandler(this.nameBox_Enter);
             // 
-            // label1
+            // nameLabel
             // 
-            this.label1.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.label1.Location = new System.Drawing.Point(7, 19);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(40, 16);
-            this.label1.TabIndex = 2;
-            this.label1.Text = "Name:";
-            this.label1.TextAlign = System.Drawing.ContentAlignment.BottomRight;
-            // 
-            // groupBox1
-            // 
-            this.groupBox1.Controls.Add(this.visibleCheckBox);
-            this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Controls.Add(this.nameBox);
-            this.groupBox1.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.groupBox1.Location = new System.Drawing.Point(8, 8);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(272, 64);
-            this.groupBox1.TabIndex = 3;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "General";
+            this.nameLabel.Location = new System.Drawing.Point(6, 24);
+            this.nameLabel.Name = "nameLabel";
+            this.nameLabel.Size = new System.Drawing.Size(50, 16);
+            this.nameLabel.TabIndex = 2;
             // 
             // cancelButton
             // 
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.cancelButton.Location = new System.Drawing.Point(208, 88);
+            this.cancelButton.Location = new System.Drawing.Point(194, 69);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.TabIndex = 1;
-            this.cancelButton.Text = "Cancel";
             this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
             // 
             // okButton
             // 
             this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.okButton.Location = new System.Drawing.Point(128, 88);
+            this.okButton.Location = new System.Drawing.Point(114, 69);
             this.okButton.Name = "okButton";
             this.okButton.TabIndex = 0;
-            this.okButton.Text = "OK";
             this.okButton.Click += new System.EventHandler(this.okButton_Click);
+            // 
+            // generalHeader
+            // 
+            this.generalHeader.Location = new System.Drawing.Point(6, 8);
+            this.generalHeader.Name = "generalHeader";
+            this.generalHeader.Size = new System.Drawing.Size(269, 14);
+            this.generalHeader.TabIndex = 4;
+            this.generalHeader.TabStop = false;
             // 
             // LayerPropertiesDialog
             // 
             this.AcceptButton = this.okButton;
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
             this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(288, 115);
+            this.ClientSize = new System.Drawing.Size(274, 96);
+            this.Controls.Add(this.generalHeader);
             this.Controls.Add(this.okButton);
             this.Controls.Add(this.cancelButton);
-            this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.nameBox);
+            this.Controls.Add(this.visibleCheckBox);
+            this.Controls.Add(this.nameLabel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "LayerPropertiesDialog";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Layer Properties";
-            this.Controls.SetChildIndex(this.groupBox1, 0);
+            this.Controls.SetChildIndex(this.nameLabel, 0);
+            this.Controls.SetChildIndex(this.visibleCheckBox, 0);
+            this.Controls.SetChildIndex(this.nameBox, 0);
             this.Controls.SetChildIndex(this.cancelButton, 0);
             this.Controls.SetChildIndex(this.okButton, 0);
-            this.groupBox1.ResumeLayout(false);
+            this.Controls.SetChildIndex(this.generalHeader, 0);
             this.ResumeLayout(false);
 
         }

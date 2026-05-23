@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -20,8 +21,8 @@ namespace PaintDotNet.Effects
     public class EffectConfigDialog
         : PdnBaseForm
     {
-		private Surface effectSourceSurface;
-		private PdnRegion effectSelection = null;
+        private Surface effectSourceSurface;
+        private PdnRegion effectSelection = null;
 
         /// <summary>
         /// This is the surface that will be used as the source for rendering.
@@ -30,50 +31,59 @@ namespace PaintDotNet.Effects
         /// Treat this object as read-only. In your OnLoad method, feel free
         /// to do any analysis of this surface to populate the dialog box.
         /// </summary>
-		public Surface EffectSourceSurface
-		{
-			get
-			{
-				return effectSourceSurface;
-			}
+        [Browsable(false)]
+        public Surface EffectSourceSurface
+        {
+            get
+            {
+                return effectSourceSurface;
+            }
 
-			set
-			{
-				effectSourceSurface = value;
-			}
-		}
+            set
+            {
+                effectSourceSurface = value;
+            }
+        }
 
-		[Browsable(false)]
-		public PdnRegion Selection
-		{
-			get
-			{
-				if (effectSelection == null || effectSelection.IsEmpty()) 
-				{
-					effectSelection = new PdnRegion();
-					effectSelection.MakeInfinite();
-				}
-				return effectSelection;
-			}
+        [Browsable(false)]
+        public PdnRegion Selection
+        {
+            get
+            {
+                if (this.DesignMode)
+                {
+                    return null;
+                }
+                else
+                {
+                    if (effectSelection == null || effectSelection.IsEmpty()) 
+                    {
+                        effectSelection = new PdnRegion();
+                        effectSelection.MakeInfinite();
+                    }
 
-			set
-			{
+                    return effectSelection;
+                }
+            }
+
+            set
+            {
                 if (effectSelection != null)
                 {
                     effectSelection.Dispose();
                     effectSelection = null;
                 }
 
-				effectSelection = value;
-			}
-		}
+                effectSelection = value;
+            }
+        }
 
         public EffectConfigDialog()
         {
             InitializeComponent();
             InitialInitToken();
-			effectSelection = new PdnRegion();
-			effectSelection.MakeInfinite();
+            effectSelection = new PdnRegion();
+            effectSelection.MakeInfinite();
         }
 
         private void InitializeComponent()
@@ -90,7 +100,6 @@ namespace PaintDotNet.Effects
             this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "EffectConfigDialog";
         }
 
         /// <summary>

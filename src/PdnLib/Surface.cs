@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -162,36 +163,7 @@ namespace PaintDotNet
                 throw new OutOfMemoryException("Dimensions are too large - not enough memory, width=" + width.ToString() + ", height=" + height.ToString(), ex);
             }
 
-            MemoryBlock scan0 = new MemoryBlock(bytes);
-            Create(width, height, stride, scan0);
-        }
-
-        /// <summary>
-        /// Creates a new instance of the Surface class.
-        /// </summary>
-        /// <param name="width">The width, in pixels, for the new Surface.</param>
-        /// <param name="height">The height, in pixels, for the new Surface.</param>
-        /// <param name="stride">The stride, in bytes, for the new Surface.</param>
-        public Surface(int width, int height, int stride)
-        {
-            if (stride < width * ColorBgra.SizeOf)
-            {
-                throw new ArgumentOutOfRangeException("stride", stride, "Stride must be greater than or equal to width * ColorBgra.SizeOf");
-            }
-
-            long bytes;
-
-            try
-            {
-                bytes = (long)height * (long)stride;
-            }
-
-            catch (OverflowException ex)
-            {
-                throw new OutOfMemoryException("Dimensions are too large -- not enough memory", ex);
-            }
-
-            MemoryBlock scan0 = new MemoryBlock(bytes);
+            MemoryBlock scan0 = new MemoryBlock(width, height);
             Create(width, height, stride, scan0);
         }
 
@@ -530,6 +502,197 @@ namespace PaintDotNet
             return x >= 0 && x < Width;
         }
 
+        /*
+        // This code is currently not used anywhere, so I am commenting it out.
+        // However, we will probably use it in the future (Zoom Blur, optimized Motion Blur)
+        // so I'm keeping it here for now instead of just nuking it.
+        // Note that this code is NOT up to coding standards and is not necessarily
+        // robust enough that we can just uncomment and go straight to using it.
+        // -Rick
+        public ColorBgra GetLineSampleChecked(PointF start, PointF end)
+        {
+            float dx = start.X - end.X;
+            float dy = start.Y - end.Y;
+
+            if (dx * dx > dy * dy)
+            {
+                if (start.X <= end.X)
+                {
+                    return GetLineSampleHorizontalChecked(start, end);
+                }
+                else
+                {
+                    return GetLineSampleHorizontalChecked(end, start);
+                }
+            }
+            else
+            {
+                if (start.Y <= end.Y)
+                {
+                    return GetLineSampleVerticalChecked(start, end);
+                }
+                else
+                {
+                    return GetLineSampleVerticalChecked(end, start);
+                }
+            }
+
+        }
+
+        //end.X >= start.X, and dy/dx <= 1
+        private ColorBgra GetLineSampleHorizontalChecked(PointF start, PointF end)
+        {
+            //Clip the line, pass to unchecked method
+            if (end.X >= 0 && start.X < width)
+            {
+                float slope = (end.Y - start.Y) / (end.X - start.X);
+
+                if (end.X > width - 1)
+                {
+                    end.Y = (width - 1 - start.X) * slope + start.Y;
+                    end.X = width - 1;
+                }
+
+                if (start.X < 0)
+                {
+                    start.Y = end.Y - slope * end.X;
+                    start.X = 0;
+                }
+
+                if (start.Y < 0 && end.Y < 0)
+                {
+                    return ColorBgra.FromUInt32(0);
+                }
+                else if (end.Y > height - 1 && start.Y > height - 1)
+                {
+                    return ColorBgra.FromUInt32(0);
+                }
+                else
+                {
+                    if (start.Y < 0)
+                    {
+                        start.Y = 0;
+                        start.X = end.Y / slope + end.X;
+                    }
+                    else if (start.Y > height - 1)
+                    {
+                        start.Y = height - 1;
+                        start.X = end.X - (height - 1 - end.Y) / slope;
+                    }
+
+                    if (end.Y < 0)
+                    {
+                        end.Y = 0;
+                        end.X = start.X - start.Y / slope;
+                    }
+                    else if (end.Y > height - 1)
+                    {
+                        start.Y = height - 1;
+                        start.X = start.X + (height - 1 - start.Y) / slope;
+                    }
+
+                    return GetLineSampleHorizontalUnchecked(start, end);
+                }
+            }
+            else
+            {
+                return ColorBgra.FromUInt32(0);
+            }
+        }
+
+        private unsafe ColorBgra GetLineSampleHorizontalUnchecked(PointF start, PointF end)
+        {
+            int fsx = (int)(start.X * 256);
+            int fsy = (int)(start.Y * 256);
+            int fex = (int)(end.X * 256);
+            int fey = (int)(end.Y * 256);
+
+            if (fex - fsx < 256)
+            {
+                return GetBilinearSample((start.X + end.X) / 2, (start.Y + end.Y) / 2, false);
+            }
+            else
+            {
+                int dx = fex - fsx;
+                int dy = fey - fsy;
+                int dir = (dy < 0) ? -1 : 1;
+
+                dy *= dir;
+
+                int gcd = Utility.GreatestCommonDivisor(dx, dy);
+
+                dx /= gcd;
+                dy /= gcd;
+
+                int sx = (1 + ((fsx - 1) | 0xFF)) >> 8;
+                int ex = fex >> 8;
+                int fsy_ = fsy + ((sx << 8) - fsx) * dy / dx;
+                int y = fsy_ >> 8;
+
+                //TODO: add tips
+                //add dy until you get dx
+                int accum = (((y << 8) - fsy_) * dir * dx) >> 8;
+
+                ColorBgra* ptr1 = GetPointAddressUnchecked(sx, y);
+                ColorBgra* ptr2 = GetPointAddressUnchecked(sx, (y + dir >= 0 && y + dir < height) ? y + dir : y); //boundscheck
+                int ptrIncr = dir * stride / sizeof(ColorBgra);
+
+                int sr = 0;
+                int sg = 0;
+                int sb = 0;
+                int sa = 0;
+                int sw = 0;
+                int sc = 0;
+
+                for (int x = sx; x <= ex; ++x)
+                {
+                    if (accum >= dx)
+                    {
+                        accum -= dx;
+                        y += dir;
+
+                        ptr1 += ptrIncr;
+                        if (y > 0 && y < height - 1)
+                        {
+                            ptr2 += ptrIncr;
+                        }
+                    }
+
+                    int w1 = ((ptr1->A >> 7) + ptr1->A) * (dx - accum);
+                    int w2 = ((ptr2->A >> 7) + ptr2->A) * accum;
+
+                    sr += w1 * ptr1->R + w2 * ptr2->R;
+                    sg += w1 * ptr1->G + w2 * ptr2->G;
+                    sb += w1 * ptr1->B + w2 * ptr2->B;
+                    sa += (dx - accum) * ptr1->A + accum * ptr2->A;
+                    sc += dx;
+                    sw += w1 + w2;
+
+                    accum += dy;
+                    ++ptr1;
+                    ++ptr2;
+                }
+
+                sr /= sw;
+                sg /= sw;
+                sb /= sw;
+                sa /= sc;
+
+                return ColorBgra.FromBgra((byte)sr, (byte)sg, (byte)sb, (byte)sa);
+            }
+        }
+
+        private ColorBgra GetLineSampleVerticalChecked(PointF start, PointF end)
+        {
+            return ColorBgra.FromUInt32(0);
+        }
+
+        private ColorBgra GetLineSampleVerticalUnchecked(PointF start, PointF end)
+        {
+            return ColorBgra.FromUInt32(0);
+        }
+        */
+
         /// <summary>
         /// Gets a sample of the image at the requested coordinates using bilinear interpolation. You may specify
         /// coordinates that are outside the boundaries of the image, and they will be wrapped. Requesting the
@@ -539,7 +702,8 @@ namespace PaintDotNet
         /// <param name="x">The x offset. If this value is outside of the surface's boundaries, it will be wrapped (not clamped).</param>
         /// <param name="y">The y offset. If this value is outside of the surface's boundaries, it will be wrapped (not clamped).</param>
         /// <returns>A color value that approximates the image's color value at the requested point.</returns>
-        /// <remarks>This method is meant for rapid prototyping or development and is slow.</remarks>
+        /// <remarks>This method is meant for rapid prototyping or development, and is slow.</remarks>
+        [Obsolete]
         public ColorBgra GetPointSample(double x, double y)
         {
             int ix = (int)x;
@@ -557,6 +721,272 @@ namespace PaintDotNet
             ColorBgra bot = ColorBgra.Lerp(this[ix % w, (iy + 1) % h], this[(ix + 1) % w, (iy + 1) % h], fx);
 
             return ColorBgra.Lerp(top, bot, fy);
+        }
+
+        public ColorBgra GetBilinearSample(float x, float y, bool wrap)
+        {
+            uint tilingMask = wrap ? 0xffffffff : 0;
+            float u = x;
+            float v = y;
+
+            if (wrap || (u >= -1 && v >= -1 && u <= width && v <= height))
+            {
+                unchecked
+                {
+                    int iu = (int)Math.Floor(u);
+                    uint sxfrac = (uint)(256 * (u - (float)iu));
+                    uint sxfracinv = 256 - sxfrac;
+
+                    int iv = (int)Math.Floor(v);
+                    uint syfrac = (uint)(256 * (v - (float)iv));
+                    uint syfracinv = 256 - syfrac;
+
+                    uint wul = (uint)(sxfracinv * syfracinv);
+                    uint wur = (uint)(sxfrac * syfracinv);
+                    uint wll = (uint)(sxfracinv * syfrac);
+                    uint wlr = (uint)(sxfrac * syfrac);
+
+                    uint inBoundsMaskLeft = tilingMask;
+                    uint inBoundsMaskTop = tilingMask;
+                    uint inBoundsMaskRight = tilingMask;
+                    uint inBoundsMaskBottom = tilingMask;
+
+                    int sx = iu;
+                    if (sx < 0)
+                    {
+                        sx = (width - 1) + ((sx + 1) % width);
+                    }
+                    else if (sx > (width - 1))
+                    {
+                        sx = sx % width;
+                    }
+                    else
+                    {
+                        inBoundsMaskLeft = 0xffffffff;
+                    }
+
+                    int sy = iv;
+                    if (sy < 0)
+                    {
+                        sy = (height - 1) + ((sy + 1) % height);
+                    }
+                    else if (sy > (height - 1))
+                    {
+                        sy = sy % height;
+                    }
+                    else
+                    {
+                        inBoundsMaskTop = 0xffffffff;
+                    }
+
+                    int sleft = sx;
+                    int sright;
+
+                    if (sleft == (width - 1))
+                    {
+                        sright = 0;
+                        inBoundsMaskRight = (iu == -1) ? 0xffffffff : tilingMask;
+                    }
+                    else
+                    {
+                        sright = sleft + 1;
+                        inBoundsMaskRight = inBoundsMaskLeft & 0xffffffff;
+                    }
+
+                    int stop = sy;
+                    int sbottom;
+
+                    if (stop == (height - 1))
+                    {
+                        sbottom = 0;
+                        inBoundsMaskBottom = (iv == -1) ? 0xffffffff : tilingMask;
+                    }
+                    else
+                    {
+                        sbottom = stop + 1;
+                        inBoundsMaskBottom = inBoundsMaskTop & 0xffffffff;
+                    }
+                                   
+                    const uint edgeColor = 0x00ffffff;
+                                     
+                    uint maskUL = inBoundsMaskLeft & inBoundsMaskTop;
+                    ColorBgra cul = ColorBgra.FromUInt32((GetPointUnchecked(sleft, stop).Bgra & maskUL) | (edgeColor & ~maskUL));
+
+                    uint maskUR = inBoundsMaskRight & inBoundsMaskTop;
+                    ColorBgra cur = ColorBgra.FromUInt32((GetPointUnchecked(sright, stop).Bgra & maskUR) | (edgeColor & ~maskUR));
+
+                    uint maskLL = inBoundsMaskLeft & inBoundsMaskBottom;
+                    ColorBgra cll = ColorBgra.FromUInt32((GetPointUnchecked(sleft, sbottom).Bgra & maskLL) | (edgeColor & ~maskLL));
+
+                    uint maskLR = inBoundsMaskRight & inBoundsMaskBottom;
+                    ColorBgra clr = ColorBgra.FromUInt32((GetPointUnchecked(sright, sbottom).Bgra & maskLR) | (edgeColor & ~maskLR));
+
+                    uint b = ((cul.B * wul) + (cur.B * wur) + (cll.B * wll) + (clr.B * wlr)) >> 16;
+                    uint g = ((cul.G * wul) + (cur.G * wur) + (cll.G * wll) + (clr.G * wlr)) >> 16;
+                    uint r = ((cul.R * wul) + (cur.R * wur) + (cll.R * wll) + (clr.R * wlr)) >> 16;
+                    uint a = ((cul.A * wul) + (cur.A * wur) + (cll.A * wll) + (clr.A * wlr)) >> 16;
+
+                    return ColorBgra.FromUInt32(b + (g << 8) + (r << 16) + (a << 24));
+                }
+            }
+            else
+            {
+                return ColorBgra.FromUInt32(0x00ffffff);
+            }
+        }
+
+        public unsafe ColorBgra GetBilinearSample2(float x, float y)
+        {
+            float u = x;
+            float v = y;
+
+            if (u >= 0 && v >= 0 && u < width && v < height)
+            {
+                unchecked
+                {
+                    int iu = (int)Math.Floor(u);
+                    uint sxfrac = (uint)(256 * (u - (float)iu));
+                    uint sxfracinv = 256 - sxfrac;
+
+                    int iv = (int)Math.Floor(v);
+                    uint syfrac = (uint)(256 * (v - (float)iv));
+                    uint syfracinv = 256 - syfrac;
+
+                    uint wul = (uint)(sxfracinv * syfracinv);
+                    uint wur = (uint)(sxfrac * syfracinv);
+                    uint wll = (uint)(sxfracinv * syfrac);
+                    uint wlr = (uint)(sxfrac * syfrac);
+
+                    int sx = iu;
+                    int sy = iv;
+                    int sleft = sx;
+                    int sright;
+
+                    if (sleft == (width - 1))
+                    {
+                        sright = sleft;
+                    }
+                    else
+                    {
+                        sright = sleft + 1;
+                    }
+
+                    int stop = sy;
+                    int sbottom;
+
+                    if (stop == (height - 1))
+                    {
+                        sbottom = stop;
+                    }
+                    else
+                    {
+                        sbottom = stop + 1;
+                    }
+                                   
+                    ColorBgra *cul = GetPointAddressUnchecked(sleft, stop);
+                    ColorBgra *cur = cul + (sright - sleft);
+                    ColorBgra *cll = GetPointAddressUnchecked(sleft, sbottom);
+                    ColorBgra *clr = cll + (sright - sleft);
+
+                    const uint ww = 32768;
+                    uint b = (ww + (cul->B * wul) + (cur->B * wur) + (cll->B * wll) + (clr->B * wlr)) >> 16;
+                    uint g = (ww + (cul->G * wul) + (cur->G * wur) + (cll->G * wll) + (clr->G * wlr)) >> 16;
+                    uint r = (ww + (cul->R * wul) + (cur->R * wur) + (cll->R * wll) + (clr->R * wlr)) >> 16;
+                    uint a = (ww + (cul->A * wul) + (cur->A * wur) + (cll->A * wll) + (clr->A * wlr)) >> 16;
+
+                    return ColorBgra.FromUInt32(b + (g << 8) + (r << 16) + (a << 24));
+                }
+            }
+            else
+            {
+                return ColorBgra.FromUInt32(0x00ffffff);
+            }
+        }
+
+        public unsafe ColorBgra GetBilinearSample2Clamped(float x, float y)
+        {
+            float u = x;
+            float v = y;
+
+            if (u < 0)
+            {
+                u = 0;
+            }
+            else if (u > this.Width - 1)
+            {
+                u = this.Width - 1;
+            }
+
+            if (v < 0)
+            {
+                v = 0;
+            }
+            else if (v > this.Height - 1)
+            {
+                v = this.Height - 1;
+            }
+
+            if (u >= 0 && v >= 0 && u < width && v < height)
+            {
+                unchecked
+                {
+                    int iu = (int)Math.Floor(u);
+                    uint sxfrac = (uint)(256 * (u - (float)iu));
+                    uint sxfracinv = 256 - sxfrac;
+
+                    int iv = (int)Math.Floor(v);
+                    uint syfrac = (uint)(256 * (v - (float)iv));
+                    uint syfracinv = 256 - syfrac;
+
+                    uint wul = (uint)(sxfracinv * syfracinv);
+                    uint wur = (uint)(sxfrac * syfracinv);
+                    uint wll = (uint)(sxfracinv * syfrac);
+                    uint wlr = (uint)(sxfrac * syfrac);
+
+                    int sx = iu;
+                    int sy = iv;
+                    int sleft = sx;
+                    int sright;
+
+                    if (sleft == (width - 1))
+                    {
+                        sright = sleft;
+                    }
+                    else
+                    {
+                        sright = sleft + 1;
+                    }
+
+                    int stop = sy;
+                    int sbottom;
+
+                    if (stop == (height - 1))
+                    {
+                        sbottom = stop;
+                    }
+                    else
+                    {
+                        sbottom = stop + 1;
+                    }
+                                   
+                    ColorBgra *cul = GetPointAddressUnchecked(sleft, stop);
+                    ColorBgra *cur = cul + (sright - sleft);
+                    ColorBgra *cll = GetPointAddressUnchecked(sleft, sbottom);
+                    ColorBgra *clr = cll + (sright - sleft);
+
+                    uint ww = 32768;
+                    uint b = (ww + (cul->B * wul) + (cur->B * wur) + (cll->B * wll) + (clr->B * wlr)) >> 16;
+                    uint g = (ww + (cul->G * wul) + (cur->G * wur) + (cll->G * wll) + (clr->G * wlr)) >> 16;
+                    uint r = (ww + (cul->R * wul) + (cur->R * wur) + (cll->R * wll) + (clr->R * wlr)) >> 16;
+                    uint a = (ww + (cul->A * wul) + (cur->A * wur) + (cll->A * wll) + (clr->A * wlr)) >> 16;
+
+                    return ColorBgra.FromUInt32(b + (g << 8) + (r << 16) + (a << 24));
+                }
+            }
+            else
+            {
+                return ColorBgra.FromUInt32(0x00ffffff);
+            }
         }
 
         /// <summary>
@@ -864,9 +1294,28 @@ namespace PaintDotNet
                 throw new ObjectDisposedException("Surface");
             }
 
-            foreach (Rectangle rect in region.GetRegionScansReadOnlyInt())
+            Rectangle[] scans = region.GetRegionScansReadOnlyInt();
+            for (int i = 0; i < scans.Length; ++i)
             {
-                CopySurface(source, rect.Location, rect);
+                Rectangle rect = scans[i];
+
+                rect.Intersect(this.Bounds);
+                rect.Intersect(source.Bounds);
+
+                if (rect.Width == 0 || rect.Height == 0)
+                {
+                    continue;
+                }
+
+                unsafe
+                {
+                    for (int y = rect.Top; y < rect.Bottom; ++y)
+                    {
+                        ColorBgra *dst = this.GetPointAddressUnchecked(rect.Left, y);
+                        ColorBgra *src = source.GetPointAddressUnchecked(rect.Left, y);
+                        Memory.Copy(dst, src, (ulong)rect.Width * (ulong)ColorBgra.SizeOf);
+                    }
+                }
             }
         }
 
@@ -956,7 +1405,7 @@ namespace PaintDotNet
         /// <remarks>This method was implemented with correctness, not performance, in mind.</remarks>
         public void SuperSamplingFitSurface(Surface source, Rectangle dstRoi)
         {
-            if (source.Width < Width || source.Height < Height)
+            if (source.Width <= Width || source.Height <= Height)
             {
                 if (source.width < 2 || source.height < 2 || this.width < 2 || this.height < 2)
                 {
@@ -1235,6 +1684,7 @@ namespace PaintDotNet
                 SuperSamplingFitSurface(source, dstRoi);
             }
             else 
+            {
                 unsafe
                 {
                     Rectangle roi = Rectangle.Intersect(dstRoi, this.Bounds);
@@ -1350,6 +1800,7 @@ namespace PaintDotNet
                     Memory.Free(rRowCacheIP);
                     Memory.Free(rColCacheIP);
                 } // unsafe
+            }
         }
 
         /// <summary>
@@ -1480,11 +1931,11 @@ namespace PaintDotNet
         /// <remarks>This method was implemented with correctness, not performance, in mind.</remarks>
         public void BilinearFitSurface(Surface source, Rectangle dstRoi)
         {
-            if (this.width < 2 || this.height < 2 || source.width < 2 || source.height < 2)
+            if (dstRoi.Width < 2 || dstRoi.Height < 2 || this.width < 2 || this.height < 2)
             {
                 SuperSamplingFitSurface(source, dstRoi);
             }
-            else 
+            else
             {
                 unsafe
                 {
@@ -1492,42 +1943,14 @@ namespace PaintDotNet
 
                     for (int dstY = roi.Top; dstY < roi.Bottom; ++dstY)
                     {
-                        double srcRow = (double)(dstY * (source.height - 1)) / (double)(height - 1);
-                        double srcRowFloor = Math.Floor(srcRow);
-                        double srcRowFrac = srcRow - srcRowFloor;
-                        int srcRowInt = (int)srcRow;
-
-                        ColorBgra *srcPtr1 = source.GetRowAddressUnchecked(srcRowInt);
-                        ColorBgra *srcPtr2 = source.GetRowAddressUnchecked(srcRowInt + 1);
-                        ColorBgra *dstPtr = this.GetPointAddressUnchecked(roi.Left, dstY);
+                        ColorBgra *dstRowPtr = this.GetRowAddressUnchecked(dstY);
+                        float srcRow = (float)(dstY * (source.height - 1)) / (float)(height - 1);
 
                         for (int dstX = roi.Left; dstX < roi.Right; dstX++)
                         {
-                            double srcColumn = (double)(dstX * (source.width - 1)) / (double)(width - 1);
-                            double srcColumnFloor = Math.Floor(srcColumn);
-                            double srcColumnFrac = srcColumn - srcColumnFloor;
-                            int srcColumnInt = (int)srcColumn;
-
-                            // Compute weight values for (x,y), (x+1,y), (x,y+1), (x+1,y+1)
-                            double w00 = (1 - srcColumnFrac) * (1 - srcRowFrac);
-                            double w01 = srcColumnFrac * (1 - srcRowFrac);
-                            double w10 = (1 - srcColumnFrac) * srcRowFrac;
-                            double w11 = srcColumnFrac * srcRowFrac;
-
-                            // get texel samples: (x,y), (x+1,y), (x,y+1), (x+1,y+1)
-                            ColorBgra *t00 = srcPtr1 + srcColumnInt;
-                            ColorBgra *t01 = t00 + 1;
-                            ColorBgra *t10 = srcPtr2 + srcColumnInt;
-                            ColorBgra *t11 = t10 + 1;
-
-                            double blue = 0.5 + (w00 * t00->B) + (w01 * t01->B) + (w10 * t10->B) + (w11 * t11->B);
-                            double green = 0.5 + (w00 * t00->G) + (w01 * t01->G) + (w10 * t10->G) + (w11 * t11->G);
-                            double red = 0.5 + (w00 * t00->R) + (w01 * t01->R) + (w10 * t10->R) + (w11 * t11->R);
-                            double alpha = 0.5 + (w00 * t00->A) + (w01 * t01->A) + (w10 * t10->A) + (w11 * t11->A);
-
-                            // now compute the resultant pixel
-                            dstPtr->Bgra = (uint)blue + ((uint)green << 8) + ((uint)red << 16) + ((uint)alpha << 24);
-                            dstPtr++;
+                            float srcColumn = (float)(dstX * (source.width - 1)) / (float)(width - 1);
+                            *dstRowPtr = source.GetBilinearSample2(srcColumn, srcRow);
+                            ++dstRowPtr;
                         }
                     }
                 }
@@ -1573,6 +1996,29 @@ namespace PaintDotNet
                 default:
                     throw new InvalidEnumArgumentException("algorithm");
             }
+        }
+
+        private MemoryBlock GetRootMemoryBlock(MemoryBlock block)
+        {
+            MemoryBlock p = block;
+
+            while (p.Parent != null)
+            {
+                p = p.Parent;
+            }
+
+            return p;
+        }
+
+        public void GetDrawBitmapInfo(out IntPtr bitmapHandle, out Point childOffset, out Size parentSize)
+        {
+            MemoryBlock rootBlock = GetRootMemoryBlock(this.scan0);
+            long childOffsetBytes = this.scan0.Pointer.ToInt64() - rootBlock.Pointer.ToInt64();
+            int childY = (int)(childOffsetBytes / this.stride);
+            int childX = (int)((childOffsetBytes - (childY * this.stride)) / ColorBgra.SizeOf);
+            childOffset = new Point(childX, childY);
+            parentSize = new Size(this.stride / ColorBgra.SizeOf, childY + this.height);
+            bitmapHandle = rootBlock.BitmapHandle;
         }
 
         #region IDisposable Members

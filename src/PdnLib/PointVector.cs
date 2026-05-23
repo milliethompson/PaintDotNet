@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -21,7 +22,7 @@ namespace PaintDotNet
         private int capacity;
         private int count = 0;
         private Point[] array;
-		
+        
         public PointVector()
             : this(32)
         {
@@ -126,7 +127,7 @@ namespace PaintDotNet
             {
                 if (index + 1 < target.count)
                 {
-                    index++;
+                    ++index;
                     return true;
                 }
                 else
@@ -152,10 +153,10 @@ namespace PaintDotNet
 
             while (newSize < min)
             {
-                newSize <<= 1;
+                newSize = 1 + ((newSize * 10) / 8);
             }
 
-            Point [] replacement = new Point[newSize];
+            Point[] replacement = new Point[newSize];
 
             for (int i = 0; i < count; i++)
             {
@@ -168,7 +169,7 @@ namespace PaintDotNet
 
         public Point[] GetPointArray()
         {
-            Point [] ret = new Point[count];
+            Point[] ret = new Point[count];
 
             for (int i = 0; i < count; i++)
             {

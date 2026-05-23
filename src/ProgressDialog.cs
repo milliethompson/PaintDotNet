@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -21,18 +22,18 @@ namespace PaintDotNet
     public class ProgressDialog 
         : PdnBaseForm
     {
-        private System.Windows.Forms.ProgressBar percentBar;
+        private System.Windows.Forms.ProgressBar progressBar;
         private System.Windows.Forms.Label percentText;
         private System.Windows.Forms.Button cancelButton;
         private System.Windows.Forms.Label descriptionLabel;
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
-        private System.ComponentModel.Container components = null;
+        private System.ComponentModel.IContainer components;
+        private CursorChanger cursorChanger;
+        private bool cancelled;
 
         private int normalHeight;
         private int noButtonHeight;
         private bool cancellable = true;
+        private System.Windows.Forms.Timer marqueeTimer;
         private bool done = false;
 
         public ProgressDialog()
@@ -47,7 +48,9 @@ namespace PaintDotNet
             Point bottomPoint = this.PointToScreen(new Point(0, Bottom));
             Point topPoint = this.cancelButton.PointToScreen(new Point(0, 0));
             normalHeight = Height;
-            noButtonHeight = Height - 32; // (bottomPoint.Y - topPoint.Y);
+            noButtonHeight = Height - 32;
+
+            this.cancelButton.Text = PdnResources.GetString("Form.CancelButton.Text");
         }
 
         public string Description
@@ -63,6 +66,35 @@ namespace PaintDotNet
             }
         }
 
+        private bool marquee = false;
+        public bool MarqueeMode
+        {
+            get
+            {
+                return this.marquee;
+            }
+
+            set
+            {
+                this.marquee = value;
+                SystemLayer.UI.SetMarqueeMode(this.progressBar, value);
+                this.marqueeTimer.Enabled = value;
+            }
+        }
+
+        public bool PercentTextVisible
+        {
+            get
+            {
+                return this.percentText.Visible;
+            }
+
+            set
+            {
+                this.percentText.Visible = value;
+            }
+        }
+
         public bool Cancellable
         {
             get
@@ -75,10 +107,12 @@ namespace PaintDotNet
                 if (value)
                 {
                     this.Height = normalHeight;
+                    this.Cursor = System.Windows.Forms.Cursors.Default;
                 }
                 else
                 {
                     this.Height = noButtonHeight;
+                    this.Cursor = System.Windows.Forms.Cursors.WaitCursor;
                 }
 
                 this.cancelButton.Visible = value;
@@ -86,22 +120,31 @@ namespace PaintDotNet
             }
         }
 
+        public bool Cancelled
+        {
+            get
+            {
+                return this.cancelled;
+            }
+        }
+
         public double Value
         {
             get
             {
-                return (double)percentBar.Value;
+                return (double)progressBar.Value;
             }
 
             set
             {
                 int intValue = (int)value;
-                string text = intValue.ToString() + "%";
+                string textFormat = PdnResources.GetString("ProgressDialog.PercentText.Text.Format");
+                string text = string.Format(textFormat, intValue); 
 
                 if (text != percentText.Text)
                 {
-                    percentText.Text = intValue.ToString() + "%";
-                    percentBar.Value = intValue;
+                    percentText.Text = text;
+                    progressBar.Value = intValue;
                     Update();
                 }
             }
@@ -124,11 +167,18 @@ namespace PaintDotNet
             Close();
         }
 
+        private int tileCount = 0;
         public void RenderedTileHandler(object sender, RenderedTileEventArgs e)
         {
             lock (this)
             {
-                double newValue = 100.0 * ((double)(e.TileNumber + 1) / (double)e.TileCount);
+                ++this.tileCount;
+                double newValue = 100.0 * ((double)(tileCount + 1) / (double)e.TileCount);
+
+                if (newValue > 100.0)
+                {
+                    newValue = 100.0;
+                }
 
                 if (this.IsHandleCreated)
                 {
@@ -139,10 +189,10 @@ namespace PaintDotNet
 
         public void FinishedRenderingHandler(object sender, EventArgs e)
         {
-			if (this.IsHandleCreated)
-			{
-				BeginInvoke(new VoidVoidDelegate(ExternalFinish), null);
-			}
+            if (this.IsHandleCreated)
+            {
+                BeginInvoke(new VoidVoidDelegate(ExternalFinish), null);
+            }
         }
 
         protected override void OnClosing(CancelEventArgs e)
@@ -178,19 +228,21 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            this.percentBar = new System.Windows.Forms.ProgressBar();
+            this.components = new System.ComponentModel.Container();
+            this.progressBar = new System.Windows.Forms.ProgressBar();
             this.descriptionLabel = new System.Windows.Forms.Label();
             this.percentText = new System.Windows.Forms.Label();
             this.cancelButton = new System.Windows.Forms.Button();
+            this.marqueeTimer = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
-            // percentBar
+            // progressBar
             // 
-            this.percentBar.Location = new System.Drawing.Point(17, 32);
-            this.percentBar.Name = "percentBar";
-            this.percentBar.Size = new System.Drawing.Size(184, 16);
-            this.percentBar.Step = 1;
-            this.percentBar.TabIndex = 0;
+            this.progressBar.Location = new System.Drawing.Point(17, 32);
+            this.progressBar.Name = "progressBar";
+            this.progressBar.Size = new System.Drawing.Size(184, 16);
+            this.progressBar.Step = 1;
+            this.progressBar.TabIndex = 0;
             // 
             // descriptionLabel
             // 
@@ -198,7 +250,6 @@ namespace PaintDotNet
             this.descriptionLabel.Name = "descriptionLabel";
             this.descriptionLabel.Size = new System.Drawing.Size(184, 16);
             this.descriptionLabel.TabIndex = 1;
-            this.descriptionLabel.Text = "Description goes here";
             // 
             // percentText
             // 
@@ -206,7 +257,6 @@ namespace PaintDotNet
             this.percentText.Name = "percentText";
             this.percentText.Size = new System.Drawing.Size(100, 16);
             this.percentText.TabIndex = 2;
-            this.percentText.Text = "label2";
             this.percentText.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // cancelButton
@@ -217,8 +267,12 @@ namespace PaintDotNet
             this.cancelButton.Location = new System.Drawing.Point(72, 80);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.TabIndex = 3;
-            this.cancelButton.Text = "Cancel";
             this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
+            // 
+            // marqueeTimer
+            // 
+            this.marqueeTimer.Interval = 35;
+            this.marqueeTimer.Tick += new System.EventHandler(this.marqueeTimer_Tick);
             // 
             // ProgressDialog
             // 
@@ -228,16 +282,14 @@ namespace PaintDotNet
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.percentText);
             this.Controls.Add(this.descriptionLabel);
-            this.Controls.Add(this.percentBar);
-            this.Cursor = System.Windows.Forms.Cursors.WaitCursor;
+            this.Controls.Add(this.progressBar);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "ProgressDialog";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Dialog";
-            this.Controls.SetChildIndex(this.percentBar, 0);
+            this.Controls.SetChildIndex(this.progressBar, 0);
             this.Controls.SetChildIndex(this.descriptionLabel, 0);
             this.Controls.SetChildIndex(this.percentText, 0);
             this.Controls.SetChildIndex(this.cancelButton, 0);
@@ -257,6 +309,7 @@ namespace PaintDotNet
 
         private void cancelButton_Click(object sender, System.EventArgs e)
         {
+            this.cancelled = true;
             OnCancelClick();
             DialogResult = DialogResult.Cancel;
             Close();
@@ -265,13 +318,23 @@ namespace PaintDotNet
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad (e);
-            Owner.Cursor = this.Cursor;
+            this.cursorChanger = new CursorChanger(this.Owner, this.Cursor);
         }
 
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed (e);
-            Owner.Cursor = Cursors.Default;
+
+            if (this.cursorChanger != null)
+            {
+                this.cursorChanger.Dispose();
+                this.cursorChanger = null;
+            }
+        }
+
+        private void marqueeTimer_Tick(object sender, System.EventArgs e)
+        {
+            this.progressBar.PerformStep();
         }
     }
 }

@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -11,16 +12,16 @@ using System.Drawing;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Adapts a Surface class so it can be used as a two dimensional boolean array
-	/// </summary>
-	public sealed class BitVector2DSurfaceAdapter
+    /// <summary>
+    /// Adapts a Surface class so it can be used as a two dimensional boolean array
+    /// </summary>
+    public sealed class BitVector2DSurfaceAdapter
         : IBitVector2D
-	{
+    {
         private Surface surface;
 
-		public BitVector2DSurfaceAdapter(Surface surface)
-		{
+        public BitVector2DSurfaceAdapter(Surface surface)
+        {
             if (surface == null)
             {
                 throw new ArgumentNullException("surface");
@@ -112,6 +113,17 @@ namespace PaintDotNet
             }
         }
 
+        public void Set(Scanline scan, bool newValue)
+        {
+            int x = scan.X;
+
+            while (x < scan.X + scan.Length)
+            {
+                Set(x, scan.Y, newValue);
+                ++x;
+            }
+        }
+
         public void Set(PdnRegion region, bool newValue)
         {
             foreach (Rectangle rect in region.GetRegionScansReadOnlyInt())
@@ -150,6 +162,17 @@ namespace PaintDotNet
                 {
                     Invert(x, y);
                 }
+            }
+        }
+
+        public void Invert(Scanline scan)
+        {
+            int x = scan.X;
+
+            while (x < scan.X + scan.Length)
+            {
+                Invert(x, scan.Y);
+                ++x;
             }
         }
 

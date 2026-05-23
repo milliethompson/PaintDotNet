@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -57,29 +58,45 @@ namespace PaintDotNet
 
             if ((e.Button & MouseButtons.Left) == MouseButtons.Left)
             {
-				ColorBgra col;
-				col = LiftColor(e.X, e.Y);
-				this.Workspace.Environment.ForeColor = col;
+                ColorBgra col;
+                col = LiftColor(e.X, e.Y);
+                this.Workspace.Environment.ForeColor = col;
+                this.Workspace.Widgets.ColorsForm.WhichUserColor = WhichUserColor.Foreground;
             }
             else if ((e.Button & MouseButtons.Right) == MouseButtons.Right)
             {   
-				ColorBgra col;
-				col = LiftColor(e.X, e.Y);
-				this.Workspace.Environment.BackColor = col;
+                ColorBgra col;
+                col = LiftColor(e.X, e.Y);
+                this.Workspace.Environment.BackColor = col;
+                this.Workspace.Widgets.ColorsForm.WhichUserColor = WhichUserColor.Background;
             }
+        }
+
+        protected override void OnActivate()
+        {
+            this.colorPickerToolCursor = new Cursor(PdnResources.GetResourceStream("Cursors.ColorPickerToolCursor.cur"));
+            this.Cursor = this.colorPickerToolCursor;
+            base.OnActivate();
+        }
+
+        protected override void OnDeactivate()
+        {
+            if (this.colorPickerToolCursor != null)
+            {
+                this.colorPickerToolCursor.Dispose();
+                this.colorPickerToolCursor = null;
+            }
+
+            base.OnDeactivate ();
         }
 
         public ColorPickerTool(DocumentWorkspace parent)
             : base(parent,
-                   Utility.GetImageResource("Icons.ColorPickerToolIcon.bmp"),
-                   "Color Picker",
-                   "Gets current color from canvas",
-                   "Left click to set foreground color, right click to set background color",
+                   PdnResources.GetImage("Icons.ColorPickerToolIcon.bmp"),
+                   PdnResources.GetString("ColorPickerTool.Name"),
+                   PdnResources.GetString("ColorPickerTool.HelpText"),
                    'd')
         {
-            this.colorPickerToolCursor = new Cursor(Utility.GetResourceStream("Cursors.ColorPickerToolCursor.cur"));
-            this.Cursor = this.colorPickerToolCursor;
-
             // initialize any state information you need
             mouseDown = false;
         }
@@ -91,12 +108,6 @@ namespace PaintDotNet
             if (disposing)
             {
                 DisposeImage();
-
-                if (this.colorPickerToolCursor != null)
-                {
-                    this.colorPickerToolCursor.Dispose();
-                    this.colorPickerToolCursor = null;
-                }
             }
         }
 

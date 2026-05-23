@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -35,6 +36,10 @@ void TraceOut(const char *szFormat, ...)
     _vsnprintf(buffer, sizeof(buffer), szFormat, marker);
 
     OutputDebugString(buffer);
+
+    FILE *flog = fopen("C:\\log.txt", "a");
+    fprintf(flog, "%s\n", buffer);
+    fclose(flog);
 }
 #endif
 
@@ -48,6 +53,7 @@ const WCHAR *GuidToString(GUID guid)
 extern "C" BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReasonForCall, LPVOID lpvReserved)
 {
     TraceEnter();
+    TraceOut("hInstance=%p, dwReasonForCall=%u, lpvReserved=%p", hInstance, dwReasonForCall, lpvReserved);
 
     switch (dwReasonForCall)
     {
@@ -95,6 +101,8 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
     CClassFactory *pFactory = NULL;
     HRESULT hr = S_OK;
 
+    TraceOut("rclsid=%s, riid=%s, ppv=%p", GuidToString(rclsid), GuidToString(riid), ppv);
+
     if (SUCCEEDED(hr))
     {
         if (NULL == ppv)
@@ -105,19 +113,21 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 
     if (SUCCEEDED(hr))
     {
+        TraceOut("Calling IsEqualCLSID(rclsid, CLSID_PdnShellExtension");
         if (!IsEqualCLSID(rclsid, CLSID_PdnShellExtension))
         {
-            return CLASS_E_CLASSNOTAVAILABLE;
+            hr = CLASS_E_CLASSNOTAVAILABLE;
         }
     }
 
     if (SUCCEEDED(hr))
     {
+        TraceOut("Creating CClassFactory instance");
         pFactory = new CClassFactory(rclsid);
 
         if (NULL == pFactory)
         {
-            return E_OUTOFMEMORY;
+            hr = E_OUTOFMEMORY;
         }
     }
 
@@ -131,35 +141,4 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
     return hr;
 }
 
-HRESULT SetRegistryStringValue(HKEY hRootKey, LPCWSTR wszSubKeyName, LPCWSTR wszValueName, LPCWSTR wszStringValue)
-{
-    HRESULT hr = S_OK;
-    HKEY hKey = NULL;
-    LONG lResult;
-
-    if (SUCCEEDED(hr))
-    {
-        lResult = RegCreateKeyExW(hRootKey, wszSubKeyName, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL);
-        if (lResult != ERROR_SUCCESS)
-        {
-            hr = HRESULT_FROM_WIN32(lResult);
-        }
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        lResult = RegSetValueExW(hKey, wszValueName, 0, REG_SZ, (const BYTE *)wszStringValue, 1 + (DWORD)wcslen(wszStringValue));
-        if (lResult != ERROR_SUCCESS)
-        {
-            hr = HRESULT_FROM_WIN32(lResult);
-        }
-    }
-
-    if (NULL != hKey)
-    {
-        RegCloseKey(hKey);
-    }
-
-    return hr;
-}
 

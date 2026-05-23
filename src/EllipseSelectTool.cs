@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -49,41 +50,77 @@ namespace PaintDotNet
             return array;
         }
 
-        protected override PointF[] CreateShape(PointF[] tracePoints)
+        protected override PointF[] CreateShape(Point[] tracePoints)
         {
-            PointF a = tracePoints[0];
-            PointF b = tracePoints[tracePoints.Length - 1];
+            Point a = tracePoints[0];
+            Point b = tracePoints[tracePoints.Length - 1];
+            Point dir = new Point(b.X - a.X, b.Y - a.Y);
+            float len = (float)Math.Sqrt(dir.X * dir.X + dir.Y * dir.Y);
 
-            RectangleF rect;
+            RectangleF rectF;
+
             if ((ModifierKeys & Keys.Shift) != 0)
             {
-                rect = Utility.PointsToConstrainedRectangle(a, b);
+                PointF center = new PointF((float)(a.X + b.X) / 2.0f, (float)(a.Y + b.Y) / 2.0f);
+                float radius = len / 2;
+                rectF = Rectangle.Truncate(Utility.RectangleFromCenter(center, radius));
             }
             else
             {
-                rect = Utility.PointsToRectangle(a, b);
+                rectF = Utility.PointsToRectangle(a, b);
             }
 
+            Rectangle rect = Utility.RoundRectangle(rectF);
             PdnGraphicsPath path = new PdnGraphicsPath();
             path.AddEllipse(rect);
-            path.Flatten(Utility.IdentityMatrix, 0.25f);
+
+            // Avoid asymmetrical circles where the left or right side of the ellipse has a pixel jutting out
+            using (Matrix m = new Matrix())
+            {
+                m.Reset();
+                m.Translate(-0.5f, -0.5f, MatrixOrder.Append);
+                path.Transform(m);
+            }
+
+            path.Flatten(Utility.IdentityMatrix, 0.1f);
 
             PointF[] pointsF = path.PathPoints;
             path.Dispose();
             return pointsF;
         }
 
+        protected override void OnActivate()
+        {
+            this.cursorMouseUp = new Cursor(PdnResources.GetResourceStream("Cursors.EllipseSelectToolCursor.cur"));
+            this.cursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.EllipseSelectToolCursorMouseDown.cur"));
+            this.Cursor = cursorMouseUp;
+            base.OnActivate();
+        }
+
+        protected override void OnDeactivate()
+        {
+            if (cursorMouseUp != null)
+            {
+                cursorMouseUp.Dispose();
+                cursorMouseUp = null;
+            }
+
+            if (cursorMouseDown != null)
+            {
+                cursorMouseDown.Dispose();
+                cursorMouseDown = null;
+            }
+            
+            base.OnDeactivate ();
+        }
+
         public EllipseSelectTool(DocumentWorkspace workspace)
             : base(workspace,
-                   Utility.GetImageResource("Icons.EllipseSelectToolIcon.bmp"),
-                   "Ellipse Select",
-                   "Allows you to select an elliptical region of the image.",
-                   "Click and move the mouse to select an elliptical region of the image. Hold shift to constrain to a circle.",
+                   PdnResources.GetImage("Icons.EllipseSelectToolIcon.bmp"),
+                   PdnResources.GetString("EllipseSelectTool.Name"),
+                   PdnResources.GetString("EllipseSelectTool.HelpText"),
                    's')
         {
-            cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.EllipseSelectToolCursor.cur"));
-            cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.EllipseSelectToolCursorMouseDown.cur"));
-            Cursor = cursorMouseUp;
         }
 
         protected override void Dispose(bool disposing)
@@ -93,20 +130,7 @@ namespace PaintDotNet
             if (disposing)
             {
                 DisposeImage();
-
-                if (cursorMouseUp != null)
-                {
-                    cursorMouseUp.Dispose();
-                    cursorMouseUp = null;
-                }
-
-                if (cursorMouseDown != null)
-                {
-                    cursorMouseDown.Dispose();
-                    cursorMouseDown = null;
-                }
             }
         }
-
     }
 }

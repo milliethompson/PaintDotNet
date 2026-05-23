@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -11,9 +12,11 @@ using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Remoting.Messaging;
@@ -35,55 +38,6 @@ namespace PaintDotNet
           IDisposable,
           ICloneable
     {
-        /// <summary>
-        /// This is our compatibility shim so that PDN files saved with previous versions load
-        /// correctly. They wouldn't load correctly because the assembly name encoded into them is
-        /// PaintDotNet, and not PaintDotNet.Data.
-        /// </summary>
-        private sealed class OurSerializationBinder
-            : SerializationBinder
-        {
-            private string ourAssemblyName;
-
-            public OurSerializationBinder()
-            {
-                ourAssemblyName = Assembly.GetExecutingAssembly().FullName;
-            }
-
-            public override Type BindToType(string assemblyName, string typeName)
-            {
-                // First try to load what they are asking for
-                string firstFullTypeName = string.Format(typeName + ", " + assemblyName);
-                Type firstTryType = Type.GetType(firstFullTypeName, false);
-
-                if (firstTryType != null)
-                {
-                    return firstTryType; // success!
-                }
-
-                // Hmm, try substituting their assembly name with *our* assembly name, then retry
-                string secondFullTypeName = string.Format(typeName + ", " + ourAssemblyName);
-                Type secondTryType = Type.GetType(secondFullTypeName);
-
-                if (secondTryType != null)
-                {
-                    return secondTryType; // success!
-                }
-
-                // Try PdnLib ...
-                string thirdFullTypeName = string.Format(typeName + ", " + typeof(Utility).Assembly.FullName);
-                Type thirdTryType = Type.GetType(thirdFullTypeName);
-
-                if (thirdTryType != null)
-                {
-                    return thirdTryType;
-                }
-
-                // Yeah, I have no idea either.
-                return null;
-            }
-        }
-
         private LayerList layers;
         private int width;
         private int height;
@@ -96,7 +50,7 @@ namespace PaintDotNet
         private InvalidateEventHandler layerInvalidatedDelegate;
 
         [NonSerialized]
-        private PdnRegion updateRegion;
+        private RectangleVector updateRegion;
 
         [NonSerialized]
         private bool dirty;
@@ -167,6 +121,412 @@ namespace PaintDotNet
         }
 
         /// <summary>
+        /// Gets or sets the units that are used for measuring the document's physical (printed) size.
+        /// </summary>
+        /// <remarks>
+        /// If this property is set to MeasurementUnit.Pixel, then Dpu will be reset to 1. 
+        /// If this property has not been set in the image's metadata, its defulat value 
+        /// will be MeasurementUnit.Inch.
+        /// </remarks>
+        public MeasurementUnit DpuUnit
+        {
+            get
+            {
+                PropertyItem[] pis = this.MetaData.GetExifValues(ExifTagID.ResolutionUnit);
+
+                if (pis.Length == 0)
+                {
+                    MeasurementUnit defaultDpuUnit = GetDefaultDpuUnit();
+                    this.DpuUnit = defaultDpuUnit;
+                    return defaultDpuUnit;
+                }
+                else
+                {
+                    try
+                    {
+                        ushort unit = Exif.DecodeShortValue(pis[0]);
+                        return (MeasurementUnit)unit;
+                    }
+
+                    catch
+                    {
+                        this.MetaData.RemoveExifValues(ExifTagID.ResolutionUnit);
+                        return this.DpuUnit; // recursive call
+                    }
+                }
+            }
+
+            set
+            {
+                PropertyItem pi = Exif.CreateShort(ExifTagID.ResolutionUnit, (ushort)value);
+                this.MetaData.ReplaceExifValues(ExifTagID.ResolutionUnit, new PropertyItem[1] { pi });
+
+                if (value == MeasurementUnit.Pixel)
+                {
+                    this.DpuX = 1.0;
+                    this.DpuY = 1.0;
+                }
+            }
+        }
+
+        public static MeasurementUnit GetDefaultDpuUnit()
+        {
+            return MeasurementUnit.Inch;
+        }
+
+        private const double defaultDpi = 96.0;
+        public const double CmPerInch = 2.54;
+        private const double defaultDpcm = defaultDpi / CmPerInch;
+
+        public static double InchesToCentimeters(double inches)
+        {
+            return inches * CmPerInch;
+        }
+
+        public static double CentimetersToInches(double centimeters)
+        {
+            return centimeters / CmPerInch;
+        }
+
+        public static double GetDefaultDpu(MeasurementUnit units)
+        {
+            double dpu;
+
+            switch (units)
+            {
+                case MeasurementUnit.Inch:
+                    dpu = defaultDpi;
+                    break;
+
+                case MeasurementUnit.Centimeter:
+                    dpu = defaultDpcm;
+                    break;
+
+                case MeasurementUnit.Pixel:
+                    dpu = 1.0;
+                    break;
+
+                default:
+                    throw new InvalidEnumArgumentException("DpuUnit", (int)units, typeof(MeasurementUnit));
+            }
+
+            return dpu;
+        }
+
+        /// <summary>
+        /// Ensures that the document's DpuX, DpuY, and DpuUnits properties are set.
+        /// If they are not already set, they are initialized to their default values (96, 96 , inches).
+        /// </summary>
+        private void InitializeDpu()
+        {
+            this.DpuUnit = this.DpuUnit;
+            this.DpuX = this.DpuX;
+            this.DpuY = this.DpuY;
+        }
+
+        private byte[] GetDoubleAsRationalExifData(double value)
+        {
+            uint numerator;
+            uint denominator;
+
+            if (Math.IEEERemainder(value, 1.0) == 0)
+            {
+                numerator = (uint)value;
+                denominator = 1;
+            }
+            else
+            {
+                double s = value * 1000.0;
+                numerator = (uint)Math.Floor(s);
+                denominator = 1000;
+            }
+            
+            return Exif.EncodeRationalValue(numerator, denominator);
+        }
+
+        /// <summary>
+        /// Gets or sets the Document's dots-per-unit scale in the X direction.
+        /// </summary>
+        /// <remarks>
+        /// If DpuUnit is equal to MeasurementUnit.Pixel, then this property may not be set
+        /// to any value other than 1.0. Setting DpuUnit to MeasurementUnit.Pixel will reset
+        /// this property to 1.0. This property may only be set to a value greater than 0.
+        /// One dot is always equal to one pixel.
+        /// </remarks>
+        public double DpuX
+        {
+            get
+            {
+                PropertyItem[] pis = this.MetaData.GetExifValues(ExifTagID.XResolution);
+
+                if (pis.Length == 0)
+                {
+                    double defaultDpu = GetDefaultDpu(this.DpuUnit);
+                    this.DpuX = defaultDpu;
+                    return defaultDpu;
+                }
+                else
+                {
+                    try
+                    {
+                        uint numerator;
+                        uint denominator;
+
+                        Exif.DecodeRationalValue(pis[0], out numerator, out denominator);
+
+                        if (denominator == 0)
+                        {
+                            throw new DivideByZeroException(); // will be caught by the below catch{}
+                        }
+                        else
+                        {
+                            return (double)numerator / (double)denominator;
+                        }
+                    }
+
+                    catch
+                    {
+                        this.MetaData.RemoveExifValues(ExifTagID.XResolution);
+                        return this.DpuX; // recursive call;
+                    }
+                }
+            }
+
+            set
+            {
+                if (value <= 0.0)
+                {
+                    throw new ArgumentOutOfRangeException("value", value, "must be > 0.0");
+                }
+
+                if (this.DpuUnit == MeasurementUnit.Pixel && value != 1.0)
+                {
+                    throw new ArgumentOutOfRangeException("value", value, "if DpuUnit == Pixel, then value must equal 1.0");
+                }
+
+                byte[] data = GetDoubleAsRationalExifData(value);
+               
+                PropertyItem pi = Exif.CreatePropertyItem(ExifTagID.XResolution, ExifTagType.Rational, data);
+                this.MetaData.ReplaceExifValues(ExifTagID.XResolution, new PropertyItem[1] { pi });
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the Document's dots-per-unit scale in the Y direction.
+        /// </summary>
+        /// <remarks>
+        /// If DpuUnit is equal to MeasurementUnit.Pixel, then this property may not be set
+        /// to any value other than 1.0. Setting DpuUnit to MeasurementUnit.Pixel will reset
+        /// this property to 1.0. This property may only be set to a value greater than 0.
+        /// One dot is always equal to one pixel.
+        /// </remarks>
+        public double DpuY
+        {
+            get
+            {
+                PropertyItem[] pis = this.MetaData.GetExifValues(ExifTagID.YResolution);
+
+                if (pis.Length == 0)
+                {
+                    // If there's no DpuY setting, default to the DpuX setting
+                    double dpu = this.DpuX;
+                    this.DpuY = dpu;
+                    return dpu;
+                }
+                else
+                {
+                    try
+                    {
+                        uint numerator;
+                        uint denominator;
+
+                        Exif.DecodeRationalValue(pis[0], out numerator, out denominator);
+
+                        if (denominator == 0)
+                        {
+                            throw new DivideByZeroException(); // will be caught by the below catch{}
+                        }
+                        else
+                        {
+                            return (double)numerator / (double)denominator;
+                        }
+                    }
+
+                    catch
+                    {
+                        this.MetaData.RemoveExifValues(ExifTagID.YResolution);
+                        return this.DpuY; // recursive call;
+                    }
+                }
+            }
+
+            set
+            {
+                if (value <= 0.0)
+                {
+                    throw new ArgumentOutOfRangeException("value", value, "must be > 0.0");
+                }
+
+                if (this.DpuUnit == MeasurementUnit.Pixel && value != 1.0)
+                {
+                    throw new ArgumentOutOfRangeException("value", value, "if DpuUnit == Pixel, then value must equal 1.0");
+                }
+
+                byte[] data = GetDoubleAsRationalExifData(value);
+               
+                PropertyItem pi = Exif.CreatePropertyItem(ExifTagID.YResolution, ExifTagType.Rational, data);
+                this.MetaData.ReplaceExifValues(ExifTagID.YResolution, new PropertyItem[1] { pi });
+            }
+        }
+
+        /// <summary>
+        /// Gets the Document's measured physical width based on the DpuUnit and DpuX properties.
+        /// </summary>
+        public double PhysicalWidth
+        {
+            get
+            {
+                return (double)this.Width / (double)this.DpuX;
+            }
+        }
+
+        /// <summary>
+        /// Gets the Document's measured physical height based on the DpuUnit and DpuY properties.
+        /// </summary>
+        public double PhysicalHeight
+        {
+            get
+            {
+                return (double)this.Height / (double)this.DpuY;
+            }
+        }
+
+        // 
+        //   Conversion Matrix:
+        //
+        // GetPhysical[X|Y](x, unit), where dpu = this.dpuX or dpuY
+        //
+        //            dpu |  px  |  in  |  cm        |
+        //        unit    |      |      |            |
+        //   -------------+------+------+------------+
+        //        px      |  x   |  x   |      x     |
+        //   -------------+------+------+------------+
+        //        in      | x /  | x /  | x /        | 
+        //                |  96  | dpuX | (dpuX*2.54)| 
+        //   -------------+------+------+------------+
+        //        cm      | x /  |x*2.54| x / dpuX   |
+        //                |  37.8| /dpuX|            |
+        //   -------------+------+------+------------+
+
+        public static double PixelToPhysical(double pixel, MeasurementUnit resultUnit, MeasurementUnit dpuUnit, double dpu)
+        {
+            double result;
+
+            if (resultUnit == MeasurementUnit.Pixel)
+            {
+                result = pixel;
+            }
+            else
+            {
+                if (resultUnit == dpuUnit)
+                {
+                    result = pixel / dpu;
+                }
+                else if (dpuUnit == MeasurementUnit.Pixel)
+                {
+                    double defaultDpu = GetDefaultDpu(dpuUnit);
+                    result = pixel / defaultDpu;
+                }
+                else if (dpuUnit == MeasurementUnit.Centimeter && resultUnit == MeasurementUnit.Inch)
+                {
+                    result = pixel / (CmPerInch * dpu);
+                }
+                else // if (dpuUnit == MeasurementUnit.Inch && resultUnit == MeasurementUnit.Centimeter)
+                {
+                    result = (pixel * CmPerInch) / dpu;
+                }
+            }
+
+            return result;
+        }
+
+        public double PixelToPhysicalX(double pixel, MeasurementUnit resultUnit)
+        {
+            double result;
+
+            if (resultUnit == MeasurementUnit.Pixel)
+            {
+                result = pixel;
+            }
+            else 
+            {
+                MeasurementUnit dpuUnit = this.DpuUnit;
+
+                if (resultUnit == dpuUnit)
+                {
+                    result = pixel / this.DpuX;
+                }
+                else if (dpuUnit == MeasurementUnit.Pixel)
+                {
+                    double defaultDpuX = GetDefaultDpu(dpuUnit);
+                    result = pixel / defaultDpuX;
+                }
+                else if (dpuUnit == MeasurementUnit.Centimeter && resultUnit == MeasurementUnit.Inch)
+                {
+                    result = pixel / (CmPerInch * this.DpuX);
+                }
+                else //if (dpuUnit == MeasurementUnit.Inch && resultUnit == MeasurementUnit.Centimeter)
+                {
+                    result = (pixel * CmPerInch) / this.DpuX;
+                }
+            }
+
+            return result;
+        }
+
+        public double PixelToPhysicalY(double pixel, MeasurementUnit resultUnit)
+        {
+            double result;
+
+            if (resultUnit == MeasurementUnit.Pixel)
+            {
+                result = pixel;
+            }
+            else 
+            {
+                MeasurementUnit dpuUnit = this.DpuUnit;
+
+                if (resultUnit == dpuUnit)
+                {
+                    result = pixel / this.DpuY;
+                }
+                else if (dpuUnit == MeasurementUnit.Pixel)
+                {
+                    double defaultDpuY = GetDefaultDpu(dpuUnit);
+                    result = pixel / defaultDpuY;
+                }
+                else if (dpuUnit == MeasurementUnit.Centimeter && resultUnit == MeasurementUnit.Inch)
+                {
+                    result = pixel / (CmPerInch * this.DpuY);
+                }
+                else //if (dpuUnit == MeasurementUnit.Inch && resultUnit == MeasurementUnit.Centimeter)
+                {
+                    result = (pixel * CmPerInch) / this.DpuY;
+                }
+            }
+
+            return result;
+        }
+
+        public double PixelAreaToPhysicalArea(double area, MeasurementUnit resultUnit)
+        {
+            double xScale = PixelToPhysicalX(1.0, resultUnit);
+            double yScale = PixelToPhysicalY(1.0, resultUnit);
+
+            return area * xScale * yScale;
+        }
+
+        /// <summary>
         /// This is provided for future use.
         /// If you want to add new stuff that must be serialized, create a new class,
         /// then point 'tag' to a new instance of this class that is initialized
@@ -195,7 +555,7 @@ namespace PaintDotNet
 
                 if (savedWith == null)
                 {
-                    savedWith = new Version(Utility.VersionFromFullAssemblyName(Assembly.GetExecutingAssembly().FullName));
+                    savedWith = PdnInfo.GetVersion();
                 }
 
                 return savedWith;
@@ -290,22 +650,6 @@ namespace PaintDotNet
             }
         }
 
-        /// <summary>
-        /// User-defined metadata consists simply as name-value pairs. For instance, the
-        /// user may wish to add "camera=Nokia 300sx" to indicate what camera they took
-        /// the picture with. And actually, if we were opening a JPEG created with that
-        /// camera, we might just add that for them automatically since many cameras add
-        /// certain metadata to the JPEGs they create.
-        /// </summary>
-        [Obsolete("user MetaData instead")]
-        public NameValueCollection UserMetaData
-        {
-            get
-            {
-                return userMetaData;
-            }
-        }
-
         public MetaData MetaData
         {
             get
@@ -319,15 +663,23 @@ namespace PaintDotNet
             }
         }
 
-		public void CopyPropertiesFrom(Document other) 
-		{
-			foreach (string key in other.userMetaData)
-			{
-				userMetaData.Set(key, other.userMetaData[key]);
-			}
-		}
+        [Obsolete("This method has been renamed to ReplaceMetaDataFrom().", true)]
+        public void CopyPropertiesFrom(Document other) 
+        {
+            ReplaceMetaDataFrom(other);
+        }
 
-        [Obsolete("don't use this property; implementors should expose type-safe properties instead")]
+        public void ReplaceMetaDataFrom(Document other)
+        {
+            this.MetaData.ReplaceWithDataFrom(other.MetaData);
+        }
+
+        public void ClearMetaData()
+        {
+            this.MetaData.Clear();
+        }
+
+        [Obsolete("don't use this property; implementors should expose type-safe properties instead", false)]
         public object Tag
         {
             get
@@ -385,7 +737,7 @@ namespace PaintDotNet
         /// <param name="rois">The array of Rectangles designating the areas to clear</param>
         /// <param name="startIndex">The start index within the rois array to clear</param>
         /// <param name="length">The number of Rectangles in the rois array (staring with startIndex) to clear</param>
-        private void ClearToBackground(Surface surface, Rectangle [] rois, int startIndex, int length) 
+        private void ClearToBackground(Surface surface, Rectangle[] rois, int startIndex, int length) 
         {
             for (int i = startIndex; i < startIndex + length; i++) 
             {
@@ -395,7 +747,7 @@ namespace PaintDotNet
 
         /// <summary>
         /// Renders the document onto the given RenderArgs. Assumes you have already cleared the surface
-        /// to whatever color value you wish to blend with (recommend BGRA=[255,255,255,0]).
+        /// to whatever color value you wish to blend with (recommend: BGRA=[255,255,255,0]).
         /// </summary>
         /// <param name="args">The target RenderArgs</param>
         public void RenderFlat(RenderArgs args)
@@ -410,7 +762,7 @@ namespace PaintDotNet
         }
 
         /// <summary>
-        /// Explicitely renders a requested region of the document.
+        /// Renders a requested region of the document.
         /// </summary>
         /// <param name="args">Contains information used to control where rendering occurs.</param>
         /// <param name="roi">The rectangular region to render.</param>
@@ -449,7 +801,7 @@ namespace PaintDotNet
         }
 
         /// <summary>
-        /// Explicitely renders a requested region of the document.
+        /// Renders a requested region of the document.
         /// </summary>
         /// <param name="args">Contains information used to control where rendering occurs.</param>
         /// <param name="roi">The Region to render.</param>
@@ -494,7 +846,12 @@ namespace PaintDotNet
                 throw new ObjectDisposedException("Document");
             }
 
-            Rectangle[] rectsOriginal = updateRegion.GetRegionScansReadOnlyInt();
+            Rectangle[] updateRects;
+            int updateRectsLength;
+            updateRegion.GetRectangleArrayReadOnly(out updateRects, out updateRectsLength);
+            PdnRegion region = Utility.RectanglesToRegion(updateRects, 0, updateRectsLength);
+
+            Rectangle[] rectsOriginal = region.GetRegionScansReadOnlyInt();
             Rectangle[] rectsToUse;
 
             // Special case where we're drawing 1 big rectangle: split it in half!
@@ -535,7 +892,7 @@ namespace PaintDotNet
             this.width = width;
             this.height = height;
             this.Dirty = true;
-            this.updateRegion = PdnRegion.CreateEmpty();
+            this.updateRegion = new RectangleVector();
             layers = new LayerList(this);
             SetupEvents();
             userMetaData = new NameValueCollection();
@@ -569,7 +926,8 @@ namespace PaintDotNet
         /// <param name="sender"></param>
         public void OnDeserialization(object sender)
         {
-            this.updateRegion = new PdnRegion(this.Bounds);
+            this.updateRegion = new RectangleVector();
+            this.updateRegion.Add(this.Bounds);
             this.threadPool = new PaintDotNet.Threading.ThreadPool();
             SetupEvents();
             Dirty = true;
@@ -657,8 +1015,8 @@ namespace PaintDotNet
         {
             Dirty = true;
             Rectangle rect = new Rectangle(0, 0, Width, Height);
-            updateRegion.MakeEmpty();
-            updateRegion.Union(rect);
+            updateRegion.Clear();
+            updateRegion.Add(rect);
             OnInvalidated(new InvalidateEventArgs(rect));
         }
 
@@ -670,12 +1028,11 @@ namespace PaintDotNet
         public void Invalidate(PdnRegion roi)
         {
             Dirty = true;
-            updateRegion.Union(roi);
-            updateRegion.Intersect(this.Bounds);
-            
+
             foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
             {
                 rect.Intersect(this.Bounds);
+                updateRegion.Add(rect);
 
                 if (!rect.IsEmpty)
                 {
@@ -715,7 +1072,7 @@ namespace PaintDotNet
         {
             Dirty = true;
             Rectangle rect = Rectangle.Intersect(roi, this.Bounds);
-            updateRegion.Union(rect);
+            updateRegion.Add(rect);
             OnInvalidated(new InvalidateEventArgs(rect));
         }
 
@@ -725,7 +1082,7 @@ namespace PaintDotNet
         /// </summary>
         private void Validate()
         {
-            updateRegion.MakeEmpty();
+            updateRegion.Clear();
         }
 
         /// <summary>
@@ -737,7 +1094,6 @@ namespace PaintDotNet
             Document document = new Document(image.Width, image.Height);
             BitmapLayer layer = Layer.CreateBackgroundLayer(image.Width, image.Height);
             layer.Surface.Clear(ColorBgra.FromBgra(255, 255, 255, 0));
-            layer.Name = "Background";
 
             using (RenderArgs args = new RenderArgs(layer.Surface))
             {
@@ -762,6 +1118,9 @@ namespace PaintDotNet
         /// </summary>
         /// <param name="stream">The stream to deserialize from. This stream must be seekable.</param>
         /// <returns>The Document that was stored in stream.</returns>
+        /// <remarks>
+        /// This is the only supported way to deserialize a Document instance from disk.
+        /// </remarks>
         public static Document FromStream(Stream stream)
         {
             long oldPosition = stream.Position;
@@ -824,7 +1183,7 @@ namespace PaintDotNet
 
                 int byteCount = low + (mid << 8) + (high << 16);
                 byte[] bytes = new byte[byteCount];
-                int bytesRead = stream.Read(bytes, 0, byteCount);
+                int bytesRead = Utility.ReadFromStream(stream, bytes, 0, byteCount);
 
                 if (bytesRead != byteCount)
                 {
@@ -859,8 +1218,11 @@ namespace PaintDotNet
             Document document;
             object docObject;
             BinaryFormatter formatter = new BinaryFormatter();
-            Document.OurSerializationBinder ourBinder = new Document.OurSerializationBinder();
-            formatter.Binder = ourBinder;
+            SerializationFallbackBinder sfb = new SerializationFallbackBinder();
+            sfb.AddAssembly(Assembly.GetExecutingAssembly());     // first try PaintDotNet.Data.dll
+            sfb.AddAssembly(typeof(Utility).Assembly);            // second, try PdnLib.dll
+            sfb.AddAssembly(typeof(SystemLayer.Memory).Assembly); // third, try PaintDotNet.SystemLayer.dll
+            formatter.Binder = sfb;
 
             if (first == 0 && second == 1)
             {
@@ -912,6 +1274,8 @@ namespace PaintDotNet
         /// </param>
         public void SaveToStream(Stream stream, IOEventHandler callback)
         {
+            InitializeDpu();
+
             PrepareHeader();
             string headerText = this.HeaderXml.OuterXml;
 
@@ -925,10 +1289,8 @@ namespace PaintDotNet
             stream.Write(headerBytes, 0, headerBytes.Length);
             stream.Flush();
 
-            // Get version info
-            Assembly a = Assembly.GetExecutingAssembly();
-            string version = Utility.VersionFromFullAssemblyName(a.FullName);
-            this.savedWith =  new Version(version);
+            // Copy version info
+            this.savedWith = PdnInfo.GetVersion();
 
             // Write 0x00, 0x01 to indicate normal .NET serialized data
             stream.WriteByte(0x00);
@@ -1018,7 +1380,7 @@ namespace PaintDotNet
         public Document Flatten()
         {
             Document newDocument = new Document(width, height);
-            newDocument.CopyPropertiesFrom(this);
+            newDocument.ReplaceMetaDataFrom(this);
             BitmapLayer layer = Layer.CreateBackgroundLayer(width, height);
             newDocument.Layers.Add(layer);
             Flatten(layer.Surface);
@@ -1029,8 +1391,6 @@ namespace PaintDotNet
         {
             Dispose(false);
         }
-
-        #region IDisposable Members
 
         public void Dispose()
         {
@@ -1049,17 +1409,11 @@ namespace PaintDotNet
                     {
                         layer.Dispose();
                     }
-
-                    updateRegion.Dispose();
                 }
 
                 disposed = true;
             }
         }
-
-        #endregion
-
-        #region ICloneable Members
 
         public object Clone()
         {
@@ -1069,8 +1423,5 @@ namespace PaintDotNet
             stream.Seek(0, SeekOrigin.Begin);
             return Document.FromStream(stream);
         }
-
-        #endregion
-
     }
 }

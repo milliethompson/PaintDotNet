@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -30,18 +31,18 @@ namespace PaintDotNet
         public RgbColor(int R, int G, int B) 
         {
 #if DEBUG
-			if (R < 0 || R > 255) 
-			{
-				throw new ArgumentOutOfRangeException("R", R, "R must corrospond to a byte value");
-			}
-			if (G < 0 || G > 255) 
-			{
-				throw new ArgumentOutOfRangeException("G", G, "G must corrospond to a byte value");
-			}
-			if (B < 0 || B > 255) 
-			{
-				throw new ArgumentOutOfRangeException("B", B, "B must corrospond to a byte value");
-			}
+            if (R < 0 || R > 255) 
+            {
+                throw new ArgumentOutOfRangeException("R", R, "R must corrospond to a byte value");
+            }
+            if (G < 0 || G > 255) 
+            {
+                throw new ArgumentOutOfRangeException("G", G, "G must corrospond to a byte value");
+            }
+            if (B < 0 || B > 255) 
+            {
+                throw new ArgumentOutOfRangeException("B", B, "B must corrospond to a byte value");
+            }
 #endif
             Red = R;
             Green = G;

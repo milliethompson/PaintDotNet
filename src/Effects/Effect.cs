@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -20,10 +21,10 @@ namespace PaintDotNet.Effects
     public abstract class Effect
     {
         private string name;
-        private string description;
         private Image image;
         private Shortcut shortcut;
-        private bool singleThreaded;
+        private EffectDirectives effectDirectives;
+        private string subMenuName;
         private EffectEnvironmentParameters envParams;
 
         /// <summary>
@@ -31,6 +32,9 @@ namespace PaintDotNet.Effects
         /// applied to the runtime type, then the default category, EffectCategory.Effect,
         /// will be returned.
         /// </summary>
+        /// <remarks>
+        /// This controls which menu in the user interface the effect is placed in to.
+        /// </remarks>
         public EffectCategory Category
         {
             get
@@ -62,15 +66,11 @@ namespace PaintDotNet.Effects
             }
         }
 
-        /// <summary>
-        /// Gets whether an Effect wants to be rendered using only 1 thread.
-        /// It is up to the caller of Render() to enforce this.
-        /// </summary>
-        public bool SingleThreaded
+        public EffectDirectives EffectDirectives
         {
             get
             {
-                return singleThreaded;
+                return this.effectDirectives;
             }
         }
 
@@ -78,17 +78,7 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                object[] attributes = this.GetType().GetCustomAttributes(true);
-
-                foreach (Attribute attribute in attributes)
-                {
-                    if (attribute is EffectSubMenuAttribute)
-                    {
-                        return ((EffectSubMenuAttribute)attribute).SubMenuName;
-                    }
-                }
-
-                return null;
+                return this.subMenuName;
             }
         }
 
@@ -100,11 +90,12 @@ namespace PaintDotNet.Effects
             }
         }
 
+        [Obsolete("This attribute was never used, and has been removed.", true)]
         public string Description
         {
             get
             {
-                return description;
+                return string.Empty;
             }
         }
 
@@ -124,7 +115,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        [Obsolete("user EnvironmentParameters.GetSelection() instead")]
+        [Obsolete("Use EnvironmentParameters.GetSelection() instead")]
         public PdnRegion Selection
         {
             get
@@ -150,6 +141,7 @@ namespace PaintDotNet.Effects
             }
 
             Rectangle checkRect = Rectangle.Intersect(dstArgs.Surface.Bounds, roi);
+
             if (checkRect != roi)
             {
                 throw new ArgumentOutOfRangeException("roi", "Region of interest was out of bounds");
@@ -191,35 +183,100 @@ namespace PaintDotNet.Effects
 
         public void RenderInPlace(RenderArgs srcAndDstArgs, Rectangle roi)
         {
-            PdnRegion region = new PdnRegion(roi);
-            
+            PdnRegion region = new PdnRegion(roi);            
             RenderInPlace(srcAndDstArgs, region);
             region.Dispose();
         }
 
+        /// <summary>
+        /// Base constructor for the Effect class.
+        /// </summary>
+        /// <param name="name">A unique name for the effect.</param>
+        /// <param name="image">A 16x16 icon for the effect that will show up in the menu.</param>
+        /// <remarks>
+        /// Do not include the word 'effect' in the name parameter.
+        /// </remarks>
+        public Effect(string name, Image image)
+            : this(name, image, Shortcut.None)
+        {
+        }
+
+        /// <summary>
+        /// Base constructor for the Effect class.
+        /// </summary>
+        /// <param name="name">A unique name for the effect.</param>
+        /// <param name="image">A 16x16 icon for the effect that will show up in the menu.</param>
+        /// <param name="shortcut">A shortcut key for accessing the effect.</param>
+        /// <remarks>
+        /// Do not include the word 'effect' in the name parameter.
+        /// The shortcut key is only honored for effects with the [EffectCategory(EffectCategory.Adjustment)] attribute.
+        /// </remarks>
+        public Effect(string name, Image image, Shortcut shortcut)
+            : this(name, image, shortcut, null)
+        {
+        }
+
+        /// <summary>
+        /// Base constructor for the Effect class.
+        /// </summary>
+        /// <param name="name">A unique name for the effect.</param>
+        /// <param name="image">A 16x16 icon for the effect that will show up in the menu.</param>
+        /// <param name="shortcut">A shortcut key for accessing the effect.</param>
+        /// <param name="subMenuName">The name of a sub-menu to place the effect into. Pass null for no sub-menu.</param>
+        /// <remarks>
+        /// Do not include the word 'effect' in the name parameter.
+        /// The shortcut key is only honored for effects with the [EffectCategory(EffectCategory.Adjustment)] attribute.
+        /// The sub-menu parameter can be used to group effects. The name parameter must still be unique.
+        /// </remarks>
+        public Effect(string name, Image image, Shortcut shortcut, string subMenuName)
+            : this(name, image, shortcut, null, EffectDirectives.None)
+        {
+        }
+
+        /// <summary>
+        /// Base constructor for the Effect class.
+        /// </summary>
+        /// <param name="name">A unique name for the effect.</param>
+        /// <param name="image">A 16x16 icon for the effect that will show up in the menu.</param>
+        /// <param name="shortcut">A shortcut key for accessing the effect.</param>
+        /// <param name="subMenuName">The name of a sub-menu to place the effect into. Pass null for no sub-menu.</param>
+        /// <param name="effectDirectives">A set of flags indicating important information about the effect.</param>
+        /// <remarks>
+        /// Do not include the word 'effect' in the name parameter.
+        /// The shortcut key is only honored for effects with the [EffectCategory(EffectCategory.Adjustment)] attribute.
+        /// The sub-menu parameter can be used to group effects. The name parameter must still be unique.
+        /// For performance reasons, it is recommended that you not set forceSingleThreaded to false.
+        /// </remarks>
+        public Effect(string name, Image image, Shortcut shortcut, string subMenuName, 
+            EffectDirectives effectDirectives)
+        {
+            this.name = name;
+            this.image = image;
+            this.subMenuName = subMenuName;
+            this.shortcut = shortcut;
+            this.effectDirectives = effectDirectives;
+            this.envParams = EffectEnvironmentParameters.DefaultParameters;
+        }
+
+        /// <summary>
+        /// This constructor is obsolete.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="description"></param>
+        /// <param name="image"></param>
+        [Obsolete("The description property has been removed.", true)]
         public Effect(string name, string description, Image image)
             : this(name, description, image, Shortcut.None)
         {
         }
 
+        /// <summary>
+        /// This constructor is obsolete.
+        /// </summary>
+        [Obsolete("The description property has been removed.", true)]
         public Effect(string name, string description, Image image, Shortcut shortcut)
+            : this(name, image, shortcut, null)
         {
-            this.name = name;
-            this.description = description;
-            this.image = image;
-            this.shortcut = shortcut;
-            this.singleThreaded = false;
-            this.envParams = EffectEnvironmentParameters.DefaultParameters;
-
-            object[] attributes = this.GetType().GetCustomAttributes(true);
-
-            foreach (Attribute attribute in attributes)
-            {
-                if (attribute is SingleThreadedEffectAttribute)
-                {
-                    this.singleThreaded = true;
-                }
-            }
         }
     }
 }

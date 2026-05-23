@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -32,12 +33,12 @@ namespace PaintDotNet
             }
         }
 
-        public override void Save(Document input, System.IO.Stream output, SaveConfigToken token)
+        protected override void OnSave(Document input, System.IO.Stream output, SaveConfigToken token, ProgressEventHandler callback)
         {
-            GdiPlusFileType.Save(input, output, this.ImageFormat);
+            GdiPlusFileType.Save(input, output, this.ImageFormat, callback);
         }
 
-        public static void Save(Document input, Stream output, ImageFormat format)
+        public static void Save(Document input, Stream output, ImageFormat format, ProgressEventHandler callback)
         {
             // flatten the document
             using (Surface surface = new Surface(input.Width, input.Height))
@@ -78,7 +79,7 @@ namespace PaintDotNet
             }
         }
 
-        public override Document Load(Stream input)
+        protected override Document OnLoad(Stream input)
         {
             using (Image image = LoadImage(input))
             {
@@ -88,10 +89,7 @@ namespace PaintDotNet
                 object[] pis = (object[])PdnGraphics.GetPropertyItems(image);
                 for (int i = 0; i < pis.Length; ++i)
                 {
-                    PropertyItem pi = (PropertyItem)pis[i];
-                    string blob = PdnGraphics.SerializePropertyItem(pi);
-                    string name = i.ToString() + "_" + pi.Id.ToString();
-                    metaData.SetValue(MetaData.ExifSectionName, name, blob);
+                    metaData.AddExifValues(new PropertyItem[] { (PropertyItem)pis[i] });
                 }
 
                 return document;
@@ -119,7 +117,12 @@ namespace PaintDotNet
         }
 
         public GdiPlusFileType(string name, ImageFormat imageFormat, bool supportsLayers, string[] extensions)
-            : base(name, supportsLayers, false, extensions)
+            : this(name, imageFormat, supportsLayers, extensions, false)
+        {
+        }
+
+        public GdiPlusFileType(string name, ImageFormat imageFormat, bool supportsLayers, string[] extensions, bool savesWithProgress)
+            : base(name, supportsLayers, false, true, true, savesWithProgress, extensions)
         {
             this.imageFormat = imageFormat;
         }

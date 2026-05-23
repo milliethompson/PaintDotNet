@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -35,33 +36,33 @@ namespace PaintDotNet
             }
         }
 
-		private PenConfigWidget penConfigWidget;
-		public PenConfigWidget PenConfigWidget
-		{
-			get
-			{
-				return penConfigWidget;
-			}
+        private PenConfigWidget penConfigWidget;
+        public PenConfigWidget PenConfigWidget
+        {
+            get
+            {
+                return penConfigWidget;
+            }
 
-			set
-			{
-				penConfigWidget = value;
-			}
-		}
+            set
+            {
+                penConfigWidget = value;
+            }
+        }
 
-		private ZoomConfigWidget zoomConfigWidget;
-		public ZoomConfigWidget ZoomConfigWidget
-		{
-			get
-			{
-				return zoomConfigWidget;
-			}
+        private ZoomConfigWidget zoomConfigWidget;
+        public ZoomConfigWidget ZoomConfigWidget
+        {
+            get
+            {
+                return zoomConfigWidget;
+            }
 
-			set
-			{
-				zoomConfigWidget = value;
-			}
-		}
+            set
+            {
+                zoomConfigWidget = value;
+            }
+        }
 
         private BrushConfigWidget brushConfigWidget;
         public BrushConfigWidget BrushConfigWidget
@@ -88,6 +89,20 @@ namespace PaintDotNet
             set
             {
                 shapeDrawTypeConfigWidget = value;
+            }
+        }
+
+        private DrawModesConfigWidget drawModesConfigWidget;
+        public DrawModesConfigWidget DrawModesConfigWidget 
+        {
+            get
+            {
+                return drawModesConfigWidget;
+            }
+
+            set
+            {
+                drawModesConfigWidget = value;
             }
         }
 

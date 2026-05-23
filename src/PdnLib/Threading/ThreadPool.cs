@@ -1,23 +1,30 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
+using System.Collections;
 using System.Threading;
 
 namespace PaintDotNet.Threading
 {
-	/// <summary>
-	/// Uses the .NET ThreadPool to do our own type of thread pool. The main difference
-	/// here is that we limit our usage of the thread pool, and that we can also drain
-	/// the threads we have ("fence"). The default maximum number of threads is 16.
-	/// </summary>
-	public class ThreadPool
-	{
+    /// <summary>
+    /// Uses the .NET ThreadPool to do our own type of thread pool. The main difference
+    /// here is that we limit our usage of the thread pool, and that we can also drain
+    /// the threads we have ("fence"). The default maximum number of threads is
+    /// Processor.LogicalCpuCount.
+    /// </summary>
+    public class ThreadPool
+    {
+        private ArrayList exceptions = ArrayList.Synchronized(new ArrayList());
+        private bool useFXTheadPool;
+
         public static int MinimumCount
         {
             get
@@ -34,21 +41,50 @@ namespace PaintDotNet.Threading
             }
         }
 
+        public Exception[] Exceptions
+        {
+            get
+            {
+                return (Exception[])this.exceptions.ToArray(typeof(Exception));
+            }
+        }
+
+        public void ClearExceptions()
+        {
+            exceptions.Clear();
+        }
+
+        public void DrainExceptions()
+        {
+            if (this.exceptions.Count > 0)
+            {
+                throw new WorkerThreadException("Worker thread threw an exception", (Exception)this.exceptions[0]);
+            }
+
+            ClearExceptions();
+        }
+
         private WaitableCounter counter;
 
-		public ThreadPool()
-            : this(16)
-		{
-		}
+        public ThreadPool()
+            : this(Processor.LogicalCpuCount)
+        {
+        }
 
         public ThreadPool(int maxThreads)
+            : this(maxThreads, true)
+        {
+        }
+
+        public ThreadPool(int maxThreads, bool useFXThreadPool)
         {
             if (maxThreads < MinimumCount || maxThreads > MaximumCount)
             {
                 throw new ArgumentOutOfRangeException("maxThreads", "must be between " + MinimumCount.ToString() + " and " + MaximumCount.ToString() + " inclusive");
             }
 
-            counter = new WaitableCounter(maxThreads);
+            this.counter = new WaitableCounter(maxThreads);
+            this.useFXTheadPool = useFXThreadPool;
         }
 
         public void QueueUserWorkItem(WaitCallback callback)
@@ -59,37 +95,66 @@ namespace PaintDotNet.Threading
         public void QueueUserWorkItem(WaitCallback callback, object state)
         {
             IDisposable token = counter.AcquireToken();
-            ThreadWrapperContext twc = new ThreadWrapperContext(callback, state, token);
-            System.Threading.ThreadPool.QueueUserWorkItem(new WaitCallback(ThreadWrapper), twc);
+            ThreadWrapperContext twc = new ThreadWrapperContext(callback, state, token, this.exceptions);
+
+            if (this.useFXTheadPool)
+            {
+                System.Threading.ThreadPool.QueueUserWorkItem(new WaitCallback(twc.ThreadWrapper), twc);
+            }
+            else
+            {
+                Thread thread = new Thread(new ThreadStart(twc.ThreadWrapper));
+                thread.IsBackground = true;
+                thread.Start();
+            }
         }
 
         public void Drain()
         {
             counter.WaitForEmpty();
+
+            if (this.exceptions.Count != 0)
+            {
+                throw new WorkerThreadException("Worker thread threw an exception", (Exception)this.exceptions[0]);
+            }
         }
 
         private sealed class ThreadWrapperContext
         {
-            public WaitCallback Callback;
-            public object Context;
-            public IDisposable CounterToken;
+            private WaitCallback callback;
+            private object context;
+            private IDisposable counterToken;
+            private ArrayList exceptionsBucket;
 
-            public ThreadWrapperContext(WaitCallback callback, object context, IDisposable counterToken)
+            public ThreadWrapperContext(WaitCallback callback, object context, 
+                IDisposable counterToken, ArrayList exceptionsBucket)
             {
-                this.Callback = callback;
-                this.Context = context;
-                this.CounterToken = counterToken;
+                this.callback = callback;
+                this.context = context;
+                this.counterToken = counterToken;
+                this.exceptionsBucket = exceptionsBucket;
+            }
+
+            public void ThreadWrapper()
+            {
+                using (IDisposable token = this.counterToken)
+                {
+                    try
+                    {
+                        this.callback(this.context);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        this.exceptionsBucket.Add(ex);
+                    }
+                }
+            }
+
+            public void ThreadWrapper(object state)
+            {
+                ThreadWrapper();
             }
         }
-
-        private void ThreadWrapper(object state)
-        {
-            ThreadWrapperContext context = (ThreadWrapperContext)state;
-
-            using (IDisposable token = context.CounterToken)
-            {
-                context.Callback(context.Context);
-            }
-        }
-	}
+    }
 }

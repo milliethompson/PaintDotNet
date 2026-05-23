@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -17,6 +18,14 @@ namespace PaintDotNet
     public class CropAction
         : DocumentAction
     {
+        public static string StaticName
+        {
+            get
+            {
+                return PdnResources.GetString("CropAction.Name");
+            }
+        }
+
         public override HistoryAction PerformAction()
         {
             SelectionHistoryAction sha = new SelectionHistoryAction(name, null, Workspace);
@@ -24,15 +33,14 @@ namespace PaintDotNet
             Rectangle boundingBox;
             Rectangle[] inverseRegionRects = null;
 
-            if (Workspace.Environment.IsSelectionEmpty)
+            if (Workspace.Environment.Selection.IsEmpty)
             {
                 throw new InvalidOperationException("There must be an area selected in order to perform the Crop action");
             }
             else
             {
-                using (PdnRegion region = Workspace.Environment.CreateSelectedRegion())
+                using (PdnRegion region = Workspace.Environment.Selection.CreateRegion())
                 {
-                    region.Intersect(Workspace.Document.Bounds);
                     boundingBox = Utility.GetRegionBounds(region);
 
                     using (PdnRegion inverseRegion = new PdnRegion(boundingBox))
@@ -47,7 +55,7 @@ namespace PaintDotNet
             Document newDocument = new Document(boundingBox.Width, boundingBox.Height);
             
             // copy the document's meta data over
-            newDocument.CopyPropertiesFrom(oldDocument);
+            newDocument.ReplaceMetaDataFrom(oldDocument);
 
             foreach (Layer layer in oldDocument.Layers)
             {
@@ -58,7 +66,6 @@ namespace PaintDotNet
                     BitmapLayer newLayer = new BitmapLayer(croppedSurface);
 
                     ColorBgra clearWhite = ColorBgra.White.NewAlpha(0);
-                    //newLayer.Surface.Clear(clearWhite);
 
                     foreach (Rectangle rect in inverseRegionRects)
                     {
@@ -75,13 +82,13 @@ namespace PaintDotNet
             }
             
             Workspace.SetDocument(newDocument);
-            CompoundHistoryAction cha = new CompoundHistoryAction(Name, Utility.GetImageResource("Icons.MenuImageCropIcon.bmp"), new HistoryAction[] { sha, rdha });
+            CompoundHistoryAction cha = new CompoundHistoryAction(Name, PdnResources.GetImage("Icons.MenuImageCropIcon.bmp"), new HistoryAction[] { sha, rdha });
 
             return cha;
         }
 
         public CropAction(DocumentWorkspace workspace)
-            : base(workspace, "Crop to Selection")
+            : base(workspace, StaticName)
         {
         }
     }

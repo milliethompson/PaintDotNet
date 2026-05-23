@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -10,13 +11,13 @@ using System;
 
 namespace PaintDotNet.Effects
 {
-	/// <summary>
-	/// Summary description for EffectTypeHint.
-	/// </summary>
-	[Flags]
-	public enum EffectTypeHint
+    /// <summary>
+    /// Summary description for EffectTypeHint.
+    /// </summary>
+    [Flags]
+    public enum EffectTypeHint
         : int
-	{
+    {
         /// <summary>
         /// Specifies that Paint.NET may make no special assumptions about the effect.
         /// This is the default.
@@ -28,8 +29,8 @@ namespace PaintDotNet.Effects
         /// to a source pixel (x,y) only requires re-rendering of destination pixel
         /// (x,y) and none others.
         /// For example, Desaturate is Unary, whereas Blur is not.
-        /// Auto-Levels is not unary because changin any pixel requires the levels
-        /// computation to be recomputed which in turn affects 
+        /// Auto-Levels is not unary because changings any pixel requires the levels
+        /// computation to be recomputed which in turn affects all other pixels.
         /// </summary>
         Unary = 1,
 
@@ -41,5 +42,5 @@ namespace PaintDotNet.Effects
         /// For example, Desaturate and Invert Colors are fast whereas Blur is not.
         /// </summary>
         Fast = 2
-	}
+    }
 }

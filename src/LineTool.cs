@@ -1,13 +1,15 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
 using System.Collections;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -23,39 +25,149 @@ namespace PaintDotNet
     public class LineTool
         : ShapeTool 
     {
+        private const int controlPointCount = 4;
+        private const float flattenConstant = 0.1f;
         private Cursor lineToolCursor;
+        private string statusTextFormat = PdnResources.GetString("LineTool.StatusText.Format");
+        private Icon lineToolIcon;
+        private MoveNubRenderer[] moveNubs;
+        private bool inCurveMode = false;
+        private int draggingNubIndex = -1;
+        private CurveType curveType;
+
+        private enum CurveType
+        {
+            NotDecided,
+            Bezier,
+            Spline
+        }
+
+        private PointF[] LineToSpline(PointF a, PointF b, int points)
+        {
+            PointF[] spline = new PointF[points];
+
+            for (int i = 0; i < spline.Length; ++i)
+            {
+                float frac = (float)i / (float)(spline.Length - 1);
+                PointF mid = Utility.Lerp(a, b, frac);
+                spline[i] = mid;
+            }
+
+            return spline;
+        }
 
         protected override ArrayList TrimShapePath(ArrayList points)
         {
-            ArrayList array = new ArrayList();
-
-            if (points.Count > 0)
+            if (this.inCurveMode)
             {
-                array.Add(points[0]);
-
-                if (points.Count > 1)
-                {
-                    array.Add(points[points.Count - 1]);
-                }
+                return points;
             }
+            else
+            {
+                ArrayList array = new ArrayList();
 
-            return array;
+                if (points.Count > 0)
+                {
+                    array.Add(points[0]);
+
+                    if (points.Count > 1)
+                    {
+                        array.Add(points[points.Count - 1]);
+                    }
+                }
+
+                return array;
+            }
+        }
+
+        private void ConstrainPoints(ref PointF a, ref PointF b)
+        {
+            PointF dir = new PointF(b.X - a.X, b.Y - a.Y);
+            double theta = Math.Atan2(dir.Y, dir.X);
+            double len = Math.Sqrt(dir.X * dir.X + dir.Y * dir.Y);
+
+            theta = Math.Round(12 * theta / Math.PI) * Math.PI / 12;
+            b = new PointF((float)(a.X + len * Math.Cos(theta)), (float)(a.Y + len * Math.Sin(theta)));
         }
 
         protected override PdnGraphicsPath CreateShapePath(PointF[] points)
         {
-            PointF a = points[0];
-            PointF b = points[points.Length - 1];
-
-            if (a == b)
-            {
-                return null;
-            }
-            else
+            if (points.Length >= 4)
             {
                 PdnGraphicsPath path = new PdnGraphicsPath();
-                path.AddLine(a, b);
+
+                switch (this.curveType)
+                {
+                    default:
+                    case CurveType.Spline:
+                        path.AddCurve(points);
+                        break;
+
+                    case CurveType.Bezier:
+                        path.AddBezier(points[0], points[1], points[2], points[3]);
+                        break;
+                }
+
+                path.Flatten(Utility.IdentityMatrix, flattenConstant);
                 return path;
+            }
+            else //if (points.Length <= 2)
+            {
+                PointF a = points[0];
+                PointF b = points[points.Length - 1];
+            
+                if (0 != (ModifierKeys & Keys.Shift) && a != b)
+                {
+                    ConstrainPoints(ref a, ref b);
+                }
+
+                double angle = -180.0 * Math.Atan2(b.Y - a.Y, b.X - a.X) / Math.PI;
+                MeasurementUnit units = Workspace.Environment.Units;
+                double offsetXPhysical = Workspace.Document.PixelToPhysicalX(b.X - a.X, units);
+                double offsetYPhysical = Workspace.Document.PixelToPhysicalY(b.Y - a.Y, units);
+                double offsetLengthPhysical = Math.Sqrt(offsetXPhysical * offsetXPhysical + offsetYPhysical * offsetYPhysical);
+
+                string numberFormat;
+                string unitsAbbreviation;
+
+                if (units != MeasurementUnit.Pixel)
+                {
+                    string unitsAbbreviationName = "MeasurementUnit." + units.ToString() + ".Abbreviation";
+                    unitsAbbreviation = PdnResources.GetString(unitsAbbreviationName);
+                    numberFormat = "F2";
+                }
+                else
+                {
+                    unitsAbbreviation = string.Empty;
+                    numberFormat = "F0";
+                }
+
+                string unitsString = PdnResources.GetString("MeasurementUnit." + units.ToString() + ".Plural");
+
+                string statusText = string.Format(
+                    this.statusTextFormat,
+                    offsetXPhysical.ToString(numberFormat),
+                    unitsAbbreviation,
+                    offsetYPhysical.ToString(numberFormat),
+                    unitsAbbreviation,
+                    offsetLengthPhysical.ToString("F2"),
+                    unitsString,
+                    angle.ToString("F2"));
+
+                SetStatus(this.lineToolIcon, statusText);
+
+                if (a == b)
+                {
+                    return null;
+                }
+                else
+                {
+                    PdnGraphicsPath path = new PdnGraphicsPath();
+                    PointF[] spline = LineToSpline(a, b, controlPointCount);
+                    path.AddCurve(spline);
+                    path.Flatten(Utility.IdentityMatrix, flattenConstant);
+                    return path;
+                }
             }
         }
 
@@ -64,16 +176,325 @@ namespace PaintDotNet
             return PixelOffsetMode.None;
         }
 
+        protected override void OnPulse()
+        {
+            if (this.moveNubs != null)
+            {
+                for (int i = 0; i < this.moveNubs.Length; ++i)
+                {
+                    // Oscillate between 25% and 100% alpha over a period of 2 seconds
+                    // Alpha value of 100% is sustained for a large duration of this period
+                    const int period = 10000 * 2000; // 10000 ticks per ms, 2000ms per second
+                    long tick = (DateTime.Now.Ticks % period) + (i * (period / this.moveNubs.Length));;
+                    double sin = Math.Sin(((double)tick / (double)period) * (2.0 * Math.PI));
+                    // sin is [-1, +1]
+
+                    sin = Math.Min(0.5, sin);
+                    // sin is [-1, +0.5]
+
+                    sin += 1.0;
+                    // sin is [0, 1.5]
+
+                    sin /= 2.0;
+                    // sin is [0, 0.75]
+
+                    sin += 0.25;
+                    // sin is [0.25, 1]
+
+                    int newAlpha = (int)(sin * 255.0);
+
+                    this.moveNubs[i].Alpha = newAlpha;
+                }
+            }
+            
+            base.OnPulse ();
+        }
+
+        protected override void OnKeyPress(KeyPressEventArgs e)
+        {
+            if (this.inCurveMode)
+            {
+                switch (e.KeyChar)
+                {
+                    case '\r': // Enter
+                        CommitShape();
+                        break;
+
+                    case (char)27: // Escape
+                        Workspace.History.StepBackward();
+                        break;
+                }
+            }
+
+            base.OnKeyPress(e);
+        }
+
+        protected override void OnShapeCommitting()
+        {
+            for (int i = 0; i < this.moveNubs.Length; ++i)
+            {
+                this.moveNubs[i].Visible = false;
+            }
+            
+            this.inCurveMode = false;
+            this.curveType = CurveType.NotDecided;
+            this.Cursor = this.lineToolCursor;
+            this.draggingNubIndex = -1;
+            SetStatus(null, this.HelpText);
+        }
+
+        protected override bool OnShapeEnd()
+        {
+            // init move nubs
+            ArrayList points = GetTrimmedShapePath();
+
+            if (points.Count < 2)
+            {
+                return true;
+            }
+            else
+            {
+                PointF a = (PointF)points[0];
+                PointF b = (PointF)points[points.Count - 1];
+
+                if (0 != (ModifierKeys & Keys.Shift) && a != b)
+                {
+                    ConstrainPoints(ref a, ref b);
+                }
+
+                PointF[] spline = LineToSpline(a, b, controlPointCount);
+                ArrayList newPoints = new ArrayList();
+
+                this.inCurveMode = true;
+                for (int i = 0; i < this.moveNubs.Length; ++i)
+                {
+                    this.moveNubs[i].Location = spline[i];
+                    this.moveNubs[i].Visible = true;
+                    newPoints.Add(spline[i]);
+                }
+
+                string helpText2 = PdnResources.GetString("LineTool.PreCurveHelpText");
+                this.SetStatus(null, helpText2);
+                SetShapePath(newPoints);
+                return false;
+            }
+        }
+
+        protected override void OnStylusDown(StylusEventArgs e)
+        {
+            bool callBase = false;
+
+            if (!this.inCurveMode)
+            {
+                callBase = true;
+            }
+            else
+            {
+                PointF mousePt = new PointF(e.Fx, e.Fy);
+
+                for (int i = 0; i < this.moveNubs.Length; ++i)
+                {
+                    if (this.moveNubs[i].IsPointTouching(Point.Truncate(mousePt), true))
+                    {
+                        this.draggingNubIndex = i;
+                        this.Cursor = this.handCursorMouseDown;
+
+                        if (this.curveType == CurveType.NotDecided)
+                        {
+                            if (e.Button == MouseButtons.Right)
+                            {
+                                this.curveType = CurveType.Bezier;
+                            }
+                            else
+                            {
+                                this.curveType = CurveType.Spline;
+                            }
+                        }
+
+                        break;
+                    }
+                }
+
+                if (this.draggingNubIndex == -1)
+                {
+                    callBase = true;
+                }
+                else
+                {
+                    for (int i = 0; i < this.moveNubs.Length; ++i)
+                    {
+                        this.moveNubs[i].Visible = false;
+                    }
+
+                    string helpText2 = PdnResources.GetString("LineTool.CurvingHelpText");
+                    SetStatus(null, helpText2);
+                    OnStylusMove(e);
+                }
+            }
+
+            if (callBase)
+            {
+                base.OnStylusDown(e);
+            }
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (!this.inCurveMode)
+            {
+                base.OnMouseDown(e);
+            }
+        }
+
+        protected override void OnStylusUp(StylusEventArgs e)
+        {
+            if (!this.inCurveMode)
+            {
+                base.OnStylusUp(e);
+            }
+            else
+            {
+                if (this.draggingNubIndex != -1)
+                {
+                    OnStylusMove(e);
+                    this.draggingNubIndex = -1;
+                    this.Cursor = this.lineToolCursor;
+
+                    for (int i = 0; i < this.moveNubs.Length; ++i)
+                    {
+                        this.moveNubs[i].Visible = true;
+                    }
+                }
+            }
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            if (!this.inCurveMode)
+            {
+                base.OnMouseUp(e);
+            }
+        }
+
+        protected override void OnStylusMove(StylusEventArgs e)
+        {
+            if (!this.inCurveMode)
+            {
+                this.Cursor = this.lineToolCursor;
+                base.OnStylusMove(e);
+            }
+            else if (this.draggingNubIndex != -1)
+            {
+                PointF mousePt = new PointF(e.Fx, e.Fy);
+                this.moveNubs[this.draggingNubIndex].Location = mousePt;
+                ArrayList points = GetTrimmedShapePath();
+                points[this.draggingNubIndex] = mousePt;
+                SetShapePath(points);
+            }
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            if (this.draggingNubIndex != -1)
+            {
+                RenderShape();
+                Update();
+            }
+            else
+            {
+                Point mousePt = new Point(e.X, e.Y);
+                bool hot = false;
+
+                for (int i = 0; i < this.moveNubs.Length; ++i)
+                {
+                    if (this.moveNubs[i].Visible && this.moveNubs[i].IsPointTouching(Point.Truncate(mousePt), true))
+                    {
+                        this.Cursor = this.handCursor;
+                        hot = true;
+                        break;
+                    }
+                }
+
+                if (!hot)
+                {
+                    this.Cursor = this.lineToolCursor;
+                }
+            }
+
+            base.OnMouseMove(e);
+        }
+
+        protected override void OnActivate()
+        {
+            this.lineToolCursor = new Cursor(PdnResources.GetResourceStream("Cursors.LineToolCursor.cur"));
+            this.Cursor = this.lineToolCursor;
+            this.lineToolIcon = Utility.ImageToIcon(this.Image);
+
+            this.moveNubs = new MoveNubRenderer[controlPointCount];
+            for (int i = 0; i < this.moveNubs.Length; ++i)
+            {
+                this.moveNubs[i] = new MoveNubRenderer(this.Renderers);
+                this.moveNubs[i].Visible = false;
+                this.Renderers.Add(this.moveNubs[i], false);
+            }
+
+            Workspace.Environment.ForeColorChanged += new EventHandler(RenderShapeBecauseOfEvent);
+            Workspace.Environment.BackColorChanged += new EventHandler(RenderShapeBecauseOfEvent);
+            Workspace.Environment.AntiAliasingChanged += new EventHandler(RenderShapeBecauseOfEvent);
+            Workspace.Environment.AlphaBlendingChanged += new EventHandler(RenderShapeBecauseOfEvent);
+            Workspace.Environment.BrushInfoChanged += new EventHandler(RenderShapeBecauseOfEvent);
+            Workspace.Environment.PenInfoChanged += new EventHandler(RenderShapeBecauseOfEvent);
+
+            base.OnActivate();
+        }
+
+        private void RenderShapeBecauseOfEvent(object sender, EventArgs e)
+        {
+            if (this.inCurveMode)
+            {
+                RenderShape();
+            }
+        }
+
+        protected override void OnDeactivate()
+        {
+            base.OnDeactivate();
+
+            Workspace.Environment.ForeColorChanged -= new EventHandler(RenderShapeBecauseOfEvent);
+            Workspace.Environment.BackColorChanged -= new EventHandler(RenderShapeBecauseOfEvent);
+            Workspace.Environment.AntiAliasingChanged -= new EventHandler(RenderShapeBecauseOfEvent);
+            Workspace.Environment.AlphaBlendingChanged -= new EventHandler(RenderShapeBecauseOfEvent);
+            Workspace.Environment.BrushInfoChanged -= new EventHandler(RenderShapeBecauseOfEvent);
+            Workspace.Environment.PenInfoChanged -= new EventHandler(RenderShapeBecauseOfEvent);
+
+            for (int i = 0; i < this.moveNubs.Length; ++i)
+            {
+                this.Renderers.Remove(this.moveNubs[i]);
+                this.moveNubs[i].Dispose();
+                this.moveNubs[i] = null;
+            }
+
+            this.moveNubs = null;
+
+            if (this.lineToolCursor != null)
+            {
+                this.lineToolCursor.Dispose();
+                this.lineToolCursor = null;
+            }
+
+            if (this.lineToolIcon != null)
+            {
+                this.lineToolIcon.Dispose();
+                this.lineToolIcon = null;
+            }
+        }
 
         public LineTool(DocumentWorkspace parent)
             : base(parent,
-                   Utility.GetImageResource("Icons.LineToolIcon.bmp"),
-                   "Line",
-                   "Draws a Line",
-                   "Left click to draw a line with the foreground color, right click to use the background color")
+                   PdnResources.GetImage("Icons.LineToolIcon.bmp"),
+                   PdnResources.GetString("LineTool.Name"),
+                   PdnResources.GetString("LineTool.HelpText"))
         {
-            this.lineToolCursor = new Cursor(Utility.GetResourceStream("Cursors.LineToolCursor.cur"));
-            this.Cursor = this.lineToolCursor;
             this.ForceShapeDrawType = true;
             this.ForcedShapeDrawType = ShapeDrawType.Outline;
         }
@@ -85,12 +506,6 @@ namespace PaintDotNet
             if (disposing)
             {
                 DisposeImage();
-
-                if (this.lineToolCursor != null)
-                {
-                    this.lineToolCursor.Dispose();
-                    this.lineToolCursor = null;
-                }
             }
         }
     }

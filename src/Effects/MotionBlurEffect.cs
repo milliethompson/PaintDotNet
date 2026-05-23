@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -9,6 +10,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
@@ -20,9 +22,11 @@ namespace PaintDotNet.Effects
           IConfigurableEffect
     {
         public MotionBlurEffect()
-            : base("Motion Blur", 
-                   "Blurs an image to give the effect of motion.", 
-                   Utility.GetImageResource("Icons.MotionBlurEffect.bmp"))
+            : base(PdnResources.GetString("MotionBlurEffect.Name"),
+                   PdnResources.GetImage("Icons.MotionBlurEffect.bmp"),
+                   Shortcut.None,
+                   PdnResources.GetString("Effects.Blurring.Submenu.Name"),
+                   EffectDirectives.None)
         {
         }
 

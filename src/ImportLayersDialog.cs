@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -14,23 +15,23 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for ImportLayersDialog.
-	/// </summary>
-	public class ImportLayersDialog 
+    /// <summary>
+    /// Summary description for ImportLayersDialog.
+    /// </summary>
+    public class ImportLayersDialog 
         : PdnBaseDialog
-	{
+    {
         private PaintDotNet.DocumentView documentView;
         private PaintDotNet.LayerControl layerControl;
         private Surface renderSurface;
-		/// <summary>
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.Container components = null;
         private System.Windows.Forms.Button allButton;
         private System.Windows.Forms.Button noneButton;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
+        private HeaderLabel layersToInsertHeader;
+        private HeaderLabel previewHeader;
         private Size layerControlInitialSize;
         private Size documentViewInitialSize;
 
@@ -97,21 +98,27 @@ namespace PaintDotNet
             }
         }
 
-		public ImportLayersDialog()
-		{
-			//
-			// Required for Windows Form Designer support
-			//
-			InitializeComponent();
+        public ImportLayersDialog()
+        {
+            //
+            // Required for Windows Form Designer support
+            //
+            InitializeComponent();
 
-            Image icon = Utility.GetImageResource("Icons.MenuLayersImportFromFileIcon.bmp");
+            Image icon = PdnResources.GetImage("Icons.MenuLayersImportFromFileIcon.bmp");
             this.Icon = Utility.ImageToIcon(icon);
 
             this.layerControlInitialSize = layerControl.Size;
             this.documentViewInitialSize = documentView.Size;
             this.EnableInstanceOpacity = false;
             this.MinimumSize = this.Size;
-		}
+
+            this.Text = PdnResources.GetString("ImportLayersDialog.Text"); 
+            this.allButton.Text = PdnResources.GetString("ImportLayersDialog.AllButton.Text");
+            this.noneButton.Text = PdnResources.GetString("ImportLayersDialog.NoneButton.Text");
+            this.layersToInsertHeader.Text = PdnResources.GetString("ImportLayersDialog.LayersToInsertHeader.Text");
+            this.previewHeader.Text = PdnResources.GetString("ImportLayersDialog.PreviewHeader.Text");
+        }
 
         protected override void OnLoad(EventArgs e)
         {
@@ -119,49 +126,49 @@ namespace PaintDotNet
             this.baseOkButton.Select();
         }
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose(bool disposing)
-		{
-			if (disposing)
-			{
-				if (components != null)
-				{
-					components.Dispose();
-				}
-			}
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
 
-			base.Dispose(disposing);
-		}
+            base.Dispose(disposing);
+        }
 
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        #region Windows Form Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.documentView = new PaintDotNet.DocumentView();
             this.layerControl = new PaintDotNet.LayerControl();
             this.allButton = new System.Windows.Forms.Button();
             this.noneButton = new System.Windows.Forms.Button();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
+            this.layersToInsertHeader = new PaintDotNet.HeaderLabel();
+            this.previewHeader = new PaintDotNet.HeaderLabel();
             this.SuspendLayout();
             // 
             // baseOkButton
             // 
             this.baseOkButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.baseOkButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.baseOkButton.Location = new System.Drawing.Point(438, 284);
+            this.baseOkButton.Location = new System.Drawing.Point(444, 287);
             this.baseOkButton.Name = "baseOkButton";
             // 
             // baseCancelButton
             // 
             this.baseCancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.baseCancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.baseCancelButton.Location = new System.Drawing.Point(526, 284);
+            this.baseCancelButton.Location = new System.Drawing.Point(527, 287);
             this.baseCancelButton.Name = "baseCancelButton";
             // 
             // documentView
@@ -169,14 +176,12 @@ namespace PaintDotNet
             this.documentView.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.documentView.Document = null;
             this.documentView.DrawGrid = false;
-            this.documentView.EnableOutlineAnimation = true;
-            this.documentView.EnableSelectionInterior = true;
-            this.documentView.EnableSelectionOutline = true;
-            this.documentView.Location = new System.Drawing.Point(248, 28);
+            this.documentView.Location = new System.Drawing.Point(240, 28);
             this.documentView.Name = "documentView";
             this.documentView.PanelAutoScroll = true;
             this.documentView.RulersEnabled = false;
-            this.documentView.Size = new System.Drawing.Size(360, 248);
+            this.documentView.Size = new System.Drawing.Size(361, 251);
+            this.documentView.TabIndex = 9;
             this.documentView.TabStop = false;
             // 
             // layerControl
@@ -185,51 +190,53 @@ namespace PaintDotNet
             this.layerControl.Document = null;
             this.layerControl.Location = new System.Drawing.Point(8, 28);
             this.layerControl.Name = "layerControl";
-            this.layerControl.Size = new System.Drawing.Size(224, 248);
+            this.layerControl.Size = new System.Drawing.Size(224, 251);
             this.layerControl.TabIndex = 4;
-            this.layerControl.Workspace = null;
             this.layerControl.TabStop = false;
+            this.layerControl.Workspace = null;
             // 
             // allButton
             // 
             this.allButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.allButton.Location = new System.Drawing.Point(8, 284);
+            this.allButton.Location = new System.Drawing.Point(8, 287);
             this.allButton.Name = "allButton";
             this.allButton.TabIndex = 5;
-            this.allButton.Text = "All";
             this.allButton.Click += new System.EventHandler(this.allButton_Click);
             // 
             // noneButton
             // 
             this.noneButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.noneButton.Location = new System.Drawing.Point(96, 284);
+            this.noneButton.Location = new System.Drawing.Point(91, 287);
             this.noneButton.Name = "noneButton";
             this.noneButton.TabIndex = 6;
-            this.noneButton.Text = "None";
             this.noneButton.Click += new System.EventHandler(this.noneButton_Click);
             // 
-            // label1
+            // layersToInsertHeader
             // 
-            this.label1.Location = new System.Drawing.Point(8, 8);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(144, 16);
-            this.label1.TabIndex = 7;
-            this.label1.Text = "Layers to insert:";
+            this.layersToInsertHeader.Location = new System.Drawing.Point(6, 8);
+            this.layersToInsertHeader.Name = "layersToInsertHeader";
+            this.layersToInsertHeader.RightMargin = 0;
+            this.layersToInsertHeader.Size = new System.Drawing.Size(226, 14);
+            this.layersToInsertHeader.TabIndex = 7;
+            this.layersToInsertHeader.TabStop = false;
+            this.layersToInsertHeader.Text = "Header";
             // 
-            // label2
+            // previewHeader
             // 
-            this.label2.Location = new System.Drawing.Point(248, 8);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(96, 16);
-            this.label2.TabIndex = 8;
-            this.label2.Text = "Preview:";
+            this.previewHeader.Location = new System.Drawing.Point(238, 8);
+            this.previewHeader.Name = "previewHeader";
+            this.previewHeader.RightMargin = 0;
+            this.previewHeader.Size = new System.Drawing.Size(362, 14);
+            this.previewHeader.TabIndex = 8;
+            this.previewHeader.TabStop = false;
+            this.previewHeader.Text = "Header";
             // 
             // ImportLayersDialog
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.ClientSize = new System.Drawing.Size(616, 315);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.label1);
+            this.ClientSize = new System.Drawing.Size(608, 320);
+            this.Controls.Add(this.previewHeader);
+            this.Controls.Add(this.layersToInsertHeader);
             this.Controls.Add(this.noneButton);
             this.Controls.Add(this.allButton);
             this.Controls.Add(this.layerControl);
@@ -238,19 +245,18 @@ namespace PaintDotNet
             this.Name = "ImportLayersDialog";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Import Layers";
             this.Controls.SetChildIndex(this.documentView, 0);
             this.Controls.SetChildIndex(this.layerControl, 0);
             this.Controls.SetChildIndex(this.allButton, 0);
             this.Controls.SetChildIndex(this.noneButton, 0);
-            this.Controls.SetChildIndex(this.label1, 0);
-            this.Controls.SetChildIndex(this.label2, 0);
+            this.Controls.SetChildIndex(this.layersToInsertHeader, 0);
+            this.Controls.SetChildIndex(this.previewHeader, 0);
             this.Controls.SetChildIndex(this.baseOkButton, 0);
             this.Controls.SetChildIndex(this.baseCancelButton, 0);
             this.ResumeLayout(false);
 
         }
-		#endregion
+        #endregion
 
         protected override void OnLayout(LayoutEventArgs e)
         {
@@ -261,6 +267,8 @@ namespace PaintDotNet
                 documentViewInitialSize.Height + delta.Height);
 
             this.documentView.ZoomToWindow();
+
+            this.previewHeader.Width = this.documentView.Width + 1;
             
             base.OnLayout(e);
         }
@@ -291,6 +299,6 @@ namespace PaintDotNet
             {
                 layer.Layer.Visible = false;
             }
-        }	
+        }   
     }
 }

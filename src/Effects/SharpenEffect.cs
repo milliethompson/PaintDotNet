@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -18,9 +19,17 @@ namespace PaintDotNet.Effects
         : ConvolutionFilterEffect,
           IConfigurableEffect
     {
-        private int[,] sharpenWeights = new int[3,3] { { -1, -1, -1 },
-                                                       { -1, 20, -1 },
-                                                       { -1, -1, -1 } };
+        public static string StaticName
+        {
+            get
+            {
+                return PdnResources.GetString("SharpenEffect.Name");
+            }
+        }
+
+        private int[][] sharpenWeights = new int[3][] { new int[] { -1, -1, -1 },
+                                                        new int[] { -1, 20, -1 },
+                                                        new int[] { -1, -1, -1 } };
 
         public override void Render(RenderArgs dstArgs, RenderArgs srcArgs, Rectangle roi)
         {
@@ -28,7 +37,8 @@ namespace PaintDotNet.Effects
         }
 
         public SharpenEffect()
-			: base("Sharpen", "Sharpens the image.", Utility.GetImageResource("Icons.SharpenEffect.bmp"))
+            : base(StaticName,
+                   PdnResources.GetImage("Icons.SharpenEffect.bmp"))
         {
         }
 
@@ -38,13 +48,13 @@ namespace PaintDotNet.Effects
         {
             AmountEffectConfigDialog aecg = new AmountEffectConfigDialog();
             aecg.Effect = this;
-            aecg.Text = "Sharpen";
-            aecg.SliderLabel = "Amount";
+            aecg.Text = StaticName;
+            aecg.SliderLabel = PdnResources.GetString("SharpenEffect.ConfigDialog.SliderLabel");
             aecg.SliderUnitsName = string.Empty;
             aecg.SliderMinimum = 1;
-			aecg.SliderMaximum = 4;
+            aecg.SliderMaximum = 4;
             aecg.SliderInitialValue = 1;
-			aecg.Icon = Utility.GetIconResource("Icons.SharpenEffect.bmp");
+            aecg.Icon = PdnResources.GetIconFromImage("Icons.SharpenEffect.bmp");
             return aecg;
         }
 
@@ -62,25 +72,28 @@ namespace PaintDotNet.Effects
         {
             AmountEffectConfigToken token = (AmountEffectConfigToken)properties;
 
-            int[,] weights = BlurEffect.CreateGaussianBlurMatrix(1 << (token.Amount - 1));
+            int[][] weights = BlurEffect.CreateGaussianBlurMatrix(1 << (token.Amount - 1));
             int sum = Utility.Sum(weights);
             int center = weights.GetLength(0) / 2;
 
-            for (int i = weights.GetLowerBound(0); i <= weights.GetUpperBound(0); ++i)
+            for (int i = 0; i < weights.Length; ++i)
             {
-                for (int j = weights.GetLowerBound(1); j <= weights.GetUpperBound(1); ++j)
+                int[] row = weights[i];
+
+                for (int j = 0; j < row.Length; ++j)
                 {
                     if (i == center && j == center)
                     {
-                        weights[i,j] = (2 * sum) - weights[i,j];
+                        row[j] = (2 * sum) - row[j];
                     }
                     else
                     {
-                        weights[i,j] = -weights[i,j];
+                        row[j] = -row[j];
                     }
                 }
             }
-			NormalizeWeightMatrix(weights);
+
+            NormalizeWeightMatrix(weights);
             base.RenderConvolutionFilter (weights, 0, dstArgs, srcArgs, roi);
         }
 

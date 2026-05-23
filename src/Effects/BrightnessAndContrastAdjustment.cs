@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -25,7 +26,7 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return "Brightness / Contrast";
+                return PdnResources.GetString("BrightnessAndContrastAdjustment.Name");
             }
         }
 
@@ -34,28 +35,14 @@ namespace PaintDotNet.Effects
             return new BrightnessAndContrastAdjustmentConfigDialog();
         }
 
-		public void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
-		{
-			BrightnessAndContrastAdjustmentConfigToken token = (BrightnessAndContrastAdjustmentConfigToken)properties;
-			int contrast = token.Contrast;
-			int brightness = token.Brightness;
-
-			int multiply, divide;
-			if (contrast < 0) 
-			{
-				multiply = contrast + 100;
-				divide = 100;
-			} 
-			else if (contrast > 0) 
-			{
-				multiply = 100;
-				divide = 100 - contrast;
-			} 
-			else 
-			{
-				multiply = 1;
-				divide = 1;
-			}
+        public void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        {
+            BrightnessAndContrastAdjustmentConfigToken token = (BrightnessAndContrastAdjustmentConfigToken)properties;
+            int contrast = token.Contrast;
+            int brightness = token.Brightness;
+            int multiply = token.Multiply;
+            int divide = token.Divide;
+            byte[] rgbTable = token.RgbTable;
 
             unsafe
             {
@@ -65,28 +52,37 @@ namespace PaintDotNet.Effects
                     {
                         ColorBgra *srcRowPtr = srcArgs.Surface.GetPointAddress(rect.Left, y);
                         ColorBgra *dstRowPtr = dstArgs.Surface.GetPointAddress(rect.Left, y);
+                        ColorBgra *dstRowEndPtr = dstRowPtr + rect.Width;
 
-                        for (int x = 0; x < rect.Width; ++x)
+                        if (divide == 0)
                         {
-                            // read
-                            ColorBgra col = *srcRowPtr;
-                            ++srcRowPtr;
+                            while (dstRowPtr < dstRowEndPtr)
+                            {
+                                ColorBgra col = *srcRowPtr;
+                                int i = col.GetIntensityByte();
+                                uint c = rgbTable[i];
+                                dstRowPtr->Bgra = (col.Bgra & 0xff000000) | c | (c << 8) | (c << 16);
 
-							for (int c = 0; c < 3; c++) 
-							{
-								if (divide != 0) 
-								{
-									col[c] = Utility.ClampToByte(127 + (col[c] - 127 + brightness) * multiply / divide);
-								} 
-								else 
-								{
-									col[c] = Utility.ClampToByte((col[c] + brightness > 127) ? 255 : 0);
-								}
-							}
+                                ++dstRowPtr;
+                                ++srcRowPtr;
+                            }
+                        }
+                        else
+                        {
+                            while (dstRowPtr < dstRowEndPtr)
+                            {
+                                ColorBgra col = *srcRowPtr;
+                                int i = col.GetIntensityByte();
+                                int shiftIndex = i * 256;
 
-                            // store
-                            *dstRowPtr = col;
-                            ++dstRowPtr;
+                                col.R = rgbTable[shiftIndex + col.R];
+                                col.G = rgbTable[shiftIndex + col.G]; 
+                                col.B = rgbTable[shiftIndex + col.B];
+
+                                *dstRowPtr = col;
+                                ++dstRowPtr;
+                                ++srcRowPtr;
+                            }
                         }
                     }
                 }
@@ -102,8 +98,7 @@ namespace PaintDotNet.Effects
 
         public BrightnessAndContrastAdjustment()
             : base(StaticName,
-                   "Adjusts the brightness and contrast levels of an image", 
-                   Utility.GetImageResource("Icons.BrightnessAndContrastAdjustment.bmp"),
+                   PdnResources.GetImage("Icons.BrightnessAndContrastAdjustment.bmp"),
                    System.Windows.Forms.Shortcut.CtrlShiftC)
         {
         }

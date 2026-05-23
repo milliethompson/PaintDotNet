@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -26,6 +27,7 @@ namespace PaintDotNet.Effects
         {
             // Required for Windows Form Designer support
             InitializeComponent();
+            this.Text = EdgeDetectEffect.StaticName;
         }
 
         // create default config token with angle 45 degress
@@ -44,13 +46,7 @@ namespace PaintDotNet.Effects
             // 
             // EdgeDetectConfigDialog
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.ClientSize = new System.Drawing.Size(186, 128);
-            this.Location = new System.Drawing.Point(0, 0);
-			this.Name = "EdgeDetectConfigDialog";
-			//this.Icon = Utility.GetIconResource("Icons.EdgeDetectEffect.bmp");
-            this.Text = "Edge Detect";
-
+            this.Name = "EdgeDetectConfigDialog";
         }
         #endregion
     }

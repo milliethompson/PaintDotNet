@@ -1,13 +1,16 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Security.Policy;
@@ -39,7 +42,7 @@ namespace PaintDotNet
                 arg = "";
             }
 
-            ProcessStartInfo psi = new ProcessStartInfo(Process.GetCurrentProcess().MainModule.FileName, arg);
+            ProcessStartInfo psi = new ProcessStartInfo(Application.ExecutablePath, arg);
             System.Diagnostics.Process.Start(psi);
         }
 
@@ -82,6 +85,36 @@ namespace PaintDotNet
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
 #endif
+
+            string locale = Settings.CurrentUser.GetString(PdnSettings.LanguageName, null);
+
+            if (locale != null)
+            {
+                CultureInfo ci = new CultureInfo(locale, true);
+                Thread.CurrentThread.CurrentUICulture = ci;
+            }
+
+            // If this is not a final release, then we expire after 30 days.
+            // This should cut down on the number of people that still run a beta
+            // or alpha release weeks and months after a final release is available.
+            //
+            // Debug builds also expire.
+            if (!PdnInfo.IsFinalBuild || PdnInfo.IsDebugBuild)
+            {
+                if (DateTime.Now > PdnInfo.ExpirationDate)
+                {
+                    string expiredMessage = PdnResources.GetString("ExpiredDialog.Message");
+                    DialogResult result = Utility.ErrorBoxOKCancel(null, expiredMessage);
+
+                    if (result == DialogResult.OK)
+                    {
+                        string expiredRedirect = PdnResources.GetString("PdnInfo.ExpiredRedirectPage");
+                        PdnInfo.LaunchWebSite(expiredRedirect);
+                    }
+
+                    return;
+                }
+            }
 
             // Create our self ...
             MainForm mainForm = new MainForm(args);
@@ -144,45 +177,59 @@ namespace PaintDotNet
         [STAThread]
         public static int Main(string[] args) 
         {
-            new Startup(args).Start();
+#if !DEBUG
+            try
+            {
+#endif
+                new Startup(args).Start();
+#if !DEBUG
+            }
+
+            catch (Exception ex)
+            {
+                try
+                {
+                    UnhandledException(ex);
+                }
+
+                catch (Exception)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
+            }
+#endif
+
             return 0;
         }
 
-        private void UnhandledException(Exception ex)
+        private static void UnhandledException(Exception ex)
         {
-            string fullName = Path.GetFullPath("pdncrash.log");
+            string dir = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+            const string fileName = "pdncrash.log";
+            string fullName = Path.Combine(dir, fileName);
 
             using (StreamWriter stream = new System.IO.StreamWriter(fullName, true))
             {
+                // This text need not be localized.
                 stream.AutoFlush = true;
                 stream.WriteLine("Crash log for " + PdnInfo.GetFullAppName());
                 stream.WriteLine("Time of crash: " + DateTime.Now.ToString());
+                stream.WriteLine("OS version: " + System.Environment.OSVersion.Version.ToString());
+                stream.WriteLine(".NET Framework version: " + System.Environment.Version.ToString());
                 stream.WriteLine();
 
-                Exception writeMe = ex;
-                bool first = true;
-
-                while (writeMe != null)
-                {
-                    if (first != true)
-                    {
-                        stream.WriteLine();
-                        stream.Write("Inner ");
-                    }
-                        
-                    stream.WriteLine("Exception details:");
-                    stream.WriteLine(writeMe.ToString());
-                    writeMe = writeMe.InnerException;
-                    first = false;
-                }
+                stream.WriteLine("Exception details:");
+                stream.WriteLine(ex.ToString());
 
                 stream.WriteLine("------------------------------------------------------------------------------");
             }
 
-            Utility.ErrorBox(null, "There was an unhandled error, and Paint.NET must be closed. Refer to '" + fullName + "' for more information.");
+            string errorFormat = PdnResources.GetString("Startup.UnhandledError.Format");
+            string error = string.Format(errorFormat, fileName);
+            Utility.ErrorBox(null, error);
         }
 
-        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             UnhandledException((Exception)e.ExceptionObject);
 
@@ -192,7 +239,7 @@ namespace PaintDotNet
             }        
         }
 
-        private void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
+        private static void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
         {
             UnhandledException(e.Exception);
             Process.GetCurrentProcess().Kill();

@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -20,11 +21,13 @@ namespace PaintDotNet
     /// </summary>
     public class BrushConfigWidget : System.Windows.Forms.UserControl
     {
-        //private DotNetWidgets.FlatComboBox styleComboBox = null;
-        private System.Windows.Forms.Label label1;
+        private EnumWrapper hatchStyleNames = EnumWrapper.Create(typeof(HatchStyle));
+        private string solidBrushText;
+        private System.Windows.Forms.Label fillStyleLabel;
         private System.Windows.Forms.ComboBox styleComboBox;
         private DotNetWidgets.DotNetToolbar dotNetToolbar1;
-        private DotNetWidgets.DotNetToolbarButtonItem dotNetToolbarButtonItem1; // alises to styleComboBoxTB.ContgainedControl
+        private DotNetWidgets.DotNetToolbarButtonItem dotNetToolbarButtonItem1; // aliases to styleComboBoxTB.ContainedControl
+
         /// <summary> 
         /// Required designer variable.
         /// </summary>
@@ -34,7 +37,7 @@ namespace PaintDotNet
         {
             get
             {
-                if (this.styleComboBox.SelectedIndex == 0)
+                if (this.styleComboBox.SelectedItem.ToString() == this.solidBrushText)
                 {
                     return new BrushInfo(BrushType.Solid, HatchStyle.BackwardDiagonal);
                 }
@@ -44,7 +47,7 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    return new BrushInfo(BrushType.Hatch, getHatchStyle(this.styleComboBox.SelectedItem.ToString()));
+                    return new BrushInfo(BrushType.Hatch, (HatchStyle)this.hatchStyleNames.LocalizedNameToEnumValue(this.styleComboBox.SelectedItem.ToString()));
                 }
             }               
         }
@@ -54,11 +57,15 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            this.styleComboBox.Items.Add("Solid Brush");
-            foreach (string styleName in Enum.GetNames(typeof(HatchStyle))) 
-            { 
-                String name = Utility.InsertSpaces(styleName);
-                styleComboBox.Items.Add(name); 
+            this.solidBrushText = PdnResources.GetString("BrushConfigWidget.SolidBrush.Text"); // "Solid Brush"
+            this.styleComboBox.Items.Add(this.solidBrushText);
+
+            string[] styleNames = this.hatchStyleNames.GetLocalizedNames();
+            Array.Sort(styleNames);
+            
+            foreach (string styleName in styleNames)
+            {
+                styleComboBox.Items.Add(styleName);
             }
 
             styleComboBox.SelectedIndex = 0;    
@@ -69,6 +76,8 @@ namespace PaintDotNet
             this.styleComboBox.MeasureItem += new System.Windows.Forms.MeasureItemEventHandler(this.comboBoxStyle_MeasureItem);
             this.styleComboBox.SelectedValueChanged += new System.EventHandler(this.comboBoxStyle_SelectedValueChanged);
             this.styleComboBox.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.comboBoxStyle_DrawItem);
+
+            this.fillStyleLabel.Text = PdnResources.GetString("BrushConfigWidget.FillStyleLabel.Text");
         }
 
         public event EventHandler BrushChanged;
@@ -78,36 +87,6 @@ namespace PaintDotNet
             {
                 BrushChanged(this, EventArgs.Empty);
             }
-        }
-
-        private HatchStyle getHatchStyle(String s)
-        {
-            String str = RemoveSpaces(s);
-            return (HatchStyle)Enum.Parse(typeof(HatchStyle), str, true);
-        }
-
-        private String RemoveSpaces(String str1)
-        {
-            int start;
-            int at;
-            int end;
-
-            String str2 = String.Copy(str1);
-            
-            at = 0;
-            end = str2.Length - 1;
-            start = 0;
-            
-            while ((start <= end) && (at > -1))
-            {
-                // start+count must be a position within str2.
-                at = str2.IndexOf(" ", start);
-                if (at == -1) break;
-                str2 = str2.Remove(at,1);
-                start = at+1;
-            }
-
-            return str2;
         }
 
         /// <summary> 
@@ -123,6 +102,7 @@ namespace PaintDotNet
                     components = null;
                 }
             }
+
             base.Dispose(disposing);
         }
 
@@ -133,25 +113,24 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            this.label1 = new System.Windows.Forms.Label();
+            this.fillStyleLabel = new System.Windows.Forms.Label();
             this.styleComboBox = new System.Windows.Forms.ComboBox();
             this.dotNetToolbar1 = new DotNetWidgets.DotNetToolbar();
-            this.dotNetToolbarButtonItem1 = new DotNetWidgets.DotNetToolbarButtonItem();
+            this.dotNetToolbarButtonItem1 = ((DotNetWidgets.DotNetToolbarButtonItem)(new DotNetWidgets.DotNetToolbarButtonItem()));
             this.SuspendLayout();
             // 
-            // label1
+            // fillStyleLabel
             // 
-            this.label1.Location = new System.Drawing.Point(12, 1);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(72, 23);
-            this.label1.TabIndex = 5;
-            this.label1.Text = "Fill Style:";
-            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.fillStyleLabel.Location = new System.Drawing.Point(12, 1);
+            this.fillStyleLabel.Name = "fillStyleLabel";
+            this.fillStyleLabel.Size = new System.Drawing.Size(82, 23);
+            this.fillStyleLabel.TabIndex = 5;
+            this.fillStyleLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // styleComboBox
             // 
             this.styleComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.styleComboBox.Location = new System.Drawing.Point(68, 3);
+            this.styleComboBox.Location = new System.Drawing.Point(78, 3);
             this.styleComboBox.Name = "styleComboBox";
             this.styleComboBox.Size = new System.Drawing.Size(128, 21);
             this.styleComboBox.TabIndex = 6;
@@ -176,10 +155,10 @@ namespace PaintDotNet
             // BrushConfigWidget
             // 
             this.Controls.Add(this.styleComboBox);
-            this.Controls.Add(this.label1);
+            this.Controls.Add(this.fillStyleLabel);
             this.Controls.Add(this.dotNetToolbar1);
             this.Name = "BrushConfigWidget";
-            this.Size = new System.Drawing.Size(304, 224);
+            this.Size = new System.Drawing.Size(226, 32);
             this.ResumeLayout(false);
 
         }
@@ -211,7 +190,9 @@ namespace PaintDotNet
 
             if (e.Index != -1)
             {
-                if (e.Index > 0)
+                string itemName = (string)this.styleComboBox.Items[e.Index];
+
+                if (itemName != this.solidBrushText)
                 {
                     Rectangle rd = r; 
                     rd.Width = rd.Left + 25; 
@@ -220,7 +201,7 @@ namespace PaintDotNet
                     r.X = rd.Right; 
 
                     string displayText = this.styleComboBox.Items[e.Index].ToString();
-                    HatchStyle hs = this.getHatchStyle(displayText);
+                    HatchStyle hs = (HatchStyle)this.hatchStyleNames.LocalizedNameToEnumValue(displayText);
 
                     using (HatchBrush b = new HatchBrush(hs, e.ForeColor, e.BackColor))
                     {
@@ -250,6 +231,7 @@ namespace PaintDotNet
                 }
                 else
                 {
+                    // Solid Brush
                     using (SolidBrush sb = new SolidBrush(Color.White))
                     {
                         if ((e.State & DrawItemState.Focus) == 0)
@@ -277,18 +259,17 @@ namespace PaintDotNet
 
         private void comboBoxStyle_MeasureItem(object sender, System.Windows.Forms.MeasureItemEventArgs e)
         {
-            //Work out what the text will be
+            // Work out what the text will be
             string displayText = this.styleComboBox.Items[e.Index].ToString();
 
-            //Get width & height of string
+            // Get width & height of string
             SizeF stringSize = e.Graphics.MeasureString(displayText, this.Font);
 
-            // set hight to text height
+            // set height to text height
             e.ItemHeight = (int)stringSize.Height;  
 
             // set width to text width
             e.ItemWidth = (int)stringSize.Width;
         }
-
     }
 }

@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -25,7 +26,6 @@ namespace PaintDotNet
         private DotNetWidgets.DotNetToolbarButtonItem redoButton;
         private DotNetWidgets.DotNetToolbarButtonItem fastForwardButton;
         private DotNetWidgets.DotNetToolbarButtonItem rewindButton;
-        private DotNetWidgets.DotNetToolbarButtonItem limitButton;
         private System.ComponentModel.IContainer components;
 
         public HistoryControl HistoryControl
@@ -45,19 +45,24 @@ namespace PaintDotNet
 
             imageList.TransparentColor = Color.FromArgb(192, 192, 192);
 
-            int clearHistoryIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuLayersDeleteLayerIcon.bmp"), imageList.TransparentColor);
-            int rewindIndex = imageList.Images.Add(Utility.GetImageResource("Icons.HistoryRewindIcon.bmp"), imageList.TransparentColor);
-            int undoIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuEditUndoIcon.bmp"), imageList.TransparentColor);
-            int redoIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuEditRedoIcon.bmp"), imageList.TransparentColor);
-            int fastForwardIndex = imageList.Images.Add(Utility.GetImageResource("Icons.HistoryFastForwardIcon.bmp"), imageList.TransparentColor);
-            int limitIndex = imageList.Images.Add(Utility.GetImageResource("Icons.HistoryLimitIcon.bmp"), imageList.TransparentColor);
+            int clearHistoryIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersDeleteLayerIcon.bmp"), imageList.TransparentColor);
+            int rewindIndex = imageList.Images.Add(PdnResources.GetImage("Icons.HistoryRewindIcon.bmp"), imageList.TransparentColor);
+            int undoIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuEditUndoIcon.bmp"), imageList.TransparentColor);
+            int redoIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuEditRedoIcon.bmp"), imageList.TransparentColor);
+            int fastForwardIndex = imageList.Images.Add(PdnResources.GetImage("Icons.HistoryFastForwardIcon.bmp"), imageList.TransparentColor);
 
             clearHistoryButton.ImageIndex = clearHistoryIndex;
             rewindButton.ImageIndex = rewindIndex;
             undoButton.ImageIndex = undoIndex;
             redoButton.ImageIndex = redoIndex;
             fastForwardButton.ImageIndex = fastForwardIndex;
-            limitButton.ImageIndex = limitIndex;
+
+            this.Text = PdnResources.GetString("HistoryForm.Text");
+            this.rewindButton.ToolTipText = PdnResources.GetString("HistoryForm.RewindButton.ToolTipText");
+            this.undoButton.ToolTipText = PdnResources.GetString("HistoryForm.UndoButton.ToolTipText");
+            this.redoButton.ToolTipText = PdnResources.GetString("HistoryForm.RedoButton.ToolTipText");
+            this.fastForwardButton.ToolTipText = PdnResources.GetString("HistoryForm.FastForwardButton.ToolTipText");
+            this.clearHistoryButton.ToolTipText = PdnResources.GetString("HistoryForm.ClearHistoryButton.ToolTipText");
         }
 
         protected override void OnLayout(LayoutEventArgs levent)
@@ -74,7 +79,7 @@ namespace PaintDotNet
 
         protected override void OnEnableStyles()
         {
-            //base.OnEnableStyles ();
+            //base.OnEnableStyles();
         }
 
         /// <summary>
@@ -109,7 +114,6 @@ namespace PaintDotNet
             this.redoButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.fastForwardButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.clearHistoryButton = new DotNetWidgets.DotNetToolbarButtonItem();
-            this.limitButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.imageList = new System.Windows.Forms.ImageList(this.components);
             this.SuspendLayout();
             // 
@@ -130,7 +134,6 @@ namespace PaintDotNet
             this.dotNetToolbar.Buttons.Add(this.redoButton);
             this.dotNetToolbar.Buttons.Add(this.fastForwardButton);
             this.dotNetToolbar.Buttons.Add(this.clearHistoryButton);
-            this.dotNetToolbar.Buttons.Add(this.limitButton);
             this.dotNetToolbar.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.dotNetToolbar.DrawGrabHandle = false;
             this.dotNetToolbar.ImageList = this.imageList;
@@ -141,30 +144,7 @@ namespace PaintDotNet
             this.dotNetToolbar.Size = new System.Drawing.Size(160, 26);
             this.dotNetToolbar.TabIndex = 1;
             this.dotNetToolbar.ButtonClick += new DotNetWidgets.DotNetToolbar.ButtonClickEventHandler(this.dotNetToolbar_ButtonClick);
-            // 
-            // rewindButton
-            // 
-            this.rewindButton.ToolTipText = "Undo All (Rewind)";
-            // 
-            // undoButton
-            // 
-            this.undoButton.ToolTipText = "Undo (Step Backward)";
-            // 
-            // redoButton
-            // 
-            this.redoButton.ToolTipText = "Redo (Step Forward)";
-            // 
-            // fastForwardButton
-            // 
-            this.fastForwardButton.ToolTipText = "Redo All (Fast Forward)";
-            // 
-            // clearHistoryButton
-            // 
-            this.clearHistoryButton.ToolTipText = "Clear History";
-            //
-            // limitHistoryButton
-            //
-            this.limitButton.ToolTipText = "Limit History";
+        
             // 
             // imageList
             // 
@@ -179,7 +159,6 @@ namespace PaintDotNet
             this.Controls.Add(this.dotNetToolbar);
             this.Controls.Add(this.historyControl);
             this.Name = "HistoryForm";
-            this.Text = "History";
             this.Enter += new System.EventHandler(this.HistoryForm_Enter);
             this.Controls.SetChildIndex(this.historyControl, 0);
             this.Controls.SetChildIndex(this.dotNetToolbar, 0);
@@ -257,20 +236,6 @@ namespace PaintDotNet
             OnFastForwardButtonClicked();
         }
 
-        public event EventHandler LimitButtonClicked;
-        protected virtual void OnLimitButtonClicked()
-        {
-            if (LimitButtonClicked != null)
-            {
-                LimitButtonClicked(this, EventArgs.Empty);
-            }
-        }
-
-        public void PerformLimitButtonClick()
-        {
-            OnLimitButtonClicked();
-        }
-
         private void dotNetToolbar_ButtonClick(object sender, DotNetWidgets.DotNetToolbarItemClickEventArgs e)
         {
             if (e.Button == clearHistoryButton)
@@ -293,10 +258,6 @@ namespace PaintDotNet
             {
                 OnFastForwardButtonClicked();
             }
-            else if (e.Button == limitButton)
-            {
-                OnLimitButtonClicked();
-            }
         }
 
         private void HistoryForm_Enter(object sender, System.EventArgs e)
@@ -306,7 +267,6 @@ namespace PaintDotNet
 
         private void historyControl_HistoryChanged(object sender, System.EventArgs e)
         {
-            // TODO: remove this abomination
             OnRelinquishFocus();
 
             // Find reasons to disable the rewind and undo buttons

@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -11,7 +12,7 @@ using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 
-namespace PaintDotNet.Effects
+namespace PaintDotNet.Effects.RotateZoom
 {
     /// <summary>
     /// Summary description for RotateZoomEffectConfigToken.
@@ -19,20 +20,52 @@ namespace PaintDotNet.Effects
     public class RotateZoomEffectConfigToken
         : EffectConfigToken
     {
-        internal struct RzInfo
+        internal class RzInfo
         {
             // gradients
-            public float dsxddx;
-            public float dsxddy;
-            public float dsyddy;
-            public float dsyddx;
+            public float startX;
+            public float startY;
+            public float startZ;
+            public float dsxdx;
+            public float dsydx;
+            public float dszdx;
+            public float dsxdy;
+            public float dsydy;
+            public float dszdy;
 
-            // degrees -> radians
-            public float angleRadians;
+            private void Transform(RotateZoomEffectConfigToken token, int x, int y, out float sx, out float sy, out float sz)
+            {
+                float rb = token.preRotateZ;
+                float ra = token.postRotateZ;
+                float r = -token.tilt;
+                float crb = (float)Math.Cos(rb);
+                float cr = (float)Math.Cos(r);
+                float cra = (float)Math.Cos(ra);
+                float srb = (float)Math.Sin(rb);
+                float sr = (float)Math.Sin(r);
+                float sra = (float)Math.Sin(ra);
+                float ox = x, oy = y, oz = 0;
+            
+                sx = (ox * crb + oy * srb) / cr;
+                sy = -ox * srb + oy * crb;
 
-            // cache cos() and sin() of angle
-            public float angleCos;
-            public float angleSin;
+                sz = sx * sr;
+                sx = sx / cr;
+                ox = sx; oy = sy; oz = sz;
+            
+                sx =  ox * cra + oy * sra;
+                sy = -ox * sra + oy * cra;
+            }
+
+            public void Update(RotateZoomEffectConfigToken token)
+            {
+                Transform(token, 0, 0, out startX, out startY, out startZ);
+                Transform(token, 1, 0, out dsxdx, out dsydx, out dszdx);
+                Transform(token, 0, 1, out dsxdy, out dsydy, out dszdy);
+    
+                dsxdx -= startX; dsydx -= startY; dszdx -= startZ;
+                dsxdy -= startX; dsydy -= startY; dszdy -= startZ;
+            }
         }
 
         private void UpdateRzInfo()
@@ -40,22 +73,21 @@ namespace PaintDotNet.Effects
             lock (this)
             {
                 computedOnce = new RzInfo();
+                computedOnce.Update(this);
+            }
+        }
 
-                computedOnce.angleRadians = ((float)this.Angle * (float)Math.PI) / 180.0f;
-                computedOnce.angleCos = (float)Math.Cos(computedOnce.angleRadians);
-                computedOnce.angleSin = (float)Math.Sin(computedOnce.angleRadians);
-            
-                float sxul = ((1 * computedOnce.angleCos) - (1 * computedOnce.angleSin)) * this.Zoom;
-                float syul = ((1 * computedOnce.angleSin) + (1 * computedOnce.angleCos)) * this.Zoom;
-                float sxur = ((2 * computedOnce.angleCos) - (1 * computedOnce.angleSin)) * this.Zoom;
-                float syur = ((2 * computedOnce.angleSin) + (1 * computedOnce.angleCos)) * this.Zoom;
-                float sxll = ((1 * computedOnce.angleCos) - (2 * computedOnce.angleSin)) * this.Zoom;
-                float syll = ((1 * computedOnce.angleSin) + (2 * computedOnce.angleCos)) * this.Zoom;
+        private bool highQuality;
+        public bool HighQuality
+        {
+            get
+            {
+                return highQuality;
+            }
 
-                computedOnce.dsxddx = sxur - sxul;
-                computedOnce.dsxddy = sxll - sxul;
-                computedOnce.dsyddy = syll - syul;
-                computedOnce.dsyddx = syur - syul;
+            set
+            {
+                this.highQuality = value;
             }
         }
 
@@ -68,17 +100,47 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private float angle;
-        public float Angle
+        private float preRotateZ;
+        public float PreRotateZ
         {
             get
             {
-                return angle;
+                return preRotateZ;
             }
 
             set
             {
-                angle = value;
+                preRotateZ = value;
+                UpdateRzInfo();
+            }
+        }
+
+        private float postRotateZ;
+        public float PostRotateZ
+        {
+            get
+            {
+                return postRotateZ;
+            }
+
+            set
+            {
+                postRotateZ = value;
+                UpdateRzInfo();
+            }
+        }
+
+        private float tilt;
+        public float Tilt
+        {
+            get
+            {
+                return tilt;
+            }
+
+            set
+            {
+                tilt = value;
                 UpdateRzInfo();
             }
         }
@@ -113,19 +175,60 @@ namespace PaintDotNet.Effects
             }
         }
 
-		public RotateZoomEffectConfigToken(float angle, float zoom, bool sourceAsBackground)
-		{
-            this.angle = angle;
+        private bool tile;
+        public bool Tile
+        {
+            get
+            {
+                return tile;
+            }
+
+            set
+            {
+                tile = value;
+                UpdateRzInfo();
+            }
+        }
+
+        private PointF offset;
+        public PointF Offset
+        {
+            get
+            {
+                return offset;
+            }
+
+            set
+            {
+                offset = value;
+                UpdateRzInfo();
+            }
+        }
+
+        public RotateZoomEffectConfigToken(bool highQuality, float preRotateZ, float postRotateZ, 
+            float tilt, float zoom, PointF offset, bool sourceAsBackground, bool tile)
+        {
+            this.highQuality = highQuality;
+            this.preRotateZ = preRotateZ;
+            this.postRotateZ = postRotateZ;
+            this.tilt = tilt;
+            this.offset = offset;
             this.zoom = zoom;
+            this.tile = tile;
             this.sourceAsBackground = sourceAsBackground;
             UpdateRzInfo();
         }
 
         protected RotateZoomEffectConfigToken(RotateZoomEffectConfigToken copyMe)
         {
-            this.angle = copyMe.angle;
+            this.highQuality = copyMe.highQuality;
+            this.preRotateZ = copyMe.preRotateZ;
+            this.postRotateZ = copyMe.postRotateZ;
+            this.tilt = copyMe.tilt;
+            this.offset = copyMe.offset;
             this.zoom = copyMe.zoom;
             this.sourceAsBackground = copyMe.sourceAsBackground;
+            this.tile = copyMe.tile;
             UpdateRzInfo();
         }
 

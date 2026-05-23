@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -32,6 +33,15 @@ namespace PaintDotNet
             get
             {
                 return new Size(48, 48);
+            }
+        }
+
+        public event EventHandler UserForeAndBackColorsChanged;
+        protected virtual void OnUserForeAndBackColorsChanged()
+        {
+            if (UserForeAndBackColorsChanged != null)
+            {
+                UserForeAndBackColorsChanged(this, EventArgs.Empty);
             }
         }
 
@@ -94,15 +104,28 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            swapIconBox.Icon = new Bitmap(Utility.GetImageResource("Icons.SwapIcon.bmp"));
+            swapIconBox.Icon = new Bitmap(PdnResources.GetImage("Icons.SwapIcon.bmp"));
             swapIconBox.TransparentColor = Color.FromArgb(192, 192, 192);
-            blackAndWhiteIconBox.Icon = new Bitmap(Utility.GetImageResource("Icons.BlackAndWhiteIcon.bmp"));
+            blackAndWhiteIconBox.Icon = new Bitmap(PdnResources.GetImage("Icons.BlackAndWhiteIcon.bmp"));
             blackAndWhiteIconBox.TransparentColor = Color.FromArgb(192, 192, 192);
 
-            toolTip.SetToolTip(swapIconBox, "Swap Colors");
-            toolTip.SetToolTip(blackAndWhiteIconBox, "Black and White");
-            toolTip.SetToolTip(foreColorRectangle, "Foreground");
-            toolTip.SetToolTip(backColorRectangle, "Background");
+            toolTip.SetToolTip(swapIconBox, PdnResources.GetString("ColorDisplayWidget.SwapIconBox.ToolTipText"));
+            toolTip.SetToolTip(blackAndWhiteIconBox, PdnResources.GetString("ColorDisplayWidget.BlackAndWhiteIconBox.ToolTipText"));
+            toolTip.SetToolTip(foreColorRectangle, PdnResources.GetString("ColorDisplayWidget.ForeColorRectangle.ToolTipText"));
+            toolTip.SetToolTip(backColorRectangle, PdnResources.GetString("ColorDisplayWidget.BackColorRectangle.ToolTipText"));
+        }
+
+        protected override void OnLayout(LayoutEventArgs levent)
+        {
+            int ulX = (this.ClientRectangle.Width - this.DefaultSize.Width) / 2;
+            int ulY = (this.ClientRectangle.Height - this.DefaultSize.Height) / 2;
+
+            this.foreColorRectangle.Location = new System.Drawing.Point(ulX + 2, ulY + 2);
+            this.backColorRectangle.Location = new System.Drawing.Point(ulX + 18, ulY + 18);
+            this.swapIconBox.Location = new System.Drawing.Point(ulX + 30, ulY + 2);
+            this.blackAndWhiteIconBox.Location = new System.Drawing.Point(ulX + 2, ulY + 31);
+
+            base.OnLayout (levent);
         }
 
         /// <summary> 
@@ -138,7 +161,6 @@ namespace PaintDotNet
             // 
             // foreColorRectangle
             // 
-            this.foreColorRectangle.Location = new System.Drawing.Point(2, 2);
             this.foreColorRectangle.Name = "foreColorRectangle";
             this.foreColorRectangle.RectangleColor = System.Drawing.Color.FromArgb(((System.Byte)(0)), ((System.Byte)(0)), ((System.Byte)(192)));
             this.foreColorRectangle.Size = new System.Drawing.Size(28, 28);
@@ -148,7 +170,6 @@ namespace PaintDotNet
             // 
             // backColorRectangle
             // 
-            this.backColorRectangle.Location = new System.Drawing.Point(18, 18);
             this.backColorRectangle.Name = "backColorRectangle";
             this.backColorRectangle.RectangleColor = System.Drawing.Color.Magenta;
             this.backColorRectangle.Size = new System.Drawing.Size(28, 28);
@@ -159,7 +180,6 @@ namespace PaintDotNet
             // swapIconBox
             // 
             this.swapIconBox.Icon = null;
-            this.swapIconBox.Location = new System.Drawing.Point(30, 2);
             this.swapIconBox.Name = "swapIconBox";
             this.swapIconBox.Size = new System.Drawing.Size(16, 16);
             this.swapIconBox.TabIndex = 2;
@@ -172,7 +192,6 @@ namespace PaintDotNet
             // blackAndWhiteIconBox
             // 
             this.blackAndWhiteIconBox.Icon = null;
-            this.blackAndWhiteIconBox.Location = new System.Drawing.Point(2, 31);
             this.blackAndWhiteIconBox.Name = "blackAndWhiteIconBox";
             this.blackAndWhiteIconBox.Size = new System.Drawing.Size(16, 16);
             this.blackAndWhiteIconBox.TabIndex = 3;
@@ -205,16 +224,14 @@ namespace PaintDotNet
             ColorBgra back = UserBackColor;
             UserForeColor = back;
             UserBackColor = fore;
-            OnUserForeColorChanged();
-            OnUserBackColorChanged();
+            OnUserForeAndBackColorsChanged();
         }
 
         private void blackAndWhiteIconBox_Click(object sender, System.EventArgs e)
         {
             UserForeColor = ColorBgra.FromBgra(0, 0, 0, 255);
-            OnUserForeColorChanged();
             UserBackColor = ColorBgra.FromBgra(255, 255, 255, 255);
-            OnUserBackColorChanged();
+            OnUserForeAndBackColorsChanged();
         }
 
         public event EventHandler UserForeColorClick;

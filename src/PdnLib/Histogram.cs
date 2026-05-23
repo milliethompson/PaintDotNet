@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -11,229 +12,200 @@ using System.Drawing;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Histogram is used to calculate a histogram for a surface (in a selection,
-	/// if desired). This can then be used to retrieve percentile, average, peak,
-	/// and distribution information.
-	/// </summary>
-	public class Histogram
-	{
-		private long [,] hist = new long[3, 256];
-
-		public event EventHandler HistogramChanged;
-		private void OnHistogramUpdated()
-		{
-			if (HistogramChanged != null)
-			{
-				HistogramChanged(this, EventArgs.Empty);
-			}
-		}
-
-		public long GetOccurrences(int channel, byte val) 
-		{
-			if (channel < 0 || channel >= 3) 
-			{
-				throw new ArgumentOutOfRangeException("channel", channel, "Channel must be between 0 and 2");
-			}
-
-			//val does not need to be bounds-checked because it
-			//has been intentionally limited to a byte.
-			return hist[channel, val];
-		}
-
-		public long GetMax() 
-		{
-			return Math.Max(Math.Max(GetMax(0), GetMax(1)), GetMax(2));
-		}
-
-		public long GetMax(int channel) 
-		{
-			if (channel < 0 || channel >= 3) 
-			{
-				throw new ArgumentOutOfRangeException("channel", channel, "Channel must be between 0 and 2");
-			}
-
-			long peak = -1, max = -1;
-
-			for (int v = 0; v < 256; v++) 
-			{
-				if (max < hist[channel, v]) 
-				{
-					max = hist[channel, v];
-					peak = v;
-				}
-			}
-			return max;
-		}
-
-		public ColorBgra GetMeanColor() 
-		{
-			ColorBgra ret = new ColorBgra();
-
-			for (int i = 0; i < 3; i++) 
-			{
-				long avg = 0;
-                long sum = 1;
-
-				for (int j = 0; j < 256; j++) 
-				{
-					avg += j * hist[i, j];
-					sum += hist[i, j];
-				}
-
-				ret[i] = (byte)(avg / sum);
-			}
-
-			ret.A = 255;
-			return ret;
-		}
-
-		public ColorBgra GetPercentileColor(float fraction) 
-		{
-			ColorBgra ret = new ColorBgra();
-
-			for (int i = 0; i < 3; i++) 
-			{
-				long sum = 0;
-                long len = 0;
-
-				for (int j = 0; j < 256; j++) 
-				{
-					len += hist[i, j];
-				}
-
-				for (int j = 0; j < 256; j++)
-				{
-					sum += hist[i, j];
-
-					if (sum > len * fraction) 
-					{
-						ret[i] = (byte)j;
-						break;
-					}
-				}
-			}
-
-			ret.A = 255;
-			return ret;
-		}
-
-
-		/// <summary>
-		/// Sets the histogram to be all zeros.
-		/// </summary>
-		private void Clear()
-		{
-			for (int c = 0; c < 3; c++) 
-			{
-				for (int v = 0; v < 256; v++) 
-				{
-					hist[c, v] = 0;
-				}
-			}
-		}
-
-	    public void UpdateHistogram(Surface surface)
-		{
-			using (PdnRegion total = new PdnRegion(new Rectangle(0, 0, surface.Width, surface.Height)))
-			{
-				UpdateHistogram(surface, total);	
-			}
-		}
-
-		public void UpdateHistogram(Surface surface, PdnRegion roi)
-		{
-			if (roi == null) 
-			{
-				throw new ArgumentNullException("roi", "roi must reference a valid PdnRegion.");
-			}
-
-			Clear();
-
-			foreach (Rectangle r in roi.GetRegionScansReadOnlyInt()) 
-			{
-                for (int y = r.Top; y < r.Bottom; ++y)
+    /// <summary>
+    /// Histogram is used to calculate a histogram for a surface (in a selection,
+    /// if desired). This can then be used to retrieve percentile, average, peak,
+    /// and distribution information.
+    /// </summary>
+    public abstract class Histogram
+    {
+        protected long [,] histogram = new long[3, 256];
+        public long[,] HistogramValues
+        {
+            get
+            {
+                return histogram;
+            }
+            set
+            {
+                if (value.GetLength(0) == histogram.GetLength(0) && value.GetLength(1) == histogram.GetLength(1))
                 {
-                    for (int x = r.Left; x < r.Right; ++x)
+                    histogram = value;
+                    OnHistogramUpdated();
+                }
+                else
+                {
+                    throw new ArgumentException("value muse be a 3x256 array", "value");
+                }
+            }
+        }
+     
+        public int Channels
+        {
+            get
+            {
+                return histogram.GetLength(0);
+            }
+        }
+     
+        public int Entries
+        {
+            get
+            {
+                return histogram.GetLength(1);
+            }
+        }
+
+        public event EventHandler HistogramChanged;
+        protected void OnHistogramUpdated()
+        {
+            if (HistogramChanged != null)
+            {
+                HistogramChanged(this, EventArgs.Empty);
+            }
+        }
+
+        protected ColorBgra[] visualColors;
+        public ColorBgra GetVisualColor(int channel)
+        {
+            return visualColors[channel];
+        }
+
+        public long GetOccurrences(int channel, int val) 
+        {
+            return histogram[channel, val];
+        }
+
+        public long GetMax() 
+        {
+            long max = -1;
+
+            foreach (long i in histogram)
+            {
+                if (i > max)
+                {
+                    max = i;
+                }
+            }
+            
+            return max;
+        }
+
+        public long GetMax(int channel) 
+        {
+            if (channel < 0 || channel >= 3) 
+            {
+                throw new ArgumentOutOfRangeException("channel", channel, "Channel must be between 0 and 2");
+            }
+
+            long max = -1;
+
+            for (int v = 0; v < 256; v++) 
+            {
+                if (max < histogram[channel, v]) 
+                {
+                    max = histogram[channel, v];
+                }
+            }
+
+            return max;
+        }
+
+        public float[] GetMean() 
+        {
+            float[] ret = new float[histogram.GetLength(0)];
+
+            for (int i = 0; i < histogram.GetLength(0); i++) 
+            {
+                long avg = 0;
+                long sum = 0;
+
+                for (int j = 0; j < histogram.GetLength(1); j++) 
+                {
+                    avg += j * histogram[i, j];
+                    sum += histogram[i, j];
+                }
+
+                if (sum != 0)
+                {
+                    ret[i] = (float)avg / (float)sum;
+                }
+                else
+                {
+                    ret[i] = 0;
+                }
+            }
+
+            return ret;
+        }
+
+        public int[] GetPercentile(float fraction) 
+        {
+            int[] ret = new int[histogram.GetLength(0)];
+
+            for (int i = 0; i < histogram.GetLength(0); i++) 
+            {
+                long integral = 0;
+                long sum = 0;
+
+                for (int j = 0; j < histogram.GetLength(1); j++) 
+                {
+                    sum += histogram[i, j];
+                }
+
+                for (int j = 0; j < histogram.GetLength(1); j++)
+                {
+                    integral += histogram[i, j];
+
+                    if (integral > sum * fraction) 
                     {
-                        ColorBgra pixel = surface[x, y];
-                        ++hist[0, pixel.B];
-                        ++hist[1, pixel.G];
-                        ++hist[2, pixel.R];
+                        ret[i] = j;
+                        break;
                     }
                 }
-			}
+            }
 
-			OnHistogramUpdated();
-		}
+            return ret;
+        }
 
-		public void SetFromLeveledHistogram(Histogram inputHistogram, UnaryPixelOps.Level upo)
-		{
-			if (inputHistogram == null || upo == null) 
-			{
-				return;
-			}
+        public abstract ColorBgra GetMeanColor();
 
-			Clear();
+        public abstract ColorBgra GetPercentileColor(float fraction);
 
-			for (int v = 0; v <= 255; v ++)
-			{
-				ColorBgra after = ColorBgra.FromRgb((byte)v, (byte)v, (byte)v);
-				float [] before = new float[3];
-				float [] slopes = new float[3];
+        /// <summary>
+        /// Sets the histogram to be all zeros.
+        /// </summary>
+        protected void Clear()
+        {
+            histogram.Initialize();
+        }
 
-				upo.UnApply(after, before, slopes);
+        protected abstract void AddSurfaceRectangleToHistogram(Surface surface, Rectangle rect);
 
-				for (int c = 0; c < 3; c++) 
-				{
-					if (after[c] > upo.ColorOutHigh[c]
-						|| after[c] < upo.ColorOutLow[c]
-						|| (int)Math.Floor(before[c]) < 0
-						|| (int)Math.Ceiling(before[c]) > 255
-						|| float.IsNaN(before[c])) 
-					{
-						hist[c, v] = 0;
-					}
-					else if (before[c] <= upo.ColorInLow[c]) 
-					{
-						hist[c, v] = 0;
+        public void UpdateHistogram(Surface surface)
+        {
+            Clear();
+            AddSurfaceRectangleToHistogram(surface, surface.Bounds);
+            OnHistogramUpdated();
+        }
 
-						for (int i = 0; i <= upo.ColorInLow[c]; i++)
-						{
-							hist[c, v] += inputHistogram.hist[c, i];
-						}
-					} 
-					else if (before[c] >= upo.ColorInHigh[c])
-					{
-						hist[c, v] = 0;
+        public void UpdateHistogram(Surface surface, Rectangle rect)
+        {
+            Clear();
+            AddSurfaceRectangleToHistogram(surface, rect);
+            OnHistogramUpdated();
+        }
 
-						for (int i = upo.ColorInHigh[c]; i < 256; i++)
-						{
-							hist[c, v] += inputHistogram.hist[c, i];
-						}
-					}
-					else
-					{
-						hist[c, v] = (int)(slopes[c] * Utility.Lerp(
-							inputHistogram.hist[c, (int)Math.Floor(before[c])],
-							inputHistogram.hist[c, (int)Math.Ceiling(before[c])],
-							before[c] - Math.Floor(before[c])));
-					}
-				}
-			}
+        public void UpdateHistogram(Surface surface, PdnRegion roi)
+        {
+            Clear();
 
-			OnHistogramUpdated();
-		}
+            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt()) 
+            {
+                AddSurfaceRectangleToHistogram(surface, rect);
+            }
 
-		public UnaryPixelOps.Level MakeLevelsAuto() 
-		{
-			ColorBgra lo, md, hi;
-
-			lo = GetPercentileColor(0.005f);
-			md = GetMeanColor();
-			hi = GetPercentileColor(0.995f);
-
-			return UnaryPixelOps.Level.AutoFromLoMdHi(lo, md, hi);
-		}
-	}
+            OnHistogramUpdated();
+        }
+    }
 }

@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -20,10 +21,11 @@ namespace PaintDotNet
         : Tool
     {
         private bool tracking = false;
-		private Point lastMouseXY;
-		private Cursor cursorMouseDown;
+        private Point lastMouseXY;
+        private Cursor cursorMouseDown;
         private Cursor cursorMouseUp;
         private Cursor cursorMouseInvalid;
+        private int ignoreMouseMove = 0;
 
         private bool CanPan()
         {
@@ -39,7 +41,7 @@ namespace PaintDotNet
 
         protected override void OnMouseDown(System.Windows.Forms.MouseEventArgs e)
         {
-            base.OnMouseDown (e);
+            base.OnMouseDown(e);
 
             lastMouseXY = new Point(e.X, e.Y);
             tracking = true;
@@ -72,20 +74,23 @@ namespace PaintDotNet
 
         protected override void OnMouseMove(System.Windows.Forms.MouseEventArgs e)
         {
-            base.OnMouseMove (e);
+            base.OnMouseMove(e);
 
-            if (tracking)
+            if (this.ignoreMouseMove > 0)
+            {
+                --this.ignoreMouseMove;
+            }
+            else if (tracking)
             {
                 Point mouseXY = new Point(e.X, e.Y);
                 Size delta = new Size(mouseXY.X - lastMouseXY.X, mouseXY.Y - lastMouseXY.Y);
 
                 if (delta.Width != 0 || delta.Height != 0)
                 {
-                    Point scrollPos = Point.Round(Workspace.DocumentView.DocumentScrollPosition);
+                    Point scrollPos = Workspace.DocumentView.DocumentScrollPosition;
                     Point newScrollPos = new Point(scrollPos.X - delta.Width, scrollPos.Y - delta.Height);
-                    
+                    ++this.ignoreMouseMove; // setting DocumentScrollPosition incurs a MouseMove event
                     Workspace.DocumentView.DocumentScrollPosition = newScrollPos;
-                    Workspace.DocumentView.Update();
 
                     lastMouseXY = mouseXY;
                     lastMouseXY.X -= delta.Width;
@@ -105,21 +110,47 @@ namespace PaintDotNet
             }
         }
 
+        protected override void OnActivate()
+        {
+            // cursor-action assignments
+            this.cursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.PanToolCursorMouseDown.cur"));
+            this.cursorMouseUp = new Cursor(PdnResources.GetResourceStream("Cursors.PanToolCursor.cur"));
+            this.cursorMouseInvalid = new Cursor(PdnResources.GetResourceStream("Cursors.PanToolCursorInvalid.cur"));
+            this.Cursor = cursorMouseUp;
+            base.OnActivate();
+        }
+
+        protected override void OnDeactivate()
+        {
+            if (cursorMouseDown != null)
+            {
+                cursorMouseDown.Dispose();
+                cursorMouseDown = null;
+            }
+
+            if (cursorMouseUp != null)
+            {
+                cursorMouseUp.Dispose();
+                cursorMouseUp = null;
+            }
+
+            if (cursorMouseInvalid != null)
+            {
+                cursorMouseInvalid.Dispose();
+                cursorMouseInvalid = null;
+            }
+            
+            base.OnDeactivate ();
+        }
+
         public PanTool(DocumentWorkspace workspace)
             : base(workspace,
-                   Utility.GetImageResource("Icons.PanToolIcon.bmp"),
-                   "Pan",
-                   "Allows you to scroll throughout the document.",
-                   "When zoomed in close, click and drag to navigate the image",
+                   PdnResources.GetImage("Icons.PanToolIcon.bmp"),
+                   PdnResources.GetString("PanTool.Name"),
+                   PdnResources.GetString("PanTool.HelpText"), 
                    'h')
         {
-			// cursor-action assignments
-			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.PanToolCursorMouseDown.cur"));
-			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.PanToolCursor.cur"));
-            cursorMouseInvalid = new Cursor(Utility.GetResourceStream("Cursors.PanToolCursorInvalid.cur"));
-			Cursor = cursorMouseUp;
-			autoScroll = false;
-
+            autoScroll = false;
             tracking = false;
         }
 
@@ -130,24 +161,6 @@ namespace PaintDotNet
             if (disposing)
             {
                 DisposeImage();
-
-                if (cursorMouseDown != null)
-                {
-                    cursorMouseDown.Dispose();
-                    cursorMouseDown = null;
-                }
-
-                if (cursorMouseUp != null)
-                {
-                    cursorMouseUp.Dispose();
-                    cursorMouseUp = null;
-                }
-
-                if (cursorMouseInvalid != null)
-                {
-                    cursorMouseInvalid.Dispose();
-                    cursorMouseInvalid = null;
-                }
             }
         }
 

@@ -1,12 +1,14 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Collections;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -114,7 +116,11 @@ namespace PaintDotNet
 
         public void SetTool(Type toolType, DocumentWorkspace workspace)
         {
-            if (toolType == null)
+            if (toolType == GetToolType())
+            {
+                return;
+            }
+            else if (toolType == null)
             {
                 SetTool(null);
             }
@@ -143,6 +149,7 @@ namespace PaintDotNet
             if (tool != null)
             {
                 tool.PerformDeactivate();
+                tool.StatusChanged -= new EventHandler(tool_StatusChanged);
                 tool.Dispose();
                 tool = null;
             }
@@ -150,6 +157,7 @@ namespace PaintDotNet
             if (copyMe != null)
             {
                 tool = Tool.CreateTool(copyMe.GetType(), copyMe.Workspace);
+                tool.StatusChanged += new EventHandler(tool_StatusChanged);
                 tool.PerformActivate();
             }
 
@@ -368,6 +376,51 @@ namespace PaintDotNet
         }
         #endregion
 
+        #region AlphaBlending
+
+        public CompositingMode GetCompositingMode()
+        {
+            return alphaBlending ? CompositingMode.SourceOver : CompositingMode.SourceCopy;
+        }
+        
+        private bool alphaBlending;
+        public bool AlphaBlending
+        {
+            get
+            {
+                return alphaBlending;
+            }
+
+            set
+            {
+                if (value != alphaBlending)
+                {
+                    OnAlphaBlendingChanging();
+                    alphaBlending = value;
+                    OnAlphaBlendingChanged();
+                }
+            }
+        }
+
+        public event EventHandler AlphaBlendingChanging;
+        protected void OnAlphaBlendingChanging()
+        {
+            if (AlphaBlendingChanging != null)
+            {
+                AlphaBlendingChanging(this, EventArgs.Empty);
+            }
+        }
+
+        public event EventHandler AlphaBlendingChanged;
+        protected void OnAlphaBlendingChanged()
+        {
+            if (AlphaBlendingChanged != null)
+            {
+                AlphaBlendingChanged(this, EventArgs.Empty);
+            }
+        }
+        #endregion
+
         #region ShapeDrawType
         private ShapeDrawType shapeDrawType;
 
@@ -406,19 +459,29 @@ namespace PaintDotNet
         #endregion
 
         #region SelectedPath and helper methods
-        private PdnGraphicsPath selectedPath;
+        private Selection selection;
+        //private PdnGraphicsPath selectedPath;
 
-        /// <summary>
-        /// Gets or sets the currently selected path.
-        /// If you set this property, the DocumentEnvironment instance will take ownership
-        /// of the PdnGraphicsPath and you should NOT call Dispose() on it.
-        /// </summary>
-        /// <remarks>
-        /// If you are modifying the SelectedPath, you should call PerformSelectedPathChanging,
-        /// then modify the path, then call PerformSelectedPathChanged.
-        /// If you set this property, however, do not call those methods.
-        /// </remarks>
-        public PdnGraphicsPath SelectedPath
+        public Selection Selection
+        {
+            get
+            {
+                return this.selection;
+            }
+        }
+
+        /*
+            /// <summary>
+            /// Gets or sets the currently selected path.
+            /// If you set this property, the DocumentEnvironment instance will take ownership
+            /// of the PdnGraphicsPath and you should NOT call Dispose() on it.
+            /// </summary>
+            /// <remarks>
+            /// If you are modifying the SelectedPath, you should call PerformSelectedPathChanging,
+            /// then modify the path, then call PerformSelectedPathChanged.
+            /// If you set this property, however, do not call those methods.
+            /// </remarks>
+            public PdnGraphicsPath SelectedPath
         {
             get
             {
@@ -443,7 +506,9 @@ namespace PaintDotNet
                 OnSelectedPathChanged();
             }
         }
+        */
 
+        /*
         public bool IsSelectionEmpty
         {
             get
@@ -451,7 +516,9 @@ namespace PaintDotNet
                 return selectedPath.PointCount == 0;
             }
         }
+        */
 
+        /*
         public event EventHandler SelectedPathChanging;
         protected virtual void OnSelectedPathChanging()
         {
@@ -479,7 +546,9 @@ namespace PaintDotNet
         {
             OnSelectedPathChanged();
         }
+        */
 
+        /*
         /// <summary>
         /// Returns a copy of the currently selected region. This is not necessarily intersected
         /// with the document's bounds, so if you need that property to be true you will have to
@@ -490,6 +559,7 @@ namespace PaintDotNet
         {
             return new PdnRegion(selectedPath);
         }
+        */
         #endregion
 
         #region AntiAliasing
@@ -531,43 +601,96 @@ namespace PaintDotNet
         }
         #endregion
 
-		#region Tolerance
-		public event EventHandler ToleranceChanged;
-		protected void OnToleranceChanged()
-		{
-			if (ToleranceChanged != null)
-			{
-				ToleranceChanged(this, EventArgs.Empty);
-			}
-		}
+        #region Units
+        public event EventHandler UnitsChanging;
+        protected void OnUnitsChanging()
+        {
+            if (UnitsChanging != null)
+            {
+                UnitsChanging(this, EventArgs.Empty);
+            }
+        }
 
-		public event EventHandler ToleranceChanging;
-		protected void OnToleranceChanging()
-		{
-			if (ToleranceChanging != null)
-			{
-				ToleranceChanging(this, EventArgs.Empty);
-			}
-		}
+        public event EventHandler UnitsChanged;
+        protected void OnUnitsChanged()
+        {
+            if (UnitsChanged != null)
+            {
+                UnitsChanged(this, EventArgs.Empty);
+            }
+        }
 
-		private float tolerance;
-		public float Tolerance
-		{
-			get
-			{
-				return tolerance;
-			}
+        private MeasurementUnit units;
+        public MeasurementUnit Units
+        {
+            get
+            {
+                return this.units;
+            }
 
-			set
-			{
-				if (tolerance != value)
-				{
-					tolerance = value;
-					OnToleranceChanged();
-				}
-			}
-		}
-		#endregion
+            set
+            {
+                if (this.units != value)
+                {
+                    OnUnitsChanging();
+                    this.units = value;
+                    OnUnitsChanged();
+                }
+            }
+        }
+        #endregion
+
+        #region Tolerance
+        public event EventHandler ToleranceChanged;
+        protected void OnToleranceChanged()
+        {
+            if (ToleranceChanged != null)
+            {
+                ToleranceChanged(this, EventArgs.Empty);
+            }
+        }
+
+        public event EventHandler ToleranceChanging;
+        protected void OnToleranceChanging()
+        {
+            if (ToleranceChanging != null)
+            {
+                ToleranceChanging(this, EventArgs.Empty);
+            }
+        }
+
+        private float tolerance;
+        public float Tolerance
+        {
+            get
+            {
+                return tolerance;
+            }
+
+            set
+            {
+                if (tolerance != value)
+                {
+                    tolerance = value;
+                    OnToleranceChanged();
+                }
+            }
+        }
+        #endregion
+
+        #region Static Tool Data Locker
+        private Hashtable staticToolData = Hashtable.Synchronized(new Hashtable());
+
+        public object GetStaticToolData(Type toolType)
+        {
+            return staticToolData[toolType];
+        }
+
+        public void SetStaticToolData(Type toolType, object data)
+        {
+            staticToolData[toolType] = data;
+        }
+        #endregion
 
         public void PerformAllChanged()
         {
@@ -579,10 +702,11 @@ namespace PaintDotNet
             OnForeColorChanged();
             OnBackColorChanged();
             OnShapeDrawTypeChanged();
-			OnToleranceChanged();
+            OnAlphaBlendingChanged();
+            OnToleranceChanged();
         }
 
-        public void ResetToDefaults()
+        private void ResetToDefaults()
         {
             antiAliasing = true;
             tool = null;
@@ -592,19 +716,34 @@ namespace PaintDotNet
             penInfo.DashStyle = DashStyle.Solid;
             brushInfo.BrushType = BrushType.Solid;
             brushInfo.HatchStyle = HatchStyle.BackwardDiagonal;
-            fontInfo = new FontInfo(new FontFamily("Arial"), 12, 0); // Arial size 12, no bold/italic/underline
+            fontInfo = new FontInfo(new FontFamily("Arial"), 12, 0);
             textAlignment = TextAlignment.Left;
             shapeDrawType = ShapeDrawType.Outline;
-			tolerance = 0.5f;
-
-            OnSelectedPathChanging();
-            SelectedPath.Reset();
-            OnSelectedPathChanged();
+            alphaBlending = true;
+            tolerance = 0.5f;
+            this.selection.Reset();
         }
+
+        public event EventHandler ToolStatusChanged;
+        private void OnToolStatusChanged()
+        {
+            if (ToolStatusChanged != null)
+            {
+                ToolStatusChanged(this, EventArgs.Empty);
+            }
+        }
+
+        private void tool_StatusChanged(object sender, EventArgs e)
+        {
+            OnToolStatusChanged();
+        }
+    
 
         public DocumentEnvironment()
         {    
-            selectedPath = new PdnGraphicsPath();
+            this.selection = new Selection();
+            //this.selectedPath = new PdnGraphicsPath();
+            this.units = MeasurementUnit.Pixel;
             ResetToDefaults();
         }
 

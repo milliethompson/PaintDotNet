@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -30,7 +31,7 @@ namespace PaintDotNet
         private IndexEventHandler layerInsertedDelegate;
         private IndexEventHandler layerRemovedDelegate;
         
-        private const int elementHeight = 34;
+        private const int elementHeight = LayerElement.ThumbSize + 2;
         
         private DocumentWorkspace workspace;
         private Document document;
@@ -40,9 +41,9 @@ namespace PaintDotNet
 
         [Browsable(false)]
         public LayerElement[] Layers
-		{
-			get
-			{
+        {
+            get
+            {
                 if (layerControls == null)
                 {
                     return new LayerElement[0];
@@ -51,8 +52,8 @@ namespace PaintDotNet
                 {
                     return (LayerElement[])this.layerControls.ToArray(typeof(LayerElement));
                 }
-			}
-		}
+            }
+        }
 
         public BorderStyle BorderStyle
         {
@@ -230,6 +231,14 @@ namespace PaintDotNet
             layerControlPanel.ScrollControlIntoView(lec);
             lec.Select();
             lec.RefreshPreview();
+        }
+
+        public void RefreshPreviews()
+        {
+            for (int i = 0; i < this.layerControls.Count; ++i)
+            {
+                ((LayerElement)this.layerControls[i]).RefreshPreview();
+            }
         }
 
         /// <summary>

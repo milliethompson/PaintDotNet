@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -24,16 +25,45 @@ namespace PaintDotNet
 
         private void LoadCallback()
         {
-            document = fileType.Load(siphonStream);
+            try
+            {
+                document = fileType.Load(siphonStream);
+            }
+
+            catch
+            {
+                if (document != null)
+                {
+                    document.Dispose();
+                    document = null;
+                }
+
+                throw;
+            }
         }
 
-        public LoadProgressDialog(IWin32Window owner, Stream stream, FileType fileType)
-            : base(owner, Application.ProductName, "Loading:")
+        protected override void OnCancelClick()
+        {
+            SiphonStream stream = siphonStream;
+
+            if (stream != null)
+            {
+                stream.Abort(new ApplicationException("Aborted"));
+            }
+
+            base.OnCancelClick ();
+        }
+
+
+        public LoadProgressDialog(Control owner, Stream stream, FileType fileType)
+            : base(owner, 
+                   PdnInfo.GetProductName(),
+                   PdnResources.GetString("LoadProgressDialog.Description"))
         {
             this.fileType = fileType;
             this.siphonStream = new SiphonStream(stream);
             this.siphonStream.IOFinished += new IOEventHandler(siphonStream_IOFinished);
-            this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.ImageFromDiskIcon.bmp"), Color.FromArgb(192, 192, 192));
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.ImageFromDiskIcon.bmp"), Color.FromArgb(192, 192, 192));
         }
 
         /// <summary>
@@ -45,10 +75,16 @@ namespace PaintDotNet
         public Document Load()
         {
             totalBytes = 0;
-            DialogResult dr = this.ShowDialog(true, new ThreadStart(LoadCallback));
+            DialogResult dr = this.ShowDialog(true, false, new ThreadStart(LoadCallback));
 
             if (dr == DialogResult.Cancel)
             {
+                if (this.document != null)
+                {
+                    this.document.Dispose();
+                    this.document = null;
+                }
+
                 return null;
             }
 

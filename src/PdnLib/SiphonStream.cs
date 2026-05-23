@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -23,6 +24,8 @@ namespace PaintDotNet
     public class SiphonStream
         : Stream
     {
+        private Exception throwMe;
+
         private Stream stream;
         private int siphonSize;
 
@@ -40,13 +43,19 @@ namespace PaintDotNet
             }
         }
 
-        public event IOEventHandler IOBeginning;
-        protected void OnIOBeginning(IOEventArgs e)
+        /// <summary>
+        /// Causes the next call to Read() or Write() to throw an IOException instead. The
+        /// exception passed to this method will be used as the InnerException.
+        /// </summary>
+        /// <param name="throwMe"></param>
+        public void Abort(Exception throwMe)
         {
-            if (IOBeginning != null)
+            if (throwMe == null)
             {
-                IOBeginning(this, e);
+                throw new ArgumentException("throwMe may not be null", "throwMe");
             }
+
+            this.throwMe = throwMe;
         }
 
         public event IOEventHandler IOFinished;
@@ -58,19 +67,71 @@ namespace PaintDotNet
             }
         }
 
+        int readAccumulator = 0;
+        int writeAccumulator = 0;
+
+        private void ReadAccumulate(int count)
+        {
+            if (count == -1)
+            {
+                if (this.readAccumulator > 0)
+                {
+                    OnIOFinished(new IOEventArgs(IOOperationType.Read, this.Position, this.readAccumulator));
+                    this.readAccumulator = 0;
+                }
+            }
+            else
+            {
+                WriteAccumulate(-1);
+                this.readAccumulator += count;
+
+                while (this.readAccumulator > this.siphonSize)
+                {
+                    OnIOFinished(new IOEventArgs(IOOperationType.Read, this.Position - this.readAccumulator + this.siphonSize, this.siphonSize));
+                    this.readAccumulator -= this.siphonSize;
+                }
+            }
+        }
+
+        private void WriteAccumulate(int count)
+        {
+            if (count == -1)
+            {
+                if (this.writeAccumulator > 0)
+                {
+                    OnIOFinished(new IOEventArgs(IOOperationType.Write, this.Position, writeAccumulator));
+                    this.writeAccumulator = 0;
+                }
+            }
+            else
+            {
+                ReadAccumulate(-1);
+                this.writeAccumulator += count;
+
+                while (this.writeAccumulator > this.siphonSize)
+                {
+                    OnIOFinished(new IOEventArgs(IOOperationType.Write, this.Position - this.writeAccumulator + this.siphonSize, this.siphonSize));
+                    this.writeAccumulator -= this.siphonSize;
+                }
+            }
+        }
+
         public override int Read(byte[] buffer, int offset, int count)
         {
+            if (throwMe != null)
+            {
+                throw new IOException("Aborted", this.throwMe);
+            }
+
             int countLeft = count;
             int amountRead = 0;
 
             for (int cursor = 0; cursor < count; cursor += siphonSize)
             {
                 int count2 = Math.Min(siphonSize, countLeft);    
-                long position = this.Position;
 
-                OnIOBeginning(new IOEventArgs(IOOperationType.Read, position, count2));
                 amountRead += stream.Read(buffer, cursor, count2);
-                OnIOFinished(new IOEventArgs(IOOperationType.Read, position, count2));
+                ReadAccumulate(count2);
 
                 countLeft -= siphonSize;
             }
@@ -80,16 +141,19 @@ namespace PaintDotNet
 
         public override void Write(byte[] buffer, int offset, int count)
         {
+            if (throwMe != null)
+            {
+                throw new IOException("Aborted", this.throwMe);
+            }
+
             int countLeft = count;
 
             for (int cursor = 0; cursor < count; cursor += siphonSize)
             {
                 int count2 = Math.Min(siphonSize, countLeft);               
-                long position = this.Position;
 
-                OnIOBeginning(new IOEventArgs(IOOperationType.Write, position, count2));
                 stream.Write(buffer, cursor, count2);
-                OnIOFinished(new IOEventArgs(IOOperationType.Write, position, count2));
+                WriteAccumulate(count2);
 
                 countLeft -= siphonSize;
             }

@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -24,7 +25,7 @@ namespace PaintDotNet
     /// Each op should be marked with the [Serializable] attribute.
     /// 
     /// Also, all 3 overrides for Apply() should be implemented, for 
-    /// performance reasons. All blend op classes should also be sealed.
+    /// performance reasons. All ops should also be sealed.
     /// 
     /// The default blend op for any layer is NormalBlendOp.
     /// 
@@ -85,7 +86,7 @@ namespace PaintDotNet
             {
                 get
                 {
-                    return "Normal";
+                    return PdnResources.GetString("UserBlendOps.NormalBlendOp.Name");
                 }
             }
 
@@ -94,6 +95,7 @@ namespace PaintDotNet
                 return BinaryPixelOps.AlphaBlend.ApplyStatic(lhs, rhs);
             }
 
+#if false
             protected override unsafe void Apply(ColorBgra *dst, ColorBgra *lhs, ColorBgra *rhs, int length)
             {
                 BinaryPixelOps.AlphaBlend.ApplyStatic(dst, lhs, rhs, length);
@@ -103,6 +105,7 @@ namespace PaintDotNet
             {
                 BinaryPixelOps.AlphaBlend.ApplyStatic(dst, src, length);
             }
+#endif
 
             public NormalBlendOp()
             {
@@ -117,7 +120,7 @@ namespace PaintDotNet
             {
                 get
                 {
-                    return "Multiply";
+                    return PdnResources.GetString("UserBlendOps.MultiplyBlendOp.Name");
                 }
             }
 
@@ -184,7 +187,7 @@ namespace PaintDotNet
             {
                 get
                 {
-                    return "Additive";
+                    return PdnResources.GetString("UserBlendOps.AdditiveBlendOp.Name");
                 }
             }
 
@@ -243,7 +246,7 @@ namespace PaintDotNet
             {
                 get
                 {
-                    return "Difference";
+                    return PdnResources.GetString("UserBlendOps.DifferenceBlendOp.Name");
                 }
             }
 
@@ -251,7 +254,7 @@ namespace PaintDotNet
             {
                 while (length > 0)
                 {
-                    int rhsA = rhs->A + 1;
+                    int rhsA = rhs->A + (rhs->A >> 7);
 
                     *dst = ColorBgra.FromBgra(
                         (byte)Math.Abs(lhs->B - ((rhs->B * rhsA) / 256)),
@@ -305,7 +308,7 @@ namespace PaintDotNet
             {
                 get
                 {
-                    return "Screen";
+                    return PdnResources.GetString("UserBlendOps.ScreenBlendOp.Name");
                 }
             }
 
@@ -373,7 +376,7 @@ namespace PaintDotNet
             {
                 get
                 {
-                    return "Lighten";
+                    return PdnResources.GetString("UserBlendOps.LightenBlendOp.Name");
                 }
             }
 
@@ -441,7 +444,7 @@ namespace PaintDotNet
             {
                 get
                 {
-                    return "Darken";
+                    return PdnResources.GetString("UserBlendOps.DarkenBlendOp.Name");
                 }
             }
 
@@ -500,6 +503,5 @@ namespace PaintDotNet
             {
             }
         }
-
     }
 }

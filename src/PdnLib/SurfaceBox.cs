@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -25,8 +26,20 @@ namespace PaintDotNet
     public class SurfaceBox : 
         System.Windows.Forms.Control
     {
+        private int justPaintWhite = 0; // when this is non-zero, we just paint white (startup optimization)
         private ScaleFactor scaleFactor;
         private PaintDotNet.Threading.ThreadPool threadPool = new PaintDotNet.Threading.ThreadPool();
+        private SurfaceBoxRendererList renderers;
+        private SurfaceBoxBaseRenderer baseRenderer;
+        private SurfaceBoxGridRenderer gridRenderer;
+
+        public SurfaceBoxRendererList Renderers
+        {
+            get
+            {
+                return this.renderers;
+            }
+        }
 
         private Surface surface;
         public Surface Surface
@@ -38,92 +51,94 @@ namespace PaintDotNet
 
             set
             {
-                surface = value;
+                this.surface = value;
+                baseRenderer.Source = value;
 
-                if (surface != null)
+                if (this.surface != null)
                 {
                     // Maintain the scalefactor
                     this.Size = this.scaleFactor.ScaleSize(surface.Size);
+                    this.renderers.SourceSize = this.surface.Size;
+                    this.renderers.DestinationSize = this.Size;
                 }
 
                 Invalidate();
             }
         }
 
-        private bool drawGrid;
         public bool DrawGrid 
         {
             get 
             {
-                return drawGrid;
+                return this.gridRenderer.Visible;
             }
+
             set 
             {
-                drawGrid = value;
-            }
-        }
-
-        [ThreadStatic]
-        private static Pen gridPen = null;
-        private static Pen GridPen
-        {
-            get
-            {
-                if (gridPen == null)
+                if (value != this.gridRenderer.Visible)
                 {
-                    gridPen = new Pen(Color.Gray);
-                    gridPen.DashStyle = DashStyle.Dot;
+                    this.gridRenderer.Visible = value;
+                    Invalidate();
                 }
-
-                return gridPen;
             }
         }
-        
+
         public void FitToSize(Size fit)
-		{
+        {
             ScaleFactor newSF = ScaleFactor.Min(fit.Width, surface.Width,
                                                 fit.Height, surface.Height,
                                                 ScaleFactor.MinValue);
 
             this.scaleFactor = newSF;
-			this.Size = this.scaleFactor.ScaleSize(surface.Size);
-		}
+            this.Size = this.scaleFactor.ScaleSize(surface.Size);
+        }
+
+        /// <summary>
+        /// Increments the "just paint white" counter. When this counter is non-zero,
+        /// the OnPaint() method will only paint white. This is used as an optimization
+        /// during Paint.NET's startup so that it doesn't have to touch all the pages
+        /// of the blank document's layer.
+        /// </summary>
+        public void IncrementJustPaintWhite()
+        {
+            ++this.justPaintWhite;
+        }
 
         protected override void OnResize(EventArgs e)
         {
-            /* This code fixes the size of the surfaceBox as necessary to 
-             * maintain the aspect ratio of the surface. Keeping the mouse
-             * within 32767 is delegated to the new overflow-checking code
-             * in Tool.cs.
-             */
-            base.OnResize (e);
+            base.OnResize(e);
 
-			Size mySize = this.Size;
-			if (this.Width == 32767 && surface != null)
-			{ 
-                //Windows forms clamped this control's width, so we have to fix the height.
-				mySize.Height = 32768 * surface.Height / surface.Width;
-			}
-			else if (mySize.Width == 0)
-			{
-				mySize.Width = 1;
-			} 
-			
-			if (this.Width == 32767 && surface != null)
-			{ 
-                //Windows forms clamped this control's height, so we have to fix the width.
-				mySize.Width = 32768 * surface.Width / surface.Height;
-			}
-			else if (mySize.Height == 0) 
-			{
-				mySize.Height = 1;
-			}
+            // This code fixes the size of the surfaceBox as necessary to 
+            // maintain the aspect ratio of the surface. Keeping the mouse
+            // within 32767 is delegated to the new overflow-checking code
+            // in Tool.cs.
 
-			if (mySize != this.Size) 
-			{
-				this.Size = mySize;
-			}
+            Size mySize = this.Size;
+            if (this.Width == 32767 && surface != null)
+            { 
+                // Windows forms clamped this control's width, so we have to fix the height.
+                mySize.Height = (32768 * surface.Height) / surface.Width;
+            }
+            else if (mySize.Width == 0)
+            {
+                mySize.Width = 1;
+            } 
             
+            if (this.Width == 32767 && surface != null)
+            { 
+                // Windows forms clamped this control's height, so we have to fix the width.
+                mySize.Width = (32768 * surface.Width) / surface.Height;
+            }
+            else if (mySize.Height == 0) 
+            {
+                mySize.Height = 1;
+            }
+
+            if (mySize != this.Size) 
+            {
+                this.Size = mySize;
+            }
+           
             if (surface == null)
             {
                 this.scaleFactor = ScaleFactor.OneToOne;
@@ -133,10 +148,12 @@ namespace PaintDotNet
                 ScaleFactor newSF = ScaleFactor.Max(this.Width, surface.Width,
                                                     this.Height, surface.Height,
                                                     ScaleFactor.OneToOne);
+
                 this.scaleFactor = newSF;
             }
-        }
 
+            this.renderers.DestinationSize = this.Size;
+        }
 
         public ScaleFactor ScaleFactor
         {
@@ -149,8 +166,15 @@ namespace PaintDotNet
         public SurfaceBox()
         {
             InitializeComponent();
-			this.scaleFactor = ScaleFactor.OneToOne;
-			this.drawGrid = false;
+            this.scaleFactor = ScaleFactor.OneToOne;
+
+            this.renderers = new SurfaceBoxRendererList(this.Size, this.Size);
+            this.renderers.Invalidated += new InvalidateEventHandler(renderers_Invalidated);
+            this.baseRenderer = new SurfaceBoxBaseRenderer(this.renderers, null);
+            this.gridRenderer = new SurfaceBoxGridRenderer(this.renderers);
+            this.gridRenderer.Visible = false;
+            this.renderers.Add(this.baseRenderer, false);
+            this.renderers.Add(this.gridRenderer, true);
         }
 
         protected override void Dispose(bool disposing)
@@ -166,7 +190,6 @@ namespace PaintDotNet
 
             base.Dispose (disposing);
         }
-
 
         /// <summary>
         /// This event is raised after painting has been performed. This is required because
@@ -190,7 +213,7 @@ namespace PaintDotNet
             }
         }
 
-        private const int paintTileSize = 2048;
+        private const int paintTileSize = 256;
         private Surface doubleBufferSurface = null;
         private Surface GetDoubleBuffer(Size size)
         {
@@ -221,47 +244,70 @@ namespace PaintDotNet
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            base.OnPaint(e);
-
-            if (this.surface == null)
+            if (this.surface != null)
             {
-                return;
-            }
-
-            Rectangle rect = e.ClipRectangle;
-            for (int top = rect.Top; top < rect.Bottom; top += paintTileSize)
-            {
-                int bottom = Math.Min(top + paintTileSize, rect.Bottom);
-
-                for (int left = rect.Left; left < rect.Right; left += paintTileSize)
+                PdnRegion clipRegion = null;
+                Rectangle[] rects = this.realUpdateRects;
+                
+                if (rects == null)
                 {
-                    int right = Math.Min(left + paintTileSize, rect.Right);
+                    clipRegion = new PdnRegion(e.Graphics.Clip, true);
+                    clipRegion.Intersect(e.ClipRectangle);
+                    rects = clipRegion.GetRegionScansReadOnlyInt();
+                }
 
-                    Rectangle clipRect2 = Rectangle.FromLTRB(left, top, right, bottom);
-
-                    if (e.Graphics.IsVisible(clipRect2))
+                if (this.justPaintWhite > 0)
+                {
+                    PdnGraphics.FillRectangles(e.Graphics, Color.White, rects);
+                }
+                else
+                {
+                    foreach (Rectangle rect in rects)
                     {
-                        PaintEventArgs2 e2 = new PaintEventArgs2(e.Graphics, clipRect2);
-                        OnPaintImpl(e2);
+                        if (e.Graphics.IsVisible(rect))
+                        {
+                            // uncomment to see rectangles that get repainted
+                            //e.Graphics.FillRectangle(Brushes.Blue, rect);
+
+                            PaintEventArgs2 e2 = new PaintEventArgs2(e.Graphics, rect);
+                            OnPaintImpl(e2);
+                        }
                     }
                 }
+
+                if (clipRegion != null)
+                {
+                    clipRegion.Dispose();
+                    clipRegion = null;
+                }
             }
+
+            if (this.justPaintWhite > 0)
+            {
+                --this.justPaintWhite;
+            }
+
+            base.OnPaint(e);
         }
 
         private void OnPaintImpl(PaintEventArgs2 e)
         {
-            Surface doubleBuffer = GetDoubleBuffer(e.ClipRectangle.Size);
-
-            using (RenderArgs renderArgs = new RenderArgs(doubleBuffer))
+            using (Surface doubleBuffer = GetDoubleBuffer(e.ClipRectangle.Size))
             {
-                renderArgs.Graphics.TranslateTransform(-e.ClipRectangle.X, -e.ClipRectangle.Y);
-                PaintEventArgs2 e2 = new PaintEventArgs2(renderArgs.Graphics, e.ClipRectangle);
-    
-                OnPrePaint(e2);
-                DrawArea(renderArgs, e2.ClipRectangle);
-                OnPainted(e2);
+                using (RenderArgs renderArgs = new RenderArgs(doubleBuffer))
+                {
+                    OnPrePaint(e);
+                    DrawArea(renderArgs, e.ClipRectangle.Location);
+                    OnPainted(e);
 
-                PdnGraphics.DrawBitmap(e.Graphics, e.ClipRectangle, renderArgs.Bitmap);
+                    IntPtr tracking;
+                    Point childOffset;
+                    Size parentSize;
+                    doubleBuffer.GetDrawBitmapInfo(out tracking, out childOffset, out parentSize);
+
+                    PdnGraphics.DrawBitmap(e.Graphics, e.ClipRectangle, e.Graphics.Transform,
+                        tracking, parentSize.Width, parentSize.Height, childOffset.X, childOffset.Y);
+                }
             }
         }
 
@@ -270,6 +316,105 @@ namespace PaintDotNet
             // do nothing so as to avoid flicker
             // tip: for debugging, uncomment the next line!
             //base.OnPaintBackground(pevent);
+        }
+
+        private class RenderContext
+        {
+            public Surface[] windows;
+            public Point[] offsets;
+            public Rectangle[] rects;
+            public SurfaceBox owner;
+            public WaitCallback waitCallback;
+
+            public void RenderThreadMethod(object indexObject)
+            {
+                int index = (int)indexObject;
+                this.owner.renderers.Render(windows[index], offsets[index]);
+                this.windows[index].Dispose();
+                this.windows[index] = null;
+            }
+        }
+
+        private RenderContext renderContext;
+
+        /// <summary>
+        /// Draws an area of the SurfaceBox.
+        /// </summary>
+        /// <param name="ra">The rendering surface object to draw to.</param>
+        /// <param name="offset">The virtual offset of ra, in client (destination) coordinates.</param>
+        /// <remarks>
+        /// If drawing to ra.Surface or ra.Bitmap, copy the roi of the source surface to (0,0) of ra.Surface or ra.Bitmap
+        /// If drawing to ra.Graphics, copy the roi of the surface to (roi.X, roi.Y) of ra.Graphics
+        /// </remarks>
+        private unsafe void DrawArea(RenderArgs ra, Point offset)
+        {
+            if (surface == null)
+            {
+                return;
+            }
+
+            if (renderContext == null || (renderContext.windows != null && renderContext.windows.Length != Processor.LogicalCpuCount))
+            {
+                renderContext = new RenderContext();
+                renderContext.owner = this;
+                renderContext.waitCallback = new WaitCallback(renderContext.RenderThreadMethod);
+                renderContext.windows = new Surface[Processor.LogicalCpuCount];
+                renderContext.offsets = new Point[Processor.LogicalCpuCount];
+                renderContext.rects = new Rectangle[Processor.LogicalCpuCount];
+            }
+
+            Utility.SplitRectangle(ra.Bounds, renderContext.rects);
+
+            for (int i = 0; i < renderContext.rects.Length; ++i)
+            {
+                if (renderContext.rects[i].Width > 0 && renderContext.rects[i].Height > 0)
+                {
+                    renderContext.offsets[i] = new Point(renderContext.rects[i].X + offset.X, renderContext.rects[i].Y + offset.Y);
+                    renderContext.windows[i] = ra.Surface.CreateWindow(renderContext.rects[i]);
+                }
+                else
+                {
+                    renderContext.windows[i] = null;
+                }
+            }
+            
+            for (int i = 0; i < renderContext.windows.Length; ++i)
+            {
+                if (renderContext.windows[i] != null)
+                {
+                    this.threadPool.QueueUserWorkItem(renderContext.waitCallback, BoxedConstants.GetInt32(i));
+                }
+            }
+
+            this.threadPool.Drain();
+            this.threadPool.DrainExceptions();
+        }
+
+        private Rectangle[] realUpdateRects = null;
+        protected override void WndProc(ref Message m)
+        {
+            IntPtr preR = m.Result;
+
+            // Ignore focus
+            if (m.Msg == 7 /* WM_SETFOCUS */)
+            {
+                return;
+            }
+            else if (m.Msg == 0x000f /* WM_PAINT */)
+            {
+                this.realUpdateRects = UI.GetUpdateRegion(this);
+
+                if (realUpdateRects.Length >= 5) // '5' chosen arbitrarily
+                {
+                    this.realUpdateRects = null;
+                }
+
+                base.WndProc(ref m);
+            }
+            else
+            {
+                base.WndProc (ref m);
+            }
         }
 
         /// <summary>
@@ -338,275 +483,6 @@ namespace PaintDotNet
             return new Rectangle(SurfaceToClient(surfaceRect.Location), SurfaceToClient(surfaceRect.Size));
         }
 
-        private static Rectangle AlignRectangle(Rectangle rect, int alignFactor)
-        {
-            if (alignFactor == 0)
-            {
-                throw new ArgumentOutOfRangeException("alignFactor", "Must not equal zero");
-            }
-
-            int left = (rect.Left / alignFactor) * alignFactor;
-            int top = (rect.Top / alignFactor) * alignFactor;
-            int right = ((rect.Right + alignFactor - 1) / alignFactor) * alignFactor;
-            int bottom = ((rect.Bottom + alignFactor - 1) / alignFactor) * alignFactor;
-
-            return Rectangle.FromLTRB(left, top, right, bottom);
-        }
-
-		public const float DrawGridMinimumZoom = 4.0f;
-
-        /// <summary>
-        /// Draws an area of the SurfaceBox.
-        /// </summary>
-        /// <param name="ra">The rendering surface object to draw to.</param>
-        /// <param name="roi">The rectangle of interest to draw, in client coordinates.</param>
-        /// <remarks>
-        /// If drawing to ra.Surface or ra.Bitmap, copy the roi of the source surface to (0,0) of ra.Surface or ra.Bitmap
-        /// If drawing to ra.Graphics, copy the roi of the surface to (roi.X,roi.Y) of ra.Graphics
-        /// </remarks>
-        private void DrawArea(RenderArgs ra, Rectangle roi)
-        {
-            if (surface == null)
-            {
-                return;
-            }
-
-            if (surface.Width < this.Width)
-            {   
-                // zoom in
-                PixelOffsetMode oldPOM = ra.Graphics.PixelOffsetMode;
-                ra.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
-
-                int alignFactor = ((this.Width + surface.Width - 1) / surface.Width);
-                Rectangle clientRect2 = AlignRectangle(roi, alignFactor);
-                Rectangle surfaceRect = Rectangle.Intersect(surface.Bounds, Utility.RoundRectangle(ClientToSurface((RectangleF)clientRect2)));
-                Rectangle clientRect3 = SurfaceToClient(surfaceRect);
-
-                if (!surfaceRect.IsEmpty)
-                {
-                    InterpolationMode oldIM = ra.Graphics.InterpolationMode;
-                    ra.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-
-                    using (Bitmap alias = surface.CreateAliasedBitmap(surfaceRect, false))
-                    {
-                        ra.Graphics.DrawImage(alias, clientRect3, new Rectangle(new Point(0, 0), surfaceRect.Size), GraphicsUnit.Pixel);
-                    }
-
-                    if (drawGrid && this.Width >= surface.Width * DrawGridMinimumZoom) 
-                    {
-                        PdnGraphics.DrawGrid(ra.Graphics, surfaceRect, new PointFPointFDelegate(SurfaceToClient));
-                    }
-
-                    ra.Graphics.InterpolationMode = oldIM;
-                }
-
-                ra.Graphics.PixelOffsetMode = oldPOM;
-            }
-            else
-            {
-                WaitCallback callback;
-
-                if (surface.Width == this.Width)
-                {   
-                    callback = new WaitCallback(RenderOneToOne);
-                }
-                else // if (surface.Width > this.Width)
-                {
-                    callback = new WaitCallback(RenderZoomOutRotatedGridMultisampling);
-                }
-
-                Rectangle[] rects;
-                
-                if (roi.Height < 16)
-                {
-                    rects = new Rectangle[1] { roi };
-                }
-                else
-                {
-                    rects = new Rectangle[SystemLayer.Processor.LogicalCpuCount];
-                    Utility.SplitRectangle(roi, rects);
-                }
-
-                foreach (Rectangle rect in rects)
-                {
-                    if (rect.Width == 0 || rect.Height == 0)
-                    {
-                        continue;
-                    }
-
-                    RenderContext rc = new RenderContext(ra.Surface, rect, new Point(rect.Left - roi.Left, rect.Top - roi.Top));
-                    threadPool.QueueUserWorkItem(callback, rc);
-                }
-
-                threadPool.Drain();
-            }
-        }
-
-        private class RenderContext
-        {
-            public Surface dstSurface;
-            public Rectangle roi;
-            public Point offset;
-
-            public RenderContext(Surface dstSurface, Rectangle roi, Point offset)
-            {
-                this.dstSurface = dstSurface;
-                this.roi = roi;
-                this.offset = offset;
-            }
-        }
-
-        private void RenderOneToOne(object context)
-        {
-            RenderOneToOne((RenderContext)context);
-        }
-
-        private void RenderOneToOne(RenderContext rc)
-        {
-            rc.dstSurface.CopySurface(this.surface, rc.offset, rc.roi);
-        }
-
-        private void RenderZoomOutRotatedGridMultisampling(object context)
-        {
-            RenderZoomOutRotatedGridMultisampling((RenderContext)context);
-        }
-
-        private void RenderZoomOutRotatedGridMultisampling(RenderContext rc)
-        {
-            unsafe
-            {
-                using (Surface scaled = rc.dstSurface.CreateWindow(new Rectangle(rc.offset, rc.roi.Size)))
-                {
-                    long fDstLeftLong = ((long)rc.roi.Left * 4096 * (long)surface.Width) / (long)this.Width;
-                    long fDstTopLong = ((long)rc.roi.Top * 4096 * (long)surface.Height) / (long)this.Height;
-                    long fDstRightLong = ((long)rc.roi.Right * 4096 * (long)surface.Width) / (long)this.Width;
-                    long fDstBottomLong = ((long)rc.roi.Bottom * 4096 * (long)surface.Height) / (long)this.Height;
-                    int fDstLeft = (int)fDstLeftLong;
-                    int fDstTop = (int)fDstTopLong;
-                    int fDstRight = (int)fDstRightLong;
-                    int fDstBottom = (int)fDstBottomLong;
-                    int dx = (fDstRight - fDstLeft) / rc.roi.Width;
-                    int dy = (fDstBottom - fDstTop) / rc.roi.Height;
-
-                    for (int dstRow = 0, fDstY = fDstTop; 
-                         dstRow < rc.roi.Height && fDstY < fDstBottom; 
-                         ++dstRow, fDstY += dy)
-                    {
-                        int srcY1 = fDstY >> 12;                            // y
-                        int srcY2 = (fDstY + (dy >> 2)) >> 12;              // y + 0.25
-                        int srcY3 = (fDstY + (dy >> 1)) >> 12;              // y + 0.50
-                        int srcY4 = (fDstY + (dy >> 1) + (dy >> 2)) >> 12;  // y + 0.75
-
-                        Debug.Assert(this.surface.IsRowVisible(srcY1));
-                        Debug.Assert(this.surface.IsRowVisible(srcY2));
-                        Debug.Assert(this.surface.IsRowVisible(srcY3));
-                        Debug.Assert(this.surface.IsRowVisible(srcY4));
-                        Debug.Assert(scaled.IsRowVisible(dstRow));
-
-                        ColorBgra *src1 = this.surface.GetRowAddressUnchecked(srcY1);
-                        ColorBgra *src2 = this.surface.GetRowAddressUnchecked(srcY2);
-                        ColorBgra *src3 = this.surface.GetRowAddressUnchecked(srcY3);
-                        ColorBgra *src4 = this.surface.GetRowAddressUnchecked(srcY4);
-                        ColorBgra *dst = scaled.GetRowAddressUnchecked(dstRow);
-
-                        for (int dstCol = 0, fDstX = fDstLeft;
-                             dstCol < rc.roi.Width && fDstX < fDstRight;
-                             ++dstCol, fDstX += dx)
-                        {
-                            int srcX1 = (fDstX + (dx >> 2)) >> 12;             // x + 0.25
-                            int srcX2 = (fDstX + (dx >> 1) + (dx >> 2)) >> 12; // x + 0.75
-                            int srcX3 = fDstX >> 12;                           // x
-                            int srcX4 = (fDstX + (dx >> 1)) >> 12;             // x + 0.50
-
-                            Debug.Assert(this.surface.IsColumnVisible(srcX1));
-                            Debug.Assert(this.surface.IsColumnVisible(srcX2));
-                            Debug.Assert(this.surface.IsColumnVisible(srcX3));
-                            Debug.Assert(this.surface.IsColumnVisible(srcX4));
-                            Debug.Assert(scaled.IsColumnVisible(dstCol));
-
-                            ColorBgra *p1 = src1 + srcX1;
-                            ColorBgra *p2 = src2 + srcX2;
-                            ColorBgra *p3 = src3 + srcX3;
-                            ColorBgra *p4 = src4 + srcX4;
-
-                            int r = (2 + p1->R + p2->R + p3->R + p4->R) >> 2;
-                            int g = (2 + p1->G + p2->G + p3->G + p4->G) >> 2;
-                            int b = (2 + p1->B + p2->B + p3->B + p4->B) >> 2;
-                            int a = (2 + p1->A + p2->A + p3->A + p4->A) >> 2;
-
-                            dst->Bgra = (uint)b + ((uint)g << 8) + ((uint)r << 16) + ((uint)a << 24);
-
-                            ++dst;
-                        }
-                    }
-                }
-            }
-        }        
-
-        private void RenderZoomOutNearestNeighbor(object rc)
-        {
-            RenderZoomOutNearestNeighbor((RenderContext)rc);
-        }
-
-        private void RenderZoomOutNearestNeighbor(RenderContext rc)
-        {
-            unsafe
-            {
-                using (Surface scaled = rc.dstSurface.CreateWindow(new Rectangle(rc.offset, rc.roi.Size)))
-                {
-                    long fDstLeftLong = ((long)rc.roi.Left * 4096 * (long)surface.Width) / (long)this.Width;
-                    long fDstTopLong = ((long)rc.roi.Top * 4096 * (long)surface.Height) / (long)this.Height;
-                    long fDstRightLong = ((long)rc.roi.Right * 4096 * (long)surface.Width) / (long)this.Width;
-                    long fDstBottomLong = ((long)rc.roi.Bottom * 4096 * (long)surface.Height) / (long)this.Height;
-                    int fDstLeft = (int)fDstLeftLong;
-                    int fDstTop = (int)fDstTopLong;
-                    int fDstRight = (int)fDstRightLong;
-                    int fDstBottom = (int)fDstBottomLong;
-                    int dx = (fDstRight - fDstLeft) / rc.roi.Width;
-                    int dy = (fDstBottom - fDstTop) / rc.roi.Height;
-
-                    for (int dstRow = 0, fDstY = fDstTop; 
-                        dstRow < rc.roi.Height && fDstY < fDstBottom; 
-                        ++dstRow, fDstY += dy)
-                    {
-                        int srcY = fDstY >> 12;
-
-                        Debug.Assert(this.surface.IsRowVisible(srcY));
-                        Debug.Assert(scaled.IsRowVisible(dstRow));
-
-                        ColorBgra *src = this.surface.GetRowAddress(srcY);
-                        ColorBgra *dst = scaled.GetRowAddress(dstRow);
-
-                        for (int dstCol = 0, fDstX = fDstLeft;
-                            dstCol < rc.roi.Width && fDstX < fDstRight;
-                            ++dstCol, fDstX += dx)
-                        {
-                            int srcX = fDstX >> 12;
-
-                            Debug.Assert(this.surface.IsColumnVisible(srcX));
-                            Debug.Assert(scaled.IsColumnVisible(dstCol));
-
-                            *dst = *(src + srcX);
-                            ++dst;
-                        }
-                    }
-                }
-            }
-        }
-
-        protected override void WndProc(ref Message m)
-        {
-            IntPtr preR = m.Result;
-
-            // Ignore focus
-            if (m.Msg == 7 /* WM_SETFOCUS */)
-            {
-                return;
-            }
-
-            base.WndProc (ref m);
-        }
-
         #region Component Designer generated code
         /// <summary> 
         /// Required method for Designer support - do not modify 
@@ -616,6 +492,12 @@ namespace PaintDotNet
         {
         }
         #endregion
+
+        private void renderers_Invalidated(object sender, InvalidateEventArgs e)
+        {
+            Rectangle rect = SurfaceToClient(Rectangle.Inflate(e.InvalidRect, 1, 1));
+            Invalidate(rect);
+        }
     }
 }
 

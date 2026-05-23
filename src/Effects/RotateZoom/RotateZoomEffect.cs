@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -11,13 +12,17 @@ using PaintDotNet.Effects;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
+using System.Reflection;
+using System.Resources;
+using System.Windows.Forms;
 
-namespace PaintDotNet.Effects
+namespace PaintDotNet.Effects.RotateZoom
 {
     /// <summary>
-    /// Summary description for Rotate / Zoom Effect.
+    /// Rotate / Zoom Effect.
     /// </summary>
-    [EffectCategory(EffectCategory.Adjustment)]
+    [EffectCategory(EffectCategory.DoNotDisplay)] // we have a menu item that manually places this in the Layers menu
     [EffectTypeHint(EffectTypeHint.Fast)]
     public class RotateZoomEffect
         : Effect,
@@ -29,7 +34,27 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return "Rotate / Zoom";
+                return PdnResources.GetString("RotateZoomEffect.Name");
+            }
+        }
+
+        public static Image StaticImage
+        {
+            get
+            {
+                Stream stream = typeof(RotateZoomEffect).Assembly.GetManifestResourceStream(
+                    "PaintDotNet.Effects.RotateZoom.Icons.RotateZoomIcon.bmp");
+
+                Image image = Image.FromStream(stream);
+                return image;
+            }
+        }
+
+        public static Shortcut StaticShortcut
+        {
+            get
+            {
+                return Shortcut.CtrlShiftZ;
             }
         }
 
@@ -44,126 +69,217 @@ namespace PaintDotNet.Effects
             RotateZoomEffectConfigToken.RzInfo rzInfo = token.ComputedOnce;
             Rectangle bounds = this.EnvironmentParameters.GetSelection(dstArgs.Bounds).GetBoundsInt();
             bounds.Intersect(dstArgs.Bounds);
-			Point center = new Point((bounds.Left + bounds.Right) / 2, (bounds.Top + bounds.Bottom) / 2);
-            Rectangle[] rects = roi.GetRegionScansReadOnlyInt();
+            Surface src = srcArgs.Surface;
+            Surface dst = dstArgs.Surface;
+            Rectangle[] scans = roi.GetRegionScansReadOnlyInt();
+            PdnRegion selection = this.EnvironmentParameters.GetSelection(src.Bounds);
+            Rectangle srcBounds = src.Bounds;
+            int srcMaxX = srcBounds.Width - 1;
+            int srcMaxY = srcBounds.Height - 1;
 
-            uint srcMask;
+            float dsxdx = rzInfo.dsxdx;
+            float dsydx = rzInfo.dsydx;
+            float dszdx = rzInfo.dszdx;
+            float dsxdy = rzInfo.dsxdy;
+            float dsydy = rzInfo.dsydy;
+            float dszdy = rzInfo.dszdy;
+            float zoom = token.Zoom;
+            uint srcMask = token.SourceAsBackground ? 0xffffffff : 0;
 
-            if (token.SourceAsBackground)
-            {
-                srcMask = 0xffffffff;
-            }
-            else
-            {
-                srcMask = 0;
-            }
+            bool tile = token.Tile;
+            float divZ = 0.5f * (float)Math.Sqrt(dst.Width * dst.Width + dst.Height * dst.Height);
+            float centerX = (float)dst.Width / 2.0f; 
+            float centerY = (float)dst.Height / 2.0f;
+            float tx = (token.Offset.X) * dst.Width / 2.0f;
+            float ty = (token.Offset.Y) * dst.Height / 2.0f;
 
-            foreach (Rectangle rect in rects)
+            uint tilingMask = tile ? 0xffffffff : 0;
+
+            foreach (Rectangle rect in scans)
             {
-                float sxul = (float)center.X + ((((float)(rect.Left - center.X) * rzInfo.angleCos) - ((float)(rect.Top - center.Y) * rzInfo.angleSin)) * token.Zoom);
-                float syul = (float)center.Y + ((((float)(rect.Left - center.X) * rzInfo.angleSin) + ((float)(rect.Top - center.Y) * rzInfo.angleCos)) * token.Zoom);
+                float cx = rzInfo.startX;
+                float cy = rzInfo.startY;
+                float cz = rzInfo.startZ;
+
+                float mcl = ((rect.Left - tx) - dst.Width / 2.0f);
+                cx += dsxdx * mcl;
+                cy += dsydx * mcl;
+                cz += dszdx * mcl;
+
+                float mct = ((rect.Top - ty) - dst.Height / 2.0f);
+                cx += dsxdy * mct;
+                cy += dsydy * mct;
+                cz += dszdy * mct;
 
                 for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
-                    float xp = sxul;
-                    float yp = syul;
+                    ColorBgra *dstPtr = dst.GetPointAddressUnchecked(rect.Left, y);
+                    ColorBgra *srcPtr = src.GetPointAddressUnchecked(rect.Left, y);
 
-                    int xpInt = (int)xp;
-                    int ypInt = (int)yp;
-
-                    ColorBgra *dstPtr = dstArgs.Surface.GetPointAddressUnchecked(rect.Left, y);
+                    float rx = cx;
+                    float ry = cy;
+                    float rz = cz;
 
                     for (int x = rect.Left; x < rect.Right; ++x)
-                    {
-                        float xLerp = xp - (float)Math.Floor(xp);
-                        float yLerp = yp - (float)Math.Floor(yp);
-
-                        // compute weights
-                        float ulw = (1 - xLerp) * (1 - yLerp);
-                        float urw = xLerp * (1 - yLerp);
-                        float llw = (1 - xLerp) * yLerp;
-                        float lrw = xLerp * yLerp;
-
-						ColorBgra backColor = ColorBgra.FromUInt32((srcArgs.Surface.GetPointUnchecked(x, y).Bgra & srcMask) | (seeThroughColor.Bgra & ~srcMask));
-
-                        ColorBgra ulc;
-                        ColorBgra lrc;
-                        ColorBgra urc;
-                        ColorBgra llc;
-
-                        if (Utility.IsPointInRectangle(xpInt, ypInt, bounds) &&
-                            Utility.IsPointInRectangle(xpInt + 1, ypInt + 1, bounds))
+                    {   
+                        if (rz  > -divZ)
                         {
-                            ulc = srcArgs.Surface.GetPointUnchecked(xpInt, ypInt);
-                            urc = srcArgs.Surface.GetPointUnchecked(xpInt + 1, ypInt);
-                            lrc = srcArgs.Surface.GetPointUnchecked(xpInt + 1, ypInt + 1);
-                            llc = srcArgs.Surface.GetPointUnchecked(xpInt, ypInt + 1);
+                            float div = divZ / (zoom * (divZ + rz));
+                            float u = (rx * div) + centerX;
+                            float v = (ry * div) + centerY;
+
+                            if (tile || (u >= -1 && v >= -1 && u <= srcBounds.Width && v <= srcBounds.Height))
+                            {
+                                unchecked
+                                {
+                                    int iu = (int)Math.Floor(u);
+                                    uint sxfrac = (uint)(256 * (u - (float)iu));
+                                    uint sxfracinv = 256 - sxfrac;
+
+                                    int iv = (int)Math.Floor(v);
+                                    uint syfrac = (uint)(256 * (v - (float)iv));
+                                    uint syfracinv = 256 - syfrac;
+
+                                    uint wul = (uint)(sxfracinv * syfracinv);
+                                    uint wur = (uint)(sxfrac * syfracinv);
+                                    uint wll = (uint)(sxfracinv * syfrac);
+                                    uint wlr = (uint)(sxfrac * syfrac);
+
+                                    uint inBoundsMaskLeft = tilingMask;
+                                    uint inBoundsMaskTop = tilingMask;
+                                    uint inBoundsMaskRight = tilingMask;
+                                    uint inBoundsMaskBottom = tilingMask;
+
+                                    int sx = iu;
+                                    if (sx < 0)
+                                    {
+                                        sx = srcMaxX + ((sx + 1) % srcBounds.Width);
+                                    }
+                                    else if (sx > srcMaxX)
+                                    {
+                                        sx = sx % srcBounds.Width;
+                                    }
+                                    else
+                                    {
+                                        inBoundsMaskLeft = 0xffffffff;
+                                    }
+
+                                    int sy = iv;
+                                    if (sy < 0)
+                                    {
+                                        sy = srcMaxY + ((sy + 1) % srcBounds.Height);
+                                    }
+                                    else if (sy > srcMaxY)
+                                    {
+                                        sy = sy % srcBounds.Height;
+                                    }
+                                    else
+                                    {
+                                        inBoundsMaskTop = 0xffffffff;
+                                    }
+
+                                    int sleft = sx;
+                                    int sright;
+
+                                    if (sleft == srcMaxX)
+                                    {
+                                        sright = 0;
+                                        inBoundsMaskRight = (iu == -1) ? 0xffffffff : tilingMask;
+                                    }
+                                    else
+                                    {
+                                        sright = sleft + 1;
+                                        inBoundsMaskRight = inBoundsMaskLeft & 0xffffffff;
+                                    }
+
+                                    int stop = sy;
+                                    int sbottom;
+
+                                    if (stop == srcMaxY)
+                                    {
+                                        sbottom = 0;
+                                        inBoundsMaskBottom = (iv == -1) ? 0xffffffff : tilingMask;
+                                    }
+                                    else
+                                    {
+                                        sbottom = stop + 1;
+                                        inBoundsMaskBottom = inBoundsMaskTop & 0xffffffff;
+                                    }
+                                   
+                                    ColorBgra edgeColor = token.SourceAsBackground ? *srcPtr : ColorBgra.FromUInt32(0x00ffffff);
+                                     
+                                    uint maskUL = inBoundsMaskLeft & inBoundsMaskTop;
+                                    ColorBgra cul = ColorBgra.FromUInt32((src.GetPointUnchecked(sleft, stop).Bgra & maskUL) | (edgeColor.Bgra & ~maskUL));
+
+                                    uint maskUR = inBoundsMaskRight & inBoundsMaskTop;
+                                    ColorBgra cur = ColorBgra.FromUInt32((src.GetPointUnchecked(sright, stop).Bgra & maskUR) | (edgeColor.Bgra & ~maskUR));
+
+                                    uint maskLL = inBoundsMaskLeft & inBoundsMaskBottom;
+                                    ColorBgra cll = ColorBgra.FromUInt32((src.GetPointUnchecked(sleft, sbottom).Bgra & maskLL) | (edgeColor.Bgra & ~maskLL));
+
+                                    uint maskLR = inBoundsMaskRight & inBoundsMaskBottom;
+                                    ColorBgra clr = ColorBgra.FromUInt32((src.GetPointUnchecked(sright, sbottom).Bgra & maskLR) | (edgeColor.Bgra & ~maskLR));
+
+                                    uint b = ((cul.B * wul) + (cur.B * wur) + (cll.B * wll) + (clr.B * wlr)) >> 16;
+                                    uint g = ((cul.G * wul) + (cur.G * wur) + (cll.G * wll) + (clr.G * wlr)) >> 16;
+                                    uint r = ((cul.R * wul) + (cur.R * wur) + (cll.R * wll) + (clr.R * wlr)) >> 16;
+                                    uint a = ((cul.A * wul) + (cur.A * wur) + (cll.A * wll) + (clr.A * wlr)) >> 16;
+
+                                    ColorBgra color = ColorBgra.FromUInt32(b + (g << 8) + (r << 16) + (a << 24));
+
+                                    if (a == 255 || !token.SourceAsBackground)
+                                    {
+                                        dstPtr->Bgra = color.Bgra;
+                                    }
+                                    else
+                                    {
+                                        *dstPtr = BinaryPixelOps.AlphaBlend.ApplyStatic(edgeColor, color);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (srcMask != 0)
+                                {
+                                    dstPtr->Bgra = srcPtr->Bgra;
+                                }
+                                else
+                                {
+                                    dstPtr->Bgra = 0;
+                                }
+                            }
                         }
                         else
                         {
-                            if (Utility.IsPointInRectangle(xpInt, ypInt, bounds))
+                            if (srcMask != 0)
                             {
-                                ulc = srcArgs.Surface.GetPointUnchecked(xpInt, ypInt);
+                                dstPtr->Bgra = srcPtr->Bgra;
                             }
                             else
                             {
-                                ulc = backColor;
-                            }
-
-                            if (Utility.IsPointInRectangle(xpInt + 1, ypInt + 1, bounds))
-                            {
-                                lrc = srcArgs.Surface.GetPointUnchecked(xpInt + 1, ypInt + 1);
-                            }
-                            else
-                            {
-                                lrc = backColor;
-                            }
-
-                            if (Utility.IsPointInRectangle(xpInt + 1, ypInt, bounds))
-                            {
-                                urc = srcArgs.Surface.GetPointUnchecked(xpInt + 1, ypInt);
-                            }
-                            else
-                            {
-                                urc = backColor;
-                            }
-
-                            if (Utility.IsPointInRectangle(xpInt, ypInt + 1, bounds))
-                            {
-                                llc = srcArgs.Surface.GetPointUnchecked(xpInt, ypInt + 1);
-                            }
-                            else
-                            {
-                                llc = backColor;
+                                dstPtr->Bgra = 0;
                             }
                         }
+            
+                        rx += dsxdx;
+                        ry += dsydx;
+                        rz += dszdx;
 
-                        float b = (float)Math.Min(255.0f, ((float)ulc.B * ulw) + ((float)urc.B * urw) + ((float)llc.B * llw) + ((float)lrc.B * lrw));
-                        float g = (float)Math.Min(255.0f, ((float)ulc.G * ulw) + ((float)urc.G * urw) + ((float)llc.G * llw) + ((float)lrc.G * lrw));
-                        float r = (float)Math.Min(255.0f, ((float)ulc.R * ulw) + ((float)urc.R * urw) + ((float)llc.R * llw) + ((float)lrc.R * lrw));
-                        float a = (float)Math.Min(255.0f, ((float)ulc.A * ulw) + ((float)urc.A * urw) + ((float)llc.A * llw) + ((float)lrc.A * lrw));
-                        
-                        *dstPtr = ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
                         ++dstPtr;
-
-                        xp += rzInfo.dsxddx;
-                        yp += rzInfo.dsyddx;
-
-                        xpInt = (int)xp;
-                        ypInt = (int)yp;
+                        ++srcPtr;
                     }
 
-                    sxul += rzInfo.dsxddy;
-                    syul += rzInfo.dsyddy;
+                    cx += dsxdy;
+                    cy += dsydy;
+                    cz += dszdy;
                 }
             }
         }
 
         public RotateZoomEffect()
             : base(StaticName, 
-                   "Rotates and zooms an image", 
-			       Utility.GetImageResource("Icons.RotateZoomIcon.bmp"), 
-			       System.Windows.Forms.Shortcut.CtrlShiftZ)
+                   StaticImage,
+                   StaticShortcut)
         {
         }
     }

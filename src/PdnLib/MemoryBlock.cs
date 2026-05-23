@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -11,6 +12,7 @@ using ICSharpCode.SharpZipLib.Zip.Compression;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
+using System.Drawing;
 using System.Globalization;
 using System.Diagnostics;
 using System.IO;
@@ -27,7 +29,7 @@ namespace PaintDotNet
     /// is disposed, the children will not be valid.
     /// </summary>
     [Serializable]
-    public unsafe class MemoryBlock
+    public unsafe sealed class MemoryBlock
         : IDisposable,
           ICloneable,
           IDeferredSerializable
@@ -36,6 +38,9 @@ namespace PaintDotNet
         private const int serializationChunkSize = 1048576; 
         private const string chunkPrefix = "chunk";
 
+        // blocks this size or larger are allocated with AllocateLarge (VirtualAlloc) instead of Allocate (HeapAlloc)
+        private const long largeBlockThreshold = 65536;
+
         private long length;
 
         // if parentBlock == null, then we allocated the pointer and are responsible for deallocating it
@@ -43,7 +48,25 @@ namespace PaintDotNet
         [NonSerialized]
         private void *voidStar;
 
+        [NonSerialized]
+        private bool valid; // if voidStar is null, and this is false, we know that it's null because allocation failed. otherwise we have a real error
+
         private MemoryBlock parentBlock = null;
+
+        [NonSerialized]
+        private IntPtr bitmapHandle = IntPtr.Zero; // if allocated using the "width, height" constructor, we keep track of a bitmap handle
+        private int bitmapWidth;
+        private int bitmapHeight;
+
+        private bool disposed = false;
+
+        public MemoryBlock Parent
+        {
+            get
+            {
+                return this.parentBlock;
+            }
+        }
 
         public long Length
         {
@@ -71,11 +94,29 @@ namespace PaintDotNet
             }
         }
 
+        public IntPtr BitmapHandle
+        {
+            get
+            {
+                if (disposed)
+                {
+                    throw new ObjectDisposedException("MemoryBlock");
+                }
+
+                return this.bitmapHandle;
+            }
+        }
+
         [CLSCompliant(false)]
         public void *VoidStar
         {
             get
             {
+                if (disposed)
+                {
+                    throw new ObjectDisposedException("MemoryBlock");
+                }
+
                 return voidStar;
             }
         }
@@ -119,18 +160,50 @@ namespace PaintDotNet
             }
         }
 
-        /// <summary>
-        /// Copies bytes from one area of memory to another. Since this function only
-        /// takes pointers, it can not do any bounds checking.
-        /// </summary>
-        /// <param name="dst">The starting address of where to copy bytes to.</param>
-        /// <param name="src">The starting address of where to copy bytes from.</param>
-        /// <param name="length">The number of bytes to copy</param>
-        [CLSCompliant(false)]
-        [Obsolete("Use PaintDotNet.SystemLayer.Memory.Copy() instead", true)]
-        public static void CopyMemory(void *dst, void *src, int length)
+        public bool MaySetAllowWrites
         {
-            Memory.Copy(dst, src, (ulong)length);
+            get
+            {
+                if (disposed)
+                {
+                    throw new ObjectDisposedException("MemoryBlock");
+                }
+
+                if (this.parentBlock != null)
+                {
+                    return this.parentBlock.MaySetAllowWrites;
+                }
+                else
+                {
+                    return (this.length >= largeBlockThreshold && this.bitmapHandle != IntPtr.Zero);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets a flag indicating whether the memory that this instance of MemoryBlock points to
+        /// may be written to.
+        /// </summary>
+        /// <remarks>
+        /// This flag is meant to be set to false for short periods of time. The value of this
+        /// property is not persisted with serialization.
+        /// </remarks>
+        public bool AllowWrites
+        {
+            set
+            {
+                if (disposed)
+                {
+                    throw new ObjectDisposedException("MemoryBlock");
+                }
+
+                if (!MaySetAllowWrites)
+                {
+                    throw new InvalidOperationException("May not set write protection on this memory block");
+                }
+
+                Memory.ProtectBlockLarge(new IntPtr(this.voidStar), (ulong)this.length, true, value);
+            }
         }
 
         /// <summary>
@@ -169,17 +242,16 @@ namespace PaintDotNet
             Memory.Copy(dstPtr, srcPtr, (ulong)length);
         }
 
-        [Obsolete("Use Clone() instead")]
-        public MemoryBlock Duplicate()
-        {
-            return Clone();
-        }
-
         /// <summary>
         /// Creates a new parent MemoryBlock and copies our contents into it
         /// </summary>
         object ICloneable.Clone()
         {
+            if (disposed)
+            {
+                throw new ObjectDisposedException("MemoryBlock");
+            }
+
             return (object)Clone();
         }
 
@@ -188,6 +260,11 @@ namespace PaintDotNet
         /// </summary>
         public MemoryBlock Clone()
         {
+            if (disposed)
+            {
+                throw new ObjectDisposedException("MemoryBlock");
+            }
+
             MemoryBlock dupe = new MemoryBlock(this.length);
             CopyBlock(dupe, 0, this, 0, length);
             return dupe;
@@ -207,6 +284,30 @@ namespace PaintDotNet
             this.length = bytes;
             this.parentBlock = null;
             this.voidStar = Allocate(bytes).ToPointer();
+            this.valid = true;
+        }
+
+        public MemoryBlock(int width, int height)
+        {
+            if (width < 0 && height < 0)
+            {
+                throw new ArgumentOutOfRangeException("width/height", new Size(width, height), "width and height must be >= 0");
+            }
+            else if (width < 0)
+            {
+                throw new ArgumentOutOfRangeException("width", width, "width must be >= 0");
+            } 
+            else if (height < 0)
+            {
+                throw new ArgumentOutOfRangeException("height", width, "height must be >= 0");
+            }
+
+            this.length = width * height * ColorBgra.SizeOf;
+            this.parentBlock = null;
+            this.voidStar = Allocate(width, height, out this.bitmapHandle).ToPointer();
+            this.valid = true;
+            this.bitmapWidth = width;
+            this.bitmapHeight = height;
         }
 
         /// <summary>
@@ -224,6 +325,7 @@ namespace PaintDotNet
             byte *bytePointer = (byte *)parentBlock.VoidStar;
             bytePointer += offset;
             this.voidStar = (void *)bytePointer;
+            this.valid = true;
             this.length = length;
         }
 
@@ -232,7 +334,6 @@ namespace PaintDotNet
             Dispose(false);
         }
 
-        private bool disposed = false;
         public void Dispose()
         {
             Dispose(true);
@@ -249,15 +350,56 @@ namespace PaintDotNet
                 {
                 }
 
-                if (parentBlock == null)
+                if (this.valid && parentBlock == null)
                 {
-                    Memory.Free(new IntPtr(voidStar));
-                    voidStar = null;
+                    if (this.bitmapHandle != IntPtr.Zero)
+                    {
+                        Memory.FreeBitmap(this.bitmapHandle);
+                    }
+                    else if (this.length >= largeBlockThreshold)
+                    {
+                        Memory.FreeLarge(new IntPtr(voidStar), (ulong)this.length);
+                    }
+                    else
+                    {
+                        Memory.Free(new IntPtr(voidStar));
+                    }
                 }
 
                 parentBlock = null;
                 voidStar = null;
+                this.valid = false;
             }
+        }
+
+        private static IntPtr Allocate(int width, int height, out IntPtr handle)
+        {
+            return Allocate(width, height, out handle, true);
+        }
+
+        private static IntPtr Allocate(int width, int height, out IntPtr handle, bool allowRetry)
+        {
+            IntPtr block;
+
+            try
+            {
+                block = Memory.AllocateBitmap(width, height, out handle);
+            }
+
+            catch (OutOfMemoryException)
+            {
+                if (allowRetry)
+                {
+                    Utility.GCFullCollect();
+                    return Allocate(width, height, out handle, false);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return block;
         }
 
         private static IntPtr Allocate(long bytes)
@@ -271,7 +413,14 @@ namespace PaintDotNet
 
             try
             {
-                block = Memory.Allocate((ulong)bytes);
+                if (bytes >= largeBlockThreshold)
+                {
+                    block = Memory.AllocateLarge((ulong)bytes);
+                }
+                else
+                {
+                    block = Memory.Allocate((ulong)bytes);
+                }
             }
 
             catch (OutOfMemoryException)
@@ -351,19 +500,41 @@ namespace PaintDotNet
             }
         }
 
-        protected MemoryBlock(SerializationInfo info, StreamingContext context)
+        private MemoryBlock(SerializationInfo info, StreamingContext context)
         {
             disposed = false;
 
             // Try to read a 64-bit value, and for backwards compatibility fall back on a 32-bit value.
             try
             {
-                this.length = info.GetInt64("length64");
+                 this.length = info.GetInt64("length64");
             }
 
             catch (SerializationException)
             {
                 this.length = (long)info.GetInt32("length");
+            }
+
+            try
+            {
+                this.bitmapWidth = (int)info.GetInt32("bitmapWidth");
+                this.bitmapHeight = (int)info.GetInt32("bitmapHeight");
+
+                if (this.bitmapWidth != 0 || this.bitmapHeight != 0)
+                {
+                    long bytes = (long)this.bitmapWidth * (long)this.bitmapHeight * (long)ColorBgra.SizeOf;
+
+                    if (bytes != this.length)
+                    {
+                        throw new ApplicationException("Invalid file format: width * height * 4 != length");
+                    }
+                }
+            }
+
+            catch (SerializationException)
+            {
+                this.bitmapWidth = 0;
+                this.bitmapHeight = 0;
             }
 
             bool hasParent = info.GetBoolean("hasParent");
@@ -386,14 +557,14 @@ namespace PaintDotNet
                 }
 
                 this.voidStar = (void *)((byte *)parentBlock.VoidStar + parentOffset);
+                this.valid = true;
             }
             else
             {
-                this.voidStar = Allocate(this.length).ToPointer();
-
                 DeferredFormatter deferredFormatter = context.Context as DeferredFormatter;
                 bool deferred = false;
 
+                // Was this stream serialized with deferment?
                 foreach (SerializationEntry entry in info)
                 {
                     if (entry.Name == "deferred")
@@ -416,6 +587,9 @@ namespace PaintDotNet
                 }
                 else
                 {
+                    this.voidStar = Allocate(this.length).ToPointer();
+                    this.valid = true;
+
                     // Non-deferred format serializes one big byte[] chunk. This is also
                     // how PDN files were saved with v2.1 Beta 2 and before.
                     byte[] array = (byte[])info.GetValue("pointerData", typeof(byte[]));
@@ -604,6 +778,18 @@ namespace PaintDotNet
 
         void IDeferredSerializable.FinishDeserialization(Stream input, DeferredFormatter context)
         {
+            // Allocate the memory
+            if (this.bitmapWidth != 0 && this.bitmapHeight != 0)
+            {
+                this.voidStar = Allocate(this.bitmapWidth, this.bitmapHeight, out this.bitmapHandle).ToPointer();
+                this.valid = true;
+            }
+            else
+            {
+                this.voidStar = Allocate(this.length).ToPointer();
+                this.valid = true;
+            }
+            
             // formatVersion should equal 0
             int formatVersion = input.ReadByte();
 
@@ -662,7 +848,7 @@ namespace PaintDotNet
 
                 // read compressed data
                 byte[] compressedBytes = new byte[dataSize];
-                input.Read(compressedBytes, 0, compressedBytes.Length);
+                Utility.ReadFromStream(input, compressedBytes, 0, compressedBytes.Length);
 
                 // decompress data
                 if (formatVersion == 0)
@@ -693,6 +879,7 @@ namespace PaintDotNet
             private uint chunkNumber;
             private long chunkOffset;
             private long chunkSize;
+            private object previousLock;
             private DeferredFormatter deferredFormatter;
             private ArrayList exceptions;
 
@@ -728,6 +915,14 @@ namespace PaintDotNet
                 }
             }
 
+            public object PreviousLock
+            {
+                get
+                {
+                    return (previousLock == null) ? this : previousLock;
+                }
+            }
+
             public DeferredFormatter DeferredFormatter
             {
                 get
@@ -744,12 +939,14 @@ namespace PaintDotNet
                 }
             }
 
-            public SerializeChunkParms(Stream output, uint chunkNumber, long chunkOffset, long chunkSize, DeferredFormatter deferredFormatter, ArrayList exceptions)
+            public SerializeChunkParms(Stream output, uint chunkNumber, long chunkOffset, long chunkSize, object previousLock,
+                DeferredFormatter deferredFormatter, ArrayList exceptions)
             {
                 this.output = output;
                 this.chunkNumber = chunkNumber;
                 this.chunkOffset = chunkOffset;
                 this.chunkSize = chunkSize;
+                this.previousLock = previousLock;
                 this.deferredFormatter = deferredFormatter;
                 this.exceptions = exceptions;
             }
@@ -761,7 +958,7 @@ namespace PaintDotNet
 
             try
             {
-                SerializeChunk(parms.Output, parms.ChunkNumber, parms.ChunkOffset, parms.ChunkSize, parms.DeferredFormatter);
+                SerializeChunk(parms.Output, parms.ChunkNumber, parms.ChunkOffset, parms.ChunkSize, parms, parms.PreviousLock, parms.DeferredFormatter);
             }
 
             catch (Exception ex)
@@ -770,66 +967,69 @@ namespace PaintDotNet
             }
         }                    
 
-        private void SerializeChunk(Stream output, uint chunkNumber, long chunkOffset, long chunkSize, DeferredFormatter deferredFormatter)
+        private void SerializeChunk(Stream output, uint chunkNumber, long chunkOffset, long chunkSize, 
+            object currentLock, object previousLock, DeferredFormatter deferredFormatter)
         {
-            int compression = deferredFormatter.CompressionLevel;
-
-            MemoryStream chunkOutput = new MemoryStream();
-
-            // chunkNumber
-            WriteUInt(chunkOutput, chunkNumber);
-
-            // dataSize
-            long rewindPos = chunkOutput.Position;
-            WriteUInt(chunkOutput, 0); // we'll rewind and write this later
-            long startPos = chunkOutput.Position;
-
-            // Compress data
-            byte[] array = new byte[chunkSize];
-
-            fixed (byte *pbArray = array)
+            lock (currentLock)
             {
-                Memory.Copy(pbArray, (byte *)this.VoidStar + chunkOffset, (ulong)chunkSize);
+                int compression = deferredFormatter.CompressionLevel;
+
+                MemoryStream chunkOutput = new MemoryStream();
+
+                // chunkNumber
+                WriteUInt(chunkOutput, chunkNumber);
+
+                // dataSize
+                long rewindPos = chunkOutput.Position;
+                WriteUInt(chunkOutput, 0); // we'll rewind and write this later
+                long startPos = chunkOutput.Position;
+
+                // Compress data
+                byte[] array = new byte[chunkSize];
+
+                fixed (byte *pbArray = array)
+                {
+                    Memory.Copy(pbArray, (byte *)this.VoidStar + chunkOffset, (ulong)chunkSize);
+                }
+
+                chunkOutput.Flush();
+
+                if (compression == 0)
+                {
+                    chunkOutput.Write(array, 0, array.Length);
+                }
+                else
+                {
+                    GZipOutputStream gZipStream = new GZipOutputStream(chunkOutput);
+                    gZipStream.SetLevel(compression);
+                    gZipStream.Write(array, 0, array.Length);
+                    gZipStream.Finish();
+                    gZipStream.Flush();
+                }
+
+                long endPos = chunkOutput.Position;
+
+                // dataSize
+                chunkOutput.Position = rewindPos;
+                uint dataSize = (uint)(endPos - startPos);
+                WriteUInt(chunkOutput, dataSize);
+
+                // bytes
+                chunkOutput.Flush();
+
+                lock (previousLock)
+                {
+                    output.Write(chunkOutput.GetBuffer(), 0, (int)chunkOutput.Length);
+                    deferredFormatter.ReportBytes(chunkSize);
+                }
             }
-
-            chunkOutput.Flush();
-
-            if (compression == 0)
-            {
-                chunkOutput.Write(array, 0, array.Length);
-            }
-            else
-            {
-                GZipOutputStream gZipStream = new GZipOutputStream(chunkOutput);
-                gZipStream.SetLevel(compression);
-                gZipStream.Write(array, 0, array.Length);
-                gZipStream.Finish();
-                gZipStream.Flush();
-            }
-
-            long endPos = chunkOutput.Position;
-
-            // dataSize
-            chunkOutput.Position = rewindPos;
-            uint dataSize = (uint)(endPos - startPos);
-            WriteUInt(chunkOutput, dataSize);
-
-            // bytes
-            chunkOutput.Flush();
-
-            lock (output)
-            {
-                output.Write(chunkOutput.GetBuffer(), 0, (int)chunkOutput.Length);
-            }
-
-            deferredFormatter.ReportBytes(chunkSize);
         }
 
         void IDeferredSerializable.FinishSerialization(Stream output, DeferredFormatter context)
         {
             int compression = context.CompressionLevel;
 
-            // formatVersion = 0
+            // formatVersion = 0 for GZIP, or 1 for uncompressed
             if (compression == 0)
             {
                 output.WriteByte(1);
@@ -848,12 +1048,14 @@ namespace PaintDotNet
             ArrayList exceptions = ArrayList.Synchronized(new ArrayList(Processor.LogicalCpuCount));
             WaitCallback callback = new WaitCallback(SerializeChunk);
 
+            object previousLock = null;
             for (uint chunk = 0; chunk < chunkCount; ++chunk)
             {
                 long chunkOffset = (long)chunk * (long)serializationChunkSize;
                 uint chunkSize = Math.Min((uint)serializationChunkSize, (uint)(this.length - chunkOffset));
-                SerializeChunkParms parms = new SerializeChunkParms(output, chunk, chunkOffset, chunkSize, context, exceptions);
+                SerializeChunkParms parms = new SerializeChunkParms(output, chunk, chunkOffset, chunkSize, previousLock, context, exceptions);
                 threadPool.QueueUserWorkItem(callback, parms);
+                previousLock = parms;
             }
 
             threadPool.Drain();
@@ -875,6 +1077,13 @@ namespace PaintDotNet
             }
 
             info.AddValue("length64", this.length);
+
+            if (this.bitmapWidth != 0 || this.bitmapHeight != 0 || this.bitmapHandle != IntPtr.Zero)
+            {
+                info.AddValue("bitmapWidth", bitmapWidth);
+                info.AddValue("bitmapHeight", bitmapHeight);
+            }
+
             info.AddValue("hasParent", this.parentBlock != null);
 
             if (parentBlock == null)
@@ -887,18 +1096,5 @@ namespace PaintDotNet
                 info.AddValue("parentOffset64", (long)((byte *)voidStar - (byte *)parentBlock.VoidStar));
             }
         }
-        #region IDeferredSerializable Members
-
-        public void FinishSerialization(Stream output)
-        {
-            // TODO:  Add MemoryBlock.FinishSerialization implementation
-        }
-
-        public void FinishDeserialization(Stream input)
-        {
-            // TODO:  Add MemoryBlock.FinishDeserialization implementation
-        }
-
-        #endregion
     }
 }

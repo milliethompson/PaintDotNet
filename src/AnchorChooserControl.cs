@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -10,6 +11,7 @@ using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace PaintDotNet
@@ -19,36 +21,15 @@ namespace PaintDotNet
     /// </summary>
     public class AnchorChooserControl : System.Windows.Forms.UserControl
     {
-        private System.Windows.Forms.RadioButton middleButton;
-        private System.Windows.Forms.RadioButton leftButton;
-        private System.Windows.Forms.RadioButton topRightButton;
-        private System.Windows.Forms.RadioButton topButton;
-        private System.Windows.Forms.RadioButton topLeftButton;
-        private System.Windows.Forms.RadioButton[,] buttons;
-        private System.Windows.Forms.RadioButton bottomRightButton;
-        private System.Windows.Forms.RadioButton bottomButton;
-        private System.Windows.Forms.RadioButton bottomLeftButton;
-        private System.Windows.Forms.RadioButton rightButton;
         /// <summary> 
         /// Required designer variable.
         /// </summary>
         private System.ComponentModel.Container components = null;
 
-        private Point ButtonToXy(RadioButton button)
-        {
-            for (int y = 0; y < 3; ++y)
-            {
-                for (int x = 0; x < 3; ++x)
-                {
-                    if (buttons[y,x] == button)
-                    {
-                        return new Point(x, y);
-                    }
-                }
-            }
-
-            return new Point(-1, -1);
-        }
+        private Image centerImage = null;
+        private AnchorEdge[][] xyToAnchorEdge;
+        private Hashtable anchorEdgeToXy; // maps AnchorEdge -> Point
+        private AnchorEdge anchorEdge = AnchorEdge.TopLeft;
 
         public event EventHandler AnchorEdgeChanged;
         protected virtual void OnAnchorEdgeChanged()
@@ -59,7 +40,7 @@ namespace PaintDotNet
             }
         }
 
-        private AnchorEdge anchorEdge;
+        [DefaultValue(AnchorEdge.TopLeft)]
         public AnchorEdge AnchorEdge
         {
             get
@@ -72,84 +53,40 @@ namespace PaintDotNet
                 if (anchorEdge != value)
                 {
                     anchorEdge = value;
-                    AnchorEdgeToButton(value).PerformClick();
                     OnAnchorEdgeChanged();
+                    Invalidate();
+                    Update();
                 }
             }
         }
-
-        private RadioButton AnchorEdgeToButton(AnchorEdge edge)
-        {
-            foreach (RadioButton button in buttons)
-            {
-                if ((AnchorEdge)button.Tag == edge)
-                {
-                    return button;
-                }
-            }
-
-            return null;
-        }
-
-        protected override void OnLoad(EventArgs e)
-        {
-            AnchorEdgeToButton(anchorEdge).PerformClick();
-        }
-
-
+        
         public AnchorChooserControl()
         {
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            buttons = new System.Windows.Forms.RadioButton[3,3];
-            topLeftButton.Tag = AnchorEdge.TopLeft;
-            topButton.Tag = AnchorEdge.Top;
-            topRightButton.Tag = AnchorEdge.TopRight;
-            leftButton.Tag = AnchorEdge.Left;
-            middleButton.Tag = AnchorEdge.Middle;
-            rightButton.Tag = AnchorEdge.Right;
-            bottomLeftButton.Tag = AnchorEdge.BottomLeft;
-            bottomButton.Tag = AnchorEdge.Bottom;
-            bottomRightButton.Tag = AnchorEdge.BottomRight;
+            this.ResizeRedraw = true;
 
-            buttons[0,0] = topLeftButton;
-            buttons[0,1] = topButton;
-            buttons[0,2] = topRightButton;
-            buttons[1,0] = leftButton;
-            buttons[1,1] = middleButton;
-            buttons[1,2] = rightButton;
-            buttons[2,0] = bottomLeftButton;
-            buttons[2,1] = bottomButton;
-            buttons[2,2] = bottomRightButton;
+            this.centerImage = PdnResources.GetImage("Images.AnchorChooserControl.AnchorImage.png");
+            this.xyToAnchorEdge = new AnchorEdge[][] {
+                                                         new AnchorEdge[] { AnchorEdge.TopLeft, AnchorEdge.Top, AnchorEdge.TopRight },
+                                                         new AnchorEdge[] { AnchorEdge.Left, AnchorEdge.Middle, AnchorEdge.Right },
+                                                         new AnchorEdge[] { AnchorEdge.BottomLeft, AnchorEdge.Bottom, AnchorEdge.BottomRight }
+                                                     };
 
-            AnchorEdge = AnchorEdge.Middle;
+            this.anchorEdgeToXy = new Hashtable();
+            this.anchorEdgeToXy.Add(AnchorEdge.TopLeft, new Point(0, 0));
+            this.anchorEdgeToXy.Add(AnchorEdge.Top, new Point(1, 0));
+            this.anchorEdgeToXy.Add(AnchorEdge.TopRight, new Point(2, 0));
+            this.anchorEdgeToXy.Add(AnchorEdge.Left, new Point(0, 1));
+            this.anchorEdgeToXy.Add(AnchorEdge.Middle, new Point(1, 1));
+            this.anchorEdgeToXy.Add(AnchorEdge.Right, new Point(2, 1));
+            this.anchorEdgeToXy.Add(AnchorEdge.BottomLeft, new Point(0, 2));
+            this.anchorEdgeToXy.Add(AnchorEdge.Bottom, new Point(1, 2));
+            this.anchorEdgeToXy.Add(AnchorEdge.BottomRight, new Point(2, 2));
 
-            OnResize(EventArgs.Empty);
-        }
-
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize (e);
-
-            for (int y = 0; y < 3; ++y)
-            {
-                for (int x = 0; x < 3; ++x)
-                {
-                    int cx = (x * this.Width) / 3;
-                    int cy = (y * this.Height) / 3;
-                    int width = (((x + 1) * this.Width) / 3) - cx + 1;
-                    int height = (((y + 1) * this.Height) / 3) - cy + 1;
-
-                    buttons[y,x].Location = new Point(cx, cy);
-                    buttons[y,x].Size = new Size(width, height);
-                }
-            }
-        }
-
-        private void button_Click(object sender, System.EventArgs e)
-        {
-            this.AnchorEdge = (AnchorEdge)((RadioButton)sender).Tag;
+            this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | 
+                ControlStyles.DoubleBuffer | ControlStyles.ResizeRedraw, true);
         }
 
         /// <summary> 
@@ -162,9 +99,9 @@ namespace PaintDotNet
                 if (components != null)
                 {
                     components.Dispose();
-                    components = null;
                 }
             }
+
             base.Dispose(disposing);
         }
 
@@ -175,122 +112,162 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            this.bottomRightButton = new System.Windows.Forms.RadioButton();
-            this.bottomButton = new System.Windows.Forms.RadioButton();
-            this.bottomLeftButton = new System.Windows.Forms.RadioButton();
-            this.rightButton = new System.Windows.Forms.RadioButton();
-            this.middleButton = new System.Windows.Forms.RadioButton();
-            this.leftButton = new System.Windows.Forms.RadioButton();
-            this.topRightButton = new System.Windows.Forms.RadioButton();
-            this.topButton = new System.Windows.Forms.RadioButton();
-            this.topLeftButton = new System.Windows.Forms.RadioButton();
-            this.SuspendLayout();
-            // 
-            // bottomRightButton
-            // 
-            this.bottomRightButton.Appearance = System.Windows.Forms.Appearance.Button;
-            this.bottomRightButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.bottomRightButton.Location = new System.Drawing.Point(103, 99);
-            this.bottomRightButton.Name = "bottomRightButton";
-            this.bottomRightButton.Size = new System.Drawing.Size(56, 48);
-            this.bottomRightButton.TabIndex = 17;
-            this.bottomRightButton.Click += new System.EventHandler(this.button_Click);
-            // 
-            // bottomButton
-            // 
-            this.bottomButton.Appearance = System.Windows.Forms.Appearance.Button;
-            this.bottomButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.bottomButton.Location = new System.Drawing.Point(47, 99);
-            this.bottomButton.Name = "bottomButton";
-            this.bottomButton.Size = new System.Drawing.Size(56, 48);
-            this.bottomButton.TabIndex = 16;
-            this.bottomButton.Click += new System.EventHandler(this.button_Click);
-            // 
-            // bottomLeftButton
-            // 
-            this.bottomLeftButton.Appearance = System.Windows.Forms.Appearance.Button;
-            this.bottomLeftButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.bottomLeftButton.Location = new System.Drawing.Point(-9, 99);
-            this.bottomLeftButton.Name = "bottomLeftButton";
-            this.bottomLeftButton.Size = new System.Drawing.Size(56, 48);
-            this.bottomLeftButton.TabIndex = 15;
-            this.bottomLeftButton.Click += new System.EventHandler(this.button_Click);
-            // 
-            // rightButton
-            // 
-            this.rightButton.Appearance = System.Windows.Forms.Appearance.Button;
-            this.rightButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.rightButton.Location = new System.Drawing.Point(103, 51);
-            this.rightButton.Name = "rightButton";
-            this.rightButton.Size = new System.Drawing.Size(56, 48);
-            this.rightButton.TabIndex = 14;
-            this.rightButton.Click += new System.EventHandler(this.button_Click);
-            // 
-            // middleButton
-            // 
-            this.middleButton.Appearance = System.Windows.Forms.Appearance.Button;
-            this.middleButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.middleButton.Location = new System.Drawing.Point(47, 51);
-            this.middleButton.Name = "middleButton";
-            this.middleButton.Size = new System.Drawing.Size(56, 48);
-            this.middleButton.TabIndex = 13;
-            this.middleButton.Click += new System.EventHandler(this.button_Click);
-            // 
-            // leftButton
-            // 
-            this.leftButton.Appearance = System.Windows.Forms.Appearance.Button;
-            this.leftButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.leftButton.Location = new System.Drawing.Point(-9, 51);
-            this.leftButton.Name = "leftButton";
-            this.leftButton.Size = new System.Drawing.Size(56, 48);
-            this.leftButton.TabIndex = 12;
-            this.leftButton.Click += new System.EventHandler(this.button_Click);
-            // 
-            // topRightButton
-            // 
-            this.topRightButton.Appearance = System.Windows.Forms.Appearance.Button;
-            this.topRightButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.topRightButton.Location = new System.Drawing.Point(103, 3);
-            this.topRightButton.Name = "topRightButton";
-            this.topRightButton.Size = new System.Drawing.Size(56, 48);
-            this.topRightButton.TabIndex = 11;
-            this.topRightButton.Click += new System.EventHandler(this.button_Click);
-            // 
-            // topButton
-            // 
-            this.topButton.Appearance = System.Windows.Forms.Appearance.Button;
-            this.topButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.topButton.Location = new System.Drawing.Point(47, 3);
-            this.topButton.Name = "topButton";
-            this.topButton.Size = new System.Drawing.Size(56, 48);
-            this.topButton.TabIndex = 10;
-            this.topButton.Click += new System.EventHandler(this.button_Click);
-            // 
-            // topLeftButton
-            // 
-            this.topLeftButton.Appearance = System.Windows.Forms.Appearance.Button;
-            this.topLeftButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.topLeftButton.Location = new System.Drawing.Point(-9, 3);
-            this.topLeftButton.Name = "topLeftButton";
-            this.topLeftButton.Size = new System.Drawing.Size(56, 48);
-            this.topLeftButton.TabIndex = 9;
-            this.topLeftButton.Click += new System.EventHandler(this.button_Click);
-            // 
-            // AnchorChooserControl
-            // 
-            this.Controls.Add(this.bottomRightButton);
-            this.Controls.Add(this.bottomButton);
-            this.Controls.Add(this.bottomLeftButton);
-            this.Controls.Add(this.rightButton);
-            this.Controls.Add(this.middleButton);
-            this.Controls.Add(this.leftButton);
-            this.Controls.Add(this.topRightButton);
-            this.Controls.Add(this.topButton);
-            this.Controls.Add(this.topLeftButton);
-            this.Name = "AnchorChooserControl";
-            this.ResumeLayout(false);
-
+            components = new System.ComponentModel.Container();
         }
         #endregion
+
+        private MouseButtons mouseButtonDown;
+        private bool mouseDown = false;
+        private Point mouseDownPoint;
+        private bool drawHotPush = false;
+        private Point hotAnchorButton = new Point(-1, -1);
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (!this.mouseDown)
+            {
+                this.mouseDown = true;
+                this.mouseButtonDown = e.Button;
+                this.mouseDownPoint = new Point(e.X, e.Y);
+
+                int anchorX = (e.X * 3) / this.Width;
+                int anchorY = (e.Y * 3) / this.Height;
+
+                this.hotAnchorButton = new Point(anchorX, anchorY);
+                this.drawHotPush = true;
+                Invalidate();
+            }
+
+            base.OnMouseDown (e);
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            if (this.mouseDown && e.Button == this.mouseButtonDown)
+            {
+                int anchorX = (e.X * 3) / this.Width;
+                int anchorY = (e.Y * 3) / this.Height;
+
+                this.drawHotPush = (anchorX == this.hotAnchorButton.X && anchorY == this.hotAnchorButton.Y);
+            }
+
+            Invalidate();
+            base.OnMouseMove (e);
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            if (this.mouseDown && e.Button == this.mouseButtonDown)
+            {
+                int anchorX = (e.X * 3) / this.Width;
+                int anchorY = (e.Y * 3) / this.Height;
+
+                if (anchorX == this.hotAnchorButton.X && anchorY == this.hotAnchorButton.Y &&
+                    anchorX >= 0 && anchorX <= 2 &&
+                    anchorY >= 0 && anchorY <= 2)
+                {
+                    AnchorEdge newEdge = (AnchorEdge)this.xyToAnchorEdge[anchorY][anchorX];
+                    this.AnchorEdge = newEdge;
+                    Invalidate();
+                }
+            }
+
+            this.drawHotPush = false;
+            this.mouseDown = false;
+            base.OnMouseUp (e);
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            Invalidate();
+            base.OnMouseLeave(e);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+            // Clear background
+            e.Graphics.Clear(SystemColors.Control);
+
+            // Draw each part
+            Point selection = (Point)this.anchorEdgeToXy[this.anchorEdge];
+
+            double controlCenterX = (double)this.Width / 2.0;
+            double controlCenterY = (double)this.Height / 2.0;
+
+            Pen linePen = new Pen(SystemColors.WindowText, (((float)Width + (float)Height) / 2.0f) / 64.0f);
+            AdjustableArrowCap cap = new AdjustableArrowCap((float)Width / 32.0f, (float)Height / 32.0f, true);
+            linePen.CustomEndCap = cap;
+
+            Point mousePoint = PointToClient(Control.MousePosition);
+            int mouseAnchorX = (int)Math.Floor(((float)mousePoint.X * 3.0f) / (float)this.Width);
+            int mouseAnchorY = (int)Math.Floor(((float)mousePoint.Y * 3.0f) / (float)this.Height);
+
+            for (int y = 0; y < 3; ++y)
+            {
+                for (int x = 0; x < 3; ++x)
+                {
+                    AnchorEdge edge = this.xyToAnchorEdge[y][x];
+                    Point offset = (Point)this.anchorEdgeToXy[edge];
+                    Point vector = new Point(offset.X - selection.X, offset.Y - selection.Y);
+
+                    int left = (this.Width * x) / 3;
+                    int top = (this.Height * y) / 3;
+                    int right = Math.Min(this.Width - 1, (this.Width * (x + 1)) / 3);
+                    int bottom = Math.Min(this.Height - 1, (this.Height * (y + 1)) / 3);
+                    int width = right - left;
+                    int height = bottom - top;
+
+                    if (vector.X == 0 && vector.Y == 0)
+                    {
+                        SystemLayer.UI.DrawThemedButton(this, e.Graphics, left, top, width, height, SystemLayer.UI.ButtonState.Pressed);
+                        e.Graphics.DrawImage(this.centerImage, left + 3, top + 3, width - 6, height - 6);
+                    }
+                    else 
+                    {
+                        SystemLayer.UI.ButtonState state;
+
+                        if (drawHotPush && x == this.hotAnchorButton.X && y == this.hotAnchorButton.Y)
+                        {
+                            state = SystemLayer.UI.ButtonState.Pressed;
+                        }
+                        else
+                        {
+                            state = SystemLayer.UI.ButtonState.Normal;
+
+                            if (!mouseDown && mouseAnchorX == x && mouseAnchorY == y)
+                            {
+                                state = SystemLayer.UI.ButtonState.Hot;
+                            }
+                        }
+
+                        SystemLayer.UI.DrawThemedButton(this, e.Graphics, left, top, width, height, state);
+
+                        if (vector.X <= 1 && vector.X >= -1 && vector.Y <= 1 && vector.Y >= -1)
+                        {
+                            double vectorMag = Math.Sqrt((double)((vector.X * vector.X) + (vector.Y * vector.Y)));
+                            double normalX = (double)vector.X / vectorMag;
+                            double normalY = (double)vector.Y / vectorMag;
+
+                            Point center = new Point((left + right) / 2, (top + bottom) / 2);
+
+                            Point start = new Point(center.X - (width / 4) * vector.X, center.Y - (height / 4) * vector.Y);
+                            Point end = new Point(
+                                start.X + (int)(((double)width / 2.0) * normalX),
+                                start.Y + (int)(((double)height / 2.0) * normalY));
+
+                            PixelOffsetMode oldPOM = e.Graphics.PixelOffsetMode;
+                            e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
+                            e.Graphics.DrawLine(linePen, start, end);
+                            e.Graphics.PixelOffsetMode = oldPOM;
+                        }
+                    }
+                }
+            }
+
+            linePen.Dispose();
+            base.OnPaint (e);
+        }
     }
 }

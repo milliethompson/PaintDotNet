@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -20,33 +21,26 @@ namespace PaintDotNet
     public class ZoomTool
         : Tool
     {
+        private bool moveOffsetMode = false;
         private MouseButtons mouseDown;
-        private IrregularSurface savedSurface = null;
-        private Point downPt, lastPt;
+        private Point downPt;
+        private Point lastPt;
         private Rectangle rect = Rectangle.Empty;
-        private Pen pen;
-        private RenderArgs renderArgs = null;
-        private BitmapLayer bitmapLayer;
         private Cursor cursorZoomIn;
         private Cursor cursorZoomOut;
         private Cursor cursorZoom;
         private Cursor cursorZoomPan;
+        private SelectionRenderer outlineRenderer;
+        private Selection outline;
 
         public ZoomTool(DocumentWorkspace parent)
             : base(parent,
-                   Utility.GetImageResource("Icons.ZoomToolIcon.bmp"),
-                   "Zoom",
-                   "Zooms in or out on the image.",
-                   "Left click to zoom in, right click to zoom out, middle click to slide",
+                   PdnResources.GetImage("Icons.ZoomToolIcon.bmp"),
+                   PdnResources.GetString("ZoomTool.Name"),
+                   PdnResources.GetString("ZoomTool.HelpText"),
                    'z')
         {
-            cursorZoom = new Cursor(Utility.GetResourceStream("Cursors.ZoomToolCursor.cur"));
-            cursorZoomIn = new Cursor(Utility.GetResourceStream("Cursors.ZoomInToolCursor.cur"));
-            cursorZoomOut = new Cursor(Utility.GetResourceStream("Cursors.ZoomOutToolCursor.cur"));
-            cursorZoomPan = new Cursor(Utility.GetResourceStream("Cursors.ZoomPanToolCursor.cur"));
-
-            Cursor = cursorZoom;
-            mouseDown = MouseButtons.None;
+            this.mouseDown = MouseButtons.None;
         }
 
         protected override void Dispose(bool disposing)
@@ -56,54 +50,74 @@ namespace PaintDotNet
             if (disposing)
             {
                 DisposeImage();
-
-                if (pen != null)
-                {
-                    pen.Dispose();
-                    pen = null;
-                }
-
-                if (cursorZoom != null)
-                {
-                    cursorZoom.Dispose();
-                    cursorZoom = null;
-                }
-
-                if (cursorZoomIn != null)
-                {
-                    cursorZoomIn.Dispose();
-                    cursorZoomIn = null;
-                }
-
-                if (cursorZoomOut != null)
-                {
-                    cursorZoomOut.Dispose();
-                    cursorZoomOut = null;
-                }
-
-                if (cursorZoomPan != null)
-                {
-                    cursorZoomPan.Dispose();
-                    cursorZoomPan = null;
-                }
             }
         }
 
         protected override void OnActivate()
         {
+            this.cursorZoom = new Cursor(PdnResources.GetResourceStream("Cursors.ZoomToolCursor.cur"));
+            this.cursorZoomIn = new Cursor(PdnResources.GetResourceStream("Cursors.ZoomInToolCursor.cur"));
+            this.cursorZoomOut = new Cursor(PdnResources.GetResourceStream("Cursors.ZoomOutToolCursor.cur"));
+            this.cursorZoomPan = new Cursor(PdnResources.GetResourceStream("Cursors.ZoomOutToolCursor.cur"));
+            //this.cursorZoomPan = new Cursor(PdnResources.GetResourceStream("Cursors.ZoomPanToolCursor.cur"));
+            this.Cursor = this.cursorZoom;
+
             base.OnActivate ();
             
-            bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
-            renderArgs = new RenderArgs(bitmapLayer.Surface);
+            //bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
+            //renderArgs = new RenderArgs(bitmapLayer.Surface);
+            this.outline = new Selection();
+            this.outlineRenderer = new SelectionRenderer(this.Renderers, this.outline, this.Workspace.DocumentView);
+            this.outlineRenderer.InvertedTinting = true;
+            this.outlineRenderer.TintColor = Color.FromArgb(128, 255, 255, 255);
+            this.outlineRenderer.ResetOutlineWhiteOpacity();
+            this.Renderers.Add(this.outlineRenderer, true);
+        }
+
+        protected override void OnDeactivate()
+        {
+            if (cursorZoom != null)
+            {
+                cursorZoom.Dispose();
+                cursorZoom = null;
+            }
+
+            if (cursorZoomIn != null)
+            {
+                cursorZoomIn.Dispose();
+                cursorZoomIn = null;
+            }
+
+            if (cursorZoomOut != null)
+            {
+                cursorZoomOut.Dispose();
+                cursorZoomOut = null;
+            }
+
+            if (cursorZoomPan != null)
+            {
+                cursorZoomPan.Dispose();
+                cursorZoomPan = null;
+            }
+
+            this.Renderers.Remove(this.outlineRenderer);
+            this.outlineRenderer.Dispose();
+            this.outlineRenderer = null;
+            
+            base.OnDeactivate();
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
 
-            if (mouseDown == MouseButtons.None) 
+            if (mouseDown != MouseButtons.None)
             {
-                switch(e.Button) 
+                this.moveOffsetMode = true;
+            }
+            else
+            {
+                switch (e.Button) 
                 {
                     case MouseButtons.Left:
                         Cursor = cursorZoomIn;
@@ -119,23 +133,9 @@ namespace PaintDotNet
                 }
 
                 mouseDown = e.Button;
-                lastPt = downPt = new Point(e.X, e.Y);
+                lastPt = new Point(e.X, e.Y);
+                downPt = lastPt;
                 OnMouseMove(e);
-
-                if (pen != null)
-                {
-                    pen.Dispose();
-                    pen = null;
-                }
-
-                pen = new Pen(Color.Blue, 1.0f);
-                pen.Alignment = PenAlignment.Outset;
-                pen.LineJoin = LineJoin.Round;
-                pen.MiterLimit = 2;
-                pen.DashStyle = DashStyle.Dash;
-                pen.DashPattern = new float[] { 2, 2 };
-                pen.DashOffset = 4.0f;
-                pen.Width = 1;
             }
         }
 
@@ -145,23 +145,29 @@ namespace PaintDotNet
 
             Point thisPt = new Point(e.X, e.Y);
 
+            if (this.moveOffsetMode)
+            {
+                Size delta = new Size(thisPt.X - lastPt.X, thisPt.Y - lastPt.Y);
+                downPt.X += delta.Width;
+                downPt.Y += delta.Height;
+            }
+
             if ((e.Button == MouseButtons.Left && 
                  mouseDown == MouseButtons.Left && 
-                 Utility.Distance(thisPt, downPt) > 10) ||
+                 Utility.Distance(thisPt, downPt) > 10) ||  // if they've moved the mouse more than 10 pixels since they clicked
                  !rect.IsEmpty) //don't undraw the rectangle
             {
-                // if they've moved the mouse more than 10 pixels since they clicked
                 rect = Utility.PointsToRectangle(downPt, thisPt);
-                rect.Intersect(renderArgs.Surface.Bounds);
+                rect.Intersect(Workspace.ActiveLayer.Bounds);
                 UpdateDrawnRect();
             } 
             else if (e.Button == MouseButtons.Middle && mouseDown == MouseButtons.Middle)
             {
-                PointF lastScrollPosition = Workspace.DocumentView.DocumentScrollPosition;
+                Point lastScrollPosition = Workspace.DocumentView.DocumentScrollPosition;
                 lastScrollPosition.X += thisPt.X - lastPt.X;
                 lastScrollPosition.Y += thisPt.Y - lastPt.Y;
                 Workspace.DocumentView.DocumentScrollPosition = lastScrollPosition;
-                Workspace.DocumentView.Update();
+                Update();
             }
             else
             {
@@ -175,11 +181,16 @@ namespace PaintDotNet
         {
             base.OnMouseUp (e);
             OnMouseMove(e);
+            bool resetMouseDown = true;
 
-            Cursor = Cursors.Arrow;
             Cursor = cursorZoom;
 
-            if (mouseDown == MouseButtons.Left || mouseDown == MouseButtons.Right) 
+            if (this.moveOffsetMode)
+            {
+                this.moveOffsetMode = false;
+                resetMouseDown = false;
+            } 
+            else if (mouseDown == MouseButtons.Left || mouseDown == MouseButtons.Right) 
             {
                 Rectangle zoomTo = rect;
 
@@ -191,7 +202,7 @@ namespace PaintDotNet
                     if (Utility.Magnitude(new PointF(zoomTo.Width, zoomTo.Height)) < 10) 
                     {
                         Workspace.ZoomIn();
-                        Workspace.DocumentView.RecenterView(new PointF(e.X, e.Y));
+                        Workspace.DocumentView.RecenterView(new Point(e.X, e.Y));
                     } 
                     else
                     {
@@ -201,55 +212,29 @@ namespace PaintDotNet
                 else
                 {
                     Workspace.ZoomOut();
-                    Workspace.DocumentView.RecenterView(new PointF(e.X, e.Y));
+                    Workspace.DocumentView.RecenterView(new Point(e.X, e.Y));
                 }
+
+                this.outline.Reset();
             }
 
-            mouseDown = MouseButtons.None;
-        }
-
-        private Rectangle[] EdgesFromRectangle(Rectangle rectangle)
-        {
-            Rectangle[] edges = new Rectangle[4];
-
-            edges[0] = new Rectangle(rectangle.Left, rectangle.Top, rectangle.Width, 1); // top
-            edges[1] = new Rectangle(rectangle.Left, rectangle.Top, 1, rectangle.Height); // left
-            edges[2] = new Rectangle(rectangle.Left, rectangle.Bottom, rectangle.Width, 1); // bottom
-            edges[3] = new Rectangle(rectangle.Right, rectangle.Top, 1, rectangle.Height); // right
-
-            return edges;
+            if (resetMouseDown)
+            {
+                mouseDown = MouseButtons.None;
+            }
         }
 
         private void UpdateDrawnRect() 
         {
-            if (savedSurface != null) 
-            {
-                savedSurface.Draw(renderArgs.Surface);
-                bitmapLayer.Invalidate(savedSurface.Region);
-                savedSurface.Dispose();
-                savedSurface = null;
-            }
-
             if (!rect.IsEmpty)
             {
-                int extra = (int)Math.Ceiling(2 * pen.Width);
-
-                Rectangle[] edges = EdgesFromRectangle(rect);
-                Rectangle[] inflatedEdges = Utility.InflateRectangles(edges, extra);
-
-                for (int i = 0; i < inflatedEdges.Length; ++i)
-                {
-                    inflatedEdges[i].Intersect(renderArgs.Bounds);
-                }
-
-                savedSurface = new IrregularSurface(renderArgs.Surface, inflatedEdges);
-
-                renderArgs.Graphics.SmoothingMode = SmoothingMode.HighQuality;
-                renderArgs.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                renderArgs.Graphics.DrawRectangle(pen, rect);
-
-                bitmapLayer.Invalidate(savedSurface.Region);
-                Workspace.Update();
+                this.outline.PerformChanging();
+                this.outline.Reset();
+                this.outline.SetContinuation(rect, CombineMode.Replace);
+                this.outlineRenderer.ResetOutlineWhiteOpacity();
+                this.outline.CommitContinuation();
+                this.outline.PerformChanged();
+                Update();
             }
         }
     }

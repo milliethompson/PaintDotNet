@@ -1,11 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -20,6 +22,22 @@ namespace PaintDotNet
     public class CanvasSizeAction
         : DocumentAction
     {
+        public static string StaticName
+        {
+            get
+            {
+                return PdnResources.GetString("CanvasSizeAction.Name");
+            }
+        }
+
+        public static Image StaticImage
+        {
+            get
+            {
+                return PdnResources.GetImage("Icons.MenuImageCanvasSizeIcon.bmp");
+            }
+        }
+
         public static BitmapLayer ResizeLayer(BitmapLayer layer, Size newSize, AnchorEdge anchor, ColorBgra background)
         {
             BitmapLayer newLayer = new BitmapLayer(newSize.Width, newSize.Height);
@@ -101,14 +119,14 @@ namespace PaintDotNet
         public static Document ResizeDocument(Document document, Size newSize, AnchorEdge edge, ColorBgra background)
         {
             Document newDoc = new Document(newSize.Width, newSize.Height);
-            newDoc.CopyPropertiesFrom(document);
+            newDoc.ReplaceMetaDataFrom(document);
 
-			for (int i = 0; i < document.Layers.Count; ++i)
-			{
-				Layer layer = (Layer)document.Layers[i];
+            for (int i = 0; i < document.Layers.Count; ++i)
+            {
+                Layer layer = (Layer)document.Layers[i];
 
-				if (layer is BitmapLayer)
-				{
+                if (layer is BitmapLayer)
+                {
                     Layer newLayer;
 
                     try
@@ -122,13 +140,13 @@ namespace PaintDotNet
                         throw;
                     }
 
-					newDoc.Layers.Add(newLayer);
-				}
-				else
-				{
-					throw new InvalidOperationException("Canvas Size does not support Layers that are not BitmapLayers");
-				}
-			}
+                    newDoc.Layers.Add(newLayer);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Canvas Size does not support Layers that are not BitmapLayers");
+                }
+            }
                     
             return newDoc;
         }
@@ -139,38 +157,85 @@ namespace PaintDotNet
                                               Document document, 
                                               Size initialNewSize, 
                                               AnchorEdge initialAnchor, 
-                                              ColorBgra background)
+                                              ColorBgra background,
+                                              bool loadAndSaveMaintainAspect,
+                                              bool saveAnchor)
         {
             using (CanvasSizeDialog csd = new CanvasSizeDialog())
             {
+                bool maintainAspect;
+                
+                if (loadAndSaveMaintainAspect)
+                {
+                    maintainAspect = Settings.CurrentUser.GetBoolean(PdnSettings.LastMaintainAspectRatioCS, false);
+                }
+                else
+                {
+                    maintainAspect = false;
+                }
 
-                csd.AspectRatio = (double)document.Width / (double)document.Height;
-                csd.IsLocked = false;
                 csd.OriginalSize = document.Size;
+                csd.OriginalDpuUnit = document.DpuUnit;
+                csd.OriginalDpu = document.DpuX;
                 csd.ImageWidth = initialNewSize.Width;
                 csd.ImageHeight = initialNewSize.Height;
-                csd.DocumentSize = csd.ImageHeight * csd.ImageWidth * document.Layers.Count * System.Runtime.InteropServices.Marshal.SizeOf(typeof(ColorBgra));
-                csd.Layers = document.Layers.Count;
+                csd.LayerCount = document.Layers.Count;
                 csd.AnchorEdge = initialAnchor;
+                csd.Units = csd.OriginalDpuUnit;
+                csd.Resolution = document.DpuX;
+                csd.Units = PdnSettings.GetLastNonPixelUnits();
+                csd.ConstrainToAspect = maintainAspect;
 
                 DialogResult result = Utility.ShowDialog(csd, parent);
                 Size newSize = new Size(csd.ImageWidth, csd.ImageHeight);
+                MeasurementUnit newDpuUnit = csd.Units;
+                double newDpu = csd.Resolution;
 
-                if (result == DialogResult.Cancel ||
-                    newSize == document.Size)
+                // If they cancelled, get out
+                if (result == DialogResult.Cancel)
                 {
                     return null;
                 }
 
+                // If they clicked OK, then we save the aspect checkbox, and maybe the anchor
+                if (loadAndSaveMaintainAspect)
+                {
+                    Settings.CurrentUser.SetBoolean(PdnSettings.LastMaintainAspectRatioCS, csd.ConstrainToAspect);
+                }
+
+                if (saveAnchor)
+                {
+                    Settings.CurrentUser.SetString(PdnSettings.LastCanvasSizeAnchorEdge, csd.AnchorEdge.ToString());
+                }
+
+                if (newSize == document.Size && newDpuUnit == document.DpuUnit && newDpu == document.DpuX)
+                {
+                    return null;
+                }
+
+                // PERF BUG: Would like to not replace the entire Document instance if they only change
+                //           the dpu/dpuUnit, but that would require an interface change.
+                //           Will consider for later.
+
                 try
                 {
-                    return ResizeDocument(document, newSize, csd.AnchorEdge, background);
+                    Utility.GCFullCollect();
+                    Document newDoc = ResizeDocument(document, newSize, csd.AnchorEdge, background);
+                    newDoc.DpuUnit = newDpuUnit;
+                    newDoc.DpuX = newDpu;
+                    newDoc.DpuY = newDpu;
+                    return newDoc;
                 }
 
                 catch (OutOfMemoryException)
                 {
-                    Utility.GCFullCollect();
-                    Utility.ErrorBox(parent, "Not enough memory to resize the canvas.");
+                    Utility.ErrorBox(parent, PdnResources.GetString("CanvasSizeAction.ResizeDocument.OutOfMemory"));
+                    return null;
+                }
+
+                // BUG: If this catch block is not here, the C# compiler does NOT seem to flag it as "not all code paths return a value"
+                catch
+                {
                     return null;
                 }
             }
@@ -178,12 +243,24 @@ namespace PaintDotNet
 
         public override HistoryAction PerformAction()
         {
+            AnchorEdge initialEdge = PdnSettings.GetLastCanvasSizeAnchorEdge();
+
             Document newDoc = ResizeDocument(Workspace.FindForm(), 
-                Workspace.Document, Workspace.Document.Size, AnchorEdge.Middle, Workspace.Environment.BackColor);
+                Workspace.Document, Workspace.Document.Size, initialEdge, Workspace.Environment.BackColor, true, true);
 
             if (newDoc != null)
             {
-                ReplaceDocumentHistoryAction rdha = new ReplaceDocumentHistoryAction(Name, Utility.GetImageResource("Icons.MenuImageCanvasSizeIcon.bmp"), Workspace);
+                if (newDoc.DpuUnit != MeasurementUnit.Pixel)
+                {
+                    Settings.CurrentUser.SetString(PdnSettings.LastNonPixelUnits, newDoc.DpuUnit.ToString());
+
+                    if (Workspace.Environment.Units != MeasurementUnit.Pixel)
+                    {
+                        Workspace.Environment.Units = newDoc.DpuUnit;
+                    }
+                }
+
+                ReplaceDocumentHistoryAction rdha = new ReplaceDocumentHistoryAction(Name, StaticImage, Workspace);
                 Workspace.SetDocument(newDoc);
                 return rdha;
             }
@@ -194,7 +271,7 @@ namespace PaintDotNet
         }
 
         public CanvasSizeAction(DocumentWorkspace workspace)
-            : base(workspace, "Canvas Size")
+            : base(workspace, StaticName)
         {
         }
     }

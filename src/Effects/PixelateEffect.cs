@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -20,12 +21,19 @@ namespace PaintDotNet.Effects
         : Effect, 
           IConfigurableEffect
     {
-		public PixelateEffect() 
-			: base("Pixelate", 
-                   "Tiles a Picture", 
-                   Utility.GetImageResource("Icons.PixelateEffect.bmp"))
-		{
-		}
+        public static string StaticName
+        {
+            get
+            {
+                return PdnResources.GetString("PixelateEffect.Name");
+            }
+        }
+
+        public PixelateEffect() 
+            : base(StaticName,
+                   PdnResources.GetImage("Icons.PixelateEffect.bmp"))
+        {
+        }
 
         public override void Render(RenderArgs dstArgs, RenderArgs srcArgs, Rectangle roi)
         {
@@ -95,19 +103,19 @@ namespace PaintDotNet.Effects
             AmountEffectConfigDialog aecg = new AmountEffectConfigDialog();
 
             aecg.Effect = this;
-            aecg.Text = "Pixelate";
+            aecg.Text = PdnResources.GetString("PixelateEffect.Name");
             aecg.SliderMinimum = 1;
             aecg.SliderMaximum = 100;
-            aecg.SliderLabel = "Cell Size";
-            aecg.SliderUnitsName = "pixels";
-            aecg.Icon = Utility.GetIconResource("Icons.PixelateEffect.bmp");
+            aecg.SliderLabel = PdnResources.GetString("PixelateEffect.ConfigDialog.SliderLabel");
+            aecg.SliderUnitsName = PdnResources.GetString("PixelateEffect.ConfigDialog.SliderUnitsName");
+            aecg.Icon = PdnResources.GetIconFromImage("Icons.PixelateEffect.bmp");
 
             return aecg;
         }
 
         void IConfigurableEffect.Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
         {
-			AmountEffectConfigToken aecd = (AmountEffectConfigToken)properties;
+            AmountEffectConfigToken aecd = (AmountEffectConfigToken)properties;
 
             foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
             {

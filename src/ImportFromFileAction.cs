@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -15,12 +16,12 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for ImportFromFileAction.
-	/// </summary>
-	public class ImportFromFileAction
+    /// <summary>
+    /// Summary description for ImportFromFileAction.
+    /// </summary>
+    public class ImportFromFileAction
         : DocumentAction
-	{
+    {
         private void Rollback(ArrayList historyActions)
         {
             for (int i = historyActions.Count - 1; i >= 0; i--)
@@ -34,8 +35,12 @@ namespace PaintDotNet
         {
             HistoryAction retHA;
 
-            DialogResult dr = MessageBox.Show(this.Workspace, "The image being imported is larger than the image canvas.\nExpand canvas to fit imported image?", 
-                PdnInfo.GetAppName(), MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+            DialogResult dr = MessageBox.Show(
+                this.Workspace, 
+                PdnResources.GetString("ImportFromFileAction.AskForCanvasResize.Confirmation"),
+                PdnInfo.GetAppName(), 
+                MessageBoxButtons.YesNoCancel, 
+                MessageBoxIcon.Question);
 
             int layerIndex = Workspace.Document.Layers.IndexOf(Workspace.ActiveLayer);
 
@@ -51,15 +56,16 @@ namespace PaintDotNet
                     {
                         using (new WaitCursorChanger(this.Workspace))
                         {
+                            Utility.GCFullCollect();
+
                             newDoc = CanvasSizeAction.ResizeDocument(this.Workspace, Workspace.Document, newSize, 
-                                AnchorEdge.TopLeft, Workspace.Environment.BackColor);
+                                AnchorEdge.TopLeft, Workspace.Environment.BackColor, false, false);
                         }
                     }
 
                     catch (OutOfMemoryException)
                     {
-                        Utility.GCFullCollect();
-                        Utility.ErrorBox(this.Workspace, "Ran out of memory while trying to resize the image");
+                        Utility.ErrorBox(this.Workspace, PdnResources.GetString("ImportFromFileAction.AskForCanvasResize.OutOfMemory"));
                         newDoc = null;
                     }
 
@@ -90,7 +96,7 @@ namespace PaintDotNet
                     break;
 
                 default:
-                    throw new InvalidEnumArgumentException("Internal error: DialogResult was no Yes, No, or Cancel");
+                    throw new InvalidEnumArgumentException("Internal error: DialogResult was not Yes, No, or Cancel");
             }
 
             return retHA;
@@ -104,7 +110,7 @@ namespace PaintDotNet
             
             if (success)
             {
-                if (!Workspace.Environment.IsSelectionEmpty)
+                if (!Workspace.Environment.Selection.IsEmpty)
                 {
                     HistoryAction ha = new DeselectAction(this.Workspace).PerformAction();
                     historyActions.Add(ha);
@@ -139,6 +145,8 @@ namespace PaintDotNet
                     {
                         using (new WaitCursorChanger(this.Workspace))
                         {
+                            Utility.GCFullCollect();
+
                             newLayer = CanvasSizeAction.ResizeLayer((BitmapLayer)layer, Workspace.Document.Size, 
                                 AnchorEdge.TopLeft, ColorBgra.White.NewAlpha(0));
                         }
@@ -146,8 +154,7 @@ namespace PaintDotNet
 
                     catch (OutOfMemoryException)
                     {
-                        Utility.GCFullCollect();
-                        Utility.ErrorBox(this.Workspace, "Ran out of memory while trying to resize the layer");
+                        Utility.ErrorBox(this.Workspace, PdnResources.GetString("ImportFromFileAction.ImportOneLayer.OutOfMemory"));
                         success = false;
                         newLayer = null;
                     }
@@ -189,7 +196,7 @@ namespace PaintDotNet
         /// <remarks>
         /// This function will take ownership of the Document given to it, and will Dispose() of it.
         /// </remarks>
-        private HistoryAction ImportDocument(Document document)
+        private HistoryAction ImportDocument(Document document, out Rectangle lastLayerBounds)
         {
             ArrayList historyActions = new ArrayList();
             bool[] selected;
@@ -217,6 +224,8 @@ namespace PaintDotNet
                 }
             }
 
+            lastLayerBounds = Rectangle.Empty;
+
             if (selected != null)
             {
                 ArrayList layers = new ArrayList();
@@ -239,6 +248,7 @@ namespace PaintDotNet
 
                 foreach (Layer layer in layers)
                 {
+                    lastLayerBounds = layer.Bounds;
                     HistoryAction ha = ImportOneLayer((BitmapLayer)layer);
 
                     if (ha != null)
@@ -267,11 +277,12 @@ namespace PaintDotNet
             }
             else
             {
+                lastLayerBounds = Rectangle.Empty;
                 return null;
             }
         }
 
-        private HistoryAction ImportOneFile(string fileName)
+        private HistoryAction ImportOneFile(string fileName, out Rectangle lastLayerBounds)
         {
             FileType fileType;
             Document document = MainForm.LoadDocument(Workspace, fileName, out fileType);
@@ -279,18 +290,20 @@ namespace PaintDotNet
             if (document != null)
             {
                 string name = Path.ChangeExtension(Path.GetFileName(fileName), null);
+                string newLayerNameFormat = PdnResources.GetString("ImportFromFileAction.ImportOneFile.NewLayer.Format");
 
                 foreach (Layer layer in document.Layers)
                 {
-                    layer.Name = name + ": " + layer.Name;
+                    layer.Name = string.Format(newLayerNameFormat, name, layer.Name);
                     layer.IsBackground = false;
                 }
 
-                HistoryAction ha = ImportDocument(document);
+                HistoryAction ha = ImportDocument(document, out lastLayerBounds);
                 return ha;
             }
             else
             {
+                lastLayerBounds = Rectangle.Empty;
                 return null;
             }
         }
@@ -299,10 +312,11 @@ namespace PaintDotNet
         {
             HistoryAction retHA = null;
             ArrayList historyActions = new ArrayList();
+            Rectangle lastLayerBounds = Rectangle.Empty;
 
             foreach (string fileName in fileNames)
             {
-                HistoryAction ha = ImportOneFile(fileName);
+                HistoryAction ha = ImportOneFile(fileName, out lastLayerBounds);
 
                 if (ha != null)
                 {
@@ -316,10 +330,21 @@ namespace PaintDotNet
                 }
             }
 
+            if (lastLayerBounds.Width > 0 && lastLayerBounds.Height > 0)
+            {
+                SelectionHistoryAction sha = new SelectionHistoryAction(null, null, this.Workspace);
+                historyActions.Add(sha);
+                Workspace.Environment.Selection.PerformChanging();
+                Workspace.Environment.Selection.Reset();
+                Workspace.Environment.Selection.SetContinuation(lastLayerBounds, System.Drawing.Drawing2D.CombineMode.Replace);
+                Workspace.Environment.Selection.CommitContinuation();
+                Workspace.Environment.Selection.PerformChanged();
+            }
+
             if (historyActions.Count > 0)
             {
                 HistoryAction[] haArray = (HistoryAction[])historyActions.ToArray(typeof(HistoryAction));
-                retHA = new CompoundHistoryAction(this.Name, Utility.GetImageResource("Icons.MenuLayersImportFromFileIcon.bmp"), haArray);
+                retHA = new CompoundHistoryAction(this.Name, StaticImage, haArray);
             }
 
             return retHA;
@@ -339,16 +364,32 @@ namespace PaintDotNet
 
             if (retHA != null)
             {
-                CompoundHistoryAction cha = new CompoundHistoryAction(this.Name, Utility.GetImageResource("Icons.MenuLayersImportFromFileIcon.bmp"), new HistoryAction[] { retHA });
+                CompoundHistoryAction cha = new CompoundHistoryAction(this.Name, StaticImage, new HistoryAction[] { retHA });
                 retHA = cha;
             }
 
             return retHA;
         }
 
-		public ImportFromFileAction(DocumentWorkspace workspace)
-            : base(workspace, "Import From File")
-		{
-		}
-	}
+        public static string StaticName
+        {
+            get
+            {
+                return PdnResources.GetString("ImportFromFileAction.Name");
+            }
+        }
+
+        public static Image StaticImage
+        {
+            get
+            {
+                return PdnResources.GetImage("Icons.MenuLayersImportFromFileIcon.bmp");
+            }
+        }
+
+        public ImportFromFileAction(DocumentWorkspace workspace)
+            : base(workspace, StaticName)
+        {
+        }
+    }
 }

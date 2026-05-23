@@ -1,17 +1,20 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
-// Original C++ implementation by Jason Waltman as part of "Filter Explorer," http://www.jasonwaltman.com/thesis/index.html
+// Original C++ implementation by Jason Waltman as part of "Filter Explorer," 
+// http://www.jasonwaltman.com/thesis/index.html
 
 using PaintDotNet;
 using PaintDotNet.Effects;
 using System;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
@@ -19,26 +22,30 @@ namespace PaintDotNet.Effects
         : Effect,
           IConfigurableEffect
     {
-        [ThreadStatic]
-        private static Random random = null;
-
-        private static Random Random
+        public static string StaticName
         {
             get
             {
-                if (random == null)
-                {
-                    random = new Random();
-                }
-
-                return random;
+                return PdnResources.GetString("FrostedGlassEffect.Name");
             }
         }
 
+        public static Image StaticImage
+        {
+            get
+            {
+                return PdnResources.GetImage("Icons.FrostedGlassEffect.bmp");
+            }
+        }
+
+        private Random random = new Random();
+
         public FrostedGlassEffect() 
-            : base("Frosted Glass", 
-                   "Gives the illusion of peering through a pane of frosted glass", 
-                   Utility.GetImageResource("Icons.FrostedGlassEffect.bmp"))
+            : base(StaticName, 
+                   StaticImage,
+                   Shortcut.None,
+                   null,
+                   EffectDirectives.None)
         {
         }
 
@@ -47,11 +54,11 @@ namespace PaintDotNet.Effects
             AmountEffectConfigDialog aecd = new AmountEffectConfigDialog();
             aecd.SliderMinimum = 1;
             aecd.SliderMaximum = 10;
-            aecd.Text = "Frosted Glass";
-            aecd.SliderLabel = "Scatter Radius";
-			aecd.SliderUnitsName = "pixels";
+            aecd.Text = StaticName;
+            aecd.SliderLabel = PdnResources.GetString("FrostedGlassEffect.ConfigDialog.SliderLabel");
+            aecd.SliderUnitsName = PdnResources.GetString("FrostedGlassEffect.ConfigDialog.SliderUnitsName");
 
-			aecd.Icon = Utility.GetIconResource("Icons.FrostedGlassEffect.bmp");
+            aecd.Icon = Utility.ImageToIcon(StaticImage, true);
             return aecd;
         }
 
@@ -64,7 +71,7 @@ namespace PaintDotNet.Effects
             int width = src.Width;
             int height = src.Height;
             int r = realToken.Amount;
-            Random random = FrostedGlassEffect.Random;
+            Random random = this.random;
 
             int[] intensityCount = new int[256];
             uint[] avgRed = new uint[256];
@@ -149,7 +156,13 @@ namespace PaintDotNet.Effects
                             }
                         }
 
-                        int randNum = random.Next(intensityChoicesIndex);
+                        int randNum;
+
+                        lock (random)
+                        {
+                            randNum = random.Next(intensityChoicesIndex);
+                        }
+
                         byte chosenIntensity = intensityChoices[randNum];
 
                         byte R = (byte)(avgRed[chosenIntensity] / intensityCount[chosenIntensity]);

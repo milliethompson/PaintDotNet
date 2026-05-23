@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -17,24 +18,24 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for HistoryElement.
     /// </summary>
-	public class HistoryElement : System.Windows.Forms.UserControl
-	{
-		private System.Windows.Forms.Label historyDescription;
-		private IconBox historyIcon;
-		private bool isUndo;
+    public class HistoryElement : System.Windows.Forms.UserControl
+    {
+        private System.Windows.Forms.Label historyDescription;
+        private IconBox historyIcon;
+        private bool isUndo;
 
-		protected override void WndProc(ref Message m)
-		{
-			IntPtr preR = m.Result;
+        protected override void WndProc(ref Message m)
+        {
+            IntPtr preR = m.Result;
 
-			// Ignore focus
-			if (m.Msg == NativeMethods.WmConstants.WM_SETFOCUS)
-			{
-				return;
-			}
+            // Ignore focus
+            if (m.Msg == NativeMethods.WmConstants.WM_SETFOCUS)
+            {
+                return;
+            }
 
-			base.WndProc (ref m);
-		}	
+            base.WndProc (ref m);
+        }   
 
         /// <summary> 
         /// Required designer variable.
@@ -163,7 +164,6 @@ namespace PaintDotNet
             this.historyDescription.Name = "historyDescription";
             this.historyDescription.Size = new System.Drawing.Size(134, 24);
             this.historyDescription.TabIndex = 0;
-            this.historyDescription.Text = "I Love History";
             this.historyDescription.UseMnemonic = false;
             this.historyDescription.Click += new System.EventHandler(this.Control_Click);
             this.historyDescription.DoubleClick += new System.EventHandler(this.Control_Click);
@@ -208,7 +208,7 @@ namespace PaintDotNet
 
         protected override void OnPaintBackground(PaintEventArgs pevent)
         {
-			// Do not call base so as to avoid flickering
+            // Do not call base so as to avoid flickering
             //base.OnPaintBackground (pevent);
         }
 

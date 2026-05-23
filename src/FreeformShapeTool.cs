@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -62,15 +63,30 @@ namespace PaintDotNet
             return path;
         }
 
+        protected override void OnActivate()
+        {
+            this.freeformShapeToolCursor = new Cursor(PdnResources.GetResourceStream("Cursors.FreeformShapeToolCursor.cur"));
+            this.Cursor = this.freeformShapeToolCursor;
+            base.OnActivate();
+        }
+
+        protected override void OnDeactivate()
+        {
+            if (this.freeformShapeToolCursor != null)
+            {
+                this.freeformShapeToolCursor.Dispose();
+                this.freeformShapeToolCursor = null;
+            }
+
+            base.OnDeactivate ();
+        }
+
         public FreeformShapeTool(DocumentWorkspace parent)
             : base(parent,
-                   Utility.GetImageResource("Icons.FreeformShapeToolIcon.bmp"),
-                   "Freeform Shape",
-                   "Draws a freeform shape",
-                   "Left click to draw a freeform shape with the foreground color, right click to use the background color")
+                   PdnResources.GetImage("Icons.FreeformShapeToolIcon.bmp"),
+                   PdnResources.GetString("FreeformShapeTool.Name"),
+                   PdnResources.GetString("FreeformShapeTool.HelpText"))
         {
-            this.freeformShapeToolCursor = new Cursor(Utility.GetResourceStream("Cursors.FreeformShapeToolCursor.cur"));
-            this.Cursor = this.freeformShapeToolCursor;
         }
 
         protected override void Dispose(bool disposing)
@@ -80,12 +96,6 @@ namespace PaintDotNet
             if (disposing)
             {
                 DisposeImage();
-
-                if (this.freeformShapeToolCursor != null)
-                {
-                    this.freeformShapeToolCursor.Dispose();
-                    this.freeformShapeToolCursor = null;
-                }
             }
         }
 

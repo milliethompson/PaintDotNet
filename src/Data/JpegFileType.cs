@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -22,7 +23,7 @@ namespace PaintDotNet
         {
         }
 
-        public override SaveConfigToken CreateDefaultSaveConfigToken()
+        protected override SaveConfigToken OnCreateDefaultSaveConfigToken()
         {
             return new JpegSaveConfigToken(95);
         }
@@ -32,7 +33,7 @@ namespace PaintDotNet
             return new JpegSaveConfigWidget();
         }
 
-        public override void Save(Document input, System.IO.Stream output, SaveConfigToken token)
+        protected override void OnSave(Document input, System.IO.Stream output, SaveConfigToken token, ProgressEventHandler callback)
         {
             JpegSaveConfigToken jsct = (JpegSaveConfigToken)token;
 

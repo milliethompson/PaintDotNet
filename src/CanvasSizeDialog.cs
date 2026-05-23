@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -17,12 +18,14 @@ namespace PaintDotNet
     public class CanvasSizeDialog 
         : PaintDotNet.ResizeDialog
     {
+        private EnumWrapper anchorEdgeNames = EnumWrapper.Create(typeof(AnchorEdge));
         private AnchorChooserControl anchorChooserControl;
-        private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.Label anchorLabel;
-        private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.Label newSpaceLabel;
+        private PaintDotNet.HeaderLabel anchorHeader;
+        private System.Windows.Forms.ComboBox anchorEdgeCB;
         private System.ComponentModel.IContainer components = null;
 
+        [DefaultValue(AnchorEdge.TopLeft)]
         public AnchorEdge AnchorEdge
         {
             get
@@ -41,9 +44,25 @@ namespace PaintDotNet
             // This call is required by the Windows Form Designer.
             InitializeComponent();
 
-            anchorChooserControl_AnchorEdgeChanged(anchorChooserControl, EventArgs.Empty);
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuImageCanvasSizeIcon.bmp"), Color.FromArgb(192, 192, 192));
 
-            this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.MenuImageCanvasSizeIcon.bmp"), Color.FromArgb(192, 192, 192));
+            this.Text = PdnResources.GetString("CanvasSizeDialog.Text"); // "Canvas Size";
+            this.anchorHeader.Text = PdnResources.GetString("CanvasSizeDialog.AnchorHeader.Text"); //"Anchor";
+            this.newSpaceLabel.Text = PdnResources.GetString("CanvasSizeDialog.NewSpaceLabel.Text"); //"The new space will be filled with the currently selected background color.";
+
+            foreach (string name in Enum.GetNames(typeof(AnchorEdge)))
+            {
+                AnchorEdge value = (AnchorEdge)Enum.Parse(typeof(AnchorEdge), name, true);
+                string itemName = this.anchorEdgeNames.EnumValueToLocalizedName(value);
+                this.anchorEdgeCB.Items.Add(itemName);
+
+                if (value == this.AnchorEdge)
+                {
+                    this.anchorEdgeCB.SelectedItem = itemName;
+                }
+            }
+
+            anchorChooserControl_AnchorEdgeChanged(anchorChooserControl, EventArgs.Empty);
         }
 
         /// <summary>
@@ -70,184 +89,259 @@ namespace PaintDotNet
         private void InitializeComponent()
         {
             this.anchorChooserControl = new PaintDotNet.AnchorChooserControl();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.label8 = new System.Windows.Forms.Label();
-            this.anchorLabel = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.widthUpDown)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.heightUpDown)).BeginInit();
-            this.resizedImageGroupBox.SuspendLayout();
+            this.newSpaceLabel = new System.Windows.Forms.Label();
+            this.anchorHeader = new PaintDotNet.HeaderLabel();
+            this.anchorEdgeCB = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.percentUpDown)).BeginInit();
-            this.groupBox1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.resolutionUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pixelWidthUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pixelHeightUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.printWidthUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.printHeightUpDown)).BeginInit();
             this.SuspendLayout();
             // 
-            // ratioCheck
+            // constrainCheckBox
             // 
-            this.ratioCheck.Location = new System.Drawing.Point(38, 92);
-            this.ratioCheck.Name = "ratioCheck";
-            // 
-            // label1
-            // 
-            this.label1.Location = new System.Drawing.Point(35, 42);
-            this.label1.Name = "label1";
-            // 
-            // label2
-            // 
-            this.label2.Location = new System.Drawing.Point(35, 68);
-            this.label2.Name = "label2";
+            this.constrainCheckBox.Location = new System.Drawing.Point(24, 74);
+            this.constrainCheckBox.Name = "constrainCheckBox";
             // 
             // okButton
             // 
-            this.okButton.Location = new System.Drawing.Point(96, 376);
+            this.okButton.Location = new System.Drawing.Point(142, 366);
             this.okButton.Name = "okButton";
-            this.okButton.TabIndex = 8;
+            this.okButton.TabIndex = 18;
             // 
             // cancelButton
             // 
-            this.cancelButton.Location = new System.Drawing.Point(176, 376);
+            this.cancelButton.Location = new System.Drawing.Point(220, 366);
             this.cancelButton.Name = "cancelButton";
-            this.cancelButton.TabIndex = 9;
+            this.cancelButton.TabIndex = 19;
             // 
-            // resamplingAlgorithmComboBox
+            // percentSignLabel
             // 
-            this.resamplingAlgorithmComboBox.Enabled = false;
-            this.resamplingAlgorithmComboBox.Location = new System.Drawing.Point(440, 20);
-            this.resamplingAlgorithmComboBox.Name = "resamplingAlgorithmComboBox";
-            this.resamplingAlgorithmComboBox.TabStop = false;
-            this.resamplingAlgorithmComboBox.Visible = false;
-            //
-            // asteriskLabel
-            //
-            this.asteriskLabel.Visible = false;
-            //
-            // asteriskTextLabel
-            //
-            this.asteriskTextLabel.Visible = false;
-            // 
-            // label3
-            // 
-            this.label3.Enabled = false;
-            this.label3.Location = new System.Drawing.Point(368, 22);
-            this.label3.Name = "label3";
-            this.label3.Visible = false;
-            // 
-            // widthUpDown
-            // 
-            this.widthUpDown.Location = new System.Drawing.Point(115, 42);
-            this.widthUpDown.Name = "widthUpDown";
-            // 
-            // heightUpDown
-            // 
-            this.heightUpDown.Location = new System.Drawing.Point(115, 68);
-            this.heightUpDown.Name = "heightUpDown";
-            // 
-            // label5
-            // 
-            this.label5.Name = "label5";
-            // 
-            // currentImageSize
-            // 
-            this.currentImageSize.Name = "currentImageSize";
-            // 
-            // resizedImageGroupBox
-            // 
-            this.resizedImageGroupBox.Name = "resizedImageGroupBox";
-            this.resizedImageGroupBox.Size = new System.Drawing.Size(240, 150);
-            // 
-            // label4
-            // 
-            this.label4.Location = new System.Drawing.Point(189, 42);
-            this.label4.Name = "label4";
-            // 
-            // label6
-            // 
-            this.label6.Location = new System.Drawing.Point(189, 68);
-            this.label6.Name = "label6";
-            // 
-            // originalImageSize
-            // 
-            this.originalImageSize.Name = "originalImageSize";
-            // 
-            // label7
-            // 
-            this.label7.Location = new System.Drawing.Point(189, 121);
-            this.label7.Name = "label7";
+            this.percentSignLabel.Location = new System.Drawing.Point(200, 28);
+            this.percentSignLabel.Name = "percentSignLabel";
+            this.percentSignLabel.TabIndex = 23;
             // 
             // percentUpDown
             // 
-            this.percentUpDown.Location = new System.Drawing.Point(115, 120);
+            this.percentUpDown.Location = new System.Drawing.Point(120, 27);
             this.percentUpDown.Name = "percentUpDown";
+            this.percentUpDown.TabIndex = 22;
             // 
             // absoluteRB
             // 
             this.absoluteRB.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.absoluteRB.Location = new System.Drawing.Point(11, 22);
+            this.absoluteRB.Location = new System.Drawing.Point(8, 51);
             this.absoluteRB.Name = "absoluteRB";
             // 
             // percentRB
             // 
             this.percentRB.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.percentRB.Location = new System.Drawing.Point(11, 118);
+            this.percentRB.Location = new System.Drawing.Point(8, 24);
             this.percentRB.Name = "percentRB";
+            this.percentRB.TabIndex = 21;
+            // 
+            // asteriskTextLabel
+            // 
+            this.asteriskTextLabel.Enabled = false;
+            this.asteriskTextLabel.Location = new System.Drawing.Point(400, 72);
+            this.asteriskTextLabel.Name = "asteriskTextLabel";
+            this.asteriskTextLabel.Visible = true;
+            // 
+            // asteriskLabel
+            // 
+            this.asteriskLabel.Enabled = false;
+            this.asteriskLabel.Location = new System.Drawing.Point(648, 32);
+            this.asteriskLabel.Name = "asteriskLabel";
+            this.asteriskLabel.Visible = true;
+            // 
+            // resizedImageHeader
+            // 
+            this.resizedImageHeader.Name = "resizedImageHeader";
+            this.resizedImageHeader.TabIndex = 20;
+            // 
+            // resolutionLabel
+            // 
+            this.resolutionLabel.Location = new System.Drawing.Point(32, 166);
+            this.resolutionLabel.Name = "resolutionLabel";
+            // 
+            // unitsComboBox2
+            // 
+            this.unitsComboBox2.Location = new System.Drawing.Point(200, 165);
+            this.unitsComboBox2.Name = "unitsComboBox2";
+            // 
+            // unitsComboBox1
+            // 
+            this.unitsComboBox1.Location = new System.Drawing.Point(200, 208);
+            this.unitsComboBox1.Name = "unitsComboBox1";
+            // 
+            // resolutionUpDown
+            // 
+            this.resolutionUpDown.Location = new System.Drawing.Point(120, 165);
+            this.resolutionUpDown.Name = "resolutionUpDown";
+            // 
+            // newWidthLabel1
+            // 
+            this.newWidthLabel1.Location = new System.Drawing.Point(32, 118);
+            this.newWidthLabel1.Name = "newWidthLabel1";
+            // 
+            // newHeightLabel1
+            // 
+            this.newHeightLabel1.Location = new System.Drawing.Point(32, 142);
+            this.newHeightLabel1.Name = "newHeightLabel1";
+            // 
+            // pixelsLabel1
+            // 
+            this.pixelsLabel1.Location = new System.Drawing.Point(200, 118);
+            this.pixelsLabel1.Name = "pixelsLabel1";
+            // 
+            // newWidthLabel2
+            // 
+            this.newWidthLabel2.Location = new System.Drawing.Point(32, 209);
+            this.newWidthLabel2.Name = "newWidthLabel2";
+            // 
+            // newHeightLabel2
+            // 
+            this.newHeightLabel2.Location = new System.Drawing.Point(32, 233);
+            this.newHeightLabel2.Name = "newHeightLabel2";
+            // 
+            // pixelsLabel2
+            // 
+            this.pixelsLabel2.Location = new System.Drawing.Point(200, 142);
+            this.pixelsLabel2.Name = "pixelsLabel2";
+            // 
+            // unitsLabel1
+            // 
+            this.unitsLabel1.Location = new System.Drawing.Point(200, 234);
+            this.unitsLabel1.Name = "unitsLabel1";
+            // 
+            // pixelWidthUpDown
+            // 
+            this.pixelWidthUpDown.Location = new System.Drawing.Point(120, 117);
+            this.pixelWidthUpDown.Name = "pixelWidthUpDown";
+            // 
+            // pixelHeightUpDown
+            // 
+            this.pixelHeightUpDown.Location = new System.Drawing.Point(120, 141);
+            this.pixelHeightUpDown.Name = "pixelHeightUpDown";
+            // 
+            // printWidthUpDown
+            // 
+            this.printWidthUpDown.Location = new System.Drawing.Point(120, 208);
+            this.printWidthUpDown.Name = "printWidthUpDown";
+            // 
+            // printHeightUpDown
+            // 
+            this.printHeightUpDown.Location = new System.Drawing.Point(120, 232);
+            this.printHeightUpDown.Name = "printHeightUpDown";
+            // 
+            // pixelSizeHeader
+            // 
+            this.pixelSizeHeader.Location = new System.Drawing.Point(22, 98);
+            this.pixelSizeHeader.Name = "pixelSizeHeader";
+            // 
+            // printSizeHeader
+            // 
+            this.printSizeHeader.Location = new System.Drawing.Point(22, 189);
+            this.printSizeHeader.Name = "printSizeHeader";
+            // 
+            // resamplingLabel
+            // 
+            this.resamplingLabel.Enabled = false;
+            this.resamplingLabel.Location = new System.Drawing.Point(384, 40);
+            this.resamplingLabel.Name = "resamplingLabel";
+            this.resamplingLabel.Visible = false;
+            // 
+            // resamplingAlgorithmComboBox
+            // 
+            this.resamplingAlgorithmComboBox.Enabled = false;
+            this.resamplingAlgorithmComboBox.Location = new System.Drawing.Point(496, 32);
+            this.resamplingAlgorithmComboBox.Name = "resamplingAlgorithmComboBox";
+            this.resamplingAlgorithmComboBox.Visible = false;
             // 
             // anchorChooserControl
             // 
-            this.anchorChooserControl.AnchorEdge = PaintDotNet.AnchorEdge.Middle;
-            this.anchorChooserControl.Location = new System.Drawing.Point(120, 24);
+            this.anchorChooserControl.Location = new System.Drawing.Point(177, 275);
             this.anchorChooserControl.Name = "anchorChooserControl";
-            this.anchorChooserControl.Size = new System.Drawing.Size(96, 96);
-            this.anchorChooserControl.TabIndex = 7;
+            this.anchorChooserControl.Size = new System.Drawing.Size(81, 81);
+            this.anchorChooserControl.TabIndex = 17;
             this.anchorChooserControl.TabStop = false;
             this.anchorChooserControl.AnchorEdgeChanged += new System.EventHandler(this.anchorChooserControl_AnchorEdgeChanged);
             // 
-            // groupBox1
+            // newSpaceLabel
             // 
-            this.groupBox1.Controls.Add(this.label8);
-            this.groupBox1.Controls.Add(this.anchorLabel);
-            this.groupBox1.Controls.Add(this.anchorChooserControl);
-            this.groupBox1.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.groupBox1.Location = new System.Drawing.Point(8, 198);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(240, 170);
-            this.groupBox1.TabIndex = 19;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Anchor";
+            this.newSpaceLabel.Location = new System.Drawing.Point(376, 296);
+            this.newSpaceLabel.Name = "newSpaceLabel";
+            this.newSpaceLabel.Size = new System.Drawing.Size(234, 32);
+            this.newSpaceLabel.TabIndex = 20;
+            // anchorHeader
             // 
-            // label8
+            this.anchorHeader.Location = new System.Drawing.Point(8, 256);
+            this.anchorHeader.Name = "anchorHeader";
+            this.anchorHeader.Size = new System.Drawing.Size(288, 14);
+            this.anchorHeader.TabIndex = 15;
+            this.anchorHeader.TabStop = false;
             // 
-            this.label8.Location = new System.Drawing.Point(8, 128);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(224, 32);
-            this.label8.TabIndex = 20;
-            this.label8.Text = "The new space will be filled with the currently selected background color.";
             // 
-            // anchorLabel
+            // anchorEdgeCB
             // 
-            this.anchorLabel.Location = new System.Drawing.Point(8, 24);
-            this.anchorLabel.Name = "anchorLabel";
-            this.anchorLabel.Size = new System.Drawing.Size(88, 96);
-            this.anchorLabel.TabIndex = 19;
-            this.anchorLabel.Text = "label7";
+            this.anchorEdgeCB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.anchorEdgeCB.Location = new System.Drawing.Point(32, 275);
+            this.anchorEdgeCB.Name = "anchorEdgeCB";
+            this.anchorEdgeCB.Size = new System.Drawing.Size(120, 21);
+            this.anchorEdgeCB.TabIndex = 16;
+            this.anchorEdgeCB.SelectedIndexChanged += new System.EventHandler(this.anchorEdgeCB_SelectedIndexChanged);
             // 
             // CanvasSizeDialog
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.ClientSize = new System.Drawing.Size(258, 408);
-            this.Controls.Add(this.groupBox1);
+            this.ClientSize = new System.Drawing.Size(298, 395);
+            this.Controls.Add(this.anchorEdgeCB);
+            this.Controls.Add(this.anchorHeader);
+            this.Controls.Add(this.anchorChooserControl);
+            this.Controls.Add(this.newSpaceLabel);
             this.Location = new System.Drawing.Point(0, 0);
             this.Name = "CanvasSizeDialog";
-            this.Text = "Canvas Size";
-            this.Controls.SetChildIndex(this.groupBox1, 0);
-            this.Controls.SetChildIndex(this.resizedImageGroupBox, 0);
+            this.Controls.SetChildIndex(this.unitsLabel1, 0);
+            this.Controls.SetChildIndex(this.resizedImageHeader, 0);
+            this.Controls.SetChildIndex(this.resolutionLabel, 0);
+            this.Controls.SetChildIndex(this.resolutionUpDown, 0);
+            this.Controls.SetChildIndex(this.unitsComboBox2, 0);
+            this.Controls.SetChildIndex(this.unitsComboBox1, 0);
+            this.Controls.SetChildIndex(this.printWidthUpDown, 0);
+            this.Controls.SetChildIndex(this.printHeightUpDown, 0);
+            this.Controls.SetChildIndex(this.pixelSizeHeader, 0);
+            this.Controls.SetChildIndex(this.printSizeHeader, 0);
+            this.Controls.SetChildIndex(this.newWidthLabel1, 0);
+            this.Controls.SetChildIndex(this.newHeightLabel1, 0);
+            this.Controls.SetChildIndex(this.pixelsLabel1, 0);
+            this.Controls.SetChildIndex(this.pixelHeightUpDown, 0);
+            this.Controls.SetChildIndex(this.pixelWidthUpDown, 0);
+            this.Controls.SetChildIndex(this.newWidthLabel2, 0);
+            this.Controls.SetChildIndex(this.newHeightLabel2, 0);
+            this.Controls.SetChildIndex(this.pixelsLabel2, 0);
+            this.Controls.SetChildIndex(this.newSpaceLabel, 0);
+            this.Controls.SetChildIndex(this.anchorChooserControl, 0);
+            this.Controls.SetChildIndex(this.percentSignLabel, 0);
+            this.Controls.SetChildIndex(this.percentUpDown, 0);
+            this.Controls.SetChildIndex(this.constrainCheckBox, 0);
+            this.Controls.SetChildIndex(this.resamplingLabel, 0);
+            this.Controls.SetChildIndex(this.resamplingAlgorithmComboBox, 0);
+            this.Controls.SetChildIndex(this.percentRB, 0);
+            this.Controls.SetChildIndex(this.absoluteRB, 0);
+            this.Controls.SetChildIndex(this.asteriskTextLabel, 0);
+            this.Controls.SetChildIndex(this.asteriskLabel, 0);
+            this.Controls.SetChildIndex(this.anchorHeader, 0);
+            this.Controls.SetChildIndex(this.anchorEdgeCB, 0);
             this.Controls.SetChildIndex(this.okButton, 0);
             this.Controls.SetChildIndex(this.cancelButton, 0);
-            this.Controls.SetChildIndex(this.label5, 0);
-            this.Controls.SetChildIndex(this.currentImageSize, 0);
-            this.Controls.SetChildIndex(this.originalImageSize, 0);
-            ((System.ComponentModel.ISupportInitialize)(this.widthUpDown)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.heightUpDown)).EndInit();
-            this.resizedImageGroupBox.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.percentUpDown)).EndInit();
-            this.groupBox1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.resolutionUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pixelWidthUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pixelHeightUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.printWidthUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.printHeightUpDown)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -255,7 +349,14 @@ namespace PaintDotNet
 
         private void anchorChooserControl_AnchorEdgeChanged(object sender, System.EventArgs e)
         {
-            anchorLabel.Text = Utility.InsertSpaces(anchorChooserControl.AnchorEdge.ToString());
+            string newItem = this.anchorEdgeNames.EnumValueToLocalizedName(anchorChooserControl.AnchorEdge);
+            this.anchorEdgeCB.SelectedItem = newItem;
+        }
+
+        private void anchorEdgeCB_SelectedIndexChanged(object sender, System.EventArgs e)
+        {
+            AnchorEdge newAnchorEdge = (AnchorEdge)this.anchorEdgeNames.LocalizedNameToEnumValue((string)this.anchorEdgeCB.SelectedItem);
+            this.AnchorEdge = newAnchorEdge;
         }
     }
 }

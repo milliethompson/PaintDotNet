@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -12,16 +13,16 @@ using System.Threading;
 namespace PaintDotNet.SystemLayer
 {
     /// <summary>
-	/// Encapsulates an array of WaitHandles and methods for waiting on them.
-	/// This class does not take ownership of the WaitHandles; you must still
-	/// Dispose() them yourself.
-	/// </summary>
-	/// <remarks>
-	/// This class exists because System.Threading.WaitHandle.Wait[Any|All] will throw an exception
-	/// in an STA apartment. So we must P/Invoke down to WaitForMultipleObjects().
+    /// Encapsulates an array of WaitHandles and methods for waiting on them.
+    /// This class does not take ownership of the WaitHandles; you must still
+    /// Dispose() them yourself.
+    /// </summary>
+    /// <remarks>
+    /// This class exists because System.Threading.WaitHandle.Wait[Any|All] will throw an exception
+    /// in an STA apartment. So we must P/Invoke down to WaitForMultipleObjects().
     /// </remarks>
-	public sealed class WaitHandleArray
-	{
+    public sealed class WaitHandleArray
+    {
         private WaitHandle[] waitHandles;
         private IntPtr[] nativeHandles;
 
@@ -99,5 +100,5 @@ namespace PaintDotNet.SystemLayer
             int returnVal = (int)SafeNativeMethods.WaitForMultipleObjects(this.nativeHandles, false, NativeConstants.INFINITE);
             return returnVal;
         }
-	}
+    }
 }

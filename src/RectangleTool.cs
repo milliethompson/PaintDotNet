@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -23,6 +24,8 @@ namespace PaintDotNet
     public class RectangleTool
         : ShapeTool 
     {
+        private Icon rectangleToolIcon;
+        private string statusTextFormat = PdnResources.GetString("RectangleTool.StatusText.Format");
         private Cursor rectangleToolCursor;
 
         protected override ArrayList TrimShapePath(ArrayList points)
@@ -49,7 +52,7 @@ namespace PaintDotNet
                 return PixelOffsetMode.None;
             }
 
-            return base.GetPixelOffsetMode ();
+            return base.GetPixelOffsetMode();
         }
 
         protected override PdnGraphicsPath CreateShapePath(PointF[] points)
@@ -71,33 +74,82 @@ namespace PaintDotNet
             path.AddRectangle(rect);
             path.CloseFigure();
             path.Reverse();
+
+            MeasurementUnit units = Workspace.Environment.Units;
+            double widthPhysical = Math.Abs(Workspace.Document.PixelToPhysicalX(b.X - a.X, units));
+            double heightPhysical = Math.Abs(Workspace.Document.PixelToPhysicalY(b.Y - a.Y, units));
+            double areaPhysical = widthPhysical * heightPhysical;
+            
+            string numberFormat;
+            string unitsAbbreviation;
+
+            if (units != MeasurementUnit.Pixel)
+            {
+                string unitsAbbreviationName = "MeasurementUnit." + units.ToString() + ".Abbreviation";
+                unitsAbbreviation = PdnResources.GetString(unitsAbbreviationName);
+                numberFormat = "F2";
+            }
+            else
+            {
+                unitsAbbreviation = string.Empty;
+                numberFormat = "F0";
+            }
+
+            string unitsString = PdnResources.GetString("MeasurementUnit." + units.ToString() + ".Plural");
+
+            string statusText = string.Format(
+                this.statusTextFormat,
+                widthPhysical.ToString(numberFormat),
+                unitsAbbreviation,
+                heightPhysical.ToString(numberFormat),
+                unitsAbbreviation,
+                areaPhysical.ToString(numberFormat),
+                unitsString);
+
+            this.SetStatus(this.rectangleToolIcon, statusText);
             return path;
+        }
+
+        protected override void OnActivate()
+        {
+            rectangleToolCursor = new Cursor(PdnResources.GetResourceStream("Cursors.RectangleToolCursor.cur"));
+            this.rectangleToolIcon = Utility.ImageToIcon(this.Image);
+            this.Cursor = rectangleToolCursor;
+            base.OnActivate ();
+        }
+
+        protected override void OnDeactivate()
+        {
+            if (this.rectangleToolCursor != null)
+            {
+                this.rectangleToolCursor.Dispose();
+                this.rectangleToolCursor = null;
+            }
+
+            if (this.rectangleToolIcon != null)
+            {
+                this.rectangleToolIcon.Dispose();
+                this.rectangleToolIcon = null;
+            }                    
+
+            base.OnDeactivate();
         }
 
         public RectangleTool(DocumentWorkspace parent)
             : base(parent,
-                   Utility.GetImageResource("Icons.RectangleToolIcon.bmp"),
-                   "Rectangle",
-                   "Draws a rectangle",
-                   "Click and drag to draw a rectangle (right click for background color). Hold shift to constrain to a square.")
+                   PdnResources.GetImage("Icons.RectangleToolIcon.bmp"),
+                   PdnResources.GetString("RectangleTool.Name"),
+                   PdnResources.GetString("RectangleTool.HelpText"))
         {
-            rectangleToolCursor = new Cursor(Utility.GetResourceStream("Cursors.RectangleToolCursor.cur"));
-            this.Cursor = rectangleToolCursor;
         }
 
         protected override void Dispose(bool disposing)
         {
-            base.Dispose (disposing);
+            base.Dispose(disposing);
 
             if (disposing)
             {
                 DisposeImage();
-
-                if (rectangleToolCursor != null)
-                {
-                    rectangleToolCursor.Dispose();
-                    rectangleToolCursor = null;
-                }
             }
         }
     }

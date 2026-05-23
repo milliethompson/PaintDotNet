@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -64,47 +65,40 @@ namespace PaintDotNet
 
             public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
             {
-                rhs.A = (byte)(((1 + rhs.A) * opacity) / 256);
+                rhs.A = (byte)(((rhs.A + (rhs.A >> 7)) * opacity) >> 8);
                 return BinaryPixelOps.AlphaBlend.ApplyStatic(lhs, rhs);
-            }
-
-            protected override unsafe void Apply(ColorBgra * dst, ColorBgra * lhs, ColorBgra * rhs, int length)
-            {
-                while (length > 0)
-                {
-                    int rhsA = ((1 + rhs->A) * opacity) / 256;
-                    int invRhsA = 256 - rhsA;
-                    int lhsA = lhs->A + 1;
-                    int invLhsA = 256 - lhsA;
-
-                    int r = (((invRhsA * (lhsA * lhs->R)) / 256) + (rhsA * rhs->R)) / 256;
-                    int g = (((invRhsA * (lhsA * lhs->G)) / 256) + (rhsA * rhs->G)) / 256;
-                    int b = (((invRhsA * (lhsA * lhs->B)) / 256) + (rhsA * rhs->B)) / 256;
-                    int a = ComputeAlpha(lhs->A, rhs->A);
-                
-                    dst->Bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)a << 24));
-
-                    ++dst;
-                    ++lhs;
-                    ++rhs;
-                    --length;
-                }
             }
 
             protected override unsafe void Apply(ColorBgra * dst, ColorBgra * src, int length)
             {
                 while (length > 0)
                 {
-                    int srcA = ((1 + src->A) * opacity) / 256;
-                    int invSrcA = 256 - srcA;
-                    int dstA = dst->A + 1;
+                    int srcA = ((src->A + (src->A >> 7)) * opacity) >> 8;
 
-                    int r = (((invSrcA * (dstA * dst->R)) / 256) + (srcA * src->R)) / 256;
-                    int g = (((invSrcA * (dstA * dst->G)) / 256) + (srcA * src->G)) / 256;
-                    int b = (((invSrcA * (dstA * dst->B)) / 256) + (srcA * src->B)) / 256;
-                    int a = ComputeAlpha(dst->A, src->A);
+                    if (srcA == 255)
+                    {
+                        *dst = *src;
+                    }
+                    else
+                    {
+                        int dstA = dst->A + (dst->A >> 7);
+                        int dstAMult = (256 - srcA) * dstA;
+                        int totalA = ((dstA * (256 - srcA)) >> 8) + srcA;
+
+                        if (totalA == 0)
+                        {
+                            dst->Bgra = 0;
+                        }
+                        else
+                        {
+                            int b = (((dstAMult * dst->B) >> 8) + (srcA * src->B)) / totalA;
+                            int g = (((dstAMult * dst->G) >> 8) + (srcA * src->G)) / totalA;
+                            int r = (((dstAMult * dst->R) >> 8) + (srcA * src->R)) / totalA;
+                            int a = ComputeAlpha(dst->A, src->A);
                 
-                    dst->Bgra = (uint)(b + (g << 8) + (r << 16) + ((uint)a << 24));
+                            dst->Bgra = ColorBgra.BgraToUInt32(b, g, r, a);
+                        }
+                    }
 
                     ++dst;
                     ++src;
@@ -131,7 +125,7 @@ namespace PaintDotNet
             public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
             {
                 ColorBgra mid = op.Apply(lhs, rhs);
-                mid.A = (byte)(((1 + mid.A) * opacity) / 256);
+                mid.A = (byte)(((mid.A + (mid.A >> 7)) * opacity) >> 8);
                 return BinaryPixelOps.AlphaBlend.ApplyStatic(lhs, mid);
             }
 
@@ -178,7 +172,16 @@ namespace PaintDotNet
             public UserBlendOp blendOp;
             internal int opacity; // this is ONLY used when loading older version PDN files! should normally equal -1
 
-            public const string BlendOpName = "Blend Mode";
+            private const string blendOpTag = "blendOp";
+            private const string opacityTag = "opacity";
+
+            public static string BlendOpName
+            {
+                get
+                {
+                    return PdnResources.GetString("BitmapLayer.Properties.BlendOp.Name");
+                }
+            }
 
             public BitmapLayerProperties(UserBlendOp blendOp)
             {
@@ -192,27 +195,21 @@ namespace PaintDotNet
                 this.opacity = -1;
             }
 
-            #region ICloneable Members
-
             public object Clone()
             {
                 return new BitmapLayerProperties(this);
             }
 
-            #endregion
-
-            #region ISerializable Members
-
             public BitmapLayerProperties(SerializationInfo info, StreamingContext context)
             {
-                this.blendOp = (UserBlendOp)info.GetValue("blendOp", typeof(UserBlendOp));
+                this.blendOp = (UserBlendOp)info.GetValue(blendOpTag, typeof(UserBlendOp));
 
                 // search for 'opacity' and load it if it exists
                 this.opacity = -1;
 
                 foreach (SerializationEntry entry in info)
                 {
-                    if (entry.Name == "opacity")
+                    if (entry.Name == opacityTag)
                     {
                         this.opacity = (int)((byte)entry.Value);
                         break;
@@ -222,10 +219,8 @@ namespace PaintDotNet
 
             public void GetObjectData(SerializationInfo info, StreamingContext context)
             {
-                info.AddValue("blendOp", this.blendOp);
+                info.AddValue(blendOpTag, this.blendOp);
             }
-
-            #endregion
         }
 
         private BitmapLayerProperties properties;
@@ -437,8 +432,6 @@ namespace PaintDotNet
             return blpd;
         }
 
-        #region IDeserializationCallback Members
-
         public void OnDeserialization(object sender)
         {
             if (this.properties.opacity != -1)
@@ -449,7 +442,5 @@ namespace PaintDotNet
                 this.PopSuppressPropertyChanged();
             }
         }
-
-        #endregion
     }
 }

@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -17,11 +18,14 @@ using System.Runtime.CompilerServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-[assembly: AssemblyTitle("Paint.NET v2.1b")]
-[assembly: AssemblyDescription("Free replacement for Microsoft Paint written in C#.")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Paint.NET v2.1b")]
-[assembly: AssemblyCopyright("Copyright © 2004, 2005 Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2004, 2005 Microsoft Corporation. All Rights Reserved.")]
+
+// NOTE: AssemblyTitle, AssemblyProduct, and the string "Application.ProductName" should all match.
+
+[assembly: AssemblyTitle("Paint.NET v2.5")]
+[assembly: AssemblyDescription("Image and photo editing software written in C#.")]
+[assembly: AssemblyCompany("Paint.NET Team")]
+[assembly: AssemblyProduct("Paint.NET v2.5")]
+[assembly: AssemblyCopyright("Copyright © 2005 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2005 Microsoft Corporation. All Rights Reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -35,13 +39,7 @@ using System.Runtime.CompilerServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below: 
-[assembly: AssemblyVersion("2.1.*")]
-
-// Change this to say "Final" for final builds. Otherwise the titlebar will contain
-// a long version string. Final versions should just say the ApplicationProduct
-// attribute (i.e., "Paint.NET" instead of "Paint.NET (Beta 2 build: 1.0.*.*)"
-// Use this to hold the current milestone title, such as "Milestone 2" or "Beta 3"
-[assembly: AssemblyConfiguration("Final")]
+[assembly: AssemblyVersion("2.5.*")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -70,5 +68,5 @@ using System.Runtime.CompilerServices;
 //
 [assembly: AssemblyDelaySign(false)]
 // can't sign the exe because we can't sign Interop.WIA.dll
-[assembly: AssemblyKeyFile(/*@"..\..\paintdotnet.keys"*/ "")]
+[assembly: AssemblyKeyFile("")]
 [assembly: AssemblyKeyName("")]

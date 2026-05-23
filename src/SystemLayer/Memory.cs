@@ -1,12 +1,14 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
 //#define DEBUGSPEW
+//#define REPORTLEAKS
 
 #if !DEBUG
 #undef DEBUGSPEW
@@ -14,18 +16,20 @@
 
 using System;
 using System.Collections;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
 namespace PaintDotNet.SystemLayer
 {
-	/// <summary>
-	/// Contains methods for allocating, freeing, and performing operations on memory 
-	/// that is fixed (pinned) in memory.
-	/// </summary>
-	[CLSCompliant(false)]
-	public unsafe sealed class Memory
-	{
+    /// <summary>
+    /// Contains methods for allocating, freeing, and performing operations on memory 
+    /// that is fixed (pinned) in memory.
+    /// </summary>
+    [CLSCompliant(false)]
+    public unsafe sealed class Memory
+    {
         private static IntPtr hHeap;
 
 #if DEBUGSPEW
@@ -39,9 +43,9 @@ namespace PaintDotNet.SystemLayer
         }
 #endif
 
-		private Memory()
-		{
-		}
+        private Memory()
+        {
+        }
 
         static Memory()
         {
@@ -100,7 +104,7 @@ namespace PaintDotNet.SystemLayer
                 }
 
 #if DEBUGSPEW
-                Debug.WriteLine("allocing block #" + block.ToString() + ", " + bytes.ToString() + " bytes");
+                Debug.WriteLine("Allocate: block #" + block.ToString() + ", " + bytes.ToString() + " bytes");
                 StackTrace st = new StackTrace();
                 blockStackTraces.Add(block, st);
                 blockSizes.Add(block, bytes);
@@ -108,7 +112,104 @@ namespace PaintDotNet.SystemLayer
 #endif
                 return block;
             }
+        }
 
+        /// <summary>
+        /// Allocates a block of memory at least as large as the amount requested.
+        /// </summary>
+        /// <param name="bytes">The number of bytes you want to allocate.</param>
+        /// <returns>A pointer to a block of memory at least as large as bytes</returns>
+        /// <remarks>
+        /// This method uses an alternate method for allocating memory (VirtualAlloc in Windows). The allocation
+        /// granularity is the page size of the system (usually 4K). Blocks allocated with this method may also
+        /// be protected using the ProtectBlock method.
+        /// </remarks>
+        public static IntPtr AllocateLarge(ulong bytes)
+        {
+            // VirtualAlloc method
+            IntPtr block = SafeNativeMethods.VirtualAlloc(IntPtr.Zero, new UIntPtr(bytes), NativeConstants.MEM_COMMIT, NativeConstants.PAGE_READWRITE);
+
+            if (block == IntPtr.Zero)
+            {
+                throw new OutOfMemoryException("VirtualAlloc returned a null pointer");
+            }
+
+#if DEBUGSPEW
+            Debug.WriteLine("AllocateLarge: block #" + block.ToString() + ", " + bytes.ToString() + " bytes");
+            StackTrace st = new StackTrace();
+            blockStackTraces.Add(block, st);
+            blockSizes.Add(block, bytes);
+            totalBytes += bytes;
+#endif
+            
+            return block;
+        }
+
+        /// <summary>
+        /// Allocates a bitmap of the given height and width.
+        /// </summary>
+        /// <param name="width">The width of the bitmap to allocate.</param>
+        /// <param name="height">The height of the bitmap to allocate.</param>
+        /// <param name="handle">Receives a handle to the bitmap.</param>
+        /// <returns>A pointer to the bitmap's pixel data.</returns>
+        /// <remarks>
+        /// The following invariants may be useful for implementors:
+        /// * The bitmap is always 32-bits per pixel, BGRA.
+        /// * Stride for the bitmap is always width * 4.
+        /// * The upper-left pixel of the bitmap (0,0) is located at the first memory location pointed to by the returned pointer.
+        /// * The bitmap is top-down ("memory correct" ordering).
+        /// * The 'handle' may be any type of data you want, but must be unique for the lifetime of the bitmap, and must not be IntPtr.Zero.
+        /// * The handle's value must be understanded by PdnGraphics.DrawBitmap.
+        /// * The bitmap is always modified by directly reading and writing to the memory pointed to by the return value.
+        /// * PdnGraphics.DrawBitmap must always render from this memory location (i.e. it must treat the memory as 'volatile')
+        /// </remarks>
+        public static IntPtr AllocateBitmap(int width, int height, out IntPtr handle)
+        {
+            NativeStructs.BITMAPINFO bmi = new NativeStructs.BITMAPINFO();
+            bmi.bmiHeader.biSize = (uint)sizeof(NativeStructs.BITMAPINFOHEADER);
+            bmi.bmiHeader.biWidth = width;
+            bmi.bmiHeader.biHeight = -height;
+            bmi.bmiHeader.biPlanes = 1;
+            bmi.bmiHeader.biBitCount = 32;
+            bmi.bmiHeader.biCompression = NativeConstants.BI_RGB;
+            bmi.bmiHeader.biSizeImage = 0;
+            bmi.bmiHeader.biXPelsPerMeter = 96;
+            bmi.bmiHeader.biYPelsPerMeter = 96;
+            bmi.bmiHeader.biClrUsed = 0;
+            bmi.bmiHeader.biClrImportant = 0;
+
+            IntPtr pvBits;
+            IntPtr hBitmap = SafeNativeMethods.CreateDIBSection(
+                IntPtr.Zero,
+                ref bmi,
+                NativeConstants.DIB_RGB_COLORS,
+                out pvBits,
+                IntPtr.Zero,
+                0);
+
+            if (hBitmap == IntPtr.Zero)
+            {
+                throw new OutOfMemoryException("CreateDIBSection returned NULL (" + Marshal.GetLastWin32Error().ToString() + ")");
+            }
+
+            // TODO: add debug spew
+
+            handle = hBitmap;
+            return pvBits;
+        }
+
+        /// <summary>
+        /// Frees a bitmap previously allocated with AllocateBitmap.
+        /// </summary>
+        /// <param name="handle">The handle that was returned from a previous call to AllocateBitmap.</param>
+        public static void FreeBitmap(IntPtr handle)
+        {
+            bool result = SafeNativeMethods.DeleteObject(handle);
+            
+            if (!result)
+            {
+                NativeMethods.ThrowOnWin32Error("DeleteObject returned false");
+            }
         }
 
         /// <summary>
@@ -122,7 +223,7 @@ namespace PaintDotNet.SystemLayer
             {
 #if DEBUGSPEW
                 UIntPtr bytes = SafeNativeMethods.HeapSize(hHeap, 0, block);
-                Debug.WriteLine("freeing block #" + block.ToString() + ", " + bytes.ToUInt64().ToString() + " bytes");
+                Debug.WriteLine("Free: block #" + block.ToString() + ", " + bytes.ToUInt64().ToString() + " bytes");
 #endif
 
                 bool result = SafeNativeMethods.HeapFree(hHeap, 0, block);
@@ -130,7 +231,7 @@ namespace PaintDotNet.SystemLayer
                 if (!result)
                 {
                     int error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-                    throw new InvalidOperationException("HeapFree returned an error");
+                    throw new InvalidOperationException("HeapFree returned an error: " + error.ToString());
                 }
 
 #if DEBUGSPEW
@@ -148,10 +249,77 @@ namespace PaintDotNet.SystemLayer
                 Debug.WriteLine(stackTrace);
 #endif
 
-#if DEBUG
+#if REPORTLEAKS
                 throw new InvalidOperationException("memory leak! check the debug output for more info, and http://blogs.msdn.com/ricom/archive/2004/12/10/279612.aspx to track it down");
 #endif
             } 
+        }
+
+        /// <summary>
+        /// Frees a block of memory previous allocated with AllocateLarge().
+        /// </summary>
+        /// <param name="block">The block to free.</param>
+        /// <param name="bytes">The size of the block.</param>
+        public static void FreeLarge(IntPtr block, ulong bytes)
+        {
+#if DEBUGSPEW
+            Debug.WriteLine("FreeLarge: block #" + block.ToString() + ", " + bytes + " bytes");
+#endif
+
+            bool result = SafeNativeMethods.VirtualFree(block, UIntPtr.Zero, NativeConstants.MEM_RELEASE);
+
+            if (!result)
+            {
+                int error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                throw new InvalidOperationException("VirtualFree returned an error: " + error.ToString());
+            }
+
+#if DEBUGSPEW
+            blockStackTraces.Remove(block);
+            blockSizes.Remove(block);
+            totalBytes -= bytes;
+#endif
+        }
+
+        /// <summary>
+        /// Sets protection on a block previously allocated with AllocateLarge.
+        /// </summary>
+        /// <param name="block">The starting memory address to set protection for.</param>
+        /// <param name="size">The size of the block.</param>
+        /// <param name="readAccess">Whether to allow read access.</param>
+        /// <param name="writeAccess">Whether to allow write access.</param>
+        /// <remarks>
+        /// You may not specify false for read access without also specifying false for write access.
+        /// Note to implementors:  This method is not guaranteed to actually set read/write-ability 
+        /// on a block of memory, and may instead be implemented as a no-op after parameter validation.
+        /// </remarks>
+        public static void ProtectBlockLarge(IntPtr block, ulong size, bool readAccess, bool writeAccess)
+        {
+            uint flOldProtect;
+            uint flNewProtect;
+
+            if (readAccess && writeAccess)
+            {
+                flNewProtect = NativeConstants.PAGE_READWRITE;
+            }
+            else if (readAccess && !writeAccess)
+            {
+                flNewProtect = NativeConstants.PAGE_READONLY;
+            }
+            else if (!readAccess && !writeAccess)
+            {
+                flNewProtect = NativeConstants.PAGE_NOACCESS;
+            }
+            else
+            {
+                throw new InvalidOperationException("May not specify a page to be write-only");
+            }
+
+#if DEBUGSPEW
+            Debug.WriteLine("ProtectBlockLarge: block #" + block.ToString() + ", read: " + readAccess + ", write: " + writeAccess);
+#endif
+
+            SafeNativeMethods.VirtualProtect(block, new UIntPtr(size), flNewProtect, out flOldProtect);
         }
 
         /// <summary>

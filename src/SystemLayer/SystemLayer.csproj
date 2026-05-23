@@ -32,7 +32,7 @@
                     DocumentationFile = ""
                     DebugSymbols = "true"
                     FileAlignment = "4096"
-                    IncrementalBuild = "false"
+                    IncrementalBuild = "true"
                     NoStdLib = "false"
                     NoWarn = ""
                     Optimize = "false"
@@ -45,7 +45,7 @@
                 <Config
                     Name = "Release"
                     AllowUnsafeBlocks = "true"
-                    BaseAddress = "285212672"
+                    BaseAddress = "318767104"
                     CheckForOverflowUnderflow = "false"
                     ConfigurationOverrideFile = ""
                     DefineConstants = "TRACE"
@@ -93,13 +93,18 @@
                     WrapperTool = "tlbimp"
                 />
                 <Reference
+                    Name = "Skybound.VisualStyles"
+                    AssemblyName = "Skybound.VisualStyles"
+                    HintPath = "..\Skybound.VisualStyles\Skybound.VisualStyles.dll"
+                />
+                <Reference
                     Name = "System.Data"
                     AssemblyName = "System.Data"
                     HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Data.dll"
                 />
                 <Reference
                     Name = "System.XML"
-                    AssemblyName = "System.XML"
+                    AssemblyName = "System.Xml"
                     HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.XML.dll"
                 />
             </References>
@@ -112,8 +117,18 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "FileSystem.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "Fonts.cs"
                     SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "FormEx.cs"
+                    SubType = "Component"
                     BuildAction = "Compile"
                 />
                 <File
@@ -142,12 +157,22 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "NativeDelegates.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "NativeMethods.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "NativeStructs.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Network.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -162,11 +187,6 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "PointFPointFDelegate.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "Processor.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -177,6 +197,11 @@
                 />
                 <File
                     RelPath = "PropertyItem2.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "RealParentWndProcDelegate.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -201,12 +226,27 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "Security.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "SerializationFallbackBinder.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "Settings.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "Timing.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Tracing.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

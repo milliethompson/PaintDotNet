@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="Paint.NET Setup Config"
+	Name="Setup Config"
 	ProjectGUID="{40A8C52E-F2F8-49D7-A825-A0411BD7306A}"
 	RootNamespace="Paint.NET Setup Config"
 	Keyword="Win32Proj">
@@ -45,8 +45,23 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Making setup packages ..."
-				CommandLine="call &quot;$(ProjectDir)\SetAllUsers.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNet.msi&quot;
-..\tools\makensis /D$(ConfigurationName) MakeFullSetup.nsi
+				CommandLine="echo Setting default option to &quot;Everyone&quot; ...
+call &quot;$(ProjectDir)\SetAllUsers.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNet.msi&quot;
+
+echo Signing MSI ...
+call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNet.msi&quot;
+
+echo Making installer ...
+..\tools\makensis /D$(ConfigurationName) MakeSetup.nsi
+
+echo Signing installer ...
+call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNetSetup.exe&quot;
+
+echo Making &apos;full&apos; installer ...
+..\tools\makensis /DFullInstaller /D$(ConfigurationName) MakeSetup.nsi
+
+echo Signing full installer ...
+call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNetFullSetup.exe&quot;
 "/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -95,8 +110,23 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Making setup packages ..."
-				CommandLine="call &quot;$(ProjectDir)\SetAllUsers.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNet.msi&quot;
-..\tools\makensis /D$(ConfigurationName) MakeFullSetup.nsi
+				CommandLine="echo Setting default option to &quot;Everyone&quot; ...
+call &quot;$(ProjectDir)\SetAllUsers.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNet.msi&quot;
+
+echo Signing MSI ...
+call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNet.msi&quot;
+
+echo Making installer ...
+..\tools\makensis /D$(ConfigurationName) MakeSetup.nsi
+
+echo Signing installer ...
+call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNetSetup.exe&quot;
+
+echo Making &apos;full&apos; installer ...
+..\tools\makensis /DFullInstaller /D$(ConfigurationName) MakeSetup.nsi
+
+echo Signing full installer ...
+call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNetFullSetup.exe&quot;
 "/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -145,8 +175,23 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Making setup packages ..."
-				CommandLine="call &quot;$(ProjectDir)\SetAllUsers.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNet.msi&quot;
-..\tools\makensis /D$(ConfigurationName) MakeFullSetup.nsi
+				CommandLine="echo Setting default option to &quot;Everyone&quot; ...
+call &quot;$(ProjectDir)\SetAllUsers.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNet.msi&quot;
+
+echo Signing MSI ...
+call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNet.msi&quot;
+
+echo Making installer ...
+..\tools\makensis /D$(ConfigurationName) MakeSetup.nsi
+
+echo Signing installer ...
+call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNetSetup.exe&quot;
+
+echo Making &apos;full&apos; installer ...
+..\tools\makensis /DFullInstaller /D$(ConfigurationName) MakeSetup.nsi
+
+echo Signing full installer ...
+call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(SolutionDir)\Setup\$(ConfigurationName)\PaintDotNetFullSetup.exe&quot;
 "/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -175,7 +220,7 @@
 				RelativePath=".\dummy.cpp">
 			</File>
 			<File
-				RelativePath=".\MakeFullSetup.nsi">
+				RelativePath=".\MakeSetup.nsi">
 			</File>
 			<File
 				RelativePath=".\SetAllUsers.bat">

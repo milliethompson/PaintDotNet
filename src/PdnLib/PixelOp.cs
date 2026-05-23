@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -43,7 +44,18 @@ namespace PaintDotNet
         {
             // Create bounding rectangles for each Surface
             Rectangle dstRect = new Rectangle(dstOffset, roiSize);
+
+            if (dstRect.Width == 0 || dstRect.Height == 0)
+            {
+                return;
+            }
+
             Rectangle srcRect = new Rectangle(srcOffset, roiSize);
+
+            if (srcRect.Width == 0 || srcRect.Height == 0)
+            {
+                return;
+            }
 
             // Clip those rectangles to those Surface's bounding rectangles
             Rectangle dstClip = Rectangle.Intersect(dstRect, dst.Bounds);

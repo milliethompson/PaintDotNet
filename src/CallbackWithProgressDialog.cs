@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -13,19 +14,20 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class CallbackWithProgressDialog
+    public abstract class CallbackWithProgressDialog
     {
         private ProgressDialog dialog;
         private string dialogTitle;
         private string dialogDescription;
         private int progress;
         private Thread thread;
-        private IWin32Window owner;
+        private Control owner;
         private ThreadStart threadCallback;
         private Exception exception = null;
         private Point startPos = Point.Empty;
         private bool setStartPos = false;
         private Icon icon = null;
+        private bool cancelled = false;
 
         /// <summary>
         /// Used to define the top center of the dialog window when it is created.
@@ -58,6 +60,14 @@ namespace PaintDotNet
             }
         }
 
+        protected Control Owner
+        {
+            get
+            {
+                return this.owner;
+            }
+        }
+
         protected int Progress
         {
             get
@@ -68,7 +78,54 @@ namespace PaintDotNet
             set
             {
                 progress = value;
-                dialog.BeginInvoke(new VoidVoidDelegate(DoProgressUpdate), null);
+
+                if (dialog.IsHandleCreated && dialog.InvokeRequired)
+                {
+                    dialog.BeginInvoke(new VoidVoidDelegate(DoProgressUpdate), null);
+                }
+                else if (dialog.IsHandleCreated && !dialog.InvokeRequired)
+                {
+                    DoProgressUpdate();
+                }
+            }
+        }
+
+        public bool Cancelled
+        {
+            get
+            {
+                return this.dialog.Cancelled;
+            }
+        }
+
+        public string Description
+        {
+            get
+            {
+                return this.dialogDescription;
+            }
+
+            set
+            {
+                this.dialogDescription = value;
+
+                if (this.dialog != null)
+                {
+                    this.dialog.Description = value;
+                }
+            }
+        }
+
+        public bool MarqueeMode
+        {
+            get
+            {
+                return this.dialog.MarqueeMode;
+            }
+
+            set
+            {
+                this.dialog.MarqueeMode = value;
             }
         }
 
@@ -105,22 +162,28 @@ namespace PaintDotNet
             }
         }
 
-        public CallbackWithProgressDialog(IWin32Window owner, string dialogTitle, string dialogDescription)
+        public CallbackWithProgressDialog(Control owner, string dialogTitle, string dialogDescription)
         {
             this.owner = owner;
             this.dialogTitle = dialogTitle;
             this.dialogDescription = dialogDescription;
         }
 
-        protected DialogResult ShowDialog(bool Cancellable, ThreadStart callback)
+        protected DialogResult ShowDialog(bool cancellable, bool marqueeProgress, ThreadStart callback)
         {
             this.threadCallback = callback;
             DialogResult dr = DialogResult.Cancel;
             
-            using (dialog = new ProgressDialog())
+            using (this.dialog = new ProgressDialog())
             {
                 dialog.Text = dialogTitle;
                 dialog.Description = dialogDescription;
+
+                if (marqueeProgress)
+                {
+                    dialog.PercentTextVisible = false;
+                    dialog.MarqueeMode = true;
+                }
 
                 if (icon != null)
                 {
@@ -129,9 +192,15 @@ namespace PaintDotNet
 
                 EventHandler leh = new EventHandler(dialog_Load);
                 dialog.Load += leh;
-                dialog.Cancellable = Cancellable;
+                dialog.Cancellable = cancellable;
+
+                if (cancellable)
+                {
+                    dialog.CancelClick += new EventHandler(dialog_CancelClick);
+                }
+
                 thread = new Thread(new ThreadStart(BackgroundCallback));
-                Progress = 0;
+                this.Progress = 0;
             
                 if (setStartPos)
                 {
@@ -146,9 +215,15 @@ namespace PaintDotNet
                 dr = Utility.ShowDialog(dialog, owner);
                 dialog.Load -= leh;
 
+                if (cancellable)
+                {
+                    this.cancelled = dialog.Cancelled;
+                    dialog.CancelClick -= new EventHandler(dialog_CancelClick);
+                }
+
                 if (exception != null)
                 {
-                    throw exception;
+                    throw new WorkerThreadException("Worker thread threw an exception", exception);
                 }
             }
 
@@ -159,6 +234,19 @@ namespace PaintDotNet
         {
             thread.Start();
         }
-    }
 
+        private void dialog_CancelClick(object sender, EventArgs e)
+        {
+            OnCancelClick();
+
+            using (new WaitCursorChanger(this.dialog))
+            {
+                thread.Join();
+            }
+        }
+
+        protected virtual void OnCancelClick()
+        {
+        }
+    }
 }

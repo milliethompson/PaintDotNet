@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
@@ -14,11 +15,12 @@ namespace PaintDotNet.SystemLayer
     /// Methods for keeping track of time in a high precision manner.
     /// </summary>
     /// <remarks>
-    /// This class guarantees precision of 1 millisecond granularity.
+    /// This class provides precision and accuracy of 1 millisecond.
     /// </remarks>
     public sealed class Timing
     {
         private ulong countsPerMs;
+        private double countsPerMsDouble;
         private ulong birthTick;
 
         /// <summary>
@@ -45,6 +47,17 @@ namespace PaintDotNet.SystemLayer
         }
 
         /// <summary>
+        /// Returns the number of milliseconds that have elapsed since
+        /// system startup.
+        /// </summary>
+        public double GetTickCountDouble()
+        {
+            ulong tick;
+            SafeNativeMethods.QueryPerformanceCounter(out tick);
+            return (double)tick / countsPerMsDouble;
+        }
+
+        /// <summary>
         /// Constructs an instance of the Timing class.
         /// </summary>
         public Timing()
@@ -57,6 +70,7 @@ namespace PaintDotNet.SystemLayer
             }
 
             countsPerMs = frequency / 1000;
+            countsPerMsDouble = (double)frequency / 1000.0;
             birthTick = GetTickCount();
         }
     }
