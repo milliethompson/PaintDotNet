@@ -129,7 +129,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        protected internal ColorDifferenceEffect(string name, Image image, string subMenuName, EffectFlags flags)
+        internal ColorDifferenceEffect(string name, Image image, string subMenuName, EffectFlags flags)
             : base(name, image, subMenuName, flags)
         {
         }

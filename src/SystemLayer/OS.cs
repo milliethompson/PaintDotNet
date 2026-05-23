@@ -102,61 +102,100 @@ namespace PaintDotNet.SystemLayer
             }
         }
 
-        public static bool IsDotNetVersionInstalled(int major, int minor, int build)
+        public static bool IsDotNetVersionInstalled(int major, int minor, int servicePack, bool allowClientSubset)
         {
             bool result = false;
             
             if (!result)
             {
-                result |= IsDotNet2VersionInstalled(major, minor, build);
+                // .NET 2.0 should always have a build # of 50727
+                result |= IsDotNet2VersionInstalled(major, minor, 50727, servicePack);
             }
 
             if (!result)
             {
-                result |= IsDotNet3VersionInstalled(major, minor, build);
+                result |= IsDotNet3VersionInstalled(major, minor, servicePack);
+            }
+
+            if (!result && allowClientSubset)
+            {
+                result |= IsDotNet3ClientVersionInstalled(major, minor, servicePack);
             }
 
             return result;
         }
 
-        private static bool IsDotNet2VersionInstalled(int major, int minor, int build)
-        {
-            const string regKeyNameFormat = "Software\\Microsoft\\NET Framework Setup\\NDP\\v{0}.{1}.{2}";
-            const string regValueName = "Install";
-
-            string regKeyName = string.Format(regKeyNameFormat, major.ToString(CultureInfo.InvariantCulture),
-                minor.ToString(CultureInfo.InvariantCulture), build.ToString(CultureInfo.InvariantCulture));
-
-            return CheckForRegValueEquals1(regValueName, regKeyName);
-        }
-
-        private static bool IsDotNet3VersionInstalled(int major, int minor, int build)
+        private static bool IsDotNet2VersionInstalled(int major, int minor, int build, int minServicePack)
         {
             bool result = false;
 
-            const string regValueName = "InstallSuccess";
+            const string regKeyNameFormat = "SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v{0}.{1}.{2}";
+            string regKeyName = string.Format(regKeyNameFormat, major.ToString(CultureInfo.InvariantCulture),
+                minor.ToString(CultureInfo.InvariantCulture), build.ToString(CultureInfo.InvariantCulture));
 
             if (!result)
             {
-                const string regKeyNameFormat = "Software\\Microsoft\\NET Framework Setup\\NDP\\v{0}.{1}\\Setup";
-                string regKeyName = string.Format(regKeyNameFormat, major, minor);
-
-                result |= CheckForRegValueEquals1(regKeyName, regValueName);
+                const string regValueName = "Install";
+                result |= CheckForRegValueEqualsInt(regKeyName, regValueName, 1);
             }
 
-            if (!result)
+            if (result)
             {
-                // There seems to be a bug in x64 .NET 3.0 where it only records its success in the 32-bit section of the registry.
-                const string regKeyNameFormat2 = "Software\\Wow6432Node\\Microsoft\\NET Framework Setup\\NDP\\v{0}.{1}\\Setup";
-                string regKeyName2 = string.Format(regKeyNameFormat2, major, minor);
-
-                result |= CheckForRegValueEquals1(regKeyName2, regValueName);
+                const string regValueName = "SP";
+                int? spLevel = GetRegValueAsInt(regKeyName, regValueName);
+                result &= (spLevel.HasValue && spLevel.Value >= minServicePack);
             }
 
             return result;
         }
 
-        private static bool CheckForRegValueEquals1(string regKeyName, string regValueName)
+        private static bool IsDotNet3VersionInstalled(int major, int minor, int minServicePack)
+        {
+            bool result = false;
+
+            const string regKeyNameFormat = "SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v{0}.{1}";
+            string regKeyName = string.Format(regKeyNameFormat, major, minor);
+
+            if (!result)
+            {
+                const string regValueName = "Install";
+                result |= CheckForRegValueEqualsInt(regKeyName, regValueName, 1);
+            }
+
+            if (result)
+            {
+                const string regValueName = "SP";
+                int? spLevel = GetRegValueAsInt(regKeyName, regValueName);
+                result &= (spLevel.HasValue && spLevel.Value >= minServicePack);
+            }
+
+            return result;
+        }
+
+        private static bool IsDotNet3ClientVersionInstalled(int major, int minor, int minServicePack)
+        {
+            bool result = false;
+
+            const string regKeyNameFormat = "SOFTWARE\\Microsoft\\NET Framework Setup\\DotNetClient\\v{0}.{1}";
+            string regKeyName = string.Format(regKeyNameFormat, major, minor);
+
+            if (!result)
+            {
+                const string regValueName = "Install";
+                result |= CheckForRegValueEqualsInt(regKeyName, regValueName, 1);
+            }
+
+            if (result)
+            {
+                const string regValueName = "SP";
+                int? spLevel = GetRegValueAsInt(regKeyName, regValueName);
+                result &= (spLevel.HasValue && spLevel.Value >= minServicePack);
+            }
+
+            return result;
+        }
+
+        private static int? GetRegValueAsInt(string regKeyName, string regValueName)
         {
             using (RegistryKey key = Registry.LocalMachine.OpenSubKey(regKeyName, false))
             {
@@ -167,7 +206,28 @@ namespace PaintDotNet.SystemLayer
                     value = key.GetValue(regValueName);
                 }
 
-                return (value != null && value is int && (int)value == 1);
+                if (value != null && value is int)
+                {
+                    return (int)value;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
+        private static bool CheckForRegValueEqualsInt(string regKeyName, string regValueName, int intValue)
+        {
+            int? value = GetRegValueAsInt(regKeyName, regValueName);
+
+            if (value.HasValue)
+            {
+                return value.Value == intValue;
+            }
+            else
+            {
+                return false;
             }
         }
 

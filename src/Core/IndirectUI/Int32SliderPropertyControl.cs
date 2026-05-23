@@ -20,7 +20,6 @@ namespace PaintDotNet.IndirectUI
         private const int maxMax = 100000000;
         private const int minMin = -100000000;
 
-
         [PropertyControlProperty(DefaultValue = (object)1)]
         public new int SliderSmallChange
         {

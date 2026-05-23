@@ -647,19 +647,20 @@ namespace PaintDotNet.Menus
                                 configDialog.EffectSourceSurface = originalSurface;
                                 configDialog.Selection = selectedRegion;
 
+                                BackgroundEffectRenderer ber = null;
+
                                 EventHandler eh =
                                     delegate(object sender, EventArgs e)
                                     {
                                         EffectConfigDialog ecf = (EffectConfigDialog)sender;
-                                        BackgroundEffectRenderer ber2 = (BackgroundEffectRenderer)ecf.Tag;
 
-                                        if (ber2 != null)
+                                        if (ber != null)
                                         {
                                             AppWorkspace.Widgets.StatusBarProgress.ResetProgressStatusBarAsync();
 
                                             try
                                             {
-                                                ber2.Start();
+                                                ber.Start();
                                             }
 
                                             catch (Exception ex)
@@ -678,7 +679,7 @@ namespace PaintDotNet.Menus
                                     configDialog.EffectToken = oldToken;
                                 }
 
-                                BackgroundEffectRenderer ber = new BackgroundEffectRenderer(
+                                ber = new BackgroundEffectRenderer(
                                     effect,
                                     configDialog.EffectToken,
                                     new RenderArgs(layer.Surface),
@@ -690,7 +691,6 @@ namespace PaintDotNet.Menus
                                 ber.RenderedTile += new RenderedTileEventHandler(RenderedTileHandler);
                                 ber.StartingRendering += new EventHandler(StartingRenderingHandler);
                                 ber.FinishedRendering += new EventHandler(FinishedRenderingHandler);
-                                configDialog.Tag = ber;
 
                                 invalidateTimer.Enabled = true;
 
@@ -1019,7 +1019,6 @@ namespace PaintDotNet.Menus
                                 tilesPerCpu * renderingThreadCount,
                                 renderingThreadCount);
 
-                            aed.Tag = ber;
                             ber.RenderedTile += new RenderedTileEventHandler(aed.RenderedTileHandler);
                             ber.RenderedTile += new RenderedTileEventHandler(RenderedTileHandler);
                             ber.StartingRendering += new EventHandler(StartingRenderingHandler);

@@ -75,11 +75,11 @@ namespace PaintDotNet.Effects
             }
         }
 
-        protected internal virtual void OnBeforeConstructor(object context)
+        internal virtual void OnBeforeConstructor(object context)
         {
         }
 
-        protected internal EffectConfigDialog(object context)
+        internal EffectConfigDialog(object context)
         {
             OnBeforeConstructor(context);
             Constructor();

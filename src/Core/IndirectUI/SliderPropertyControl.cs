@@ -226,13 +226,11 @@ namespace PaintDotNet.IndirectUI
 
             this.numericUpDown.DecimalPlaces = 0;
             this.numericUpDown.Name = "numericUpDown";
-            this.numericUpDown.ValueChanged += new EventHandler(NumericUpDown_ValueChanged);
             this.numericUpDown.TextAlign = HorizontalAlignment.Right;
             this.numericUpDown.TabIndex = 1;
 
             this.slider.Name = "slider";
             this.slider.AutoSize = false;
-            this.slider.ValueChanged += new EventHandler(Slider_ValueChanged);
             this.slider.Orientation = Orientation.Horizontal;
             this.slider.TabIndex = 0;
             this.SliderShowTickMarks = (bool)propInfo.ControlProperties[ControlInfoPropertyNames.SliderShowTickMarks].Value;
@@ -250,9 +248,13 @@ namespace PaintDotNet.IndirectUI
             this.descriptionText.AutoSize = false;
             this.descriptionText.Text = this.Description;
 
+            // In order to make sure that setting the ranges on the controls doesn't affect the property in weird ways,
+            // we don't set up our ValueChanged handlers until after we set up the controls.
             ValidateUIRanges();
-
             ResetUIRanges();
+
+            this.numericUpDown.ValueChanged += new EventHandler(NumericUpDown_ValueChanged);
+            this.slider.ValueChanged += new EventHandler(Slider_ValueChanged);
 
             Controls.AddRange(
                 new Control[]

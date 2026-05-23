@@ -28,19 +28,22 @@ namespace PaintDotNet.Updates
         //     DownloadPageUrl=downloadPageUrl                  // This should link to the main download page
         //     StableVersions=version1,version2,...,versionN    // A comma-separated list of all available stable versions available for download
         //     BetaVersions=version1,version2,...,versionN      // A comma-separated list of all available beta/pre-release versions available for download
+        //
         //     version1_Name=name1                              // Friendly name for a given version
         //     version1_NetFxVersion=netFxVersion1              // What version of .NET does this version require?
+        //                                                         For .NET 2.0, this should be specificed as 2.0.x, where x used to be the build number (50727) but is now ignored
+        //                                                         For .NET 3.5, this should be specificed as 3.5.x, where x is the required service pack level
         //     version1_InfoUrl=infoUrl1                        // A URL that contains information about the given version
         //     version1_ZipUrlList="zipUrl1","zipUrl2",...,"zipUrlN"
-        //                                                      // A URL to download a ZIP containing the given version
+        //                                                      // A comma-delimited list of URL's for mirrors to download the updater. One will be chosen at random.
         //     version1_FullZipUrlList="zipFullUrl1","zipFullUrl2",...,"zipFullUrlN"
-        //                                                      // A comma-delimited list of URL's where a ZIP containing the 'full' installer for Paint.NET
+        //                                                      // A comma-delimited list of URL's for mirrors to download the 'full' installer ('full' means it bundles the appropriate .NET installer
         //     ...
         //     versionN_Name=name1                              // Friendly name for a given version
         //     versionN_NetFxVersion=netFxVersionN              // What version of .NET does this version require?
         //     versionN_InfoUrl=infoUrlN                        // A URL that contains information about the given version
-        //     versionN_ZipUrl=zipUrlN                          // A URL to download a ZIP containing the given version
-        //     versionN_FullZipUrl=zipFullUrlN                  // A URL to download a ZIP containing the given version w/ its required version of .NET
+        //     versionN_ZipUrlList=zipUrlN                      // A comma-delimited list of URL's for mirrors to download the updater. One will be chosen at random.
+        //     versionN_FullZipUrl=zipFullUrlN                  // A comma-delimited list of URL's for mirrors to download the 'full' installer ('full' means it bundles the appropriate .NET installer
         //     
         // Example:
         //     ; Paint.NET versions download manifest
@@ -87,7 +90,7 @@ namespace PaintDotNet.Updates
         private const char commentChar = ';';
 
         // {0} is schema version
-        // {1} is Windows revision (501 for XP, 502 for Server 2k3, 600 for Vista)
+        // {1} is Windows revision (501 for XP, 502 for Server 2k3, 600 for Vista, 601 for Win7)
         // {2} is platform (x86, x64)
         // {3} is the locale (en, etc)
         private const string versionManifestRelativeUrlFormat = "/updates/versions.{0}.{1}.{2}.{3}.txt";
@@ -343,8 +346,23 @@ namespace PaintDotNet.Updates
                     List<string> fullZipUrlList = new List<string>();
                     SplitUrlList(stableFullZipUrls[i], fullZipUrlList);
 
-                    PdnVersionInfo info = new PdnVersionInfo(stableVersions[i], stableNames[i], new Version(stableNetFxVersions[i]),
-                        stableInfoUrls[i], zipUrlList.ToArray(), fullZipUrlList.ToArray(), true);
+                    Version netFxVersion = new Version(stableNetFxVersions[i]);
+
+                    if (netFxVersion.Major == 2 && netFxVersion.Minor == 0)
+                    {
+                        netFxVersion = new Version(2, 0, 0); // discard the build # that is specified, since we use that for Service Pack level now
+                    }
+
+                    PdnVersionInfo info = new PdnVersionInfo(
+                        stableVersions[i], 
+                        stableNames[i], 
+                        netFxVersion.Major,
+                        netFxVersion.Minor,
+                        netFxVersion.Build, // service pack
+                        stableInfoUrls[i], 
+                        zipUrlList.ToArray(), 
+                        fullZipUrlList.ToArray(), 
+                        true);
 
                     versionInfos[cursor] = info;
                     ++cursor;
@@ -358,8 +376,23 @@ namespace PaintDotNet.Updates
                     List<string> fullZipUrlList = new List<string>();
                     SplitUrlList(betaFullZipUrls[i], fullZipUrlList);
 
-                    PdnVersionInfo info = new PdnVersionInfo(betaVersions[i], betaNames[i], new Version(betaNetFxVersions[i]),
-                        betaInfoUrls[i], zipUrlList.ToArray(), fullZipUrlList.ToArray(), false);
+                    Version netFxVersion = new Version(betaNetFxVersions[i]);
+
+                    if (netFxVersion.Major == 2 && netFxVersion.Minor == 0)
+                    {
+                        netFxVersion = new Version(2, 0, 0); // discard the build # that is specified, since we use that for Service Pack level now
+                    }
+
+                    PdnVersionInfo info = new PdnVersionInfo(
+                        betaVersions[i], 
+                        betaNames[i],
+                        netFxVersion.Major,
+                        netFxVersion.Minor,
+                        netFxVersion.Build, // service pack
+                        betaInfoUrls[i], 
+                        zipUrlList.ToArray(), 
+                        fullZipUrlList.ToArray(), 
+                        false);
 
                     versionInfos[cursor] = info;
                     ++cursor;

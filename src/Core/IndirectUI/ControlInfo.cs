@@ -114,17 +114,17 @@ namespace PaintDotNet.IndirectUI
             return this.childControls;
         }
 
-        protected internal ControlInfo()
+        internal ControlInfo()
         {
             this.controlProperties = new PropertyCollection(new Property[0], new PropertyCollectionRule[0]);
         }
 
-        protected internal ControlInfo(PropertyCollection controlProperties)
+        internal ControlInfo(PropertyCollection controlProperties)
         {
             this.controlProperties = controlProperties.Clone();
         }
 
-        protected internal ControlInfo(ControlInfo cloneMe)
+        internal ControlInfo(ControlInfo cloneMe)
         {
             this.controlProperties = cloneMe.controlProperties.Clone();
             this.childControls = new List<ControlInfo>(cloneMe.childControls.Count);
@@ -153,7 +153,7 @@ namespace PaintDotNet.IndirectUI
             }
         }
 
-        protected internal abstract Control CreateWinFormsControl();
+        internal abstract Control CreateWinFormsControl();
 
         public abstract ControlInfo Clone();
 

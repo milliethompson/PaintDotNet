@@ -10,6 +10,7 @@
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Threading;
@@ -281,6 +282,37 @@ namespace PaintDotNet.Effects
             }
         }
 
+        private Rectangle[] ConsolidateRects(Rectangle[] scans)
+        {
+            if (scans.Length == 0)
+            {
+                return scans;
+            }
+
+            List<Rectangle> cons = new List<Rectangle>();
+            int current = 0;
+            cons.Add(scans[0]);
+
+            for (int i = 1; i < scans.Length; ++i)
+            {
+                if (scans[i].Left == cons[current].Left &&
+                    scans[i].Right == cons[current].Right &&
+                    scans[i].Top == cons[current].Bottom)
+                {
+                    Rectangle cc = cons[current];
+                    cc.Height = scans[i].Bottom - cons[current].Top;
+                    cons[current] = cc;
+                }
+                else
+                {
+                    cons.Add(scans[i]);
+                    current = cons.Count - 1; 
+                }
+            }
+
+            return cons.ToArray();
+        }
+
         private Rectangle[][] SliceUpRegion(PdnRegion region, int sliceCount, Rectangle layerBounds)
         {
             Rectangle[][] slices = new Rectangle[sliceCount][];
@@ -310,7 +342,8 @@ namespace PaintDotNet.Effects
                     newRects[j].Intersect(layerBounds);
                 }
 
-                slices[i] = newRects;
+                Rectangle[] consRects = ConsolidateRects(newRects);
+                slices[i] = consRects;
             }
 
             return slices;
@@ -330,6 +363,7 @@ namespace PaintDotNet.Effects
             this.srcArgs = srcArgs;
             this.renderRegion = renderRegion;
             this.renderRegion.Intersect(dstArgs.Bounds);
+
             this.tileRegions = SliceUpRegion(renderRegion, tileCount, dstArgs.Bounds);
 
             this.tilePdnRegions = new PdnRegion[this.tileRegions.Length];

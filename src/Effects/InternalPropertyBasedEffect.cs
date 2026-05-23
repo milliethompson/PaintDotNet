@@ -24,7 +24,7 @@ namespace PaintDotNet.Effects
             base.OnCustomizeConfigUIWindowProperties(props);
         }
 
-        protected internal InternalPropertyBasedEffect(string name, Image image, string subMenuName, EffectFlags flags)
+        internal InternalPropertyBasedEffect(string name, Image image, string subMenuName, EffectFlags flags)
             : base(name, image, subMenuName, flags)
         {
         }

@@ -294,6 +294,7 @@ namespace PaintDotNet
 
             e.Graphics.SetClip(clipRegion, CombineMode.Replace);
             DrawRuler(e, false);
+            clipRegion.Dispose();
         }
 
         private static readonly float[] majorDivisors = 
@@ -325,7 +326,7 @@ namespace PaintDotNet
             }
         }
 
-        void SubdivideX(
+        private void SubdivideX(
             Graphics g,
             Pen pen,
             float x,
@@ -366,7 +367,7 @@ namespace PaintDotNet
             }
         }
 
-        void SubdivideY(
+        private void SubdivideY(
             Graphics g,
             Pen pen,
             float y,

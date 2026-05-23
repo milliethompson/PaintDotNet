@@ -646,7 +646,16 @@ namespace PaintDotNet
                 }
             }
 
-            base.Dispose(disposing);
+            try
+            {
+                base.Dispose(disposing);
+            }
+
+            catch (RankException)
+            {
+                // System.Windows.Forms.PropertyStore
+                // Discard error - bug #2746
+            }
         }
 
         /// <summary>
@@ -1291,10 +1300,8 @@ namespace PaintDotNet
 
         private static void PrintFocus()
         {
-            /*
             Control c = Utility.FindFocus();
             Tracing.Ping("Focused: " + GetControlName(c));
-             * */
         }
 
         private static void FocusPrintThread()

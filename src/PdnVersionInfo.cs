@@ -18,7 +18,9 @@ namespace PaintDotNet
     {
         private Version version;
         private string friendlyName;
-        private Version netFxVersion;
+        private int netFxMajorVersion;
+        private int netFxMinorVersion;
+        private int netFxServicePack;
         private string infoUrl;
         private string[] downloadUrls;
         private string[] fullDownloadUrls;
@@ -40,11 +42,27 @@ namespace PaintDotNet
             }
         }
 
-        public Version NetFxVersion
+        public int NetFxMajorVersion
         {
             get
             {
-                return this.netFxVersion;
+                return this.netFxMajorVersion;
+            }
+        }
+
+        public int NetFxMinorVersion
+        {
+            get
+            {
+                return this.netFxMinorVersion;
+            }
+        }
+
+        public int NetFxServicePack
+        {
+            get
+            {
+                return this.netFxServicePack;
             }
         }
 
@@ -98,12 +116,22 @@ namespace PaintDotNet
             return urls[index];
         }
 
-        public PdnVersionInfo(Version version, string friendlyName, Version netFxVersion, string infoUrl, 
-            string[] downloadUrls, string[] fullDownloadUrls, bool isFinal)
+        public PdnVersionInfo(
+            Version version, 
+            string friendlyName, 
+            int netFxMajorVersion,
+            int netFxMinorVersion,
+            int netFxServicePack,
+            string infoUrl, 
+            string[] downloadUrls, 
+            string[] fullDownloadUrls, 
+            bool isFinal)
         {
             this.version = version;
             this.friendlyName = friendlyName;
-            this.netFxVersion = netFxVersion;
+            this.netFxMajorVersion = netFxMajorVersion;
+            this.netFxMinorVersion = netFxMinorVersion;
+            this.netFxServicePack = netFxServicePack;
             this.infoUrl = infoUrl;
             this.downloadUrls = (string[])downloadUrls.Clone();
             this.fullDownloadUrls = (string[])fullDownloadUrls.Clone();

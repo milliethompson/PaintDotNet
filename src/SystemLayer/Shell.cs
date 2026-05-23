@@ -616,9 +616,11 @@ namespace PaintDotNet.SystemLayer
         {
             string srcDir = Application.StartupPath;
             string srcPath = Path.Combine(srcDir, updateExeFileName);
+            string srcPath2 = srcPath + ".config";
 
             string dstDir = Environment.ExpandEnvironmentVariables(@"%TEMP%\PdnSetup");
             string dstPath = Path.Combine(dstDir, updateExeFileName);
+            string dstPath2 = dstPath + ".config";
 
             if (!Directory.Exists(dstDir))
             {
@@ -626,6 +628,7 @@ namespace PaintDotNet.SystemLayer
             }
 
             File.Copy(srcPath, dstPath, true);
+            File.Copy(srcPath2, dstPath2, true);
             updateMonitorExePath = dstPath;
         }
 

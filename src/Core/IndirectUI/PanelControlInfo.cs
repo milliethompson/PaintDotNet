@@ -37,7 +37,7 @@ namespace PaintDotNet.IndirectUI
         {
         }
 
-        protected internal override Control CreateWinFormsControl()
+        internal override Control CreateWinFormsControl()
         {
             return new PanelControl(this);
         }

@@ -620,10 +620,13 @@ namespace PaintDotNet.IndirectUI
                     this.blueNud.Value = blue;
                 }
 
-                int newValue = (red << 16) | (green << 8) | blue;
-                if (Property.Value != newValue)
+                if (this.inOnPropertyValueChanged == 0)
                 {
-                    Property.Value = newValue;
+                    int newValue = (red << 16) | (green << 8) | blue;
+                    if (Property.Value != newValue)
+                    {
+                        Property.Value = newValue;
+                    }
                 }
 
                 RgbColor rgb = new RgbColor(red, green, blue);
@@ -826,16 +829,27 @@ namespace PaintDotNet.IndirectUI
             this.resetButton.Enabled = !Property.ReadOnly;
         }
 
+        private int inOnPropertyValueChanged = 0; // this field is necessary to avoid having Effect`1.OnSetRenderInfo() called 3-4+ times at effect startup
         protected override void OnPropertyValueChanged()
         {
-            int value = Property.Value;
-            int red = (value >> 16) & 0xff;
-            int green = (value >> 8) & 0xff;
-            int blue = value & 0xff;
-            SetPropertyValueFromRgb(red, green, blue);
+            ++this.inOnPropertyValueChanged;
 
-            ColorBgra color = ColorBgra.FromBgr((byte)blue, (byte)green, (byte)red);
-            this.colorRectangle.RectangleColor = color.ToColor();
+            try
+            {
+                int value = Property.Value;
+                int red = (value >> 16) & 0xff;
+                int green = (value >> 8) & 0xff;
+                int blue = value & 0xff;
+                SetPropertyValueFromRgb(red, green, blue);
+
+                ColorBgra color = ColorBgra.FromBgr((byte)blue, (byte)green, (byte)red);
+                this.colorRectangle.RectangleColor = color.ToColor();
+            }
+
+            finally
+            {
+                --this.inOnPropertyValueChanged;
+            }
         }
 
         protected override bool OnFirstSelect()

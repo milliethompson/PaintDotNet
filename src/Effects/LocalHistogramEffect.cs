@@ -19,7 +19,7 @@ namespace PaintDotNet.Effects
     public abstract class LocalHistogramEffect
         : InternalPropertyBasedEffect
     {
-        protected internal LocalHistogramEffect(string name, Image image, string subMenuName, EffectFlags flags)
+        internal LocalHistogramEffect(string name, Image image, string subMenuName, EffectFlags flags)
             : base(name, image, subMenuName, flags)
         {
         }

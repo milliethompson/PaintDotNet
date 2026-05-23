@@ -79,7 +79,6 @@ namespace PaintDotNet.SystemLayer
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool UnmapViewOfFile(IntPtr lpBaseAddress);
-
        
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -230,7 +229,6 @@ namespace PaintDotNet.SystemLayer
             IntPtr hWnd,
             int nIndex,
             uint dwNewLong);
-
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]

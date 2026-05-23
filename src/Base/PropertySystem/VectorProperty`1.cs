@@ -123,24 +123,24 @@ namespace PaintDotNet.PropertySystem
             return (lhs.First.CompareTo(rhs.First) == 0) && (lhs.Second.CompareTo(rhs.Second) == 0);
         }
 
-        protected internal VectorProperty(object name, Pair<T, T> defaultValues, Pair<T, T> minValues, Pair<T, T> maxValues)
+        internal VectorProperty(object name, Pair<T, T> defaultValues, Pair<T, T> minValues, Pair<T, T> maxValues)
             : this(name, defaultValues, minValues, maxValues, false)
         {
         }
 
-        protected internal VectorProperty(object name, Pair<T, T> defaultValues, Pair<T, T> minValues, Pair<T, T> maxValues, bool readOnly)
+        internal VectorProperty(object name, Pair<T, T> defaultValues, Pair<T, T> minValues, Pair<T, T> maxValues, bool readOnly)
             : this(name, defaultValues, minValues, maxValues, readOnly, DefaultValueValidationFailureResult)
         {
         }
 
-        protected internal VectorProperty(object name, Pair<T, T> defaultValues, Pair<T, T> minValues, Pair<T, T> maxValues, bool readOnly, ValueValidationFailureResult vvfResult)
+        internal VectorProperty(object name, Pair<T, T> defaultValues, Pair<T, T> minValues, Pair<T, T> maxValues, bool readOnly, ValueValidationFailureResult vvfResult)
             : base(name, defaultValues, readOnly, vvfResult)
         {
             this.minValues = minValues;
             this.maxValues = maxValues;
         }
 
-        protected internal VectorProperty(VectorProperty<T> cloneMe, VectorProperty<T> sentinelNotUsed)
+        internal VectorProperty(VectorProperty<T> cloneMe, VectorProperty<T> sentinelNotUsed)
             : base(cloneMe, sentinelNotUsed)
         {
             this.minValues = cloneMe.minValues;

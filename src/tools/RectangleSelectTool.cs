@@ -60,28 +60,37 @@ namespace PaintDotNet.Tools
                     break;
 
                 case SelectionDrawMode.FixedRatio:
-                    int drawnWidth = b.X - a.X;
-                    int drawnHeight = b.Y - a.Y;
-
-                    double drawnWidthScale = (double)drawnWidth / (double)sdmInfo.Width;
-                    double drawnWidthSign = Math.Sign(drawnWidthScale);
-                    double drawnHeightScale = (double)drawnHeight / (double)sdmInfo.Height;
-                    double drawnHeightSign = Math.Sign(drawnHeightScale);
-
-                    double aspect = (double)sdmInfo.Width / (double)sdmInfo.Height;
-
-                    if (drawnWidthScale < drawnHeightScale)
+                    try
                     {
-                        rect = Utility.PointsToRectangle(
-                            new Point(a.X, a.Y),
-                            new Point(a.X + drawnWidth, a.Y + (int)(drawnHeightSign * Math.Abs((double)drawnWidth / aspect))));
+                        int drawnWidth = b.X - a.X;
+                        int drawnHeight = b.Y - a.Y;
+
+                        double drawnWidthScale = (double)drawnWidth / (double)sdmInfo.Width;
+                        double drawnWidthSign = Math.Sign(drawnWidthScale);
+                        double drawnHeightScale = (double)drawnHeight / (double)sdmInfo.Height;
+                        double drawnHeightSign = Math.Sign(drawnHeightScale);
+
+                        double aspect = (double)sdmInfo.Width / (double)sdmInfo.Height;
+
+                        if (drawnWidthScale < drawnHeightScale)
+                        {
+                            rect = Utility.PointsToRectangle(
+                                new Point(a.X, a.Y),
+                                new Point(a.X + drawnWidth, a.Y + (int)(drawnHeightSign * Math.Abs((double)drawnWidth / aspect))));
+                        }
+                        else
+                        {
+                            rect = Utility.PointsToRectangle(
+                                new Point(a.X, a.Y),
+                                new Point(a.X + (int)(drawnWidthSign * Math.Abs((double)drawnHeight * aspect)), a.Y + drawnHeight));
+                        }
                     }
-                    else
+
+                    catch (ArithmeticException)
                     {
-                        rect = Utility.PointsToRectangle(
-                            new Point(a.X, a.Y),
-                            new Point(a.X + (int)(drawnWidthSign * Math.Abs((double)drawnHeight * aspect)), a.Y + drawnHeight));
+                        rect = new Rectangle(a.X, a.Y, 0, 0);
                     }
+
                     break;
 
                 case SelectionDrawMode.FixedSize:

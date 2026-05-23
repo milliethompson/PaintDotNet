@@ -159,7 +159,7 @@ namespace PaintDotNet.Effects
 
         protected override unsafe void OnRender(Rectangle[] rois, int startIndex, int length)
         {
-            int dev = this.intensity * this.intensity / 64;
+            int dev = this.intensity * this.intensity / 4;
             int sat = this.saturation * 4096 / 100;
 
             if (threadRand == null)
@@ -197,15 +197,15 @@ namespace PaintDotNet.Effects
                             g = localLookup[localRand.Next(tableSize)];
                             b = localLookup[localRand.Next(tableSize)];
 
-                            i = (1867 * r + 9618 * g + 4899 * b) >> 14;
+                            i = (4899 * r + 9618 * g + 1867 * b) >> 14; 
 
                             r = i + (((r - i) * sat) >> 12);
                             g = i + (((g - i) * sat) >> 12);
                             b = i + (((b - i) * sat) >> 12);
 
-                            dstPtr->R = Utility.ClampToByte(srcPtr->R + ((r * dev * 16 + 32768) >> 16));
-                            dstPtr->G = Utility.ClampToByte(srcPtr->G + ((g * dev * 16 + 32768) >> 16));
-                            dstPtr->B = Utility.ClampToByte(srcPtr->B + ((b * dev * 16 + 32768) >> 16));
+                            dstPtr->R = Utility.ClampToByte(srcPtr->R + ((r * dev + 32768) >> 16));
+                            dstPtr->G = Utility.ClampToByte(srcPtr->G + ((g * dev + 32768) >> 16));
+                            dstPtr->B = Utility.ClampToByte(srcPtr->B + ((b * dev + 32768) >> 16));
                             dstPtr->A = srcPtr->A;
                         }
 

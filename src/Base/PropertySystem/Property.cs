@@ -262,7 +262,7 @@ namespace PaintDotNet.PropertySystem
             }
         }
 
-        protected internal Property(object name, Type valueType, object defaultValue, bool readOnly, ValueValidationFailureResult vvfResult)
+        internal Property(object name, Type valueType, object defaultValue, bool readOnly, ValueValidationFailureResult vvfResult)
         {
             if (defaultValue != null)
             {
@@ -298,7 +298,7 @@ namespace PaintDotNet.PropertySystem
             }
         }
 
-        protected internal Property(Property cloneMe, Property sentinelNotUsed)
+        internal Property(Property cloneMe, Property sentinelNotUsed)
         {
             // sentinelNotUsed is just there so that this constructor can be unambiguous from Property<T>(object)
             // the call to no op is so that code verifiers aren't thrown off

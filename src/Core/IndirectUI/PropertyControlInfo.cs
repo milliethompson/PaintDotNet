@@ -181,7 +181,7 @@ namespace PaintDotNet.IndirectUI
             return new PropertyControlInfo(property);
         }
 
-        protected internal override Control CreateWinFormsControl()
+        internal override Control CreateWinFormsControl()
         {
             Type propertyControlType = controlTypeToPropertyControlType[Pair.Create(
                 Property.GetType(), (PropertyControlType)this.controlType.Value)];

@@ -260,7 +260,7 @@ namespace PaintDotNet.Data
             }
         }
 
-        protected override Set<SavableBitDepths> CreateAllowedBitDepthListFromToken(PropertyBasedSaveConfigToken token)
+        internal override Set<SavableBitDepths> CreateAllowedBitDepthListFromToken(PropertyBasedSaveConfigToken token)
         {
             TgaBitDepthUIChoices bitDepth = (TgaBitDepthUIChoices)token.GetProperty<StaticListChoiceProperty>(PropertyNames.BitDepth).Value;
 
@@ -288,12 +288,12 @@ namespace PaintDotNet.Data
             return bitDepths;
         }
 
-        protected override int GetDitherLevelFromToken(PropertyBasedSaveConfigToken token)
+        internal override int GetDitherLevelFromToken(PropertyBasedSaveConfigToken token)
         {
             return 0;
         }
 
-        protected override int GetThresholdFromToken(PropertyBasedSaveConfigToken token)
+        internal override int GetThresholdFromToken(PropertyBasedSaveConfigToken token)
         {
             return 0;
         }
@@ -679,7 +679,7 @@ namespace PaintDotNet.Data
             return color;
         }
 
-        protected override void FinalSave(
+        internal override void FinalSave(
             Document input, 
             Stream output, 
             Surface scratchSurface, 

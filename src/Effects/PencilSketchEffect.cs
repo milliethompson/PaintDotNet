@@ -110,8 +110,8 @@ namespace PaintDotNet.Effects
 
                 for (int y = roi.Top; y < roi.Bottom; ++y)
                 {
-                    ColorBgra* srcPtr = SrcArgs.Surface.GetPointAddressUnchecked(roi.X, roi.Y);
-                    ColorBgra* dstPtr = DstArgs.Surface.GetPointAddressUnchecked(roi.X, roi.Y);
+                    ColorBgra* srcPtr = SrcArgs.Surface.GetPointAddressUnchecked(roi.X, y);
+                    ColorBgra* dstPtr = DstArgs.Surface.GetPointAddressUnchecked(roi.X, y);
 
                     for (int x = roi.Left; x < roi.Right; ++x)
                     {

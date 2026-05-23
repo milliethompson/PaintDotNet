@@ -342,10 +342,8 @@ namespace PaintDotNet
                     this.mainForm.Dispose();
                 }
 
-                catch (RankException)
+                catch (Exception)
                 {
-                    // System.Windows.Forms.PropertyStore
-                    // Discard error - bug #2746
                 }
 
                 this.mainForm = null;
@@ -485,7 +483,8 @@ namespace PaintDotNet
             string osRevision = noInfoString;
             string osType = noInfoString;
             string processorNativeArchitecture = noInfoString;
-            string fxVersion = noInfoString;
+            string clrVersion = noInfoString;
+            string fxInventory = noInfoString;
             string processorArchitecture = noInfoString;
             string cpuName = noInfoString;
             string cpuCount = noInfoString;
@@ -573,12 +572,36 @@ namespace PaintDotNet
 
                 try
                 {
-                    fxVersion = System.Environment.Version.ToString();
+                    clrVersion = System.Environment.Version.ToString();
                 }
 
                 catch (Exception ex7)
                 {
-                    fxVersion = "--- Exception while populating fxVersion: " + ex7.ToString() + Environment.NewLine;
+                    clrVersion = "--- Exception while populating clrVersion: " + ex7.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    fxInventory =
+                        (SystemLayer.OS.IsDotNetVersionInstalled(2, 0, 0, false) ? "2.0 " : "") +
+                        (SystemLayer.OS.IsDotNetVersionInstalled(2, 0, 1, false) ? "2.0SP1 " : "") +
+                        (SystemLayer.OS.IsDotNetVersionInstalled(2, 0, 2, false) ? "2.0SP2 " : "") +
+                        (SystemLayer.OS.IsDotNetVersionInstalled(3, 0, 0, false) ? "3.0 " : "") +
+                        (SystemLayer.OS.IsDotNetVersionInstalled(3, 0, 1, false) ? "3.0SP1 " : "") +
+                        (SystemLayer.OS.IsDotNetVersionInstalled(3, 0, 2, false) ? "3.0SP2 " : "") +
+                        (SystemLayer.OS.IsDotNetVersionInstalled(3, 5, 0, false) ? "3.5 " : "") +
+                        (SystemLayer.OS.IsDotNetVersionInstalled(3, 5, 1, false) ? "3.5SP1 " : "") +
+                        (SystemLayer.OS.IsDotNetVersionInstalled(3, 5, 1, true) ? "3.5SP1_Client " : "") +
+                        (SystemLayer.OS.IsDotNetVersionInstalled(3, 5, 2, false) ? "3.5SP2 " : "") +
+                        (SystemLayer.OS.IsDotNetVersionInstalled(4, 0, 0, false) ? "4.0 " : "") +
+                        (SystemLayer.OS.IsDotNetVersionInstalled(4, 0, 1, false) ? "4.0SP1 " : "") +
+                        (SystemLayer.OS.IsDotNetVersionInstalled(4, 0, 2, false) ? "4.0SP2 " : "")
+                        .Trim();
+                }
+
+                catch (Exception ex30)
+                {
+                    fxInventory = "--- Exception while populating fxInventory: " + ex30.ToString() + Environment.NewLine;
                 }
 
                 try
@@ -807,7 +830,7 @@ namespace PaintDotNet
             stream.WriteLine("Application uptime: " + appUptime);
 
             stream.WriteLine("OS Version: " + osVersion + (string.IsNullOrEmpty(osRevision) ? "" : (" " + osRevision)) + " " + osType + " " + processorNativeArchitecture);
-            stream.WriteLine(".NET Framework version: " + fxVersion + " " + processorArchitecture);
+            stream.WriteLine(".NET version: CLR " + clrVersion + " " + processorArchitecture + ", FX " + fxInventory);
             stream.WriteLine("Processor: " + cpuCount + " \"" + cpuName + "\" " + cpuSpeed + " " + cpuFeatures);
             stream.WriteLine("Physical memory: " + totalPhysicalBytes);
             stream.WriteLine("UI DPI: " + dpiInfo);

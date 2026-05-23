@@ -305,7 +305,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        protected internal ConvolutionFilterEffect(string name, Image image, EffectFlags flags)
+        internal ConvolutionFilterEffect(string name, Image image, EffectFlags flags)
             : base(name, image, flags)
         {
         }

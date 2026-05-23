@@ -1548,7 +1548,17 @@ namespace PaintDotNet
 
             base.OnResize(e);
             DoLayout();
-        }       
+        }
+
+        public PointF MouseToDocumentF(Control sender, Point mouse)
+        {
+            Point screenPoint = sender.PointToScreen(mouse);
+            Point sbClient = surfaceBox.PointToClient(screenPoint);
+
+            PointF docPoint = surfaceBox.ClientToSurface(new PointF(sbClient.X, sbClient.Y));
+
+            return docPoint;
+        }
 
         public Point MouseToDocument(Control sender, Point mouse) 
         {
@@ -1575,11 +1585,42 @@ namespace PaintDotNet
         private void MouseMoveHandler(object sender, MouseEventArgs e)
         {
             Point docPoint = MouseToDocument((Control)sender, new Point(e.X, e.Y));
+            PointF docPointF = MouseToDocumentF((Control)sender, new Point(e.X, e.Y));
 
             if (RulersEnabled)
             {
-                topRuler.Value = docPoint.X;
-                leftRuler.Value = docPoint.Y;
+                int x;
+
+                if (docPointF.X > 0)
+                {
+                    x = (int)Math.Truncate(docPointF.X);
+                }
+                else if (docPointF.X < 0)
+                {
+                    x = (int)Math.Truncate(docPointF.X - 1);
+                }
+                else // if (docPointF.X == 0)
+                {
+                    x = 0;
+                }
+
+                int y;
+
+                if (docPointF.Y > 0)
+                {
+                    y = (int)Math.Truncate(docPointF.Y);
+                }
+                else if (docPointF.Y < 0)
+                {
+                    y = (int)Math.Truncate(docPointF.Y - 1);
+                }
+                else // if (docPointF.Y == 0)
+                {
+                    y = 0;
+                }
+
+                topRuler.Value = x;
+                leftRuler.Value = y;
 
                 UpdateRulerOffsets();
             }

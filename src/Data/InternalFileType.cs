@@ -27,7 +27,7 @@ namespace PaintDotNet
         /// <summary>
         /// The actual bit-depths we can save with.
         /// </summary>
-        protected internal enum SavableBitDepths
+        internal enum SavableBitDepths
         {
             Rgba32, // 2^24 colors, plus a full 8-bit alpha channel
             Rgb24,  // 2^24 colors
@@ -85,7 +85,7 @@ namespace PaintDotNet
             return sbTS;
         }
 
-        protected internal SavableBitDepths ChooseBitDepth(
+        internal SavableBitDepths ChooseBitDepth(
             Set<SavableBitDepths> allowedBitDepths,
             Set<SavableBitDepths> losslessBitDepths,
             bool allOpaque,
@@ -213,11 +213,11 @@ namespace PaintDotNet
             uniqueColorCount = uniqueColors.Count;
         }
 
-        protected abstract Set<SavableBitDepths> CreateAllowedBitDepthListFromToken(PropertyBasedSaveConfigToken token);
+        internal abstract Set<SavableBitDepths> CreateAllowedBitDepthListFromToken(PropertyBasedSaveConfigToken token);
 
-        protected abstract int GetThresholdFromToken(PropertyBasedSaveConfigToken token);
+        internal abstract int GetThresholdFromToken(PropertyBasedSaveConfigToken token);
 
-        protected abstract int GetDitherLevelFromToken(PropertyBasedSaveConfigToken token);
+        internal abstract int GetDitherLevelFromToken(PropertyBasedSaveConfigToken token);
 
         protected unsafe override sealed void OnSaveT(
             Document input,
@@ -325,7 +325,7 @@ namespace PaintDotNet
             FinalSave(input, output, scratchSurface, ditherLevel, bitDepth, token, progressCallback);
         }
 
-        protected abstract void FinalSave(
+        internal abstract void FinalSave(
             Document input,
             Stream output,
             Surface scratchSurface,
@@ -334,7 +334,7 @@ namespace PaintDotNet
             PropertyBasedSaveConfigToken token,
             ProgressEventHandler progressCallback);
 
-        protected internal InternalFileType(string name, FileTypeFlags flags, string[] extensions)
+        internal InternalFileType(string name, FileTypeFlags flags, string[] extensions)
             : base(name, flags, extensions)
         {
         }

@@ -345,7 +345,7 @@ namespace PaintDotNet
             }
         }
 
-        protected unsafe override void  RenderImpl(RenderArgs args, Rectangle[] rois, int startIndex, int length)
+        protected unsafe override void RenderImpl(RenderArgs args, Rectangle[] rois, int startIndex, int length)
         {
             if (disposed)
             {

@@ -59,9 +59,10 @@ namespace PaintDotNet.Updates
                 bool getFull;
 
                 if (SystemLayer.OS.IsDotNetVersionInstalled(
-                        downloadMe.NetFxVersion.Major,
-                        downloadMe.NetFxVersion.Minor,
-                        downloadMe.NetFxVersion.Build))
+                        downloadMe.NetFxMajorVersion,
+                        downloadMe.NetFxMinorVersion,
+                        downloadMe.NetFxServicePack,
+                        true))
                 {
                     getFull = false;
                 }

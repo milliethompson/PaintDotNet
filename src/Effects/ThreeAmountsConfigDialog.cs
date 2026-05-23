@@ -200,7 +200,7 @@ namespace PaintDotNet.Effects
 
         }
 
-        protected internal ThreeAmountsConfigDialogBase()
+        internal ThreeAmountsConfigDialogBase()
         {
             InitializeComponent();
             this.amount3Reset.Text = PdnResources.GetString("TwoAmountsConfigDialog.Reset.Text");

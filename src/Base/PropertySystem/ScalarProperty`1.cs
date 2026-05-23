@@ -108,17 +108,17 @@ namespace PaintDotNet.PropertySystem
             return Clamp(newValue, this.minValue, this.maxValue);
         }
 
-        protected internal ScalarProperty(object name, T defaultValue, T minValue, T maxValue)
+        internal ScalarProperty(object name, T defaultValue, T minValue, T maxValue)
             : this(name, defaultValue, minValue, maxValue, false)
         {
         }
 
-        protected internal ScalarProperty(object name, T defaultValue, T minValue, T maxValue, bool readOnly)
+        internal ScalarProperty(object name, T defaultValue, T minValue, T maxValue, bool readOnly)
             : this(name, defaultValue, minValue, maxValue, readOnly, DefaultValueValidationFailureResult)
         {
         }
 
-        protected internal ScalarProperty(object name, T defaultValue, T minValue, T maxValue, bool readOnly, ValueValidationFailureResult vvfResult)
+        internal ScalarProperty(object name, T defaultValue, T minValue, T maxValue, bool readOnly, ValueValidationFailureResult vvfResult)
             : base(name, defaultValue, readOnly, vvfResult)
         {
             if (IsLessThan(maxValue, minValue))
@@ -140,7 +140,7 @@ namespace PaintDotNet.PropertySystem
             this.maxValue = maxValue;
         }
 
-        protected internal ScalarProperty(ScalarProperty<T> copyMe, ScalarProperty<T> sentinelNotUsed)
+        internal ScalarProperty(ScalarProperty<T> copyMe, ScalarProperty<T> sentinelNotUsed)
             : base(copyMe, sentinelNotUsed)
         {
             this.minValue = copyMe.minValue;

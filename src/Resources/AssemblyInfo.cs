@@ -22,13 +22,13 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCopyright("Copyright © 2008 dotPDN LLC, Rick Brewster, Tom Jackson, and past contributors. Portions Copyright © Microsoft Corporation. All Rights Reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: AssemblyVersion("3.35.*")]
+[assembly: AssemblyVersion("3.36.*")]
 
 // Change this to say "Final" for final builds. Otherwise the titlebar will contain
 // a long version string. Final versions should just say the ApplicationProduct
 // attribute (i.e., "Paint.NET" instead of "Paint.NET (Beta 2 build: 1.0.*.*)"
 // Use this to hold the current milestone title, such as "Milestone 2" or "Beta 3"
-[assembly: AssemblyConfiguration("Final")]
+[assembly: AssemblyConfiguration("Personal")]
 
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyFile("")]

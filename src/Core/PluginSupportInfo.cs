@@ -22,7 +22,17 @@ namespace PaintDotNet
 
         private static IPluginSupportInfo GetPluginSupportInfo(ICustomAttributeProvider icap)
         {
-            object[] attributes = icap.GetCustomAttributes(typeof(PluginSupportInfoAttribute), false);
+            object[] attributes;
+
+            try
+            {
+                attributes = icap.GetCustomAttributes(typeof(PluginSupportInfoAttribute), false);
+            }
+
+            catch (Exception)
+            {
+                attributes = new object[0]; 
+            }
 
             if (attributes.Length == 1)
             {

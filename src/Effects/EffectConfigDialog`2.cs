@@ -67,7 +67,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        protected internal EffectConfigDialog(object context)
+        internal EffectConfigDialog(object context)
             : base(context)
         {
         }

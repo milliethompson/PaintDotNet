@@ -42,7 +42,7 @@ namespace PaintDotNet.Effects
     public abstract class WarpEffectBase
         : InternalPropertyBasedEffect
     {
-        protected internal WarpEffectBase(string name, Image image, string submenuName, EffectFlags options)
+        internal WarpEffectBase(string name, Image image, string submenuName, EffectFlags options)
             : base(name, image, submenuName, options)
         {
         }

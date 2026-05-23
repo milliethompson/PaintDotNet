@@ -37,12 +37,12 @@ namespace PaintDotNet.PropertySystem
             }
         }
 
-        protected internal Property(object name, T defaultValue, bool readOnly, ValueValidationFailureResult vvfResult)
+        internal Property(object name, T defaultValue, bool readOnly, ValueValidationFailureResult vvfResult)
             : base(name, typeof(T), defaultValue, readOnly, vvfResult)
         {
         }
 
-        protected internal Property(Property<T> cloneMe, Property<T> sentinelNotUsed)
+        internal Property(Property<T> cloneMe, Property<T> sentinelNotUsed)
             : base(cloneMe, sentinelNotUsed)
         {
             // sentinelNotUsed is just there so that this constructor can be unambiguous from Property<T>(object)

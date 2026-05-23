@@ -35,7 +35,7 @@ namespace PaintDotNet.Effects
         private PaintDotNet.HeaderLabel headerLabel;
         public int sliderInitialValue = 2;
 
-        protected internal AmountEffectConfigDialogBase()
+        internal AmountEffectConfigDialogBase()
         {
             // This call is required by the Windows Form Designer.
             InitializeComponent();

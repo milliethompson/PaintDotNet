@@ -24,7 +24,7 @@ namespace PaintDotNet.PropertySystem
             }
         }
 
-        protected internal PropertyCollectionRule()
+        internal PropertyCollectionRule()
         {
         }
 
@@ -40,7 +40,7 @@ namespace PaintDotNet.PropertySystem
             OnInitialized();
         }
 
-        protected internal bool IsInitialized
+        internal bool IsInitialized
         {
             get
             {
@@ -48,7 +48,7 @@ namespace PaintDotNet.PropertySystem
             }
         }
 
-        protected internal void VerifyInitialized()
+        internal void VerifyInitialized()
         {
             if (!IsInitialized)
             {

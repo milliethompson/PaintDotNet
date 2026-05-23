@@ -135,8 +135,8 @@ namespace PaintDotNet.Effects
 
                 for (int y = roi.Top; y < roi.Bottom; ++y)
                 {
-                    ColorBgra* srcPtr = SrcArgs.Surface.GetPointAddress(roi.X, roi.Y);
-                    ColorBgra* dstPtr = DstArgs.Surface.GetPointAddress(roi.X, roi.Y);
+                    ColorBgra* srcPtr = SrcArgs.Surface.GetPointAddress(roi.X, y);
+                    ColorBgra* dstPtr = DstArgs.Surface.GetPointAddress(roi.X, y);
 
                     for (int x = roi.Left; x < roi.Right; ++x)
                     {

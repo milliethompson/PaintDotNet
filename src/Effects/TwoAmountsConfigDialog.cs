@@ -157,7 +157,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        protected internal TwoAmountsConfigDialogBase()
+        internal TwoAmountsConfigDialogBase()
         {
             // This call is required by the Windows Form Designer.
             InitializeComponent();

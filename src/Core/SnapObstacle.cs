@@ -159,12 +159,12 @@ namespace PaintDotNet
             }
         }
 
-        protected internal SnapObstacle(string name, Rectangle bounds, SnapRegion snapRegion, bool stickyEdges)
+        internal SnapObstacle(string name, Rectangle bounds, SnapRegion snapRegion, bool stickyEdges)
             : this(name, bounds, snapRegion, stickyEdges, DefaultSnapProximity, DefaultSnapDistance)
         {
         }
 
-        protected internal SnapObstacle(string name, Rectangle bounds, SnapRegion snapRegion, bool stickyEdges, int snapProximity, int snapDistance)
+        internal SnapObstacle(string name, Rectangle bounds, SnapRegion snapRegion, bool stickyEdges, int snapProximity, int snapDistance)
         {
             this.name = name;
             this.bounds = bounds;

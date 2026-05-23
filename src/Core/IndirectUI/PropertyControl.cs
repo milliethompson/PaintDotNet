@@ -88,7 +88,7 @@ namespace PaintDotNet.IndirectUI
             }
         }
 
-        protected internal PropertyControl(PropertyControlInfo propInfo)
+        internal PropertyControl(PropertyControlInfo propInfo)
         {
             this.property = propInfo.Property;
             this.property.ValueChanged += new EventHandler(Property_ValueChanged);

@@ -63,10 +63,7 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            BackColor = ColorBgra.Blend(
-                    ColorBgra.FromColor(SystemColors.Control),
-                    ColorBgra.FromColor(SystemColors.ControlDark),
-                    128).ToColor();
+            BackColor = Color.FromArgb(0xc0, 0xc0, 0xc0);
 
             this.roundedEdgeUL = PdnResources.GetImageResource("Images.RoundedEdgeUL.png").Reference;
             this.roundedEdgeUR = PdnResources.GetImageResource("Images.RoundedEdgeUR.png").Reference;

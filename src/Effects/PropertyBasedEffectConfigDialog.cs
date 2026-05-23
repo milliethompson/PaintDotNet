@@ -302,7 +302,7 @@ namespace PaintDotNet.Effects
             return idealClientSize;
         }
 
-        protected internal override void OnBeforeConstructor(object context)
+        internal override void OnBeforeConstructor(object context)
         {
             this.properties = ((PropertyCollection)context).Clone();
         }

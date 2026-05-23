@@ -70,19 +70,18 @@ namespace PaintDotNet.Updates
             string setupTempDir = Environment.ExpandEnvironmentVariables(@"%TEMP%\PdnSetup");
 
             // Delete the update monitor exe if possible
-            try
+            // Delete the update monitor exe if possible
+            foreach (var fileName in new string[] { "UpdateMonitor.exe", "UpdateMonitor.exe.config" })
             {
-                const string updateExeFileName = "UpdateMonitor.exe";
-                string updateExeMonitorPath = Path.Combine(setupTempDir, updateExeFileName);
-
-                if (File.Exists(updateExeMonitorPath))
+                try
                 {
-                    File.Delete(updateExeMonitorPath);
+                    FileSystem.TryDeleteFile(setupTempDir, fileName);
                 }
-            }
 
-            catch (Exception)
-            {
+                catch (Exception)
+                {
+                    // discard any error
+                }
             }
 
             if (msiDeleteMe != null &&
