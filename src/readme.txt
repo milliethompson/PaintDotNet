@@ -2,13 +2,11 @@ Paint.NET Source Code Readme
 
 Prerequisites
 -------------
-1. Windows XP, Server 2003, or Vista.
+1. Windows XP or Windows Server 2003, or newer. 
 
 2. Visual Studio .NET 2005 with Service Pack 1
    You should install the C++ x64 compiler as well, which may not come installed
    by default. 
-   Not tested with any Express editions of Visual Studio, or with Visual Studio
-   2008. You're completely on your own in those cases.
 
 3. .NET Framework 2.0
 
@@ -21,22 +19,39 @@ Instructions
 ------------
 1. Open src/paintdotnet.sln with Microsoft Visual Studio .NET 2005. 
 
-2. Set the project configuration to Release or Debug
+2. Make sure the project configuration is set to "Release and Package."
+   This can be done by going to the "Build" menu, selecting "Configuration
+   Manager...", selecting "Release and Package" under "Active Solution 
+   Configuration:" and then clicking Close.
     
 3. Go to the "Build" menu and click "Rebuild Solution."
 
-4. You will get a number of compiler errors for src/Resources/InvariantStrings.cs.
-   Go to that file and inspect its contents, and follow the instructions in
-   order to make the file compilable.
+4. Assuming all went well, the output files are now in src/Setup/Release:
 
-5. Once that's done, go back to the Build menu and click Rebuild Solution again.
+   * PaintDotNet.msi
+     This is the MSI that installs Paint.NET, but you shouldn't launch it
+     directly, otherwise certain MSI properties won't be set up right.
+     
+   * PaintDotNet_M_m.exe
+     The "real" installer, where M is the major version and m is the minor
+     version, i.e. PaintDotNet_2_6.exe
+     
+     Suitable for web-based distribution. This is fairly small and installs
+     just Paint.NET.             
+               
+   * PaintDotNet_M_m_Full.exe
+     This is the "full" installer that will install .NET 2.0 if it is not 
+     already installed. This file is much larger than PaintDotNetSetup.exe
+     but provides a very convenient all-in-one installation package.
 
-6. Assuming all went well, the program files are now in src/bin/[Debug|Release].
 
-You should make sure that the /skipRepairAttempt command line parameter is 
-present in the Debug tab of the 'paintdotnet' project's properties. Otherwise, 
-Paint.NET will see that some files are missing and attempt to repair itself.
-Not all of these files are necessary when doing development or debugging.
+For normal development work, use either the 'Release' or 'Debug' configuration.
+This will skip the process of building all the setup packages, help file, and 
+merge modules. When you are working in this mode, you should make sure that
+the /skipRepairAttempt command line parameter is present in the Debug tab of
+the 'paintdotnet' project's properties. Otherwise, Paint.NET will see that some
+files are missing and attempt to repair itself. Not all of these files are 
+necessary when doing development or debugging.
 
 Also, you will need to make sure that mt.exe and signtool.exe are in a
 directory that is in your PATH. These are available as part of the Windows SDK
@@ -52,7 +67,7 @@ src/
 src/Base
     This assembly houses base framework-style code. This assembly was introduced
     because there was code in Core that SystemLayer could not access and thus
-    had to duplicate.
+    had to duplicate. 
 
 src/bin
     This is where the main Paint.NET executable and DLLs will be placed.
@@ -61,8 +76,6 @@ src/bin
 
 src/BuildTools
     Some exe's that are used by the build process.
-
-src/Core
 
 src/Data
     Contains all data-related code, including loading and saving of images.
@@ -76,6 +89,9 @@ src/GeneratedCode
     in the paintdotnet solution. Currently it only generates the user blend
     ops in the Data project.
 
+src/Help
+    Contains all the help files that are compiled into PaintDotNet.chm.
+    
 src/Interop.WIA
     Contains the .NET interop DLL for the Windows Image Acquisition (WIA)
     Automation Layer.
@@ -91,8 +107,36 @@ src/Manifests
 src/obj
     Intermediate files used during compilation go here.
 
+src/PdnLib
+    Contains the Paint.NET "library." This is code that is plausibly usable 
+    either outside of Paint.NET or required for plugins to link against.
+
 src/Resources
     Contains all the resources for Paint.NET, and some code for managing them.
+
+src/Setup
+    Contains a project that is used to build PaintDotNet.msi. Note that the
+    MSI file is not complete until the "Setup-Config" project has finished!
+
+src/Setup-Config
+    This is the final stage of the build process. It modifies PaintDotNet.msi
+    using a VBS script so that it defaults to "Install for Everyone" instead
+    of "Install for Just Me." It then packages together PaintDotNet.msi with
+    dotnetfx.exe using NSIS (Nullsoft Scriptable Installation System).
+
+src/SetupFrontEnd
+    Contains our front-end to the setup MSI. This was written so that we can
+    localize (translate) the setup wizard, and also so that the installation
+    options can be preserved when updating or reinstalling.
+
+src/SetupNgen
+    This is a program that is run as part of install and uninstall that "pre-
+    JITs" our DLLs, as well as performing a few other tasks.
+
+src/SetupShim
+    This is the setup "shim" which determines if .NET is installed and tries
+    to install it if required. If .NET is already installed, it launches
+    SetupFrontEnd.
 
 src/SharpZipLib
     Contains the DLL for #ziplib, by Mike Krueger.

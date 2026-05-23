@@ -686,7 +686,7 @@ namespace PaintDotNet.SystemLayer
             string quotedUrl = "\"" + url + "\"";
             ExecutePrivilege executePrivilege;
 
-            if (!Security.IsAdministrator)
+            if (!Security.IsAdministrator || (Security.IsAdministrator && !Security.CanLaunchNonAdminProcess))
             {
                 executePrivilege = ExecutePrivilege.AsInvokerOrAsManifest;
             }
@@ -727,7 +727,7 @@ namespace PaintDotNet.SystemLayer
 
                 catch (Exception ex)
                 {
-                    MessageBox.Show(owner, "Exception while using method 2 to launch url through '" + shellExePath + "', " + quotedUrl + ", : " + ex.ToString());
+                    Tracing.Ping("Exception while using method 2 to launch url through '" + shellExePath + "', " + quotedUrl + ", : " + ex.ToString());
                     success = false;
                 }
             }

@@ -77,32 +77,52 @@ namespace PaintDotNet.Effects
             base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
         }
 
-        public unsafe override ColorBgra Apply(ColorBgra src, int area, int* hb, int* hg, int* hr, int* ha)
+        public unsafe override ColorBgra ApplyWithAlpha(ColorBgra src, int area, int sum, int* hb, int* hg, int* hr)
         {
-            // TODO: do this calculation proper based on alpha values
-
-            int b = 0;
-            int g = 0;
-            int r = 0;
-            int a = 0;
-
-            for (int i = 1; i < 256; ++i)
+            //each slot of the histgram can contain up to area * 255. This will overflow an int when area > 32k
+            if (area < 32768)
             {
-                b += i * hb[i];
-                g += i * hg[i];
-                r += i * hr[i];
-                a += i * ha[i];
-            }
+                int b = 0;
+                int g = 0;
+                int r = 0;
 
-            ColorBgra c = ColorBgra.FromBgraClamped(b / area, g / area, r / area, a / area);
-            return c;
+                for (int i = 1; i < 256; ++i)
+                {
+                    b += i * hb[i];
+                    g += i * hg[i];
+                    r += i * hr[i];
+                }
+
+                int alpha = sum / area;
+                int div = area * 255;
+
+                return ColorBgra.FromBgraClamped(b / div, g / div, r / div, alpha);
+            }
+            else //use a long if an int will overflow.
+            {
+                long b = 0;
+                long g = 0;
+                long r = 0;
+
+                for (long i = 1; i < 256; ++i)
+                {
+                    b += i * hb[i];
+                    g += i * hg[i];
+                    r += i * hr[i];
+                }
+
+                int alpha = sum / area;
+                int div = area * 255;
+
+                return ColorBgra.FromBgraClamped(b / div, g / div, r / div, alpha);
+            }
         }
 
         protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
         {
             foreach (Rectangle rect in rois)
             {
-                RenderRect(this.radius, SrcArgs.Surface, DstArgs.Surface, rect);
+                RenderRectWithAlpha(this.radius, SrcArgs.Surface, DstArgs.Surface, rect);
             }
         }
     }

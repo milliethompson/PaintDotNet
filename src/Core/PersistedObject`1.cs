@@ -256,14 +256,7 @@ namespace PaintDotNet
 
                 if (fi.Exists)
                 {
-                    try
-                    {
-                        fi.Delete();
-                    }
-
-                    catch
-                    {
-                    }
+                    bool result = FileSystem.TryDeleteFile(fi.FullName);
 
                     try
                     {
@@ -310,14 +303,7 @@ namespace PaintDotNet
 
                     if (fi.Exists)
                     {
-                        try
-                        {
-                            fi.Delete();
-                        }
-                        
-                        catch (Exception)
-                        {
-                        }                        
+                        bool result = FileSystem.TryDeleteFile(fi.FullName);
                     }
                 }
             }

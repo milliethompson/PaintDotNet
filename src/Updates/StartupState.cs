@@ -95,41 +95,22 @@ namespace PaintDotNet.Updates
 
                 while (retryCount > 0)
                 {
-                    try
+                    if (FileSystem.TryDeleteFile(msiPath))
                     {
-                        File.Delete(msiPath);
-                        retryCount = 0;
+                        break;
                     }
 
-                    catch (Exception)
-                    {
-                        Thread.Sleep(500);
-                    }
-
+                    Thread.Sleep(500);
                     --retryCount;
                 }
 
-                try
-                {
-                    Settings.CurrentUser.Delete(SettingNames.UpdateMsiFileName);
-                }
-
-                catch (Exception)
-                {
-                }
+                Settings.CurrentUser.TryDelete(SettingNames.UpdateMsiFileName);
             }
 
             // Try to remove the dir from the temp folder
-            try
+            if (Directory.Exists(setupTempDir))
             {
-                if (Directory.Exists(setupTempDir))
-                {
-                    Directory.Delete(setupTempDir, false);
-                }
-            }
-
-            catch (Exception)
-            {
+                FileSystem.TryDeleteDirectory(setupTempDir);
             }
         }
 

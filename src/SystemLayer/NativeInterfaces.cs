@@ -353,7 +353,8 @@ namespace PaintDotNet.SystemLayer
             void SetClientGuid([In] ref Guid guid);
 
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-            void ClearClientData();
+            [PreserveSig]
+            int ClearClientData();
 
             // Not supported:  IShellItemFilter is not defined, converting to IntPtr
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]

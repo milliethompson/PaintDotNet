@@ -8,6 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
+using PaintDotNet.SystemLayer;
 using System;
 using System.Globalization;
 using System.IO;
@@ -178,27 +179,13 @@ namespace PaintDotNet.Updates
                 {
                     if (this.installerPath != null)
                     {
-                        try
-                        {
-                            File.Delete(this.installerPath);
-                        }
-
-                        catch
-                        {
-                        }
+                        bool result = FileSystem.TryDeleteFile(this.installerPath);
                     }
                 }
 
                 if (this.extractMe != null)
                 {
-                    try
-                    {
-                        File.Delete(this.extractMe);
-                    }
-
-                    catch
-                    {
-                    }
+                    bool result = FileSystem.TryDeleteFile(this.extractMe);
                 }
             }
         }

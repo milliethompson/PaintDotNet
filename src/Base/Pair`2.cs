@@ -11,6 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
+    [Serializable]
     public struct Pair<T, U>
     {
         private T first;

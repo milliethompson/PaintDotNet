@@ -11,6 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
+    [Serializable]
     public struct Triple<T, U, V>
     {
         private T first;

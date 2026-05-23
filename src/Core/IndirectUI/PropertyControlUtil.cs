@@ -33,7 +33,11 @@ namespace PaintDotNet.IndirectUI
             double lerp2 = Math.Sqrt(lerp);
             double newPropertyValue = minValue + (lerp2 * (maxValue - minValue));
             double clampedNewPropertyValue = Utility.Clamp(newPropertyValue, minValue, maxValue);
-            return (int)(clampedNewPropertyValue * toIntScale);
+            double newSliderValueDouble = clampedNewPropertyValue * toIntScale;
+            long newSliderValueLong = (long)newSliderValueDouble;
+            int newSliderValueInt = (int)newSliderValueLong;
+
+            return newSliderValueInt;
         }
 
         public static int ToSliderValueExp(double propertyValue, double minValue, double maxValue, int scaleLog10)

@@ -62,14 +62,7 @@ namespace PaintDotNet.Actions
                     }
 
                     // Try to delete the temp file but don't worry if we can't
-                    try
-                    {
-                        File.Delete(tempName);
-                    }
-
-                    catch (Exception)
-                    {
-                    }
+                    bool result = FileSystem.TryDeleteFile(tempName);
                 }
 
                 finally

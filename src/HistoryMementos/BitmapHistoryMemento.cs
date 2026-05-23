@@ -54,17 +54,7 @@ namespace PaintDotNet.HistoryMementos
                 {
                     string fileName = Marshal.PtrToStringBSTR(this.bstrFileName);
                     Marshal.FreeBSTR(this.bstrFileName);
-
-                    try
-                    {
-                        File.Delete(fileName);
-                    }
-
-                    catch (Exception ex)
-                    {
-                        Tracing.Ping("Exception when trying to delete file:" + ex.ToString());
-                    }
-
+                    bool result = FileSystem.TryDeleteFile(fileName);
                     this.bstrFileName = IntPtr.Zero;
                 }
             }

@@ -11,6 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
+    [Serializable]
     public struct Quadruple<T, U, V, W>
     {
         private T first;

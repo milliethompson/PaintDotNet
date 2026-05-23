@@ -117,6 +117,8 @@ namespace DdsFileTypePlugin
 						SquishInterface_32.SquishCompressImage( pRGBA, width, height, pBlocks, flags, progressFn );
 				}
 			}
+
+            GC.KeepAlive(progressFn);
 		}
 		
 		private static unsafe void	CallDecompressImage( byte[] rgba, int width, int height, byte[] blocks, int flags, ProgressFn progressFn )
@@ -133,6 +135,8 @@ namespace DdsFileTypePlugin
 						SquishInterface_32.SquishDecompressImage( pRGBA, width, height, pBlocks, flags, progressFn );
 				}
 			}
+
+            GC.KeepAlive(progressFn);
 		}
 
         public static void Initialize()

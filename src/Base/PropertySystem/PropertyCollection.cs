@@ -139,7 +139,7 @@ namespace PaintDotNet.PropertySystem
             {
                 Property dstProp = this[srcProp.Name];
 
-                if (dstProp != null && dstProp.Type == srcProp.Type)
+                if (dstProp != null && dstProp.ValueType == srcProp.ValueType)
                 {
                     dstProp.Value = srcProp.Value;
                 }

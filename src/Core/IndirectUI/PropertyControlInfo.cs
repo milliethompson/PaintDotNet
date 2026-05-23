@@ -21,17 +21,19 @@ namespace PaintDotNet.IndirectUI
         : ControlInfo,
           IPropertyRef
     {
+        // NOTE: In these descriptions, do not confuse Property.GetType() with Property.ValueType.
+
         // Maps from Property.GetType() to set of PropertyControlType
         private static Dictionary<Type, Set<PropertyControlType>> propertyTypeToControlType;
 
         // Maps from Property.GetType() to the default PropertyControlType (some property types get more than 1)
         private static Dictionary<Type, PropertyControlType> propertyTypeToDefaultControlType;
 
-        // Maps from {Property.GetType(),PropertyControlType} to PropertyControl.GetType()
+        // Maps from {Property.GetType(), PropertyControlType} to PropertyControl.GetType()
         private static Dictionary<Pair<Type, PropertyControlType>, Type> controlTypeToPropertyControlType;
 
-        // Maps from PropertyControlType to its PropertyControlInfo properties
-        private static Dictionary<PropertyControlType, PropertyCollection> controlTypeToProperties;
+        // Maps from {Property.GetType(), PropertyControlType} to its PropertyControlInfo properties
+        private static Dictionary<Pair<Type, PropertyControlType>, PropertyCollection> controlTypeToProperties;
 
         static PropertyControlInfo()
         {
@@ -53,7 +55,7 @@ namespace PaintDotNet.IndirectUI
             propertyTypeToControlType = new Dictionary<Type,Set<PropertyControlType>>();
             propertyTypeToDefaultControlType = new Dictionary<Type, PropertyControlType>();
             controlTypeToPropertyControlType = new Dictionary<Pair<Type,PropertyControlType>,Type>();
-            controlTypeToProperties = new Dictionary<PropertyControlType, PropertyCollection>();
+            controlTypeToProperties = new Dictionary<Pair<Type, PropertyControlType>, PropertyCollection>();
 
             Assembly thisAssembly = Assembly.GetExecutingAssembly();
             Type[] types = thisAssembly.GetTypes();
@@ -109,7 +111,7 @@ namespace PaintDotNet.IndirectUI
                     }
 
                     PropertyCollection controlProps2 = new PropertyCollection(controlProps);
-                    controlTypeToProperties[infoAttribute.ControlType] = controlProps2;
+                    controlTypeToProperties[Pair.Create(infoAttribute.PropertyType, infoAttribute.ControlType)] = controlProps2;
                 }
             }
         }
@@ -146,11 +148,6 @@ namespace PaintDotNet.IndirectUI
             return valueDisplayName ?? value.ToString();
         }
 
-        private static PropertyCollection CreatePropertiesForControlType(PropertyControlType controlType)
-        {
-            return controlTypeToProperties[controlType].Clone();
-        }
-
         private PropertyControlInfo(Property property)
             : base()
         {
@@ -158,7 +155,7 @@ namespace PaintDotNet.IndirectUI
             PropertyControlType defaultControlType = propertyTypeToDefaultControlType[this.property.GetType()];
             this.controlType = StaticListChoiceProperty.CreateForEnum<PropertyControlType>(ControlInfoPropertyNames.ControlType, defaultControlType, false);
             this.controlType.ValueChanged += new EventHandler(ControlType_ValueChanged);
-            this.ControlProperties = controlTypeToProperties[(PropertyControlType)this.controlType.Value].Clone();
+            this.ControlProperties = controlTypeToProperties[Pair.Create(property.GetType(), (PropertyControlType)this.controlType.Value)].Clone();
         }
 
         private PropertyControlInfo(PropertyControlInfo cloneMe)
@@ -171,8 +168,11 @@ namespace PaintDotNet.IndirectUI
 
         private void ControlType_ValueChanged(object sender, EventArgs e)
         {
-            PropertyCollection newProps = controlTypeToProperties[(PropertyControlType)this.controlType.Value].Clone();
+            PropertyCollection newProps = controlTypeToProperties[Pair.Create(this.Property.GetType(), 
+                (PropertyControlType)this.controlType.Value)].Clone();
+
             newProps.CopyCompatibleValuesFrom(this.ControlProperties);
+
             this.ControlProperties = newProps;
         }
 

@@ -78,7 +78,7 @@ namespace PaintDotNet.PropertySystem
         }
 
         private string name;
-        private Type type;
+        private Type valueType;
         private object ourValue;
         private object defaultValue;
         private bool readOnly;
@@ -144,11 +144,20 @@ namespace PaintDotNet.PropertySystem
             }
         }
 
+        [Obsolete("Use the ValueType property instead")]
         public Type Type
         {
             get
             {
-                return this.type;
+                return this.valueType;
+            }
+        }
+
+        public Type ValueType
+        {
+            get
+            {
+                return this.valueType;
             }
         }
 
@@ -229,25 +238,25 @@ namespace PaintDotNet.PropertySystem
             }
         }
 
-        protected internal Property(object name, Type type, object defaultValue, bool readOnly, ValueValidationFailureResult vvfResult)
+        protected internal Property(object name, Type valueType, object defaultValue, bool readOnly, ValueValidationFailureResult vvfResult)
         {
             if (defaultValue != null)
             {
                 Type defaultValueType = defaultValue.GetType();
 
-                if (!type.IsAssignableFrom(defaultValueType))
+                if (!valueType.IsAssignableFrom(defaultValueType))
                 {
                     throw new ArgumentOutOfRangeException(
                         "type",
                         string.Format(
-                            "defaultValue is not of type specified in constructor. type.Name = {0}, defaultValue.GetType().Name = {1}",
-                            type.Name,
+                            "defaultValue is not of type specified in constructor. valueType.Name = {0}, defaultValue.GetType().Name = {1}",
+                            valueType.Name,
                             defaultValue.GetType().Name));
                 }
             }
 
             this.name = name.ToString();
-            this.type = type;
+            this.valueType = valueType;
             this.ourValue = defaultValue;
             this.defaultValue = defaultValue;
             this.readOnly = readOnly;
@@ -272,7 +281,7 @@ namespace PaintDotNet.PropertySystem
             sentinelNotUsed.NoOp();
 
             this.name = cloneMe.name;
-            this.type = cloneMe.type;
+            this.valueType = cloneMe.valueType;
             this.ourValue = cloneMe.ourValue;
             this.defaultValue = cloneMe.defaultValue;
             this.readOnly = cloneMe.readOnly;

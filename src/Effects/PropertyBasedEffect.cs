@@ -71,7 +71,7 @@ namespace PaintDotNet.Effects
 
         public override sealed EffectConfigDialog CreateConfigDialog()
         {
-            PropertyCollection props1 = OnCreatePropertyCollection();
+            PropertyCollection props1 = CreatePropertyCollection();
             PropertyCollection props2 = props1.Clone();
             PropertyCollection props3 = props1.Clone();
 

@@ -250,14 +250,7 @@ namespace PaintDotNet.SystemLayer
 
             this.uiCallbacks = uiCallbacks;
 
-            try
-            {
-                FileDialog.ClearClientData();
-            }
-
-            catch (Exception)
-            {
-            }
+            int hrCCD = FileDialog.ClearClientData();
 
             uint dwCookie = 0xdeadbeef;
 

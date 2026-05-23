@@ -2277,6 +2277,15 @@ Click OK to go to the Paint.NET website where you may download a newer version.<
   <data name="ConfirmLanguageDialog.CancelTB.ExplanationText">
     <value>Does not close Paint.NET. Your language choice will be cancelled.</value>
   </data>
+  <data name="ReduceNoiseEffect.Name">
+    <value>Reduce Noise</value>
+  </data>
+  <data name="ReduceNoise.Radius.DisplayName">
+    <value>Radius</value>
+  </data>
+  <data name="ReduceNoise.Strength.DisplayName">
+    <value>Strength</value>
+  </data>
   <data name="AddNoiseEffect.Amount1Label" xml:space="preserve">
     <value>Intensity</value>
   </data>
@@ -3221,6 +3230,6 @@ Because of the unpredictable nature of these types of errors, it is strongly rec
     <value>This plugin is known to cause stability problems, and has been blocked from loading.</value>
   </data>
   <data name="BlockedPluginException.PluginIsNowBuiltIn">
-    <value>This plugin is now built-in to Paint.NET, so the old plugin DLL has been blocked from loading. You may safely delete this plugin DLL.</value>
+    <value>This plugin is now built-in to Paint.NET, so the old plugin DLL has been blocked from loading.</value>
   </data>
 </root>

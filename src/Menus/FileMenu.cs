@@ -311,14 +311,26 @@ namespace PaintDotNet.Menus
             AppWorkspace.PerformAction(new OpenFileAction());
         }
 
-        private void MenuFileExit_Click(object sender, System.EventArgs e)
+        private void DoExit()
         {
             Startup.CloseApplication();
         }
 
+        private void MenuFileExit_Click(object sender, System.EventArgs e)
+        {
+            DoExit();
+        }
+
         private void MenuFileClose_Click(object sender, EventArgs e)
         {
-            this.AppWorkspace.PerformAction(new CloseWorkspaceAction());
+            if (this.AppWorkspace.DocumentWorkspaces.Length > 0)
+            {
+                this.AppWorkspace.PerformAction(new CloseWorkspaceAction());
+            }
+            else
+            {
+                DoExit();
+            }
         }
 
         private void MenuFileSaveAs_Click(object sender, System.EventArgs e)

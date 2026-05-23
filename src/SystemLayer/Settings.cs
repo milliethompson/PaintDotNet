@@ -72,7 +72,21 @@ namespace PaintDotNet.SystemLayer
             }
 
             return softwareKey;
-        }   
+        }
+
+        public bool TryDelete(string key)
+        {
+            try
+            {
+                Delete(key);
+                return true;
+            }
+
+            catch (Exception)
+            {
+                return false;
+            }
+        }
 
         /// <summary>
         /// Deletes a settings key.

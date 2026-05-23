@@ -96,14 +96,7 @@ namespace PaintDotNet.Updates
                 }
                 else
                 {
-                    try
-                    {
-                        File.Delete(this.installerPath);
-                    }
-
-                    catch (Exception)
-                    {
-                    }
+                    bool result = FileSystem.TryDeleteFile(this.installerPath);
                 }
             }
 

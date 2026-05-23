@@ -495,15 +495,7 @@ namespace PaintDotNet.SystemLayer
                 // If we can delete the lock file, then definitely clean up
                 if (!cleanUp)
                 {
-                    try
-                    {
-                        File.Delete(lockPath);
-                        cleanUp = true;
-                    }
-
-                    catch (Exception)
-                    {
-                    }
+                    cleanUp = FileSystem.TryDeleteFile(lockPath);
                 }
 
                 if (cleanUp)
@@ -512,24 +504,10 @@ namespace PaintDotNet.SystemLayer
 
                     foreach (string fileToCleanUp in filesToCleanUp)
                     {
-                        try
-                        {
-                            File.Delete(fileToCleanUp);
-                        }
-
-                        catch (Exception)
-                        {
-                        }
+                        bool result1 = TryDeleteFile(fileToCleanUp);
                     }
 
-                    try
-                    {
-                        Directory.Delete(oldDirPath, false);
-                    }
-
-                    catch (Exception)
-                    {
-                    }
+                    FileSystem.TryDeleteDirectory(oldDirPath);
                 }
             }
 
@@ -558,6 +536,16 @@ namespace PaintDotNet.SystemLayer
 
             // Cleanup when the app exits.
             Application.ApplicationExit += new EventHandler(Application_ApplicationExit);
+        }
+
+        public static bool TryDeleteFile(string filePath)
+        {
+            return NativeMethods.DeleteFileW(filePath);
+        }
+
+        public static bool TryDeleteDirectory(string dirPath)
+        {
+            return NativeMethods.RemoveDirectoryW(dirPath);
         }
 
         private static bool EnableCompression(string filePath)

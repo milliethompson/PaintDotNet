@@ -15,6 +15,16 @@ namespace PaintDotNet.SystemLayer
 {
     internal static class NativeMethods
     {
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool DeleteFileW(
+            [MarshalAs(UnmanagedType.LPWStr)] string lpFileName);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool RemoveDirectoryW(
+            [MarshalAs(UnmanagedType.LPWStr)] string lpPathName);
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern uint WaitForInputIdle(
             IntPtr hProcess,

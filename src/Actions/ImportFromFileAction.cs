@@ -262,8 +262,7 @@ namespace PaintDotNet.Actions
         {
             documentWorkspace.AppWorkspace.Widgets.StatusBarProgress.ResetProgressStatusBar();
 
-            ProgressEventHandler progressCallback =
-                delegate(object sender, ProgressEventArgs e)
+            ProgressEventHandler progressCallback = (s, e) =>
                 {
                     documentWorkspace.AppWorkspace.Widgets.StatusBarProgress.SetProgressStatusBar(e.Percent);
                 };

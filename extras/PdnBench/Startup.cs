@@ -169,6 +169,8 @@ namespace PdnBench
 
             Surface surface = ((BitmapLayer)document.Layers[0]).Surface;
 
+            Surface dst = new Surface(surface.Width * 4, surface.Height * 4);
+
 #if EFFECTS
             for (double i = 0; i < (2 * Math.PI); i += 70.0 * ((2 * Math.PI) / 360.0))
             {
@@ -319,6 +321,19 @@ namespace PdnBench
             }
 
             {
+                ReduceNoiseEffect e = new ReduceNoiseEffect();
+                PropertyCollection props = e.CreatePropertyCollection();
+
+                benchmarks.Add(
+                    new EffectBenchmark(
+                        "Reduce Noise (3x)",
+                        3,
+                        e,
+                        new PropertyBasedEffectConfigToken(props),
+                        dst));
+            }
+
+            {
                 MandelbrotFractalEffect e = new MandelbrotFractalEffect();
                 PropertyCollection props = e.CreatePropertyCollection();
 
@@ -345,8 +360,6 @@ namespace PdnBench
             }
 
 #endif
-
-            Surface dst = new Surface(surface.Width * 4, surface.Height * 4);
 
 #if RESIZE
             // Resize benchmarks

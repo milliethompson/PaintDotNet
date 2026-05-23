@@ -162,7 +162,10 @@ namespace PaintDotNet.Effects
                     Quadruple.Create("InkSketch", "EffectPlugin", new Version(1, 0, int.MaxValue, int.MaxValue), BuiltInMessage),
 
                     // Portrait, which is now built-in to Paint.NET ("Soften Portrait")
-                    Quadruple.Create("PortraitEffect", "EffectPlugin", new Version(1, 0, int.MaxValue, int.MaxValue), BuiltInMessage)
+                    Quadruple.Create("PortraitEffect", "EffectPlugin", new Version(1, 0, int.MaxValue, int.MaxValue), BuiltInMessage),
+
+                    // Reduce Noice, which is now built-in to Paint.NET
+                    Quadruple.Create("HistogramEffects", "ReduceNoiseEffect", new Version (1, 1, 0, 0), BuiltInMessage)
                 };
 
         private static Exception IsBannedEffect(Type effectType)

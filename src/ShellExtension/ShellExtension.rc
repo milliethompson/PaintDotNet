@@ -53,8 +53,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,20,0,0
- PRODUCTVERSION 3,20,0,0
+ FILEVERSION 3,22,0,0
+ PRODUCTVERSION 3,22,0,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -70,12 +70,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "FileDescription", "Paint.NET Shell Extension DLL"
-            VALUE "FileVersion", "3, 20, 0, 0"
+            VALUE "FileVersion", "3, 22, 0, 0"
             VALUE "InternalName", "PdnShellExtension"
-            VALUE "LegalCopyright", "Copyright © 2007 Rick Brewster, Tom Jackson, and past contributors. Portions Copyright © 2007 Microsoft Corporation. All Rights Reserved."
+            VALUE "LegalCopyright", "Copyright © 2008 dotPDN LLC, Rick Brewster, Tom Jackson, and past contributors. Portions Copyright © Microsoft Corporation. All Rights Reserved."
             VALUE "OriginalFilename", "ShellExtension.dll "
             VALUE "ProductName", "Paint.NET"
-            VALUE "ProductVersion", "3, 20, 0, 0"
+            VALUE "ProductVersion", "3, 22, 0, 0"
         END
     END
     BLOCK "VarFileInfo"

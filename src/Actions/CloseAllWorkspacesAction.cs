@@ -66,11 +66,7 @@ namespace PaintDotNet.Actions
             {
                 using (UnsavedChangesDialog dialog = new UnsavedChangesDialog())
                 {
-                    dialog.DocumentClicked +=
-                        delegate(object sender, EventArgs<DocumentWorkspace> e2)
-                        {
-                            appWorkspace.ActiveDocumentWorkspace = e2.Data;
-                        };
+                    dialog.DocumentClicked += (s, e2) => { appWorkspace.ActiveDocumentWorkspace = e2.Data; };
 
                     dialog.Documents = unsavedDocs.ToArray();
 

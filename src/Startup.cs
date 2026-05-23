@@ -483,6 +483,8 @@ namespace PaintDotNet
             string totalPhysicalBytes = noInfoString;
             string localeName = noInfoString;
             string inkInfo = noInfoString;
+            string assembliesInfo = noInfoString;
+            string updaterInfo = noInfoString;
 
             try
             {
@@ -678,6 +680,55 @@ namespace PaintDotNet
                 {
                     inkInfo = "--- Exception while populating inkInfo: " + ex15.ToString() + Environment.NewLine;
                 }
+
+                try
+                {
+                    StringBuilder assembliesInfoSB = new StringBuilder();
+
+                    Assembly[] loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+                    foreach (Assembly assembly in loadedAssemblies)
+                    {
+                        assembliesInfoSB.AppendFormat("{0}    {1} @ {2}", Environment.NewLine, assembly.FullName, assembly.Location);
+                    }
+
+                    assembliesInfo = assembliesInfoSB.ToString();
+                }
+
+                catch (Exception ex16)
+                {
+                    assembliesInfo = "--- Exception while populating assembliesInfo: " + ex16.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    string autoCheckForUpdates = Settings.SystemWide.GetString(SettingNames.AutoCheckForUpdates, noInfoString);
+
+                    string lastUpdateCheckTimeInfo;
+
+                    try
+                    {
+                        string lastUpdateCheckTimeString = Settings.CurrentUser.Get(SettingNames.LastUpdateCheckTimeTicks);
+                        long lastUpdateCheckTimeTicks = long.Parse(lastUpdateCheckTimeString);
+                        DateTime lastUpdateCheckTime = new DateTime(lastUpdateCheckTimeTicks);
+                        lastUpdateCheckTimeInfo = lastUpdateCheckTime.ToShortDateString();
+                    }
+
+                    catch (Exception)
+                    {
+                        lastUpdateCheckTimeInfo = noInfoString;
+                    }
+
+                    updaterInfo = string.Format(
+                        "{0}, {1}",
+                        (autoCheckForUpdates == "1") ? "true" : (autoCheckForUpdates == "0" ? "false" : (autoCheckForUpdates ?? "null")),
+                        lastUpdateCheckTimeInfo);
+                }
+
+                catch (Exception ex17)
+                {
+                    updaterInfo = "--- Exception while populating updaterInfo: " + ex17.ToString() + Environment.NewLine;
+                }
             }
 
             catch (Exception ex12)
@@ -694,7 +745,9 @@ namespace PaintDotNet
             stream.WriteLine("Processor: " + cpuCount + " \"" + cpuName + "\" " + cpuSpeed + " " + cpuFeatures);
             stream.WriteLine("Physical memory: " + totalPhysicalBytes);
             stream.WriteLine("Tablet PC: " + inkInfo);
+            stream.WriteLine("Updates: " + updaterInfo);
             stream.WriteLine("Locale: " + localeName);
+            stream.WriteLine("Loaded assemblies: " + assembliesInfo);
             stream.WriteLine();
 
             stream.WriteLine("Exception details:");
