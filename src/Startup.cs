@@ -23,6 +23,21 @@ namespace PaintDotNet
     public sealed class Startup
     {
         private string[] args;
+        private static DateTime startupTime;
+        private static bool enableCrashLog = true;
+
+        public static bool EnableCrashLog
+        {
+            get
+            {
+                return enableCrashLog;
+            }
+
+            set
+            {
+                enableCrashLog = value;
+            }
+        }
 
         public Startup(string[] args)
         {
@@ -107,6 +122,7 @@ namespace PaintDotNet
             // Create our self ...
             Application.SetCompatibleTextRenderingDefault(false);
             Application.EnableVisualStyles();
+            SystemLayer.UI.EnableDPIAware();
 
             MainForm mainForm = new MainForm(args);
 
@@ -168,6 +184,8 @@ namespace PaintDotNet
         [STAThread]
         public static int Main(string[] args) 
         {
+            startupTime = DateTime.Now;
+
 #if !DEBUG
             try
             {
@@ -195,6 +213,11 @@ namespace PaintDotNet
 
         private static void UnhandledException(Exception ex)
         {
+            if (!enableCrashLog)
+            {
+                return;
+            }
+
             string dir = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
             const string fileName = "pdncrash.log";
             string fullName = Path.Combine(dir, fileName);
@@ -206,20 +229,175 @@ namespace PaintDotNet
                 stream.WriteLine("This text file was created because Paint.NET crashed.");
                 stream.WriteLine("Please e-mail this file to " + InvariantStrings.FeedbackEmail + " so we can diagnose and fix the problem.");
                 stream.WriteLine();
-                stream.WriteLine("Application version: " + PdnInfo.GetFullAppName());
-                stream.WriteLine("Time of crash: " + DateTime.Now.ToString());
 
-                // Example: 5.1.2600.0 Service Pack 2 Workstation x86
-                stream.WriteLine("OS version: " + 
-                    System.Environment.OSVersion.Version.ToString() + " " + 
-                    OS.Revision + " " +
-                    OS.Type.ToString() + " " + 
-                    Processor.NativeArchitecture.ToString().ToLower());
+                try
+                {
+                    string fullAppName;
 
-                stream.WriteLine(".NET Framework version: " + System.Environment.Version.ToString() + " " + Processor.Architecture.ToString().ToLower());
-                stream.WriteLine("Processor count: " + SystemLayer.Processor.LogicalCpuCount);
-                stream.WriteLine("Physical memory: " + ((SystemLayer.Memory.TotalPhysicalBytes / 1024) / 1024) + " MB");
-                stream.WriteLine();
+                    try
+                    {
+                        fullAppName = PdnInfo.GetFullAppName();
+                    }
+
+                    catch (Exception ex1)
+                    {
+                        fullAppName = Application.ProductVersion + ", --- Exception while calling PdnInfo.GetFullPathName(): " + ex1.ToString() + Environment.NewLine;
+                    }
+
+                    stream.WriteLine("Application version: " + fullAppName);
+
+                    string timeOfCrash;
+
+                    try
+                    {
+                        timeOfCrash = DateTime.Now.ToString();
+                    }
+
+                    catch (Exception ex2)
+                    {
+                        timeOfCrash = "--- Exception while populating timeOfCrash: " + ex2.ToString() + Environment.NewLine;
+                    }
+
+                    stream.WriteLine("Time of crash: " + timeOfCrash);
+
+                    string appUptime;
+
+                    try
+                    {
+                        appUptime = (DateTime.Now - startupTime).ToString();
+                    }
+
+                    catch (Exception ex13)
+                    {
+                        appUptime = "--- Exception while populating appUptime: " + ex13.ToString() + Environment.NewLine;
+                    }
+
+                    stream.WriteLine("Application uptime: " + appUptime);
+
+                    // Example: 5.1.2600.0 Service Pack 2 Workstation x86
+                    string osVersion;
+
+                    try
+                    {
+                        osVersion = System.Environment.OSVersion.Version.ToString();
+                    }
+
+                    catch (Exception ex3)
+                    {
+                        osVersion = "--- Exception while populating osVersion: " + ex3.ToString() + Environment.NewLine;
+                    }
+
+                    string osRevision;
+
+                    try
+                    {
+                        osRevision = OS.Revision;
+                    }
+
+                    catch (Exception ex4)
+                    {
+                        osRevision = "--- Exception while populating osRevision: " + ex4.ToString() + Environment.NewLine;
+                    }
+
+                    string osType;
+
+                    try
+                    {
+                        osType = OS.Type.ToString();
+                    }
+
+                    catch (Exception ex5)
+                    {
+                        osType = "--- Exception while populating osType: " + ex5.ToString() + Environment.NewLine;
+                    }
+
+                    string processorNativeArchitecture;
+
+                    try
+                    {
+                        processorNativeArchitecture = Processor.NativeArchitecture.ToString().ToLower();
+                    }
+
+                    catch (Exception ex6)
+                    {
+                        processorNativeArchitecture = "--- Exception while populating processorNativeArchitecture: " + ex6.ToString() + Environment.NewLine;
+                    }
+
+                    stream.WriteLine("OS Version: " + osVersion + " " + osRevision + " " + osType + " " + processorNativeArchitecture);
+
+                    string fxVersion;
+
+                    try
+                    {
+                        fxVersion = System.Environment.Version.ToString();
+                    }
+
+                    catch (Exception ex7)
+                    {
+                        fxVersion = "--- Exception while populating fxVersion: " + ex7.ToString() + Environment.NewLine;
+                    }
+
+                    string processorArchitecture;
+
+                    try
+                    {
+                        processorArchitecture = Processor.Architecture.ToString().ToLower();
+                    }
+
+                    catch (Exception ex8)
+                    {
+                        processorArchitecture = "--- Exception while populating processorArchitecture: " + ex8.ToString() + Environment.NewLine;
+                    }
+
+                    stream.WriteLine(".NET Framework version: " + fxVersion + " " + processorArchitecture);
+
+                    string cpuName;
+
+                    try
+                    {
+                        cpuName = SystemLayer.Processor.CpuName;
+                    }
+
+                    catch (Exception ex9)
+                    {
+                        cpuName = "--- Exception while populating cpuName: " + ex9.ToString() + Environment.NewLine;
+                    }
+
+                    string cpuCount;
+
+                    try
+                    {
+                        cpuCount = SystemLayer.Processor.LogicalCpuCount.ToString() + "x";
+                    }
+
+                    catch (Exception ex10)
+                    {
+                        cpuCount = "--- Exception while populating cpuCount: " + ex10.ToString() + Environment.NewLine;
+                    }
+
+                    stream.WriteLine("Processor: " + cpuCount + " " + cpuName);
+
+                    string totalPhysicalBytes;
+
+                    try
+                    {
+                        totalPhysicalBytes = ((SystemLayer.Memory.TotalPhysicalBytes / 1024) / 1024) + " MB";
+                    }
+
+                    catch (Exception ex11)
+                    {
+                        totalPhysicalBytes = "--- Exception while populating totalPhysicalBytes: " + ex11.ToString() + Environment.NewLine;
+                    }
+
+                    stream.WriteLine("Physical memory: " + totalPhysicalBytes);
+
+                    stream.WriteLine();
+                }
+
+                catch (Exception ex12)
+                {
+                    stream.WriteLine("Exception while gathering app and system info: " + ex12.ToString());
+                }
 
                 stream.WriteLine("Exception details:");
                 stream.WriteLine(ex.ToString());

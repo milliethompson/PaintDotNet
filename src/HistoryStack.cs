@@ -189,63 +189,78 @@ namespace PaintDotNet
         /// </summary>
         public void StepForward()
         {
-            HistoryAction topAction = redoStack[0];
-            ToolHistoryAction asToolHistoryAction = topAction as ToolHistoryAction;
-
-            if (asToolHistoryAction != null && asToolHistoryAction.ToolType != workspace.Environment.GetToolType())
+            if (redoStack.Count == 0)
             {
-                workspace.Environment.SetTool(asToolHistoryAction.ToolType, this.workspace);
-                StepForward();
-            }
-            else
-            {
-                OnChanging();
-
-                ExecutingHistoryActionEventArgs ehaea1 = new ExecutingHistoryActionEventArgs(topAction, true, false);
-
-                if (asToolHistoryAction == null && (!(topAction is SentinelHistoryAction) || topAction.SeriesGuid != Guid.Empty))
-                {
-                    ehaea1.SuspendTool = true;
-                }
-
-                Tool oldTool = null;
-                OnExecutingHistoryAction(ehaea1);
-
-                if (ehaea1.SuspendTool)
-                {                                                    
-                    oldTool = workspace.Environment.Tool;
-                    workspace.Environment.SetTool(null);
-                }
-            
-                HistoryAction redoAction = redoStack[0];
-
-                // Possibly useful invariant here:
-                //     ehaea1.HistoryAction.SeriesGuid == ehaea2.HistoryAction.SeriesGuid == ehaea3.HistoryAction.SeriesGuid
-                ExecutingHistoryActionEventArgs ehaea2 = new ExecutingHistoryActionEventArgs(redoAction, false, ehaea1.SuspendTool);
-                OnExecutingHistoryAction(ehaea2);
-
-                HistoryAction undoAction = redoAction.PerformUndo();
-            
-                redoStack.RemoveAt(0);
-                undoStack.Add(undoAction);
-
-                ExecutedHistoryActionEventArgs ehaea3 = new ExecutedHistoryActionEventArgs(undoAction);
-                OnExecutedHistoryAction(ehaea3);
-
-                OnChanged();
-                OnSteppedForward();
-
-                undoAction.Flush();
-
-                if (oldTool != null)
-                {
-                    workspace.Environment.SetTool(oldTool);
-                }       
+                throw new InvalidOperationException("nothing to redo! redo stack is empty");
             }
 
-            if (this.stepGroupDepth == 0)
+            try
             {
-                OnFinishedStepGroup();
+                HistoryAction topAction = redoStack[0];
+                ToolHistoryAction asToolHistoryAction = topAction as ToolHistoryAction;
+
+                if (asToolHistoryAction != null && asToolHistoryAction.ToolType != workspace.Environment.GetToolType())
+                {
+                    workspace.Environment.SetTool(asToolHistoryAction.ToolType, this.workspace);
+                    StepForward();
+                }
+                else
+                {
+                    OnChanging();
+
+                    ExecutingHistoryActionEventArgs ehaea1 = new ExecutingHistoryActionEventArgs(topAction, true, false);
+
+                    if (asToolHistoryAction == null && (!(topAction is SentinelHistoryAction) || topAction.SeriesGuid != Guid.Empty))
+                    {
+                        ehaea1.SuspendTool = true;
+                    }
+
+                    Tool oldTool = null;
+                    OnExecutingHistoryAction(ehaea1);
+
+                    if (ehaea1.SuspendTool)
+                    {
+                        oldTool = workspace.Environment.Tool;
+                        workspace.Environment.SetTool(null);
+                    }
+
+                    HistoryAction redoAction = redoStack[0];
+
+                    // Possibly useful invariant here:
+                    //     ehaea1.HistoryAction.SeriesGuid == ehaea2.HistoryAction.SeriesGuid == ehaea3.HistoryAction.SeriesGuid
+                    ExecutingHistoryActionEventArgs ehaea2 = new ExecutingHistoryActionEventArgs(redoAction, false, ehaea1.SuspendTool);
+                    OnExecutingHistoryAction(ehaea2);
+
+                    HistoryAction undoAction = redoAction.PerformUndo();
+
+                    redoStack.RemoveAt(0);
+                    undoStack.Add(undoAction);
+
+                    ExecutedHistoryActionEventArgs ehaea3 = new ExecutedHistoryActionEventArgs(undoAction);
+                    OnExecutedHistoryAction(ehaea3);
+
+                    OnChanged();
+                    OnSteppedForward();
+
+                    undoAction.Flush();
+
+                    if (oldTool != null)
+                    {
+                        workspace.Environment.SetTool(oldTool);
+                    }
+                }
+
+                if (this.stepGroupDepth == 0)
+                {
+                    OnFinishedStepGroup();
+                }
+            }
+
+            catch (InvalidOperationException ex)
+            {
+                // Need to distinguish non-fatal InvalidOperationException from a fatal one
+                // (the fatal one is at the top of this method)
+                throw new PdnException("Unexpected exception while redoing", ex);
             }
         }
 
@@ -255,62 +270,82 @@ namespace PaintDotNet
         /// </summary>
         public void StepBackward()
         {
-            HistoryAction topAction = undoStack[undoStack.Count - 1];
-            ToolHistoryAction asToolHistoryAction = topAction as ToolHistoryAction;
-
-            if (asToolHistoryAction != null && asToolHistoryAction.ToolType != workspace.Environment.GetToolType())
+            if (undoStack.Count == 0)
             {
-                workspace.Environment.SetTool(asToolHistoryAction.ToolType, this.workspace);
-                StepBackward();
-            }
-            else
-            {
-                OnChanging();
-
-                ExecutingHistoryActionEventArgs ehaea1 = new ExecutingHistoryActionEventArgs(topAction, true, false);
-
-                if (asToolHistoryAction == null && (topAction.SeriesGuid == Guid.Empty && !(topAction is SentinelHistoryAction)))
-                {
-                    ehaea1.SuspendTool = true;
-                }
-
-                OnExecutingHistoryAction(ehaea1);
-
-                Tool oldTool = null;
-                if (ehaea1.SuspendTool)
-                {
-                    oldTool = workspace.Environment.Tool;
-                    workspace.Environment.SetTool(null);
-                }
-
-                HistoryAction undoAction = undoStack[undoStack.Count - 1];
-
-                ExecutingHistoryActionEventArgs ehaea2 = new ExecutingHistoryActionEventArgs(undoAction, false, ehaea1.SuspendTool);
-                OnExecutingHistoryAction(ehaea2);
-
-                HistoryAction redoAction = undoStack[undoStack.Count - 1].PerformUndo();
-                undoStack.RemoveAt(undoStack.Count - 1);
-                redoStack.Insert(0, redoAction);
-
-                // Possibly useful invariant here:
-                //     ehaea1.HistoryAction.SeriesGuid == ehaea2.HistoryAction.SeriesGuid == ehaea3.HistoryAction.SeriesGuid
-                ExecutedHistoryActionEventArgs ehaea3 = new ExecutedHistoryActionEventArgs(redoAction);
-                OnExecutedHistoryAction(ehaea3);
-
-                OnChanged();
-                OnSteppedBackward();
-
-                redoAction.Flush();
-
-                if (oldTool != null)
-                {
-                    workspace.Environment.SetTool(oldTool);
-                }
+                throw new InvalidOperationException("nothing to undo! undo stack is empty");
             }
 
-            if (this.stepGroupDepth == 0)
+            if (undoStack[undoStack.Count - 1] is NullHistoryAction)
             {
-                OnFinishedStepGroup();
+                throw new InvalidOperationException("nothing to undo! undoStack[last] is NullHistoryAction");
+            }
+
+            try
+            {
+                HistoryAction topAction = undoStack[undoStack.Count - 1];
+                ToolHistoryAction asToolHistoryAction = topAction as ToolHistoryAction;
+
+                if (asToolHistoryAction != null && asToolHistoryAction.ToolType != workspace.Environment.GetToolType())
+                {
+                    workspace.Environment.SetTool(asToolHistoryAction.ToolType, this.workspace);
+                    StepBackward();
+                }
+                else
+                {
+                    OnChanging();
+
+                    ExecutingHistoryActionEventArgs ehaea1 = new ExecutingHistoryActionEventArgs(topAction, true, false);
+
+                    if (asToolHistoryAction == null && (topAction.SeriesGuid == Guid.Empty && !(topAction is SentinelHistoryAction)))
+                    {
+                        ehaea1.SuspendTool = true;
+                    }
+
+                    OnExecutingHistoryAction(ehaea1);
+
+                    Tool oldTool = null;
+                    if (ehaea1.SuspendTool)
+                    {
+                        oldTool = workspace.Environment.Tool;
+                        workspace.Environment.SetTool(null);
+                    }
+
+                    HistoryAction undoAction = undoStack[undoStack.Count - 1];
+
+                    ExecutingHistoryActionEventArgs ehaea2 = new ExecutingHistoryActionEventArgs(undoAction, false, ehaea1.SuspendTool);
+                    OnExecutingHistoryAction(ehaea2);
+
+                    HistoryAction redoAction = undoStack[undoStack.Count - 1].PerformUndo();
+                    undoStack.RemoveAt(undoStack.Count - 1);
+                    redoStack.Insert(0, redoAction);
+
+                    // Possibly useful invariant here:
+                    //     ehaea1.HistoryAction.SeriesGuid == ehaea2.HistoryAction.SeriesGuid == ehaea3.HistoryAction.SeriesGuid
+                    ExecutedHistoryActionEventArgs ehaea3 = new ExecutedHistoryActionEventArgs(redoAction);
+                    OnExecutedHistoryAction(ehaea3);
+
+                    OnChanged();
+                    OnSteppedBackward();
+
+                    redoAction.Flush();
+
+                    if (oldTool != null)
+                    {
+                        workspace.Environment.SetTool(oldTool);
+                    }
+                }
+
+                if (this.stepGroupDepth == 0)
+                {
+                    OnFinishedStepGroup();
+                }
+            }
+
+            catch (InvalidOperationException ex)
+            {
+                // Need to distinguish non-fatal InvalidOperationException from a fatal one
+                // (the fatal one is at the top of this method)
+                throw new PdnException("Unexpected exception while undoing", ex);
             }
         }
 

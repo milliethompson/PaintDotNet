@@ -267,7 +267,17 @@ namespace PaintDotNet
 
                     case (char)27: // Escape
                         e.Handled = true;
-                        Workspace.History.StepBackward();
+
+                        try
+                        {
+                            Workspace.History.StepBackward();
+                        }
+
+                        catch (InvalidOperationException)
+                        {
+                            // ignore
+                        }
+
                         break;
                 }
             }

@@ -275,7 +275,7 @@ namespace PaintDotNet
         /// the Ticks property of the DateTime structure.
         /// </summary>
         /// <remarks>
-        /// This is a SystemWide setting and may not be changed by non-admins.
+        /// This is a CurrentUser setting.
         /// </remarks>
         public const string LastUpdateCheckTimeTicks = "LastUpdateCheckTimeTicks";
 
@@ -286,7 +286,7 @@ namespace PaintDotNet
         /// Then when the user finally does click on the button, we do another website ping.
         /// </summary>
         /// <remarks>
-        /// This is a SystemWide setting and may not be changed by non-admins.
+        /// This is a CurrentUser setting.
         /// </remarks>
         public const string UpdateIsAvailable = "UpdateIsAvailable";
 

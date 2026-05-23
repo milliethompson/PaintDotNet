@@ -244,6 +244,12 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_30DA3C2DD92E080022B7F57D99A212F1"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_60B027B3CDE8EE39AE49C7A1C1844214"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -268,6 +274,12 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_173F0FFA61AD4898B4469931EAA5E427"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_BDFCDD2368B224C266DE49CF6E1AEF3F"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -286,25 +298,13 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_FC23B324CB93942CD7E81824BEA8BEE1"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_30DA3C2DD92E080022B7F57D99A212F1"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_173F0FFA61AD4898B4469931EAA5E427"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_9F8E67762C79CD0F715C03E740D3F8F4"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_FC23B324CB93942CD7E81824BEA8BEE1"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -478,7 +478,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:PdnLib, Version=2.6.2257.24038, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:PdnLib, Version=2.63.2342.20525, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_2489421B5CA5A184628172E7E2721F1C"
@@ -540,7 +540,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:PaintDotNet.StylusReader, Version=2.6.2257.24038, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:PaintDotNet.StylusReader, Version=2.63.2342.20523, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_460C2426EB1D01B6E8931F7E80EA02B9"
@@ -591,7 +591,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:PaintDotNet.Resources, Version=2.6.2257.24037, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:PaintDotNet.Resources, Version=2.63.2342.20521, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_60B027B3CDE8EE39AE49C7A1C1844214"
@@ -622,7 +622,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:SetupNgen, Version=2.6.2257.24039, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:SetupNgen, Version=2.63.2342.20528, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_9893088CD1314602A7C26D1C29D4B357"
@@ -684,7 +684,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:PaintDotNet.SystemLayer, Version=2.6.2257.24038, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:PaintDotNet.SystemLayer, Version=2.63.2342.20524, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_BDFCDD2368B224C266DE49CF6E1AEF3F"
@@ -715,7 +715,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:PaintDotNet.Resources, Version=2.6.2257.24037, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:PaintDotNet.Resources, Version=2.63.2342.20521, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_C08B0CE0650062A8481C7009710B08A1"
@@ -746,7 +746,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:PaintDotNet.Data, Version=2.6.2257.24039, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:PaintDotNet.Data, Version=2.63.2342.20526, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_DD482EF71A1503BCD5E281D6E0A78245"
@@ -777,7 +777,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:PaintDotNet.Effects, Version=2.6.2257.24039, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:PaintDotNet.Effects, Version=2.63.2342.20527, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_F1C1B1CB8BB912893F46644F7CAC2F32"
@@ -914,19 +914,19 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:Paint.NET v2.61"
-        "ProductCode" = "8:{AAF2D4ED-864D-4921-9699-0632B81AB577}"
-        "PackageCode" = "8:{73640962-4911-4326-8F93-78571276D9B7}"
+        "ProductName" = "8:Paint.NET v2.63"
+        "ProductCode" = "8:{8B6FC947-8168-4086-915B-F71392823473}"
+        "PackageCode" = "8:{3823EFD0-88A7-46FD-BD88-30A2E9AFA2D1}"
         "UpgradeCode" = "8:{04A40F40-A207-4B48-AED7-6AA532E43275}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:2.6.13"
+        "ProductVersion" = "8:2.6.16"
         "Manufacturer" = "8:Paint.NET Team"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.eecs.wsu.edu/paint.net"
-        "Title" = "8:Paint.NET v2.61"
+        "Title" = "8:Paint.NET v2.63"
         "Subject" = "8:"
         "ARPCONTACT" = "8:Paint.NET Team"
         "Keywords" = "8:"
@@ -1037,34 +1037,6 @@
             {
                 "Keys"
                 {
-                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_14477431AF154A329522E351BE4B1B86"
-                    {
-                    "Name" = "8:Software"
-                    "Condition" = "8:"
-                    "AlwaysCreate" = "11:FALSE"
-                    "DeleteAtUninstall" = "11:FALSE"
-                    "Transitive" = "11:FALSE"
-                        "Keys"
-                        {
-                            "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_9A9CFFD803D046D0B0AF3BC78E2139F6"
-                            {
-                            "Name" = "8:Paint.NET"
-                            "Condition" = "8:"
-                            "AlwaysCreate" = "11:TRUE"
-                            "DeleteAtUninstall" = "11:FALSE"
-                            "Transitive" = "11:FALSE"
-                                "Keys"
-                                {
-                                }
-                                "Values"
-                                {
-                                }
-                            }
-                        }
-                        "Values"
-                        {
-                        }
-                    }
                 }
             }
             "HKCR"
@@ -1954,7 +1926,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_0858FC559B564FC5B383C6FDC40EAB30"
             {
-            "SourcePath" = "8:..\\shellextension\\shellextension_x86\\release\\ShellExtension_x86.dll"
+            "SourcePath" = "8:..\\ShellExtension\\ShellExtension_x86\\Release\\ShellExtension_x86.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_0D95EC664B8E4CB3B82CC44F6F61B196"
@@ -2010,7 +1982,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_233B1F32DDC2428DACC426361687CCF8"
             {
-            "SourcePath" = "8:..\\shellextension\\shellextension_ia64\\release\\ShellExtension_IA64.dll"
+            "SourcePath" = "8:..\\ShellExtension\\ShellExtension_IA64\\release\\ShellExtension_IA64.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_0D95EC664B8E4CB3B82CC44F6F61B196"
@@ -2136,7 +2108,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_7A661889DA66482D8CC4C3B42BE9ADFC"
             {
-            "SourcePath" = "8:..\\shellextension\\shellextension_x64\\release\\ShellExtension_x64.dll"
+            "SourcePath" = "8:..\\ShellExtension\\ShellExtension_x64\\Release\\ShellExtension_x64.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_0D95EC664B8E4CB3B82CC44F6F61B196"

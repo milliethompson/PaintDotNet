@@ -39,11 +39,11 @@ InstallDir $TEMP\PdnSetup
 Icon ..\Setup\SetupIcon.ico
 
 VIAddVersionKey ProductName "Paint.NET Setup"
-VIAddVersionKey ProductVersion "2.6.1.0"
-VIAddVersionKey FileVersion "2.6.1.0"
+VIAddVersionKey ProductVersion "2.62.0.0"
+VIAddVersionKey FileVersion "2.62.0.0"
 VIAddVersionKey LegalCopyright "Copyright © 2006 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2006 Microsoft Corporation. All Rights Reserved."
 VIAddVersionKey FileDescription "Installs Paint.NET."
-VIProductVersion "2.6.1.0"
+VIProductVersion "2.62.0.0"
 
 ; The file to write
 !ifdef Debug

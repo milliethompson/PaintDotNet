@@ -183,7 +183,18 @@ namespace PaintDotNet
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            RegionData regionData = this.gdiRegion.GetRegionData();
+            if (this.disposed)
+            {
+                throw new ObjectDisposedException("PdnRegion");
+            }
+
+            RegionData regionData;
+
+            lock (SyncRoot)
+            {
+                regionData = this.gdiRegion.GetRegionData();
+            }
+
             byte[] data = regionData.Data;
             info.AddValue("data", data);
         }
@@ -231,24 +242,16 @@ namespace PaintDotNet
             {
                 if (disposing)
                 {
-                    gdiRegion.Dispose();
-                    gdiRegion = null;
+                    lock (SyncRoot)
+                    {
+                        gdiRegion.Dispose();
+                        gdiRegion = null;
+                    }
                 }
 
                 disposed = true;
             }
         }
-
-        /*
-        public static implicit operator Region(PdnRegion convert)
-        {
-            lock (convert.SyncRoot)
-            {
-                convert.changed = true;
-                return convert.gdiRegion;
-            }
-        }
-        */
 
         public Region GetRegionReadOnly()
         {

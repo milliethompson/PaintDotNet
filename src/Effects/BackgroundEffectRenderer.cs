@@ -34,7 +34,8 @@ namespace PaintDotNet.Effects
         private EffectConfigToken effectToken; // this references the main token that is passed in to the constructor
         private EffectConfigToken effectTokenCopy; // this copy of the token is updated every time you call Start() to make sure it is up to date. This is then passed to the threads, not the original one.
         private PdnRegion renderRegion;
-        private PdnRegion[] tileRegions;
+        private Rectangle[][] tileRegions;
+        private PdnRegion[] tilePdnRegions;
         private int tileCount;
         private Threading.ThreadPool threadPool;
         private RenderArgs dstArgs;
@@ -113,9 +114,10 @@ namespace PaintDotNet.Effects
                             break;
                         }
 
-                        PdnRegion subRegion = ber.tileRegions[tile];
+                        Rectangle[] subRegion = ber.tileRegions[tile];
                         ber.effect.Render(this.token, ber.dstArgs, ber.srcArgs, subRegion);
-                        ber.OnRenderedTile(new RenderedTileEventArgs(subRegion, ber.tileCount, tile));
+                        PdnRegion subPdnRegion = ber.tilePdnRegions[tile];
+                        ber.OnRenderedTile(new RenderedTileEventArgs(subPdnRegion, ber.tileCount, tile));
                     }
                 }
 
@@ -147,9 +149,10 @@ namespace PaintDotNet.Effects
 
                     try
                     {
-                        PdnRegion subRegion = this.tileRegions[0];
+                        Rectangle[] subRegion = this.tileRegions[0];
                         this.effect.Render(this.effectTokenCopy, this.dstArgs, this.srcArgs, subRegion);
-                        OnRenderedTile(new RenderedTileEventArgs(subRegion, this.tileCount, 0));
+                        PdnRegion subPdnRegion = this.tilePdnRegions[0];
+                        OnRenderedTile(new RenderedTileEventArgs(subPdnRegion, this.tileCount, 0));
                     }
 
                     finally
@@ -261,9 +264,9 @@ namespace PaintDotNet.Effects
             exceptions.Clear();
         }
 
-        private PdnRegion[] SliceUpRegion(PdnRegion region, int sliceCount, Rectangle layerBounds)
+        private Rectangle[][] SliceUpRegion(PdnRegion region, int sliceCount, Rectangle layerBounds)
         {
-            PdnRegion[] slices = new PdnRegion[sliceCount];
+            Rectangle[][] slices = new Rectangle[sliceCount][];
             Rectangle[] regionRects = region.GetRegionScansReadOnlyInt();
             Scanline[] regionScans = Utility.GetRegionScans(regionRects);
 
@@ -290,9 +293,7 @@ namespace PaintDotNet.Effects
                     newRects[j].Intersect(layerBounds);
                 }
 
-                PdnRegion newRegion = Utility.RectanglesToRegion(newRects);
-                newRegion.GetRegionScansReadOnlyInt(); // force scans to be cached
-                slices[i] = newRegion;
+                slices[i] = newRects;
             }
 
             return slices;
@@ -313,6 +314,14 @@ namespace PaintDotNet.Effects
             this.renderRegion = renderRegion;
             this.renderRegion.Intersect(dstArgs.Bounds);
             this.tileRegions = SliceUpRegion(renderRegion, tileCount, dstArgs.Bounds);
+
+            this.tilePdnRegions = new PdnRegion[this.tileRegions.Length];
+            for (int i = 0; i < this.tileRegions.Length; ++i)
+            {
+                PdnRegion pdnRegion = Utility.RectanglesToRegion(this.tileRegions[i]);
+                this.tilePdnRegions[i] = pdnRegion;
+            }
+
             this.tileCount = tileCount;
             this.workerThreads = workerThreads;
 

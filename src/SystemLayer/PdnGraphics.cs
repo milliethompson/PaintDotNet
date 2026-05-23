@@ -252,7 +252,7 @@ namespace PaintDotNet.SystemLayer
             }
         }
 
-        private const int screwUpMax = 10;
+        private const int screwUpMax = 100;
 
         /// <summary>
         /// Retrieves an array of rectangles that approximates a region, and computes the

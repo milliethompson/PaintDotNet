@@ -1875,7 +1875,16 @@ namespace PaintDotNet
                 {
                     using (new WaitCursorChanger(this))
                     {
-                        History.StepBackward();
+                        try
+                        {
+                            History.StepBackward();
+                        }
+
+                        catch (InvalidOperationException)
+                        {
+                            // ignore
+                        }
+
                         Update();
                     }
                 }
@@ -1892,7 +1901,16 @@ namespace PaintDotNet
                 {
                     using (new WaitCursorChanger(this))
                     {
-                        History.StepForward();
+                        try
+                        {
+                            History.StepForward();
+                        }
+
+                        catch (InvalidOperationException)
+                        {
+                            // Ignore
+                        }
+
                         Update();
                     }
                 }
@@ -1916,7 +1934,15 @@ namespace PaintDotNet
             {
                 using (new WaitCursorChanger(this))
                 {
-                    History.StepBackward();
+                    try
+                    {
+                        History.StepBackward();
+                    }
+
+                    catch (InvalidOperationException)
+                    {
+                        break;
+                    }
 
                     if ((DateTime.Now - lastUpdate).TotalMilliseconds >= 500)
                     {
@@ -1945,7 +1971,15 @@ namespace PaintDotNet
             {
                 using (new WaitCursorChanger(this))
                 {
-                    History.StepForward();
+                    try
+                    {
+                        History.StepForward();
+                    }
+
+                    catch (InvalidOperationException)
+                    {
+                        break;
+                    }
 
                     if ((DateTime.Now - lastUpdate).TotalMilliseconds >= 500)
                     {

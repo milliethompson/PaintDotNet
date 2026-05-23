@@ -187,7 +187,7 @@ namespace PaintDotNet.SystemLayer
 
             if (hBitmap == IntPtr.Zero)
             {
-                throw new OutOfMemoryException("CreateDIBSection returned NULL (" + Marshal.GetLastWin32Error().ToString() + ")");
+                throw new OutOfMemoryException("CreateDIBSection returned NULL (" + Marshal.GetLastWin32Error().ToString() + ") while attempting to allocate " + width + "x" + height + " bitmap");
             }
 
             handle = hBitmap;

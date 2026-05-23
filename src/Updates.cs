@@ -545,7 +545,7 @@ namespace PaintDotNet
             {
                 try
                 {
-                    string lastUpdateCheckTimeTicksString = Settings.SystemWide.GetString(PdnSettings.LastUpdateCheckTimeTicks, null);
+                    string lastUpdateCheckTimeTicksString = Settings.CurrentUser.GetString(PdnSettings.LastUpdateCheckTimeTicks, null);
 
                     if (lastUpdateCheckTimeTicksString == null)
                     {
@@ -577,7 +577,7 @@ namespace PaintDotNet
 
         public static void PingLastUpdateCheckTime()
         {
-            Settings.SystemWide.SetString(PdnSettings.LastUpdateCheckTimeTicks, DateTime.Now.Ticks.ToString());
+            Settings.CurrentUser.SetString(PdnSettings.LastUpdateCheckTimeTicks, DateTime.Now.Ticks.ToString());
         }
 
         private Updates()

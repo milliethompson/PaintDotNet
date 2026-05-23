@@ -99,7 +99,19 @@ namespace PaintDotNet
             bufferGraphics.SmoothingMode = SmoothingMode.HighQuality;
             bufferGraphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
 
-            using (Font ourFont = new Font("Arial", 7))
+            Font ourFont;
+
+            try
+            {
+                ourFont = new Font("Arial", 7);
+            }
+
+            catch (Exception)
+            {
+                ourFont = new Font(FontFamily.GenericSansSerif, 7);
+            }
+
+            using (ourFont)
             {                   
                 if (tracking || hovering) 
                 {

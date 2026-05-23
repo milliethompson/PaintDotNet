@@ -836,6 +836,8 @@ namespace PaintDotNet
 
                         this.upgradeMsiFileName = null;
                     }
+
+                    Startup.EnableCrashLog = false; // see bug #1827
                 }
             }
 
@@ -1027,7 +1029,6 @@ namespace PaintDotNet
             this.menuHelpSendFeedback = new System.Windows.Forms.ToolStripMenuItem();
             this.menuSeparator10 = new System.Windows.Forms.ToolStripSeparator();
             this.defaultButton = new System.Windows.Forms.Button();
-
             this.statusStrip = new StatusStrip();
             this.contextStatusLabel = new ToolStripStatusLabel();
             this.progressStatusSeparator = new ToolStripSeparator();
@@ -1873,17 +1874,18 @@ namespace PaintDotNet
                 splash = null;
             }
 
-            if (SystemLayer.Security.IsAdministrator &&
+            if ((SystemLayer.Security.IsAdministrator || Environment.OSVersion.Version >= OS.WindowsVista) &&
                 PdnInfo.StartupTest == PdnInfo.StartupTestType.None)
             {
-                // Should we check for updates? Only enable this stuff if the user is an admin.
+                // Should we check for updates? Only enable this stuff if the user is an admin, 
+                // OR if the user is on Vista (in which case they can easily elevate to run the setup exe)
 
                 // If we previously determined an update was available, but if the
                 // user hasn't yet pushed the green+arrow button, then show the button again!
                 // This will allow us to keep the button in the UI w/o pinging the website
                 // again until the user clicks the button, OR until several more days have
                 // elapsed.
-                if (Settings.SystemWide.GetBoolean(PdnSettings.UpdateIsAvailable, false))
+                if (Settings.CurrentUser.GetBoolean(PdnSettings.UpdateIsAvailable, false))
                 {
                     EnableUpdatesButton();
                 }
@@ -1940,7 +1942,7 @@ namespace PaintDotNet
                 else
                 {
                     this.BeginInvoke(new VoidVoidDelegate(this.DisableUpdatesButton));
-                    Settings.SystemWide.SetBoolean(PdnSettings.UpdateIsAvailable, false);
+                    Settings.CurrentUser.SetBoolean(PdnSettings.UpdateIsAvailable, false);
                 }
             }
 
@@ -2026,7 +2028,7 @@ namespace PaintDotNet
                     {
                         manifestResult = manifest;
                         latestVersionIndexResult = latestIndex;
-                        Settings.SystemWide.SetBoolean(PdnSettings.UpdateIsAvailable, true);
+                        Settings.CurrentUser.SetBoolean(PdnSettings.UpdateIsAvailable, true);
                     }
                 }
             }
@@ -2043,7 +2045,7 @@ namespace PaintDotNet
         private delegate void ShowUpdateDialogDelegate(PdnVersionManifest manifest, int versionIndex);
         private void ShowUpdateDialog(PdnVersionManifest manifest, int versionIndex)
         {
-            Settings.SystemWide.SetBoolean(PdnSettings.UpdateIsAvailable, false);
+            Settings.CurrentUser.SetBoolean(PdnSettings.UpdateIsAvailable, false);
             UpdatesDialog updates = new UpdatesDialog();
             updates.EnableInstanceOpacity = false;
             updates.PdnVersionManifest = manifest;
@@ -2087,7 +2089,7 @@ namespace PaintDotNet
         private void CheckForUpdatesClickHandler()
         {
             DisableUpdatesButton();
-            Settings.SystemWide.SetBoolean(PdnSettings.UpdateIsAvailable, false);
+            Settings.CurrentUser.SetBoolean(PdnSettings.UpdateIsAvailable, false);
 
             if (this.versionManifest != null && this.versionManifestIndex != -1)
             {
@@ -2378,7 +2380,19 @@ namespace PaintDotNet
             }
 
             string tempName = Path.ChangeExtension(SystemLayer.FileSystem.GetTempFileName(), ".bmp");
-            ScanResult result = ScanningAndPrinting.Scan(this, tempName);
+            ScanResult result;
+
+            try
+            {
+                result = ScanningAndPrinting.Scan(this, tempName);
+            }
+
+            // If there was an exception, let's assume the user has already received an error dialog,
+            // either from Windows or from the WIA UI, and let's /not/ present another error dialog.
+            catch (Exception)
+            {
+                result = ScanResult.UserCancelled;
+            }
 
             if (result == ScanResult.Success)
             {
@@ -3490,7 +3504,17 @@ namespace PaintDotNet
                     fileName = Path.Combine(GetDefaultSavePath(), Path.ChangeExtension(name, fileType.DefaultExtension));
                 }
 
-                sfd.FileName = Path.ChangeExtension(fileName, null);
+                // If the filename is only an extension (i.e. ".lmnop") then we must treat it specially
+                string fileNameOnly = Path.GetFileName(fileName);
+                if (fileNameOnly.Length >= 1 && fileNameOnly[0] == '.')
+                {
+                    sfd.FileName = fileName;
+                }
+                else
+                {
+                    sfd.FileName = Path.ChangeExtension(fileName, null);
+                }
+
                 sfd.FilterIndex = 1 + fileTypes.IndexOfFileType(fileType);
                 sfd.InitialDirectory = Path.GetDirectoryName(fileName);
                 sfd.RestoreDirectory = true;
@@ -3723,7 +3747,10 @@ namespace PaintDotNet
 
                         Document thumbDoc = new Document(thumb.Width, thumb.Height);
                         BitmapLayer thumbLayer = new BitmapLayer(thumb);
+                        BitmapLayer whiteLayer = new BitmapLayer(thumb.Width, thumb.Height);
+                        whiteLayer.Surface.Clear(ColorBgra.White);
                         thumb.Dispose();
+                        thumbDoc.Layers.Add(whiteLayer);
                         thumbDoc.Layers.Add(thumbLayer);
                         MemoryStream thumbGif = new MemoryStream();
                         GifSaveConfigToken token = new GifSaveConfigToken(128, true, 4);
@@ -4756,7 +4783,7 @@ namespace PaintDotNet
                 try
                 {
                     Utility.GCFullCollect();
-                    surfaceForClipboard = (SurfaceForClipboard)clipData.GetData(typeof(SurfaceForClipboard));
+                    surfaceForClipboard = clipData.GetData(typeof(SurfaceForClipboard)) as SurfaceForClipboard;
                 }
 
                 catch (OutOfMemoryException)
@@ -5981,7 +6008,15 @@ namespace PaintDotNet
             {
                 using (new WaitCursorChanger(this))
                 {
-                    workspace.History.StepBackward();
+                    try
+                    {
+                        workspace.History.StepBackward();
+                    }
+
+                    catch (InvalidOperationException)
+                    {
+                        // ignore
+                    }
                 }
             }
         }
@@ -6726,7 +6761,7 @@ namespace PaintDotNet
 
         private void menuFileUpdatesCheckNow_Click(object sender, EventArgs e)
         {
-            if (!Security.IsAdministrator)
+            if (!Security.IsAdministrator && !(Environment.OSVersion.Version >= OS.WindowsVista))
             {
                 Utility.ShowNonAdminErrorBox(this);
             }
@@ -6787,7 +6822,7 @@ namespace PaintDotNet
                 if (!autoCheckForUpdates)
                 {
                     DisableUpdatesButton();
-                    Settings.SystemWide.SetBoolean(PdnSettings.UpdateIsAvailable, false);
+                    Settings.CurrentUser.SetBoolean(PdnSettings.UpdateIsAvailable, false);
                 }
             }
             else

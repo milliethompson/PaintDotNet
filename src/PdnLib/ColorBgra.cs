@@ -92,7 +92,7 @@ namespace PaintDotNet
         /// <returns>A value in the range 0 to 255 inclusive.</returns>
         public byte GetIntensityByte()
         {
-            return (byte)((7471 * R + 38470 * G + 19595 * B) >> 16);
+            return (byte)((7471 * B + 38470 * G + 19595 * R) >> 16);
         }
 
         /// <summary>

@@ -256,7 +256,6 @@ namespace PaintDotNet.Setup
                         returnVal = (string)key.GetValue(property, defaultValue);
                     }
                 }
-
             }
 
             if (defaultValue != null)
@@ -278,7 +277,15 @@ namespace PaintDotNet.Setup
 
             catch
             {
-                returnFont = new Font("Arial", size);
+                try
+                {
+                    returnFont = new Font("Arial", size);
+                }
+
+                catch (Exception)
+                {
+                    returnFont = new Font(FontFamily.GenericSansSerif, size);
+                }
             }
 
             return returnFont;
@@ -790,6 +797,12 @@ namespace PaintDotNet.Setup
         // * or newer
         private static bool CheckOSRequirement()
         {
+            // Just say "no" to Windows 9x
+            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            {
+                return false;
+            }
+            
             // Windows Vista or later?
             bool winVista = CheckOSVersion(6, 0, 0);
 
@@ -883,6 +896,7 @@ namespace PaintDotNet.Setup
 
             Application.SetCompatibleTextRenderingDefault(false);
             Application.EnableVisualStyles();
+            SystemLayer.UI.EnableDPIAware();
 
             // Uncomment to test German
             //System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("de");

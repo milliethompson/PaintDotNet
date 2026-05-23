@@ -56,16 +56,35 @@ namespace PaintDotNet
             InitializeComponent();
 
             this.sizeComboBox.ComboBox.SuspendLayout();
+
             for (int i = 0; i < this.fontSizes.Length; ++i)
             {
                 this.sizeComboBox.Items.Add(this.fontSizes[i].ToString());
             }
+
             this.sizeComboBox.ComboBox.ResumeLayout(false);
 
             this.fontLabel.Text = PdnResources.GetString("TextConfigWidget.FontLabel.Text");
 
-            this.arialFontFamily = new FontFamily(arialName);
-            this.arialFontBase = new Font(arialFontFamily, initialFontSize, FontStyle.Regular);
+            try
+            {
+                this.arialFontFamily = new FontFamily(arialName);
+            }
+
+            catch (Exception)
+            {
+                this.arialFontFamily = new FontFamily(System.Drawing.Text.GenericFontFamilies.SansSerif);
+            }
+
+            try
+            {
+                this.arialFontBase = new Font(arialFontFamily, initialFontSize, FontStyle.Regular);
+            }
+
+            catch (Exception)
+            {
+                this.arialFontBase = new Font(FontFamily.GenericSansSerif, initialFontSize, FontStyle.Regular);
+            }
 
             this.alignment = TextAlignment.Left;
             this.alignLeftButton.Checked = true;

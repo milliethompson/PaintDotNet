@@ -14,8 +14,11 @@ using System.Collections;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Text;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
+using System.Resources;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 
@@ -38,10 +41,98 @@ namespace PaintDotNet.Setup
         private string optimizingText;
         private Label errorLabel;
 
+        private bool adLoaded = false;
+        private Label adLabel;
+        private PictureBox adBox;
+        private const string adClickUrl = "http://www.eecs.wsu.edu/paint.net/redirect/wloc_setup.html";
+        private readonly DateTime adExpireDate = new DateTime(2006, 7, 10); // ad is not shown from this date onward
+
         /// <summary> 
         /// Required designer variable.
         /// </summary>
         private System.ComponentModel.Container components = null;
+
+        private void LoadAd()
+        {
+            if (!this.adLoaded)
+            {
+                this.adLoaded = true;
+
+                this.adLabel.Text = "(Clickable Advertisement)"; // we can get away w/ not having this localizable because right now the ad only displays on en-US
+                this.adLabel.Font = new Font(this.adLabel.Font.FontFamily, this.adLabel.Font.Size - 1);
+                Assembly ourAssembly = Assembly.GetExecutingAssembly();
+                Stream adStream = ourAssembly.GetManifestResourceStream("PaintDotNet.Setup.WLOCAd.png");
+                Image adImage = Image.FromStream(adStream);
+                this.adBox.SizeMode = PictureBoxSizeMode.StretchImage;
+                this.adBox.Image = adImage;
+                this.adBox.Click += new EventHandler(adBox_Click);
+            }
+        }
+
+        private bool ShouldShowAd
+        {
+            get
+            {
+                if (DateTime.Now < adExpireDate &&
+                    string.Compare(CultureInfo.CurrentUICulture.Name, "en-US", StringComparison.InvariantCultureIgnoreCase) == 0 && 
+                    string.Compare(RegionInfo.CurrentRegion.Name, "US", StringComparison.InvariantCultureIgnoreCase) == 0)
+                {
+#if DEBUG
+                    return true;
+#else
+                    string fileName = Assembly.GetExecutingAssembly().Location;
+                    bool validSig;
+
+                    try
+                    {
+                        validSig = SystemLayer.Security.VerifySignedFile(this, fileName, false, false);
+                    }
+
+                    catch
+                    {
+                        validSig = false;
+                    }
+
+                    return validSig;
+#endif
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        private void ShowAd()
+        {
+            if (ShouldShowAd)
+            {
+                this.adBox.Size = new Size(WizardHost.ScaleX(this.adBox.Image.Width), WizardHost.ScaleY(this.adBox.Image.Height));
+                this.adBox.Location = new Point((this.ClientSize.Width - this.adBox.Width) / 2, this.ClientSize.Height - this.adBox.Height - WizardHost.ScaleY(5));
+
+                this.adLabel.Location = new Point((this.ClientSize.Width - this.adLabel.Width) / 2, this.adBox.Top - this.adLabel.Height - WizardHost.ScaleY(2));
+                this.adLabel.Visible = true;
+
+                this.adBox.Enabled = true;
+                this.adBox.Visible = true;
+            }
+        }
+
+        private void HideAd()
+        {
+            this.adLabel.Visible = false;
+            this.adBox.Enabled = false;
+            this.adBox.Visible = false;
+        }
+
+        private void adBox_Click(object sender, EventArgs e)
+        {
+            Cursor oldCursor = this.adBox.Cursor;
+            this.adBox.Cursor = Cursors.AppStarting;
+            SystemLayer.Shell.OpenUrl(this, adClickUrl);
+            System.Threading.Thread.Sleep(250);
+            this.adBox.Cursor = oldCursor;
+        }
 
         public InstallingPage()
         {
@@ -188,6 +279,7 @@ namespace PaintDotNet.Setup
 
                 try
                 {
+                    ShowAd();
                     this.infoText.Text = this.optimizingText;
                     ProcessStartInfo psi = new ProcessStartInfo(ngenExe, ngenArg);
                     psi.UseShellExecute = false;
@@ -226,31 +318,11 @@ namespace PaintDotNet.Setup
 
                 this.infoText.Text = string.Format(infoFormat, this.appName);
                 WizardHost.SetBackEnabled(false);
-
-                // "Ping" the last update time. See bug #1458
-                try
-                {
-                    long ticks = DateTime.Now.Ticks;
-                    string ticksStr = ticks.ToString();
-                    const string regKeyName = @"SOFTWARE\Paint.NET";
-                    const string regKeyValue = "LastUpdateCheckTimeTicks";
-
-                    using (RegistryKey key = Registry.LocalMachine.CreateSubKey(regKeyName))
-                    {
-                        if (key != null)
-                        {
-                            key.SetValue(regKeyValue, ticksStr);
-                        }
-                    }
-                }
-
-                catch
-                {
-                    // Do not care if it fails.
-                }
             }
             else
             {
+                HideAd();
+
                 WizardHost.SetFinished(true);
                 this.progressBar.Visible = false;
 
@@ -296,9 +368,18 @@ namespace PaintDotNet.Setup
         {
             if (disposing)
             {
-                if (components != null)
+                if (this.components != null)
                 {
-                    components.Dispose();
+                    this.components.Dispose();
+                    this.components = null;
+                }
+
+                if (this.adBox.Image != null)
+                {
+                    Image adImage = this.adBox.Image;
+                    this.adBox.Image = null;
+                    adImage.Dispose();
+                    adImage = null;
                 }
             }
 
@@ -315,6 +396,8 @@ namespace PaintDotNet.Setup
             this.infoText = new System.Windows.Forms.Label();
             this.progressBar = new System.Windows.Forms.ProgressBar();
             this.errorLabel = new System.Windows.Forms.Label();
+            this.adBox = new PictureBox();
+            this.adLabel = new Label();
             this.SuspendLayout();
             // 
             // infoText
@@ -327,7 +410,7 @@ namespace PaintDotNet.Setup
             // 
             // progressBar
             // 
-            this.progressBar.Location = new System.Drawing.Point(42, 59);
+            this.progressBar.Location = new System.Drawing.Point(42, 39);
             this.progressBar.MarqueeAnimationSpeed = 50;
             this.progressBar.Name = "progressBar";
             this.progressBar.Size = new System.Drawing.Size(408, 19);
@@ -343,9 +426,29 @@ namespace PaintDotNet.Setup
             this.errorLabel.TabIndex = 2;
             this.errorLabel.Text = "label1";
             this.errorLabel.Visible = false;
+            //
+            // adBox
+            //
+            this.adBox.Name = "adBox";
+            this.adBox.Enabled = false;
+            this.adBox.Visible = false;
+            this.adBox.Cursor = Cursors.Hand;
+            //
+            // adLabel
+            //
+            this.adLabel.Name = "adLabel";
+            this.adLabel.AutoSize = true;
+            this.adLabel.Enabled = false;
+            this.adLabel.Visible = false;
+            //
+            // ad
+            //
+            LoadAd();
             // 
             // InstallingPage
             // 
+            this.Controls.Add(this.adLabel);
+            this.Controls.Add(this.adBox);
             this.Controls.Add(this.progressBar);
             this.Controls.Add(this.infoText);
             this.Controls.Add(this.errorLabel);

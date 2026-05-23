@@ -75,7 +75,21 @@ namespace PaintDotNet
             // If any of those Rectangles actually got clipped, then throw an exception
             if (dstRect != dstClip)
             {
-                throw new ArgumentOutOfRangeException("roiSize", "Destination roi out of bounds");
+                throw new ArgumentOutOfRangeException
+                (
+                    "roiSize",
+                    "Destination roi out of bounds" +
+                    ", dst.Size=" + dst.Size.ToString() +
+                    ", dst.Bounds=" + dst.Bounds.ToString() +
+                    ", dstOffset=" + dstOffset.ToString() +
+                    ", src.Size=" + src.Size.ToString() +
+                    ", srcOffset=" + srcOffset.ToString() +
+                    ", roiSize=" + roiSize.ToString() +
+                    ", dstRect=" + dstRect.ToString() +
+                    ", dstClip=" + dstClip.ToString() +
+                    ", srcRect=" + srcRect.ToString() +
+                    ", srcClip=" + srcClip.ToString()
+                );
             }
 
             if (srcRect != srcClip)

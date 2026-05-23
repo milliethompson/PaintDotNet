@@ -374,7 +374,15 @@ namespace PaintDotNet
                     {
                         using (new WaitCursorChanger(this))
                         {
-                            historyStack.StepBackward();
+                            try
+                            {
+                                historyStack.StepBackward();
+                            }
+
+                            catch (InvalidOperationException)
+                            {
+                                // ignore
+                            }
                         }
                     }
                 }
@@ -386,7 +394,15 @@ namespace PaintDotNet
                     {
                         using (new WaitCursorChanger(this))
                         {
-                            historyStack.StepBackward();
+                            try
+                            {
+                                historyStack.StepBackward();
+                            }
+
+                            catch (InvalidOperationException)
+                            {
+                                break;
+                            }
                         }
                     }
 
@@ -402,7 +418,15 @@ namespace PaintDotNet
                 {
                     using (new WaitCursorChanger(this))
                     {
-                        historyStack.StepForward();
+                        try
+                        {
+                            historyStack.StepForward();
+                        }
+
+                        catch (InvalidOperationException)
+                        {
+                            break;
+                        }
                     }
                 }
 

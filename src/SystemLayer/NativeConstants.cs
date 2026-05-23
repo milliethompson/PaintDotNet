@@ -51,6 +51,9 @@ namespace PaintDotNet.SystemLayer
 
         internal const int ERROR_SUCCESS = 0;
         internal const int ERROR_IO_PENDING = 0x3e5;
+        internal const int ERROR_NO_MORE_ITEMS = 259;
+
+        internal const uint DIGCF_PRESENT = 2;
 
         internal const int GWL_STYLE = -16;
         internal const int GWL_EXSTYLE = -20;

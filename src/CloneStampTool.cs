@@ -401,7 +401,19 @@ namespace PaintDotNet
             historyRects.Add(rect);
 
             // Follow the line to draw the clone... line
-            float fInc = (float)Math.Sqrt(bw) / length;
+            float fInc;
+
+            try
+            {
+                fInc = (float)Math.Sqrt(bw) / length;
+            }
+
+            catch (DivideByZeroException)
+            {
+                // See bug #1796
+                return;
+            }
+
             for (float f = 0; f < 1; f += fInc) 
             {
                 // Do intersects with each of the rectangles in a selection

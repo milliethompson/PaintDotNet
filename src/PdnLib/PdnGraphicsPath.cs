@@ -145,15 +145,18 @@ namespace PaintDotNet
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            info.AddValue("ptCount", this.gdiPath.PointCount);
-
-            if (this.gdiPath.PointCount > 0)
+            lock (this) // avoid race condition with Dispose()
             {
-                info.AddValue("pts", this.gdiPath.PathPoints);
-                info.AddValue("types", this.gdiPath.PathTypes);
-            }
+                info.AddValue("ptCount", this.gdiPath.PointCount);
 
-            info.AddValue("fillMode", this.gdiPath.FillMode);
+                if (this.gdiPath.PointCount > 0)
+                {
+                    info.AddValue("pts", this.gdiPath.PathPoints);
+                    info.AddValue("types", this.gdiPath.PathTypes);
+                }
+
+                info.AddValue("fillMode", this.gdiPath.FillMode);
+            }
         }
 
         public static PdnGraphicsPath FromRegion(PdnRegion region)
@@ -492,17 +495,20 @@ namespace PaintDotNet
         private void Dispose(bool disposing)
         { 
             if (disposing)
-            { 
-                if (gdiPath != null)
+            {
+                lock (this) // avoid race condition with GetObjectData()
                 {
-                    gdiPath.Dispose();
-                    gdiPath = null;
-                }
+                    if (gdiPath != null)
+                    {
+                        gdiPath.Dispose();
+                        gdiPath = null;
+                    }
 
-                if (regionCache != null)
-                {
-                    regionCache.Dispose();
-                    regionCache = null;
+                    if (regionCache != null)
+                    {
+                        regionCache.Dispose();
+                        regionCache = null;
+                    }
                 }
             }
         }

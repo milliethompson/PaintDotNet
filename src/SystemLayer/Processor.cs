@@ -7,7 +7,9 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using Microsoft.Win32;
 using System;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 
 namespace PaintDotNet.SystemLayer
@@ -18,6 +20,7 @@ namespace PaintDotNet.SystemLayer
     public sealed class Processor
     {
         private static int logicalCpuCount;
+        private static string cpuName;
 
         private Processor()
         {
@@ -95,6 +98,144 @@ namespace PaintDotNet.SystemLayer
                 {
                     return Architecture;
                 }
+            }
+        }
+
+        private static string GetCpuName()
+        {
+            Guid processorClassGuid = new Guid("{50127DC3-0F36-415E-A6CC-4CB3BE910B65}");
+            IntPtr hDiSet = IntPtr.Zero;
+            string cpuName = null;
+            
+            try
+            {
+                hDiSet = NativeMethods.SetupDiGetClassDevsW(ref processorClassGuid, null, IntPtr.Zero, NativeConstants.DIGCF_PRESENT);
+
+                if (hDiSet == NativeConstants.INVALID_HANDLE_VALUE)
+                {
+                    NativeMethods.ThrowOnWin32Error("SetupDiGetClassDevsW returned INVALID_HANDLE_VALUE");
+                }
+
+                bool bResult = false;
+                uint memberIndex = 0;
+
+                while (true)
+                {
+                    NativeStructs.SP_DEVINFO_DATA spDevinfoData = new NativeStructs.SP_DEVINFO_DATA();
+                    spDevinfoData.cbSize = (uint)Marshal.SizeOf(typeof(NativeStructs.SP_DEVINFO_DATA));
+
+                    bResult = NativeMethods.SetupDiEnumDeviceInfo(hDiSet, memberIndex, ref spDevinfoData);
+
+                    if (!bResult)
+                    {
+                        int error = Marshal.GetLastWin32Error();
+
+                        if (error == NativeConstants.ERROR_NO_MORE_ITEMS)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            throw new Win32Exception("SetupDiEnumDeviceInfo returned false, GetLastError() = " + error.ToString());
+                        }
+                    }
+
+                    uint lengthReq = 0;
+                    bResult = NativeMethods.SetupDiGetDeviceInstanceIdW(hDiSet, ref spDevinfoData, IntPtr.Zero, 0, out lengthReq);
+
+                    if (bResult)
+                    {
+                        NativeMethods.ThrowOnWin32Error("SetupDiGetDeviceInstanceIdW(1) returned true");
+                    }
+
+                    if (lengthReq == 0)
+                    {
+                        NativeMethods.ThrowOnWin32Error("SetupDiGetDeviceInstanceIdW(1) returned false, but also 0 for lengthReq");
+                    }
+
+                    IntPtr str = IntPtr.Zero;
+                    string regPath = null;
+
+                    try
+                    {
+                        // Note: We cannot use Memory.Allocate() here because this property is
+                        // usually retrieved during app shutdown, during which the heap may not
+                        // be available.
+                        str = Marshal.AllocHGlobal(checked((int)(sizeof(char) * (1 + lengthReq))));
+                        bResult = NativeMethods.SetupDiGetDeviceInstanceIdW(hDiSet, ref spDevinfoData, str, lengthReq, out lengthReq);
+
+                        if (!bResult)
+                        {
+                            NativeMethods.ThrowOnWin32Error("SetupDiGetDeviceInstanceIdW(2) returned false");
+                        }
+
+                        regPath = Marshal.PtrToStringUni(str);
+                    }
+
+                    finally
+                    {
+                        if (str != IntPtr.Zero)
+                        {
+                            Marshal.FreeHGlobal(str);
+                            str = IntPtr.Zero;
+                        }
+                    }
+
+                    string keyName = @"SYSTEM\CurrentControlSet\Enum\" + regPath;
+                    using (RegistryKey procKey = Registry.LocalMachine.OpenSubKey(keyName, false))
+                    {
+                        const string friendlyName = "FriendlyName";
+
+                        if (procKey != null)
+                        {
+                            object valueObj = procKey.GetValue(friendlyName);
+                            string value = valueObj as string;
+
+                            if (value != null)
+                            {
+                                cpuName = value;
+                            }
+                        }
+                    }
+
+                    if (cpuName != null)
+                    {
+                        break;
+                    }
+
+                    ++memberIndex;
+                }
+            }
+
+            finally
+            {
+                if (hDiSet != IntPtr.Zero)
+                {
+                    NativeMethods.SetupDiDestroyDeviceInfoList(hDiSet);
+                    hDiSet = IntPtr.Zero;
+                }
+            }
+
+            return cpuName;
+        }
+
+        /// <summary>
+        /// Returns the name of the CPU that is installed. If more than 1 CPU is installed,
+        /// then the name of the first one is retrieved.
+        /// </summary>
+        /// <remarks>
+        /// This is the name that shows up in Device Manager in the "Processors" node.
+        /// </remarks>
+        public static string CpuName
+        {
+            get
+            {
+                if (cpuName == null)
+                {
+                    cpuName = GetCpuName();
+                }
+
+                return cpuName;
             }
         }
 

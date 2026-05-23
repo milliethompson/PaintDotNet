@@ -24,6 +24,10 @@ namespace PaintDotNet
     /// Similar to IrregularImage, makes working with transformations much
     /// easier.
     /// Instances of this class are immutable once created.
+    /// This class is not thread-safe, and its properties and fields must only
+    /// be executing in one thread at a time. However, it may be serialized
+    /// by one thread while being accessed in the aforementioned manner by
+    /// another thread. It may not be serialized by more than one thread at once.
     /// </summary>
     [Serializable]
     public sealed class MaskedSurface
@@ -40,7 +44,29 @@ namespace PaintDotNet
 
         // Use one of these
         private PdnRegion region;
+
+        // Whenever you set this field, you must Clone() it and store that into shadowPath -- 
+        // in other words, use SetPathField() and never set this field directly
+        // And, never call methods or properties of the path field's object, always use shadowPath.
+        // (it is fine to do a null check on path)
         private PdnGraphicsPath path;
+
+        private void SetPathField(PdnGraphicsPath newPath)
+        {
+            this.path = newPath;
+            this.shadowPath = newPath.Clone();
+        }
+
+        // We create one copy of the path so that when we go to Draw(), we can Clone() it without
+        // running into a race condition. PdnGraphicsPath is not thread safe, and the MoveTool
+        // is going the performant route of serializing data in the background while continuing
+        // on with its work. This work includes calling our Draw() method which then Clone()s the
+        // path while the path is still being serialized. Since GDI+ is fussy about cross-thread 
+        // use of its objects, it throws an exception.
+        // This does not introduce thread safety into PdnGraphicsPath, but it does relieve a certain
+        // amount of transitive responsibility from users of this class.
+        [NonSerialized]
+        private PdnGraphicsPath shadowPath;
 
         [NonSerialized]
         private static PaintDotNet.Threading.ThreadPool threadPool = new PaintDotNet.Threading.ThreadPool();
@@ -49,7 +75,7 @@ namespace PaintDotNet
         {
             if (this.region == null)
             {
-                this.region = new PdnRegion(this.path);
+                this.region = new PdnRegion(this.shadowPath);
             }
 
             return this.region;
@@ -69,10 +95,10 @@ namespace PaintDotNet
         {
             if (this.path == null)
             {
-                this.path = PdnGraphicsPath.FromRegion(this.region);
+                SetPathField(PdnGraphicsPath.FromRegion(this.region));
             }
 
-            return this.path;
+            return this.shadowPath;
         }
 
         public PdnGraphicsPath CreatePath()
@@ -84,26 +110,7 @@ namespace PaintDotNet
 
             return GetPath().Clone();
         }
-
-        private void Translate(int dx, int dy)
-        {
-            using (Matrix m = new Matrix())
-            {
-                m.Reset();
-                m.Translate(dx, dy);
-
-                if (this.path != null)
-                {
-                    this.path.Transform(m);
-                }
-
-                if (this.region != null)
-                {
-                    this.region.Transform(m);
-                }
-            }
-        }
-
+        
         private MaskedSurface()
         {
         }
@@ -127,7 +134,7 @@ namespace PaintDotNet
             this.surface.CopySurface(source, dstOffset, rect);
 
             this.region = roiClipped;
-            this.path = PdnGraphicsPath.FromRegion(this.region);
+            SetPathField(PdnGraphicsPath.FromRegion(this.region));
         }
 
         public MaskedSurface(Surface source, PdnGraphicsPath path)
@@ -145,13 +152,13 @@ namespace PaintDotNet
             {
                 PdnRegion region = new PdnRegion(path);
                 region.Intersect(source.Bounds);
-                this.path = PdnGraphicsPath.FromRegion(region);
+                SetPathField(PdnGraphicsPath.FromRegion(region));
                 this.region = region;
                 boundsRead = region.GetBoundsInt();
             }
             else
             {
-                this.path = path.Clone();
+                SetPathField(path.Clone());
                 this.region = new PdnRegion(this.path);
                 boundsRead = boundsClipped;
             }
@@ -170,6 +177,11 @@ namespace PaintDotNet
         public void OnDeserialization(object sender)
         {
             threadPool = new PaintDotNet.Threading.ThreadPool();
+
+            if (this.path != null)
+            {
+                this.shadowPath = this.path.Clone();
+            }
         }
 
         public MaskedSurface Clone()
@@ -188,7 +200,7 @@ namespace PaintDotNet
 
             if (this.path != null)
             {
-                ms.path = this.path.Clone();
+                ms.SetPathField(this.shadowPath.Clone());
             }
 
             if (this.surface != null)
@@ -478,7 +490,7 @@ namespace PaintDotNet
             }
             else
             {
-                using (PdnGraphicsPath mPath = this.path.Clone())
+                using (PdnGraphicsPath mPath = this.shadowPath.Clone())
                 {
                     regionBounds = Rectangle.Truncate(mPath.GetBounds());
                     mPath.Transform(transform);
@@ -618,6 +630,12 @@ namespace PaintDotNet
                 {
                     this.path.Dispose();
                     this.path = null;
+                }
+
+                if (this.shadowPath != null)
+                {
+                    this.shadowPath.Dispose();
+                    this.shadowPath = null;
                 }
             }
 

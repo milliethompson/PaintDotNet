@@ -48,7 +48,34 @@ namespace PaintDotNet.SystemLayer
             uint uiParam,
             void *pvParam,
             uint fWinIni
-            );   
+            );
+
+        [DllImport("SetupApi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        internal static extern IntPtr SetupDiGetClassDevsW(
+            ref Guid ClassGuid,
+            [MarshalAs(UnmanagedType.LPWStr)] string Enumerator,
+            IntPtr hwndParent,
+            uint Flags);
+
+        [DllImport("SetupApi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool SetupDiDestroyDeviceInfoList(IntPtr DeviceInfoSet);
+
+        [DllImport("SetupApi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool SetupDiEnumDeviceInfo(
+            IntPtr DeviceInfoSet,
+            uint MemberIndex,
+            ref NativeStructs.SP_DEVINFO_DATA DeviceInfoData);
+
+        [DllImport("SetupApi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool SetupDiGetDeviceInstanceIdW(
+            IntPtr DeviceInfoSet,
+            ref NativeStructs.SP_DEVINFO_DATA DeviceInfoData,
+            IntPtr DeviceInstanceId,
+            uint DeviceInstanceIdSize,
+            out uint RequiredSize);
 
         internal static void ThrowOnWin32Error()
         {

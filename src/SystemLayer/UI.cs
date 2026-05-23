@@ -26,6 +26,27 @@ namespace PaintDotNet.SystemLayer
         private static float xScale;
         private static float yScale;
 
+        public static void EnableDPIAware()
+        {
+            if (Environment.OSVersion.Version >= OS.WindowsVista)
+            {
+                try
+                {
+                    bool bResult = SafeNativeMethods.SetProcessDPIAware();
+
+                    if (!bResult)
+                    {
+                        NativeMethods.ThrowOnWin32Error("SetProcessDPIAware() returned false");
+                    }
+                }
+
+                catch (Exception)
+                {
+                    // Ignore errors
+                }
+            }
+        }
+
         private static void InitScaleFactors(Control c)
         {
             using (Graphics g = c.CreateGraphics())
@@ -119,11 +140,13 @@ namespace PaintDotNet.SystemLayer
             // the filenames if you hold down Shift when opening a folder in Thumbnail view, we
             // simply spin until the user lets go of shift!
             Cursor.Current = Cursors.WaitCursor;
+
             while ((Control.ModifierKeys & Keys.Shift) != 0)
             {
                 System.Threading.Thread.Sleep(1);
                 Application.DoEvents();
             }
+
             Cursor.Current = Cursors.Default;
 
             owner.BeginInvoke(new EtvDelegate(EnableThumbnailView), new object[] { fd });

@@ -125,8 +125,10 @@ namespace PaintDotNet
         /// </summary>
         /// <remarks>
         /// If this property is set to MeasurementUnit.Pixel, then Dpu will be reset to 1. 
-        /// If this property has not been set in the image's metadata, its defulat value 
+        /// If this property has not been set in the image's metadata, its default value 
         /// will be MeasurementUnit.Inch.
+        /// If the EXIF data for the image is invalid (such as "ResolutionUnit = 0" or something),
+        /// then the default DpuUnit will be returned.
         /// </remarks>
         public MeasurementUnit DpuUnit
         {
@@ -145,7 +147,18 @@ namespace PaintDotNet
                     try
                     {
                         ushort unit = Exif.DecodeShortValue(pis[0]);
-                        return (MeasurementUnit)unit;
+
+                        switch ((MeasurementUnit)unit)
+                        {
+                            case MeasurementUnit.Centimeter:
+                            case MeasurementUnit.Inch:
+                            case MeasurementUnit.Pixel:
+                                return (MeasurementUnit)unit;
+
+                            default:
+                                this.Metadata.RemoveExifValues(ExifTagID.ResolutionUnit);
+                                return this.DpuUnit; // recursive call
+                        }
                     }
 
                     catch
@@ -178,6 +191,7 @@ namespace PaintDotNet
         public const double CmPerInch = 2.54;
         private const double defaultDpcm = defaultDpi / CmPerInch;
         public const double MinimumDpu = 0.01;
+        public const double MaximumDpu = 32767.0;
 
         public static double InchesToCentimeters(double inches)
         {
@@ -253,7 +267,7 @@ namespace PaintDotNet
         /// to any value other than 1.0. Setting DpuUnit to MeasurementUnit.Pixel will reset
         /// this property to 1.0. This property may only be set to a value greater than 0.
         /// One dot is always equal to one pixel. This property will not return a value less
-        /// than 0.01.
+        /// than MinimumDpu, nor a value larger than MaximumDpu.
         /// </remarks>
         public double DpuX
         {
@@ -282,11 +296,11 @@ namespace PaintDotNet
                         }
                         else
                         {
-                            return Math.Max(MinimumDpu, (double)numerator / (double)denominator);
+                            return Math.Min(MaximumDpu, Math.Max(MinimumDpu, (double)numerator / (double)denominator));
                         }
                     }
 
-                    catch
+                    catch (Exception)
                     {
                         this.Metadata.RemoveExifValues(ExifTagID.XResolution);
                         return this.DpuX; // recursive call;
@@ -321,7 +335,7 @@ namespace PaintDotNet
         /// to any value other than 1.0. Setting DpuUnit to MeasurementUnit.Pixel will reset
         /// this property to 1.0. This property may only be set to a value greater than 0.
         /// One dot is always equal to one pixel. This property will not return a value less
-        /// than 0.01.
+        /// than MinimumDpu, nor a value larger than MaximumDpu.
         /// </remarks>
         public double DpuY
         {
@@ -351,11 +365,11 @@ namespace PaintDotNet
                         }
                         else
                         {
-                            return Math.Max(MinimumDpu, (double)numerator / (double)denominator);
+                            return Math.Min(MaximumDpu, Math.Max(MinimumDpu, (double)numerator / (double)denominator));
                         }
                     }
 
-                    catch
+                    catch (Exception)
                     {
                         this.Metadata.RemoveExifValues(ExifTagID.YResolution);
                         return this.DpuY; // recursive call;

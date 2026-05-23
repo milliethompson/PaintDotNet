@@ -102,7 +102,17 @@ namespace PaintDotNet
             this.logoBox.Image = useThis;
 
             this.versionLabel.Text = PdnInfo.GetFriendlyVersionString();
-            this.versionLabel.Font = new Font("Verdana", 8.0f);
+
+            try
+            {
+                this.versionLabel.Font = new Font("Verdana", 8.0f);
+            }
+
+            catch (Exception)
+            {
+                this.versionLabel.Font = new Font(FontFamily.GenericSansSerif, 8.0f);
+            }
+
             this.linkLabel.Text = PdnResources.GetString("AboutDialog.WebSiteLink.Text");
             this.richCreditsBox.LoadFile(PdnResources.GetResourceStream("Files.AboutCredits.rtf"), RichTextBoxStreamType.RichText);
             this.copyrightLabel.Text = PdnInfo.GetCopyrightString();

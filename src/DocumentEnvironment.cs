@@ -716,7 +716,17 @@ namespace PaintDotNet
             penInfo.DashStyle = DashStyle.Solid;
             brushInfo.BrushType = BrushType.Solid;
             brushInfo.HatchStyle = HatchStyle.BackwardDiagonal;
-            fontInfo = new FontInfo(new FontFamily("Arial"), 12, 0);
+
+            try
+            {
+                fontInfo = new FontInfo(new FontFamily("Arial"), 12, FontStyle.Regular);
+            }
+
+            catch (Exception)
+            {
+                fontInfo = new FontInfo(new FontFamily(GenericFontFamilies.SansSerif), 12, FontStyle.Regular);
+            }
+
             textAlignment = TextAlignment.Left;
             shapeDrawType = ShapeDrawType.Outline;
             alphaBlending = true;
