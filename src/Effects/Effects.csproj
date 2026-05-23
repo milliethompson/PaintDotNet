@@ -290,8 +290,8 @@
     <PreBuildEvent>
     </PreBuildEvent>
     <PostBuildEvent>@rem Sign
-call "$(SolutionDir)signfile.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)"
-call "$(SolutionDir)signfile.bat" "$(TargetPath)"
+rem call "$(SolutionDir)signfile.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)"
+rem call "$(SolutionDir)signfile.bat" "$(TargetPath)"
 </PostBuildEvent>
   </PropertyGroup>
 </Project>

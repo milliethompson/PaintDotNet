@@ -1,3 +1,12 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -7,16 +16,17 @@ using System.IO;
 using PaintDotNet;
 using PaintDotNet.Effects;
 
-namespace DistortionEffects
+namespace PaintDotNet.Effects.Distortion
 {
     [Guid("1445F876-356D-4a7c-B726-50457F6E7AEF")]
-    class BulgeEffect : Effect
+    public class BulgeEffect 
+        : Effect
     {
         public static Image StaticImage
         {
             get
             {
-                return (Image)MyResources.MyResourceManager.GetObject("BulgeEffect");
+                return PdnResources.GetImage("Icons.BulgeEffect.png");
             }
         }
 
@@ -24,7 +34,7 @@ namespace DistortionEffects
         {
             get
             {
-                return MyResources.MyResourceManager.GetString("BulgeEffect.Name");
+                return PdnResources.GetString("BulgeEffect.Name");
             }
         }
 
@@ -32,13 +42,12 @@ namespace DistortionEffects
         {
             get
             {
-                return MyResources.MyResourceManager.GetString("DistortSubmenu.Name");
+                return PdnResources.GetString("DistortSubmenu.Name");
             }
         }
 
         public BulgeEffect()
-            :
-            base(StaticName, StaticImage, System.Windows.Forms.Keys.None, StaticSubMenuName, true)
+            : base(StaticName, StaticImage, System.Windows.Forms.Keys.None, StaticSubMenuName, true)
         {
         }
 
@@ -48,7 +57,7 @@ namespace DistortionEffects
 
             aecd.Text = StaticName;
             aecd.SliderInitialValue = 45;
-            aecd.SliderLabel = MyResources.MyResourceManager.GetString("BulgeEffect.BulgeAmount.Text");
+            aecd.SliderLabel = PdnResources.GetString("BulgeEffect.BulgeAmount.Text");
             aecd.SliderMaximum = 100;
             aecd.SliderMinimum = -200;
             aecd.SliderUnitsName = string.Empty;
@@ -56,7 +65,13 @@ namespace DistortionEffects
             return aecd;
         }
 
-        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle[] rois, int startIndex, int length)
+        public unsafe override void Render(
+            EffectConfigToken parameters, 
+            RenderArgs dstArgs, 
+            RenderArgs srcArgs, 
+            System.Drawing.Rectangle[] rois, 
+            int startIndex, 
+            int length)
         {
             AmountEffectConfigToken token = (AmountEffectConfigToken)parameters;
 
@@ -103,7 +118,6 @@ namespace DistortionEffects
 
                         ++dstPtr;
                         ++srcPtr;
-
                     }
                 }
             }

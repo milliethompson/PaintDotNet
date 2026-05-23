@@ -1,22 +1,32 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
+using PaintDotNet;
+using PaintDotNet.Effects;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.IO;
-using PaintDotNet;
-using PaintDotNet.Effects;
 
-namespace DistortionEffects
+namespace PaintDotNet.Effects.Distortion
 {
     [Guid("9A1EB3D9-0A36-4d32-9BB2-707D6E5A9D2C")]
-    class TwistEffect : Effect
+    public class TwistEffect 
+        : Effect
     {
         public static Image StaticImage
         {
             get
             {
-                return (Image)MyResources.MyResourceManager.GetObject("TwistEffect");
+                return PdnResources.GetImage("Icons.TwistEffect.png");
             }
         }
 
@@ -24,7 +34,7 @@ namespace DistortionEffects
         {
             get
             {
-                return MyResources.MyResourceManager.GetString("TwistEffect.Name");
+                return PdnResources.GetString("TwistEffect.Name");
             }
         }
 
@@ -32,13 +42,12 @@ namespace DistortionEffects
         {
             get
             {
-                return MyResources.MyResourceManager.GetString("DistortSubmenu.Name");
+                return PdnResources.GetString("DistortSubmenu.Name");
             }
         }
 
         public TwistEffect()
-            :
-            base(StaticName, StaticImage, System.Windows.Forms.Keys.None, StaticSubMenuName, true)
+            : base(StaticName, StaticImage, System.Windows.Forms.Keys.None, StaticSubMenuName, true)
         {
         }
 
@@ -48,11 +57,11 @@ namespace DistortionEffects
 
             tacd.Text = StaticName;
             tacd.Amount1Default = 45;
-            tacd.Amount1Label = MyResources.MyResourceManager.GetString("TwistEffect.TwistAmount.Text");
+            tacd.Amount1Label = PdnResources.GetString("TwistEffect.TwistAmount.Text");
             tacd.Amount1Maximum = 100;
             tacd.Amount1Minimum = -100;
             tacd.Amount2Default = 2;
-            tacd.Amount2Label = MyResources.MyResourceManager.GetString("TwistEffect.Antialias.Text");
+            tacd.Amount2Label = PdnResources.GetString("TwistEffect.Antialias.Text");
             tacd.Amount2Maximum = 5;
             tacd.Amount2Minimum = 0;
 
@@ -120,12 +129,8 @@ namespace DistortionEffects
                                 t = t < 0 ? 0 : t * t * t;
 
                                 theta += t * twist / 100;
-                                /*
-                                ColorBgra sample = src.GetBilinearSample(
-                                    hw + (float)(rad * Math.Cos(theta)),
-                                    hh + (float)(rad * Math.Sin(theta)), true);
-                                */
-                                ColorBgra sample = *src.GetPointAddressUnchecked(
+
+                                ColorBgra sample = *src.GetPointAddress(
                                     (int)(hw + (float)(rad * Math.Cos(theta))),
                                     (int)(hh + (float)(rad * Math.Sin(theta))));
 

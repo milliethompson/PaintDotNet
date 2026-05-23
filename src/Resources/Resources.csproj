@@ -271,13 +271,20 @@
   <ItemGroup>
     <EmbeddedResource Include="Images\TransparentLogo.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\BulgeEffect.png" />
+    <EmbeddedResource Include="Icons\GlowEffect.png" />
+    <EmbeddedResource Include="Icons\PolarInversionEffect.png" />
+    <EmbeddedResource Include="Icons\TileEffect.png" />
+    <EmbeddedResource Include="Icons\TwistEffect.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
     <PostBuildEvent>@rem Sign
-call "$(SolutionDir)signfile.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)"
-call "$(SolutionDir)signfile.bat" "$(TargetPath)"
+rem call "$(SolutionDir)signfile.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)"
+rem call "$(SolutionDir)signfile.bat" "$(TargetPath)"
 </PostBuildEvent>
   </PropertyGroup>
 </Project>

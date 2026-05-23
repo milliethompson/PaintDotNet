@@ -353,15 +353,23 @@ namespace PaintDotNet
             }
             else
             {
+                float minDistance = float.MaxValue;
+                Point mousePt = new Point(e.X, e.Y);
+
                 for (int i = 0; i < this.moveNubs.Length; ++i)
                 {
                     MoveNubRenderer nub = this.moveNubs[i];
 
-                    if (nub.IsPointTouching(new Point(e.X, e.Y), true))
+                    if (nub.IsPointTouching(mousePt, true))
                     {
-                        mode = Mode.Scale;
-                        edge = (Edge)i;
-                        break;
+                        float distance = Utility.Distance((PointF)mousePt, nub.Location);
+
+                        if (distance < minDistance)
+                        {
+                            minDistance = distance;
+                            mode = Mode.Scale;
+                            edge = (Edge)i;
+                        }
                     }
                 }
             }

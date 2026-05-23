@@ -336,11 +336,11 @@ namespace PaintDotNet
             }
         }
 
-        public static string GetNgenPath()
+        public static string GetNgenPath(bool forceX86)
         {
             string fxDir;
 
-            if (UIntPtr.Size == 8)
+            if (UIntPtr.Size == 8 && !forceX86)
             {
                 fxDir = "Framework64";
             }

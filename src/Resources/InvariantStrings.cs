@@ -22,7 +22,7 @@ namespace PaintDotNet
 
         public const string FeedbackEmail = "paint.net@hotmail.com";
 
-        public const string DonateUrl = "http://www.eecs.wsu.edu/paint.net/redirect/donate_hm.html";
+        public const string DonateUrl = "http://www.getpaint.net/redirect/donate_hm.html";
 
         private InvariantStrings()
         {

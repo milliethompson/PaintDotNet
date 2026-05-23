@@ -599,7 +599,7 @@ Expand canvas to fit imported image?</value>
         <value>Magic Wand</value>
     </data>
     <data name="MagicWandTool.HelpText">
-        <value>Click to select an area of similar color. Hold Shift to add (union), Ctrl to xor, or Ctrl+Shift to remove.</value>
+        <value>Click to select an area of similar color. Hold Control to add (union), right button to subtract, Shift for global.</value>
     </data>
     <data name="MoveTool.Name">
         <value>Move Selected Pixels</value>
@@ -659,13 +659,13 @@ Expand canvas to fit imported image?</value>
         <value>When zoomed in close, click and drag to navigate the image</value>
     </data>
     <data name="PdnInfo.WebSiteUrl">
-        <value>http://www.eecs.wsu.edu/paint.net/</value>
+        <value>http://www.getpaint.net/</value>
     </data>
     <data name="PdnInfo.AboutRedirectPage">
-        <value>pdnabout.html</value>
+        <value>redirect/main_about.html</value>
     </data>
     <data name="PdnInfo.ExpiredRedirectPage">
-        <value>pdnexpired.html</value>
+        <value>redirect/main_expired.html</value>
     </data>
     <data name="PdnInfo.FullAppName.Format">
         <value>{0} ({1})</value>
@@ -1556,6 +1556,57 @@ Expand canvas to fit pasted image?</value>
     <data name="BlurEffect.Name">
         <value>Gaussian Blur</value>
     </data>
+    <data name="GlowEffect.Amount1.Name" xml:space="preserve">
+        <value>Radius</value>
+    </data>
+    <data name="GlowEffect.Amount2.Name" xml:space="preserve">
+        <value>Brightness</value>
+    </data>
+    <data name="GlowEffect.Amount3.Name" xml:space="preserve">
+        <value>Contrast</value>
+    </data>
+    <data name="GlowEffect.Name" xml:space="preserve">
+        <value>Glow</value>
+    </data>
+    <data name="BulgeEffect.Name" xml:space="preserve">
+        <value>Bulge</value>
+    </data>
+    <data name="DistortSubmenu.Name" xml:space="preserve">
+        <value>Distort</value>
+    </data>
+    <data name="TileEffect.Name" xml:space="preserve">
+        <value>Tile Reflection</value>
+    </data>
+    <data name="TwistEffect.Name" xml:space="preserve">
+        <value>Twist</value>
+    </data>
+    <data name="BulgeEffect.BulgeAmount.Text" xml:space="preserve">
+        <value>Bulge</value>
+    </data>
+    <data name="TileEffect.Intensity.Text" xml:space="preserve">
+        <value>Curvature</value>
+    </data>
+    <data name="TileEffect.Rotation.Text" xml:space="preserve">
+        <value>Rotation Angle (degrees)</value>
+    </data>
+    <data name="TileEffect.SquareSize.Text" xml:space="preserve">
+        <value>Square Size (pixels)</value>
+    </data>
+    <data name="TwistEffect.Antialias.Text" xml:space="preserve">
+        <value>Quality</value>
+    </data>
+    <data name="TwistEffect.TwistAmount.Text" xml:space="preserve">
+        <value>Twisting amount</value>
+    </data>
+    <data name="PolarInversionEffect.Name" xml:space="preserve">
+        <value>Polar Inversion</value>
+    </data>
+    <data name="PolarInversionEffect.PolarInversionAmount.Text" xml:space="preserve">
+        <value>Amount</value>
+    </data>
+    <data name="PolarInversionEffect.Quality.Text" xml:space="preserve">
+        <value>Quality</value>
+    </data>
     <data name="BrightnessAndContrastAdjustment.Name">
         <value>Brightness / Contrast</value>
     </data>
@@ -1898,7 +1949,7 @@ Return code is 0 on success, or non-zero on failure.</value>
         <value>32-bit MSI may not be installed on 64-bit OS.</value>
     </data>
     <data name="SetupWizard.Error.Win2KRequired">
-        <value>Paint.NET requires Windows 2000 SP3, Windows XP SP1, Windows Server 2003, or later.</value>
+        <value>Paint.NET requires Windows 2000 SP4, Windows XP SP2, Windows Server 2003 SP1, Windows Vista, or later.</value>
     </data>
     <data name="SetupWizard.Error.AdminRequired">
         <value>Administrator privilege is required to install Paint.NET.</value>

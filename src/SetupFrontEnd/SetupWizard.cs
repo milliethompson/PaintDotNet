@@ -790,9 +790,9 @@ namespace PaintDotNet.Setup
         }
 
         // Requires:
-        // * Windows 2000 SP3 or later
-        // * Windows XP SP1 or later
-        // * Windows Server 2003
+        // * Windows 2000 SP4 or later
+        // * Windows XP SP2 or later
+        // * Windows Server 2003 SP1 or later
         // * Windows Vista
         // * or newer
         private static bool CheckOSRequirement()
@@ -809,16 +809,46 @@ namespace PaintDotNet.Setup
             // Windows 2003 or later?
             bool win2k3 = CheckOSVersion(5, 2, 0);
 
+            // Windows 2003 SP1 or later?
+            bool win2k3SP1 = CheckOSVersion(5, 2, 1);
+
             // Windows XP or later?
             bool winXP = CheckOSVersion(5, 1, 0);
 
-            // Windows XP SP1 or later?
-            bool winXPSP1 = CheckOSVersion(5, 1, 1);
+            // Windows XP SP2 or later?
+            bool winXPSP2 = CheckOSVersion(5, 1, 2);
 
-            // Windows 2000 SP3 or later?
-            bool win2KSP3 = CheckOSVersion(5, 0, 0);
+            // Windows 2000 SP4 or later?
+            bool win2kSP4 = CheckOSVersion(5, 0, 4);
 
-            return winVista | win2k3 | (winXP && winXPSP1) | win2KSP3;
+            if (winVista)
+            {
+                return true;
+            }
+            else if (win2k3SP1)
+            {
+                return true;
+            }
+            else if (win2k3 && !win2k3SP1)
+            {
+                return false;
+            }
+            else if (winXPSP2)
+            {
+                return true;
+            }
+            else if (winXP && !winXPSP2)
+            {
+                return false;
+            }
+            else if (win2kSP4)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private static bool IsUserAdministrator()

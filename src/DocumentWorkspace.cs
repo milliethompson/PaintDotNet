@@ -1535,24 +1535,17 @@ namespace PaintDotNet
             effectsArrays.Add(GetEffectsFromAssembly(Assembly.GetExecutingAssembly()));
 
             // collate List<T> of arrays into one big array
-            int count = 0;
-
-            foreach (Type[] typeArray in effectsArrays)
-            {
-                count += typeArray.Length;
-            }
-
-            this.effects = new Type[count];
-            int cursor = 0;
+            List<Type> theEffects = new List<Type>();
 
             foreach (Type[] typeArray in effectsArrays)
             {
                 foreach (Type type in typeArray)
                 {
-                    this.effects[cursor] = type;
-                    ++cursor;
+                    theEffects.Add(type);
                 }
             }
+
+            this.effects = theEffects.ToArray();
         }
 
         /// <summary>

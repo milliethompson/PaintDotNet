@@ -7,7 +7,7 @@
     <ProjectGuid>{386268DE-9441-43AA-B834-690995E2357F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DistortionEffects</RootNamespace>
+    <RootNamespace>PaintDotNet.Effects.Distortion</RootNamespace>
     <AssemblyName>DistortionEffects</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -31,43 +31,32 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="PaintDotNet.Effects, Version=2.61.2259.27494, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\src\bin\Debug\PaintDotNet.Effects.dll</HintPath>
-    </Reference>
-    <Reference Include="PdnLib, Version=2.61.2259.27493, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\src\bin\Debug\PdnLib.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BulgeEffect.cs" />
     <Compile Include="PolarInversionEffect.cs" />
     <Compile Include="TileEffect.cs" />
     <Compile Include="TwistEffect.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="MyResources.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="MyResources.resx">
-    </EmbeddedResource>
+    <ProjectReference Include="..\Effects\Effects.csproj">
+      <Project>{2E4E8805-00F7-4B18-A967-C23994BBCE75}</Project>
+      <Name>Effects</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PdnLib\PdnLib.csproj">
+      <Project>{1EADE568-A866-4DD4-9898-0A151E3F0E26}</Project>
+      <Name>PdnLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Resources\Resources.csproj">
+      <Project>{0B173113-1F9B-4939-A62F-A176336F13AC}</Project>
+      <Name>Resources</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\TileEffect.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\TwistEffect.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\BulgeEffect.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\PolarInversion.png" />
+    <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

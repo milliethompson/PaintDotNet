@@ -143,21 +143,25 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="WLOCAd.png" />
+    <EmbeddedResource Include="DonateAd_en.png" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
-    <PostBuildEvent>@rem copy English strings over
+    <PostBuildEvent>@rem Embed manifest
+call "$(SolutionDir)Manifests\embedManifest.bat" "$(TargetPath)" "$(SolutionDir)Manifests\requireAdministrator.xml"
+call "$(SolutionDir)Manifests\embedManifest.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)" "$(SolutionDir)Manifests\requireAdministrator.xml"
+
+@rem copy English strings over
 copy "$(SolutionDir)\Strings\$(ConfigurationName)\PaintDotNet.Strings.resources" "$(TargetDir)"
 
 @rem copy German strings over
 copy "$(SolutionDir)\Strings.de\$(ConfigurationName)\PaintDotNet.Strings.de.resources" "$(TargetDir)"
 
 @rem Sign
-call "$(SolutionDir)signfile.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)"
-call "$(SolutionDir)signfile.bat" "$(TargetPath)"
+rem call "$(SolutionDir)signfile.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)"
+rem call "$(SolutionDir)signfile.bat" "$(TargetPath)"
 </PostBuildEvent>
   </PropertyGroup>
 </Project>

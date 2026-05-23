@@ -346,28 +346,21 @@ namespace PaintDotNet
             }
             else
             {
-                PointF mousePt = new PointF(e.Fx, e.Fy);
+                PointF mousePtF = new PointF(e.Fx, e.Fy);
+                Point mousePt = Point.Truncate(mousePtF);
+                float minDistance = float.MaxValue;
 
                 for (int i = 0; i < this.moveNubs.Length; ++i)
                 {
-                    if (this.moveNubs[i].IsPointTouching(Point.Truncate(mousePt), true))
+                    if (this.moveNubs[i].IsPointTouching(mousePt, true))
                     {
-                        this.draggingNubIndex = i;
-                        this.Cursor = this.handCursorMouseDown;
+                        float distance = Utility.Distance(mousePtF, this.moveNubs[i].Location);
 
-                        if (this.curveType == CurveType.NotDecided)
+                        if (distance < minDistance)
                         {
-                            if (e.Button == MouseButtons.Right)
-                            {
-                                this.curveType = CurveType.Bezier;
-                            }
-                            else
-                            {
-                                this.curveType = CurveType.Spline;
-                            }
+                            minDistance = distance;
+                            this.draggingNubIndex = i;
                         }
-
-                        break;
                     }
                 }
 
@@ -377,6 +370,20 @@ namespace PaintDotNet
                 }
                 else
                 {
+                    this.Cursor = this.handCursorMouseDown;
+
+                    if (this.curveType == CurveType.NotDecided)
+                    {
+                        if (e.Button == MouseButtons.Right)
+                        {
+                            this.curveType = CurveType.Bezier;
+                        }
+                        else
+                        {
+                            this.curveType = CurveType.Spline;
+                        }
+                    }
+
                     for (int i = 0; i < this.moveNubs.Length; ++i)
                     {
                         this.moveNubs[i].Visible = false;

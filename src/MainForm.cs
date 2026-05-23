@@ -4613,29 +4613,81 @@ namespace PaintDotNet
 
         private void AddEffectsToMenu(ToolStripMenuItem topMenu, BoolObjectDelegate predicate, bool withShortcuts)
         {
-            // Fill the menu with the effect names, and "..." if it is configurable
-            foreach (Type type in workspace.Effects)
-            {
-                Effect effect;
+            // Create and then sort the list of effects
+            List<Effect> effects = new List<Effect>(10);
 
+            foreach (Type effectType in this.workspace.Effects)
+            {
                 try
                 {
-                    ConstructorInfo ci = type.GetConstructor(Type.EmptyTypes);
-                    effect = (Effect)ci.Invoke(null);
+                    ConstructorInfo ci = effectType.GetConstructor(Type.EmptyTypes);
+                    Effect effect = (Effect)ci.Invoke(null);
+
+                    if (predicate(effect))
+                    {
+                        effects.Add(effect);
+                    }
                 }
 
                 catch
                 {
                     // We don't want a DLL that can't be figured out to cause the app to crash
-                    // But should we show an error message?
                     continue;
                 }
+            }
 
-                if (!predicate(effect))
+            effects.Sort(
+                delegate(Effect lhs, Effect rhs)
                 {
-                    continue;
+                    return string.Compare(lhs.Name, rhs.Name, true);
+                });
+
+            // Pass 1: populate sub-menus
+            List<string> subMenuNames = new List<string>();
+
+            foreach (Effect effect in effects)
+            {
+                if (effect.SubMenuName != null)
+                {
+                    subMenuNames.Add(effect.SubMenuName);
+                }
+            }
+
+            subMenuNames.Sort(
+                delegate(string lhs, string rhs)
+                {
+                    return string.Compare(lhs, rhs, true);
+                });
+
+            foreach (string subMenuName in subMenuNames)
+            {
+                ToolStripMenuItem subMenu = null;
+
+                // search for this subMenu
+                foreach (ToolStripItem sub in menuEffects.DropDownItems)
+                {
+                    ToolStripMenuItem submi = sub as ToolStripMenuItem;
+
+                    if (submi != null)
+                    {
+                        if (submi.Text == subMenuName)
+                        {
+                            subMenu = submi;
+                            break;
+                        }
+                    }
                 }
 
+                if (subMenu == null)
+                {
+                    subMenu = new ToolStripMenuItem(subMenuName);
+                    topMenu.DropDownItems.Add(subMenu);
+                }
+            }
+
+            // Pass 2: populate effects
+            foreach (Effect effect in effects)
+            {
                 string name = effect.Name;
 
                 if (effect.IsConfigurable)
@@ -6065,14 +6117,16 @@ namespace PaintDotNet
             }
             
             string tempName = Path.GetTempFileName();
-            ra.Bitmap.Save(tempName, ImageFormat.Bmp);
+            string tempBmpName = tempName + ".bmp";
+            ra.Bitmap.Save(tempBmpName, ImageFormat.Bmp);
 
-            ScanningAndPrinting.Print(this, tempName);
+            ScanningAndPrinting.Print(this, tempBmpName);
 
             // Try to delete the temp file but don't worry if we can't
             try
             {
                 File.Delete(tempName);
+                File.Delete(tempBmpName);
             }
 
             catch

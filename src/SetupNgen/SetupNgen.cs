@@ -175,7 +175,7 @@ namespace PaintDotNet
 
         private static readonly string ourPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
-        static void InstallAssembly(string name, bool delete, bool queue)
+        static void InstallAssembly(string name, bool delete, bool queue, bool forceX86)
         {
             // ngen it
             if (delete)
@@ -197,7 +197,7 @@ namespace PaintDotNet
 
             string argList = actionArg + " " + nameArg + " " + optionsArg;
 
-            string ngenExe = PaintDotNet.PdnInfo.GetNgenPath();
+            string ngenExe = PaintDotNet.PdnInfo.GetNgenPath(forceX86);
             ProcessStartInfo psi1 = new ProcessStartInfo(ngenExe, argList);
 
             psi1.UseShellExecute = false;
@@ -437,18 +437,39 @@ namespace PaintDotNet
                 }
 
                 // Pre-JIT and install to GAC. These are in alphabetical order.
-                string[] names1 = new string[] {
-                                                   "PaintDotNet.exe",
-                                               };
+                string[] names = 
+                    new string[] 
+                    {
+                        "PaintDotNet.exe",
+                    };
 
-                foreach (string name in names1)
+                foreach (string name in names)
                 {
                     try
                     {
-                        InstallAssembly(name, delete, queueNgen);
+                        InstallAssembly(name, delete, queueNgen, false);
                     }
 
                     // We don't raise a stink if ngen fails.
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+                }
+
+                string[] names_x86 =
+                    new string[] 
+                    {
+                        "WiaProxy32.exe",
+                    };
+
+                foreach (string name in names_x86)
+                {
+                    try
+                    {
+                        InstallAssembly(name, delete, queueNgen, true);
+                    }
+
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex);

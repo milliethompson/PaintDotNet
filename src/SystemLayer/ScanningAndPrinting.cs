@@ -118,6 +118,12 @@ namespace PaintDotNet.SystemLayer
                 throw new InvalidOperationException("Printing is not available");
             }
 
+            string fileNameExt = Path.GetExtension(fileName);
+            if (string.Compare(fileNameExt, ".bmp", StringComparison.InvariantCultureIgnoreCase) != 0)
+            {
+                throw new ArgumentOutOfRangeException("fileName", fileName, "can only print .bmp files");
+            }
+
             // Disable the entire UI, otherwise it's possible to close PDN while the
             // print wizard is active! And then it crashes.
             Form ownedForm = owner.FindForm();

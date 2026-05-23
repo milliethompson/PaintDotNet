@@ -1,13 +1,13 @@
-// Source: http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnaspp/html/colorquant.asp
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
 
-/* 
-  THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF 
-  ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
-  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A 
-  PARTICULAR PURPOSE. 
-  
-    This is sample code and is freely distributable. 
-*/ 
+// Based on: http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnaspp/html/colorquant.asp
 
 using PaintDotNet;
 using System;
@@ -199,7 +199,7 @@ namespace PaintDotNet.Data.Quantize
             try
             {
                 // Lock the output bitmap into memory
-                outputData = output.LockBits(bounds, ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
+                outputData = output.LockBits(bounds, ImageLockMode.ReadWrite, PixelFormat.Format8bppIndexed);
 
                 // Define the source data pointers. The source row is a byte to
                 // keep addition of the stride value easier (as this is in bytes)
@@ -210,61 +210,101 @@ namespace PaintDotNet.Data.Quantize
                 byte* pDestinationRow = (byte *)outputData.Scan0.ToPointer();
                 byte* pDestinationPixel = pDestinationRow;
 
-                // And convert the first pixel, so that I have values going into the loop
-                byte pixelValue = QuantizePixel((ColorBgra *)pSourcePixel);
-
-                // Assign the value of the first pixel
-                *pDestinationPixel = pixelValue;
-
-                // Loop through each row
-                int[] errorLastRowR = new int[width];
-                int[] errorLastRowG = new int[width];
-                int[] errorLastRowB = new int[width];
-
-                errorLastRowB.Initialize();
-                errorLastRowG.Initialize();
-                errorLastRowR.Initialize();
+                int[] errorThisRowR = new int[width + 1];
+                int[] errorThisRowG = new int[width + 1];
+                int[] errorThisRowB = new int[width + 1];
 
                 for (int row = 0; row < height; row++)
                 {
-                    // Set the source pixel to the first pixel in this row
-                    pSourcePixel = (Int32*)pSourceRow;
+                    int[] errorNextRowR = new int[width + 1];
+                    int[] errorNextRowG = new int[width + 1];
+                    int[] errorNextRowB = new int[width + 1];
 
-                    // And set the destination pixel pointer to the first pixel in the row
-                    pDestinationPixel = pDestinationRow;
+                    int ptrInc;
 
-                    int errorB = 0;
-                    int errorG = 0;
-                    int errorR = 0;
+                    if ((row & 1) == 0)
+                    {
+                        pSourcePixel = (Int32*)pSourceRow;
+                        pDestinationPixel = pDestinationRow;
+                        ptrInc = +1;
+                    }
+                    else
+                    {
+                        pSourcePixel = (Int32*)pSourceRow + width - 1;
+                        pDestinationPixel = pDestinationRow + width - 1;
+                        ptrInc = -1;
+                    }
 
                     // Loop through each pixel on this scan line
-                    for (int col = 0; col < width; col++, pSourcePixel++, pDestinationPixel++)
+                    for (int col = 0; col < width; ++col)
                     {
-                        // Check if this is the same as the last pixel. If so use that value
-                        // rather than calculating it again. This is an inexpensive optimisation.
-
                         // Quantize the pixel
-                        ColorBgra *srcPixel = (ColorBgra *)pSourcePixel;
+                        ColorBgra srcPixel = *(ColorBgra *)pSourcePixel;
                         ColorBgra target = new ColorBgra();
 
-                        target.B = Utility.ClampToByte(srcPixel->B - errorB * weight / 8);
-                        target.G = Utility.ClampToByte(srcPixel->G - errorG * weight / 8);
-                        target.R = Utility.ClampToByte(srcPixel->R - errorR * weight / 8);
-                        target.A = srcPixel->A;
+                        target.B = Utility.ClampToByte(srcPixel.B - ((errorThisRowB[col] * weight) / 8));
+                        target.G = Utility.ClampToByte(srcPixel.G - ((errorThisRowG[col] * weight) / 8));
+                        target.R = Utility.ClampToByte(srcPixel.R - ((errorThisRowR[col] * weight) / 8));
+                        target.A = srcPixel.A;
 
-                        pixelValue = QuantizePixel(&target);
+                        byte pixelValue = QuantizePixel(&target);
+                        *pDestinationPixel = pixelValue;
                     
                         ColorBgra actual = ColorBgra.FromColor(pallete[pixelValue]);
 
-                        errorLastRowB[col] = errorB;
-                        errorLastRowG[col] = errorG;
-                        errorLastRowB[col] = errorR;
-                        errorR = actual.R - target.R;
-                        errorG = actual.G - target.G;
-                        errorB = actual.B - target.B; 
+                        int errorR = actual.R - target.R;
+                        int errorG = actual.G - target.G;
+                        int errorB = actual.B - target.B; 
 
-                        // And set the pixel in the output
-                        *pDestinationPixel = pixelValue;
+                        // Floyd-Steinberg Error Diffusion:
+                        // a) 7/16 error goes to x+1
+                        // b) 5/16 error goes to y+1
+                        // c) 3/16 error goes to x-1,y+1
+                        // d) 1/16 error goes to x+1,y+1
+
+                        const int a = 7;
+                        const int b = 5;
+                        const int c = 3;
+
+                        int errorRa = (errorR * a) / 16;
+                        int errorRb = (errorR * b) / 16;
+                        int errorRc = (errorR * c) / 16;
+                        int errorRd = errorR - errorRa - errorRb - errorRc;
+
+                        int errorGa = (errorG * a) / 16;
+                        int errorGb = (errorG * b) / 16;
+                        int errorGc = (errorG * c) / 16;
+                        int errorGd = errorG - errorGa - errorGb - errorGc;
+
+                        int errorBa = (errorB * a) / 16;
+                        int errorBb = (errorB * b) / 16;
+                        int errorBc = (errorB * c) / 16;
+                        int errorBd = errorB - errorBa - errorBb - errorBc;
+
+                        errorThisRowR[col + 1] += errorRa;
+                        errorThisRowG[col + 1] += errorGa;
+                        errorThisRowB[col + 1] += errorBa;
+
+                        errorNextRowR[width - col] += errorRb;
+                        errorNextRowG[width - col] += errorGb;
+                        errorNextRowB[width - col] += errorBb;
+
+                        if (col != 0)
+                        {
+                            errorNextRowR[width - (col - 1)] += errorRc;
+                            errorNextRowG[width - (col - 1)] += errorGc;
+                            errorNextRowB[width - (col - 1)] += errorBc;
+                        }
+
+                        errorNextRowR[width - (col + 1)] += errorRd;
+                        errorNextRowG[width - (col + 1)] += errorGd;
+                        errorNextRowB[width - (col + 1)] += errorBd;
+
+                        unchecked
+                        {
+                            pSourcePixel += ptrInc;
+                            pDestinationPixel += ptrInc;
+                        }
                     }
 
                     // Add the stride to the source row
@@ -277,6 +317,10 @@ namespace PaintDotNet.Data.Quantize
                     {
                         progressCallback(this, new ProgressEventArgs(100.0 * (0.5 + ((double)(row + 1) / (double)height) / 2.0)));
                     }
+
+                    errorThisRowB = errorNextRowB;
+                    errorThisRowG = errorNextRowG;
+                    errorThisRowR = errorNextRowR;
                 }
             }
             

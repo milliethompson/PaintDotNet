@@ -21,16 +21,24 @@ Prerequisites
 
 Instructions
 ------------
-1. Open src/paintdotnet.sln with Microsoft Visual Studio .NET 2005. 
+1. Make sure that 'mt.exe' is placed somewhere on your PATH. This file is
+   included with Visual Studio 2005 and is usually at the following path:
 
-2. Make sure the project configuration is set to "Release and Package."
+     C:\Program Files\Microsoft Visual Studio 8\SDK\v2.0\Bin
+
+   A quick way to satisfy this requirement is to just copy mt.exe in to
+   your C:\Windows\System32 directory.
+
+2. Open src/paintdotnet.sln with Microsoft Visual Studio .NET 2005. 
+
+3. Make sure the project configuration is set to "Release and Package."
    This can be done by going to the "Build" menu, selecting "Configuration
    Manager...", selecting "Release and Package" under "Active Solution 
    Configuration:" and then clicking Close.
     
-3. Go to the "Build" menu and click "Rebuild Solution."
+4. Go to the "Build" menu and click "Rebuild Solution."
 
-4. Assuming all went well, the output files are now in src/Setup/Release:
+5. Assuming all went well, the output files are now in src/Setup/Release:
 
    * PaintDotNet.msi
      This is the MSI that installs Paint.NET, but you shouldn't launch it
@@ -82,6 +90,10 @@ src/Help
 src/Interop.WIA
     Contains the .NET interop DLL for the Windows Image Acquisition (WIA)
     Automation Layer.
+
+src/Manifests
+    Includes XML manifests that are used during the post-build process. These
+    files are important for best compatibility with Windows Vista.
 
 src/obj
     Intermediate files used during compilation go here.

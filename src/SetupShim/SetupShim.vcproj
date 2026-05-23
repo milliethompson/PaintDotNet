@@ -174,7 +174,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="@rem Sign&#x0D;&#x0A;call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(TargetPath)&quot;"
+				CommandLine="@rem Embed manifest&#x0D;&#x0A;call &quot;$(SolutionDir)Manifests\embedManifest.bat&quot; &quot;$(TargetPath)&quot; &quot;$(SolutionDir)Manifests\asInvoker.xml&quot;&#x0D;&#x0A;&#x0D;&#x0A;@rem Sign&#x0D;&#x0A;call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

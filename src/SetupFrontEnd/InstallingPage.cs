@@ -44,8 +44,8 @@ namespace PaintDotNet.Setup
         private bool adLoaded = false;
         private Label adLabel;
         private PictureBox adBox;
-        private const string adClickUrl = "http://www.eecs.wsu.edu/paint.net/redirect/wloc_setup.html";
-        private readonly DateTime adExpireDate = new DateTime(2006, 7, 10); // ad is not shown from this date onward
+        private const string adClickUrl = "http://www.getpaint.net/redirect/donate_setup.html";
+        private readonly DateTime adExpireDate = DateTime.MaxValue;
 
         /// <summary> 
         /// Required designer variable.
@@ -58,10 +58,10 @@ namespace PaintDotNet.Setup
             {
                 this.adLoaded = true;
 
-                this.adLabel.Text = "(Clickable Advertisement)"; // we can get away w/ not having this localizable because right now the ad only displays on en-US
+                this.adLabel.Text = "";
                 this.adLabel.Font = new Font(this.adLabel.Font.FontFamily, this.adLabel.Font.Size - 1);
                 Assembly ourAssembly = Assembly.GetExecutingAssembly();
-                Stream adStream = ourAssembly.GetManifestResourceStream("PaintDotNet.Setup.WLOCAd.png");
+                Stream adStream = ourAssembly.GetManifestResourceStream("PaintDotNet.Setup.DonateAd_en.png");
                 Image adImage = Image.FromStream(adStream);
                 this.adBox.SizeMode = PictureBoxSizeMode.StretchImage;
                 this.adBox.Image = adImage;
@@ -73,6 +73,9 @@ namespace PaintDotNet.Setup
         {
             get
             {
+                return true;
+
+                /*
                 if (DateTime.Now < adExpireDate &&
                     string.Compare(CultureInfo.CurrentUICulture.Name, "en-US", StringComparison.InvariantCultureIgnoreCase) == 0 && 
                     string.Compare(RegionInfo.CurrentRegion.Name, "US", StringComparison.InvariantCultureIgnoreCase) == 0)
@@ -100,6 +103,7 @@ namespace PaintDotNet.Setup
                 {
                     return false;
                 }
+                 * */
             }
         }
 
@@ -274,7 +278,7 @@ namespace PaintDotNet.Setup
                     this.progressBar.Visible = true;
                 }
 
-                string ngenExe = PdnInfo.GetNgenPath();
+                string ngenExe = PdnInfo.GetNgenPath(false);
                 const string ngenArg = "executeQueuedItems";
 
                 try

@@ -45,32 +45,32 @@ namespace PaintDotNet
     ///     
     /// Example:
     ///     ; Paint.NET versions download manifest
-    ///     DownloadPageUrl=http://www.eecs.wsu.edu/paint.net/download.htm
+    ///     DownloadPageUrl=http://www.getpaint.net/download.htm
     ///     StableVersions=2.1.1958.27164
     ///     BetaVersions=2.5.2013.31044
     ///     
     ///     2.1.1958.27164_Name=Paint.NET v2.1b     
-    ///     2.1.1958.27164_InfoUrl=http://www.eecs.wsu.edu/paint.net/roadmap.htm#v2_1
+    ///     2.1.1958.27164_InfoUrl=http://www.getpaint.net/roadmap.htm#v2_1
     ///     2.1.1958.27164_NetFxVersion=1.1.4322
-    ///     2.1.1958.27164_ZipUrl=http://www.eecs.wsu.edu/paint.net/zip/PaintDotNet_2_1b.zip
+    ///     2.1.1958.27164_ZipUrl=http://www.getpaint.net/zip/PaintDotNet_2_1b.zip
     ///     2.1.1958.27164_ZipUrlSize=5398528
-    ///     2.1.1958.27164_FullZipUrl=http://www.eecs.wsu.edu/paint.net/zip/PaintDotNet_2_1b_Full.zip
+    ///     2.1.1958.27164_FullZipUrl=http://www.getpaint.net/zip/PaintDotNet_2_1b_Full.zip
     ///     2.1.1958.27164_FullZipUrlSize=27770728
     ///     
     ///     2.5.2013.31044_Name=Paint.NET v2.5        
-    ///     2.5.2013.31044_InfoUrl=http://www.eecs.wsu.edu/paint.net/roadmap.htm#v2_5
+    ///     2.5.2013.31044_InfoUrl=http://www.getpaint.net/roadmap.htm#v2_5
     ///     2.5.2013.31044_NetFxVersion=1.1.4322
-    ///     2.5.2013.31044_ZipUrl=http://www.eecs.wsu.edu/paint.net/zip/PaintDotNet_2_5.zip
+    ///     2.5.2013.31044_ZipUrl=http://www.getpaint.net/zip/PaintDotNet_2_5.zip
     ///     2.5.2013.31044_ZipUrlSize=5100000
-    ///     2.5.2013.31044_FullZipUrl=http://www.eecs.wsu.edu/paint.net/zip/PaintDotNet_2_5_Full.zip
+    ///     2.5.2013.31044_FullZipUrl=http://www.getpaint.net/zip/PaintDotNet_2_5_Full.zip
     ///     2.5.2013.31044_FullZipUrlSize=45100000
     ///     
     ///     2.6.2113.23752_Name=Paint.NET v2.6 Beta 1
-    ///     2.6.2113.23752_InfoUrl=http://www.eecs.wsu.edu/paint.net/roadmap.htm#v2_6
+    ///     2.6.2113.23752_InfoUrl=http://www.getpaint.net/roadmap.htm#v2_6
     ///     2.6.2113.23752_NetFxVersion=2.0.50727
-    ///     2.6.2113.23752_ZipUrl=http://www.eecs.wsu.edu/paint.net/zip/PaintDotNet_2_6_Beta1.zip
+    ///     2.6.2113.23752_ZipUrl=http://www.getpaint.net/zip/PaintDotNet_2_6_Beta1.zip
     ///     2.6.2113.23752_ZipUrlSize=5500000
-    ///     2.6.2113.23752_FullZipUrl=http://www.eecs.wsu.edu/paint.net/zip/PaintDotNet_2_5_Beta5_Full.zip
+    ///     2.6.2113.23752_FullZipUrl=http://www.getpaint.net/zip/PaintDotNet_2_5_Beta5_Full.zip
     ///     2.6.2113.23752_FullZipUrlSize=75100000
     ///     
     /// Notes:
@@ -87,8 +87,8 @@ namespace PaintDotNet
     {
         // {0} is schema version
         // {1} is platform (x86, x64, ia64)
-        private const string versionManifestUrlFormat = "http://www.eecs.wsu.edu/paint.net/updates/versions.{0}.{1}.{2}.txt";
-        private const string versionManifestTestUrl = "http://www.eecs.wsu.edu/paint.net/updates/versions.txt.test.txt";
+        private const string versionManifestUrlFormat = "http://www.getpaint.net/updates/versions.{0}.{1}.{2}.txt";
+        private const string versionManifestTestUrl = "http://www.getpaint.net/updates/versions.txt.test.txt";
         private const int schemaVersion = 2;
 
         private static string VersionManifestUrl

@@ -1,3 +1,12 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -7,16 +16,17 @@ using System.IO;
 using PaintDotNet;
 using PaintDotNet.Effects;
 
-namespace DistortionEffects
+namespace PaintDotNet.Effects.Distortion
 {
     [Guid("3154E367-6B4D-4960-B4D8-F6D06E1C9C24")]
-    class TileEffect : Effect
+    public class TileEffect 
+        : Effect
     {
         public static Image StaticImage
         {
             get
             {
-                return (Image)MyResources.MyResourceManager.GetObject("TileEffect");
+                return PdnResources.GetImage("Icons.TileEffect.png");
             }
         }
 
@@ -24,7 +34,7 @@ namespace DistortionEffects
         {
             get
             {
-                return MyResources.MyResourceManager.GetString("TileEffect.Name");
+                return PdnResources.GetString("TileEffect.Name");
             }
         }
 
@@ -32,13 +42,12 @@ namespace DistortionEffects
         {
             get
             {
-                return MyResources.MyResourceManager.GetString("DistortSubmenu.Name");
+                return PdnResources.GetString("DistortSubmenu.Name");
             }
         }
 
         public TileEffect()
-            :
-            base(StaticName, StaticImage, System.Windows.Forms.Keys.None, StaticSubMenuName, true)
+            : base(StaticName, StaticImage, System.Windows.Forms.Keys.None, StaticSubMenuName, true)
         {
         }
 
@@ -47,15 +56,15 @@ namespace DistortionEffects
             ThreeAmountsConfigDialog tacd = new ThreeAmountsConfigDialog();
 
             tacd.Text = StaticName;
-            tacd.Amount1Label = MyResources.MyResourceManager.GetString("TileEffect.Rotation.Text");
+            tacd.Amount1Label = PdnResources.GetString("TileEffect.Rotation.Text");
             tacd.Amount1Default = 30;
             tacd.Amount1Minimum = -45;
             tacd.Amount1Maximum = 45;
-            tacd.Amount2Label = MyResources.MyResourceManager.GetString("TileEffect.SquareSize.Text");
+            tacd.Amount2Label = PdnResources.GetString("TileEffect.SquareSize.Text");
             tacd.Amount2Default = 40;
             tacd.Amount2Maximum = 200;
             tacd.Amount2Minimum = 2;
-            tacd.Amount3Label = MyResources.MyResourceManager.GetString("TileEffect.Intensity.Text");
+            tacd.Amount3Label = PdnResources.GetString("TileEffect.Intensity.Text");
             tacd.Amount3Default = 8;
             tacd.Amount3Maximum = 20;
             tacd.Amount3Minimum = -20;
@@ -63,7 +72,13 @@ namespace DistortionEffects
             return tacd;
         }
 
-        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle[] rois, int startIndex, int length)
+        public unsafe override void Render(
+            EffectConfigToken parameters, 
+            RenderArgs dstArgs, 
+            RenderArgs srcArgs, 
+            System.Drawing.Rectangle[] rois, 
+            int startIndex, 
+            int length)
         {
             ThreeAmountsConfigToken token = (ThreeAmountsConfigToken)parameters;
 
@@ -92,7 +107,7 @@ namespace DistortionEffects
 
                 x -= (int)x;
 
-                //RGSS + rotation to maximize AA quality
+                // RGSS + rotation to maximize AA quality
                 aaPoints[i] = new PointF((float)(cos * x + sin * y), (float)(cos * y - sin * x));
             }
 
@@ -126,13 +141,13 @@ namespace DistortionEffects
                             int ySample = (int)(hh + v);
 
                             xSample = (xSample + width) % width;
-                            if (xSample < 0)//This makes it a little faster
+                            if (xSample < 0) // This makes it a little faster
                             {
                                 xSample = (xSample + width) % width;
                             }
 
                             ySample = (ySample + height) % height;
-                            if (ySample < 0)//This makes it a little faster
+                            if (ySample < 0) // This makes it a little faster
                             {
                                 ySample = (ySample + height) % height;
                             }

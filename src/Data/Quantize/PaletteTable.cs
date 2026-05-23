@@ -13,9 +13,6 @@ using System.Drawing;
 
 namespace PaintDotNet.Data.Quantize
 {
-    /// <summary>
-    /// Summary description for PaletteTable.
-    /// </summary>
     public sealed class PaletteTable
     {
         private Color[] palette;

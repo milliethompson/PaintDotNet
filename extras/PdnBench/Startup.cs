@@ -13,6 +13,8 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace PdnBench
 {
@@ -73,8 +75,8 @@ namespace PdnBench
                             return;
                         }
 
-                        benchmarkImageName = args[i];
                         ++i;
+                        benchmarkImageName = args[i];
 
                         if (!System.IO.File.Exists(benchmarkImageName))
                         {
@@ -95,6 +97,13 @@ namespace PdnBench
                         break;
                 }
             }
+
+            Console.WriteLine("PdnBench v" + Application.ProductVersion);
+            Console.WriteLine("Running in " + (8 * Marshal.SizeOf(typeof(IntPtr))) + "-bit mode on " + 
+                Processor.NativeArchitecture.ToString().ToLower() + " OS");
+            Console.WriteLine("Processor: " + Processor.LogicalCpuCount + "x " + Processor.CpuName);
+            Console.WriteLine("Memory: " + ((Memory.TotalPhysicalBytes / 1024) / 1024) + " MB");
+            Console.WriteLine();
 
             //Processor.LogicalCpuCount = 1;
             Console.WriteLine("Using " + Processor.LogicalCpuCount + " threads.");
@@ -125,6 +134,8 @@ namespace PdnBench
             }
 
             Console.WriteLine("(" + document.Width + " x " + document.Height + ") done");
+
+            Console.Write("Generating benchmarks ... ");
 
             Surface surface = ((BitmapLayer)document.Layers[0]).Surface;
 
@@ -396,8 +407,16 @@ namespace PdnBench
                 dst.CreateWindow(new Rectangle(0, 0, surface.Width, surface.Height))));
 #endif
 
+            Console.WriteLine("done");
+
             // Run benchmarks!
             Timing timing = new Timing();
+            ((Benchmark)benchmarks[0]).Execute(); // warm up the thread pool
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+
             ulong start = timing.GetTickCount();
 
             foreach (Benchmark benchmark in benchmarks)

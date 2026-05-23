@@ -544,6 +544,57 @@
   <data name="BitmapLayerPropertiesDialog.OpacityLabel.Text" xml:space="preserve">
     <value>Opazität:</value>
   </data>
+  <data name="GlowEffect.Amount1.Name" xml:space="preserve">
+    <value>Radius</value>
+  </data>
+  <data name="GlowEffect.Amount2.Name" xml:space="preserve">
+    <value>Helligkeit</value>
+  </data>
+  <data name="GlowEffect.Amount3.Name" xml:space="preserve">
+    <value>Kontrast</value>
+  </data>
+  <data name="GlowEffect.Name" xml:space="preserve">
+    <value>Glühen</value>
+  </data>
+  <data name="BulgeEffect.Name" xml:space="preserve">
+    <value>Wölbung</value>
+  </data>
+  <data name="DistortSubmenu.Name" xml:space="preserve">
+    <value>Deformieren</value>
+  </data>
+  <data name="TileEffect.Name" xml:space="preserve">
+    <value>Kachelspiegelung</value>
+  </data>
+  <data name="TwistEffect.Name" xml:space="preserve">
+    <value>Verdrehung</value>
+  </data>
+  <data name="BulgeEffect.BulgeAmount.Text" xml:space="preserve">
+    <value>Umfang</value>
+  </data>
+  <data name="TileEffect.Intensity.Text" xml:space="preserve">
+    <value>Biegung</value>
+  </data>
+  <data name="TileEffect.Rotation.Text" xml:space="preserve">
+    <value>Rotationswinkel (Grad)</value>
+  </data>
+  <data name="TileEffect.SquareSize.Text" xml:space="preserve">
+    <value>Quadratische Größe (Pixel)</value>
+  </data>
+  <data name="TwistEffect.Antialias.Text" xml:space="preserve">
+    <value>Qualität</value>
+  </data>
+  <data name="TwistEffect.TwistAmount.Text" xml:space="preserve">
+    <value>Umfang</value>
+  </data>
+  <data name="PolarInversionEffect.Name" xml:space="preserve">
+    <value>Polare Inversion</value>
+  </data>
+  <data name="PolarInversionEffect.PolarInversionAmount.Text" xml:space="preserve">
+    <value>Umfang</value>
+  </data>
+  <data name="PolarInversionEffect.Quality.Text" xml:space="preserve">
+    <value>Qualität</value>
+  </data>
   <data name="BlurEffect.ConfigDialog.SliderLabel" xml:space="preserve">
     <value>Radius</value>
   </data>
@@ -1444,7 +1495,7 @@ Möchten sie das aktuelle Bild automatisch erweitern?
 </value>
   </data>
   <data name="PdnInfo.AboutRedirectPage" xml:space="preserve">
-    <value>pdnabout.html</value>
+    <value>redirect/main_about.html</value>
   </data>
   <data name="PdnInfo.FullAppName.Format" xml:space="preserve">
     <value>{0} ({1})</value>
@@ -1453,7 +1504,7 @@ Möchten sie das aktuelle Bild automatisch erweitern?
     <value>{0} {1} Build {2}</value>
   </data>
   <data name="PdnInfo.WebSiteUrl" xml:space="preserve">
-    <value>http://www.eecs.wsu.edu/paint.net/</value>
+    <value>http://www.getpaint.net/</value>
   </data>
   <data name="PencilTool.HelpText" xml:space="preserve">
     <value>Klicken sie mit Links zum Freihandzeichnen in der primären und mit Rechts für die sekundäre Farbe (Strichstärke: ein Pixel)</value>
@@ -1606,7 +1657,7 @@ Möchten sie das aktuelle Bild automatisch erweitern?
     <value>Zum Installieren von Paint.NET sind lokale Administratorrechte erforderlich.</value>
   </data>
   <data name="SetupWizard.Error.Win2KRequired" xml:space="preserve">
-    <value>Paint.NET benötigt Windows 2000 Service Pack 3, Windows XP Service Pack 1 oder Windows Server 2003 oder höher.</value>
+    <value>Paint.NET benötigt Windows 2000 Service Pack 4, Windows XP Service Pack 2 oder Windows Server 2003 Service Pack 1 oder höher.</value>
   </data>
   <data name="SetupWizard.HelpText" xml:space="preserve">
     <value>Paint.NET Installationshilfe

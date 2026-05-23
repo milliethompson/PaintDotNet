@@ -1,3 +1,12 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET
+// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
+//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
+//               and Luke Walker
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
+// See src/setup/License.rtf for complete licensing and attribution information.
+/////////////////////////////////////////////////////////////////////////////////
+
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -7,16 +16,17 @@ using System.IO;
 using PaintDotNet;
 using PaintDotNet.Effects;
 
-namespace DistortionEffects
+namespace PaintDotNet.Effects.Distortion
 {
     [Guid("1445F876-356D-4a7c-B726-50457F6E7AEF")]
-    class PolarInversionEffect : Effect
+    public class PolarInversionEffect 
+        : Effect
     {
         public static Image StaticImage
         {
             get
             {
-                return (Image)MyResources.MyResourceManager.GetObject("PolarInversionEffect");
+                return PdnResources.GetImage("Icons.PolarInversionEffect.png");
             }
         }
 
@@ -24,7 +34,7 @@ namespace DistortionEffects
         {
             get
             {
-                return MyResources.MyResourceManager.GetString("PolarInversionEffect.Name");
+                return PdnResources.GetString("PolarInversionEffect.Name");
             }
         }
 
@@ -32,13 +42,12 @@ namespace DistortionEffects
         {
             get
             {
-                return MyResources.MyResourceManager.GetString("DistortSubmenu.Name");
+                return PdnResources.GetString("DistortSubmenu.Name");
             }
         }
 
         public PolarInversionEffect()
-            :
-            base(StaticName, StaticImage, System.Windows.Forms.Keys.None, StaticSubMenuName, true)
+            : base(StaticName, StaticImage, System.Windows.Forms.Keys.None, StaticSubMenuName, true)
         {
         }
 
@@ -47,11 +56,11 @@ namespace DistortionEffects
             TwoAmountsConfigDialog tacd = new TwoAmountsConfigDialog();
 
             tacd.Text = StaticName;
-            tacd.Amount1Label = MyResources.MyResourceManager.GetString("PolarInversionEffect.PolarInversionAmount.Text");
+            tacd.Amount1Label = PdnResources.GetString("PolarInversionEffect.PolarInversionAmount.Text");
             tacd.Amount1Default = 100;
             tacd.Amount1Minimum = -200;
             tacd.Amount1Maximum = 200;
-            tacd.Amount2Label = MyResources.MyResourceManager.GetString("PolarInversionEffect.Quality.Text");
+            tacd.Amount2Label = PdnResources.GetString("PolarInversionEffect.Quality.Text");
             tacd.Amount2Default = 2;
             tacd.Amount2Maximum = 7;
             tacd.Amount2Minimum = 0;
@@ -59,7 +68,13 @@ namespace DistortionEffects
             return tacd;
         }
 
-        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle[] rois, int startIndex, int length)
+        public unsafe override void Render(
+            EffectConfigToken parameters, 
+            RenderArgs dstArgs, 
+            RenderArgs srcArgs, 
+            System.Drawing.Rectangle[] rois, 
+            int startIndex, 
+            int length)
         {
             TwoAmountsConfigToken token = (TwoAmountsConfigToken)parameters;
 
@@ -84,7 +99,7 @@ namespace DistortionEffects
 
                 x -= (int)x;
 
-                //RGSS + rotation to maximize AA quality
+                // RGSS + rotation to maximize AA quality
                 aaPoints[i] = new PointF((float)x, (float)y);
             }
 
@@ -118,11 +133,13 @@ namespace DistortionEffects
                             a += sample.A;
                         }
 
-                        *(dstPtr++) = ColorBgra.FromBgra(
+                        *dstPtr = ColorBgra.FromBgra(
                             (byte)(b / aaSamples),
                             (byte)(g / aaSamples),
                             (byte)(r / aaSamples),
                             (byte)(a / aaSamples));
+
+                        ++dstPtr;
                     }
                 }
             }
