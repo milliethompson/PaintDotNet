@@ -60,6 +60,45 @@ namespace PaintDotNet
 
         public static void LoadProperties(Image dstImage, Document srcDoc)
         {
+            Bitmap asBitmap = dstImage as Bitmap;
+
+            if (asBitmap != null)
+            {
+                // Sometimes GDI+ does not honor the resolution tags that we
+                // put in manually via the EXIF properties.
+                float dpiX;
+                float dpiY;
+
+                switch (srcDoc.DpuUnit)
+                {
+                    case MeasurementUnit.Centimeter:
+                        dpiX = (float)Document.CentimetersToInches(srcDoc.DpuX);
+                        dpiY = (float)Document.CentimetersToInches(srcDoc.DpuY);
+                        break;
+
+                    case MeasurementUnit.Inch:
+                        dpiX = (float)srcDoc.DpuX;
+                        dpiY = (float)srcDoc.DpuY;
+                        break;
+
+                    default:
+                    case MeasurementUnit.Pixel:
+                        dpiX = 1.0f;
+                        dpiY = 1.0f;
+                        break;
+                }
+
+                try
+                {
+                    asBitmap.SetResolution(dpiX, dpiY);
+                }
+
+                catch (Exception)
+                {
+                    // Ignore error
+                }
+            } 
+            
             Metadata metaData = srcDoc.Metadata;
 
             foreach (string key in metaData.GetKeys(Metadata.ExifSectionName))
@@ -84,15 +123,6 @@ namespace PaintDotNet
             using (Image image = PdnResources.LoadImage(input))
             {
                 Document document = Document.FromImage(image);
-                Metadata metaData = document.Metadata;
-
-                PropertyItem[] pis = image.PropertyItems;
-
-                for (int i = 0; i < pis.Length; ++i)
-                {
-                    metaData.AddExifValues(new PropertyItem[] { pis[i] });
-                }
-
                 return document;
             }
         }

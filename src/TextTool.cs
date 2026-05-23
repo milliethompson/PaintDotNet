@@ -1124,11 +1124,15 @@ namespace PaintDotNet
             {
                 keyHandled = false;
             }
+            else if (modifier == Keys.Alt)
+            {
+                // ignore so they can use Alt+#### to type special characters
+            }
             else if (mode != EditingMode.NotEditing)
             {
                 switch (key)
                 {
-                    case Keys.Back: 
+                    case Keys.Back:
                         if (modifier == Keys.Control)
                         {
                             PerformControlBackspace();
@@ -1149,14 +1153,14 @@ namespace PaintDotNet
                         {
                             PerformDelete();
                         }
-                        
+
                         break;
 
-                    case Keys.Enter:  
-                        PerformEnter();     
+                    case Keys.Enter:
+                        PerformEnter();
                         break;
 
-                    case Keys.Left: 
+                    case Keys.Left:
                         if (modifier == Keys.Control)
                         {
                             PerformControlLeft();
@@ -1168,7 +1172,7 @@ namespace PaintDotNet
 
                         break;
 
-                    case Keys.Right: 
+                    case Keys.Right:
                         if (modifier == Keys.Control)
                         {
                             PerformControlRight();
@@ -1180,12 +1184,12 @@ namespace PaintDotNet
 
                         break;
 
-                    case Keys.Up: 
-                        PerformUp();                    
+                    case Keys.Up:
+                        PerformUp();
                         break;
 
-                    case Keys.Down: 
-                        PerformDown();              
+                    case Keys.Down:
+                        PerformDown();
                         break;
 
                     case Keys.Home:

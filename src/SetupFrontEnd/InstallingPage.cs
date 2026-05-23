@@ -45,7 +45,24 @@ namespace PaintDotNet.Setup
         private Label adLabel;
         private PictureBox adBox;
         private const string adClickUrl = "http://www.getpaint.net/redirect/donate_setup.html";
+        private const string adImageNameFormat = "PaintDotNet.Setup.DonateAd_{0}.png";
         private readonly DateTime adExpireDate = DateTime.MaxValue;
+
+        private string AdImageName
+        {
+            get
+            {
+                string twoCode = "en";
+
+                if (CultureInfo.CurrentUICulture.Name.IndexOf("de") == 0)
+                {
+                    twoCode = "de";
+                }
+
+                string adImageName = string.Format(adImageNameFormat, twoCode);
+                return adImageName;
+            }
+        }
 
         /// <summary> 
         /// Required designer variable.
@@ -61,7 +78,7 @@ namespace PaintDotNet.Setup
                 this.adLabel.Text = "";
                 this.adLabel.Font = new Font(this.adLabel.Font.FontFamily, this.adLabel.Font.Size - 1);
                 Assembly ourAssembly = Assembly.GetExecutingAssembly();
-                Stream adStream = ourAssembly.GetManifestResourceStream("PaintDotNet.Setup.DonateAd_en.png");
+                Stream adStream = ourAssembly.GetManifestResourceStream(AdImageName);
                 Image adImage = Image.FromStream(adStream);
                 this.adBox.SizeMode = PictureBoxSizeMode.StretchImage;
                 this.adBox.Image = adImage;
@@ -69,57 +86,16 @@ namespace PaintDotNet.Setup
             }
         }
 
-        private bool ShouldShowAd
-        {
-            get
-            {
-                return true;
-
-                /*
-                if (DateTime.Now < adExpireDate &&
-                    string.Compare(CultureInfo.CurrentUICulture.Name, "en-US", StringComparison.InvariantCultureIgnoreCase) == 0 && 
-                    string.Compare(RegionInfo.CurrentRegion.Name, "US", StringComparison.InvariantCultureIgnoreCase) == 0)
-                {
-#if DEBUG
-                    return true;
-#else
-                    string fileName = Assembly.GetExecutingAssembly().Location;
-                    bool validSig;
-
-                    try
-                    {
-                        validSig = SystemLayer.Security.VerifySignedFile(this, fileName, false, false);
-                    }
-
-                    catch
-                    {
-                        validSig = false;
-                    }
-
-                    return validSig;
-#endif
-                }
-                else
-                {
-                    return false;
-                }
-                 * */
-            }
-        }
-
         private void ShowAd()
         {
-            if (ShouldShowAd)
-            {
-                this.adBox.Size = new Size(WizardHost.ScaleX(this.adBox.Image.Width), WizardHost.ScaleY(this.adBox.Image.Height));
-                this.adBox.Location = new Point((this.ClientSize.Width - this.adBox.Width) / 2, this.ClientSize.Height - this.adBox.Height - WizardHost.ScaleY(5));
+            this.adBox.Size = new Size(WizardHost.ScaleX(this.adBox.Image.Width), WizardHost.ScaleY(this.adBox.Image.Height));
+            this.adBox.Location = new Point((this.ClientSize.Width - this.adBox.Width) / 2, this.ClientSize.Height - this.adBox.Height - WizardHost.ScaleY(5));
 
-                this.adLabel.Location = new Point((this.ClientSize.Width - this.adLabel.Width) / 2, this.adBox.Top - this.adLabel.Height - WizardHost.ScaleY(2));
-                this.adLabel.Visible = true;
+            this.adLabel.Location = new Point((this.ClientSize.Width - this.adLabel.Width) / 2, this.adBox.Top - this.adLabel.Height - WizardHost.ScaleY(2));
+            this.adLabel.Visible = true;
 
-                this.adBox.Enabled = true;
-                this.adBox.Visible = true;
-            }
+            this.adBox.Enabled = true;
+            this.adBox.Visible = true;
         }
 
         private void HideAd()

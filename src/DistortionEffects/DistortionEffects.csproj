@@ -42,6 +42,10 @@
     <Compile Include="TwistEffect.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Data\Data.csproj">
+      <Project>{66681BB0-955D-451D-A466-94C045B1CF4A}</Project>
+      <Name>Data</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Effects\Effects.csproj">
       <Project>{2E4E8805-00F7-4B18-A967-C23994BBCE75}</Project>
       <Name>Effects</Name>
@@ -53,6 +57,10 @@
     <ProjectReference Include="..\Resources\Resources.csproj">
       <Project>{0B173113-1F9B-4939-A62F-A176336F13AC}</Project>
       <Name>Resources</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SystemLayer\SystemLayer.csproj">
+      <Project>{80572820-93A5-4278-A513-D902BEA2639C}</Project>
+      <Name>SystemLayer</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

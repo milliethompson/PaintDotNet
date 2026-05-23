@@ -16,10 +16,10 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-[assembly: AssemblyTitle("Paint.NET v2.70 Glow Effect Plugin")]
+[assembly: AssemblyTitle("Paint.NET v2.72 Glow Effect Plugin")]
 [assembly: AssemblyDescription("Image and photo editing software written in C#.")]
 [assembly: AssemblyCompany("Paint.NET Team")]
-[assembly: AssemblyProduct("Paint.NET v2.70")]
+[assembly: AssemblyProduct("Paint.NET v2.72")]
 [assembly: AssemblyCopyright("Copyright © 2006 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2006 Microsoft Corporation. All Rights Reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -35,7 +35,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("2.70.*")]
+[assembly: AssemblyVersion("2.72.*")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 

@@ -281,6 +281,7 @@
     <Compile Include="TwoAmountsConfigToken.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ZoomBlurEffect.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

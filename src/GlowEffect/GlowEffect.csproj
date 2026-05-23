@@ -56,6 +56,10 @@
       <Project>{0B173113-1F9B-4939-A62F-A176336F13AC}</Project>
       <Name>Resources</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SystemLayer\SystemLayer.csproj">
+      <Project>{80572820-93A5-4278-A513-D902BEA2639C}</Project>
+      <Name>SystemLayer</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

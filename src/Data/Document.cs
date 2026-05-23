@@ -1136,13 +1136,94 @@ namespace PaintDotNet
         {
             Document document = new Document(image.Width, image.Height);
             BitmapLayer layer = Layer.CreateBackgroundLayer(image.Width, image.Height);
-            layer.Surface.Clear(ColorBgra.FromBgra(255, 255, 255, 0));
+            layer.Surface.Clear(ColorBgra.FromBgra(0, 0, 0, 0));
 
-            using (RenderArgs args = new RenderArgs(layer.Surface))
+            Bitmap asBitmap = image as Bitmap;
+
+            // Copy pixels
+            if (asBitmap != null && asBitmap.PixelFormat == PixelFormat.Format32bppArgb)
             {
-                args.Graphics.DrawImage(image, 0, 0, image.Width, image.Height);
+                unsafe
+                {
+                    BitmapData bData = asBitmap.LockBits(new Rectangle(0, 0, asBitmap.Width, asBitmap.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+
+                    try
+                    {
+                        for (int y = 0; y < bData.Height; ++y)
+                        {
+                            uint* srcPtr = (uint*)((byte*)bData.Scan0.ToPointer() + (y * bData.Stride));
+
+                            for (int x = 0; x < bData.Width; ++x)
+                            {
+                                layer.Surface[x, y] = ColorBgra.FromUInt32(*srcPtr);
+                                ++srcPtr;
+                            }
+                        }
+                    }
+
+                    finally
+                    {
+                        asBitmap.UnlockBits(bData);
+                        bData = null;
+                    }
+                }
+            }
+            else if (asBitmap != null && asBitmap.PixelFormat == PixelFormat.Format24bppRgb)
+            {
+                unsafe
+                {
+                    BitmapData bData = asBitmap.LockBits(new Rectangle(0, 0, asBitmap.Width, asBitmap.Height), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+
+                    try
+                    {
+                        for (int y = 0; y < bData.Height; ++y)
+                        {
+                            byte* srcPtr = (byte*)bData.Scan0.ToPointer() + (y * bData.Stride);
+
+                            for (int x = 0; x < bData.Width; ++x)
+                            {
+                                byte b = *srcPtr;
+                                byte g = *(srcPtr + 1);
+                                byte r = *(srcPtr + 2);
+                                byte a = 255;
+
+                                layer.Surface[x, y] = ColorBgra.FromBgra(b, g, r, a);
+
+                                srcPtr += 3;
+                            }
+                        }
+                    }
+
+                    finally
+                    {
+                        asBitmap.UnlockBits(bData);
+                        bData = null;
+                    }
+                }
+            }
+            else
+            {
+                using (RenderArgs args = new RenderArgs(layer.Surface))
+                {
+                    args.Graphics.CompositingMode = CompositingMode.SourceCopy;
+                    args.Graphics.SmoothingMode = SmoothingMode.None;
+                    args.Graphics.DrawImage(image, args.Bounds, args.Bounds, GraphicsUnit.Pixel);
+                }
             }
 
+            // Transfer metadata
+            document.DpuUnit = MeasurementUnit.Inch;
+            document.DpuX = image.HorizontalResolution;
+            document.DpuY = image.VerticalResolution;
+
+            PropertyItem[] pis = image.PropertyItems;
+
+            for (int i = 0; i < pis.Length; ++i)
+            {
+                document.Metadata.AddExifValues(new PropertyItem[] { pis[i] });
+            }
+
+            // Finish up
             document.Layers.Add(layer);
             document.Invalidate();
             return document;

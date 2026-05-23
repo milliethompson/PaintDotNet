@@ -258,6 +258,7 @@
     <Content Include="images\SanDiego_small_Sharpen.jpg" />
     <Content Include="images\SanDiego_small_TileReflection.jpg" />
     <Content Include="images\SanDiego_small_Twist.jpg" />
+    <Content Include="images\SanDiego_small_ZoomBlur.jpg" />
     <Content Include="images\Shapes_Interior.png" />
     <Content Include="images\Shapes_Outline.png" />
     <Content Include="images\Shapes_OutlineAndInterior.png" />

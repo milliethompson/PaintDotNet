@@ -601,6 +601,12 @@
   <data name="BlurEffect.ConfigDialog.SliderUnitsName" xml:space="preserve">
     <value>Pixel</value>
   </data>
+  <data name="ZoomBlurEffect.Name">
+    <value>Unschärfe Vergrößern</value>
+  </data>
+  <data name="ZoomBlurEffect.ConfigDialog.AmountLabel">
+    <value>Vergrößern um</value>
+  </data>
   <data name="BlurEffect.Name" xml:space="preserve">
     <value>Gaußsche Unschärfe</value>
   </data>

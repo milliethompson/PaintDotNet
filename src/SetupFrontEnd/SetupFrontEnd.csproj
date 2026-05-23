@@ -145,6 +145,9 @@
   <ItemGroup>
     <EmbeddedResource Include="DonateAd_en.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="DonateAd_de.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>

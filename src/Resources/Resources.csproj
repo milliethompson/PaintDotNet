@@ -278,6 +278,9 @@
     <EmbeddedResource Include="Icons\TileEffect.png" />
     <EmbeddedResource Include="Icons\TwistEffect.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\ZoomBlurEffect.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>

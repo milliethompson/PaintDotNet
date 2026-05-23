@@ -1553,6 +1553,12 @@ Expand canvas to fit pasted image?</value>
     <data name="Effects.Blurring.Submenu.Name">
         <value>Blurs</value>
     </data>
+    <data name="ZoomBlurEffect.Name">
+        <value>Zoom Blur</value>
+    </data>
+    <data name="ZoomBlurEffect.ConfigDialog.AmountLabel">
+        <value>Zoom Amount</value>
+    </data>
     <data name="BlurEffect.Name">
         <value>Gaussian Blur</value>
     </data>
