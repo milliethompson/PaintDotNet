@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
@@ -32,7 +31,6 @@ namespace PaintDotNet
             public const string Width = "SaveConfigDialog.Width";
             public const string Height = "SaveConfigDialog.Height";
             public const string WindowState = "SaveConfigDialog.WindowState";
-            public const string ShowDonate = "SaveConfigDialog.ShowDonate";
         }
 
         private void LoadPositions()
@@ -245,8 +243,6 @@ namespace PaintDotNet
         private PaintDotNet.SaveConfigWidget saveConfigWidget;
         private System.Windows.Forms.Panel saveConfigPanel;
 
-        private PictureBox donateImage;
-
         private PaintDotNet.HeaderLabel settingsHeader;
 
         private Surface scratchSurface;
@@ -384,62 +380,15 @@ namespace PaintDotNet
             this.defaultsButton.Text = PdnResources.GetString("SaveConfigDialog.DefaultsButton.Text");
             this.previewHeader.Text = PdnResources.GetString("SaveConfigDialog.PreviewHeader.Text");
 
-            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileSaveIcon.png"));
-
-            this.donateImage.Image = ImageResource.Get("Images.PayPalDonate.gif").Reference;
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.MenuFileSaveIcon.png").Reference);
 
             this.documentView.Cursor = handIcon;
 
             //this.MinimumSize = this.Size;
         }
 
-        private bool ShouldShowDonate()
-        {
-            bool shouldShow = true;
-
-            try
-            {
-                shouldShow = Settings.SystemWide.GetBoolean(SettingNames.ShowDonate, shouldShow);
-            }
-
-            catch (Exception)
-            {
-            }
-
-            try
-            {
-                shouldShow = Settings.CurrentUser.GetBoolean(SettingNames.ShowDonate, shouldShow);
-            }
-
-            catch (Exception)
-            {
-            }
-
-            return shouldShow;
-        }
-
         protected override void OnLayout(LayoutEventArgs levent)
         {
-            // Donate button
-            if (this.donateImage.Image != null)
-            {
-                this.donateImage.Size = UI.ScaleSize(this.donateImage.Image.Size);
-                this.donateImage.Visible = true & ShouldShowDonate();
-            }
-            else
-            {
-                this.donateImage.Size = new Size(1, 1);
-                this.donateImage.Visible = false;
-            }
-
-            int donateBottomMargin = UI.ScaleHeight(8);
-            int donateLeftMargin = UI.ScaleWidth(8);
-            int donateHorizSpacing = UI.ScaleWidth(8);
-
-            this.donateImage.Location = new Point(
-                donateLeftMargin, 
-                ClientSize.Height - this.donateImage.Height - donateBottomMargin);
-
             // Bottom-right Buttons
             int buttonsBottomMargin = UI.ScaleHeight(8);
             int buttonsRightMargin = UI.ScaleWidth(8);
@@ -559,7 +508,6 @@ namespace PaintDotNet
             this.previewHeader = new PaintDotNet.HeaderLabel();
             this.documentView = new PaintDotNet.DocumentView();
             this.settingsHeader = new PaintDotNet.HeaderLabel();
-            this.donateImage = new PictureBox();
             this.SuspendLayout();
             // 
             // baseOkButton
@@ -589,6 +537,7 @@ namespace PaintDotNet
             // 
             this.defaultsButton.Name = "defaultsButton";
             this.defaultsButton.AutoSize = true;
+            this.defaultsButton.FlatStyle = FlatStyle.System;
             this.defaultsButton.TabIndex = 1;
             this.defaultsButton.Click += new System.EventHandler(this.DefaultsButton_Click);
             // 
@@ -626,13 +575,6 @@ namespace PaintDotNet
             this.settingsHeader.TabIndex = 13;
             this.settingsHeader.TabStop = false;
             this.settingsHeader.Text = "Header";
-            //
-            // donateImage
-            //
-            this.donateImage.Name = "donateImage";
-            this.donateImage.SizeMode = PictureBoxSizeMode.StretchImage;
-            this.donateImage.Cursor = Cursors.Hand;
-            this.donateImage.Click += new EventHandler(DonateImage_Click);
             // 
             // SaveConfigDialog
             // 
@@ -643,7 +585,6 @@ namespace PaintDotNet
             this.Controls.Add(this.previewHeader);
             this.Controls.Add(this.documentView);
             this.Controls.Add(this.saveConfigPanel);
-            this.Controls.Add(this.donateImage);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
             this.MinimizeBox = false;
             this.MaximizeBox = true;
@@ -657,20 +598,9 @@ namespace PaintDotNet
             this.Controls.SetChildIndex(this.previewHeader, 0);
             this.Controls.SetChildIndex(this.settingsHeader, 0);
             this.Controls.SetChildIndex(this.defaultsButton, 0);
-            this.Controls.SetChildIndex(this.donateImage, 0);
             this.ResumeLayout(false);
         }
         #endregion
-
-        private void DonateImage_Click(object sender, EventArgs e)
-        {
-            DonateClicked();
-        }
-
-        private void DonateClicked()
-        {
-            PdnInfo.LaunchWebSite(this, InvariantStrings.DonateSaveConfigDialogPage);
-        }
 
         private void DefaultsButton_Click(object sender, System.EventArgs e)
         {
@@ -882,7 +812,6 @@ namespace PaintDotNet
         {
             if (this.fileSizeTimer != null)
             {
-                this.fileSizeTimer.Change(Timeout.Infinite, Timeout.Infinite);
                 this.fileSizeTimer.Dispose();
                 this.fileSizeTimer = null;
             }
@@ -890,8 +819,6 @@ namespace PaintDotNet
 
         private void BaseOkButton_Click(object sender, System.EventArgs e)
         {
-            // TODO: if this takes too long, put up a dialog box saying "waiting for background task to finish ..."
-            //       and with progress if ISaveWithProgress!
             using (new WaitCursorChanger(this))
             {
                 this.callbackDoneEvent.WaitOne();

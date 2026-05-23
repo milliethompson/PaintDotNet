@@ -244,7 +244,6 @@ namespace PaintDotNet
             // Initialize some misc. Windows Forms settings
             Application.SetCompatibleTextRenderingDefault(false);
             Application.EnableVisualStyles();
-            UI.EnableDpiAware();
 
             // If any files are missing, try to repair.
             // However, support /skipRepairAttempt for when developing in the IDE 

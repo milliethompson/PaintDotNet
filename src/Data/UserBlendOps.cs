@@ -51,6 +51,11 @@ namespace PaintDotNet
             return types.ToArray();
         }
 
+        public static string GetBlendOpFriendlyName(Type opType)
+        {
+            return Utility.GetStaticName(opType);
+        }
+
         public static UserBlendOp CreateBlendOp(Type opType)
         {
             ConstructorInfo ci = opType.GetConstructor(System.Type.EmptyTypes);

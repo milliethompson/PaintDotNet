@@ -84,6 +84,33 @@ namespace PaintDotNet
             // Required for Windows Form Designer support
             //
             InitializeComponent();
+
+            try
+            {
+                SystemLayer.UserSessions.SessionChanged += new EventHandler(UserSessions_SessionChanged);
+                Microsoft.Win32.SystemEvents.DisplaySettingsChanged += new EventHandler(SystemEvents_DisplaySettingsChanged);
+            }
+
+            catch (Exception ex)
+            {
+                Tracing.Ping("Exception while signing up for some system events: " + ex.ToString());
+            }
+        }
+
+        private void SystemEvents_DisplaySettingsChanged(object sender, EventArgs e)
+        {
+            if (Visible && IsShown)
+            {
+                EnsureFormIsOnScreen();
+            }
+        }
+
+        private void UserSessions_SessionChanged(object sender, EventArgs e)
+        {
+            if (Visible && IsShown)
+            {
+                EnsureFormIsOnScreen();
+            }
         }
 
         protected override void OnClick(EventArgs e)
@@ -142,6 +169,17 @@ namespace PaintDotNet
                 {
                     components.Dispose();
                     components = null;
+                }
+
+                try
+                {
+                    SystemLayer.UserSessions.SessionChanged -= new EventHandler(UserSessions_SessionChanged);
+                    Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= new EventHandler(SystemEvents_DisplaySettingsChanged);
+                }
+
+                catch (Exception)
+                {
+                    // Ignore any errors
                 }
             }
             base.Dispose(disposing);
@@ -215,6 +253,16 @@ namespace PaintDotNet
                     mySM.ReparkObstacle(this);
                 }
             }
+        }
+
+        protected override void OnVisibleChanged(EventArgs e)
+        {
+            if (Visible)
+            {
+                EnsureFormIsOnScreen();
+            }
+
+            base.OnVisibleChanged(e);
         }
 
         protected override void OnResizeBegin(EventArgs e)

@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Drawing;

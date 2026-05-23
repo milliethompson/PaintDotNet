@@ -13,11 +13,6 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Describes an interface for some sort of source->destination rendering effect.
-    /// The pixels of the destination are the result of apply some function to the
-    /// pixel values of the source that may be affect by some other state.
-    /// </summary>
     public abstract class Effect
     {
         private const string shortcutKeysObsoleteString = 
@@ -25,10 +20,19 @@ namespace PaintDotNet.Effects
 
         private string name;
         private Image image;
-        private EffectDirectives effectDirectives;
         private string subMenuName;
         private EffectEnvironmentParameters envParams;
-        private bool isConfigurable;
+        private EffectFlags effectFlags;
+
+        private bool setRenderInfoCalled = false;
+
+        internal protected bool SetRenderInfoCalled
+        {
+            get
+            {
+                return this.setRenderInfoCalled;
+            }
+        }
 
         /// <summary>
         /// Returns the category of the effect. If there is no EffectCategoryAttribute
@@ -69,12 +73,33 @@ namespace PaintDotNet.Effects
             }
         }
 
+        [Obsolete]
         public EffectDirectives EffectDirectives
         {
             get
             {
-                return this.effectDirectives;
+                if ((this.effectFlags & EffectFlags.SingleThreaded) == EffectFlags.SingleThreaded)
+                {
+                    return EffectDirectives.SingleThreaded;
+                }
+                else
+                {
+                    return EffectDirectives.None;
+                }
             }
+        }
+
+        public EffectFlags EffectFlags
+        {
+            get
+            {
+                return this.effectFlags;
+            }
+        }
+
+        public bool CheckForEffectFlags(EffectFlags flags)
+        {
+            return (EffectFlags & flags) == flags;
         }
 
         public string SubMenuName
@@ -110,12 +135,23 @@ namespace PaintDotNet.Effects
             }
         }
 
+        [Obsolete("Use CheckForEffectFlags() instead")]
         public bool IsConfigurable
         {
             get
             {
-                return this.isConfigurable;
+                return (EffectFlags & EffectFlags.Configurable) == EffectFlags.Configurable;
             }
+        }
+
+        public void SetRenderInfo(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.setRenderInfoCalled = true;
+            OnSetRenderInfo(parameters, dstArgs, srcArgs);
+        }
+
+        protected virtual void OnSetRenderInfo(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
         }
 
         /// <summary>
@@ -145,7 +181,7 @@ namespace PaintDotNet.Effects
 
         public virtual EffectConfigDialog CreateConfigDialog()
         {
-            if (this.IsConfigurable)
+            if (CheckForEffectFlags(EffectFlags.Configurable))
             {
                 throw new NotImplementedException("If IsConfigurable is true, then CreateConfigDialog() must be implemented");
             }
@@ -181,12 +217,18 @@ namespace PaintDotNet.Effects
         }
 
         public Effect(string name, Image image)
-            : this(name, image, false)
+            : this(name, image, EffectFlags.None)
         {
         }
 
+        public Effect(string name, Image image, EffectFlags flags)
+            : this(name, image, null, flags)
+        {
+        }
+
+        [Obsolete]
         public Effect(string name, Image image, bool isConfigurable)
-            : this(name, image, null, isConfigurable)
+            : this(name, image, null, isConfigurable ? EffectFlags.Configurable : EffectFlags.None)
         {
         }
 
@@ -209,7 +251,7 @@ namespace PaintDotNet.Effects
         }
 
         public Effect(string name, Image image, string subMenuName)
-            : this(name, image, subMenuName, EffectDirectives.None)
+            : this(name, image, subMenuName, EffectFlags.None)
         {
         }
 
@@ -219,13 +261,15 @@ namespace PaintDotNet.Effects
         {
         }
 
+        [Obsolete]
         public Effect(string name, Image image, string subMenuName, EffectDirectives effectDirectives)
-            : this(name, image, subMenuName, effectDirectives, false)
+            : this(name, image, subMenuName, effectDirectives == EffectDirectives.SingleThreaded ? EffectFlags.SingleThreaded : EffectFlags.None)
         {
         }
 
+        [Obsolete]
         public Effect(string name, Image image, string subMenuName, bool isConfigurable)
-            : this(name, image, subMenuName, EffectDirectives.None, isConfigurable)
+            : this(name, image, subMenuName, isConfigurable ? EffectFlags.Configurable : EffectFlags.None)
         {
         }
 
@@ -254,14 +298,21 @@ namespace PaintDotNet.Effects
         /// The shortcut key is only honored for effects with the [EffectCategory(EffectCategory.Adjustment)] attribute.
         /// The sub-menu parameter can be used to group effects. The name parameter must still be unique.
         /// </remarks>
+        [Obsolete]
         public Effect(string name, Image image, string subMenuName, EffectDirectives effectDirectives, bool isConfigurable)
+            : this(name, image, subMenuName, 
+                (effectDirectives == EffectDirectives.SingleThreaded ? EffectFlags.SingleThreaded : EffectFlags.None) |
+                (isConfigurable ? EffectFlags.Configurable : EffectFlags.None))
+        {
+        }
+
+        public Effect(string name, Image image, string subMenuName, EffectFlags effectFlags)
         {
             this.name = name;
             this.image = image;
             this.subMenuName = subMenuName;
-            this.effectDirectives = effectDirectives;
+            this.effectFlags = effectFlags;
             this.envParams = EffectEnvironmentParameters.DefaultParameters;
-            this.isConfigurable = isConfigurable;
         }
     }
 }

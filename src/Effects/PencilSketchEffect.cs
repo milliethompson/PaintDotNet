@@ -7,14 +7,23 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace PaintDotNet.Effects
 {
     public sealed class PencilSketchEffect
-        : Effect
+        : PropertyBasedEffect
     {
+        public enum PropertyNames
+        {
+            PencilTipSize,
+            ColorRange
+        }
+
         private static string StaticName
         {
             get
@@ -27,28 +36,73 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return ImageResource.Get("Icons.PencilSketchEffectIcon.png");
+                return PdnResources.GetImageResource("Icons.PencilSketchEffectIcon.png");
             }
         }
 
-        private BlurEffect blurEffect = new BlurEffect();
+        private GaussianBlurEffect blurEffect;
+        private PropertyCollection blurProps;
+
         private UnaryPixelOps.Desaturate desaturateOp = new UnaryPixelOps.Desaturate();
+
         private DesaturateEffect desaturateEffect = new DesaturateEffect();
         private InvertColorsEffect invertEffect = new InvertColorsEffect();
+
         private BrightnessAndContrastAdjustment bacAdjustment = new BrightnessAndContrastAdjustment();
+        private PropertyCollection bacProps;
+
         private UserBlendOps.ColorDodgeBlendOp colorDodgeOp = new UserBlendOps.ColorDodgeBlendOp();
 
-        public override unsafe void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            TwoAmountsConfigToken tacd = (TwoAmountsConfigToken)parameters;
+            List<Property> props = new List<Property>();
 
-            AmountEffectConfigToken blurToken = new AmountEffectConfigToken(tacd.Amount1);
-            BrightnessAndContrastAdjustmentConfigToken bacToken = new BrightnessAndContrastAdjustmentConfigToken(tacd.Amount2, -tacd.Amount2);
+            props.Add(new Int32Property(PropertyNames.PencilTipSize, 2, 1, 20));
+            props.Add(new Int32Property(PropertyNames.ColorRange, 0, -20, +20));
 
-            this.blurEffect.Render(blurToken, dstArgs, srcArgs, rois, startIndex, length);
-            this.bacAdjustment.Render(bacToken, dstArgs, dstArgs, rois, startIndex, length);
-            this.invertEffect.Render(null, dstArgs, dstArgs, rois, startIndex, length);
-            this.desaturateEffect.Render(null, dstArgs, dstArgs, rois, startIndex, length);
+            return new PropertyCollection(props);
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.PencilTipSize, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("PencilSketchEffect.ConfigDialog.PencilTipSizeLabel"));
+            configUI.SetPropertyControlValue(PropertyNames.ColorRange, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("PencilSketchEffect.ConfigDialog.RangeLabel"));
+
+            return configUI;
+        }
+
+        private int pencilTipSize;
+        private int colorRange;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.pencilTipSize = newToken.GetProperty<Int32Property>(PropertyNames.PencilTipSize).Value;
+            this.colorRange = newToken.GetProperty<Int32Property>(PropertyNames.ColorRange).Value;
+
+            PropertyBasedEffectConfigToken blurToken = new PropertyBasedEffectConfigToken(this.blurProps);
+            blurToken.SetPropertyValue(GaussianBlurEffect.PropertyNames.Radius, this.pencilTipSize);
+            this.blurEffect.SetRenderInfo(blurToken, dstArgs, srcArgs);
+
+            PropertyBasedEffectConfigToken bacToken = new PropertyBasedEffectConfigToken(this.bacProps);
+            bacToken.SetPropertyValue(BrightnessAndContrastAdjustment.PropertyNames.Brightness, this.colorRange);
+            bacToken.SetPropertyValue(BrightnessAndContrastAdjustment.PropertyNames.Contrast, -this.colorRange);
+            this.bacAdjustment.SetRenderInfo(bacToken, dstArgs, dstArgs);
+
+            this.desaturateEffect.SetRenderInfo(null, dstArgs, dstArgs);
+
+            this.invertEffect.SetRenderInfo(null, dstArgs, dstArgs);
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected override unsafe void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            this.blurEffect.Render(rois, startIndex, length);
+            this.bacAdjustment.Render(rois, startIndex, length);
+            this.invertEffect.Render(rois, startIndex, length);
+            this.desaturateEffect.Render(rois, startIndex, length);
 
             for (int i = startIndex; i < startIndex + length; ++i)
             {
@@ -56,8 +110,8 @@ namespace PaintDotNet.Effects
 
                 for (int y = roi.Top; y < roi.Bottom; ++y)
                 {
-                    ColorBgra* srcPtr = srcArgs.Surface.GetPointAddressUnchecked(roi.X, roi.Y);
-                    ColorBgra* dstPtr = dstArgs.Surface.GetPointAddressUnchecked(roi.X, roi.Y);
+                    ColorBgra* srcPtr = SrcArgs.Surface.GetPointAddressUnchecked(roi.X, roi.Y);
+                    ColorBgra* dstPtr = DstArgs.Surface.GetPointAddressUnchecked(roi.X, roi.Y);
 
                     for (int x = roi.Left; x < roi.Right; ++x)
                     {
@@ -72,28 +126,14 @@ namespace PaintDotNet.Effects
             }
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
-        {
-            TwoAmountsConfigDialog tacd = new TwoAmountsConfigDialog();
-            tacd.Text = StaticName;
-
-            tacd.Amount1Label = PdnResources.GetString("PencilSketchEffect.ConfigDialog.PencilTipSizeLabel");
-            tacd.Amount1Minimum = 1;
-            tacd.Amount1Maximum = 20;
-            tacd.Amount1Default = 2;
-
-            tacd.Amount2Label = PdnResources.GetString("PencilSketchEffect.ConfigDialog.RangeLabel");
-            tacd.Amount2Minimum = -20;
-            tacd.Amount2Maximum = 20;
-            tacd.Amount2Default = 0;
-
-            return tacd;
-        }
-
         public PencilSketchEffect()
-            : base(StaticName, StaticIcon.Reference, null, EffectDirectives.None, true)
+            : base(StaticName, StaticIcon.Reference, SubmenuNames.Artistic, EffectFlags.Configurable)
         {
+            this.blurEffect = new GaussianBlurEffect();
+            this.blurProps = this.blurEffect.CreatePropertyCollection();
 
+            this.bacAdjustment = new BrightnessAndContrastAdjustment();
+            this.bacProps = this.bacAdjustment.CreatePropertyCollection();
         }
     }
 }

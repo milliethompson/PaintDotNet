@@ -94,8 +94,8 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            this.swapIconBox.Icon = new Bitmap(PdnResources.GetImage("Icons.SwapIcon.png"));
-            this.blackAndWhiteIconBox.Icon = new Bitmap(PdnResources.GetImage("Icons.BlackAndWhiteIcon.png"));
+            this.swapIconBox.Icon = new Bitmap(PdnResources.GetImageResource("Icons.SwapIcon.png").Reference);
+            this.blackAndWhiteIconBox.Icon = new Bitmap(PdnResources.GetImageResource("Icons.BlackAndWhiteIcon.png").Reference);
 
             if (!DesignMode)
             {

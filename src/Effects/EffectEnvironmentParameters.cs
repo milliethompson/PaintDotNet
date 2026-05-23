@@ -23,7 +23,8 @@ namespace PaintDotNet.Effects
                 return new EffectEnvironmentParameters(ColorBgra.FromBgra(255, 255, 255, 255),
                                                        ColorBgra.FromBgra(0, 0, 0, 255),
                                                        2.0f,
-                                                       new PdnRegion());
+                                                       new PdnRegion(),
+                                                       null);
             }
         }
 
@@ -32,6 +33,7 @@ namespace PaintDotNet.Effects
         private float brushWidth = 0.0f;
         private PdnRegion selection;
         private bool haveIntersectedSelection = false;
+        private Surface sourceSurface;
 
         [Obsolete("This property has been renamed. Use PrimaryColor instead.", true)]
         public ColorBgra ForeColor 
@@ -75,6 +77,14 @@ namespace PaintDotNet.Effects
             }
         }
 
+        public Surface SourceSurface
+        {
+            get
+            {
+                return this.sourceSurface;
+            }
+        }
+
         /// <summary>
         /// Gets the user's currently selected area.
         /// </summary>
@@ -99,12 +109,13 @@ namespace PaintDotNet.Effects
             return this.selection;
         }
 
-        public EffectEnvironmentParameters(ColorBgra primaryColor, ColorBgra secondaryColor, float brushWidth, PdnRegion selection)
+        public EffectEnvironmentParameters(ColorBgra primaryColor, ColorBgra secondaryColor, float brushWidth, PdnRegion selection, Surface sourceSurface)
         {
             this.primaryColor = primaryColor;
             this.secondaryColor = secondaryColor;
             this.brushWidth = brushWidth;
             this.selection = (PdnRegion)selection.Clone();
+            this.sourceSurface = sourceSurface;
         }
 
         ~EffectEnvironmentParameters()

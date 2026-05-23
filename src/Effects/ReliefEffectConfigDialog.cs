@@ -17,6 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
+    [Obsolete]  
     public sealed class ReliefEffectConfigDialog 
         : AngleChooserConfigDialogBase
     {

@@ -7,7 +7,10 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace PaintDotNet.Effects
@@ -27,28 +30,44 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return ImageResource.Get("Icons.SharpenEffect.png");
+                return PdnResources.GetImageResource("Icons.SharpenEffect.png");
             }
         }
 
+        public enum PropertyNames
+        {
+            Amount
+        }
+
         public SharpenEffect()
-            : base(StaticName, StaticImage.Reference, true)
+            : base(StaticName, StaticImage.Reference, SubmenuNames.Photo, EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            AmountEffectConfigDialog acd = new AmountEffectConfigDialog();
+            List<Property> props = new List<Property>();
 
-            acd.Text = this.Name;
+            props.Add(new Int32Property(PropertyNames.Amount, 2, 1, 20));
 
-            acd.SliderLabel = PdnResources.GetString("SharpenEffect.ConfigDialog.SliderLabel");
-            acd.SliderInitialValue = 2;
-            acd.SliderMinimum = 1;
-            acd.SliderMaximum = 20;
-            acd.SliderUnitsName = string.Empty;
+            return new PropertyCollection(props);
+        }
 
-            return acd;
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.Amount, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("SharpenEffect.ConfigDialog.SliderLabel"));
+
+            return configUI;
+        }
+
+        private int amount;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.amount = newToken.GetProperty<Int32Property>(PropertyNames.Amount).Value;
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
         }
 
         public unsafe override ColorBgra Apply(ColorBgra src, int area, int* hb, int* hg, int* hr, int* ha)
@@ -57,19 +76,11 @@ namespace PaintDotNet.Effects
             return ColorBgra.Lerp(src, median, -0.5f);
         }
 
-        public unsafe override void Render(
-            EffectConfigToken parameters,
-            RenderArgs dstArgs,
-            RenderArgs srcArgs,
-            Rectangle[] rois,
-            int startIndex,
-            int length)
+        protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
         {
-            AmountEffectConfigToken token = (AmountEffectConfigToken)parameters;
-
             foreach (Rectangle rect in rois)
             {
-                RenderRect(token.Amount, srcArgs.Surface, dstArgs.Surface, rect);
+                RenderRect(this.amount, SrcArgs.Surface, DstArgs.Surface, rect);
             }
         }
     }

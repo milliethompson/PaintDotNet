@@ -36,15 +36,24 @@ THE SOFTWARE.
 
 using PaintDotNet;
 using PaintDotNet.Effects;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace PaintDotNet.Effects
 {
     public sealed class SoftenPortraitEffect
-        : Effect
+        : PropertyBasedEffect
     {
+        public enum PropertyNames
+        {
+            Softness,
+            Lighting,
+            Warmth
+        }
+
         public static string StaticName
         {
             get
@@ -57,27 +66,68 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return PdnResources.GetImage("Icons.SoftenPortraitEffectIcon.png");
+                return PdnResources.GetImageResource("Icons.SoftenPortraitEffectIcon.png").Reference;
             }
         }
 
-        private BlurEffect blurEffect = new BlurEffect();
-        private UnaryPixelOps.Desaturate desaturateOp = new UnaryPixelOps.Desaturate();
-        private SepiaEffect sepiaEffect = new SepiaEffect();
-        private BrightnessAndContrastAdjustment bacAdjustment = new BrightnessAndContrastAdjustment();
-        private UserBlendOps.OverlayBlendOp overlayOp = new UserBlendOps.OverlayBlendOp();
-
-        public override unsafe void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            ThreeAmountsConfigToken tacd = (ThreeAmountsConfigToken)parameters;
-            float redAdjust = 1.0f + ((float)tacd.Amount3 / 100.0f);
-            float blueAdjust = 1.0f - ((float)tacd.Amount3 / 100.0f);
+ 	        List<Property> props = new List<Property>();
 
-            AmountEffectConfigToken blurToken = new AmountEffectConfigToken(tacd.Amount1 * 3);
-            BrightnessAndContrastAdjustmentConfigToken bacToken = new BrightnessAndContrastAdjustmentConfigToken(tacd.Amount2, -tacd.Amount2 / 2);
+            props.Add(new Int32Property(PropertyNames.Softness, 5, 0, 10));
+            props.Add(new Int32Property(PropertyNames.Lighting, 0, -20, +20));
+            props.Add(new Int32Property(PropertyNames.Warmth, 10, 0, 20));
 
-            this.blurEffect.Render(blurToken, dstArgs, srcArgs, rois, startIndex, length);
-            this.bacAdjustment.Render(bacToken, dstArgs, dstArgs, rois, startIndex, length);
+            return new PropertyCollection(props);
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.Softness, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("SoftenPortraitEffect.ConfigDialog.SoftnessLabel"));
+            configUI.SetPropertyControlValue(PropertyNames.Lighting, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("SoftenPortraitEffect.ConfigDialog.LightingLabel"));
+            configUI.SetPropertyControlValue(PropertyNames.Warmth, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("SoftenPortraitEffect.ConfigDialog.WarmthLabel"));
+
+ 	        return configUI;
+        }
+
+        private GaussianBlurEffect blurEffect;
+        private PropertyCollection blurProps;
+        private UnaryPixelOps.Desaturate desaturateOp;
+        private BrightnessAndContrastAdjustment bacAdjustment;
+        private PropertyCollection bacProps;
+        private UserBlendOps.OverlayBlendOp overlayOp;
+
+        private int softness;
+        private int lighting;
+        private int warmth;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.softness = newToken.GetProperty<Int32Property>(PropertyNames.Softness).Value;
+            this.lighting = newToken.GetProperty<Int32Property>(PropertyNames.Lighting).Value;
+            this.warmth = newToken.GetProperty<Int32Property>(PropertyNames.Warmth).Value;
+
+            PropertyBasedEffectConfigToken blurToken = new PropertyBasedEffectConfigToken(this.blurProps);
+            blurToken.SetPropertyValue(GaussianBlurEffect.PropertyNames.Radius, this.softness * 3);
+            this.blurEffect.SetRenderInfo(blurToken, dstArgs, srcArgs);
+
+            PropertyBasedEffectConfigToken bacToken = new PropertyBasedEffectConfigToken(this.bacProps);
+            bacToken.SetPropertyValue(BrightnessAndContrastAdjustment.PropertyNames.Brightness, this.lighting);
+            bacToken.SetPropertyValue(BrightnessAndContrastAdjustment.PropertyNames.Contrast, -this.lighting / 2);
+            this.bacAdjustment.SetRenderInfo(bacToken, dstArgs, dstArgs);
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected override unsafe void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            float redAdjust = 1.0f + (this.warmth / 100.0f);
+            float blueAdjust = 1.0f - (this.warmth / 100.0f);
+
+            this.blurEffect.Render(rois, startIndex, length);
+            this.bacAdjustment.Render(rois, startIndex, length);
 
             for (int i = startIndex; i < startIndex + length; ++i)
             {
@@ -85,8 +135,8 @@ namespace PaintDotNet.Effects
 
                 for (int y = roi.Top; y < roi.Bottom; ++y)
                 {
-                    ColorBgra* srcPtr = srcArgs.Surface.GetPointAddress(roi.X, roi.Y);
-                    ColorBgra* dstPtr = dstArgs.Surface.GetPointAddress(roi.X, roi.Y);
+                    ColorBgra* srcPtr = SrcArgs.Surface.GetPointAddress(roi.X, roi.Y);
+                    ColorBgra* dstPtr = DstArgs.Surface.GetPointAddress(roi.X, roi.Y);
 
                     for (int x = roi.Left; x < roi.Right; ++x)
                     {
@@ -105,32 +155,18 @@ namespace PaintDotNet.Effects
             }
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
-        {
-            ThreeAmountsConfigDialog tacd = new ThreeAmountsConfigDialog();
-            tacd.Text = StaticName;
-
-            tacd.Amount1Label = PdnResources.GetString("SoftenPortraitEffect.ConfigDialog.SoftnessLabel");
-            tacd.Amount1Minimum = 0;
-            tacd.Amount1Maximum = 10;
-            tacd.Amount1Default = 5;
-
-            tacd.Amount2Label = PdnResources.GetString("SoftenPortraitEffect.ConfigDialog.LightingLabel");
-            tacd.Amount2Minimum = -20;
-            tacd.Amount2Maximum = 20;
-            tacd.Amount2Default = 0;
-
-            tacd.Amount3Label = PdnResources.GetString("SoftenPortraitEffect.ConfigDialog.WarmthLabel"); 
-            tacd.Amount3Minimum = 0;
-            tacd.Amount3Maximum = 20;
-            tacd.Amount3Default = 10;
-
-            return tacd;
-        }
-
         public SoftenPortraitEffect()
-            : base(StaticName, StaticIcon, true)
+            : base(StaticName, StaticIcon, SubmenuNames.Photo, EffectFlags.Configurable)
         {
+            this.blurEffect = new GaussianBlurEffect();
+            this.blurProps = this.blurEffect.CreatePropertyCollection();
+
+            this.desaturateOp = new UnaryPixelOps.Desaturate();
+
+            this.bacAdjustment = new BrightnessAndContrastAdjustment();
+            this.bacProps = this.bacAdjustment.CreatePropertyCollection();
+
+            this.overlayOp = new UserBlendOps.OverlayBlendOp();
         }
     }
 }

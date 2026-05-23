@@ -215,6 +215,7 @@
     <Compile Include="VistaFileDialog.cs" />
     <Compile Include="VistaFileOpenDialog.cs" />
     <Compile Include="VistaFileSaveDialog.cs" />
+    <Compile Include="VisualStyleClass.cs" />
     <Compile Include="WaitHandleArray.cs">
       <SubType>Code</SubType>
     </Compile>

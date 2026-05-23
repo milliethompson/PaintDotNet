@@ -288,6 +288,7 @@ namespace PaintDotNet.Effects
             this.amount2Reset.Name = "amount2Reset";
             this.amount2Reset.Size = new System.Drawing.Size(81, 20);
             this.amount2Reset.TabIndex = 5;
+            this.amount2Reset.FlatStyle = FlatStyle.System;
             this.amount2Reset.Click += new System.EventHandler(this.amount2Reset_Click);
             // 
             // amount2UpDown

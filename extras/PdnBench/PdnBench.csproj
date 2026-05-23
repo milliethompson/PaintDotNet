@@ -124,26 +124,29 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="PaintDotNet.Core, Version=3.5.2624.38882, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="PaintDotNet.Base, Version=3.20.2902.32939, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Paint.NET\PaintDotNet.Core.dll</HintPath>
+      <HintPath>C:\Program Files\Paint.NET\PaintDotNet.Base.dll</HintPath>
     </Reference>
-    <Reference Include="PaintDotNet.Data">
-      <Name>PaintDotNet.Data</Name>
-      <HintPath>..\..\src\bin\Release\PaintDotNet.Data.dll</HintPath>
-    </Reference>
-    <Reference Include="PaintDotNet.Effects">
-      <Name>PaintDotNet.Effects</Name>
-      <HintPath>..\..\src\bin\Release\PaintDotNet.Effects.dll</HintPath>
-    </Reference>
-    <Reference Include="PaintDotNet.Resources, Version=2.6.2188.35031, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="PaintDotNet.Core, Version=3.20.2902.32941, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\src\bin\Release\PaintDotNet.Resources.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>C:\Program Files\Paint.NET\PaintDotNet.Core.dll</HintPath>
     </Reference>
-    <Reference Include="PaintDotNet.SystemLayer">
-      <Name>PaintDotNet.SystemLayer</Name>
-      <HintPath>..\..\src\bin\Release\PaintDotNet.SystemLayer.dll</HintPath>
+    <Reference Include="PaintDotNet.Data, Version=3.20.2902.32943, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\Paint.NET\PaintDotNet.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="PaintDotNet.Effects, Version=3.20.2902.32946, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\Paint.NET\PaintDotNet.Effects.dll</HintPath>
+    </Reference>
+    <Reference Include="PaintDotNet.Resources, Version=3.20.2902.32941, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\Paint.NET\PaintDotNet.Resources.dll</HintPath>
+    </Reference>
+    <Reference Include="PaintDotNet.SystemLayer, Version=3.20.2902.32940, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\Paint.NET\PaintDotNet.SystemLayer.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>

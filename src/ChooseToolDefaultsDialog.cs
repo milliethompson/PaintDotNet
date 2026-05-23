@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -138,6 +137,11 @@ namespace PaintDotNet
                     newAppEnvironment.ColorPickerClickBehavior = row.ToolConfigStrip.ColorPickerClickBehavior;
                 }
 
+                if ((row.ToolBarConfigItems & ToolBarConfigItems.FloodMode) != 0)
+                {
+                    newAppEnvironment.FloodMode = row.ToolConfigStrip.FloodMode;
+                }
+
                 if ((row.ToolBarConfigItems & ToolBarConfigItems.Gradient) != 0)
                 {
                     newAppEnvironment.GradientInfo = row.ToolConfigStrip.GradientInfo;
@@ -152,6 +156,16 @@ namespace PaintDotNet
                 if ((row.ToolBarConfigItems & ToolBarConfigItems.Resampling) != 0)
                 {
                     newAppEnvironment.ResamplingAlgorithm = row.ToolConfigStrip.ResamplingAlgorithm;
+                }
+
+                if ((row.ToolBarConfigItems & ToolBarConfigItems.SelectionCombineMode) != 0)
+                {
+                    newAppEnvironment.SelectionCombineMode = row.ToolConfigStrip.SelectionCombineMode;
+                }
+
+                if ((row.ToolBarConfigItems & ToolBarConfigItems.SelectionDrawMode) != 0)
+                {
+                    newAppEnvironment.SelectionDrawModeInfo = row.ToolConfigStrip.SelectionDrawModeInfo;
                 }
 
                 if ((row.ToolBarConfigItems & ToolBarConfigItems.ShapeType) != 0)
@@ -197,9 +211,10 @@ namespace PaintDotNet
             InitializeComponent();
 
             this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.ShapeType | ToolBarConfigItems.Brush | ToolBarConfigItems.Pen | ToolBarConfigItems.PenCaps));
+            this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.SelectionCombineMode | ToolBarConfigItems.SelectionDrawMode));
             this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.Text));
             this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.Gradient));
-            this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.Tolerance));
+            this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.Tolerance | ToolBarConfigItems.FloodMode));
             this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.ColorPickerBehavior));
             this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.Resampling));
             this.toolConfigRows.Add(new ToolConfigRow(ToolBarConfigItems.AlphaBlending | ToolBarConfigItems.Antialiasing));
@@ -233,7 +248,7 @@ namespace PaintDotNet
         public override void LoadResources()
         {
             this.Text = PdnResources.GetString("ChooseToolDefaultsDialog.Text");
-            this.Icon = Utility.ImageToIcon(ImageResource.Get("Icons.MenuLayersLayerPropertiesIcon.png").Reference);
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.MenuLayersLayerPropertiesIcon.png").Reference);
 
             this.introText.Text = PdnResources.GetString("ChooseToolDefaultsDialog.IntroText.Text");
             this.defaultToolText.Text = PdnResources.GetString("ChooseToolDefaultsDialog.DefaultToolText.Text");
@@ -339,6 +354,7 @@ namespace PaintDotNet
             this.cancelButton.AutoSize = true;
             this.cancelButton.Click += new EventHandler(CancelButton_Click);
             this.cancelButton.TabIndex = 3;
+            this.cancelButton.FlatStyle = FlatStyle.System;
             // 
             // saveButton
             // 
@@ -346,6 +362,7 @@ namespace PaintDotNet
             this.saveButton.AutoSize = true;
             this.saveButton.Click += new EventHandler(SaveButton_Click);
             this.saveButton.TabIndex = 2;
+            this.saveButton.FlatStyle = FlatStyle.System;
             // 
             // introText
             // 
@@ -364,12 +381,14 @@ namespace PaintDotNet
             this.resetButton.AutoSize = true;
             this.resetButton.Click += new EventHandler(ResetButton_Click);
             this.resetButton.TabIndex = 0;
+            this.resetButton.FlatStyle = FlatStyle.System;
             //
             // loadFromToolBarButton
             //
             this.loadFromToolBarButton.Name = "loadFromToolBarButton";
             this.loadFromToolBarButton.AutoSize = true;
             this.loadFromToolBarButton.Click += new EventHandler(LoadFromToolBarButton_Click);
+            this.loadFromToolBarButton.FlatStyle = FlatStyle.System;
             this.loadFromToolBarButton.TabIndex = 1;
             //
             // toolChooserStrip
@@ -392,7 +411,7 @@ namespace PaintDotNet
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = AutoScaleMode.Dpi;
             this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(448, 373);
+            this.ClientSize = new System.Drawing.Size(448, 173);
             this.Controls.Add(this.resetButton);
             this.Controls.Add(this.loadFromToolBarButton);
             this.Controls.Add(this.introText);

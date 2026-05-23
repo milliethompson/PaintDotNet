@@ -149,6 +149,8 @@ namespace PaintDotNet.Effects
 
             try
             {
+                this.effect.SetRenderInfo(this.effectTokenCopy, this.dstArgs, this.srcArgs);
+
                 if (tileCount > 0)
                 {
                     Rectangle[] subRegion = this.tileRegions[0];
@@ -228,10 +230,10 @@ namespace PaintDotNet.Effects
                 this.effectTokenCopy = (EffectConfigToken)this.effectToken.Clone();
             }
 
-            threadShouldStop = false;
+            this.threadShouldStop = false;
             OnStartingRendering();
-            thread = new Thread(new ThreadStart(ThreadFunction));
-            thread.Start();
+            this.thread = new Thread(new ThreadStart(ThreadFunction));
+            this.thread.Start();
         }
 
         public bool Aborted
@@ -244,11 +246,11 @@ namespace PaintDotNet.Effects
 
         public void Abort()
         {
-            if (thread != null)
+            if (this.thread != null)
             {
-                threadShouldStop = true;
+                this.threadShouldStop = true;
                 Join();
-                threadPool.Drain();
+                this.threadPool.Drain();
             }
         }
 
@@ -269,14 +271,14 @@ namespace PaintDotNet.Effects
         /// </summary>
         public void Join()
         {
-            thread.Join();
+            this.thread.Join();
 
-            if (exceptions.Count > 0)
+            if (this.exceptions.Count > 0)
             {
-                throw new WorkerThreadException("Worker thread threw an exception", (Exception)exceptions[0]);
+                Exception throwMe = (Exception)this.exceptions[0];
+                this.exceptions.Clear();
+                throw new WorkerThreadException("Worker thread threw an exception", throwMe);
             }
-
-            exceptions.Clear();
         }
 
         private Rectangle[][] SliceUpRegion(PdnRegion region, int sliceCount, Rectangle layerBounds)
@@ -340,7 +342,7 @@ namespace PaintDotNet.Effects
             this.tileCount = tileCount;
             this.workerThreads = workerThreads;
 
-            if ((effect.EffectDirectives & EffectDirectives.SingleThreaded) != 0)
+            if (effect.CheckForEffectFlags(EffectFlags.SingleThreaded))
             {
                 this.workerThreads = 1;
             }

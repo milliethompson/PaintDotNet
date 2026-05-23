@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -40,17 +39,17 @@ namespace PaintDotNet
         {
             InitializeComponent();
 
-            this.newButton.Image = PdnResources.GetImage("Icons.MenuFileNewIcon.png");
-            this.openButton.Image = PdnResources.GetImage("Icons.MenuFileOpenIcon.png");
-            this.saveButton.Image = PdnResources.GetImage("Icons.MenuFileSaveIcon.png");
-            this.printButton.Image = PdnResources.GetImage("Icons.MenuFilePrintIcon.png");
-            this.cutButton.Image = PdnResources.GetImage("Icons.MenuEditCutIcon.png");
-            this.copyButton.Image = PdnResources.GetImage("Icons.MenuEditCopyIcon.png");
-            this.pasteButton.Image = PdnResources.GetImage("Icons.MenuEditPasteIcon.png");
-            this.cropButton.Image = PdnResources.GetImage("Icons.MenuImageCropIcon.png");
-            this.deselectButton.Image = PdnResources.GetImage("Icons.MenuEditDeselectIcon.png");
-            this.undoButton.Image = PdnResources.GetImage("Icons.MenuEditUndoIcon.png");
-            this.redoButton.Image = PdnResources.GetImage("Icons.MenuEditRedoIcon.png");
+            this.newButton.Image = PdnResources.GetImageResource("Icons.MenuFileNewIcon.png").Reference;
+            this.openButton.Image = PdnResources.GetImageResource("Icons.MenuFileOpenIcon.png").Reference;
+            this.saveButton.Image = PdnResources.GetImageResource("Icons.MenuFileSaveIcon.png").Reference;
+            this.printButton.Image = PdnResources.GetImageResource("Icons.MenuFilePrintIcon.png").Reference;
+            this.cutButton.Image = PdnResources.GetImageResource("Icons.MenuEditCutIcon.png").Reference;
+            this.copyButton.Image = PdnResources.GetImageResource("Icons.MenuEditCopyIcon.png").Reference;
+            this.pasteButton.Image = PdnResources.GetImageResource("Icons.MenuEditPasteIcon.png").Reference;
+            this.cropButton.Image = PdnResources.GetImageResource("Icons.MenuImageCropIcon.png").Reference;
+            this.deselectButton.Image = PdnResources.GetImageResource("Icons.MenuEditDeselectIcon.png").Reference;
+            this.undoButton.Image = PdnResources.GetImageResource("Icons.MenuEditUndoIcon.png").Reference;
+            this.redoButton.Image = PdnResources.GetImageResource("Icons.MenuEditRedoIcon.png").Reference;
 
             this.newButton.ToolTipText = PdnResources.GetString("CommonAction.New");
             this.openButton.ToolTipText = PdnResources.GetString("CommonAction.Open");

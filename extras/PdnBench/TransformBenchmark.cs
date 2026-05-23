@@ -10,7 +10,7 @@ namespace PdnBench
     class TransformBenchmark
         : Benchmark
     {
-        public const int Iterations = 25;
+        public const int Iterations = 30;
         private Surface dst;
         private MaskedSurface src;
         private Matrix transform;

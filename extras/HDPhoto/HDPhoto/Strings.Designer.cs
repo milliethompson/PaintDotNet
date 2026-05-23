@@ -61,7 +61,7 @@ namespace PaintDotNet.Data {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to HD Photo BETA - Expires July 1st 2007.
+        ///   Looks up a localized string similar to HD Photo (BETA).
         /// </summary>
         internal static string HDPhotoFileType_Name {
             get {

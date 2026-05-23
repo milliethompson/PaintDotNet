@@ -194,7 +194,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="PngFileType.cs">
-      <SubType>Code</SubType>
     </Compile>
     <Compile Include="Quantize\OctreeQuantizer.cs">
       <SubType>Code</SubType>

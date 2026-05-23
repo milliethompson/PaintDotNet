@@ -164,7 +164,7 @@ namespace PaintDotNet.Tools
                     renderArgs.Graphics.SetClip(clipRegion.GetRegionReadOnly(), CombineMode.Replace);
                 }
 
-                this.OnStylusMove(new StylusEventArgs(e.Button, e.Clicks, e.Fx + 0.01f, e.Fy, e.Delta, e.Pressure));
+                this.OnStylusMove(new StylusEventArgs(e.Button, e.Clicks, unchecked(e.Fx + 0.01f), e.Fy, e.Delta, e.Pressure));
             }
         }
 
@@ -335,7 +335,7 @@ namespace PaintDotNet.Tools
 
         public PaintBrushTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.PaintBrushToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.PaintBrushToolIcon.png"),
                    PdnResources.GetString("PaintBrushTool.Name"),
                    PdnResources.GetString("PaintBrushTool.HelpText"),
                    'b',

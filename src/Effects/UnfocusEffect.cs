@@ -7,6 +7,8 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
 using System.Drawing;
 using System.Collections.Generic;
@@ -29,7 +31,7 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return ImageResource.Get("Icons.UnfocusEffectIcon.png");
+                return PdnResources.GetImageResource("Icons.UnfocusEffectIcon.png");
             }
         }
 
@@ -37,27 +39,48 @@ namespace PaintDotNet.Effects
             : base(StaticName, 
                    StaticImage.Reference,
                    SubmenuNames.Blurs,
-                   true)
+                   EffectFlags.Configurable)
         { 
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        public enum PropertyNames
         {
-            AmountEffectConfigDialog acd = new AmountEffectConfigDialog();
+            Radius
+        }
 
-            acd.Text = this.Name;
+        protected override PropertyCollection OnCreatePropertyCollection()
+        {
+            List<Property> props = new List<Property>();
 
-            acd.SliderLabel = PdnResources.GetString("UnfocusEffect.ConfigDialog.AmountLabel");
-            acd.SliderMinimum = 1;
-            acd.SliderMaximum = 200;
-            acd.SliderInitialValue = 4;
-            acd.SliderUnitsName = PdnResources.GetString("UnfocusEffect.ConfigDialog.UnitsLabel");
+            props.Add(new Int32Property(PropertyNames.Radius, 4, 1, 200));
 
-            return acd;
+            return new PropertyCollection(props);
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.Radius, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("UnfocusEffect.ConfigDialog.AmountLabel"));
+
+            // TODO: units label
+            //acd.SliderUnitsName = PdnResources.GetString("UnfocusEffect.ConfigDialog.UnitsLabel");
+
+            return configUI;
+        }
+
+        private int radius;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.radius = newToken.GetProperty<Int32Property>(PropertyNames.Radius).Value;
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
         }
 
         public unsafe override ColorBgra Apply(ColorBgra src, int area, int* hb, int* hg, int* hr, int* ha)
         {
+            // TODO: do this calculation proper based on alpha values
+
             int b = 0;
             int g = 0;
             int r = 0;
@@ -75,13 +98,11 @@ namespace PaintDotNet.Effects
             return c;
         }
 
-        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
+        protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
         {
-            AmountEffectConfigToken token = (AmountEffectConfigToken)parameters;
-
             foreach (Rectangle rect in rois)
             {
-                RenderRect(token.Amount, srcArgs.Surface, dstArgs.Surface, rect);
+                RenderRect(this.radius, SrcArgs.Surface, DstArgs.Surface, rect);
             }
         }
     }

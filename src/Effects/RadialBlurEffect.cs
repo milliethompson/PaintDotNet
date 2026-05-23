@@ -7,14 +7,17 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
     public sealed class RadialBlurEffect
-        : Effect
+        : PropertyBasedEffect
     {
         public static string StaticName
         {
@@ -26,24 +29,60 @@ namespace PaintDotNet.Effects
 
         public RadialBlurEffect()
             : base(StaticName,
-                   PdnResources.GetImage("Icons.RadialBlurEffect.png"),
+                   PdnResources.GetImageResource("Icons.RadialBlurEffect.png").Reference,
                    SubmenuNames.Blurs,
-                   EffectDirectives.None,
-                   true)
+                   EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        public enum PropertyNames
         {
-            AmountEffectConfigDialog oacd = new AmountEffectConfigDialog();
+            Angle,
+            Offset,
+            Quality
+        }
 
-            oacd.Text = StaticName;
-            oacd.SliderLabel = PdnResources.GetString("RadialBlurEffect.ConfigDialog.RadialLabel");
-            oacd.SliderMaximum = 360;
-            oacd.SliderMinimum = 0;
-            oacd.Icon = PdnResources.GetIconFromImage("Icons.RadialBlurEffect.png");
+        protected override PropertyCollection OnCreatePropertyCollection()
+        {
+            List<Property> props = new List<Property>();
 
-            return oacd;
+            props.Add(new DoubleProperty(PropertyNames.Angle, 2, 0, 360));
+
+            props.Add(new DoubleVectorProperty(
+                PropertyNames.Offset,
+                Pair.Create(0.0, 0.0),
+                Pair.Create(-2.0, -2.0),
+                Pair.Create(+2.0, +2.0)));
+
+            props.Add(new Int32Property(PropertyNames.Quality, 2, 1, 5));
+
+            return new PropertyCollection(props);
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.Angle, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("RadialBlurEffect.ConfigDialog.RadialLabel"));
+            configUI.FindControlForPropertyName(PropertyNames.Angle).ControlType.Value = PropertyControlType.AngleChooser;
+
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("RadialBlurEffect.ConfigDialog.OffsetLabel"));
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderSmallChangeX, 0.05);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderLargeChangeX, 0.25);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.UpDownIncrementX, 0.01);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderSmallChangeY, 0.05);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderLargeChangeY, 0.25);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.UpDownIncrementY, 0.01);
+
+            Surface sourceSurface = this.EnvironmentParameters.SourceSurface;
+            Bitmap bitmap = sourceSurface.CreateAliasedBitmap();
+            ImageResource imageResource = ImageResource.FromImage(bitmap);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.StaticImageUnderlay, imageResource);
+
+            configUI.SetPropertyControlValue(PropertyNames.Quality, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("RadialBlurEffect.ConfigDialog.QualityLabel"));
+            configUI.SetPropertyControlValue(PropertyNames.Quality, ControlInfoPropertyNames.Description, PdnResources.GetString("RadialBlurEffect.ConfigDialog.QualityDescription"));
+
+            return configUI;
         }
 
         private static void Rotate(ref int fx, ref int fy, int fr)
@@ -57,33 +96,48 @@ namespace PaintDotNet.Effects
             fy = cy + ((cx >> 8) * fr >> 8) - ((cy >> 14) * (fr * fr >> 11) >> 8);
         }
 
-        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
-            Rectangle[] rois, int startIndex, int length)
+        private double angle;
+        private double offsetX;
+        private double offsetY;
+        private int quality;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
         {
-            AmountEffectConfigToken token = (AmountEffectConfigToken)parameters;
-            int w = dstArgs.Bounds.Width;
-            int h = dstArgs.Bounds.Height;
-            int fcx = w << 15;
-            int fcy = h << 15;
-            int fr = (int)((double)token.Amount * Math.PI * 65536.0 / 181.0);
-            int strideSrc = srcArgs.Surface.Stride;
-            int strideDst = dstArgs.Surface.Stride;
-            ColorBgra* srcPtr = srcArgs.Surface.GetRowAddressUnchecked(0);
-            ColorBgra* dstPtr = dstArgs.Surface.GetRowAddressUnchecked(0);
-            
+            this.angle = newToken.GetProperty<DoubleProperty>(PropertyNames.Angle).Value;
+            this.offsetX = newToken.GetProperty<DoubleVectorProperty>(PropertyNames.Offset).ValueX;
+            this.offsetY = newToken.GetProperty<DoubleVectorProperty>(PropertyNames.Offset).ValueY;
+
+            this.quality = newToken.GetProperty<Int32Property>(PropertyNames.Quality).Value;
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            Surface src = SrcArgs.Surface;
+            Surface dst = DstArgs.Surface;
+            int w = dst.Width;
+            int h = dst.Height;
+            int fcx = (w << 15) + (int)(this.offsetX * (w << 15));
+            int fcy = (h << 15) + (int)(this.offsetY * (h << 15));
+
+            int n = (this.quality * this.quality) * (30 + this.quality * this.quality);
+
+            int fr = (int)(this.angle * Math.PI * 65536.0 / 181.0);
+
             for (int r = startIndex; r < startIndex + length; ++r)
             {
                 Rectangle rect = rois[r];
 
                 for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
-                    ColorBgra *dstRow = (ColorBgra *)(strideDst * y + (byte *)dstPtr);
+                    ColorBgra* dstPtr = dst.GetPointAddressUnchecked(rect.Left, y);
+                    ColorBgra* srcPtr = src.GetPointAddressUnchecked(rect.Left, y);
 
                     for (int x = rect.Left; x < rect.Right; ++x)
                     {
                         int fx = (x << 16) - fcx;
                         int fy = (y << 16) - fcy;
-                        const int n = 64;
 
                         int fsr = fr / n;
 
@@ -93,12 +147,10 @@ namespace PaintDotNet.Effects
                         int sa = 0;
                         int sc = 0;
 
-                        ColorBgra *src = x + (ColorBgra *)((byte *)srcPtr + strideSrc * y);
-
-                        sr += src->R * src->A;
-                        sg += src->G * src->A;
-                        sb += src->B * src->A;
-                        sa += src->A;
+                        sr += srcPtr->R * srcPtr->A;
+                        sg += srcPtr->G * srcPtr->A;
+                        sb += srcPtr->B * srcPtr->A;
+                        sa += srcPtr->A;
                         ++sc;
 
                         int ox1 = fx;
@@ -108,44 +160,41 @@ namespace PaintDotNet.Effects
 
                         for (int i = 0; i < n; ++i)
                         {
-                            int u;
-                            int v;
-
                             Rotate(ref ox1, ref oy1, fsr);
                             Rotate(ref ox2, ref oy2, -fsr);
-                            
-                            u = ox1 + fcx + 32768 >> 16;
-                            v = oy1 + fcy + 32768 >> 16;
 
-                            if (u > 0 && v > 0 && u < w && v < h)
+                            int u1 = ox1 + fcx + 32768 >> 16;
+                            int v1 = oy1 + fcy + 32768 >> 16;
+
+                            if (u1 > 0 && v1 > 0 && u1 < w && v1 < h)
                             {
-                                src = u + (ColorBgra *)((byte *)srcPtr + strideSrc * v);
+                                ColorBgra *sample = src.GetPointAddressUnchecked(u1, v1);
 
-                                sr += src->R * src->A;
-                                sg += src->G * src->A;
-                                sb += src->B * src->A;
-                                sa += src->A;
+                                sr += sample->R * sample->A;
+                                sg += sample->G * sample->A;
+                                sb += sample->B * sample->A;
+                                sa += sample->A;
                                 ++sc;
                             }
 
-                            u = ox2 + fcx + 32768 >> 16;
-                            v = oy2 + fcy + 32768 >> 16;
+                            int u2 = ox2 + fcx + 32768 >> 16;
+                            int v2 = oy2 + fcy + 32768 >> 16;
 
-                            if (u > 0 && v > 0 && u < w&& v < h)
+                            if (u2 > 0 && v2 > 0 && u2 < w && v2 < h)
                             {
-                                src = u + (ColorBgra *)((byte *)srcPtr + strideSrc * v);
+                                ColorBgra* sample = src.GetPointAddressUnchecked(u2, v2);
 
-                                sr += src->R * src->A;
-                                sg += src->G * src->A;
-                                sb += src->B * src->A;
-                                sa += src->A;
+                                sr += sample->R * sample->A;
+                                sg += sample->G * sample->A;
+                                sb += sample->B * sample->A;
+                                sa += sample->A;
                                 ++sc;
                             }
                         }
-                 
+
                         if (sa > 0)
                         {
-                            dstRow[x] = ColorBgra.FromBgra(
+                            *dstPtr = ColorBgra.FromBgra(
                                 Utility.ClampToByte(sb / sa),
                                 Utility.ClampToByte(sg / sa),
                                 Utility.ClampToByte(sr / sa),
@@ -153,11 +202,14 @@ namespace PaintDotNet.Effects
                         }
                         else
                         {
-                            dstRow[x].Bgra = 0;
+                            dstPtr->Bgra = 0;
                         }
+
+                        ++dstPtr;
+                        ++srcPtr;
                     }
                 }
-            }                       
+            }
         }
     }
 }

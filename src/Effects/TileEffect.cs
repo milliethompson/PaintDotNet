@@ -7,26 +7,24 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.IO;
-using PaintDotNet;
-using PaintDotNet.Effects;
 
 namespace PaintDotNet.Effects
 {
-    [Guid("3154E367-6B4D-4960-B4D8-F6D06E1C9C24")]
     public sealed class TileEffect 
-        : Effect
+        : PropertyBasedEffect
     {
         public static Image StaticImage
         {
             get
             {
-                return PdnResources.GetImage("Icons.TileEffect.png");
+                return PdnResources.GetImageResource("Icons.TileEffect.png").Reference;
             }
         }
 
@@ -46,76 +44,98 @@ namespace PaintDotNet.Effects
             }
         }
 
+        public enum PropertyNames
+        {
+            Rotation,
+            SquareSize,
+            Curvature,
+            Quality
+        }
+
         public TileEffect()
-            : base(StaticName, StaticImage, StaticSubMenuName, true)
+            : base(StaticName, StaticImage, StaticSubMenuName, EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            ThreeAmountsConfigDialog tacd = new ThreeAmountsConfigDialog();
+            List<Property> props = new List<Property>();
 
-            tacd.Text = StaticName;
+            props.Add(new DoubleProperty(PropertyNames.Rotation, 30, -180, +180));
+            props.Add(new DoubleProperty(PropertyNames.SquareSize, 40, 1, 800));
+            props.Add(new DoubleProperty(PropertyNames.Curvature, 8, -100, 100));
+            props.Add(new Int32Property(PropertyNames.Quality, 2, 1, 5));
 
-            tacd.Amount1Label = PdnResources.GetString("TileEffect.Rotation.Text");
-            tacd.Amount1Default = 30;
-            tacd.Amount1Minimum = -45;
-            tacd.Amount1Maximum = 45;
-
-            tacd.Amount2Label = PdnResources.GetString("TileEffect.SquareSize.Text");
-            tacd.Amount2Default = 40;
-            tacd.Amount2Maximum = 200;
-            tacd.Amount2Minimum = 2;
-
-            tacd.Amount3Label = PdnResources.GetString("TileEffect.Intensity.Text");
-            tacd.Amount3Default = 8;
-            tacd.Amount3Maximum = 20;
-            tacd.Amount3Minimum = -20;
-
-            return tacd;
+            return new PropertyCollection(props);
         }
 
-        public unsafe override void Render(
-            EffectConfigToken parameters, 
-            RenderArgs dstArgs, 
-            RenderArgs srcArgs, 
-            System.Drawing.Rectangle[] rois, 
-            int startIndex, 
-            int length)
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
         {
-            ThreeAmountsConfigToken token = (ThreeAmountsConfigToken)parameters;
+            ControlInfo configUI = CreateDefaultConfigUI(props);
 
-            Surface dst = dstArgs.Surface;
-            Surface src = srcArgs.Surface;
+            configUI.SetPropertyControlValue(PropertyNames.Rotation, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("TileEffect.Rotation.Text"));
+            configUI.SetPropertyControlType(PropertyNames.Rotation, PropertyControlType.AngleChooser);
+
+            configUI.SetPropertyControlValue(PropertyNames.SquareSize, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("TileEffect.SquareSize.Text"));
+            configUI.SetPropertyControlValue(PropertyNames.SquareSize, ControlInfoPropertyNames.UseExponentialScale, true);
+
+            configUI.SetPropertyControlValue(PropertyNames.Curvature, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("TileEffect.Intensity.Text"));
+
+            configUI.SetPropertyControlValue(PropertyNames.Quality, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("TileEffect.Quality.Text"));
+
+            return configUI;
+        }
+
+        private double rotation;
+        private double squareSize;
+        private double curvature;
+
+        private int quality;
+        private float sin;
+        private float cos;
+        private float scale;
+        private float intensity;
+        //private PointF[] aaPointsArray;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.rotation = -newToken.GetProperty<DoubleProperty>(PropertyNames.Rotation).Value;
+            this.squareSize = newToken.GetProperty<DoubleProperty>(PropertyNames.SquareSize).Value;
+            this.curvature = newToken.GetProperty<DoubleProperty>(PropertyNames.Curvature).Value;
+            
+            this.sin = (float)Math.Sin(this.rotation * Math.PI / 180.0);
+            this.cos = (float)Math.Cos(this.rotation * Math.PI / 180.0);
+            this.scale = (float)(Math.PI / this.squareSize);
+            this.intensity = (float)(this.curvature * this.curvature / 10.0 * Math.Sign(this.curvature));
+
+            this.quality = newToken.GetProperty<Int32Property>(PropertyNames.Quality).Value;
+
+            if (this.quality != 1)
+            {
+                ++this.quality;
+            }
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            Surface dst = DstArgs.Surface;
+            Surface src = SrcArgs.Surface;
             int width = dst.Width;
             int height = dst.Height;
             float hw = width / 2.0f;
             float hh = height / 2.0f;
-            float sin = (float)Math.Sin(token.Amount1 * Math.PI / 180.0);
-            float cos = (float)Math.Cos(token.Amount1 * Math.PI / 180.0);
-            float scale = (float)Math.PI / token.Amount2;
-            float intensity = token.Amount3;
 
-            intensity = intensity * intensity / 10 * Math.Sign(intensity);
-
-            int aaLevel = 4;
-            int aaSamples = aaLevel * aaLevel + 1;
-            PointF* aaPoints = stackalloc PointF[aaSamples];
-
-            for (int i = 0; i < aaSamples; ++i)
-            {
-                double x = (i * aaLevel) / (double)aaSamples;
-                double y = i / (double)aaSamples;
-
-                x -= (int)x;
-
-                // RGSS + rotation to maximize AA quality
-                aaPoints[i] = new PointF((float)(cos * x + sin * y), (float)(cos * y - sin * x));
-            }
+            int aaSampleCount = this.quality * this.quality;
+            PointF* aaPointsArray = stackalloc PointF[aaSampleCount];
+            Utility.GetRgssOffsets(aaPointsArray, aaSampleCount, this.quality);
+            ColorBgra* samples = stackalloc ColorBgra[aaSampleCount];
 
             for (int n = startIndex; n < startIndex + length; ++n)
             {
                 Rectangle rect = rois[n];
+
                 for (int y = rect.Top; y < rect.Bottom; y++)
                 {
                     float j = y - hh;
@@ -123,55 +143,51 @@ namespace PaintDotNet.Effects
 
                     for (int x = rect.Left; x < rect.Right; x++)
                     {
-                        int b = 0;
-                        int g = 0;
-                        int r = 0;
-                        int a = 0;
                         float i = x - hw;
 
-                        for (int p = 0; p < aaSamples; ++p)
+                        for (int p = 0; p < aaSampleCount; ++p)
                         {
-                            PointF pt = aaPoints[p];
+                            PointF pt = aaPointsArray[p];
 
-                            float u = i + pt.X;
-                            float v = j - pt.Y;
+                            float u1 = i + pt.X;
+                            float v1 = j - pt.Y;
 
-                            float s =  cos * u + sin * v;
-                            float t = -sin * u + cos * v;
+                            float s1 =  cos * u1 + sin * v1;
+                            float t1 = -sin * u1 + cos * v1;
 
-                            s += intensity * (float)Math.Tan(s * scale);
-                            t += intensity * (float)Math.Tan(t * scale);
-                            u = cos * s - sin * t;
-                            v = sin * s + cos * t;
+                            float s2 = s1 + this.intensity * (float)Math.Tan(s1 * this.scale);
+                            float t2 = t1 + this.intensity * (float)Math.Tan(t1 * this.scale);
 
-                            int xSample = (int)(hw + u);
-                            int ySample = (int)(hh + v);
+                            float u2 = cos * s2 - sin * t2;
+                            float v2 = sin * s2 + cos * t2;
 
-                            xSample = (xSample + width) % width;
-                            if (xSample < 0) // This makes it a little faster
+                            float xSample = hw + u2;
+                            float ySample = hh + v2;
+
+                            samples[p] = src.GetBilinearSampleWrapped(xSample, ySample);
+
+                            /*
+                            int xiSample = (int)xSample;
+                            int yiSample = (int)ySample;
+
+                            xiSample = (xiSample + width) % width;
+                            if (xiSample < 0) // This makes it a little faster
                             {
-                                xSample = (xSample + width) % width;
+                                xiSample = (xiSample + width) % width;
                             }
 
-                            ySample = (ySample + height) % height;
-                            if (ySample < 0) // This makes it a little faster
+                            yiSample = (yiSample + height) % height;
+                            if (yiSample < 0) // This makes it a little faster
                             {
-                                ySample = (ySample + height) % height;
+                                yiSample = (yiSample + height) % height;
                             }
 
-                            ColorBgra sample = *src.GetPointAddressUnchecked(xSample, ySample);
-
-                            b += sample.B;
-                            g += sample.G;
-                            r += sample.R;
-                            a += sample.A;
+                            samples[p] = *src.GetPointAddressUnchecked(xiSample, yiSample);
+                            */
                         }
 
-                        *(dstPtr++) = ColorBgra.FromBgra(
-                            (byte)(b / aaSamples),
-                            (byte)(g / aaSamples),
-                            (byte)(r / aaSamples),
-                            (byte)(a / aaSamples));
+                        *dstPtr = ColorBgra.Blend(samples, aaSampleCount);
+                        ++dstPtr;
                     }
                 }
             }

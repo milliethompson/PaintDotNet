@@ -8,6 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace PaintDotNet.SystemLayer
@@ -26,7 +27,7 @@ namespace PaintDotNet.SystemLayer
     {
         private bool clickThrough = true;
         private bool managedFocus = true;
-        private static int enteredComboBox = 0;
+        private static int lockFocusCount = 0;
 
         public ToolStripEx()
         {
@@ -123,29 +124,63 @@ namespace PaintDotNet.SystemLayer
         protected override void OnItemAdded(ToolStripItemEventArgs e)
         {
             ToolStripComboBox tscb = e.Item as ToolStripComboBox;
+            ToolStripTextBox tstb = e.Item as ToolStripTextBox;
 
-            if (tscb == null)
+            if (tscb != null)
             {
-                e.Item.MouseEnter += OnItemMouseEnter;
+                tscb.DropDownClosed += ComboBox_DropDownClosed;
+                tscb.Enter += ComboBox_Enter;
+                tscb.Leave += ComboBox_Leave;
+            }
+            else if (tstb != null)
+            {
+                tstb.Enter += TextBox_Enter;
+                tstb.Leave += TextBox_Enter;
             }
             else
             {
-                tscb.DropDownClosed += new EventHandler(ComboBox_DropDownClosed);
-                tscb.Enter += new EventHandler(ComboBox_Enter);
-                tscb.Leave += new EventHandler(ComboBox_Leave);
+                e.Item.MouseEnter += OnItemMouseEnter;
             }
 
             base.OnItemAdded(e);
         }
 
-        private void ComboBox_Leave(object sender, EventArgs e)
+        private static void PushLockFocus()
         {
-            --enteredComboBox;
+            Interlocked.Increment(ref lockFocusCount);
+        }
+
+        private static void PopLockFocus()
+        {
+            Interlocked.Decrement(ref lockFocusCount);
+        }
+
+        private static bool IsFocusLocked
+        {
+            get
+            {
+                return lockFocusCount > 0;
+            }
         }
 
         private void ComboBox_Enter(object sender, EventArgs e)
         {
-            ++enteredComboBox;
+            PushLockFocus();
+        }
+
+        private void ComboBox_Leave(object sender, EventArgs e)
+        {
+            PopLockFocus();
+        }
+
+        private void TextBox_Enter(object sender, EventArgs e)
+        {
+            PushLockFocus();
+        }
+
+        private void TextBox_Leave(object sender, EventArgs e)
+        {
+            PopLockFocus();
         }
 
         private void ComboBox_DropDownClosed(object sender, EventArgs e)
@@ -156,16 +191,22 @@ namespace PaintDotNet.SystemLayer
         protected override void OnItemRemoved(ToolStripItemEventArgs e)
         {
             ToolStripComboBox tscb = e.Item as ToolStripComboBox;
+            ToolStripTextBox tstb = e.Item as ToolStripTextBox;
 
-            if (tscb == null)
+            if (tscb != null)
             {
-                e.Item.MouseEnter -= OnItemMouseEnter;
+                tscb.DropDownClosed -= ComboBox_DropDownClosed;
+                tscb.Enter -= ComboBox_Enter;
+                tscb.Leave -= ComboBox_Leave;
+            }
+            else if (tstb != null)
+            {
+                tstb.Enter -= TextBox_Enter;
+                tstb.Leave -= TextBox_Enter;
             }
             else
             {
-                tscb.DropDownClosed -= new EventHandler(ComboBox_DropDownClosed);
-                tscb.Enter -= new EventHandler(ComboBox_Enter);
-                tscb.Leave -= new EventHandler(ComboBox_Leave);
+                e.Item.MouseEnter -= OnItemMouseEnter;
             }
 
             base.OnItemRemoved(e);
@@ -173,16 +214,18 @@ namespace PaintDotNet.SystemLayer
 
         private void OnItemMouseEnter(object sender, EventArgs e)
         {
-            if (this.managedFocus && !MenuStripEx.IsAnyMenuActive && UI.IsOurAppActive && enteredComboBox == 0)
+            if (this.managedFocus && !MenuStripEx.IsAnyMenuActive && UI.IsOurAppActive && !IsFocusLocked)
             {
+                Tracing.Ping("stealing focus");
                 this.Focus();
             }
         }
 
         protected override void OnMouseLeave(EventArgs e)
         {
-            if (this.managedFocus && !MenuStripEx.IsAnyMenuActive && UI.IsOurAppActive && enteredComboBox == 0)
+            if (this.managedFocus && !MenuStripEx.IsAnyMenuActive && UI.IsOurAppActive && !IsFocusLocked)
             {
+                Tracing.Ping("relinquishing focus");
                 OnRelinquishFocus();
             }
 

@@ -22,7 +22,7 @@ namespace PaintDotNet
                 if (cancel == null)
                 {
                     cancel = new TaskButton(
-                        ImageResource.Get("Icons.CancelIcon.png").Reference,
+                        PdnResources.GetImageResource("Icons.CancelIcon.png").Reference,
                         PdnResources.GetString("TaskButton.Cancel.ActionText"),
                         PdnResources.GetString("TaskButton.Cancel.ExplanationText"));
                 }

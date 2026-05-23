@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.PropertySystem;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -16,21 +17,27 @@ namespace PaintDotNet.Effects
     [EffectCategory(EffectCategory.Adjustment)]
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public sealed class SepiaEffect
-        : Effect
+        : PropertyBasedEffect
     {
         private UnaryPixelOp levels;
         private UnaryPixelOp desaturate;
 
-        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
-            Rectangle[] rois, int startIndex, int length)
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            this.desaturate.Apply(dstArgs.Surface, srcArgs.Surface, rois, startIndex, length);
-            this.levels.Apply(dstArgs.Surface, dstArgs.Surface, rois, startIndex, length);
+            return PropertyCollection.CreateEmpty();
+        }
+
+        protected override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            this.desaturate.Apply(DstArgs.Surface, SrcArgs.Surface, rois, startIndex, length);
+            this.levels.Apply(DstArgs.Surface, DstArgs.Surface, rois, startIndex, length);
         }
 
         public SepiaEffect()
             : base(PdnResources.GetString("SepiaEffect.Name"),
-                   PdnResources.GetImage("Icons.SepiaEffect.png"))
+                   PdnResources.GetImageResource("Icons.SepiaEffect.png").Reference,
+                   null,
+                   EffectFlags.None)
         {
             this.desaturate = new UnaryPixelOps.Desaturate();
 

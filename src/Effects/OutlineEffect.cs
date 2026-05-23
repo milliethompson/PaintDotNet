@@ -7,10 +7,11 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
 using System.Drawing;
 using System.Collections.Generic;
-using System.Text;
 
 namespace PaintDotNet.Effects
 {
@@ -29,41 +30,56 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return ImageResource.Get("Icons.OutlineEffectIcon.png");
+                return PdnResources.GetImageResource("Icons.OutlineEffectIcon.png");
             }
         }
 
-        private int radius;
-        private int spread;
+        public enum PropertyNames
+        {
+            Thickness,
+            Intensity
+        }
+
+        private int thickness;
+        private int intensity;
 
         public OutlineEffect()
-            : base(StaticName, StaticImage.Reference, true)
+            : base(StaticName, StaticImage.Reference, SubmenuNames.Stylize, EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            TwoAmountsConfigDialog tacd = new TwoAmountsConfigDialog();
+            List<Property> props = new List<Property>();
 
-            tacd.Text = this.Name;
+            props.Add(new Int32Property(PropertyNames.Thickness, 3, 1, 200));
+            props.Add(new Int32Property(PropertyNames.Intensity, 50, 0, 100));
 
-            tacd.Amount1Label = PdnResources.GetString("OutlineEffect.ConfigDialog.ThicknessLabel");
-            tacd.Amount1Default = 3;
-            tacd.Amount1Minimum = 1;
-            tacd.Amount1Maximum = 200;
+            return new PropertyCollection(props);
+        }
 
-            tacd.Amount2Label = PdnResources.GetString("OutlineEffect.ConfigDialog.IntensityLabel");
-            tacd.Amount2Default = 50;
-            tacd.Amount2Minimum = 0;
-            tacd.Amount2Maximum = 100;
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
 
-            return tacd;
+            configUI.SetPropertyControlValue(PropertyNames.Thickness, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("OutlineEffect.ConfigDialog.ThicknessLabel"));
+            configUI.SetPropertyControlValue(PropertyNames.Intensity, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("OutlineEffect.ConfigDialog.IntensityLabel"));
+
+            return configUI;
+        }
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.thickness = newToken.GetProperty<Int32Property>(PropertyNames.Thickness).Value;
+            this.intensity = newToken.GetProperty<Int32Property>(PropertyNames.Intensity).Value;
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
         }
 
         public unsafe override ColorBgra Apply(ColorBgra src, int area, int* hb, int* hg, int* hr, int* ha)
         {
-            int minCount1 = area * (100 - this.spread) / 200;
-            int minCount2 = area * (100 + this.spread) / 200;
+            int minCount1 = area * (100 - this.intensity) / 200;
+            int minCount2 = area * (100 + this.intensity) / 200;
 
             int bCount = 0;
             int b1 = 0;
@@ -152,15 +168,11 @@ namespace PaintDotNet.Effects
                 (byte)(a2));
         }
 
-        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
+        protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
         {
-            TwoAmountsConfigToken token = (TwoAmountsConfigToken)parameters;
-            this.radius = token.Amount1;
-            this.spread = token.Amount2;
-
             foreach (Rectangle rect in rois)
             {
-                RenderRect(this.radius, srcArgs.Surface, dstArgs.Surface, rect);
+                RenderRect(this.thickness, SrcArgs.Surface, DstArgs.Surface, rect);
             }
         }
     }

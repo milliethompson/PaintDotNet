@@ -7,8 +7,10 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using System.Drawing;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
@@ -16,19 +18,25 @@ namespace PaintDotNet.Effects
     [EffectCategory(EffectCategory.Adjustment)]
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public sealed class DesaturateEffect
-        : Effect
+        : PropertyBasedEffect
     {
         private UnaryPixelOps.Desaturate desaturateOp;
 
-        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
-            Rectangle[] rois, int startIndex, int length)
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            this.desaturateOp.Apply(dstArgs.Surface, srcArgs.Surface, rois, startIndex, length);
+            return PropertyCollection.CreateEmpty();
+        }
+
+        protected override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            this.desaturateOp.Apply(DstArgs.Surface, SrcArgs.Surface, rois, startIndex, length);
         }
 
         public DesaturateEffect()
             : base(PdnResources.GetString("DesaturateEffect.Name"),
-                   PdnResources.GetImage("Icons.DesaturateEffect.png"))
+                   PdnResources.GetImageResource("Icons.DesaturateEffect.png").Reference,
+                   null,
+                   EffectFlags.None)
         {
             this.desaturateOp = new UnaryPixelOps.Desaturate();
         }

@@ -305,8 +305,8 @@ namespace PaintDotNet.Effects
             }
         }
 
-        protected internal ConvolutionFilterEffect(string name, Image image, bool isConfigurable)
-            : base(name, image, isConfigurable)
+        protected internal ConvolutionFilterEffect(string name, Image image, EffectFlags flags)
+            : base(name, image, flags)
         {
         }
     }

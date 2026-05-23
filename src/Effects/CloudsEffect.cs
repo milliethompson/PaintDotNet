@@ -7,19 +7,19 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Core;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
     public sealed class CloudsEffect
-        : Effect
+        : PropertyBasedEffect
     {        
-        private int scale;
-        private byte seed;
-        private double power;
-
         // This is so that repetition of the effect with CTRL+F actually shows up differently.
         private byte instanceSeed = unchecked((byte)DateTime.Now.Ticks); 
 
@@ -35,46 +35,107 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return PdnResources.GetImage("Icons.CloudsEffect.png");
+                return PdnResources.GetImageResource("Icons.CloudsEffect.png").Reference;
             }
         }
 
         public CloudsEffect()
-            : base(StaticName, StaticImage, true)
+            : base(StaticName, StaticImage, SubmenuNames.Render, EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        private enum PropertyNames
         {
-            EffectConfigDialog dlg = new CloudsEffectConfigDialog();
-            return dlg;
+            Scale,
+            Power,
+            BlendOp,
+            Seed
         }
-        
-        public override void Render(EffectConfigToken parameters,  RenderArgs dstArgs,  RenderArgs srcArgs,  System.Drawing.Rectangle[] rois,  int startIndex,  int length)
-        {
-            CloudsEffectConfigToken token = (CloudsEffectConfigToken)parameters;
-            UserBlendOp blendOp = token.BlendOp;
 
-            if (blendOp is UserBlendOps.NormalBlendOp &&
+        protected override PropertyCollection OnCreatePropertyCollection()
+        {
+            List<Property> props = new List<Property>();
+
+            props.Add(new Int32Property(PropertyNames.Scale, 250, 2, 1000));
+            props.Add(new DoubleProperty(PropertyNames.Power, 0.5, 0.0, 1.0));
+
+            Type[] blendOpTypes = UserBlendOps.GetBlendOps();
+            int defaultBlendOpIndex = Array.IndexOf(blendOpTypes, UserBlendOps.GetDefaultBlendOp());
+            props.Add(new StaticListChoiceProperty(PropertyNames.BlendOp, blendOpTypes, 0, false));
+
+            props.Add(new Int32Property(PropertyNames.Seed, 0, 0, 255));
+
+            return new PropertyCollection(props);
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.Scale, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("CloudsEffect.ConfigDialog.ScaleLabel"));
+
+            configUI.SetPropertyControlValue(PropertyNames.Power, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("CloudsEffect.ConfigDialog.RoughnessLabel"));
+            configUI.SetPropertyControlValue(PropertyNames.Power, ControlInfoPropertyNames.SliderLargeChange, 0.25);
+            configUI.SetPropertyControlValue(PropertyNames.Power, ControlInfoPropertyNames.SliderSmallChange, 0.05);
+            configUI.SetPropertyControlValue(PropertyNames.Power, ControlInfoPropertyNames.UpDownIncrement, 0.01);
+
+            PropertyControlInfo blendOpControl = configUI.FindControlForPropertyName(PropertyNames.BlendOp);
+            blendOpControl.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = PdnResources.GetString("CloudsEffect.ConfigDialog.BlendModeHeader.Text");
+
+            Type[] blendOpTypes = UserBlendOps.GetBlendOps();
+            foreach (Type blendOpType in blendOpTypes)
+            {
+                string blendOpDisplayName = UserBlendOps.GetBlendOpFriendlyName(blendOpType);
+                blendOpControl.SetValueDisplayName(blendOpType, blendOpDisplayName);
+            }
+
+            configUI.SetPropertyControlType(PropertyNames.Seed, PropertyControlType.IncrementButton);
+            configUI.SetPropertyControlValue(PropertyNames.Seed, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("CloudsEffect.ConfigDialog.SeedHeader.Text"));
+            configUI.SetPropertyControlValue(PropertyNames.Seed, ControlInfoPropertyNames.ButtonText, PdnResources.GetString("CloudsEffect.ConfigDialog.ReseedButton.Text"));
+            configUI.SetPropertyControlValue(PropertyNames.Seed, ControlInfoPropertyNames.Description, PdnResources.GetString("CloudsEffect.ConfigDialog.UsageLabel"));
+
+            return configUI;
+        }
+
+        private int scale;
+        private byte seed;
+        private double power;
+        private UserBlendOp blendOp;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.scale = newToken.GetProperty<Int32Property>(PropertyNames.Scale).Value;
+
+            int intSeed = newToken.GetProperty<Int32Property>(PropertyNames.Seed).Value;
+            this.seed = (byte)(intSeed ^ instanceSeed);
+
+            this.power = newToken.GetProperty<DoubleProperty>(PropertyNames.Power).Value;
+
+            Type blendOpType = (Type)newToken.GetProperty<StaticListChoiceProperty>(PropertyNames.BlendOp).Value;
+            this.blendOp = UserBlendOps.CreateBlendOp(blendOpType);
+
+            if (this.blendOp is UserBlendOps.NormalBlendOp &&
                 EnvironmentParameters.PrimaryColor.A == 255 &&
                 EnvironmentParameters.SecondaryColor.A == 255)
             {
                 // this is just an optimization
-                blendOp = null;
+                this.blendOp = null;
             }
 
-            this.scale = token.Amount1;
-            this.power = token.Amount2 / 100.0f;
-            this.seed = (byte)(token.Seed ^ instanceSeed);
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
 
+        protected override void OnRender(Rectangle[] renderRects, int startIndex, int length)
+        {
             for (int i = startIndex; i < startIndex + length; ++i)
             {
-                RenderClouds(dstArgs.Surface, rois[i]);
+                RenderClouds(this.DstArgs.Surface, renderRects[i], this.scale, this.seed, 
+                    this.power, EnvironmentParameters.PrimaryColor, EnvironmentParameters.SecondaryColor);
 
                 if (blendOp != null)
                 {
-                    blendOp.Apply(dstArgs.Surface, rois[i].Location, srcArgs.Surface, 
-                        rois[i].Location, dstArgs.Surface, rois[i].Location, rois[i].Size);
+                    blendOp.Apply(this.DstArgs.Surface, renderRects[i].Location, this.SrcArgs.Surface,
+                        renderRects[i].Location, this.DstArgs.Surface, renderRects[i].Location, renderRects[i].Size);
                 }
             }
         }
@@ -152,11 +213,8 @@ namespace PaintDotNet.Effects
             return Utility.Lerp(edge1, edge2, v);
         }
 
-        private unsafe void RenderClouds(Surface surface, Rectangle rect)
+        private unsafe static void RenderClouds(Surface surface, Rectangle rect, int scale, byte seed, double power, ColorBgra colorFrom, ColorBgra colorTo)
         {
-            ColorBgra colorFrom = EnvironmentParameters.PrimaryColor;
-            ColorBgra colorTo = EnvironmentParameters.SecondaryColor;
-
             int w = surface.Width;
             int h = surface.Height;
 
@@ -170,12 +228,13 @@ namespace PaintDotNet.Effects
                     int dx = 2 * x - w;
                     double val = 0;
                     double mult = 1;
-                    int div = this.scale;
+                    int div = scale;
 
                     for (int i = 0; i < 12 && mult > 0.03 && div > 0; ++i)
                     {
                         double dxr = 65536 + (double)dx / (double)div;
                         double dyr = 65536 + (double)dy / (double)div;
+
                         int dxd = (int)dxr;
                         int dyd = (int)dyr;
 
@@ -191,7 +250,7 @@ namespace PaintDotNet.Effects
 
                         val += noise * mult;
                         div /= 2;
-                        mult *= this.power;
+                        mult *= power;
                     }
 
                     *ptr = ColorBgra.Lerp(colorFrom, colorTo, (val + 1) / 2);

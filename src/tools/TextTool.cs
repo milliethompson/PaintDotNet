@@ -7,7 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
+using PaintDotNet;
 using PaintDotNet.HistoryMementos;
 using PaintDotNet.SystemLayer;
 using System;
@@ -140,7 +140,11 @@ namespace PaintDotNet.Tools
 
         private bool OnBackspaceTyped(Keys keys)
         {
-            if (this.mode != EditingMode.NotEditing)
+            if (!this.DocumentWorkspace.Visible)
+            {
+                return false;
+            }
+            else if (this.mode != EditingMode.NotEditing)
             {
                 OnKeyPress(Keys.Back);
                 return true;
@@ -291,6 +295,11 @@ namespace PaintDotNet.Tools
 
         private void PerformEnter()
         {
+            if (this.lines == null)
+            {
+                return;
+            }
+
             string currentLine = (string)this.lines[this.linePos];
 
             if (this.textPos == currentLine.Length)
@@ -1556,7 +1565,8 @@ namespace PaintDotNet.Tools
             if (this.moveNub != null)
             {
                 int newAlpha = (int)(sin * 255.0);
-                this.moveNub.Alpha = newAlpha;
+                int clampedAlpha = Utility.Clamp(newAlpha, 0, 255);
+                this.moveNub.Alpha = clampedAlpha;
             }
 
             PlaceMoveNub();
@@ -1612,7 +1622,7 @@ namespace PaintDotNet.Tools
 
         public TextTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.TextToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.TextToolIcon.png"),
                    PdnResources.GetString("TextTool.Name"),
                    PdnResources.GetString("TextTool.HelpText"),
                    't',

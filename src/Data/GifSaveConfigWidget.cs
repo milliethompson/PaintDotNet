@@ -142,6 +142,7 @@ namespace PaintDotNet
             this.preMultiplyAlphaCheckBox.Size = new System.Drawing.Size(168, 24);
             this.preMultiplyAlphaCheckBox.TabIndex = 6;
             this.preMultiplyAlphaCheckBox.CheckedChanged += new System.EventHandler(this.PreMultiplyAlphaCheckBox_CheckedChanged);
+            this.preMultiplyAlphaCheckBox.FlatStyle = FlatStyle.System;
             // 
             // ditherUpDown
             // 

@@ -768,61 +768,54 @@ namespace PaintDotNet
                 v = this.Height - 1;
             }
 
-            if (u >= 0 && v >= 0 && u < width && v < height)
+            unchecked
             {
-                unchecked
+                int iu = (int)Math.Floor(u);
+                uint sxfrac = (uint)(256 * (u - (float)iu));
+                uint sxfracinv = 256 - sxfrac;
+
+                int iv = (int)Math.Floor(v);
+                uint syfrac = (uint)(256 * (v - (float)iv));
+                uint syfracinv = 256 - syfrac;
+
+                uint wul = (uint)(sxfracinv * syfracinv);
+                uint wur = (uint)(sxfrac * syfracinv);
+                uint wll = (uint)(sxfracinv * syfrac);
+                uint wlr = (uint)(sxfrac * syfrac);
+
+                int sx = iu;
+                int sy = iv;
+                int sleft = sx;
+                int sright;
+
+                if (sleft == (width - 1))
                 {
-                    int iu = (int)Math.Floor(u);
-                    uint sxfrac = (uint)(256 * (u - (float)iu));
-                    uint sxfracinv = 256 - sxfrac;
-
-                    int iv = (int)Math.Floor(v);
-                    uint syfrac = (uint)(256 * (v - (float)iv));
-                    uint syfracinv = 256 - syfrac;
-
-                    uint wul = (uint)(sxfracinv * syfracinv);
-                    uint wur = (uint)(sxfrac * syfracinv);
-                    uint wll = (uint)(sxfracinv * syfrac);
-                    uint wlr = (uint)(sxfrac * syfrac);
-
-                    int sx = iu;
-                    int sy = iv;
-                    int sleft = sx;
-                    int sright;
-
-                    if (sleft == (width - 1))
-                    {
-                        sright = sleft;
-                    }
-                    else
-                    {
-                        sright = sleft + 1;
-                    }
-
-                    int stop = sy;
-                    int sbottom;
-
-                    if (stop == (height - 1))
-                    {
-                        sbottom = stop;
-                    }
-                    else
-                    {
-                        sbottom = stop + 1;
-                    }
-                                   
-                    ColorBgra *cul = GetPointAddressUnchecked(sleft, stop);
-                    ColorBgra *cur = cul + (sright - sleft);
-                    ColorBgra *cll = GetPointAddressUnchecked(sleft, sbottom);
-                    ColorBgra *clr = cll + (sright - sleft);
-
-                    ColorBgra c = ColorBgra.BlendColors4W16IP(*cul, wul, *cur, wur, *cll, wll, *clr, wlr);
-                    return c;
+                    sright = sleft;
                 }
-            }
-            else
-            {
-                return ColorBgra.FromUInt32(0);
+                else
+                {
+                    sright = sleft + 1;
+                }
+
+                int stop = sy;
+                int sbottom;
+
+                if (stop == (height - 1))
+                {
+                    sbottom = stop;
+                }
+                else
+                {
+                    sbottom = stop + 1;
+                }
+                               
+                ColorBgra *cul = GetPointAddressUnchecked(sleft, stop);
+                ColorBgra *cur = cul + (sright - sleft);
+                ColorBgra *cll = GetPointAddressUnchecked(sleft, sbottom);
+                ColorBgra *clr = cll + (sright - sleft);
+
+                ColorBgra c = ColorBgra.BlendColors4W16IP(*cul, wul, *cur, wur, *cll, wll, *clr, wlr);
+                return c;
             }
         }
 

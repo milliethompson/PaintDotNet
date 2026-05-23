@@ -51,7 +51,9 @@ namespace PaintDotNet
                 case AutoSizeStrategy.ExpandHeightToContentAndKeepWidth:
                     if (button.Width != 0)
                     {
-                        Size preferredSize = button.GetPreferredSize(new Size(button.Width, 1));
+                        Size preferredSizeP = button.GetPreferredSize(new Size(button.Width, 1));
+                        Size preferredSize = new Size((preferredSizeP.Width * 11) / 10, preferredSizeP.Height); // add 10% padding
+
                         int lineHeight = preferredSize.Height;
                         int overageScale = (preferredSize.Width + (button.Width - 1)) / button.Width;
                         button.Height = lineHeight * overageScale;

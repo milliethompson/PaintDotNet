@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -15,6 +14,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 namespace PaintDotNet
 {
@@ -94,7 +94,7 @@ namespace PaintDotNet
         {
             if (ColorClicked != null)
             {
-                ColorClicked(this, new EventArgs<Pair<int, MouseButtons>>(new Pair<int, MouseButtons>(index, buttons)));
+                ColorClicked(this, new EventArgs<Pair<int, MouseButtons>>(Pair.Create(index, buttons)));
             }
         }
 
@@ -214,42 +214,43 @@ namespace PaintDotNet
                     scaledSwatchSize, 
                     scaledSwatchSize);
 
-                UI.ButtonState state;
+                PushButtonState state;
 
                 if (this.mouseDown)
                 {
                     if (i == this.mouseDownIndex)
                     {
-                        state = UI.ButtonState.Pressed;
+                        state = PushButtonState.Pressed;
                     }
                     else
                     {
-                        state = UI.ButtonState.Normal;
+                        state = PushButtonState.Normal;
                     }
                 }
                 else if (i == activeIndex)
                 {
-                    state = UI.ButtonState.Hot;
+                    state = PushButtonState.Hot;
                 }
                 else
                 {
-                    state = UI.ButtonState.Normal;
+                    state = PushButtonState.Normal;
                 }
 
                 bool drawOutline;
 
                 switch (state)
                 {
-                    case UI.ButtonState.Hot:
+                    case PushButtonState.Hot:
                         drawOutline = true;
                         break;
 
-                    case UI.ButtonState.Pressed:
+                    case PushButtonState.Pressed:
                         drawOutline = false;
                         break;
 
-                    case UI.ButtonState.Disabled:
-                    case UI.ButtonState.Normal:
+                    case PushButtonState.Default:
+                    case PushButtonState.Disabled:
+                    case PushButtonState.Normal:
                         drawOutline = false;
                         break;
 

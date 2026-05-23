@@ -7,7 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
+using PaintDotNet;
 using System;
 using System.Reflection;
 using System.Windows.Forms;
@@ -143,10 +143,18 @@ namespace PaintDotNet.SystemLayer
 
             Cursor.Current = Cursors.WaitCursor;
 
-            while ((Control.ModifierKeys & Keys.Shift) != 0)
+            if ((Control.ModifierKeys & Keys.Shift) != 0)
             {
-                System.Threading.Thread.Sleep(1);
-                Application.DoEvents();
+                UI.InvokeThroughModalTrampoline(
+                    owner,
+                    delegate(IWin32Window modalOwner)
+                    {
+                        while ((Control.ModifierKeys & Keys.Shift) != 0)
+                        {
+                            System.Threading.Thread.Sleep(1);
+                            Application.DoEvents();
+                        }
+                    });
             }
 
             Cursor.Current = Cursors.Default;

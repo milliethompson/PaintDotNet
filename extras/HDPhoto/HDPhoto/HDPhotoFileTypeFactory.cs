@@ -18,8 +18,10 @@ namespace PaintDotNet.Data
     {
         public FileType[] GetFileTypeInstances()
         {
-            // We expect to have this built-in to Paint.NET soon
-            if (DateTime.Now < new DateTime(2007, 7, 1))
+            Version minVersion = new Version(3, 20);
+            Version maxVersion = new Version(3, 65536);
+
+            if (PdnInfo.GetVersion() >= minVersion && PdnInfo.GetVersion() < maxVersion)
             {
                 return new FileType[] { new HDPhotoFileType() };
             }

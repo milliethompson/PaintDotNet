@@ -8,25 +8,23 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
+using PaintDotNet.IndirectUI;
 using PaintDotNet.Effects;
+using PaintDotNet.PropertySystem;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.IO;
 
 namespace PaintDotNet.Effects
 {
-    [Guid("9A1EB3D9-0A36-4d32-9BB2-707D6E5A9D2C")]
     public sealed class TwistEffect 
-        : Effect
+        : PropertyBasedEffect
     {
         public static Image StaticImage
         {
             get
             {
-                return PdnResources.GetImage("Icons.TwistEffect.png");
+                return PdnResources.GetImageResource("Icons.TwistEffect.png").Reference;
             }
         }
 
@@ -46,61 +44,110 @@ namespace PaintDotNet.Effects
             }
         }
 
+        public enum PropertyNames
+        {
+            Amount,
+            Size,
+            Offset,
+            Quality,
+        }
+
         public TwistEffect()
-            : base(StaticName, StaticImage, StaticSubMenuName, true)
+            : base(StaticName, StaticImage, StaticSubMenuName, EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            TwoAmountsConfigDialog tacd = new TwoAmountsConfigDialog();
+            List<Property> props = new List<Property>();
 
-            tacd.Text = StaticName;
-            tacd.Amount1Default = 45;
+            props.Add(new DoubleProperty(PropertyNames.Amount, 30.0, -200.0, 200.0));
+            props.Add(new DoubleProperty(PropertyNames.Size, 1.0, 0.01, 2.0));
 
-            tacd.Amount1Label = PdnResources.GetString("TwistEffect.TwistAmount.Text");
-            tacd.Amount1Maximum = 100;
-            tacd.Amount1Minimum = -100;
-            tacd.Amount2Default = 2;
+            props.Add(new DoubleVectorProperty(
+                PropertyNames.Offset,
+                Pair.Create(0.0, 0.0),
+                Pair.Create(-2.0, -2.0),
+                Pair.Create(+2.0, +2.0)));
 
-            tacd.Amount2Label = PdnResources.GetString("TwistEffect.Antialias.Text");
-            tacd.Amount2Maximum = 5;
-            tacd.Amount2Minimum = 0;
+            props.Add(new Int32Property(PropertyNames.Quality, 2, 1, 5));
 
-            return tacd;
+            return new PropertyCollection(props);
         }
 
-        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle[] rois, int startIndex, int length)
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
         {
-            TwoAmountsConfigToken token = (TwoAmountsConfigToken)parameters;
+            ControlInfo configUI = CreateDefaultConfigUI(props);
 
-            float twist = token.Amount1;
-            Surface dst = dstArgs.Surface;
-            Surface src = srcArgs.Surface;
+            configUI.SetPropertyControlValue(PropertyNames.Amount, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("TwistEffect.TwistAmount.Text"));
+            configUI.SetPropertyControlValue(PropertyNames.Amount, ControlInfoPropertyNames.UseExponentialScale, true);
+
+            configUI.SetPropertyControlValue(PropertyNames.Size, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("TwistEffect.TwistSize.Text"));
+            configUI.SetPropertyControlValue(PropertyNames.Size, ControlInfoPropertyNames.SliderSmallChange, 0.05);
+            configUI.SetPropertyControlValue(PropertyNames.Size, ControlInfoPropertyNames.SliderLargeChange, 0.25);
+            configUI.SetPropertyControlValue(PropertyNames.Size, ControlInfoPropertyNames.UpDownIncrement, 0.01);
+
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("TwistEffect.Offset.Text"));
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderSmallChangeX, 0.05);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderLargeChangeX, 0.25);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.UpDownIncrementX, 0.01);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderSmallChangeY, 0.05);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderLargeChangeY, 0.25);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.UpDownIncrementY, 0.01);
+
+            Surface sourceSurface = this.EnvironmentParameters.SourceSurface;
+            Bitmap bitmap = sourceSurface.CreateAliasedBitmap();
+            ImageResource imageResource = ImageResource.FromImage(bitmap);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.StaticImageUnderlay, imageResource);
+
+            configUI.SetPropertyControlValue(PropertyNames.Quality, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("TwistEffect.Antialias.Text"));
+
+            return configUI;
+        }
+
+        private double inv100 = 1.0 / 100.0;
+
+        private double amount;
+        private double size;
+        private int quality;
+        private Pair<double, double> offset;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.amount = -newToken.GetProperty<DoubleProperty>(PropertyNames.Amount).Value;
+            this.size = 1.0 / newToken.GetProperty<DoubleProperty>(PropertyNames.Size).Value;
+            this.quality = newToken.GetProperty<Int32Property>(PropertyNames.Quality).Value;
+            this.offset = newToken.GetProperty<DoubleVectorProperty>(PropertyNames.Offset).Value;
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            double twist = this.amount * this.amount * Math.Sign(this.amount);
+
+            Surface dst = DstArgs.Surface;
+            Surface src = SrcArgs.Surface;
 
             float hw = dst.Width / 2.0f;
+            hw += (float)(hw * this.offset.First);
             float hh = dst.Height / 2.0f;
-            float maxrad = Math.Min(hw, hh);
+            hh += (float)(hh * this.offset.Second);
 
-            twist = twist * twist * Math.Sign(twist);
+            //*double maxrad = Math.Min(dst.Width / 2.0, dst.Height / 2.0);
+            double invmaxrad = 1.0 / Math.Min(dst.Width / 2.0, dst.Height / 2.0);
 
-            int aaLevel = token.Amount2;
-            int aaSamples = aaLevel * aaLevel + 1;
+            int aaLevel = this.quality;
+            int aaSamples = aaLevel * aaLevel;
             PointF* aaPoints = stackalloc PointF[aaSamples];
+            Utility.GetRgssOffsets(aaPoints, aaSamples, aaLevel);
 
-            for (int i = 0; i < aaSamples; ++i)
-            {
-                PointF pt = new PointF(
-                    ((i * aaLevel) / (float)aaSamples),
-                    i / (float)aaSamples);
-
-                pt.X -= (int)pt.X;
-                aaPoints[i] = pt;
-            }
+            ColorBgra* samples = stackalloc ColorBgra[aaSamples];
 
             for (int n = startIndex; n < startIndex + length; ++n)
             {
                 Rectangle rect = rois[n];
+
                 for (int y = rect.Top; y < rect.Bottom; y++)
                 {
                     float j = y - hh;
@@ -111,46 +158,31 @@ namespace PaintDotNet.Effects
                     {
                         float i = x - hw;
 
-                        if (i * i + j * j > (maxrad + 1) * (maxrad + 1))
+                        int sampleCount = 0;
+
+                        for (int p = 0; p < aaSamples; ++p)
                         {
-                            *dstPtr = *srcPtr;
+                            float u = i + aaPoints[p].X;
+                            float v = j + aaPoints[p].Y;
+
+                            double rad = Math.Sqrt(u * u + v * v);
+                            double theta = Math.Atan2(v, u);
+
+                            double t = 1 - ((rad * this.size) * invmaxrad);
+
+                            t = (t < 0) ? 0 : (t * t * t);
+
+                            theta += (t * twist) * inv100;
+
+                            float sampleX = (hw + (float)(rad * Math.Cos(theta)));
+                            float sampleY = (hh + (float)(rad * Math.Sin(theta)));
+
+                            samples[sampleCount] = src.GetBilinearSampleClamped(sampleX, sampleY);
+                            ++sampleCount;
                         }
-                        else
-                        {
-                            int b = 0;
-                            int g = 0;
-                            int r = 0;
-                            int a = 0;
 
-                            for (int p = 0; p < aaSamples; ++p)
-                            {
-                                float u = i + aaPoints[p].X;
-                                float v = j + aaPoints[p].Y;
-                                double rad = Math.Sqrt(u * u + v * v);
-                                double theta = Math.Atan2(v, u);
+                        *dstPtr = ColorBgra.Blend(samples, sampleCount);
 
-                                double t = 1 - rad / maxrad;
-
-                                t = (t < 0) ? 0 : (t * t * t);
-
-                                theta += (t * twist) / 100;
-
-                                ColorBgra sample = src.GetPointUnchecked(
-                                    (int)(hw + (float)(rad * Math.Cos(theta))),
-                                    (int)(hh + (float)(rad * Math.Sin(theta))));
-
-                                b += sample.B;
-                                g += sample.G;
-                                r += sample.R;
-                                a += sample.A;
-                            }
-
-                            *dstPtr = ColorBgra.FromBgra(
-                                (byte)(b / aaSamples),
-                                (byte)(g / aaSamples),
-                                (byte)(r / aaSamples),
-                                (byte)(a / aaSamples));
-                        }
 
                         ++dstPtr;
                         ++srcPtr;

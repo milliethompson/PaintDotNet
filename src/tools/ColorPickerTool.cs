@@ -106,7 +106,7 @@ namespace PaintDotNet.Tools
 
         public ColorPickerTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.ColorPickerToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.ColorPickerToolIcon.png"),
                    PdnResources.GetString("ColorPickerTool.Name"),
                    PdnResources.GetString("ColorPickerTool.HelpText"),
                    'k',

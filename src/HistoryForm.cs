@@ -45,10 +45,10 @@ namespace PaintDotNet
             this.imageList.TransparentColor = Utility.TransparentKey;
             this.toolStrip.ImageList = this.imageList;
 
-            int rewindIndex = imageList.Images.Add(PdnResources.GetImage("Icons.HistoryRewindIcon.png"), imageList.TransparentColor);
-            int undoIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuEditUndoIcon.png"), imageList.TransparentColor);
-            int redoIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuEditRedoIcon.png"), imageList.TransparentColor);
-            int fastForwardIndex = imageList.Images.Add(PdnResources.GetImage("Icons.HistoryFastForwardIcon.png"), imageList.TransparentColor);
+            int rewindIndex = imageList.Images.Add(PdnResources.GetImageResource("Icons.HistoryRewindIcon.png").Reference, imageList.TransparentColor);
+            int undoIndex = imageList.Images.Add(PdnResources.GetImageResource("Icons.MenuEditUndoIcon.png").Reference, imageList.TransparentColor);
+            int redoIndex = imageList.Images.Add(PdnResources.GetImageResource("Icons.MenuEditRedoIcon.png").Reference, imageList.TransparentColor);
+            int fastForwardIndex = imageList.Images.Add(PdnResources.GetImageResource("Icons.HistoryFastForwardIcon.png").Reference, imageList.TransparentColor);
 
             rewindButton.ImageIndex = rewindIndex;
             undoButton.ImageIndex = undoIndex;

@@ -80,10 +80,7 @@ namespace PaintDotNet.SystemLayer
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool UnmapViewOfFile(IntPtr lpBaseAddress);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool SetProcessDPIAware();
-        
+       
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool ShowScrollBar(

@@ -71,7 +71,7 @@ namespace PaintDotNet
         public override void LoadResources()
         {
             this.Text = PdnResources.GetString("SavePaletteDialog.Text");
-            this.Icon = Utility.ImageToIcon(ImageResource.Get("Icons.MenuFileSaveAsIcon.png").Reference);
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.MenuFileSaveAsIcon.png").Reference);
             this.cancelButton.Text = PdnResources.GetString("Form.CancelButton.Text");
             this.saveButton.Text = PdnResources.GetString("Form.SaveButton.Text");
             this.typeANameLabel.Text = PdnResources.GetString("SavePaletteDialog.TypeANameLabel.Text");
@@ -145,6 +145,7 @@ namespace PaintDotNet
             this.saveButton.TabIndex = 4;
             this.saveButton.Text = "button1";
             this.saveButton.UseVisualStyleBackColor = true;
+            this.saveButton.FlatStyle = FlatStyle.System;
             this.saveButton.Click += new System.EventHandler(this.SaveButton_Click);
             // 
             // cancelButton
@@ -156,6 +157,7 @@ namespace PaintDotNet
             this.cancelButton.TabIndex = 6;
             this.cancelButton.Text = "button1";
             this.cancelButton.UseVisualStyleBackColor = true;
+            this.cancelButton.FlatStyle = FlatStyle.System;
             this.cancelButton.Click += new System.EventHandler(this.CancelButton_Click);
             // 
             // SavePaletteDialog

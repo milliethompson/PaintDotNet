@@ -35,7 +35,7 @@ namespace PaintDotNet.Actions
         {
             get
             {
-                return ImageResource.Get("Icons.MenuLayersImportFromFileIcon.png");
+                return PdnResources.GetImageResource("Icons.MenuLayersImportFromFileIcon.png");
             }
         }
 

@@ -7,7 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
+using PaintDotNet;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -34,8 +34,18 @@ namespace PaintDotNet.Actions
         {
             DocumentWorkspace originalDW = appWorkspace.ActiveDocumentWorkspace;
 
-            int oldLatency = appWorkspace.Widgets.DocumentStrip.ThumbnailUpdateLatency;
-            appWorkspace.Widgets.DocumentStrip.ThumbnailUpdateLatency = 0;
+            int oldLatency = 10;
+
+            try
+            {
+                oldLatency = appWorkspace.Widgets.DocumentStrip.ThumbnailUpdateLatency;
+                appWorkspace.Widgets.DocumentStrip.ThumbnailUpdateLatency = 0;
+            }
+
+            catch (NullReferenceException)
+            {
+                // See bug #2544
+            }
 
             List<DocumentWorkspace> unsavedDocs = new List<DocumentWorkspace>();
             foreach (DocumentWorkspace dw in appWorkspace.DocumentWorkspaces)
@@ -118,7 +128,15 @@ namespace PaintDotNet.Actions
                 }
             }
 
-            appWorkspace.Widgets.DocumentStrip.ThumbnailUpdateLatency = oldLatency;
+            try
+            {
+                appWorkspace.Widgets.DocumentStrip.ThumbnailUpdateLatency = oldLatency;
+            }
+
+            catch (NullReferenceException)
+            {
+                // See bug #2544
+            }
 
             if (this.cancelled)
             {

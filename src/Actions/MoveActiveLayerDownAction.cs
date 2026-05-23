@@ -27,7 +27,7 @@ namespace PaintDotNet.Actions
         {
             get
             {
-                return ImageResource.Get("Icons.MenuLayersMoveLayerDownIcon.png");
+                return PdnResources.GetImageResource("Icons.MenuLayersMoveLayerDownIcon.png");
             }
         }
 

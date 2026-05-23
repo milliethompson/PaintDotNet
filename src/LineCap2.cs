@@ -11,7 +11,6 @@ using System;
 
 namespace PaintDotNet
 {
-    // TODO: find better name man.
     public enum LineCap2
     {
         Flat = 0,

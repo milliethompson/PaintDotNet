@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -21,7 +20,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    // TODO: after 3.0, refactor into smaller ToolConfigStrip "Sections"
+    // TODO: for 4.0, refactor into smaller ToolConfigStrip "Sections"
+    //       better yet, use IndirectUI
     public class ToolConfigStrip
         : ToolStripEx,
           IBrushConfig,
@@ -33,15 +33,18 @@ namespace PaintDotNet
           IToleranceConfig,
           IColorPickerConfig,
           IGradientConfig,          
-          IResamplingConfig
+          IResamplingConfig,
+          ISelectionCombineModeConfig,
+          IFloodModeConfig,
+          ISelectionDrawModeConfig
     {
         private ToolBarConfigItems toolBarConfigItems = ToolBarConfigItems.None;
 
         private EnumLocalizer hatchStyleNames = EnumLocalizer.Create(typeof(HatchStyle));
         private string solidBrushText;
-        private ImageResource shapeOutlineImage = ImageResource.Get("Icons.ShapeOutlineIcon.png");
-        private ImageResource shapeInteriorImage = ImageResource.Get("Icons.ShapeInteriorIcon.png");
-        private ImageResource shapeBothImage = ImageResource.Get("Icons.ShapeBothIcon.png");
+        private ImageResource shapeOutlineImage = PdnResources.GetImageResource("Icons.ShapeOutlineIcon.png");
+        private ImageResource shapeInteriorImage = PdnResources.GetImageResource("Icons.ShapeInteriorIcon.png");
+        private ImageResource shapeBothImage = PdnResources.GetImageResource("Icons.ShapeBothIcon.png");
 
         private ToolStripSeparator brushSeparator;
         private ToolStripLabel brushStyleLabel;
@@ -178,6 +181,43 @@ namespace PaintDotNet
                 108, 144, 192, 216, 288
             };
 
+        private ToolStripSeparator selectionCombineModeSeparator;
+        private ToolStripLabel selectionCombineModeLabel;
+        private ToolStripSplitButton selectionCombineModeSplitButton;
+
+        private ToolStripSeparator floodModeSeparator;
+        private ToolStripLabel floodModeLabel;
+        private ToolStripSplitButton floodModeSplitButton;
+
+        private SelectionDrawModeInfo selectionDrawModeInfo;
+        private ToolStripSeparator selectionDrawModeSeparator;
+        private ToolStripLabel selectionDrawModeModeLabel;
+        private ToolStripSplitButton selectionDrawModeSplitButton;
+        private ToolStripLabel selectionDrawModeWidthLabel;
+        private ToolStripTextBox selectionDrawModeWidthTextBox;
+        private ToolStripButton selectionDrawModeSwapButton;
+        private ToolStripLabel selectionDrawModeHeightLabel;
+        private ToolStripTextBox selectionDrawModeHeightTextBox;
+        private UnitsComboBoxStrip selectionDrawModeUnits;
+
+        public event EventHandler SelectionDrawModeUnitsChanging;
+        protected void OnSelectionDrawModeUnitsChanging()
+        {
+            if (SelectionDrawModeUnitsChanging != null)
+            {
+                SelectionDrawModeUnitsChanging(this, EventArgs.Empty);
+            }
+        }
+
+        public event EventHandler SelectionDrawModeUnitsChanged;
+        protected void OnSelectionDrawModeUnitsChanged()
+        {
+            if (SelectionDrawModeUnitsChanged != null)
+            {
+                SelectionDrawModeUnitsChanged(this, EventArgs.Empty);
+            }
+        }
+
         public void LoadFromAppEnvironment(AppEnvironment appEnvironment)
         {
             AlphaBlending = appEnvironment.AlphaBlending;
@@ -192,6 +232,9 @@ namespace PaintDotNet
             FontSmoothing = appEnvironment.FontSmoothing;
             FontAlignment = appEnvironment.TextAlignment;
             Tolerance = appEnvironment.Tolerance;
+            SelectionCombineMode = appEnvironment.SelectionCombineMode;
+            FloodMode = appEnvironment.FloodMode;
+            SelectionDrawModeInfo = appEnvironment.SelectionDrawModeInfo;
         }
 
         public event EventHandler BrushInfoChanged;
@@ -403,9 +446,9 @@ namespace PaintDotNet
             this.penSizeComboBox.SelectedIndex = 1; // default to brush size of 2
 
             this.penSizeDecButton.ToolTipText = PdnResources.GetString("ToolConfigStrip.PenSizeDecButton.ToolTipText");
-            this.penSizeDecButton.Image = ImageResource.Get("Icons.MinusButtonIcon.png").Reference;
+            this.penSizeDecButton.Image = PdnResources.GetImageResource("Icons.MinusButtonIcon.png").Reference;
             this.penSizeIncButton.ToolTipText = PdnResources.GetString("ToolConfigStrip.PenSizeIncButton.ToolTipText");
-            this.penSizeIncButton.Image = ImageResource.Get("Icons.PlusButtonIcon.png").Reference;
+            this.penSizeIncButton.Image = PdnResources.GetImageResource("Icons.PlusButtonIcon.png").Reference;
             this.penStyleLabel.Text = PdnResources.GetString("ToolConfigStrip.PenStyleLabel.Text");
             this.penStartCapSplitButton.Tag = PenInfo.DefaultLineCap;
             this.penStartCapSplitButton.Image = GetLineCapImage(PenInfo.DefaultLineCap, true).Reference;
@@ -418,26 +461,26 @@ namespace PaintDotNet
             this.penEndCapSplitButton.ToolTipText = PdnResources.GetString("ToolConfigStrip.PenEndCapSplitButton.ToolTipText");
 
             this.gradientLinearClampedButton.ToolTipText = this.gradientTypeNames.EnumValueToLocalizedName(GradientType.LinearClamped);
-            this.gradientLinearClampedButton.Image = ImageResource.Get("Icons.LinearClampedGradientIcon.png").Reference;
+            this.gradientLinearClampedButton.Image = PdnResources.GetImageResource("Icons.LinearClampedGradientIcon.png").Reference;
             this.gradientLinearReflectedButton.ToolTipText = this.gradientTypeNames.EnumValueToLocalizedName(GradientType.LinearReflected);
-            this.gradientLinearReflectedButton.Image = ImageResource.Get("Icons.LinearReflectedGradientIcon.png").Reference;
+            this.gradientLinearReflectedButton.Image = PdnResources.GetImageResource("Icons.LinearReflectedGradientIcon.png").Reference;
             this.gradientLinearDiamondButton.ToolTipText = this.gradientTypeNames.EnumValueToLocalizedName(GradientType.LinearDiamond);
-            this.gradientLinearDiamondButton.Image = ImageResource.Get("Icons.LinearDiamondGradientIcon.png").Reference;
+            this.gradientLinearDiamondButton.Image = PdnResources.GetImageResource("Icons.LinearDiamondGradientIcon.png").Reference;
             this.gradientRadialButton.ToolTipText = this.gradientTypeNames.EnumValueToLocalizedName(GradientType.Radial);
-            this.gradientRadialButton.Image = ImageResource.Get("Icons.RadialGradientIcon.png").Reference;
+            this.gradientRadialButton.Image = PdnResources.GetImageResource("Icons.RadialGradientIcon.png").Reference;
             this.gradientConicalButton.ToolTipText = this.gradientTypeNames.EnumValueToLocalizedName(GradientType.Conical);
-            this.gradientConicalButton.Image = ImageResource.Get("Icons.ConicalGradientIcon.png").Reference;
+            this.gradientConicalButton.Image = PdnResources.GetImageResource("Icons.ConicalGradientIcon.png").Reference;
 
-            this.gradientAllColorChannelsImage = ImageResource.Get("Icons.AllColorChannelsIcon.png");
-            this.gradientAlphaChannelOnlyImage = ImageResource.Get("Icons.AlphaChannelOnlyIcon.png");
+            this.gradientAllColorChannelsImage = PdnResources.GetImageResource("Icons.AllColorChannelsIcon.png");
+            this.gradientAlphaChannelOnlyImage = PdnResources.GetImageResource("Icons.AlphaChannelOnlyIcon.png");
             this.gradientChannelsSplitButton.Image = this.gradientAllColorChannelsImage.Reference;
 
-            this.antiAliasingEnabledImage = ImageResource.Get("Icons.AntiAliasingEnabledIcon.png");
-            this.antiAliasingDisabledImage = ImageResource.Get("Icons.AntiAliasingDisabledIcon.png");
+            this.antiAliasingEnabledImage = PdnResources.GetImageResource("Icons.AntiAliasingEnabledIcon.png");
+            this.antiAliasingDisabledImage = PdnResources.GetImageResource("Icons.AntiAliasingDisabledIcon.png");
             this.antiAliasingSplitButton.Image = this.antiAliasingEnabledImage.Reference;
 
-            this.alphaBlendingEnabledImage = ImageResource.Get("Icons.BlendingEnabledIcon.png");
-            this.alphaBlendingOverwriteImage = ImageResource.Get("Icons.BlendingOverwriteIcon.png");
+            this.alphaBlendingEnabledImage = PdnResources.GetImageResource("Icons.BlendingEnabledIcon.png");
+            this.alphaBlendingOverwriteImage = PdnResources.GetImageResource("Icons.BlendingOverwriteIcon.png");
             this.alphaBlendingSplitButton.Image = this.alphaBlendingEnabledImage.Reference;
 
             this.penSizeComboBox.Size = new Size(UI.ScaleWidth(this.penSizeComboBox.Width), penSizeComboBox.Height);
@@ -506,9 +549,9 @@ namespace PaintDotNet
             this.fontItalicsButton.Image = PdnResources.GetImageBmpOrPng("Icons.FontItalicIcon");
             this.fontUnderlineButton.Image = PdnResources.GetImageBmpOrPng("Icons.FontUnderlineIcon");
 
-            this.fontAlignLeftButton.Image = PdnResources.GetImage("Icons.TextAlignLeftIcon.png");
-            this.fontAlignCenterButton.Image = PdnResources.GetImage("Icons.TextAlignCenterIcon.png");
-            this.fontAlignRightButton.Image = PdnResources.GetImage("Icons.TextAlignRightIcon.png");
+            this.fontAlignLeftButton.Image = PdnResources.GetImageResource("Icons.TextAlignLeftIcon.png").Reference;
+            this.fontAlignCenterButton.Image = PdnResources.GetImageResource("Icons.TextAlignCenterIcon.png").Reference;
+            this.fontAlignRightButton.Image = PdnResources.GetImageResource("Icons.TextAlignRightIcon.png").Reference;
 
             this.fontBoldButton.ToolTipText = PdnResources.GetString("TextConfigWidget.BoldButton.ToolTipText");
             this.fontItalicsButton.ToolTipText = PdnResources.GetString("TextConfigWidget.ItalicButton.ToolTipText");
@@ -566,6 +609,19 @@ namespace PaintDotNet
             this.colorPickerComboBox.DropDownWidth = UI.ScaleWidth(this.colorPickerComboBox.DropDownWidth);
 
             this.toleranceSlider.Size = UI.ScaleSize(this.toleranceSlider.Size);
+
+            this.selectionCombineModeLabel.Text = PdnResources.GetString("ToolConfigStrip.SelectionCombineModeLabel.Text");
+
+            this.floodModeLabel.Text = PdnResources.GetString("ToolConfigStrip.FloodModeLabel.Text");
+
+            this.selectionDrawModeModeLabel.Text = PdnResources.GetString("ToolConfigStrip.SelectionDrawModeLabel.Text");
+            this.selectionDrawModeWidthLabel.Text = PdnResources.GetString("ToolConfigStrip.SelectionDrawModeWidthLabel.Text");
+            this.selectionDrawModeHeightLabel.Text = PdnResources.GetString("ToolConfigStrip.SelectionDrawModeHeightLabel.Text");
+            this.selectionDrawModeSwapButton.Image = PdnResources.GetImageResource("Icons.ToolConfigStrip.SelectionDrawModeSwapButton.png").Reference;
+
+            this.selectionDrawModeWidthTextBox.Size = new Size(UI.ScaleWidth(this.selectionDrawModeWidthTextBox.Width), this.selectionDrawModeWidthTextBox.Height);
+            this.selectionDrawModeHeightTextBox.Size = new Size(UI.ScaleWidth(this.selectionDrawModeHeightTextBox.Width), this.selectionDrawModeHeightTextBox.Height);
+            this.selectionDrawModeUnits.Size = new Size(UI.ScaleWidth(this.selectionDrawModeUnits.Width), this.selectionDrawModeUnits.Height);
 
             ToolBarConfigItems = ToolBarConfigItems.None;
             ResumeLayout(false);
@@ -658,6 +714,24 @@ namespace PaintDotNet
             this.colorPickerLabel = new ToolStripLabel();
             this.colorPickerComboBox = new ToolStripComboBox();
 
+            this.selectionCombineModeSeparator = new ToolStripSeparator();
+            this.selectionCombineModeLabel = new ToolStripLabel();
+            this.selectionCombineModeSplitButton = new ToolStripSplitButton();
+
+            this.floodModeSeparator = new ToolStripSeparator();
+            this.floodModeLabel = new ToolStripLabel();
+            this.floodModeSplitButton = new ToolStripSplitButton();
+
+            this.selectionDrawModeSeparator = new ToolStripSeparator();
+            this.selectionDrawModeModeLabel = new ToolStripLabel();
+            this.selectionDrawModeSplitButton = new ToolStripSplitButton();
+            this.selectionDrawModeWidthLabel = new ToolStripLabel();
+            this.selectionDrawModeWidthTextBox = new ToolStripTextBox();
+            this.selectionDrawModeSwapButton = new ToolStripButton();
+            this.selectionDrawModeHeightLabel = new ToolStripLabel();
+            this.selectionDrawModeHeightTextBox = new ToolStripTextBox();
+            this.selectionDrawModeUnits = new UnitsComboBoxStrip();
+
             this.SuspendLayout();
             //
             // brushStyleLabel
@@ -682,11 +756,13 @@ namespace PaintDotNet
             //
             this.shapeButton.Name = "shapeButton";
             this.shapeButton.DropDownOpening += new EventHandler(ShapeButton_DropDownOpening);
+
             this.shapeButton.DropDownClosed += 
                 delegate(object sender, EventArgs e)
                 {
                     this.shapeButton.DropDownItems.Clear();
                 };
+            
             this.shapeButton.ButtonClick +=
                 delegate(object sender, EventArgs e)
                 {
@@ -900,7 +976,7 @@ namespace PaintDotNet
             //
             this.toleranceSlider.Name = "toleranceSlider";
             this.toleranceSlider.ToleranceChanged += new EventHandler(ToleranceSlider_ToleranceChanged);
-            this.toleranceSlider.Size = new Size(120, 16);
+            this.toleranceSlider.Size = new Size(150, 16);
             //
             // toleranceSliderStrip
             //
@@ -914,7 +990,6 @@ namespace PaintDotNet
             // fontFamilyComboBox
             //
             this.fontFamilyComboBox.Name = "fontComboBox";
-            this.fontFamilyComboBox.AllowDrop = true;
             this.fontFamilyComboBox.DropDownWidth = 240;
             this.fontFamilyComboBox.MaxDropDownItems = 12;
             this.fontFamilyComboBox.Sorted = true;
@@ -1008,65 +1083,234 @@ namespace PaintDotNet
             this.colorPickerComboBox.Sorted = false;
             this.colorPickerComboBox.SelectedIndexChanged += new EventHandler(ColorPickerComboBox_SelectedIndexChanged);
             //
+            // selectionCombineModeSeparator
+            //
+            this.selectionCombineModeSeparator.Name = "selectionCombineModeSeparator";
+            //
+            // selectionCombineModeLabel
+            //
+            this.selectionCombineModeLabel.Name = "selectionCombineModeLabel";
+            //
+            // selectionCombineModeSplitButton
+            //
+            this.selectionCombineModeSplitButton.Name = "selectionCombineModeSplitButton";
+            this.selectionCombineModeSplitButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            this.selectionCombineModeSplitButton.DropDownOpening += new EventHandler(SelectionCombineModeSplitButton_DropDownOpening);
+            this.selectionCombineModeSplitButton.DropDownClosed +=
+                delegate(object sender, EventArgs e)
+                {
+                    this.selectionCombineModeSplitButton.DropDownItems.Clear();
+                };
+            this.selectionCombineModeSplitButton.ButtonClick +=
+                delegate(object sender, EventArgs e)
+                {
+                    this.SelectionCombineMode = CycleSelectionCombineMode(this.SelectionCombineMode);
+                };
+            //
+            // floodModeSeparator
+            //
+            this.floodModeSeparator.Name = "floodModeSeparator";
+            //
+            // floodModeLabel
+            //
+            this.floodModeLabel.Name = "floodModeLabel";
+            //
+            // floodModeSplitButton
+            //
+            this.floodModeSplitButton.Name = "floodModeSplitButton";
+            this.floodModeSplitButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            this.floodModeSplitButton.DropDownOpening += new EventHandler(FloodModeSplitButton_DropDownOpening);
+            this.floodModeSplitButton.DropDownClosed +=
+                delegate(object sender, EventArgs e)
+                {
+                    this.floodModeSplitButton.DropDownItems.Clear();
+                };
+            this.floodModeSplitButton.ButtonClick +=
+                delegate(object sender, EventArgs e)
+                {
+                    this.FloodMode = CycleFloodMode(this.FloodMode);
+                };
+            //
+            // selectionDrawModeSeparator
+            //
+            this.selectionDrawModeSeparator.Name = "selectionDrawModeSeparator";
+            //
+            // selectionDrawModeModeLabel
+            //
+            this.selectionDrawModeModeLabel.Name = "selectionDrawModeModeLabel";
+            //
+            // selectionDrawModeSplitButton
+            //
+            this.selectionDrawModeSplitButton.Name = "selectionDrawModeSplitButton";
+            this.selectionDrawModeSplitButton.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+            this.selectionDrawModeSplitButton.DropDownOpening += new EventHandler(SelectionDrawModeSplitButton_DropDownOpening);
+            this.selectionDrawModeSplitButton.DropDownClosed +=
+                delegate(object sender, EventArgs e)
+                {
+                    this.selectionDrawModeSplitButton.DropDownItems.Clear();
+                };
+            this.selectionDrawModeSplitButton.ButtonClick +=
+                delegate(object sender, EventArgs e)
+                {
+                    SelectionDrawMode newSDM = CycleSelectionDrawMode(this.SelectionDrawModeInfo.DrawMode);
+                    this.SelectionDrawModeInfo = this.SelectionDrawModeInfo.CloneWithNewDrawMode(newSDM);
+                };
+            //
+            // selectionDrawModeWidthLabel
+            //
+            this.selectionDrawModeWidthLabel.Name = "selectionDrawModeWidthLabel";
+            //
+            // selectionDrawModeWidthTextBox
+            //
+            this.selectionDrawModeWidthTextBox.Name = "selectionDrawModeWidthTextBox";
+            this.selectionDrawModeWidthTextBox.TextBox.Width = 50;
+            this.selectionDrawModeWidthTextBox.TextBoxTextAlign = HorizontalAlignment.Right;
+            this.selectionDrawModeWidthTextBox.Enter +=
+                delegate(object sender, EventArgs e)
+                {
+                    this.selectionDrawModeWidthTextBox.TextBox.Select(0, this.selectionDrawModeWidthTextBox.TextBox.Text.Length);
+                };
+            this.selectionDrawModeWidthTextBox.Leave +=
+                delegate(object sender, EventArgs e)
+                {
+                    double newWidth;
+                    if (double.TryParse(this.selectionDrawModeWidthTextBox.Text, out newWidth))
+                    {
+                        this.SelectionDrawModeInfo = this.selectionDrawModeInfo.CloneWithNewWidth(newWidth);
+                    }
+                    else
+                    {
+                        this.selectionDrawModeWidthTextBox.Text = this.selectionDrawModeInfo.Width.ToString();
+                    }
+                };
+            //
+            // selectionDrawModeSwapButton
+            //
+            this.selectionDrawModeSwapButton.Name = "selectionDrawModeSwapButton";
+            this.selectionDrawModeSwapButton.Click +=
+                delegate(object sender, EventArgs e)
+                {
+                    SelectionDrawModeInfo oldSDMI = this.SelectionDrawModeInfo;
+                    SelectionDrawModeInfo newSDMI = new SelectionDrawModeInfo(oldSDMI.DrawMode, oldSDMI.Height, oldSDMI.Width, oldSDMI.Units);
+                    this.SelectionDrawModeInfo = newSDMI;
+                };
+            //
+            // selectionDrawModeHeightLabel
+            //
+            this.selectionDrawModeHeightLabel.Name = "selectionDrawModeHeightLabel";
+            //
+            // selectionDrawModeHeightTextBox
+            //
+            this.selectionDrawModeHeightTextBox.Name = "selectionDrawModeHeightTextBox";
+            this.selectionDrawModeHeightTextBox.TextBox.Width = 50;
+            this.selectionDrawModeHeightTextBox.TextBoxTextAlign = HorizontalAlignment.Right;
+            this.selectionDrawModeHeightTextBox.Enter +=
+                delegate(object sender, EventArgs e)
+                {
+                    this.selectionDrawModeHeightTextBox.TextBox.Select(0, this.selectionDrawModeHeightTextBox.TextBox.Text.Length);
+                };
+            this.selectionDrawModeHeightTextBox.Leave +=
+                delegate(object sender, EventArgs e)
+                {
+                    double newHeight;
+                    if (double.TryParse(this.selectionDrawModeHeightTextBox.Text, out newHeight))
+                    {
+                        this.SelectionDrawModeInfo = this.selectionDrawModeInfo.CloneWithNewHeight(newHeight);
+                    }
+                    else
+                    {
+                        this.selectionDrawModeHeightTextBox.Text = this.selectionDrawModeInfo.Height.ToString();
+                    }
+                };
+            //
+            // selectionDrawModeUnits
+            //
+            this.selectionDrawModeUnits.Name = "selectionDrawModeUnits";
+            this.selectionDrawModeUnits.UnitsDisplayType = UnitsDisplayType.Plural;
+            this.selectionDrawModeUnits.LowercaseStrings = true;
+            this.selectionDrawModeUnits.Size = new Size(90, this.selectionDrawModeUnits.Height);
+            //
             // DrawConfigStrip
             //
             this.AutoSize = true;
 
-            this.Items.Add(this.resamplingSeparator);
-            this.Items.Add(this.resamplingLabel);
-            this.Items.Add(this.resamplingComboBox);
+            this.Items.AddRange(
+                new ToolStripItem[]
+                {
+                    this.selectionCombineModeSeparator,
+                    this.selectionCombineModeLabel,
+                    this.selectionCombineModeSplitButton,
 
-            this.Items.Add(this.colorPickerSeparator);
-            this.Items.Add(this.colorPickerLabel);
-            this.Items.Add(this.colorPickerComboBox);
+                    this.selectionDrawModeSeparator,
+                    this.selectionDrawModeModeLabel,
+                    this.selectionDrawModeSplitButton,
+                    this.selectionDrawModeWidthLabel,
+                    this.selectionDrawModeWidthTextBox,
+                    this.selectionDrawModeSwapButton,
+                    this.selectionDrawModeHeightLabel,
+                    this.selectionDrawModeHeightTextBox,
+                    this.selectionDrawModeUnits,
 
-            this.Items.Add(this.fontSeparator);
-            this.Items.Add(this.fontLabel);
-            this.Items.Add(this.fontFamilyComboBox);
-            this.Items.Add(this.fontSizeComboBox);
-            this.Items.Add(this.fontSmoothingComboBox);
-            this.Items.Add(this.fontStyleSeparator);
-            this.Items.Add(this.fontBoldButton);
-            this.Items.Add(this.fontItalicsButton);
-            this.Items.Add(this.fontUnderlineButton);
-            this.Items.Add(this.fontAlignSeparator);
-            this.Items.Add(this.fontAlignLeftButton);
-            this.Items.Add(this.fontAlignCenterButton);
-            this.Items.Add(this.fontAlignRightButton);
+                    this.floodModeSeparator,
+                    this.floodModeLabel,
+                    this.floodModeSplitButton,
 
-            this.Items.Add(this.shapeSeparator);
-            this.Items.Add(this.shapeButton);
+                    this.resamplingSeparator,
+                    this.resamplingLabel,
+                    this.resamplingComboBox,
 
-            this.Items.Add(this.gradientSeparator1);
-            this.Items.Add(this.gradientLinearClampedButton);
-            this.Items.Add(this.gradientLinearReflectedButton);
-            this.Items.Add(this.gradientLinearDiamondButton);
-            this.Items.Add(this.gradientRadialButton);
-            this.Items.Add(this.gradientConicalButton);
-            this.Items.Add(this.gradientSeparator2);
-            this.Items.Add(this.gradientChannelsSplitButton);
+                    this.colorPickerSeparator,
+                    this.colorPickerLabel,
+                    this.colorPickerComboBox,
 
-            this.Items.Add(this.penSeparator);
-            this.Items.Add(this.penSizeLabel);
-            this.Items.Add(this.penSizeDecButton);
-            this.Items.Add(this.penSizeComboBox);
-            this.Items.Add(this.penSizeIncButton);
-            this.Items.Add(this.penStyleLabel);
-            this.Items.Add(this.penStartCapSplitButton);
-            this.Items.Add(this.penDashStyleSplitButton);
-            this.Items.Add(this.penEndCapSplitButton);
+                    this.fontSeparator,
+                    this.fontLabel,
+                    this.fontFamilyComboBox,
+                    this.fontSizeComboBox,
+                    this.fontSmoothingComboBox,
+                    this.fontStyleSeparator,
+                    this.fontBoldButton,
+                    this.fontItalicsButton,
+                    this.fontUnderlineButton,
+                    this.fontAlignSeparator,
+                    this.fontAlignLeftButton,
+                    this.fontAlignCenterButton,
+                    this.fontAlignRightButton,
 
-            this.Items.Add(this.brushSeparator);
-            this.Items.Add(this.brushStyleLabel);
-            this.Items.Add(this.brushStyleComboBox);
+                    this.shapeSeparator,
+                    this.shapeButton,
 
-            this.Items.Add(this.toleranceSeparator);
-            this.Items.Add(this.toleranceLabel);
-            this.Items.Add(this.toleranceSliderStrip);
+                    this.gradientSeparator1,
+                    this.gradientLinearClampedButton,
+                    this.gradientLinearReflectedButton,
+                    this.gradientLinearDiamondButton,
+                    this.gradientRadialButton,
+                    this.gradientConicalButton,
+                    this.gradientSeparator2,
+                    this.gradientChannelsSplitButton,
 
-            this.Items.Add(this.blendingSeparator);
-            this.Items.Add(this.antiAliasingSplitButton);
-            this.Items.Add(this.alphaBlendingSplitButton);
+                    this.penSeparator,
+                    this.penSizeLabel,
+                    this.penSizeDecButton,
+                    this.penSizeComboBox,
+                    this.penSizeIncButton,
+                    this.penStyleLabel,
+                    this.penStartCapSplitButton,
+                    this.penDashStyleSplitButton,
+                    this.penEndCapSplitButton,
+
+                    this.brushSeparator,
+                    this.brushStyleLabel,
+                    this.brushStyleComboBox,
+
+                    this.toleranceSeparator,
+                    this.toleranceLabel,
+                    this.toleranceSliderStrip,
+
+                    this.blendingSeparator,
+                    this.antiAliasingSplitButton,
+                    this.alphaBlendingSplitButton
+                });
 
             this.ResumeLayout(false);            
         }
@@ -1595,7 +1839,7 @@ namespace PaintDotNet
         {
             string nameFormat = "Images.DashStyleButton.{0}.png";
             string name = string.Format(nameFormat, dashStyle.ToString());
-            ImageResource imageResource = ImageResource.Get(name);
+            ImageResource imageResource = PdnResources.GetImageResource(name);
 
             Image returnImage;
 
@@ -1615,7 +1859,7 @@ namespace PaintDotNet
         {
             string nameFormat = "Images.LineCapButton.{0}.{1}.png";
             string name = string.Format(nameFormat, lineCap.ToString(), isStartCap ? "Start" : "End");
-            ImageResource imageResource = ImageResource.Get(name);
+            ImageResource imageResource = PdnResources.GetImageResource(name);
             return imageResource;
         }
 
@@ -1700,7 +1944,7 @@ namespace PaintDotNet
                         PenInfo = newPenInfo;
                     });
 
-                mi.Tag = new Pair<ToolStripSplitButton, LineCap2>((ToolStripSplitButton)sender, lineCap);
+                mi.Tag = Pair.Create(splitButton, lineCap);
 
                 if (lineCap == currentLineCap)
                 {
@@ -2344,6 +2588,25 @@ namespace PaintDotNet
                 this.colorPickerLabel.Visible = showColorPicker;
                 this.colorPickerComboBox.Visible = showColorPicker;
 
+                bool showSelectionCombineMode = ((value & ToolBarConfigItems.SelectionCombineMode) != ToolBarConfigItems.None);
+                this.selectionCombineModeSeparator.Visible = showSelectionCombineMode;
+                this.selectionCombineModeLabel.Visible = showSelectionCombineMode;
+                this.selectionCombineModeSplitButton.Visible = showSelectionCombineMode;
+
+                bool showFloodMode = ((value & ToolBarConfigItems.FloodMode) != ToolBarConfigItems.None);
+                this.floodModeSeparator.Visible = showFloodMode;
+                this.floodModeLabel.Visible = showFloodMode;
+                this.floodModeSplitButton.Visible = showFloodMode;
+
+                bool showSelectionDrawMode = ((value & ToolBarConfigItems.SelectionDrawMode) != ToolBarConfigItems.None);
+                this.selectionDrawModeSeparator.Visible = showSelectionDrawMode;
+                this.selectionDrawModeModeLabel.Visible = showSelectionDrawMode;
+                this.selectionDrawModeSplitButton.Visible = showSelectionDrawMode;
+                this.selectionDrawModeWidthLabel.Visible = showSelectionDrawMode;
+                this.selectionDrawModeSwapButton.Visible = showSelectionDrawMode;
+                this.selectionDrawModeHeightLabel.Visible = showSelectionDrawMode;
+                RefreshSelectionDrawModeInfoVisibilities();
+
                 if (value == ToolBarConfigItems.None)
                 {
                     this.Visible = false;
@@ -2470,6 +2733,353 @@ namespace PaintDotNet
         public void PerformResamplingAlgorithmChanged()
         {
             OnResamplingAlgorithmChanged();
+        }
+
+        public event EventHandler SelectionCombineModeChanged;
+
+        protected void OnSelectionCombineModeChanged()
+        {
+            if (SelectionCombineModeChanged != null)
+            {
+                SelectionCombineModeChanged(this, EventArgs.Empty);
+            }
+        }
+
+        public CombineMode SelectionCombineMode
+        {
+            get
+            {
+                object tag = this.selectionCombineModeSplitButton.Tag;
+                CombineMode cm = (tag == null) ? CombineMode.Replace : (CombineMode)tag;
+                return cm;
+            }
+
+            set
+            {
+                object tag = this.selectionCombineModeSplitButton.Tag;
+                CombineMode oldCm = (tag == null) ? CombineMode.Replace : (CombineMode)tag;
+
+                if (tag == null || (tag != null && value != oldCm))
+                {
+                    this.selectionCombineModeSplitButton.Tag = value;
+                    UI.SuspendControlPainting(this);
+                    this.selectionCombineModeSplitButton.Image = GetSelectionCombineModeImage(value).Reference;
+                    UI.ResumeControlPainting(this);
+                    OnSelectionCombineModeChanged();
+                    Invalidate(true);
+                }
+            }
+        }
+
+        public void PerformSelectionCombineModeChanged()
+        {
+            OnSelectionCombineModeChanged();
+        }
+
+        private ImageResource GetSelectionCombineModeImage(CombineMode cm)
+        {
+            return PdnResources.GetImageResource("Icons.ToolConfigStrip.SelectionCombineMode." + cm.ToString() + ".png");
+        }
+
+        private void SelectionCombineModeSplitButton_DropDownOpening(object sender, EventArgs e)
+        {
+            this.selectionCombineModeSplitButton.DropDownItems.Clear();
+
+            foreach (CombineMode cm in
+                new CombineMode[] 
+                { 
+                    CombineMode.Replace, 
+                    CombineMode.Union, 
+                    CombineMode.Exclude, 
+                    CombineMode.Xor 
+                })
+            {
+                ToolStripMenuItem cmMI = new ToolStripMenuItem(
+                    PdnResources.GetString("ToolConfigStrip.SelectionCombineModeSplitButton." + cm.ToString() + ".Text"),
+                    GetSelectionCombineModeImage(cm).Reference,
+                    delegate(object sender2, EventArgs e2)
+                    {
+                        ToolStripMenuItem asTSMI = (ToolStripMenuItem)sender2;
+                        CombineMode newCM = (CombineMode)asTSMI.Tag;
+                        this.SelectionCombineMode = newCM;
+                    });
+
+                cmMI.Tag = cm;
+                cmMI.Checked = (cm == SelectionCombineMode);
+
+                this.selectionCombineModeSplitButton.DropDownItems.Add(cmMI);
+            }
+        }
+
+        private CombineMode CycleSelectionCombineMode(CombineMode mode)
+        {
+            CombineMode newMode;
+
+            // Replace -> Union -> Exclude -> Xor -> Replace
+
+            switch (mode)
+            {
+                default:
+                case CombineMode.Intersect:
+                case CombineMode.Complement:
+                    throw new InvalidEnumArgumentException();
+
+                case CombineMode.Exclude:
+                    newMode = CombineMode.Xor;
+                    break;
+
+                case CombineMode.Replace:
+                    newMode = CombineMode.Union;
+                    break;
+
+                case CombineMode.Union:
+                    newMode = CombineMode.Exclude;
+                    break;
+
+                case CombineMode.Xor:
+                    newMode = CombineMode.Replace;
+                    break;
+            }
+
+            return newMode;
+        }
+
+        public event EventHandler FloodModeChanged;
+
+        protected void OnFloodModeChanged()
+        {
+            if (FloodModeChanged != null)
+            {
+                FloodModeChanged(this, EventArgs.Empty);
+            }
+        }
+
+        public FloodMode FloodMode
+        {
+            get
+            {
+                object tag = this.floodModeSplitButton.Tag;
+                FloodMode fm = (tag == null) ? FloodMode.Local : (FloodMode)tag;
+                return fm;
+            }
+
+            set
+            {
+                object tag = this.floodModeSplitButton.Tag;
+                FloodMode oldFm = (tag == null) ? FloodMode.Local : (FloodMode)tag;
+
+                if (tag == null || (tag != null && value != oldFm))
+                {
+                    this.floodModeSplitButton.Tag = value;
+                    this.floodModeSplitButton.Image = GetFloodModeImage(value).Reference;
+                    OnFloodModeChanged();
+                }
+            }
+        }
+
+        public void PerformFloodModeChanged()
+        {
+            OnFloodModeChanged();
+        }
+
+        private ImageResource GetFloodModeImage(FloodMode cm)
+        {
+            return PdnResources.GetImageResource("Icons.ToolConfigStrip.FloodMode." + cm.ToString() + ".png");
+        }
+
+        private void FloodModeSplitButton_DropDownOpening(object sender, EventArgs e)
+        {
+            this.floodModeSplitButton.DropDownItems.Clear();
+
+            foreach (FloodMode fm in
+                new FloodMode[] 
+                { 
+                    FloodMode.Local,
+                    FloodMode.Global
+                })
+            {
+                ToolStripMenuItem fmMI = new ToolStripMenuItem(
+                    PdnResources.GetString("ToolConfigStrip.FloodModeSplitButton." + fm.ToString() + ".Text"),
+                    GetFloodModeImage(fm).Reference,
+                    delegate(object sender2, EventArgs e2)
+                    {
+                        ToolStripMenuItem asTSMI = (ToolStripMenuItem)sender2;
+                        FloodMode newFM = (FloodMode)asTSMI.Tag;
+                        this.FloodMode = newFM;
+                    });
+
+                fmMI.Tag = fm;
+                fmMI.Checked = (fm == FloodMode);
+
+                this.floodModeSplitButton.DropDownItems.Add(fmMI);
+            }
+        }
+
+        private FloodMode CycleFloodMode(FloodMode mode)
+        {
+            FloodMode newMode;
+
+            switch (mode)
+            {
+                default:
+                    throw new InvalidEnumArgumentException();
+
+                case FloodMode.Global:
+                    newMode = FloodMode.Local;
+                    break;
+
+                case FloodMode.Local:
+                    newMode = FloodMode.Global;
+                    break;
+            }
+
+            return newMode;
+        }
+
+        public event EventHandler SelectionDrawModeInfoChanged;
+
+        protected void OnSelectionDrawModeInfoChanged()
+        {
+            if (SelectionDrawModeInfoChanged != null)
+            {
+                SelectionDrawModeInfoChanged(this, EventArgs.Empty);
+            }
+        }
+
+        // syncs this.SelectionDrawModeInfo into the controls
+        private void SyncSelectionDrawModeInfoUI()
+        {
+            this.selectionDrawModeSplitButton.Text = GetSelectionDrawModeString(this.selectionDrawModeInfo.DrawMode);
+            this.selectionDrawModeSplitButton.Image = GetSelectionDrawModeImage(this.selectionDrawModeInfo.DrawMode);
+
+            this.selectionDrawModeWidthTextBox.Text = this.selectionDrawModeInfo.Width.ToString();
+
+            this.selectionDrawModeHeightTextBox.Text = this.selectionDrawModeInfo.Height.ToString();
+
+            this.selectionDrawModeUnits.UnitsChanged -= SelectionDrawModeUnits_UnitsChanged;
+            this.selectionDrawModeUnits.Units = this.selectionDrawModeInfo.Units;
+            this.selectionDrawModeUnits.UnitsChanged += SelectionDrawModeUnits_UnitsChanged;
+
+            RefreshSelectionDrawModeInfoVisibilities();
+        }
+
+        private void RefreshSelectionDrawModeInfoVisibilities()
+        {
+            if (this.selectionDrawModeInfo != null)
+            {
+                SuspendLayout();
+
+                bool anyVisible = (this.ToolBarConfigItems & ToolBarConfigItems.SelectionDrawMode) != ToolBarConfigItems.None;
+
+                this.selectionDrawModeModeLabel.Visible = false;
+
+                bool showWidthHeight = anyVisible & (this.selectionDrawModeInfo.DrawMode != SelectionDrawMode.Normal);
+
+                this.selectionDrawModeWidthTextBox.Visible = showWidthHeight;
+                this.selectionDrawModeHeightTextBox.Visible = showWidthHeight;
+                this.selectionDrawModeWidthLabel.Visible = showWidthHeight;
+                this.selectionDrawModeHeightLabel.Visible = showWidthHeight;
+                this.selectionDrawModeSwapButton.Visible = showWidthHeight;
+
+                this.selectionDrawModeUnits.Visible = anyVisible & (this.selectionDrawModeInfo.DrawMode == SelectionDrawMode.FixedSize);
+
+                ResumeLayout(false);
+                PerformLayout();
+            }
+        }
+
+        public SelectionDrawModeInfo SelectionDrawModeInfo
+        {
+            get
+            {
+                return (this.selectionDrawModeInfo ?? SelectionDrawModeInfo.CreateDefault()).Clone();
+            }
+
+            set
+            {
+                if (this.selectionDrawModeInfo == null || !this.selectionDrawModeInfo.Equals(value))
+                {
+                    this.selectionDrawModeInfo = value.Clone();
+                    OnSelectionDrawModeInfoChanged();
+                    SyncSelectionDrawModeInfoUI();
+                }
+            }
+        }
+
+        public void PerformSelectionDrawModeInfoChanged()
+        {
+            OnSelectionDrawModeInfoChanged();
+        }
+
+        private string GetSelectionDrawModeString(SelectionDrawMode drawMode)
+        {
+            return PdnResources.GetString("ToolConfigStrip.SelectionDrawModeSplitButton." + drawMode.ToString() + ".Text");
+        }
+
+        private Image GetSelectionDrawModeImage(SelectionDrawMode drawMode)
+        {
+            return PdnResources.GetImageResource("Icons.ToolConfigStrip.SelectionDrawModeSplitButton." + drawMode.ToString() + ".png").Reference;
+        }
+
+        private void SelectionDrawModeSplitButton_DropDownOpening(object sender, EventArgs e)
+        {
+            this.selectionDrawModeSplitButton.DropDownItems.Clear();
+
+            foreach (SelectionDrawMode sdm in
+                new SelectionDrawMode[]
+                {
+                    SelectionDrawMode.Normal,
+                    SelectionDrawMode.FixedRatio,
+                    SelectionDrawMode.FixedSize
+                })
+            {
+                ToolStripMenuItem sdmTSMI = new ToolStripMenuItem(
+                    GetSelectionDrawModeString(sdm),
+                    GetSelectionDrawModeImage(sdm),
+                    delegate(object sender2, EventArgs e2)
+                    {
+                        ToolStripMenuItem asTSMI = (ToolStripMenuItem)sender2;
+                        SelectionDrawMode newSDM = (SelectionDrawMode)asTSMI.Tag;
+                        this.SelectionDrawModeInfo = this.SelectionDrawModeInfo.CloneWithNewDrawMode(newSDM);
+                    });
+
+                sdmTSMI.Tag = sdm;
+                sdmTSMI.Checked = (sdm == this.SelectionDrawModeInfo.DrawMode);
+
+                this.selectionDrawModeSplitButton.DropDownItems.Add(sdmTSMI);
+            }
+        }
+
+        private SelectionDrawMode CycleSelectionDrawMode(SelectionDrawMode drawMode)
+        {
+            SelectionDrawMode newSDM;
+
+            switch (drawMode)
+            {
+                case SelectionDrawMode.Normal:
+                    newSDM = SelectionDrawMode.FixedRatio;
+                    break;
+
+                case SelectionDrawMode.FixedRatio:
+                    newSDM = SelectionDrawMode.FixedSize;
+                    break;
+
+                case SelectionDrawMode.FixedSize:
+                    newSDM = SelectionDrawMode.Normal;
+                    break;
+
+                default:
+                    throw new InvalidEnumArgumentException();
+            }
+
+            return newSDM;
+        }
+
+        private void SelectionDrawModeUnits_UnitsChanged(object sender, EventArgs e)
+        {
+            OnSelectionDrawModeUnitsChanging();
+            this.SelectionDrawModeInfo = this.selectionDrawModeInfo.CloneWithNewUnits(this.selectionDrawModeUnits.Units);
+            OnSelectionDrawModeUnitsChanged();
         }
     }
 }

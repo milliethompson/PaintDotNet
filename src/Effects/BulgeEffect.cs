@@ -7,26 +7,24 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.IO;
-using PaintDotNet;
-using PaintDotNet.Effects;
 
 namespace PaintDotNet.Effects
 {
-    [Guid("1445F876-356D-4a7c-B726-50457F6E7AEF")]
     public sealed class BulgeEffect 
-        : Effect
+        : PropertyBasedEffect
     {
         public static Image StaticImage
         {
             get
             {
-                return PdnResources.GetImage("Icons.BulgeEffect.png");
+                return PdnResources.GetImageResource("Icons.BulgeEffect.png").Reference;
             }
         }
 
@@ -46,44 +44,82 @@ namespace PaintDotNet.Effects
             }
         }
 
+        public enum PropertyNames
+        {
+            Amount,
+            Offset
+        }
+
         public BulgeEffect()
-            : base(StaticName, StaticImage, StaticSubMenuName, true)
+            : base(StaticName, StaticImage, StaticSubMenuName, EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            AmountEffectConfigDialog aecd = new AmountEffectConfigDialog();
+            List<Property> props = new List<Property>();
 
-            aecd.Text = StaticName;
-            aecd.SliderInitialValue = 45;
-            aecd.SliderLabel = PdnResources.GetString("BulgeEffect.BulgeAmount.Text");
-            aecd.SliderMaximum = 100;
-            aecd.SliderMinimum = -200;
-            aecd.SliderUnitsName = string.Empty;
+            props.Add(new Int32Property(PropertyNames.Amount, 45, -200, 100));
 
-            return aecd;
+            props.Add(new DoubleVectorProperty(
+                PropertyNames.Offset,
+                Pair.Create(0.0, 0.0),
+                Pair.Create(-1.0, -1.0),
+                Pair.Create(1.0, 1.0)));
+
+            return new PropertyCollection(props);
         }
 
-        public unsafe override void Render(
-            EffectConfigToken parameters, 
-            RenderArgs dstArgs, 
-            RenderArgs srcArgs, 
-            System.Drawing.Rectangle[] rois, 
-            int startIndex, 
-            int length)
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
         {
-            AmountEffectConfigToken token = (AmountEffectConfigToken)parameters;
+            ControlInfo configUI = CreateDefaultConfigUI(props);
 
-            float bulge = token.Amount;
-            Surface dst = dstArgs.Surface;
-            Surface src = srcArgs.Surface;
+            configUI.SetPropertyControlValue(PropertyNames.Amount, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("BulgeEffect.BulgeAmount.Text"));
+
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("BulgeEffect.Offset.Text"));
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderSmallChangeX, 0.05);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderLargeChangeX, 0.25);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.UpDownIncrementX, 0.01);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderSmallChangeY, 0.05);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderLargeChangeY, 0.25);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.UpDownIncrementY, 0.01);
+
+            Surface sourceSurface = this.EnvironmentParameters.SourceSurface;
+            Bitmap bitmap = sourceSurface.CreateAliasedBitmap();
+            ImageResource imageResource = ImageResource.FromImage(bitmap);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.StaticImageUnderlay, imageResource);
+
+            return configUI;
+        }
+
+        private int amount;
+        private float offsetX;
+        private float offsetY;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.amount = newToken.GetProperty<Int32Property>(PropertyNames.Amount).Value;
+
+            this.offsetX = (float)newToken.GetProperty<DoubleVectorProperty>(PropertyNames.Offset).ValueX;
+            this.offsetY = (float)newToken.GetProperty<DoubleVectorProperty>(PropertyNames.Offset).ValueY;
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            float bulge = this.amount;
+            Surface dst = DstArgs.Surface;
+            Surface src = SrcArgs.Surface;
 
             float hw = dst.Width / 2.0f;
             float hh = dst.Height / 2.0f;
             float maxrad = Math.Min(hw, hh);
             float maxrad2 = maxrad * maxrad;
-            float amt = token.Amount / 100.0f;
+            float amt = this.amount / 100.0f;
+
+            hh = hh + this.offsetY * hh;
+            hw = hw + this.offsetX * hw;
 
             for (int n = startIndex; n < startIndex + length; ++n)
             {
@@ -99,17 +135,16 @@ namespace PaintDotNet.Effects
                     {
                         float u = x - hw;
                         float r = (float)Math.Sqrt(u * u + v * v);
-                        float rscale;
-                        rscale = (1.0f - (r / maxrad));
+                        float rscale1 = (1.0f - (r / maxrad));
 
-                        if (rscale > 0)
+                        if (rscale1 > 0)
                         {
-                            rscale = 1 - amt * rscale * rscale;
+                            float rscale2 = 1 - amt * rscale1 * rscale1;
 
-                            float xp = u * rscale;
-                            float yp = v * rscale;
+                            float xp = u * rscale2;
+                            float yp = v * rscale2;
 
-                            *dstPtr = src.GetBilinearSampleWrapped(xp + hw, yp + hh);
+                            *dstPtr = src.GetBilinearSampleClamped(xp + hw, yp + hh);
                         }
                         else
                         {

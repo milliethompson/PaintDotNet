@@ -113,6 +113,24 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="BlockedPluginException.cs" />
+    <Compile Include="IFirstSelection.cs" />
+    <Compile Include="IndirectUI\ControlInfo.cs" />
+    <Compile Include="IndirectUI\ControlInfoPropertyNames.cs" />
+    <Compile Include="EtchedLine.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="IPluginSupportInfo.cs" />
+    <Compile Include="PanControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\PanelControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\PanelControlInfo.cs" />
+    <Compile Include="PluginSupportInfo.cs" />
+    <Compile Include="PluginSupportInfoAttribute.cs" />
+    <Compile Include="IndirectUI\PropertyControlInfo.cs" />
     <Compile Include="LayoutUtility.cs" />
     <Compile Include="AutoSizeStrategy.cs" />
     <Compile Include="BinaryPixelOp.cs">
@@ -208,6 +226,54 @@
     <Compile Include="ObsoleteClasses.cs" />
     <Compile Include="ImageStrip.cs">
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PdnNumericUpDown.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\PropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\PropertyControlInfoAttribute.cs">
+    </Compile>
+    <Compile Include="IndirectUI\PropertyControlPropertyAttribute.cs">
+    </Compile>
+    <Compile Include="IndirectUI\AngleChooserPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\BooleanCheckBoxPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\DoubleSliderPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\DoubleVectorSliderPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\Int32IncrementButtonPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\DoubleVectorPanAndSliderPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\StaticListDropDownPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\Int32SliderPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\SliderPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\StringTextBoxPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\VectorSliderPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\PropertyControlType.cs" />
+    <Compile Include="IndirectUI\PropertyControlUtil.cs" />
+    <Compile Include="IndirectUI\PropertyControl`1.cs">
+      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="SnapDescription.cs" />
     <Compile Include="SnapManager.cs" />
@@ -399,6 +465,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
+    <Folder Include="PropertyControls\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

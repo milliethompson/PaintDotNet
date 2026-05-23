@@ -27,7 +27,7 @@ namespace PaintDotNet.Actions
         {
             get
             {
-                return ImageResource.Get("Icons.MenuEditCutIcon.png");
+                return PdnResources.GetImageResource("Icons.MenuEditCutIcon.png");
             }
         }
 

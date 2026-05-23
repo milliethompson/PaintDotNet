@@ -12,6 +12,7 @@ using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 namespace PaintDotNet
 {
@@ -108,38 +109,52 @@ namespace PaintDotNet
             OnClick(EventArgs.Empty);
         }
 
+        private bool ContainsMouseCursor
+        {
+            get
+            {
+                Point mousePt = Control.MousePosition;
+                Rectangle screenRect = this.RectangleToScreen(ClientRectangle);
+
+                return screenRect.Contains(mousePt);
+            }
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
-            UI.ButtonState state;
+            PushButtonState state;
 
             if (!Enabled)
             {
-                state = UI.ButtonState.Disabled;
+                state = PushButtonState.Disabled;
             }
-            else if (this.drawPressed)
+            else if (this.drawPressed && ContainsMouseCursor)
             {
-                state = UI.ButtonState.Pressed;
+                state = PushButtonState.Pressed;
             }
             else if (this.drawHover)
             {
-                state = UI.ButtonState.Hot;
+                state = PushButtonState.Hot;
+            }
+            else if (IsDefault)
+            {
+                state = PushButtonState.Default;
             }
             else
             {
-                state = UI.ButtonState.Normal;
+                state = PushButtonState.Normal;
             }
 
             bool drawFocusCues = ShowFocusCues && Focused;
             bool drawKeyboardCues = ShowKeyboardCues;
 
-            OnPaintButton(e.Graphics, state, this.isDefault, drawFocusCues, drawKeyboardCues);
+            OnPaintButton(e.Graphics, state, drawFocusCues, drawKeyboardCues);
             base.OnPaint(e);
         }
 
         protected abstract void OnPaintButton(
             Graphics g,
-            UI.ButtonState state,
-            bool drawAsDefault,
+            PushButtonState buttonState,
             bool drawFocusCues,
             bool drawKeyboardCues);
 
@@ -153,6 +168,7 @@ namespace PaintDotNet
         {
             this.drawHover = true;
             Invalidate(true);
+            Update();
             base.OnMouseEnter(e);
         }
 
@@ -165,6 +181,7 @@ namespace PaintDotNet
 
         protected override void OnMouseMove(MouseEventArgs mevent)
         {
+            Invalidate(true);
             base.OnMouseMove(mevent);
         }
 
@@ -179,6 +196,7 @@ namespace PaintDotNet
         {
             this.drawHover = false;
             Invalidate(true);
+            Update();
             base.OnMouseLeave(e);
         }
 

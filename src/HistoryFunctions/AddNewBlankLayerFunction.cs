@@ -26,7 +26,7 @@ namespace PaintDotNet.HistoryFunctions
 
             NewLayerHistoryMemento ha = new NewLayerHistoryMemento(
                 PdnResources.GetString("AddNewBlankLayer.HistoryMementoName"),
-                ImageResource.Get("Icons.MenuLayersAddNewLayerIcon.png"),
+                PdnResources.GetImageResource("Icons.MenuLayersAddNewLayerIcon.png"),
                 historyWorkspace,
                 newLayerIndex);
 

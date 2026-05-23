@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
@@ -574,6 +573,142 @@ namespace PaintDotNet
             }
 
             return result;
+        }
+
+        private static bool IsValidMeasurementUnit(MeasurementUnit unit)
+        {
+            switch (unit)
+            {
+                case MeasurementUnit.Pixel:
+                case MeasurementUnit.Centimeter:
+                case MeasurementUnit.Inch:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        public static double ConvertMeasurement(
+            double sourceLength, 
+            MeasurementUnit sourceUnits, 
+            MeasurementUnit basisDpuUnits, 
+            double basisDpu, 
+            MeasurementUnit resultDpuUnits)
+        {
+            // Validation
+            if (!IsValidMeasurementUnit(sourceUnits))
+            {
+                throw new InvalidEnumArgumentException("sourceUnits", (int)sourceUnits, typeof(MeasurementUnit));
+            }
+
+            if (!IsValidMeasurementUnit(basisDpuUnits))
+            {
+                throw new InvalidEnumArgumentException("basisDpuUnits", (int)basisDpuUnits, typeof(MeasurementUnit));
+            }
+
+            if (!IsValidMeasurementUnit(resultDpuUnits))
+            {
+                throw new InvalidEnumArgumentException("resultDpuUnits", (int)resultDpuUnits, typeof(MeasurementUnit));
+            }
+
+            if (basisDpuUnits == MeasurementUnit.Pixel && basisDpu != 1.0)
+            {
+                throw new ArgumentOutOfRangeException("basisDpuUnits, basisDpu", "if basisDpuUnits is Pixel, then basisDpu must equal 1.0");
+            }
+
+            // Case 1. No conversion is necessary if they want the same units out.
+            if (sourceUnits == resultDpuUnits)
+            {
+                return sourceLength;
+            }
+
+            // Case 2. Simple inches -> centimeters
+            if (sourceUnits == MeasurementUnit.Inch && resultDpuUnits == MeasurementUnit.Centimeter)
+            {
+                return InchesToCentimeters(sourceLength);
+            }
+
+            // Case 3. Simple centimeters -> inches.
+            if (sourceUnits == MeasurementUnit.Centimeter && resultDpuUnits == MeasurementUnit.Inch)
+            {
+                return CentimetersToInches(sourceLength);
+            }
+
+            // At this point we know we are converting from non-pixels to pixels, or from pixels
+            // to non-pixels. 
+            // Cases 4 through 8 cover conversion from non-pixels to pixels. 
+            // Cases 9 through 11 cover conversion from pixels to non-pixels.
+
+            // Case 4. Conversion from pixels to inches/centimeters when basis is in pixels too. 
+            // This means we must use the default DPU for the desired result measurement.
+            // No need to compare lengthUnits != resultDpuUnits, since we already know this to 
+            // be true from case 1.
+            if (sourceUnits == MeasurementUnit.Pixel && basisDpuUnits == MeasurementUnit.Pixel)
+            {
+                double dpu = GetDefaultDpu(resultDpuUnits);
+                double lengthInOrCm = sourceLength / dpu;
+                return lengthInOrCm;
+            }
+
+            // Case 5. Conversion from inches/centimeters to pixels when basis is in pixels too.
+            // This means we must use the default DPU for the given input measurement.
+            if (sourceUnits != MeasurementUnit.Pixel && basisDpuUnits == MeasurementUnit.Pixel)
+            {
+                double dpu = GetDefaultDpu(sourceUnits);
+                double resultPx = sourceLength * dpu;
+                return resultPx;
+            }
+
+            // Case 6. Conversion from inches/centimeters to pixels, when basis is in same units as input.
+            if (sourceUnits == basisDpuUnits && resultDpuUnits == MeasurementUnit.Pixel)
+            {
+                double resultPx = sourceLength * basisDpu;
+                return resultPx;
+            }
+
+            // Case 7. Conversion from inches to pixels, when basis is in centimeters.
+            if (sourceUnits == MeasurementUnit.Inch && basisDpuUnits == MeasurementUnit.Centimeter)
+            {
+                double dpi = DotsPerCmToDotsPerInch(basisDpu);
+                double resultPx = sourceLength * dpi;
+                return resultPx;
+            }
+
+            // Case 8. Conversion from centimeters to pixels, when basis is in inches.
+            if (sourceUnits == MeasurementUnit.Centimeter && basisDpuUnits == MeasurementUnit.Inch)
+            {
+                double dpcm = DotsPerInchToDotsPerCm(basisDpu);
+                double resultPx = sourceLength * dpcm;
+                return resultPx;
+            }
+
+            // Case 9. Converting from pixels to inches/centimeters, when the basis and result
+            // units are the same.
+            if (basisDpuUnits == resultDpuUnits)
+            {
+                double resultInOrCm = sourceLength / basisDpu;
+                return resultInOrCm;
+            }
+            
+            // Case 10. Converting from pixels to centimeters, when the basis is in inches.
+            if (resultDpuUnits == MeasurementUnit.Centimeter && basisDpuUnits == MeasurementUnit.Inch)
+            {
+                double dpcm = DotsPerInchToDotsPerCm(basisDpu);
+                double resultCm = sourceLength / dpcm;
+                return resultCm;
+            }
+
+            // Case 11. Converting from pixels to inches, when the basis is in centimeters.
+            if (resultDpuUnits == MeasurementUnit.Inch && basisDpuUnits == MeasurementUnit.Centimeter)
+            {
+                double dpi = DotsPerCmToDotsPerInch(basisDpu);
+                double resultIn = sourceLength / dpi;
+                return resultIn;
+            }
+
+            // Should not be possible to get here, but must appease the compiler.
+            throw new InvalidOperationException();
         }
 
         public double PixelAreaToPhysicalArea(double area, MeasurementUnit resultUnit)

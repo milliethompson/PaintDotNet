@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -174,6 +173,7 @@ namespace PaintDotNet.Effects
             this.resetButton.Name = "resetButton";
             this.resetButton.Size = new System.Drawing.Size(81, 23);
             this.resetButton.TabIndex = 3;
+            this.resetButton.FlatStyle = FlatStyle.System;
             this.resetButton.Click += new System.EventHandler(this.resetButton_Click);
             // 
             // modeComboBox
@@ -369,6 +369,7 @@ namespace PaintDotNet.Effects
                     checkbox.Checked = curveControl.GetSelected(i);
                     checkbox.CheckedChanged += maskCheckChanged;
                     checkbox.Text = curveControl.GetChannelName(i);
+                    checkbox.FlatStyle = FlatStyle.System;
 
                     this.tableLayoutPanelMask.Controls.Add(checkbox, i, 0);
                     this.tableLayoutPanelMask.ColumnStyles[i].SizeType = SizeType.Percent;

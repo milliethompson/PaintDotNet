@@ -293,9 +293,23 @@ namespace PaintDotNet.Actions
 
         private static Surface CreateThumbnail(SurfaceForClipboard surfaceForClipboard)
         {
-            const int thumbSize96dpi = 120;
-            int thumbSizeOurDpi = SystemLayer.UI.ScaleWidth(thumbSize96dpi);
-            Size thumbSize = Utility.ComputeThumbnailSize(surfaceForClipboard.Bounds.Size, thumbSizeOurDpi);
+            const int thumbLength96dpi = 120;
+            int thumbSizeOurDpi = SystemLayer.UI.ScaleWidth(thumbLength96dpi);
+
+            Surface surface = surfaceForClipboard.MaskedSurface.SurfaceReadOnly;
+            PdnGraphicsPath maskPath = surfaceForClipboard.MaskedSurface.CreatePath();
+            Rectangle bounds = surfaceForClipboard.Bounds;
+
+            Surface thumb = CreateThumbnail(surface, maskPath, bounds, thumbSizeOurDpi);
+
+            maskPath.Dispose();
+
+            return thumb;
+        }
+
+        public static Surface CreateThumbnail(Surface sourceSurface, PdnGraphicsPath maskPath, Rectangle bounds, int thumbSideLength)
+        {
+            Size thumbSize = Utility.ComputeThumbnailSize(bounds.Size, thumbSideLength);
 
             Surface thumb = new Surface(Math.Max(5, thumbSize.Width + 4), Math.Max(5, thumbSize.Height + 4));
             thumb.Clear(ColorBgra.Transparent);
@@ -306,26 +320,23 @@ namespace PaintDotNet.Actions
             Surface thumbInset = thumb.CreateWindow(insetRect);
             thumbInset.Clear(ColorBgra.Transparent);
 
-            float scaleX = (float)thumbInset.Width / (float)surfaceForClipboard.Bounds.Width;
-            float scaleY = (float)thumbInset.Height / (float)surfaceForClipboard.Bounds.Height;
+            float scaleX = (float)thumbInset.Width / (float)bounds.Width;
+            float scaleY = (float)thumbInset.Height / (float)bounds.Height;
 
             Matrix scaleMatrix = new Matrix();
-            scaleMatrix.Translate(-surfaceForClipboard.Bounds.X, -surfaceForClipboard.Bounds.Y, System.Drawing.Drawing2D.MatrixOrder.Append);
+            scaleMatrix.Translate(-bounds.X, -bounds.Y, System.Drawing.Drawing2D.MatrixOrder.Append);
             scaleMatrix.Scale(scaleX, scaleY, System.Drawing.Drawing2D.MatrixOrder.Append);
 
-            thumbInset.SuperSamplingFitSurface(surfaceForClipboard.MaskedSurface.SurfaceReadOnly);
+            thumbInset.SuperSamplingFitSurface(sourceSurface);
 
             Surface maskInset = new Surface(thumbInset.Size);
             maskInset.Clear(ColorBgra.Black);
             using (RenderArgs maskInsetRA = new RenderArgs(maskInset))
             {
-                using (PdnGraphicsPath maskPath = surfaceForClipboard.MaskedSurface.CreatePath())
-                {
-                    maskInsetRA.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                    maskInsetRA.Graphics.Transform = scaleMatrix;
-                    maskInsetRA.Graphics.FillPath(Brushes.White, maskPath);
-                    maskInsetRA.Graphics.DrawPath(Pens.White, maskPath);
-                }
+                maskInsetRA.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                maskInsetRA.Graphics.Transform = scaleMatrix;
+                maskInsetRA.Graphics.FillPath(Brushes.White, maskPath);
+                maskInsetRA.Graphics.DrawPath(Pens.White, maskPath);
             }
 
             scaleMatrix.Dispose();
@@ -356,7 +367,7 @@ namespace PaintDotNet.Actions
         {
             DialogResult result;
 
-            Icon formIcon = Utility.ImageToIcon(ImageResource.Get("Icons.MenuEditPasteIcon.png").Reference);
+            Icon formIcon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.MenuEditPasteIcon.png").Reference);
             string formTitle = PdnResources.GetString("ExpandCanvasQuestion.Title");
 
             RenderArgs taskImageRA = new RenderArgs(thumbnail);
@@ -364,12 +375,12 @@ namespace PaintDotNet.Actions
             string introText = PdnResources.GetString("ExpandCanvasQuestion.IntroText");
 
             TaskButton yesTB = new TaskButton(
-                ImageResource.Get("Icons.ExpandCanvasQuestion.YesTB.Image.png").Reference,
+                PdnResources.GetImageResource("Icons.ExpandCanvasQuestion.YesTB.Image.png").Reference,
                 PdnResources.GetString("ExpandCanvasQuestion.YesTB.ActionText"),
                 PdnResources.GetString("ExpandCanvasQuestion.YesTB.ExplanationText"));
 
             TaskButton noTB = new TaskButton(
-                ImageResource.Get("Icons.ExpandCanvasQuestion.NoTB.Image.png").Reference,
+                PdnResources.GetImageResource("Icons.ExpandCanvasQuestion.NoTB.Image.png").Reference,
                 PdnResources.GetString("ExpandCanvasQuestion.NoTB.ActionText"),
                 PdnResources.GetString("ExpandCanvasQuestion.NoTB.ExplanationText"));
 

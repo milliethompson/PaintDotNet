@@ -7,7 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
+using PaintDotNet;
 using PaintDotNet.HistoryMementos;
 using PaintDotNet.SystemLayer;
 using PaintDotNet.Threading;
@@ -38,7 +38,7 @@ namespace PaintDotNet.Actions
         {
             get
             {
-                return ImageResource.Get("Icons.MenuImageResizeIcon.png");
+                return PdnResources.GetImageResource("Icons.MenuImageResizeIcon.png");
             }
         }
 

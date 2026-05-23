@@ -25,7 +25,7 @@ namespace PaintDotNet.Actions
 
                 documentWorkspace.History.PushNewMemento(new NullHistoryMemento(
                     PdnResources.GetString("ClearHistory.HistoryMementoName"),
-                    ImageResource.Get("Icons.MenuLayersDeleteLayerIcon.png")));
+                    PdnResources.GetImageResource("Icons.MenuLayersDeleteLayerIcon.png")));
             }
 
             return null;

@@ -28,5 +28,45 @@ namespace PaintDotNet.Effects
                 return PdnResources.GetString("DistortSubmenu.Name");
             }
         }
+
+        public static string Render
+        {
+            get
+            {
+                return PdnResources.GetString("Effects.Render.Submenu.Name");
+            }
+        }
+
+        public static string Noise
+        {
+            get
+            {
+                return PdnResources.GetString("Effects.Noise.Submenu.Name");
+            }
+        }
+
+        public static string Photo
+        {
+            get
+            {
+                return PdnResources.GetString("Effects.Photo.Submenu.Name");
+            }
+        }
+
+        public static string Artistic
+        {
+            get
+            {
+                return PdnResources.GetString("Effects.Artistic.Submenu.Name");
+            }
+        }
+
+        public static string Stylize
+        {
+            get
+            {
+                return PdnResources.GetString("Effects.Stylize.Submenu.Name");
+            }
+        }
     }
 }

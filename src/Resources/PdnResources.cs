@@ -290,6 +290,53 @@ namespace PaintDotNet
             return image;
         }
 
+        private sealed class PdnImageResource
+            : ImageResource
+        {
+            private string name;
+            private static Dictionary<string, ImageResource> images;
+
+            protected override Image Load()
+            {
+                return PdnResources.GetImage(this.name);
+            }
+
+            public static ImageResource Get(string name)
+            {
+                ImageResource ir;
+
+                if (!images.TryGetValue(name, out ir))
+                {
+                    ir = new PdnImageResource(name);
+                    images.Add(name, ir);
+                }
+
+                return ir;
+            }
+
+            static PdnImageResource()
+            {
+                images = new Dictionary<string, ImageResource>();
+            }
+
+            private PdnImageResource(string name)
+                : base()
+            {
+                this.name = name;
+            }
+
+            private PdnImageResource(Image image)
+                : base(image)
+            {
+                this.name = null;
+            }                
+        }
+
+        public static ImageResource GetImageResource(string fileName)
+        {
+            return PdnImageResource.Get(fileName);
+        }
+
         public static Icon GetIcon(string fileName)
         {
             Stream stream = GetResourceStream(fileName);

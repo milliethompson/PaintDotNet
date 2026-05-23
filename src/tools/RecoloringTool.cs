@@ -825,7 +825,7 @@ namespace PaintDotNet.Tools
 
         public RecolorTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.RecoloringToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.RecoloringToolIcon.png"),
                    PdnResources.GetString("RecolorTool.Name"), 
                    PdnResources.GetString("RecolorTool.HelpText"),
                    'r',

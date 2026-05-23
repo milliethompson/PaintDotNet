@@ -29,7 +29,7 @@ namespace PaintDotNet.HistoryFunctions
         {
             SelectionHistoryMemento sha = new SelectionHistoryMemento(
                 StaticName, 
-                ImageResource.Get("Icons.MenuEditSelectAllIcon.png"),
+                PdnResources.GetImageResource("Icons.MenuEditSelectAllIcon.png"),
                 historyWorkspace);
 
             EnterCriticalRegion();

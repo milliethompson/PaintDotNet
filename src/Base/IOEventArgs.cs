@@ -10,7 +10,7 @@
 using System;
 using System.IO;
 
-namespace PaintDotNet.Base
+namespace PaintDotNet
 {
     public sealed class IOEventArgs
         : EventArgs

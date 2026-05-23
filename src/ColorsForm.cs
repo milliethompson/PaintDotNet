@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Drawing;
@@ -562,8 +561,8 @@ namespace PaintDotNet
 
             this.toolStrip.Renderer = new OurToolStripRenderer();
 
-            this.colorAddOverlay = ImageResource.Get("Icons.ColorAddOverlay.png").Reference;
-            this.colorPalettesButton.Image = ImageResource.Get("Icons.ColorPalettes.png").Reference;
+            this.colorAddOverlay = PdnResources.GetImageResource("Icons.ColorAddOverlay.png").Reference;
+            this.colorPalettesButton.Image = PdnResources.GetImageResource("Icons.ColorPalettes.png").Reference;
 
             RenderColorAddIcon(this.UserPrimaryColor);
 
@@ -1912,7 +1911,7 @@ namespace PaintDotNet
                 {
                     this.colorPalettesButton.DropDownItems.Add(
                         paletteName,
-                        ImageResource.Get("Icons.SwatchIcon.png").Reference, 
+                        PdnResources.GetImageResource("Icons.SwatchIcon.png").Reference, 
                         OnPaletteClickedHandler);
                 }
 
@@ -1924,12 +1923,12 @@ namespace PaintDotNet
 
             this.colorPalettesButton.DropDownItems.Add(
                 PdnResources.GetString("ColorsForm.ColorPalettesButton.SaveCurrentPaletteAs.Text"),
-                ImageResource.Get("Icons.SavePaletteIcon.png").Reference,
+                PdnResources.GetImageResource("Icons.SavePaletteIcon.png").Reference,
                 OnSavePaletteAsHandler);
 
             this.colorPalettesButton.DropDownItems.Add(
                 PdnResources.GetString("ColorsForm.ColorPalettesButton.OpenPalettesFolder.Text"),
-                ImageResource.Get("Icons.ColorPalettes.png").Reference,
+                PdnResources.GetImageResource("Icons.ColorPalettes.png").Reference,
                 OnOpenPalettesFolderClickedHandler);
 
             this.colorPalettesButton.DropDownItems.Add(new ToolStripSeparator());

@@ -9,6 +9,8 @@
 
 using PaintDotNet;
 using PaintDotNet.Effects;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -18,9 +20,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    [GuidAttribute("270DCBF1-CE42-411e-9885-162E2BFA8265")]
     public sealed class GlowEffect
-        : Effect
+        : PropertyBasedEffect
     {
         public static string StaticName
         {
@@ -34,19 +35,58 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return PdnResources.GetImage("Icons.GlowEffect.png");
+                return PdnResources.GetImageResource("Icons.GlowEffect.png").Reference;
             }
         }
 
-        private BlurEffect blurEffect;
-        private BrightnessAndContrastAdjustment bcAdjustment;
-        private UserBlendOps.ScreenBlendOp screenBlendOp;
+        public enum PropertyNames
+        {
+            Radius,
+            Brightness,
+            Contrast
+        }
 
-        public override unsafe void Render(
-            EffectConfigToken parameters, 
-            RenderArgs dstArgs, 
-            RenderArgs srcArgs, 
-            System.Drawing.Rectangle[] rois, 
+        private GaussianBlurEffect blurEffect = new GaussianBlurEffect();
+        private PropertyCollection blurProps;
+        private BrightnessAndContrastAdjustment bcAdjustment = new BrightnessAndContrastAdjustment();
+        private PropertyCollection bcProps;
+
+        private UserBlendOps.ScreenBlendOp screenBlendOp = new UserBlendOps.ScreenBlendOp();
+
+        protected override PropertyCollection OnCreatePropertyCollection()
+        {
+            List<Property> props = new List<Property>();
+
+            props.Add(new Int32Property(PropertyNames.Radius, 6, 1, 20));
+            props.Add(new Int32Property(PropertyNames.Brightness, 10, -100, +100));
+            props.Add(new Int32Property(PropertyNames.Contrast, 10, -100, +100));
+
+            return new PropertyCollection(props);
+        }
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            PropertyCollection blurValues = this.blurProps.Clone();
+            blurValues[GaussianBlurEffect.PropertyNames.Radius].Value = newToken.GetProperty<Int32Property>(PropertyNames.Radius).Value;
+            PropertyBasedEffectConfigToken blurToken = new PropertyBasedEffectConfigToken(blurValues);
+            this.blurEffect.SetRenderInfo(blurToken, dstArgs, srcArgs);
+
+            PropertyCollection bcValues = this.bcProps.Clone();
+
+            bcValues[BrightnessAndContrastAdjustment.PropertyNames.Brightness].Value =
+                newToken.GetProperty<Int32Property>(PropertyNames.Brightness).Value;
+
+            bcValues[BrightnessAndContrastAdjustment.PropertyNames.Contrast].Value =
+                newToken.GetProperty<Int32Property>(PropertyNames.Contrast).Value;
+
+            PropertyBasedEffectConfigToken bcToken = new PropertyBasedEffectConfigToken(bcValues);
+            this.bcAdjustment.SetRenderInfo(bcToken, dstArgs, dstArgs); // have to do adjustment in place, hence dstArgs for both 'args' parameters
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected override unsafe void OnRender(
+            Rectangle[] rois, 
             int startIndex, 
             int length)
         {
@@ -54,13 +94,8 @@ namespace PaintDotNet.Effects
             // Then we apply Brightness/Contrast with the input as the dst, and the output as the dst
             // Third, we apply the Screen blend operation so that dst = dst OVER src
 
-            ThreeAmountsConfigToken token = (ThreeAmountsConfigToken)parameters;
-
-            AmountEffectConfigToken blurToken = new AmountEffectConfigToken(token.Amount1);
-            this.blurEffect.Render(blurToken, dstArgs, srcArgs, rois, startIndex, length);
-
-            BrightnessAndContrastAdjustmentConfigToken bcToken = new BrightnessAndContrastAdjustmentConfigToken(token.Amount2, token.Amount3);
-            this.bcAdjustment.Render(bcToken, dstArgs, dstArgs, rois, startIndex, length);
+            this.blurEffect.Render(rois, startIndex, length);
+            this.bcAdjustment.Render(rois, startIndex, length);
 
             for (int i = startIndex; i < startIndex + length; ++i)
             {
@@ -68,43 +103,34 @@ namespace PaintDotNet.Effects
 
                 for (int y = roi.Top; y < roi.Bottom; ++y)
                 {
-                    ColorBgra* dstPtr = dstArgs.Surface.GetPointAddressUnchecked(roi.Left, y);
-                    ColorBgra* srcPtr = srcArgs.Surface.GetPointAddressUnchecked(roi.Left, y);
+                    ColorBgra* dstPtr = DstArgs.Surface.GetPointAddressUnchecked(roi.Left, y);
+                    ColorBgra* srcPtr = SrcArgs.Surface.GetPointAddressUnchecked(roi.Left, y);
 
                     screenBlendOp.Apply(dstPtr, srcPtr, dstPtr, roi.Width);
                 }
             }
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
         {
-            ThreeAmountsConfigDialog dialog = new ThreeAmountsConfigDialog();
+            ControlInfo configUI = CreateDefaultConfigUI(props);
 
-            dialog.Amount1Default = 6;
-            dialog.Amount1Label = PdnResources.GetString("GlowEffect.Amount1.Name");
-            dialog.Amount1Minimum = 1;
-            dialog.Amount1Maximum = 100;
+            configUI.SetPropertyControlValue(PropertyNames.Radius, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("GlowEffect.Amount1.Name"));
+            configUI.SetPropertyControlValue(PropertyNames.Brightness, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("GlowEffect.Amount2.Name"));
+            configUI.SetPropertyControlValue(PropertyNames.Contrast, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("GlowEffect.Amount3.Name"));
 
-            dialog.Amount2Default = 10;
-            dialog.Amount2Label = PdnResources.GetString("GlowEffect.Amount2.Name");
-            dialog.Amount2Minimum = -100;
-            dialog.Amount2Maximum = +100;
-
-            dialog.Amount3Default = 10;
-            dialog.Amount3Label = PdnResources.GetString("GlowEffect.Amount3.Name");
-            dialog.Amount3Minimum = -100;
-            dialog.Amount3Maximum = +100;
-
-            dialog.Text = StaticName;
-
-            return dialog;
+            return configUI;
         }
 
         public GlowEffect()
-            : base(StaticName, StaticImage, null, EffectDirectives.None, true)
+            : base(StaticName, StaticImage, SubmenuNames.Photo, EffectFlags.Configurable)
         {
-            this.blurEffect = new BlurEffect();
+            this.blurEffect = new GaussianBlurEffect();
+            this.blurProps = this.blurEffect.CreatePropertyCollection();
+
             this.bcAdjustment = new BrightnessAndContrastAdjustment();
+            this.bcProps = this.bcAdjustment.CreatePropertyCollection();
+
             this.screenBlendOp = new UserBlendOps.ScreenBlendOp();
         }
     }

@@ -311,7 +311,7 @@ namespace PaintDotNet.Tools
             if (didPaste)
             {
                 name = EnumLocalizer.EnumValueToLocalizedName(typeof(CommonAction), CommonAction.Paste);
-                image = ImageResource.Get("Icons.MenuEditPasteIcon.png");
+                image = PdnResources.GetImageResource("Icons.MenuEditPasteIcon.png");
             }
             else
             {
@@ -591,7 +591,7 @@ namespace PaintDotNet.Tools
                 if (this.didPaste)
                 {
                     haName = PdnResources.GetString("CommonAction.Paste");
-                    image = ImageResource.Get("Icons.MenuEditPasteIcon.png");
+                    image = PdnResources.GetImageResource("Icons.MenuEditPasteIcon.png");
                     this.didPaste = false;
                 }
                 else
@@ -619,7 +619,7 @@ namespace PaintDotNet.Tools
 
         public MoveTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.MoveToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.MoveToolIcon.png"),
                    MoveTool.StaticName,
                    PdnResources.GetString("MoveTool.HelpText"), // "Click and drag to move a selected region",
                    'm',

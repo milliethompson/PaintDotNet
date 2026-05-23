@@ -14,6 +14,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 namespace PaintDotNet
 {
@@ -143,23 +144,23 @@ namespace PaintDotNet
             base.Dispose(disposing);
         }
 
-        protected override void OnPaintButton(Graphics g, UI.ButtonState state, bool drawAsDefault, bool drawFocusCues, bool drawKeyboardCues)
+        protected override void OnPaintButton(Graphics g, PushButtonState state, bool drawFocusCues, bool drawKeyboardCues)
         {
-            UI.ButtonState newState;
+            PushButtonState newState;
 
             if (this.forcedPushed)
             {
-                newState = UI.ButtonState.Pressed;
+                newState = PushButtonState.Pressed;
             }
             else
             {
                 newState = state;
             }
 
-            OnPaintButtonImpl(g, newState, drawAsDefault, drawFocusCues, drawKeyboardCues);
+            OnPaintButtonImpl(g, newState, drawFocusCues, drawKeyboardCues);
         }
 
-        private void OnPaintButtonImpl(Graphics g, UI.ButtonState state, bool drawAsDefault, bool drawFocusCues, bool drawKeyboardCues)
+        private void OnPaintButtonImpl(Graphics g, PushButtonState state, bool drawFocusCues, bool drawKeyboardCues)
         {
             Color backColor;
             Color outlineColor;
@@ -168,28 +169,29 @@ namespace PaintDotNet
 
             switch (state)
             {
-                case UI.ButtonState.Disabled:
+                case PushButtonState.Disabled:
                     backColor = Color.Transparent;
                     outlineColor = BackColor;
                     arrowFillColor = Color.Gray;
                     arrowOutlineColor = Color.Black;
                     break;
 
-                case UI.ButtonState.Hot:
+                case PushButtonState.Hot:
                     backColor = Color.FromArgb(64, SystemColors.HotTrack);
                     outlineColor = backColor;
                     arrowFillColor = Color.Blue;
                     arrowOutlineColor = Color.White;
                     break;
 
-                case UI.ButtonState.Normal:
+                case PushButtonState.Default:
+                case PushButtonState.Normal:
                     backColor = Color.Transparent;
                     outlineColor = Color.Transparent;
                     arrowFillColor = Color.Black;
                     arrowOutlineColor = Color.White;
                     break;
 
-                case UI.ButtonState.Pressed:
+                case PushButtonState.Pressed:
                     backColor = Color.FromArgb(192, SystemColors.Highlight);
                     outlineColor = Color.FromArgb(192, SystemColors.Highlight);
                     arrowFillColor = Color.Blue;

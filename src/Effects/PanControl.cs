@@ -15,7 +15,6 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary></summary>
     public class PanControl 
         : UserControl
     {
@@ -104,7 +103,7 @@ namespace PaintDotNet.Effects
             base.OnMouseEnter(e);
         }
 
-        protected override void OnMouseDown(System.Windows.Forms.MouseEventArgs e)
+        protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
 
@@ -225,6 +224,7 @@ namespace PaintDotNet.Effects
             }
 
             g.Clear(this.BackColor);
+            SmoothingMode oldSM = g.SmoothingMode;
             g.SmoothingMode = SmoothingMode.HighQuality;
 
             using (Pen pen = (Pen)Pens.Black.Clone())
@@ -246,6 +246,8 @@ namespace PaintDotNet.Effects
                 g.DrawLine(pen, ptDot.X - 6, ptDot.Y, ptDot.X + 6, ptDot.Y);
                 g.DrawLine(pen, ptDot.X, ptDot.Y - 6, ptDot.X, ptDot.Y + 6);
             }
+
+            g.SmoothingMode = oldSM;
         }
     }
 }

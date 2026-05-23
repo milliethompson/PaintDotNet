@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.Actions;
 using PaintDotNet.Effects;
 using PaintDotNet.HistoryFunctions;
@@ -410,6 +409,73 @@ namespace PaintDotNet
             }
         }
 
+        private Set<Triple<Assembly, string, Exception>> effectLoadErrors = new Set<Triple<Assembly, string, Exception>>();
+
+        public void ReportEffectLoadError(Triple<Assembly, string, Exception> error)
+        {
+            string internedError = string.Intern(error.Second);
+            Triple<Assembly, string, Exception> error2 = Triple.Create(error.First, internedError, error.Third);
+
+            lock (this.effectLoadErrors)
+            {
+                if (!this.effectLoadErrors.Contains(error2))
+                {
+                    this.effectLoadErrors.Add(error2);
+                }
+            }
+        }
+
+        public static string GetLocalizedEffectErrorMessage(Assembly assembly, Type type, Exception exception)
+        {
+            IPluginSupportInfo supportInfo = PluginSupportInfo.GetPluginSupportInfo(type);
+            string typeName = string.Format("{0}.{1}", type.Namespace, type.Name);
+            return GetLocalizedEffectErrorMessage(assembly, typeName, supportInfo, exception);
+        }
+
+        public static string GetLocalizedEffectErrorMessage(Assembly assembly, string typeName, Exception exception)
+        {
+            IPluginSupportInfo supportInfo = PluginSupportInfo.GetPluginSupportInfo(assembly);
+            return GetLocalizedEffectErrorMessage(assembly, typeName, supportInfo, exception);
+        }
+
+        public static string GetLocalizedEffectErrorMessage(Assembly assembly, string typeName, IPluginSupportInfo supportInfo, Exception exception)
+        {
+            string fileName = assembly.Location;
+            string shortErrorFormat = PdnResources.GetString("EffectErrorMessage.ShortFormat");
+            string fullErrorFormat = PdnResources.GetString("EffectErrorMessage.FullFormat");
+            string notSuppliedText = PdnResources.GetString("EffectErrorMessage.InfoNotSupplied");
+
+            string errorText;
+
+            if (supportInfo == null)
+            {
+                errorText = string.Format(
+                    shortErrorFormat,
+                    fileName ?? notSuppliedText,
+                    typeName ?? notSuppliedText,
+                    exception.ToString());
+            }
+            else
+            {
+                errorText = string.Format(
+                    fullErrorFormat,
+                    fileName ?? notSuppliedText,
+                    supportInfo.DisplayName ?? notSuppliedText,
+                    (supportInfo.Version ?? new Version()).ToString(),
+                    supportInfo.Author ?? notSuppliedText,
+                    supportInfo.Copyright ?? notSuppliedText,
+                    (supportInfo.WebsiteUri == null ? notSuppliedText : supportInfo.WebsiteUri.ToString()),
+                    exception.ToString());
+            }
+
+            return errorText;
+        }
+
+        public IList<Triple<Assembly, string, Exception>> GetEffectLoadErrors()
+        {
+            return this.effectLoadErrors.ToArray();
+        }
+
         public void RunEffect(Type effectType)
         {
             // TODO: this is kind of a hack
@@ -428,7 +494,7 @@ namespace PaintDotNet
         {
             get
             {
-                return ImageResource.Get("Icons.MenuFileNewIcon.png");
+                return PdnResources.GetImageResource("Icons.MenuFileNewIcon.png");
             }
         }
 
@@ -436,7 +502,7 @@ namespace PaintDotNet
         {
             get
             {
-                return ImageResource.Get("Icons.ImageFromDiskIcon.png");
+                return PdnResources.GetImageResource("Icons.ImageFromDiskIcon.png");
             }
         }
 
@@ -864,7 +930,7 @@ namespace PaintDotNet
                 this.activeDocumentWorkspace.ScaleFactorChanged += ZoomChangedHandler;
                 this.activeDocumentWorkspace.ZoomBasisChanged += DocumentWorkspace_ZoomBasisChanged;
 
-                this.activeDocumentWorkspace.Units = this.widgets.ViewConfigStrip.Units; //AppEnvironment.Units;
+                this.activeDocumentWorkspace.Units = this.widgets.ViewConfigStrip.Units;
 
                 this.historyForm.HistoryControl.HistoryStack = this.ActiveDocumentWorkspace.History;
 
@@ -945,6 +1011,9 @@ namespace PaintDotNet
             AppEnvironment.BrushInfoChanged += Environment_BrushInfoChanged;
             AppEnvironment.ColorPickerClickBehaviorChanged += Environment_ColorPickerClickBehaviorChanged;
             AppEnvironment.ResamplingAlgorithmChanged += Environment_ResamplingAlgorithmChanged;
+            AppEnvironment.SelectionCombineModeChanged += Environment_SelectionCombineModeChanged;
+            AppEnvironment.FloodModeChanged += Environment_FloodModeChanged;
+            AppEnvironment.SelectionDrawModeInfoChanged += Environment_SelectionDrawModeInfoChanged;
 
             this.toolBar.DocumentStrip.RelinquishFocus += RelinquishFocusHandler;
 
@@ -977,6 +1046,11 @@ namespace PaintDotNet
             this.toolBar.ToolConfigStrip.RelinquishFocus += OnToolStripRelinquishFocus;
             this.toolBar.ToolConfigStrip.ColorPickerClickBehaviorChanged += ToolConfigStrip_ColorPickerClickBehaviorChanged;
             this.toolBar.ToolConfigStrip.ResamplingAlgorithmChanged += ToolConfigStrip_ResamplingAlgorithmChanged;
+            this.toolBar.ToolConfigStrip.SelectionCombineModeChanged += ToolConfigStrip_SelectionCombineModeChanged;
+            this.toolBar.ToolConfigStrip.FloodModeChanged += ToolConfigStrip_FloodModeChanged;
+            this.toolBar.ToolConfigStrip.SelectionDrawModeInfoChanged += ToolConfigStrip_SelectionDrawModeInfoChanged;
+            this.toolBar.ToolConfigStrip.SelectionDrawModeUnitsChanging += ToolConfigStrip_SelectionDrawModeUnitsChanging;
+
             this.toolBar.ToolConfigStrip.MouseWheel += OnToolStripMouseWheel;
 
             this.toolBar.DocumentStrip.RelinquishFocus += OnToolStripRelinquishFocus;
@@ -1013,6 +1087,92 @@ namespace PaintDotNet
         private void Environment_ResamplingAlgorithmChanged(object sender, EventArgs e)
         {
             this.widgets.ToolConfigStrip.ResamplingAlgorithm = this.appEnvironment.ResamplingAlgorithm;
+        }
+
+        private void ToolConfigStrip_SelectionCombineModeChanged(object sender, EventArgs e)
+        {
+            this.appEnvironment.SelectionCombineMode = this.widgets.ToolConfigStrip.SelectionCombineMode;
+        }
+
+        private void Environment_SelectionCombineModeChanged(object sender, EventArgs e)
+        {
+            this.widgets.ToolConfigStrip.SelectionCombineMode = this.appEnvironment.SelectionCombineMode;
+        }
+
+        private void ToolConfigStrip_FloodModeChanged(object sender, EventArgs e)
+        {
+            this.appEnvironment.FloodMode = this.widgets.ToolConfigStrip.FloodMode;
+        }
+
+        private void Environment_FloodModeChanged(object sender, EventArgs e)
+        {
+            this.widgets.ToolConfigStrip.FloodMode = this.appEnvironment.FloodMode;
+        }
+
+        private void ToolConfigStrip_SelectionDrawModeInfoChanged(object sender, EventArgs e)
+        {
+            this.appEnvironment.SelectionDrawModeInfo = this.widgets.ToolConfigStrip.SelectionDrawModeInfo;
+        }
+
+        private void Environment_SelectionDrawModeInfoChanged(object sender, EventArgs e)
+        {
+            this.widgets.ToolConfigStrip.SelectionDrawModeInfo = this.appEnvironment.SelectionDrawModeInfo;
+        }
+
+        private sealed class ToolConfigStrip_SelectionDrawModeUnitsChangeHandler
+        {
+            private ToolConfigStrip toolConfigStrip;
+            private Document activeDocument;
+            private MeasurementUnit oldUnits;
+
+            public ToolConfigStrip_SelectionDrawModeUnitsChangeHandler(ToolConfigStrip toolConfigStrip, Document activeDocument)
+            {
+                this.toolConfigStrip = toolConfigStrip;
+                this.activeDocument = activeDocument;
+                this.oldUnits = toolConfigStrip.SelectionDrawModeInfo.Units;
+            }
+
+            public void Initialize()
+            {
+                this.toolConfigStrip.SelectionDrawModeUnitsChanged += ToolConfigStrip_SelectionDrawModeUnitsChanged;
+            }
+
+            public void ToolConfigStrip_SelectionDrawModeUnitsChanged(object sender, EventArgs e)
+            {
+                try
+                {
+                    SelectionDrawModeInfo sdmi = this.toolConfigStrip.SelectionDrawModeInfo;
+                    MeasurementUnit newUnits = sdmi.Units;
+
+                    double oldWidth = sdmi.Width;
+                    double oldHeight = sdmi.Height;
+
+                    double newWidth;
+                    double newHeight;
+
+                    newWidth = Document.ConvertMeasurement(oldWidth, this.oldUnits, this.activeDocument.DpuUnit, this.activeDocument.DpuX, newUnits);
+                    newHeight = Document.ConvertMeasurement(oldHeight, this.oldUnits, this.activeDocument.DpuUnit, this.activeDocument.DpuY, newUnits);
+
+                    SelectionDrawModeInfo newSdmi = sdmi.CloneWithNewWidthAndHeight(newWidth, newHeight);
+                    this.toolConfigStrip.SelectionDrawModeInfo = newSdmi;
+                }
+
+                finally
+                {
+                    this.toolConfigStrip.SelectionDrawModeUnitsChanged -= ToolConfigStrip_SelectionDrawModeUnitsChanged;
+                }
+            }
+        }
+
+        private void ToolConfigStrip_SelectionDrawModeUnitsChanging(object sender, EventArgs e)
+        {
+            if (this.ActiveDocumentWorkspace != null && this.ActiveDocumentWorkspace.Document != null)
+            {
+                ToolConfigStrip_SelectionDrawModeUnitsChangeHandler tcsSdmuch = new ToolConfigStrip_SelectionDrawModeUnitsChangeHandler(
+                    this.toolBar.ToolConfigStrip, this.ActiveDocumentWorkspace.Document);
+
+                tcsSdmuch.Initialize();
+            }
         }
 
         private void DocumentStrip_DocumentListChanged(object sender, EventArgs e)

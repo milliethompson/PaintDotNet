@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.PropertySystem;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -16,19 +17,25 @@ namespace PaintDotNet.Effects
     [EffectCategory(EffectCategory.Adjustment)]
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public sealed class InvertColorsEffect
-        : Effect
+        : PropertyBasedEffect
     {
         private UnaryPixelOps.Invert invertOp;
 
-        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
-            Rectangle[] rois, int startIndex, int length)
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            this.invertOp.Apply(dstArgs.Surface, srcArgs.Surface, rois, startIndex, length);
+            return PropertyCollection.CreateEmpty();
+        }
+
+        protected override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            this.invertOp.Apply(DstArgs.Surface, SrcArgs.Surface, rois, startIndex, length);
         }
 
         public InvertColorsEffect()
             : base(PdnResources.GetString("InvertColorsEffect.Name"),
-                   PdnResources.GetImage("Icons.InvertColorsEffect.png"))
+                   PdnResources.GetImageResource("Icons.InvertColorsEffect.png").Reference,
+                   null,
+                   EffectFlags.None)
         {
             this.invertOp = new UnaryPixelOps.Invert();
         }

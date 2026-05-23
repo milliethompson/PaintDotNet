@@ -31,8 +31,8 @@ namespace PaintDotNet.HistoryFunctions
             get
             {
                 // TODO: find a real icon for this?
-                //return ImageResource.Get("todo.png");
-                return ImageResource.Get("Icons.MenuLayersMoveLayerUpIcon.png");
+                //return PdnResources.GetImageResource("todo.png");
+                return PdnResources.GetImageResource("Icons.MenuLayersMoveLayerUpIcon.png");
             }
         }
 

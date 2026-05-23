@@ -17,15 +17,10 @@ using System.Text;
 namespace PaintDotNet.Effects
 {
     public abstract class LocalHistogramEffect 
-        : Effect
+        : PropertyBasedEffect
     {
-        protected internal LocalHistogramEffect(string name, Image image, string subMenuName, bool isConfigurable)
-            : base(name, image, subMenuName, isConfigurable)
-        {
-        }
-
-        protected internal LocalHistogramEffect(string name, Image image, bool isConfigurable)
-            : base(name, image, isConfigurable)
+        protected internal LocalHistogramEffect(string name, Image image, string subMenuName, EffectFlags flags)
+            : base(name, image, subMenuName, flags)
         {
         }
 

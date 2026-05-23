@@ -130,7 +130,7 @@ namespace PaintDotNet.Tools
 
         public RoundedRectangleTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.RoundedRectangleToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.RoundedRectangleToolIcon.png"),
                    PdnResources.GetString("RoundedRectangleTool.Name"),
                    PdnResources.GetString("RoundedRectangleTool.HelpText"))
         {

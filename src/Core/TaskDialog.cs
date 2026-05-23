@@ -59,6 +59,24 @@ namespace PaintDotNet
             TaskButton cancelTaskButton,
             int pixelWidth96Dpi)
         {
+            return Show(owner, formIcon, formTitle, taskImage, scaleTaskImageWithDpi, introText, 
+                taskButtons, acceptTaskButton, cancelTaskButton, pixelWidth96Dpi, null, null);
+        }
+
+        public static TaskButton Show(
+            IWin32Window owner,
+            Icon formIcon,
+            string formTitle,
+            Image taskImage,
+            bool scaleTaskImageWithDpi,
+            string introText,
+            TaskButton[] taskButtons,
+            TaskButton acceptTaskButton,
+            TaskButton cancelTaskButton,
+            int pixelWidth96Dpi,
+            string auxButtonText,
+            EventHandler auxButtonClickHandler)
+        {
             using (TaskDialogForm form = new TaskDialogForm())
             {
                 form.Icon = formIcon;
@@ -70,6 +88,16 @@ namespace PaintDotNet
                 form.AcceptTaskButton = acceptTaskButton;
                 form.CancelTaskButton = cancelTaskButton;
 
+                if (auxButtonText != null)
+                {
+                    form.AuxButtonText = auxButtonText;
+                }
+
+                if (auxButtonClickHandler != null)
+                {
+                    form.AuxButtonClick += auxButtonClickHandler;
+                }
+
                 int pixelWidth = UI.ScaleWidth(pixelWidth96Dpi);
                 form.ClientSize = new Size(pixelWidth, form.ClientSize.Height);
 
@@ -79,7 +107,7 @@ namespace PaintDotNet
                 return result;
             }
         }
-
+        
         private sealed class TaskDialogForm
             : PdnBaseForm
         {
@@ -92,6 +120,31 @@ namespace PaintDotNet
             private TaskButton acceptTaskButton;
             private TaskButton cancelTaskButton;
             private TaskButton dialogResult;
+
+            private Button auxButton;
+
+            public string AuxButtonText
+            {
+                get
+                {
+                    return this.auxButton.Text;
+                }
+
+                set
+                {
+                    this.auxButton.Text = value;
+                    PerformLayout();
+                }
+            }
+
+            public event EventHandler AuxButtonClick;
+            private void OnAuxButtonClick()
+            {
+                if (AuxButtonClick != null)
+                {
+                    AuxButtonClick(this, EventArgs.Empty);
+                }
+            }
 
             public new TaskButton DialogResult
             {
@@ -225,6 +278,7 @@ namespace PaintDotNet
             {
                 SuspendLayout();
                 this.introTextLabel = new Label();
+                this.auxButton = new Button();
                 this.taskImagePB = new PictureBox();
                 this.separator = new HeaderLabel();
                 //
@@ -236,6 +290,18 @@ namespace PaintDotNet
                 //
                 this.taskImagePB.Name = "taskImagePB";
                 this.taskImagePB.SizeMode = PictureBoxSizeMode.StretchImage;
+                //
+                // auxButton
+                //
+                this.auxButton.Name = "auxButton";
+                this.auxButton.AutoSize = true;
+                this.auxButton.FlatStyle = FlatStyle.System;
+                this.auxButton.Visible = false;
+                this.auxButton.Click +=
+                    delegate(object sender, EventArgs e)
+                    {
+                        OnAuxButtonClick();
+                    };
                 //
                 // separator
                 //
@@ -253,6 +319,7 @@ namespace PaintDotNet
                 this.StartPosition = FormStartPosition.CenterParent;
                 this.Controls.Add(this.introTextLabel);
                 this.Controls.Add(this.taskImagePB);
+                this.Controls.Add(this.auxButton);
                 this.Controls.Add(this.separator);
                 ResumeLayout();
             }
@@ -297,6 +364,19 @@ namespace PaintDotNet
 
                 int y = Math.Max(this.taskImagePB.Bottom, this.introTextLabel.Bottom);
                 y += topSectionToLinksVMargin;
+
+                if (!string.IsNullOrEmpty(this.auxButton.Text))
+                {
+                    this.auxButton.Visible = true;
+                    this.auxButton.Location = new Point(leftMargin, y);
+                    this.auxButton.PerformLayout();
+                    y += this.auxButton.Height;
+                    y += topSectionToLinksVMargin;
+                }
+                else
+                {
+                    this.auxButton.Visible = false;
+                }
 
                 if (this.commandButtons != null)
                 {
@@ -369,6 +449,11 @@ namespace PaintDotNet
 
                 AcceptButton = newAcceptButton;
                 CancelButton = newCancelButton;
+
+                if (newAcceptButton != null && newAcceptButton is Control)
+                {
+                    ((Control)newAcceptButton).Select();
+                }
 
                 ResumeLayout();
             }

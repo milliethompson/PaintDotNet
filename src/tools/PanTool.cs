@@ -142,7 +142,7 @@ namespace PaintDotNet.Tools
 
         public PanTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.PanToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.PanToolIcon.png"),
                    PdnResources.GetString("PanTool.Name"),
                    PdnResources.GetString("PanTool.HelpText"), 
                    'h',

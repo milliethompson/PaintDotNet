@@ -9,7 +9,7 @@
 
 using System;
 
-namespace PaintDotNet.Base
+namespace PaintDotNet
 {
     public delegate void Procedure();
     public delegate void Procedure<T>(T t);

@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
 // Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
@@ -17,6 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
+    [Obsolete]
     public sealed class CloudsEffectConfigDialog 
         : TwoAmountsConfigDialogBase
     {

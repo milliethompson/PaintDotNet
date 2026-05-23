@@ -139,6 +139,11 @@ namespace PaintDotNet
 
         public override int Add(object value)
         {
+            if (!(value is BitmapLayer))
+            {
+                throw new ArgumentException("can only add bitmap layers");
+            }
+
             OnChanging();
             CheckLayerSize(value);
             parent.Invalidate(); // TODO: is this necessary? shouldn't Document just hook in to the Inserted event?

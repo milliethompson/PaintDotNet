@@ -8,10 +8,11 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
 using System.Drawing;
 using System.Collections.Generic;
-using System.Text;
 
 namespace PaintDotNet.Effects
 {
@@ -30,37 +31,45 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return ImageResource.Get("Icons.MedianEffectIcon.png");
+                return PdnResources.GetImageResource("Icons.MedianEffectIcon.png");
             }
         }
 
+        private int radius;
 	    private int percentile;
 
         public MedianEffect() 
             : base(StaticName, 
                    StaticImage.Reference, 
-                   SubmenuNames.Blurs,
-                   true)
+                   SubmenuNames.Noise,
+                   EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        public enum PropertyNames
         {
-	        TwoAmountsConfigDialog tacd = new TwoAmountsConfigDialog();
+            Radius,
+            Percentile
+        }
 
-	        tacd.Text = this.Name;
+        protected override PropertyCollection OnCreatePropertyCollection()
+        {
+            List<Property> props = new List<Property>();
 
-            tacd.Amount1Label = PdnResources.GetString("MedianEffect.ConfigDialog.RadiusLabel");
-	        tacd.Amount1Default = 10;
-	        tacd.Amount1Minimum = 1;
-	        tacd.Amount1Maximum = 200;
+            props.Add(new Int32Property(PropertyNames.Radius, 10, 1, 200));
+            props.Add(new Int32Property(PropertyNames.Percentile, 50, 0, 100));
 
-            tacd.Amount2Label = PdnResources.GetString("MedianEffect.ConfigDialog.PercentileLabel");
-	        tacd.Amount2Default = 50;
-	        tacd.Amount2Minimum = 0;
-	        tacd.Amount2Maximum = 100;
+            return new PropertyCollection(props);
+        }
 
-	        return tacd;
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.Radius, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("MedianEffect.ConfigDialog.RadiusLabel"));
+            configUI.SetPropertyControlValue(PropertyNames.Percentile, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("MedianEffect.ConfigDialog.PercentileLabel"));
+
+            return configUI;
         }
 
         public unsafe override ColorBgra Apply(ColorBgra src, int area, int* hb, int* hg, int* hr, int* ha)
@@ -69,14 +78,19 @@ namespace PaintDotNet.Effects
             return c;
         }
 
-        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
         {
-	        TwoAmountsConfigToken token = (TwoAmountsConfigToken)parameters;
-            this.percentile = token.Amount2;
+            this.radius = newToken.GetProperty<Int32Property>(PropertyNames.Radius).Value;
+            this.percentile = newToken.GetProperty<Int32Property>(PropertyNames.Percentile).Value;
 
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
 	        foreach (Rectangle rect in rois)
 	        {
-		        RenderRect(token.Amount1, srcArgs.Surface, dstArgs.Surface, rect);
+		        RenderRect(this.radius, SrcArgs.Surface, DstArgs.Surface, rect);
 	        }
         }
     }

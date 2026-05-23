@@ -80,7 +80,7 @@ namespace PaintDotNet.Tools
 
         public FreeformShapeTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.FreeformShapeToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.FreeformShapeToolIcon.png"),
                    PdnResources.GetString("FreeformShapeTool.Name"),
                    PdnResources.GetString("FreeformShapeTool.HelpText"))
         {

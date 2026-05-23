@@ -92,7 +92,6 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ImageResource.cs" />
     <Compile Include="InvariantStrings.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -102,7 +101,6 @@
     <Compile Include="PdnResources.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Resource`1.cs" />
     <Compile Include="StartupTestType.cs" />
     <EmbeddedResource Include="Cursors\CloneStampToolCursor.cur" />
     <EmbeddedResource Include="Cursors\CloneStampToolCursorSetSource.cur" />
@@ -440,6 +438,37 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Icons\MenuHelpPdnSearchIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\JuliaFractalEffectIcon.png" />
+    <EmbeddedResource Include="Icons\MandelbrotFractalEffectIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\ToolConfigStrip.SelectionCombineMode.Exclude.png" />
+    <EmbeddedResource Include="Icons\ToolConfigStrip.SelectionCombineMode.Replace.png" />
+    <EmbeddedResource Include="Icons\ToolConfigStrip.SelectionCombineMode.Union.png" />
+    <EmbeddedResource Include="Icons\ToolConfigStrip.SelectionCombineMode.Xor.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\ToolConfigStrip.FloodMode.Global.png" />
+    <EmbeddedResource Include="Icons\ToolConfigStrip.FloodMode.Local.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\ToolConfigStrip.SelectionDrawModeSwapButton.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\ToolConfigStrip.SelectionDrawModeSplitButton.FixedRatio.png" />
+    <EmbeddedResource Include="Icons\ToolConfigStrip.SelectionDrawModeSplitButton.FixedSize.png" />
+    <EmbeddedResource Include="Icons\ToolConfigStrip.SelectionDrawModeSplitButton.Normal.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\BugWarning.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\MenuFileViewPluginLoadErrorsIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\MenuWindowResetWindowLocationsIcon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Drawing;
@@ -157,11 +156,11 @@ namespace PaintDotNet
         {
             InitializeComponent();
 
-            this.cursorInfoStatusLabel.Image = ImageResource.Get("Icons.CursorXYIcon.png").Reference;
+            this.cursorInfoStatusLabel.Image = PdnResources.GetImageResource("Icons.CursorXYIcon.png").Reference;
             this.cursorInfoStatusLabel.Text = string.Empty;
 
             // imageInfo (width,height info)
-            this.imageInfoStatusLabel.Image = ImageResource.Get("Icons.ImageSizeIcon.png").Reference;
+            this.imageInfoStatusLabel.Image = PdnResources.GetImageResource("Icons.ImageSizeIcon.png").Reference;
 
             // progress
             this.progressStatusBar.Visible = false;

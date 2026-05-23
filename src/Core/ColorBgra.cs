@@ -402,10 +402,12 @@ namespace PaintDotNet
         public static ColorBgra BlendColors4W16IP(ColorBgra c1, uint w1, ColorBgra c2, uint w2, ColorBgra c3, uint w3, ColorBgra c4, uint w4)
         {
 #if DEBUG
+            /*
             if ((w1 + w2 + w3 + w4) != 65536)
             {
                 throw new ArgumentOutOfRangeException("w1 + w2 + w3 + w4 must equal 65536!");
             }
+             * */
 #endif
 
             const uint ww = 32768;
@@ -497,8 +499,8 @@ namespace PaintDotNet
             }
 
             return ColorBgra.FromUInt32((uint)b + ((uint)g << 8) + ((uint)r << 16) + ((uint)a << 24));
-        }        
-        
+        }
+
         /// <summary>
         /// Blends the colors based on the given weight values.
         /// </summary>
@@ -519,7 +521,7 @@ namespace PaintDotNet
 
             if (c.Length == 0)
             {
-                return ColorBgra.FromUInt32(0);
+                return ColorBgra.Transparent;
             }
 
             double wsum = 0;
@@ -563,6 +565,68 @@ namespace PaintDotNet
             }
 
             return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
+        }
+
+        public static ColorBgra Blend(ColorBgra[] colors)
+        {
+            unsafe
+            {
+                fixed (ColorBgra* pColors = colors)
+                {
+                    return Blend(pColors, colors.Length);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Smoothly blends the given colors together, assuming equal weighting for each one.
+        /// </summary>
+        /// <param name="colors"></param>
+        /// <param name="colorCount"></param>
+        /// <returns></returns>
+        public unsafe static ColorBgra Blend(ColorBgra* colors, int count)
+        {
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException("count must be 0 or greater");
+            }
+
+            if (count == 0)
+            {
+                return ColorBgra.Transparent;
+            }
+
+            ulong aSum = 0;
+
+            for (int i = 0; i < count; ++i)
+            {
+                aSum += (ulong)colors[i].A;
+            }
+
+            byte b = 0;
+            byte g = 0;
+            byte r = 0;
+            byte a = (byte)(aSum / (ulong)count);
+
+            if (aSum != 0)
+            {
+                ulong bSum = 0;
+                ulong gSum = 0;
+                ulong rSum = 0;
+
+                for (int i = 0; i < count; ++i)
+                {
+                    bSum += (ulong)(colors[i].A * colors[i].B);
+                    gSum += (ulong)(colors[i].A * colors[i].G);
+                    rSum += (ulong)(colors[i].A * colors[i].R);
+                }
+
+                b = (byte)(bSum / aSum);
+                g = (byte)(gSum / aSum);
+                r = (byte)(rSum / aSum);
+            }
+
+            return ColorBgra.FromBgra(b, g, r, a);
         }
 
         public override string ToString()

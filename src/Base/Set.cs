@@ -11,7 +11,7 @@ using System;
 using System.Collections;
 using System.ComponentModel;
 
-namespace PaintDotNet.Base
+namespace PaintDotNet
 {
     /// <summary>
     /// Represents an enumerable collection of items. Each item can only be present
@@ -108,6 +108,11 @@ namespace PaintDotNet.Base
             {
                 Add(theObject);
             }
+        }
+
+        public static Set<T> Create<T>(params T[] items)
+        {
+            return new Set<T>(items);
         }
 
         /// <summary>

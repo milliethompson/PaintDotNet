@@ -129,7 +129,7 @@ namespace PaintDotNet.Tools
 
         public RectangleTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.RectangleToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.RectangleToolIcon.png"),
                    PdnResources.GetString("RectangleTool.Name"),
                    PdnResources.GetString("RectangleTool.HelpText"))
         {

@@ -44,7 +44,7 @@ namespace PaintDotNet
             // This call is required by the Windows Form Designer.
             InitializeComponent();
 
-            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuImageCanvasSizeIcon.png"), Utility.TransparentKey);
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.MenuImageCanvasSizeIcon.png").Reference, Utility.TransparentKey);
 
             this.Text = PdnResources.GetString("CanvasSizeDialog.Text"); // "Canvas Size";
             this.anchorHeader.Text = PdnResources.GetString("CanvasSizeDialog.AnchorHeader.Text"); //"Anchor";

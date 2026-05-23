@@ -23,24 +23,24 @@ namespace PaintDotNet.Tools
     {
         private bool contiguous;
 
-        private bool limitToSelection = true;
-        protected bool LimitToSelection
+        private bool clipToSelection = true;
+        protected bool ClipToSelection
         {
             get 
             {
-                return limitToSelection;
+                return clipToSelection;
             }
 
             set
             {
-                limitToSelection = value;
+                clipToSelection = value;
             }
         }
 
         public FloodToolBase(DocumentWorkspace documentWorkspace, ImageResource toolBarImage, string name, 
             string helpText, char hotKey, bool skipIfActiveOnHotKey, ToolBarConfigItems toolBarConfigItems)
             : base(documentWorkspace, toolBarImage, name, helpText, hotKey, skipIfActiveOnHotKey, 
-              ToolBarConfigItems.Tolerance | toolBarConfigItems)
+              ToolBarConfigItems.FloodMode | ToolBarConfigItems.Tolerance | toolBarConfigItems)
         {
         }
 
@@ -299,7 +299,21 @@ namespace PaintDotNet.Tools
         {
             Point pos = new Point(e.X, e.Y);
             
-            this.contiguous = ((ModifierKeys & Keys.Shift) == 0);
+            switch (AppEnvironment.FloodMode)
+            {
+                case FloodMode.Local:
+                    this.contiguous = true;
+                    break;
+
+                case FloodMode.Global:
+                    this.contiguous = false;
+                    break;
+            }
+
+            if ((ModifierKeys & Keys.Shift) != 0)
+            {
+                this.contiguous = !this.contiguous;
+            }
 
             if (Document.Bounds.Contains(pos))
             {
@@ -308,7 +322,7 @@ namespace PaintDotNet.Tools
                 PdnRegion currentRegion = Selection.CreateRegion();
 
                 // See if the mouse click is valid
-                if (!currentRegion.IsVisible(pos) && limitToSelection)
+                if (!currentRegion.IsVisible(pos) && clipToSelection)
                 {
                     currentRegion.Dispose();
                     currentRegion = null;
@@ -325,11 +339,13 @@ namespace PaintDotNet.Tools
 
                 if (contiguous)
                 {
-                    FillStencilFromPoint(surface, stencilBuffer, pos, tolerance, out boundingBox, currentRegion, limitToSelection);
+                    // FloodMode.Local
+                    FillStencilFromPoint(surface, stencilBuffer, pos, tolerance, out boundingBox, currentRegion, clipToSelection);
                 }
                 else
                 {
-                    FillStencilByColor(surface, stencilBuffer, surface[pos], tolerance, out boundingBox, currentRegion, limitToSelection);
+                    // FloodMode.Global
+                    FillStencilByColor(surface, stencilBuffer, surface[pos], tolerance, out boundingBox, currentRegion, clipToSelection);
                 }
 
                 Point[][] polygonSet = PdnGraphicsPath.PolygonSetFromStencil(stencilBuffer, boundingBox, 0, 0);

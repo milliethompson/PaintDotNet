@@ -66,7 +66,7 @@ namespace PaintDotNet.Actions
                             dw.History.PushNewMemento(
                                 new NullHistoryMemento(
                                     PdnResources.GetString("NewImageAction.Name"),
-                                    ImageResource.Get("Icons.MenuLayersAddNewLayerIcon.png")));
+                                    PdnResources.GetImageResource("Icons.MenuLayersAddNewLayerIcon.png")));
 
                             appWorkspace.ActiveDocumentWorkspace = dw;
                         }

@@ -75,11 +75,11 @@ namespace PaintDotNet.Tools
 
                 wasNotEmpty = !Selection.IsEmpty;
 
+                // Determine this.combineMode
+
                 // if the user is holding down the control key then we don't want to reset the path, merely append to it
                 if ((ModifierKeys & Keys.Control) == Keys.Control)
                 {
-                    append = true;
-
                     if ((e.Button & MouseButtons.Right) == MouseButtons.Right)
                     {
                         this.combineMode = CombineMode.Xor;
@@ -88,20 +88,39 @@ namespace PaintDotNet.Tools
                     {
                         this.combineMode = CombineMode.Union;
                     }
-
-                    Selection.ResetContinuation();
                 }
                 else if ((e.Button & MouseButtons.Right) == MouseButtons.Right)
                 {
-                    append = true;
                     this.combineMode = CombineMode.Exclude;
-                    Selection.ResetContinuation();
                 }
                 else
                 {
-                    append = false;
-                    this.combineMode = CombineMode.Replace;
-                    Selection.Reset();
+                    this.combineMode = AppEnvironment.SelectionCombineMode;
+                    //this.combineMode = CombineMode.Replace;
+                }
+
+                // Act on this.combineMode
+                switch (this.combineMode)
+                {
+                    case CombineMode.Xor:
+                        append = true;
+                        Selection.ResetContinuation();
+                        break;
+
+                    case CombineMode.Union:
+                        append = true;
+                        Selection.ResetContinuation();
+                        break;
+
+                    case CombineMode.Exclude:
+                        append = true;
+                        Selection.ResetContinuation();
+                        break;
+
+                    case CombineMode.Replace:
+                        append = false;
+                        Selection.Reset();
+                        break;
                 }
             }
         }
@@ -363,7 +382,7 @@ namespace PaintDotNet.Tools
                    helpText,
                    hotKey,
                    false,
-                   toolBarConfigItems)
+                   toolBarConfigItems | ToolBarConfigItems.SelectionCombineMode)
         {
             this.tracking = false;
         }

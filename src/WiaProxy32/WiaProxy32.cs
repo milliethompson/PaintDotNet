@@ -68,8 +68,6 @@ Scan <filename>
 
         static int MainImpl(string[] args)
         {
-            UI.EnableDpiAware();
-
             if (args.Length != 2)
             {
                 Console.WriteLine(helpText);

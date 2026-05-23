@@ -157,7 +157,7 @@ namespace PaintDotNet
             if (this.showChooseDefaults)
             {
                 string chooseToolText = PdnResources.GetString("ToolChooserStrip.ChooseToolDefaults.Text");
-                ImageResource chooseToolIcon = ImageResource.Get("Icons.MenuLayersLayerPropertiesIcon.png");
+                ImageResource chooseToolIcon = PdnResources.GetImageResource("Icons.MenuLayersLayerPropertiesIcon.png");
 
                 ToolStripMenuItem tsmi = new ToolStripMenuItem(
                     chooseToolText,

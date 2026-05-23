@@ -24,6 +24,7 @@ namespace PaintDotNet
         /// </summary>
         private System.ComponentModel.Container components = null;
         private bool tracking = false;
+        private bool hover = false;
         private Point lastMouseXY;
 
         public event EventHandler ValueChanged;
@@ -79,21 +80,49 @@ namespace PaintDotNet
         private void DrawToGraphics(Graphics g)
         {
             g.Clear(this.BackColor);
+
+            SmoothingMode oldSM = g.SmoothingMode;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            Rectangle ourRect = Rectangle.Inflate(ClientRectangle, -2, -2);
-            int diameter = Math.Min(ourRect.Width, ourRect.Height);
 
-            Point center = new Point(ourRect.X + (diameter / 2), ourRect.Y + (diameter / 2));
-            double radius = ((double)diameter / 2);
-            double theta = ((double)angleValue * 2 * Math.PI) / 360.0;
+            RectangleF ourRect = RectangleF.Inflate(ClientRectangle, -1, -1);
+            double diameter = Math.Min(ourRect.Width, ourRect.Height);
 
-            Point endPoint = new Point(center.X + (int)(radius * Math.Cos(theta)),
-                center.Y - (int)(radius * Math.Sin(theta)));
+            double radius = (diameter / 2.0);
 
-            g.DrawLine(SystemPens.ControlDark, center, new Point(center.X + (diameter / 2), center.Y));
-            g.DrawEllipse(SystemPens.ControlDarkDark, new Rectangle(new Point(ourRect.X - 1, ourRect.Y - 1), new Size(diameter, diameter)));
-            g.DrawEllipse(SystemPens.ControlLightLight, new Rectangle(ourRect.Location, new Size(diameter, diameter)));
-            g.DrawLine(SystemPens.ControlText, center, endPoint);
+            PointF center = new PointF(
+                (float)(ourRect.X + radius), 
+                (float)(ourRect.Y + radius));
+
+            double theta = (this.angleValue * 2.0 * Math.PI) / 360.0;
+
+            RectangleF ellipseRect = new RectangleF(ourRect.Location, new SizeF((float)diameter, (float)diameter));
+            g.FillEllipse(SystemBrushes.ControlLightLight, RectangleF.Inflate(ellipseRect, -2, -2));
+
+            RectangleF ellipseOutlineRect = this.hover ? RectangleF.Inflate(ellipseRect, -1.0f, -1.0f) : ellipseRect;
+
+            using (Pen ellipseOutlinePen = new Pen(SystemColors.ControlDark))
+            {
+                ellipseOutlinePen.Width = this.hover ? 2.0f : 1.0f;
+                g.DrawEllipse(ellipseOutlinePen, ellipseOutlineRect);
+            }
+
+            double endPointRadius = radius - 2;
+            PointF endPoint = new PointF(
+                (float)(center.X + (endPointRadius * Math.Cos(theta))),
+                (float)(center.Y - (endPointRadius * Math.Sin(theta))));
+
+            float gripSize = 2.5f;
+            RectangleF gripEllipseRect = new RectangleF(center.X - gripSize, center.Y - gripSize, gripSize * 2, gripSize * 2);
+            g.FillEllipse(SystemBrushes.ControlDark, gripEllipseRect);
+
+            using (Pen anglePen = (Pen)SystemPens.ControlDark.Clone())
+            {
+                anglePen.Width = 2.0f;
+                anglePen.Alignment = PenAlignment.Center;
+                g.DrawLine(anglePen, center, endPoint);
+            }
+
+            g.SmoothingMode = oldSM;
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -101,15 +130,29 @@ namespace PaintDotNet
             DrawToGraphics(e.Graphics);
         }
 
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            this.hover = true;
+            Invalidate(true);
+            base.OnMouseEnter(e);
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            this.hover = false;
+            Invalidate(true);
+            base.OnMouseLeave(e);
+        }
+
         protected override void OnMouseDown(MouseEventArgs e)
         {
-            base.OnMouseDown (e);
+            base.OnMouseDown(e);
             tracking = true;
         }
 
         protected override void OnMouseUp(MouseEventArgs e)
         {
-            base.OnMouseUp (e);
+            base.OnMouseUp(e);
             tracking = false;
         }
 
@@ -128,7 +171,33 @@ namespace PaintDotNet
                 int dx = e.X - center.X;
                 int dy = e.Y - center.Y;
                 double theta = Math.Atan2(-dy, dx);
-                this.ValueDouble = (theta * 360) / (2 * Math.PI);
+
+                double newAngle = (theta * 360) / (2 * Math.PI);
+
+                if ((ModifierKeys & Keys.Shift) != 0)
+                {
+                    const double constraintAngle = 15.0;
+
+                    double multiple = newAngle / constraintAngle;
+                    double top = Math.Floor(multiple);
+                    double topDelta = Math.Abs(top - multiple);
+                    double bottom = Math.Ceiling(multiple);
+                    double bottomDelta = Math.Abs(bottom - multiple);
+
+                    double bestMultiple;
+                    if (bottomDelta < topDelta)
+                    {
+                        bestMultiple = bottom;
+                    }
+                    else
+                    {
+                        bestMultiple = top;
+                    }
+
+                    newAngle = bestMultiple * constraintAngle;
+                }
+
+                this.ValueDouble = newAngle;
 
                 Update();
             }
@@ -155,8 +224,12 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
-                ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            SetStyle(ControlStyles.Selectable, false);
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
+
+            DoubleBuffered = true;
+
+            TabStop = false;
         }
 
         /// <summary> 

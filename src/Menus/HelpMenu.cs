@@ -283,12 +283,12 @@ namespace PaintDotNet.Menus
             PdnResources.SetNewCulture(newLocaleName);
 
             // Load the text and buttons in the new language
-            Icon formIcon = Utility.ImageToIcon(ImageResource.Get("Icons.MenuHelpLanguageIcon.png").Reference);
+            Icon formIcon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.MenuHelpLanguageIcon.png").Reference);
             string title = PdnResources.GetString("ConfirmLanguageDialog.Title");
             Image taskImage = null;
             string introText = PdnResources.GetString("ConfirmLanguageDialog.IntroText");
 
-            Image restartImage = ImageResource.Get("Icons.RightArrowBlue.png").Reference;
+            Image restartImage = PdnResources.GetImageResource("Icons.RightArrowBlue.png").Reference;
             string explanationTextFormat = PdnResources.GetString("ConfirmLanguageDialog.RestartTB.ExplanationText.Format");
             CultureInfo newCI = new CultureInfo(newLocaleName);
 
@@ -308,7 +308,7 @@ namespace PaintDotNet.Menus
                 PdnResources.GetString("ConfirmLanguageDialog.RestartTB.ActionText"),
                 explanationText);
 
-            Image cancelImage = ImageResource.Get("Icons.CancelIcon.png").Reference;
+            Image cancelImage = PdnResources.GetImageResource("Icons.CancelIcon.png").Reference;
             TaskButton cancelTB = new TaskButton(
                 cancelImage,
                 PdnResources.GetString("ConfirmLanguageDialog.CancelTB.ActionText"),

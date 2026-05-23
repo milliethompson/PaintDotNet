@@ -32,8 +32,8 @@ namespace PaintDotNet
         public UnitsComboBoxHandler(ComboBox comboBox)
         {
             this.comboBox = comboBox;
-            this.comboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBox.SelectedIndexChanged += new EventHandler(comboBox_SelectedIndexChanged);
+            this.comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            this.comboBox.SelectedIndexChanged += ComboBox_SelectedIndexChanged;
             ReloadItems();
         }
 
@@ -197,6 +197,7 @@ namespace PaintDotNet
         private void ReloadItems()
         {
             string suffix;
+
             switch (this.unitsDisplayType)
             {
                 case UnitsDisplayType.Plural:
@@ -236,6 +237,8 @@ namespace PaintDotNet
 
             if (lowercase)
             {
+                // TODO: we shouldn't really be using ToLower() here, these should be separately localizable strings
+
                 pixelsString = pixelsString.ToLower();
                 inchesString = inchesString.ToLower();
                 centimetersString = centimetersString.ToLower();
@@ -284,6 +287,7 @@ namespace PaintDotNet
         }
 
         public event EventHandler UnitsChanged;
+
         private void OnUnitsChanged()
         {
             if (UnitsChanged != null)
@@ -292,7 +296,7 @@ namespace PaintDotNet
             }
         }
 
-        private void comboBox_SelectedIndexChanged(object sender, EventArgs e)
+        private void ComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             this.OnUnitsChanged();
         }

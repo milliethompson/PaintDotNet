@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.ComponentModel;
@@ -241,7 +240,7 @@ namespace PaintDotNet
         public void SetIcon(string imageName)
         {
             this.ImageTransparentColor = Utility.TransparentKey;
-            this.Image = ImageResource.Get(imageName).Reference;
+            this.Image = PdnResources.GetImageResource(imageName).Reference;
         }
 
         public void SetIcon(ImageResource image)

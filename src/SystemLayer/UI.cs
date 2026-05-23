@@ -7,7 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
+using PaintDotNet;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -17,6 +17,7 @@ using System.Drawing.Imaging;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 namespace PaintDotNet.SystemLayer
 {
@@ -37,34 +38,10 @@ namespace PaintDotNet.SystemLayer
             GC.KeepAlive(form);
         }
 
-        /// <summary>
-        /// Indicates to the OS that this application is aware of high-DPI modes and handles
-        /// it correctly. On some OS versions, if this function is not called then the application
-        /// is virtualized to 96 DPI even if the system is running at 120 DPI. The rendering
-        /// is then stretched by 125% (for 120 DPI) so that it is "physically" the correct size.
-        /// </summary>
-        /// <remarks>
-        /// Note to implementors: This may be implemented as a no-op.
-        /// </remarks>
+        [Obsolete]
         public static void EnableDpiAware()
         {
-            if (OS.IsVistaOrLater)
-            {
-                try
-                {
-                    bool bResult = SafeNativeMethods.SetProcessDPIAware();
-
-                    if (!bResult)
-                    {
-                        NativeMethods.ThrowOnWin32Error("SetProcessDPIAware() returned false");
-                    }
-                }
-
-                catch (Exception)
-                {
-                    // Ignore any error
-                }
-            }
+            return;
         }
 
         /// <summary>
@@ -194,14 +171,134 @@ namespace PaintDotNet.SystemLayer
             return yScale;
         }
 
-        public enum ButtonState
+        public static void DrawCommandButton(
+            Graphics g, 
+            PushButtonState state, 
+            Rectangle rect, 
+            Color backColor,
+            Control childControl)
         {
-            Normal,
-            Hot,
-            Pressed,
-            Disabled
+            VisualStyleElement element = null;
+            int alpha = 255;
+            
+            if (OS.IsVistaOrLater)
+            {
+                const string className = "BUTTON";
+                const int partID = NativeConstants.BP_COMMANDLINK;
+                int stateID;
+
+                switch (state)
+                {
+                    case PushButtonState.Default:
+                        stateID = NativeConstants.CMDLS_DEFAULTED;
+                        break;
+
+                    case PushButtonState.Disabled:
+                        stateID = NativeConstants.CMDLS_DISABLED;
+                        break;
+                        
+                    case PushButtonState.Hot:
+                        stateID = NativeConstants.CMDLS_HOT;
+                        break;
+
+                    case PushButtonState.Normal:
+                        stateID = NativeConstants.CMDLS_NORMAL;
+                        break;
+
+                    case PushButtonState.Pressed:
+                        stateID = NativeConstants.CMDLS_PRESSED;
+                        break;
+
+                    default:
+                        throw new InvalidEnumArgumentException();
+                }
+
+                try
+                {
+                    element = VisualStyleElement.CreateElement(className, partID, stateID);
+
+                    if (!VisualStyleRenderer.IsElementDefined(element))
+                    {
+                        element = null;
+                    }
+                }
+
+                catch (InvalidOperationException)
+                {
+                    element = null;
+                }
+            }
+
+            if (element == null)
+            {
+                switch (state)
+                {
+                    case PushButtonState.Default:
+                        element = VisualStyleElement.Button.PushButton.Default;
+                        alpha = 95;
+                        break;
+
+                    case PushButtonState.Disabled:
+                        element = VisualStyleElement.Button.PushButton.Disabled;
+                        break;
+
+                    case PushButtonState.Hot:
+                        element = VisualStyleElement.Button.PushButton.Hot;
+                        break;
+
+                    case PushButtonState.Normal:
+                        alpha = 0;
+                        element = VisualStyleElement.Button.PushButton.Normal;
+                        break;
+                    case PushButtonState.Pressed:
+                        element = VisualStyleElement.Button.PushButton.Pressed;
+                        break;
+
+                    default:
+                        throw new InvalidEnumArgumentException();
+                }
+            }
+
+            if (element != null)
+            {
+                try
+                {
+                    VisualStyleRenderer renderer = new VisualStyleRenderer(element);
+                    renderer.DrawParentBackground(g, rect, childControl);
+                    renderer.DrawBackground(g, rect);
+                }
+
+                catch (Exception)
+                {
+                    element = null;
+                }
+            }
+
+            if (element == null)
+            {
+                ButtonRenderer.DrawButton(g, rect, state);
+            }
+
+            if (alpha != 255)
+            {
+                using (Brush backBrush = new SolidBrush(Color.FromArgb(255 - alpha, backColor)))
+                {
+                    CompositingMode oldCM = g.CompositingMode;
+
+                    try
+                    {
+                        g.CompositingMode = CompositingMode.SourceOver;
+                        g.FillRectangle(backBrush, rect);
+                    }
+
+                    finally
+                    {
+                        g.CompositingMode = oldCM;
+                    }
+                }
+            }
         }
-        
+       
         /// <summary>
         /// This method is obsolete. Use SuspendControlPainting() and ResumeControlPainting() instead.
         /// </remarks>
@@ -445,6 +542,53 @@ namespace PaintDotNet.SystemLayer
                 }
 
                 return false;
+            }
+        }
+
+        private static VisualStyleClass DetermineVisualStyleClass()
+        {
+            VisualStyleClass vsClass;
+
+            if (!VisualStyleInformation.IsSupportedByOS)
+            {
+                vsClass = VisualStyleClass.Classic;
+            }
+            else if (!VisualStyleInformation.IsEnabledByUser)
+            {
+                vsClass = VisualStyleClass.Classic;
+            }
+            else if (0 == string.Compare(VisualStyleInformation.Author, "MSX", StringComparison.InvariantCulture) &&
+                     0 == string.Compare(VisualStyleInformation.DisplayName, "Aero style", StringComparison.InvariantCulture))
+            {
+                vsClass = VisualStyleClass.Aero;
+            }
+            else if (0 == string.Compare(VisualStyleInformation.Company, "Microsoft Corporation", StringComparison.InvariantCulture) &&
+                     0 == string.Compare(VisualStyleInformation.Author, "Microsoft Design Team", StringComparison.InvariantCulture))
+            {
+                if (0 == string.Compare(VisualStyleInformation.DisplayName, "Windows XP style", StringComparison.InvariantCulture) ||  // Luna
+                    0 == string.Compare(VisualStyleInformation.DisplayName, "Zune Style", StringComparison.InvariantCulture) ||        // Zune
+                    0 == string.Compare(VisualStyleInformation.DisplayName, "Media Center style", StringComparison.InvariantCulture))  // Royale
+                {
+                    vsClass = VisualStyleClass.Luna;
+                }
+                else
+                {
+                    vsClass = VisualStyleClass.Other;
+                }
+            }
+            else
+            {
+                vsClass = VisualStyleClass.Other;
+            }
+
+            return vsClass;
+        }
+
+        public static VisualStyleClass VisualStyleClass
+        {
+            get
+            {
+                return DetermineVisualStyleClass();
             }
         }
 

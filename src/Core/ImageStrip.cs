@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -43,15 +42,15 @@ namespace PaintDotNet
 
         public sealed class Item
         {
-            private UI.ButtonState imageRenderState;
+            private PushButtonState imageRenderState;
             private Image image;
 
             private bool selected;
 
-            private UI.ButtonState checkRenderState;
+            private PushButtonState checkRenderState;
             private CheckState checkState;
 
-            private UI.ButtonState closeRenderState;
+            private PushButtonState closeRenderState;
 
             private bool dirty;
 
@@ -83,7 +82,7 @@ namespace PaintDotNet
                 }
             }
 
-            public UI.ButtonState ImageRenderState
+            public PushButtonState ImageRenderState
             {
                 get
                 {
@@ -206,7 +205,7 @@ namespace PaintDotNet
                 }
             }
 
-            public UI.ButtonState CheckRenderState
+            public PushButtonState CheckRenderState
             {
                 get
                 {
@@ -223,7 +222,7 @@ namespace PaintDotNet
                 }
             }
 
-            public UI.ButtonState CloseRenderState
+            public PushButtonState CloseRenderState
             {
                 get
                 {
@@ -240,7 +239,7 @@ namespace PaintDotNet
                 }
             }
 
-            public void SetPartRenderState(ItemPart itemPart, UI.ButtonState renderState)
+            public void SetPartRenderState(ItemPart itemPart, PushButtonState renderState)
             {
                 switch (itemPart)
                 {
@@ -374,9 +373,9 @@ namespace PaintDotNet
 
             for (int i = 0; i < this.items.Count; ++i)
             {
-                this.items[i].CheckRenderState = UI.ButtonState.Normal;
-                this.items[i].CloseRenderState = UI.ButtonState.Normal;
-                this.items[i].ImageRenderState = UI.ButtonState.Normal;
+                this.items[i].CheckRenderState = PushButtonState.Normal;
+                this.items[i].CloseRenderState = PushButtonState.Normal;
+                this.items[i].ImageRenderState = PushButtonState.Normal;
                 this.items[i].Selected = false;
             }
 
@@ -388,7 +387,7 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    this.items[this.mouseDownIndex].SetPartRenderState(this.mouseDownItemPart, UI.ButtonState.Pressed);
+                    this.items[this.mouseDownIndex].SetPartRenderState(this.mouseDownItemPart, PushButtonState.Pressed);
                     this.items[this.mouseDownIndex].Selected = true;
                 }
             }
@@ -400,7 +399,7 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    this.items[this.mouseOverIndex].SetPartRenderState(this.mouseOverItemPart, UI.ButtonState.Hot);
+                    this.items[this.mouseOverIndex].SetPartRenderState(this.mouseOverItemPart, PushButtonState.Hot);
                     this.items[this.mouseOverIndex].Selected = true;
                 }
             }
@@ -570,7 +569,7 @@ namespace PaintDotNet
             if (ItemClicked != null)
             {
                 ItemClicked(this, new EventArgs<Triple<Item, ItemPart, MouseButtons>>(
-                    new Triple<Item, ItemPart, MouseButtons>(item, itemPart, mouseButtons)));
+                    Triple.Create(item, itemPart, mouseButtons)));
             }
         }
 
@@ -826,7 +825,7 @@ namespace PaintDotNet
 
                 string resourceName = resourceNamePrefix + resourceNameInfix + resourceNameSuffix;
 
-                ImageResource imageResource = ImageResource.Get(resourceName);
+                ImageResource imageResource = PdnResources.GetImageResource(resourceName);
                 Image image = imageResource.Reference;
 
                 g.SmoothingMode = SmoothingMode.AntiAlias;

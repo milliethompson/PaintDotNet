@@ -138,7 +138,7 @@ namespace PaintDotNet.Tools
 
         public EllipseTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.EllipseToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.EllipseToolIcon.png"),
                    PdnResources.GetString("EllipseTool.Name"),
                    PdnResources.GetString("EllipseTool.HelpText"))
         {

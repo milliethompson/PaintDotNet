@@ -300,7 +300,7 @@ namespace PaintDotNet.Tools
 
         public PencilTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.PencilToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.PencilToolIcon.png"),
                    PdnResources.GetString("PencilTool.Name"),
                    PdnResources.GetString("PencilTool.HelpText"),
                    'p',

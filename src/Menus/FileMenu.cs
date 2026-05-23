@@ -10,11 +10,13 @@
 using PaintDotNet.Actions;
 using PaintDotNet.SystemLayer;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -38,6 +40,8 @@ namespace PaintDotNet.Menus
         private ToolStripSeparator menuFileSeparator2;
         private PdnMenuItem menuFilePrint;
         private ToolStripSeparator menuFileSeparator3;
+        private PdnMenuItem menuFileViewPluginLoadErrors;
+        private ToolStripSeparator menuFileSeparator4;
         private PdnMenuItem menuFileExit;
 
         private bool OnCtrlF4Typed(Keys keys)
@@ -67,6 +71,8 @@ namespace PaintDotNet.Menus
             this.menuFileSeparator2 = new ToolStripSeparator();
             this.menuFilePrint = new PdnMenuItem();
             this.menuFileSeparator3 = new ToolStripSeparator();
+            this.menuFileViewPluginLoadErrors = new PdnMenuItem();
+            this.menuFileSeparator4 = new ToolStripSeparator();
             this.menuFileExit = new PdnMenuItem();
             //
             // FileMenu
@@ -85,6 +91,8 @@ namespace PaintDotNet.Menus
                     this.menuFileSeparator2,
                     this.menuFilePrint,
                     this.menuFileSeparator3,
+                    this.menuFileViewPluginLoadErrors,
+                    this.menuFileSeparator4,
                     this.menuFileExit
                 }); 
             this.Name = "Menu.File";
@@ -154,11 +162,108 @@ namespace PaintDotNet.Menus
             this.menuFilePrint.Name = "Print";
             this.menuFilePrint.ShortcutKeys = Keys.Control | Keys.P;
             this.menuFilePrint.Click += new System.EventHandler(this.MenuFilePrint_Click);
+            //
+            // menuFileViewPluginLoadErrors
+            //
+            this.menuFileViewPluginLoadErrors.Name = "ViewPluginLoadErrors";
+            this.menuFileViewPluginLoadErrors.Click += new EventHandler(MenuFileViewPluginLoadErrors_Click);
             // 
             // menuFileExit
             // 
             this.menuFileExit.Name = "Exit";
             this.menuFileExit.Click += new System.EventHandler(this.MenuFileExit_Click);
+        }
+
+        private List<Triple<Assembly, string, Exception>> RemoveDuplicates(IList<Triple<Assembly, string, Exception>> allErrors)
+        {
+            Set<Triple<Assembly, string, string>> internedList = new Set<Triple<Assembly, string, string>>();
+            List<Triple<Assembly, string, Exception>> noDupesList = new List<Triple<Assembly, string, Exception>>();
+
+            for (int i = 0; i < allErrors.Count; ++i)
+            {
+                Triple<Assembly, string, string> interned = Triple.Create(
+                    allErrors[i].First, string.Intern(allErrors[i].Second), string.Intern(allErrors[i].Third.ToString()));
+
+                if (!internedList.Contains(interned))
+                {
+                    internedList.Add(interned);
+                    noDupesList.Add(allErrors[i]);
+                }
+            }
+
+            return noDupesList;
+        }
+
+        private void MenuFileViewPluginLoadErrors_Click(object sender, EventArgs e)
+        {
+            IList<Triple<Assembly, string, Exception>> allErrors = AppWorkspace.GetEffectLoadErrors();
+            IList<Triple<Assembly, string, Exception>> errors = RemoveDuplicates(allErrors);
+
+            using (Form errorsDialog = new Form())
+            {
+                errorsDialog.Icon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.MenuFileViewPluginLoadErrorsIcon.png").Reference);
+                errorsDialog.Text = PdnResources.GetString("Effects.PluginLoadErrorsDialog.Text");
+
+                Label messageLabel = new Label();
+                messageLabel.Name = "messageLabel";
+                messageLabel.Text = PdnResources.GetString("Effects.PluginLoadErrorsDialog.Message.Text");
+
+                TextBox errorsBox = new TextBox();
+                errorsBox.Font = new Font(FontFamily.GenericMonospace, errorsBox.Font.Size);
+                errorsBox.ReadOnly = true;
+                errorsBox.Multiline = true;
+                errorsBox.ScrollBars = ScrollBars.Vertical;
+
+                StringBuilder allErrorsText = new StringBuilder();
+                string headerTextFormat = PdnResources.GetString("EffectErrorMessage.HeaderFormat");
+
+                for (int i = 0; i < errors.Count; ++i)
+                {
+                    Assembly assembly = errors[i].First;
+                    string typeName = errors[i].Second;
+                    Exception exception = errors[i].Third;
+
+                    string headerText = string.Format(headerTextFormat, i + 1, errors.Count);
+                    string errorText = AppWorkspace.GetLocalizedEffectErrorMessage(assembly, typeName, exception);
+
+                    allErrorsText.Append(headerText);
+                    allErrorsText.Append(Environment.NewLine);
+                    allErrorsText.Append(errorText);
+
+                    if (i != errors.Count - 1)
+                    {
+                        allErrorsText.Append(Environment.NewLine);
+                    }
+                }
+
+                errorsBox.Text = allErrorsText.ToString();
+
+                errorsDialog.Layout +=
+                    delegate(object sender2, LayoutEventArgs e2)
+                    {
+                        int hMargin = UI.ScaleWidth(8);
+                        int vMargin = UI.ScaleHeight(8);
+                        int insetWidth = errorsDialog.ClientSize.Width - (hMargin * 2);
+
+                        messageLabel.Location = new Point(hMargin, vMargin);
+                        messageLabel.Width = insetWidth;
+                        messageLabel.Size = messageLabel.GetPreferredSize(new Size(messageLabel.Width, 1));
+
+                        errorsBox.Location = new Point(hMargin, messageLabel.Bottom + vMargin);
+                        errorsBox.Width = insetWidth;
+                        errorsBox.Height = errorsDialog.ClientSize.Height - vMargin - errorsBox.Top;
+                    };
+
+                errorsDialog.StartPosition = FormStartPosition.CenterParent;
+                errorsDialog.ShowInTaskbar = false;
+                errorsDialog.MinimizeBox = false;
+                errorsDialog.Width *= 2;
+                errorsDialog.Size = UI.ScaleSize(errorsDialog.Size);
+                errorsDialog.Controls.Add(messageLabel);
+                errorsDialog.Controls.Add(errorsBox);
+
+                errorsDialog.ShowDialog(AppWorkspace);
+            }
         }
 
         protected override void OnDropDownOpening(EventArgs e)
@@ -184,6 +289,18 @@ namespace PaintDotNet.Menus
                 this.menuFileSaveAs.Enabled = false;
                 this.menuFileClose.Enabled = false;
                 this.menuFilePrint.Enabled = false;
+            }
+
+            IList<Triple<Assembly, string, Exception>> pluginLoadErrors = AppWorkspace.GetEffectLoadErrors();
+            if (pluginLoadErrors.Count == 0)
+            {
+                this.menuFileViewPluginLoadErrors.Visible = false;
+                this.menuFileSeparator4.Visible = false;
+            }
+            else
+            {
+                this.menuFileViewPluginLoadErrors.Visible = true;
+                this.menuFileSeparator4.Visible = true;
             }
 
             base.OnDropDownOpening(e);
@@ -321,7 +438,7 @@ namespace PaintDotNet.Menus
                 ToolStripMenuItem clearList = new ToolStripMenuItem();
                 clearList.Text = PdnResources.GetString("Menu.File.OpenRecent.ClearThisList");
                 menuFileOpenRecent.DropDownItems.Add(clearList);
-                Image deleteIcon = PdnResources.GetImage("Icons.MenuEditEraseSelectionIcon.png");
+                Image deleteIcon = PdnResources.GetImageResource("Icons.MenuEditEraseSelectionIcon.png").Reference;
                 clearList.ImageTransparentColor = Utility.TransparentKey;
                 clearList.ImageAlign = ContentAlignment.MiddleCenter;
                 clearList.ImageScaling = ToolStripItemImageScaling.None;
@@ -357,7 +474,7 @@ namespace PaintDotNet.Menus
                 AppWorkspace.OpenFileInNewWorkspace(fileName);
             }
 
-            catch
+            catch (Exception)
             {
             }
         }

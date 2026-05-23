@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.Actions;
 using PaintDotNet.Effects;
 using PaintDotNet.Menus;
@@ -36,7 +35,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class MainForm 
+    public sealed class MainForm 
         : PdnBaseForm
     {
         private AppWorkspace appWorkspace;
@@ -362,17 +361,17 @@ namespace PaintDotNet
                 }
 
                 TaskButton checkForUpdatesTB = new TaskButton(
-                    ImageResource.Get("Icons.MenuHelpCheckForUpdatesIcon.png").Reference,
+                    PdnResources.GetImageResource("Icons.MenuHelpCheckForUpdatesIcon.png").Reference,
                     PdnResources.GetString("ExpiredTaskDialog.CheckForUpdatesTB.ActionText"),
                     PdnResources.GetString("ExpiredTaskDialog.CheckForUpdatesTB.ExplanationText"));
 
                 TaskButton goToWebSiteTB = new TaskButton(
-                    ImageResource.Get("Icons.MenuHelpPdnWebsiteIcon.png").Reference,
+                    PdnResources.GetImageResource("Icons.MenuHelpPdnWebsiteIcon.png").Reference,
                     PdnResources.GetString("ExpiredTaskDialog.GoToWebSiteTB.ActionText"),
                     PdnResources.GetString("ExpiredTaskDialog.GoToWebSiteTB.ExplanationText"));
 
                 TaskButton doNotCheckForUpdatesTB = new TaskButton(
-                    ImageResource.Get("Icons.CancelIcon.png").Reference,
+                    PdnResources.GetImageResource("Icons.CancelIcon.png").Reference,
                     PdnResources.GetString("ExpiredTaskDialog.DoNotCheckForUpdatesTB.ActionText"),
                     PdnResources.GetString("ExpiredTaskDialog.DoNotCheckForUpdatesTB.ExplanationText"));
 
@@ -388,7 +387,7 @@ namespace PaintDotNet
                     this,
                     Icon,
                     PdnInfo.GetFullAppName(),
-                    ImageResource.Get("Icons.WarningIcon.png").Reference,
+                    PdnResources.GetImageResource("Icons.WarningIcon.png").Reference,
                     true,
                     PdnResources.GetString("ExpiredTaskDialog.InfoText"),
                     taskButtons,
@@ -588,7 +587,7 @@ namespace PaintDotNet
                 appWorkspace.ActiveDocumentWorkspace.SetTool(null);
             }
 
-            base.OnClosed (e);
+            base.OnClosed(e);
         }
 
         /// <summary>
@@ -667,7 +666,17 @@ namespace PaintDotNet
             // 
             // MainForm
             // 
-            this.AllowDrop = true;
+
+            try
+            {
+                this.AllowDrop = true;
+            }
+
+            catch (InvalidOperationException)
+            {
+                // Discard error. See bug #2605.
+            }
+
             this.AutoScaleDimensions = new SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(950, 738);
@@ -1103,12 +1112,12 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    Icon formIcon = Utility.ImageToIcon(ImageResource.Get("Icons.DragDrop.OpenOrImport.FormIcon.png").Reference);
+                    Icon formIcon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.DragDrop.OpenOrImport.FormIcon.png").Reference);
                     string title = PdnResources.GetString("DragDrop.OpenOrImport.Title");
                     string infoText = PdnResources.GetString("DragDrop.OpenOrImport.InfoText");
 
                     TaskButton openTB = new TaskButton(
-                        ImageResource.Get("Icons.MenuFileOpenIcon.png").Reference,
+                        PdnResources.GetImageResource("Icons.MenuFileOpenIcon.png").Reference,
                         PdnResources.GetString("DragDrop.OpenOrImport.OpenButton.ActionText"),
                         PdnResources.GetString("DragDrop.OpenOrImport.OpenButton.ExplanationText"));
 
@@ -1123,7 +1132,7 @@ namespace PaintDotNet
                     }
 
                     TaskButton importLayersTB = new TaskButton(
-                        ImageResource.Get("Icons.MenuLayersImportFromFileIcon.png").Reference,
+                        PdnResources.GetImageResource("Icons.MenuLayersImportFromFileIcon.png").Reference,
                         PdnResources.GetString("DragDrop.OpenOrImport.ImportLayers.ActionText"),
                         importLayersExplanation);
 

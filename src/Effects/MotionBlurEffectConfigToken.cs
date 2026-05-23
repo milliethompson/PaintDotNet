@@ -13,6 +13,7 @@ using System.Drawing.Drawing2D;
 
 namespace PaintDotNet.Effects
 {
+    [Obsolete]
     public class MotionBlurEffectConfigToken
         : EffectConfigToken
     {

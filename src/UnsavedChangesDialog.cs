@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -110,22 +109,22 @@ namespace PaintDotNet
         public override void LoadResources()
         {
             this.Text = PdnResources.GetString("UnsavedChangesDialog.Text");
-            this.Icon = Utility.ImageToIcon(ImageResource.Get("Icons.WarningIcon.png").Reference, false);
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.WarningIcon.png").Reference, false);
 
             this.infoLabel.Text = PdnResources.GetString("UnsavedChangesDialog.InfoLabel.Text");
             this.documentListHeader.Text = PdnResources.GetString("UnsavedChangesDialog.DocumentListHeader.Text");
             
             this.saveButton.ActionText = PdnResources.GetString("UnsavedChangesDialog.SaveButton.ActionText");
             this.saveButton.ExplanationText = PdnResources.GetString("UnsavedChangesDialog.SaveButton.ExplanationText");
-            this.saveButton.ActionImage = ImageResource.Get("Icons.UnsavedChangesDialog.SaveButton.png").Reference;
+            this.saveButton.ActionImage = PdnResources.GetImageResource("Icons.UnsavedChangesDialog.SaveButton.png").Reference;
 
             this.dontSaveButton.ActionText = PdnResources.GetString("UnsavedChangesDialog.DontSaveButton.ActionText");
             this.dontSaveButton.ExplanationText = PdnResources.GetString("UnsavedChangesDialog.DontSaveButton.ExplanationText");
-            this.dontSaveButton.ActionImage = ImageResource.Get("Icons.MenuFileCloseIcon.png").Reference;
+            this.dontSaveButton.ActionImage = PdnResources.GetImageResource("Icons.MenuFileCloseIcon.png").Reference;
 
             this.cancelButton.ActionText = PdnResources.GetString("UnsavedChangesDialog.CancelButton.ActionText");
             this.cancelButton.ExplanationText = PdnResources.GetString("UnsavedChangesDialog.CancelButton.ExplanationText");
-            this.cancelButton.ActionImage = ImageResource.Get("Icons.CancelIcon.png").Reference;
+            this.cancelButton.ActionImage = PdnResources.GetImageResource("Icons.CancelIcon.png").Reference;
 
             base.LoadResources();        
         }

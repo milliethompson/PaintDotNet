@@ -96,7 +96,7 @@ namespace PaintDotNet.HistoryFunctions
 
                 CompoundHistoryMemento cha = new CompoundHistoryMemento(
                     StaticName,
-                    ImageResource.Get("Icons.MenuImageCropIcon.png"),
+                    PdnResources.GetImageResource("Icons.MenuImageCropIcon.png"),
                     new HistoryMemento[] { sha, rdha });
 
                 EnterCriticalRegion();

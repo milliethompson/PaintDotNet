@@ -249,7 +249,7 @@ namespace PaintDotNet.Tools
 
         public EraserTool(DocumentWorkspace documentWorkspace) 
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.EraserToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.EraserToolIcon.png"),
                    PdnResources.GetString("EraserTool.Name"),
                    PdnResources.GetString("EraserTool.HelpText"), //"Click and drag to erase a portion of the image",
                    'e',

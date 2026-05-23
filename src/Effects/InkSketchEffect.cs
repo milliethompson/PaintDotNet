@@ -36,15 +36,23 @@ THE SOFTWARE.
 
 using PaintDotNet;
 using PaintDotNet.Effects;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace PaintDotNet.Effects
 {
     public sealed class InkSketchEffect
-        : Effect
+        : PropertyBasedEffect
     {
+        public enum PropertyNames
+        {
+            InkOutline,
+            Coloring
+        }
+
         public static string StaticName
         {
             get
@@ -57,13 +65,15 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return PdnResources.GetImage("Icons.InkSketchEffectIcon.png");
+                return PdnResources.GetImageResource("Icons.InkSketchEffectIcon.png").Reference;
             }
         }
 
         public InkSketchEffect()
-            : base(StaticName, StaticIcon, null, EffectDirectives.None, true)
+            : base(StaticName, StaticIcon, SubmenuNames.Artistic, EffectFlags.Configurable)
         {
+            this.glowEffect = new GlowEffect();
+            this.glowProps = this.glowEffect.CreatePropertyCollection();
         }
 
         static InkSketchEffect()
@@ -87,16 +97,51 @@ namespace PaintDotNet.Effects
         private const int radius = (size - 1) / 2;
 
         private UnaryPixelOps.Desaturate desaturateOp = new UnaryPixelOps.Desaturate();
-        private GlowEffect glowEffect = new GlowEffect();
+        private GlowEffect glowEffect;
+        private PropertyCollection glowProps;
         private UserBlendOps.DarkenBlendOp darkenOp = new UserBlendOps.DarkenBlendOp();
 
-        public override unsafe void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
-        {
-            TwoAmountsConfigToken tacd = (TwoAmountsConfigToken)parameters;
+        private int inkOutline;
+        private int coloring;
 
+        protected override PropertyCollection OnCreatePropertyCollection()
+        {
+            List<Property> props = new List<Property>();
+
+            props.Add(new Int32Property(PropertyNames.InkOutline, 50, 0, 99));
+            props.Add(new Int32Property(PropertyNames.Coloring, 50, 0, 100));
+
+            return new PropertyCollection(props);
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.InkOutline, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("InkSketchEffect.ConfigDialog.InkOutlineLabel"));
+            configUI.SetPropertyControlValue(PropertyNames.Coloring, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("InkSketchEffect.ConfigDialog.ColoringLabel"));
+
+            return configUI;
+        }
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.inkOutline = newToken.GetProperty<Int32Property>(PropertyNames.InkOutline).Value;
+            this.coloring = newToken.GetProperty<Int32Property>(PropertyNames.Coloring).Value;
+
+            PropertyBasedEffectConfigToken glowToken = new PropertyBasedEffectConfigToken(this.glowProps);
+            glowToken.SetPropertyValue(GlowEffect.PropertyNames.Radius, 6);
+            glowToken.SetPropertyValue(GlowEffect.PropertyNames.Brightness, -(this.coloring - 50) * 2);
+            glowToken.SetPropertyValue(GlowEffect.PropertyNames.Contrast, -(this.coloring - 50) * 2);
+            this.glowEffect.SetRenderInfo(glowToken, dstArgs, srcArgs);
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected override unsafe void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
             // Glow backgound 
-            ThreeAmountsConfigToken glowToken = new ThreeAmountsConfigToken(6, -(tacd.Amount2 - 50) * 2, -(tacd.Amount2 - 50) * 2);
-            this.glowEffect.Render(glowToken, dstArgs, srcArgs, rois, startIndex, length);
+            this.glowEffect.Render(rois, startIndex, length);
 
             // Create black outlines by finding the edges of objects 
 
@@ -114,13 +159,13 @@ namespace PaintDotNet.Effects
                         top = 0;
                     }
 
-                    if (bottom > dstArgs.Height)
+                    if (bottom > DstArgs.Height)
                     {
-                        bottom = dstArgs.Height;
+                        bottom = DstArgs.Height;
                     }
 
-                    ColorBgra* srcPtr = srcArgs.Surface.GetPointAddress(roi.X, y);
-                    ColorBgra* dstPtr = dstArgs.Surface.GetPointAddress(roi.X, y);
+                    ColorBgra* srcPtr = SrcArgs.Surface.GetPointAddress(roi.X, y);
+                    ColorBgra* dstPtr = DstArgs.Surface.GetPointAddress(roi.X, y);
 
                     for (int x = roi.Left; x < roi.Right; ++x)
                     {
@@ -132,9 +177,9 @@ namespace PaintDotNet.Effects
                             left = 0;
                         }
 
-                        if (right > dstArgs.Width)
+                        if (right > DstArgs.Width)
                         {
-                            right = dstArgs.Width;
+                            right = DstArgs.Width;
                         }
 
                         int r = 0;
@@ -143,7 +188,7 @@ namespace PaintDotNet.Effects
 
                         for (int v = top; v < bottom; v++)
                         {
-                            ColorBgra* pRow = srcArgs.Surface.GetRowAddress(v);
+                            ColorBgra* pRow = SrcArgs.Surface.GetRowAddress(v);
                             int j = v - y + radius;
 
                             for (int u = left; u < right; u++)
@@ -168,7 +213,7 @@ namespace PaintDotNet.Effects
                         topLayer = this.desaturateOp.Apply(topLayer);
 
                         // Adjust Brightness and Contrast 
-                        if (topLayer.R > (tacd.Amount1 * 255 / 100))
+                        if (topLayer.R > (this.inkOutline * 255 / 100))
                         {
                             topLayer = ColorBgra.FromBgra(255, 255, 255, topLayer.A);
                         }
@@ -186,24 +231,6 @@ namespace PaintDotNet.Effects
                     }
                 }
             }
-        }
-
-        public override EffectConfigDialog CreateConfigDialog()
-        {
-            TwoAmountsConfigDialog tacd = new TwoAmountsConfigDialog();
-            tacd.Text = StaticName;
-
-            tacd.Amount1Label = PdnResources.GetString("InkSketchEffect.ConfigDialog.InkOutlineLabel");
-            tacd.Amount1Minimum = 0;
-            tacd.Amount1Maximum = 99;
-            tacd.Amount1Default = 50;
-
-            tacd.Amount2Label = PdnResources.GetString("InkSketchEffect.ConfigDialog.ColoringLabel");
-            tacd.Amount2Minimum = 0;
-            tacd.Amount2Maximum = 100;
-            tacd.Amount2Default = 50;
-
-            return tacd;
         }
     }
 }

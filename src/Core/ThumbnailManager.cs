@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -94,7 +93,7 @@ namespace PaintDotNet
 
         private void OnThumbnailReady(IThumbnailProvider dw, ThumbnailReadyHandler callback, Surface thumb)
         {
-            Pair<IThumbnailProvider, Surface> data = new Pair<IThumbnailProvider, Surface>(dw, thumb);
+            Pair<IThumbnailProvider, Surface> data = Pair.Create(dw, thumb);
             ThumbnailReadyArgs e = new ThumbnailReadyArgs(data);
 
             lock (this.thumbnailReadyInvokeList)

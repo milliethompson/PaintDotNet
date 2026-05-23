@@ -156,6 +156,7 @@ namespace PaintDotNet
             this.cancelButton.TabIndex = 1;
             this.cancelButton.Text = "cancelButton";
             this.cancelButton.UseVisualStyleBackColor = true;
+            this.cancelButton.FlatStyle = FlatStyle.System;
             this.cancelButton.Click += new System.EventHandler(this.CancelButton_Click);
             // 
             // itemText

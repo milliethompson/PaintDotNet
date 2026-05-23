@@ -69,10 +69,10 @@ namespace PaintDotNet
             InitializeComponent();
             BackColor = Color.Transparent;
 
-            this.roundedEdgeUL = ImageResource.Get("Images.RoundedEdgeUL.png").Reference;
-            this.roundedEdgeUR = ImageResource.Get("Images.RoundedEdgeUR.png").Reference;
-            this.roundedEdgeLL = ImageResource.Get("Images.RoundedEdgeLL.png").Reference;
-            this.roundedEdgeLR = ImageResource.Get("Images.RoundedEdgeLR.png").Reference;
+            this.roundedEdgeUL = PdnResources.GetImageResource("Images.RoundedEdgeUL.png").Reference;
+            this.roundedEdgeUR = PdnResources.GetImageResource("Images.RoundedEdgeUR.png").Reference;
+            this.roundedEdgeLL = PdnResources.GetImageResource("Images.RoundedEdgeLL.png").Reference;
+            this.roundedEdgeLR = PdnResources.GetImageResource("Images.RoundedEdgeLR.png").Reference;
 
             if (!PdnInfo.IsFinalBuild && !betaTagDone)
             {

@@ -8,8 +8,10 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
+using PaintDotNet.PropertySystem;
 using PaintDotNet.Effects;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace PaintDotNet.Effects
@@ -24,10 +26,15 @@ namespace PaintDotNet.Effects
     /// (Chris Crosetto)
     /// </summary>
     public abstract class ColorDifferenceEffect
-        : Effect
+        : PropertyBasedEffect
     {            
-        public unsafe void RenderColorDifferenceEffect(double[,] weights, RenderArgs dstArgs, 
-            RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
+        public unsafe void RenderColorDifferenceEffect(
+            double[][] weights, 
+            RenderArgs dstArgs, 
+            RenderArgs srcArgs, 
+            Rectangle[] rois, 
+            int startIndex, 
+            int length)
         {
             Surface dst = dstArgs.Surface;
             Surface src = srcArgs.Surface;
@@ -72,7 +79,7 @@ namespace PaintDotNet.Effects
                         {
                             for (int fx = fxStart; fx < fxEnd; ++fx)
                             {
-                                double weight = weights[fy, fx];
+                                double weight = weights[fy][fx];
                                 ColorBgra c = src.GetPointUnchecked(x - 1 + fx, y - 1 + fy);
 
                                 rSum += weight * (double)c.R;
@@ -85,13 +92,35 @@ namespace PaintDotNet.Effects
                         int iGsum = (int)gSum;
                         int iBsum = (int)bSum;
 
-                        if (iRsum > 255) iRsum = 255;
-                        if (iGsum > 255) iGsum = 255;
-                        if (iBsum > 255) iBsum = 255;
+                        if (iRsum > 255)
+                        {
+                            iRsum = 255;
+                        }
 
-                        if (iRsum < 0) iRsum = 0;
-                        if (iGsum < 0) iGsum = 0;
-                        if (iBsum < 0) iBsum = 0;
+                        if (iGsum > 255)
+                        {
+                            iGsum = 255;
+                        }
+
+                        if (iBsum > 255)
+                        {
+                            iBsum = 255;
+                        }
+
+                        if (iRsum < 0)
+                        {
+                            iRsum = 0;
+                        }
+
+                        if (iGsum < 0)
+                        {
+                            iGsum = 0;
+                        }
+
+                        if (iBsum < 0)
+                        {
+                            iBsum = 0;
+                        }
 
                         *dstPtr = ColorBgra.FromBgra((byte)iBsum, (byte)iGsum, (byte)iRsum, 255);
                         ++dstPtr;
@@ -100,8 +129,8 @@ namespace PaintDotNet.Effects
             }
         }
 
-        protected internal ColorDifferenceEffect(string name, Image image, bool isConfigurable)
-            : base(name, image, isConfigurable)
+        protected internal ColorDifferenceEffect(string name, Image image, string subMenuName, EffectFlags flags)
+            : base(name, image, subMenuName, flags)
         {
         }
     }    

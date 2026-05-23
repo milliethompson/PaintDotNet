@@ -217,6 +217,7 @@ namespace PaintDotNet.Effects
             this.keepBackgroundCheckBox.Name = "keepBackgroundCheckBox";
             this.keepBackgroundCheckBox.Width = 175;
             this.keepBackgroundCheckBox.TabIndex = 24;
+            this.keepBackgroundCheckBox.FlatStyle = FlatStyle.System;
             this.keepBackgroundCheckBox.CheckedChanged += new System.EventHandler(this.KeepBackgroundCheckBox_CheckedChanged);
             // 
             // tileSourceCheckBox
@@ -226,6 +227,7 @@ namespace PaintDotNet.Effects
             this.tileSourceCheckBox.Name = "tileSourceCheckBox";
             this.tileSourceCheckBox.Width = 175;
             this.tileSourceCheckBox.TabIndex = 23;
+            this.tileSourceCheckBox.FlatStyle = FlatStyle.System;   
             this.tileSourceCheckBox.CheckedChanged += new System.EventHandler(this.TileSource_CheckedChanged);
             // 
             // rollControl
@@ -382,6 +384,7 @@ namespace PaintDotNet.Effects
             this.panResetButton.Name = "panResetButton";
             this.panResetButton.Size = new System.Drawing.Size(80, 23);
             this.panResetButton.TabIndex = 6;
+            this.panResetButton.FlatStyle = FlatStyle.System;
             this.panResetButton.Click += new System.EventHandler(this.PanResetButton_Click);
             // 
             // angleLabel
@@ -420,6 +423,7 @@ namespace PaintDotNet.Effects
             this.zoomResetButton.Name = "zoomResetButton";
             this.zoomResetButton.Size = new System.Drawing.Size(80, 23);
             this.zoomResetButton.TabIndex = 10;
+            this.zoomResetButton.FlatStyle = FlatStyle.System;
             this.zoomResetButton.Click += new System.EventHandler(this.ZoomResetButton_Click);
             // 
             // twistAngleLabel
@@ -483,6 +487,7 @@ namespace PaintDotNet.Effects
             this.rollResetButton.Name = "rollResetButton";
             this.rollResetButton.Size = new System.Drawing.Size(80, 23);
             this.rollResetButton.TabIndex = 4;
+            this.rollResetButton.FlatStyle = FlatStyle.System;
             this.rollResetButton.Click += new System.EventHandler(this.RollResetButton_Click);
             // 
             // resetAllButton
@@ -492,6 +497,7 @@ namespace PaintDotNet.Effects
             this.resetAllButton.Name = "resetAllButton";
             this.resetAllButton.Size = new System.Drawing.Size(104, 23);
             this.resetAllButton.TabIndex = 25;
+            this.resetAllButton.FlatStyle = FlatStyle.System;
             this.resetAllButton.Click += new System.EventHandler(this.ResetAllButton_Click);
             // 
             // fineTuningHeader

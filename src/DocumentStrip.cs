@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -385,7 +384,7 @@ namespace PaintDotNet
             if (DocumentClicked != null)
             {
                 DocumentClicked(this, new EventArgs<Pair<DocumentWorkspace, DocumentClickAction>>(
-                    new Pair<DocumentWorkspace, DocumentClickAction>(dw, action)));
+                    Pair.Create(dw, action)));
             }
         }
 

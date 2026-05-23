@@ -1,0 +1,93 @@
+/////////////////////////////////////////////////////////////////////////////////
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
+/////////////////////////////////////////////////////////////////////////////////
+
+using PaintDotNet.Core;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+
+namespace PaintDotNet.Effects
+{
+    public abstract class PropertyBasedEffect
+        : Effect<PropertyBasedEffectConfigToken>
+    {
+        protected abstract PropertyCollection OnCreatePropertyCollection();
+
+        public PropertyCollection CreatePropertyCollection()
+        {
+            return OnCreatePropertyCollection();
+        }
+
+        protected virtual ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            return CreateDefaultConfigUI(props);
+        }
+
+        public ControlInfo CreateConfigUI(PropertyCollection props)
+        {
+            return OnCreateConfigUI(props);
+        }
+
+        public static ControlInfo CreateDefaultConfigUI(IEnumerable<Property> props)
+        {
+            PanelControlInfo configUI = new PanelControlInfo();
+
+            foreach (Property property in props)
+            {
+                PropertyControlInfo propertyControlInfo = PropertyControlInfo.CreateFor(property);
+                propertyControlInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = property.Name;
+                configUI.AddChildControl(propertyControlInfo);
+            }
+
+            return configUI;
+        }
+
+        private string GetConfigDialogTitle()
+        {
+            return this.Name;
+        }
+
+        private Icon GetConfigDialogIcon()
+        {
+            Image image = this.Image;
+
+            Icon icon = null;
+
+            if (image != null)
+            {
+                icon = Utility.ImageToIcon(image);
+            }
+
+            return icon;
+        }
+
+        public override sealed EffectConfigDialog CreateConfigDialog()
+        {
+            PropertyCollection props1 = OnCreatePropertyCollection();
+            PropertyCollection props2 = props1.Clone();
+            PropertyCollection props3 = props1.Clone();
+
+            ControlInfo configUI = CreateConfigUI(props2);
+
+            PropertyBasedEffectConfigDialog pbecd = new PropertyBasedEffectConfigDialog(props3, configUI);
+
+            pbecd.Text = GetConfigDialogTitle();
+            pbecd.Icon = GetConfigDialogIcon();
+
+            return pbecd;
+        }
+
+        public PropertyBasedEffect(string name, Image image, string subMenuName, EffectFlags flags)
+            : base(name, image, subMenuName, flags)
+        {
+        }
+    }
+}

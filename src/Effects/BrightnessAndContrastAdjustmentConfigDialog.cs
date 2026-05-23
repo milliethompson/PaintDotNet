@@ -15,10 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Provided for compatibility with v1.1.
-    /// Normally you should just fill in the properties for the TwoAmountsConfigDialog.
-    /// </summary>
+    [Obsolete]
     public sealed class BrightnessAndContrastAdjustmentConfigDialog 
         : TwoAmountsConfigDialogBase
     {

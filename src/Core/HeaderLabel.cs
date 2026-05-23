@@ -13,65 +13,25 @@ using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 namespace PaintDotNet
 {
-    public sealed class HeaderLabel 
+    public sealed class HeaderLabel
         : Control
     {
-        private Control leftMask;
-        private Control rightMask;
-        private int leftMargin = 1;
+        private const TextFormatFlags textFormatFlags =
+            TextFormatFlags.Default |
+            TextFormatFlags.EndEllipsis |
+            TextFormatFlags.HidePrefix |
+            TextFormatFlags.NoPadding | 
+            TextFormatFlags.NoPrefix | 
+            TextFormatFlags.SingleLine;
+
+        private int leftMargin = 2;
         private int rightMargin = 8;
-        private System.Windows.Forms.GroupBox groupBox;
 
-        public override string Text
-        {
-            get
-            {
-                if (this.groupBox == null)
-                {
-                    return string.Empty;
-                }
-                else
-                {
-                    string text = this.groupBox.Text;
-
-                    if (text.Length > 2)
-                    {
-                        text = text.Substring(0, text.Length - 2);
-                    }
-
-                    return text;
-                }
-            }
-
-            set
-            {
-                if (this.groupBox != null)
-                {
-                    string newText;
-
-                    if (value == null)
-                    {
-                        newText = string.Empty;
-                    }
-                    else if (value.Length >= 1)
-                    {
-                        newText = value + "  ";
-                    }
-                    else
-                    {
-                        newText = string.Empty;
-                    }
-
-                    if (newText != this.groupBox.Text)
-                    {
-                        this.groupBox.Text = newText;
-                    }
-                }
-            }
-        }
+        private EtchedLine etchedLine;
 
         [DefaultValue(8)]
         public int RightMargin
@@ -88,99 +48,89 @@ namespace PaintDotNet
             }
         }
 
-        /// <summary> 
-        /// Required designer variable.
-        /// </summary>
-        private System.ComponentModel.Container components = null;
+        protected override void OnFontChanged(EventArgs e)
+        {
+            PerformLayout();
+            Refresh();
+            base.OnFontChanged(e);
+        }
+
+        protected override void OnTextChanged(EventArgs e)
+        {
+            PerformLayout();
+            Refresh();
+            base.OnTextChanged(e);
+        }
 
         public HeaderLabel()
         {
+            SetStyle(ControlStyles.AllPaintingInWmPaint, true);
+            SetStyle(ControlStyles.Opaque, true);
+            SetStyle(ControlStyles.ResizeRedraw, true);
+            SetStyle(ControlStyles.UserPaint, true);
             SetStyle(ControlStyles.Selectable, false);
-
             UI.InitScaling(null);
+            TabStop = false;
+            ForeColor = SystemColors.Highlight;
+            DoubleBuffered = true;
+            ResizeRedraw = true;
 
-            // This call is required by the Windows.Forms Form Designer.
-            InitializeComponent();
-            PerformLayout();
+            SuspendLayout();
+            this.etchedLine = new EtchedLine();
+            Controls.Add(this.etchedLine);
+            Size = new Size(144, 14);
+            ResumeLayout(false);
         }
 
-        /// <summary> 
-        /// Clean up any resources being used.
-        /// </summary>
-        protected override void Dispose(bool disposing)
+        private int GetPreferredWidth(Size proposedSize)
         {
-            if (disposing)
-            {
-                if (components != null)
-                {
-                    components.Dispose();
-                }
-            }
-
-            base.Dispose(disposing);
+            Size textSize = GetTextSize();
+            return this.leftMargin + textSize.Width;
         }
-
-        #region Component Designer generated code
-        /// <summary> 
-        /// Required method for Designer support - do not modify 
-        /// the contents of this method with the code editor.
-        /// </summary>
-        private void InitializeComponent()
-        {
-            this.groupBox = new System.Windows.Forms.GroupBox();
-            this.leftMask = new System.Windows.Forms.Control();
-            this.rightMask = new System.Windows.Forms.Control();
-            this.SuspendLayout();
-            // 
-            // groupBox
-            // 
-            this.groupBox.Location = new System.Drawing.Point(128, 144);
-            this.groupBox.Name = "groupBox";
-            this.groupBox.TabStop = false;
-            this.groupBox.FlatStyle = FlatStyle.System;
-            // 
-            // leftMask
-            // 
-            this.leftMask.Location = new System.Drawing.Point(0, 0);
-            this.leftMask.Name = "leftMask";
-            this.leftMask.TabStop = false;
-            // 
-            // rightMask
-            // 
-            this.rightMask.Location = new System.Drawing.Point(0, 0);
-            this.rightMask.Name = "rightMask";
-            this.rightMask.TabStop = false;
-            // 
-            // HeaderLabel
-            // 
-            this.Controls.Add(this.leftMask);
-            this.Controls.Add(this.rightMask);
-            this.Controls.Add(this.groupBox);
-            this.TabStop = false;
-            this.Name = "HeaderLabel";
-            this.Size = new System.Drawing.Size(144, 14);
-            this.ResumeLayout(false);
-
-        }
-        #endregion
 
         public override Size GetPreferredSize(Size proposedSize)
         {
-            return new Size(proposedSize.Width, UI.ScaleHeight(14));
+            return new Size(Math.Max(proposedSize.Width, GetPreferredWidth(proposedSize)), GetTextSize().Height);
+        }
+
+        private Size GetTextSize()
+        {
+            string textToUse = string.IsNullOrEmpty(Text) ? " " : Text;
+
+            Size size = TextRenderer.MeasureText(textToUse, this.Font, this.ClientSize, textFormatFlags);
+
+            if (string.IsNullOrEmpty(Text))
+            {
+                size.Width = 0;
+            }
+
+            return size;
         }
 
         protected override void OnLayout(LayoutEventArgs levent)
         {
-            this.groupBox.Location = new Point(-8 + UI.ScaleWidth(leftMargin), 0);
-            this.groupBox.Size = new Size(this.ClientRectangle.Width + 16, this.ClientRectangle.Height + 16);
-            this.leftMask.Location = new Point(-1, 0);
-            this.leftMask.Size = new Size(1 + leftMargin, this.ClientRectangle.Height);
-            this.rightMask.Location = new Point(this.ClientRectangle.Width - rightMargin, 0);
-            this.rightMask.Size = new Size(1 + rightMargin, this.ClientRectangle.Height);
+            Size textSize = GetTextSize();
 
-            this.leftMask.Visible = false;
+            int lineLeft = (string.IsNullOrEmpty(this.Text) ? 0 : this.leftMargin) + textSize.Width + (string.IsNullOrEmpty(this.Text) ? 0 : 1);
+            int lineRight = ClientRectangle.Right - this.rightMargin;
+
+            this.etchedLine.Size = this.etchedLine.GetPreferredSize(new Size(lineRight - lineLeft, 1));
+            this.etchedLine.Location = new Point(lineLeft, (ClientSize.Height - this.etchedLine.Height) / 2);
 
             base.OnLayout(levent);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            using (SolidBrush backBrush = new SolidBrush(BackColor))
+            {
+                e.Graphics.FillRectangle(backBrush, e.ClipRectangle);
+            }
+
+            Size textSize = GetTextSize();
+            TextRenderer.DrawText(e.Graphics, this.Text, this.Font, new Point(this.leftMargin, 0), SystemColors.WindowText, textFormatFlags);
+
+            base.OnPaint(e);
         }
     }
 }

@@ -120,6 +120,7 @@ namespace PaintDotNet.Effects
             this.okButton.Size = new System.Drawing.Size(81, 23);
             this.okButton.Name = "okButton";
             this.okButton.TabIndex = 9;
+            this.okButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
             // 
             // cancelButton
             // 
@@ -127,6 +128,7 @@ namespace PaintDotNet.Effects
             this.cancelButton.Size = new System.Drawing.Size(81, 23);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.TabIndex = 10;
+            this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
             // 
             // amount3Reset
             // 
@@ -135,6 +137,7 @@ namespace PaintDotNet.Effects
             this.amount3Reset.Size = new System.Drawing.Size(81, 20);
             this.amount3Reset.TabIndex = 8;
             this.amount3Reset.Click += new System.EventHandler(this.amount3Reset_Click);
+            this.amount3Reset.FlatStyle = System.Windows.Forms.FlatStyle.System;
             // 
             // amount3UpDown
             // 

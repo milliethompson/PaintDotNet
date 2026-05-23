@@ -552,6 +552,11 @@ namespace PaintDotNet
 
         private void History_HistoryFlushed(object sender, EventArgs e)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             EnsureLastUndoItemIsFullyVisible();
             PerformMouseMove();
             PerformLayout();
@@ -560,6 +565,11 @@ namespace PaintDotNet
 
         private void History_SteppedForward(object sender, EventArgs e)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             this.undoItemHighlight = -1;
             this.redoItemHighlight = -1;
             EnsureLastUndoItemIsFullyVisible();
@@ -570,6 +580,11 @@ namespace PaintDotNet
 
         private void History_SteppedBackward(object sender, EventArgs e)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             this.undoItemHighlight = -1;
             this.redoItemHighlight = -1;
             EnsureLastUndoItemIsFullyVisible();
@@ -580,6 +595,11 @@ namespace PaintDotNet
 
         private void History_NewHistoryMemento(object sender, EventArgs e)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             EnsureLastUndoItemIsFullyVisible();
             PerformMouseMove();
             PerformLayout();
@@ -588,6 +608,11 @@ namespace PaintDotNet
 
         private void History_Changed(object sender, EventArgs e)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             PerformMouseMove();
             PerformLayout();
             Refresh();

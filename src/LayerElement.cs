@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
@@ -21,7 +20,7 @@ using System.Windows.Forms;
 namespace PaintDotNet
 {
     public class LayerElement 
-        : System.Windows.Forms.UserControl
+        : UserControl
     {
         public static int ThumbSizePreScaling = 40;
 

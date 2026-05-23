@@ -24,9 +24,8 @@ namespace PaintDotNet.Effects
     {
         public CurvesEffect()
             : base(PdnResources.GetString("CurvesEffect.Name"),
-                PdnResources.GetImage("Icons.CurvesEffect.png"),
-                null,
-                EffectDirectives.None, true)
+                   PdnResources.GetImageResource("Icons.CurvesEffect.png").Reference,
+                   EffectFlags.Configurable)
         {
         }
 

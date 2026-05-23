@@ -7,7 +7,10 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 
@@ -15,7 +18,7 @@ namespace PaintDotNet.Effects
 {
     [EffectTypeHint(EffectTypeHint.Fast)]
     public sealed class PixelateEffect 
-        : Effect
+        : PropertyBasedEffect
     {
         public static string StaticName
         {
@@ -27,9 +30,35 @@ namespace PaintDotNet.Effects
 
         public PixelateEffect() 
             : base(StaticName,
-                   PdnResources.GetImage("Icons.PixelateEffect.png"),
-                   true)
+                   PdnResources.GetImageResource("Icons.PixelateEffect.png").Reference,
+                   SubmenuNames.Distort,
+                   EffectFlags.Configurable)
         {
+        }
+
+        public enum PropertyNames
+        {
+            CellSize
+        }
+
+        protected override PropertyCollection OnCreatePropertyCollection()
+        {
+            List<Property> props = new List<Property>();
+
+            props.Add(new Int32Property(PropertyNames.CellSize, 2, 1, 100));
+
+            return new PropertyCollection(props);
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.CellSize, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("PixelateEffect.ConfigDialog.SliderLabel"));
+            // TODO: units label?
+            //aecg.SliderUnitsName = PdnResources.GetString("PixelateEffect.ConfigDialog.SliderUnitsName");
+
+            return configUI;
         }
 
         private ColorBgra ComputeCellColor(int x, int y, RenderArgs src, int cellSize)
@@ -61,25 +90,15 @@ namespace PaintDotNet.Effects
             return returnMe;
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        private int cellSize;
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
         {
-            AmountEffectConfigDialog aecg = new AmountEffectConfigDialog();
-
-            aecg.Effect = this;
-            aecg.Text = PdnResources.GetString("PixelateEffect.Name");
-            aecg.SliderMinimum = 1;
-            aecg.SliderMaximum = 100;
-            aecg.SliderLabel = PdnResources.GetString("PixelateEffect.ConfigDialog.SliderLabel");
-            aecg.SliderUnitsName = PdnResources.GetString("PixelateEffect.ConfigDialog.SliderUnitsName");
-            aecg.Icon = PdnResources.GetIconFromImage("Icons.PixelateEffect.png");
-
-            return aecg;
+            this.cellSize = newToken.GetProperty<Int32Property>(PropertyNames.CellSize).Value;
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
         }
 
-        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
+        protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
         {
-            AmountEffectConfigToken aecd = (AmountEffectConfigToken)parameters;
-
             for (int i = startIndex; i < startIndex + length; ++i)
             {
                 Rectangle rect = rois[i];
@@ -90,16 +109,16 @@ namespace PaintDotNet.Effects
 
                     for (int x = rect.Left; x < rect.Right; ++x)
                     {
-                        Rectangle cellRect = GetCellBox(x, y, aecd.Amount);
-                        cellRect.Intersect(dstArgs.Bounds);
-                        ColorBgra color = ComputeCellColor(x, y, srcArgs, aecd.Amount);
+                        Rectangle cellRect = GetCellBox(x, y, this.cellSize);
+                        cellRect.Intersect(DstArgs.Bounds);
+                        ColorBgra color = ComputeCellColor(x, y, SrcArgs, this.cellSize);
 
                         int xEnd = Math.Min(rect.Right, cellRect.Right);
                         yEnd = Math.Min(rect.Bottom, cellRect.Bottom);
 
                         for (int y2 = y; y2 < yEnd; ++y2)
                         {
-                            ColorBgra *ptr = dstArgs.Surface.GetPointAddressUnchecked(x, y2);
+                            ColorBgra *ptr = DstArgs.Surface.GetPointAddressUnchecked(x, y2);
 
                             for (int x2 = x; x2 < xEnd; ++x2)
                             {

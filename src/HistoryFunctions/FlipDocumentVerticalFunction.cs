@@ -24,7 +24,7 @@ namespace PaintDotNet.HistoryFunctions
 
         public FlipDocumentVerticalFunction()
             : base(StaticName,
-                   ImageResource.Get("Icons.MenuImageFlipVerticalIcon.png"), 
+                   PdnResources.GetImageResource("Icons.MenuImageFlipVerticalIcon.png"), 
                    FlipType.Vertical)
         {
         }

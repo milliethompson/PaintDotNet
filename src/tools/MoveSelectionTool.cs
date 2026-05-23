@@ -251,7 +251,7 @@ namespace PaintDotNet.Tools
 
         public MoveSelectionTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.MoveSelectionToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.MoveSelectionToolIcon.png"),
                    MoveSelectionTool.StaticName,
                    PdnResources.GetString("MoveSelectionTool.HelpText"), // "Click and drag to move a selected region",
                    'm',

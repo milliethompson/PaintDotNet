@@ -10,7 +10,7 @@
 using System;
 using System.Windows.Forms;
 
-namespace PaintDotNet.Base
+namespace PaintDotNet
 {
     public interface IProgressEvents<TItemInfo>
     {

@@ -40,7 +40,7 @@ namespace PaintDotNet.Tools
 
         public LassoSelectTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.LassoSelectToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.LassoSelectToolIcon.png"),
                    PdnResources.GetString("LassoSelectTool.Name"),
                    PdnResources.GetString("LassoSelectTool.HelpText"),
                    's',

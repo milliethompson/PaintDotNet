@@ -1457,7 +1457,7 @@ namespace PaintDotNet
         {
             if (statusIcon == null && statusText != null)
             {
-                statusIcon = ImageResource.Get("Icons.MenuHelpHelpTopicsIcon.png");
+                statusIcon = PdnResources.GetImageResource("Icons.MenuHelpHelpTopicsIcon.png");
             }
 
             DocumentWorkspace.SetStatus(statusText, statusIcon);

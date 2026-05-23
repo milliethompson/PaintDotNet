@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using System;
 using System.Drawing;
 using System.Collections;
@@ -63,13 +62,13 @@ namespace PaintDotNet
 
             toolStrip.ImageList = this.imageList;
 
-            int addNewLayerIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersAddNewLayerIcon.png"), imageList.TransparentColor);
-            int deleteLayerIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersDeleteLayerIcon.png"), imageList.TransparentColor);
-            int moveLayerUpIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersMoveLayerUpIcon.png"), imageList.TransparentColor);
-            int moveLayerDownIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersMoveLayerDownIcon.png"), imageList.TransparentColor);
-            int duplicateLayerIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuEditCopyIcon.png"), imageList.TransparentColor);
-            int mergeLayerDownIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersMergeLayerDownIcon.png"), imageList.TransparentColor);
-            int propertiesIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersLayerPropertiesIcon.png"), imageList.TransparentColor);
+            int addNewLayerIndex = imageList.Images.Add(PdnResources.GetImageResource("Icons.MenuLayersAddNewLayerIcon.png").Reference, imageList.TransparentColor);
+            int deleteLayerIndex = imageList.Images.Add(PdnResources.GetImageResource("Icons.MenuLayersDeleteLayerIcon.png").Reference, imageList.TransparentColor);
+            int moveLayerUpIndex = imageList.Images.Add(PdnResources.GetImageResource("Icons.MenuLayersMoveLayerUpIcon.png").Reference, imageList.TransparentColor);
+            int moveLayerDownIndex = imageList.Images.Add(PdnResources.GetImageResource("Icons.MenuLayersMoveLayerDownIcon.png").Reference, imageList.TransparentColor);
+            int duplicateLayerIndex = imageList.Images.Add(PdnResources.GetImageResource("Icons.MenuEditCopyIcon.png").Reference, imageList.TransparentColor);
+            int mergeLayerDownIndex = imageList.Images.Add(PdnResources.GetImageResource("Icons.MenuLayersMergeLayerDownIcon.png").Reference, imageList.TransparentColor);
+            int propertiesIndex = imageList.Images.Add(PdnResources.GetImageResource("Icons.MenuLayersLayerPropertiesIcon.png").Reference, imageList.TransparentColor);
 
             addNewLayerButton.ImageIndex = addNewLayerIndex;
             deleteLayerButton.ImageIndex = deleteLayerIndex;

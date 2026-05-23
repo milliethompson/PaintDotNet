@@ -8,7 +8,9 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -17,29 +19,37 @@ namespace PaintDotNet.Effects
     [EffectCategory(EffectCategory.Adjustment)]
     [EffectTypeHint(EffectTypeHint.Fast)]
     public sealed class AutoLevelEffect
-        : Effect
+        : PropertyBasedEffect
     {
         private UnaryPixelOps.Level levels = null;
 
-        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
-            Rectangle[] rois, int startIndex, int length)
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            if (levels == null) 
-            {
-                HistogramRgb histogram = new HistogramRgb();
-                histogram.UpdateHistogram(srcArgs.Surface, this.EnvironmentParameters.GetSelection(dstArgs.Bounds));
-                levels = histogram.MakeLevelsAuto();
-            }
+            return PropertyCollection.CreateEmpty();
+        }
 
-            if (levels.isValid)
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            HistogramRgb histogram = new HistogramRgb();
+            histogram.UpdateHistogram(srcArgs.Surface, this.EnvironmentParameters.GetSelection(dstArgs.Bounds));
+            this.levels = histogram.MakeLevelsAuto();
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            if (this.levels.isValid)
             {
-                levels.Apply(dstArgs.Surface, srcArgs.Surface, rois, startIndex, length);
+                this.levels.Apply(DstArgs.Surface, SrcArgs.Surface, rois, startIndex, length);
             }
         }
 
         public AutoLevelEffect()
             : base(PdnResources.GetString("AutoLevel.Name"),
-                   PdnResources.GetImage("Icons.AutoLevel.png")) 
+                   PdnResources.GetImageResource("Icons.AutoLevel.png").Reference,
+                   null,
+                   EffectFlags.None)
         {
         }
     }

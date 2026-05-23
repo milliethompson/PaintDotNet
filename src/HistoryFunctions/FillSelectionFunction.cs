@@ -29,7 +29,7 @@ namespace PaintDotNet.HistoryFunctions
         {
             get
             {
-                return ImageResource.Get("Icons.MenuEditFillSelectionIcon.png");
+                return PdnResources.GetImageResource("Icons.MenuEditFillSelectionIcon.png");
             }
         }
 

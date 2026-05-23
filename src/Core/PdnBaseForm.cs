@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Diagnostics;
@@ -19,6 +18,7 @@ using System.Reflection;
 using System.Resources;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace PaintDotNet
@@ -570,8 +570,19 @@ namespace PaintDotNet
             }
         }
 
+        private ThreadPriority originalPriority;
+
+        protected override void OnScroll(ScrollEventArgs se)
+        {
+            Thread.CurrentThread.Priority = this.originalPriority;
+            base.OnScroll(se);
+        }
+
         public PdnBaseForm()
         {
+            this.originalPriority = Thread.CurrentThread.Priority;
+            Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
+
             UI.InitScaling(this);
 
             this.SuspendLayout();
@@ -951,6 +962,30 @@ namespace PaintDotNet
 
                 return snapManager;
             }
+        }
+
+        public Size ClientSizeToWindowSize(Size clientSize)
+        {
+            Size baseClientSize = ClientSize;
+            Size baseWindowSize = Size;
+
+            int extraWidth = baseWindowSize.Width - baseClientSize.Width;
+            int extraHeight = baseWindowSize.Height - baseClientSize.Height;
+
+            Size windowSize = new Size(clientSize.Width + extraWidth, clientSize.Height + extraHeight);
+            return windowSize;
+        }
+
+        public Size WindowSizeToClientSize(Size windowSize)
+        {
+            Size baseClientSize = ClientSize;
+            Size baseWindowSize = Size;
+
+            int extraWidth = baseWindowSize.Width - baseClientSize.Width;
+            int extraHeight = baseWindowSize.Height - baseClientSize.Height;
+            Size clientSize = new Size(windowSize.Width - extraWidth, windowSize.Height - extraHeight);
+
+            return clientSize;
         }
 
         public Rectangle ClientBoundsToWindowBounds(Rectangle clientBounds)

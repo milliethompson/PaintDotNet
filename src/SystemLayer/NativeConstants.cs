@@ -14,6 +14,15 @@ namespace PaintDotNet.SystemLayer
 {
     internal static class NativeConstants
     {
+        public const int BP_COMMANDLINK = 6;
+
+        public const int CMDLS_NORMAL = 1;
+        public const int CMDLS_HOT = 2;
+        public const int CMDLS_PRESSED = 3;
+        public const int CMDLS_DISABLED = 4;
+        public const int CMDLS_DEFAULTED = 5;
+        public const int CMDLS_DEFAULTED_ANIMATING = 6;
+
         public enum SECURITY_IMPERSONATION_LEVEL
         {
             SecurityAnonymous = 0,
@@ -37,6 +46,7 @@ namespace PaintDotNet.SystemLayer
         public const uint TOKEN_ADJUST_GROUPS = 0x0040;
         public const uint TOKEN_ADJUST_DEFAULT = 0x0080;
         public const uint TOKEN_ADJUST_SESSIONID = 0x0100;
+
         public const uint TOKEN_ALL_ACCESS_P = 
             STANDARD_RIGHTS_REQUIRED | 
             TOKEN_ASSIGN_PRIMARY | 

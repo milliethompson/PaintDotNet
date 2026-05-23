@@ -7,14 +7,17 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
     public sealed class ZoomBlurEffect
-        : Effect
+        : PropertyBasedEffect
     {
         public static string StaticName
         {
@@ -28,7 +31,7 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return ImageResource.Get("Icons.ZoomBlurEffect.png");
+                return PdnResources.GetImageResource("Icons.ZoomBlurEffect.png");
             }
         }
 
@@ -36,36 +39,77 @@ namespace PaintDotNet.Effects
             : base(StaticName,
                    StaticImage.Reference,
                    SubmenuNames.Blurs,
-                   EffectDirectives.None,
-                   true)
+                   EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        public enum PropertyNames
         {
-            AmountEffectConfigDialog oacd = new AmountEffectConfigDialog();
-
-            oacd.Text = StaticName;
-            oacd.SliderLabel = PdnResources.GetString("ZoomBlurEffect.ConfigDialog.AmountLabel");
-            oacd.SliderMaximum = 100;
-            oacd.SliderMinimum = 0;
-            oacd.SliderInitialValue = 10;
-            oacd.Icon = PdnResources.GetIconFromImage("Icons.ZoomBlurEffect.png");
-
-            return oacd;
+            Amount,
+            Offset,
         }
 
-        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
-            Rectangle[] rois, int startIndex, int length)
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            AmountEffectConfigToken token = (AmountEffectConfigToken)parameters;
-            Surface dst = dstArgs.Surface;
-            Surface src = srcArgs.Surface;
+            List<Property> props = new List<Property>();
+
+            props.Add(new Int32Property(PropertyNames.Amount, 10, 0, 100));
+
+            props.Add(new DoubleVectorProperty(
+                PropertyNames.Offset,
+                Pair.Create(0.0, 0.0),
+                Pair.Create(-2.0, -2.0),
+                Pair.Create(+2.0, +2.0)));
+
+            return new PropertyCollection(props);
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.Amount, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("ZoomBlurEffect.ConfigDialog.AmountLabel"));
+
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("ZoomBlurEffect.ConfigDialog.Offset"));
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderSmallChangeX, 0.05);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderLargeChangeX, 0.25);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.UpDownIncrementX, 0.01);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderSmallChangeY, 0.05);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.SliderLargeChangeY, 0.25);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.UpDownIncrementY, 0.01);
+
+            Surface sourceSurface = this.EnvironmentParameters.SourceSurface;
+            Bitmap bitmap = sourceSurface.CreateAliasedBitmap();
+            ImageResource imageResource = ImageResource.FromImage(bitmap);
+            configUI.SetPropertyControlValue(PropertyNames.Offset, ControlInfoPropertyNames.StaticImageUnderlay, imageResource);
+
+            return configUI;
+        }
+
+        private int amount;
+        private Pair<double, double> offset;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.amount = newToken.GetProperty<Int32Property>(PropertyNames.Amount).Value;
+            this.offset = newToken.GetProperty<DoubleVectorProperty>(PropertyNames.Offset).Value;
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            Surface dst = DstArgs.Surface;
+            Surface src = SrcArgs.Surface;
             long w = dst.Width;
             long h = dst.Height;
-            long fcx = w << 15;
-            long fcy = h << 15;
-            long fz = token.Amount;
+            long fox = (long)(dst.Width * this.offset.First * 32768.0);
+            long foy = (long)(dst.Height * this.offset.Second * 32768.0);
+            long fcx = fox + (w << 15);
+            long fcy = foy + (h << 15);
+            long fz = this.amount;
+
+            const int n = 64;
             
             for (int r = startIndex; r < startIndex + length; ++r)
             {
@@ -80,7 +124,6 @@ namespace PaintDotNet.Effects
                     {
                         long fx = (x << 16) - fcx;
                         long fy = (y << 16) - fcy;
-                        const int n = 64;
 
                         int sr = 0;
                         int sg = 0;
@@ -102,13 +145,16 @@ namespace PaintDotNet.Effects
                             int u = (int)(fx + fcx + 32768 >> 16);
                             int v = (int)(fy + fcy + 32768 >> 16);
 
-                            ColorBgra *srcPtr2 = src.GetPointAddressUnchecked(u, v);
+                            if (src.IsVisible(u, v))
+                            {
+                                ColorBgra* srcPtr2 = src.GetPointAddressUnchecked(u, v);
 
-                            sr += srcPtr2->R * srcPtr2->A;
-                            sg += srcPtr2->G * srcPtr2->A;
-                            sb += srcPtr2->B * srcPtr2->A;
-                            sa += srcPtr2->A;
-                            ++sc;
+                                sr += srcPtr2->R * srcPtr2->A;
+                                sg += srcPtr2->G * srcPtr2->A;
+                                sb += srcPtr2->B * srcPtr2->A;
+                                sa += srcPtr2->A;
+                                ++sc;
+                            }
                         }
                  
                         if (sa != 0)

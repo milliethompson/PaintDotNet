@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace PaintDotNet.Base
+namespace PaintDotNet
 {
     [Serializable]
     public class WeakReference<T>

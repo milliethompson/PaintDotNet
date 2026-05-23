@@ -30,10 +30,9 @@ namespace PaintDotNet.Effects
         }
 
         public LevelsEffect()
-            :
-            base(PdnResources.GetString("LevelsEffect.Name"),
-                 PdnResources.GetImage("Icons.LevelsEffect.png"),
-                 true)
+            : base(PdnResources.GetString("LevelsEffect.Name"),
+                   PdnResources.GetImageResource("Icons.LevelsEffect.png").Reference,
+                   EffectFlags.Configurable)
         {
         }
     }

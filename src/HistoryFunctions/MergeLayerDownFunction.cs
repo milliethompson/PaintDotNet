@@ -28,7 +28,7 @@ namespace PaintDotNet.HistoryFunctions
         {
             get
             {
-                return ImageResource.Get("Icons.MenuLayersMergeLayerDownIcon.png");
+                return PdnResources.GetImageResource("Icons.MenuLayersMergeLayerDownIcon.png");
             }   
         }
 

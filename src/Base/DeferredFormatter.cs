@@ -11,7 +11,7 @@ using System;
 using System.Collections;
 using System.IO;
 
-namespace PaintDotNet.Base
+namespace PaintDotNet
 {
     public sealed class DeferredFormatter
     {

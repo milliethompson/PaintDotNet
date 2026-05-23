@@ -160,6 +160,7 @@
     <Compile Include="CanvasControl.cs">
     </Compile>
     <Compile Include="DocumentClickAction.cs" />
+    <Compile Include="FloodMode.cs" />
     <Compile Include="GradientInfo.cs" />
     <Compile Include="GradientType.cs" />
     <Compile Include="HistoryFunctions\FillSelectionFunction.cs" />
@@ -265,11 +266,14 @@
     <Compile Include="IAntiAliasingConfig.cs" />
     <Compile Include="IBrushConfig.cs" />
     <Compile Include="IColorPickerConfig.cs" />
+    <Compile Include="IFloodModeConfig.cs" />
     <Compile Include="IGradientConfig.cs" />
     <Compile Include="IHistoryWorkspace.cs" />
     <Compile Include="IDocumentList.cs" />
     <Compile Include="IPenConfig.cs" />
     <Compile Include="IResamplingConfig.cs" />
+    <Compile Include="ISelectionCombineModeConfig.cs" />
+    <Compile Include="ISelectionDrawModeConfig.cs" />
     <Compile Include="IShapeTypeConfig.cs" />
     <Compile Include="IStatusBarProgress.cs" />
     <Compile Include="ITextConfig.cs" />
@@ -315,6 +319,8 @@
     <Compile Include="Menus\WindowMenu.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="SelectionDrawMode.cs" />
+    <Compile Include="SelectionDrawModeInfo.cs" />
     <Compile Include="TransferProgressDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -611,9 +617,6 @@ copy "$(SolutionDir)\WiaProxy32\bin\$(ConfigurationName)\WiaProxy32.exe" "$(Targ
 
 @rem copy English strings over
 copy "$(SolutionDir)\Strings\$(ConfigurationName)\PaintDotNet.Strings.3.resources" "$(TargetDir)"
-
-@rem copy non-English strings (we won't copy the other file/image resource overrides)
-copy "$(SolutionDir)\Resources.mui\*.resources" "$(TargetDir)"
 
 :done
 rem call "$(ProjectDir)prejit.bat" "$(TargetPath)"</PostBuildEvent>

@@ -17,7 +17,6 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    // TODO: rename to UpdateOptionsDialog (no plural in "Updates"), post-3.0. don't forget string resource names.
     public partial class UpdatesOptionsDialog 
         : PdnBaseForm
     {
@@ -74,8 +73,8 @@ namespace PaintDotNet.Updates
         {
             this.Text = PdnResources.GetString("UpdatesOptionsDialog.Text");
 
-            Image iconImage = PdnResources.GetImage("Icons.SettingsIcon.png");
-            this.Icon = Utility.ImageToIcon(iconImage, Utility.TransparentKey, true);
+            Image iconImage = PdnResources.GetImageResource("Icons.SettingsIcon.png").Reference;
+            this.Icon = Utility.ImageToIcon(iconImage, Utility.TransparentKey, false);
 
             this.saveButton.Text = PdnResources.GetString("UpdatesOptionsDialog.SaveButton.Text");
             this.autoCheckBox.Text = PdnResources.GetString("UpdatesOptionsDialog.AutoCheckBox.Text");
@@ -150,6 +149,7 @@ namespace PaintDotNet.Updates
             this.saveButton.TabIndex = 0;
             this.saveButton.Text = ".save";
             this.saveButton.UseVisualStyleBackColor = true;
+            this.saveButton.FlatStyle = FlatStyle.System;
             this.saveButton.Click += new System.EventHandler(this.SaveButton_Click);
             // 
             // autoCheckBox
@@ -161,6 +161,7 @@ namespace PaintDotNet.Updates
             this.autoCheckBox.TabIndex = 1;
             this.autoCheckBox.Text = "checkBox1";
             this.autoCheckBox.UseVisualStyleBackColor = true;
+            this.autoCheckBox.FlatStyle = FlatStyle.System;
             this.autoCheckBox.CheckedChanged += new System.EventHandler(this.AutoCheckBox_CheckedChanged);
             // 
             // betaCheckBox
@@ -171,6 +172,7 @@ namespace PaintDotNet.Updates
             this.betaCheckBox.Size = new System.Drawing.Size(80, 17);
             this.betaCheckBox.TabIndex = 2;
             this.betaCheckBox.Text = "checkBox1";
+            this.betaCheckBox.FlatStyle = FlatStyle.System;
             this.betaCheckBox.UseVisualStyleBackColor = true;
             // 
             // allUsersNoticeLabel
@@ -192,6 +194,7 @@ namespace PaintDotNet.Updates
             this.cancelButton.TabIndex = 5;
             this.cancelButton.Text = ".cancel";
             this.cancelButton.UseVisualStyleBackColor = true;
+            this.cancelButton.FlatStyle = FlatStyle.System;
             this.cancelButton.Click += new System.EventHandler(this.CancelButton_Click);
             // 
             // headerLabel1

@@ -9,7 +9,7 @@
 
 using System;
 
-namespace PaintDotNet.Base
+namespace PaintDotNet
 {
     /// <summary>
     /// Provides access to a cached group of boxed, commonly used constants.

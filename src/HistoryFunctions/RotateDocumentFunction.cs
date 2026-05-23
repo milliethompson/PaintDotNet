@@ -79,7 +79,7 @@ namespace PaintDotNet.HistoryFunctions
             // Initialize the new Doc
             string haNameFormat = PdnResources.GetString("RotateAction.HistoryMementoName.Format");
             string haName = string.Format(haNameFormat, StaticName, suffix);
-            ImageResource haImage = ImageResource.Get(iconResName);
+            ImageResource haImage = PdnResources.GetImageResource(iconResName);
 
             List<HistoryMemento> actions = new List<HistoryMemento>();
 

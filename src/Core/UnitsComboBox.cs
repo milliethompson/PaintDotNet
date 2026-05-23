@@ -34,6 +34,7 @@ namespace PaintDotNet
         {
             this.comboBox = new ComboBox();
             this.comboBox.Dock = DockStyle.Fill;
+            this.comboBox.FlatStyle = FlatStyle.System;
             this.Controls.Add(this.comboBox);
         }
 

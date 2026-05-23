@@ -28,7 +28,8 @@ namespace PaintDotNet
     [Serializable]
     public sealed class AppEnvironment
         : IDisposable,
-          ICloneable
+          ICloneable,
+          IDeserializationCallback
     {
         private TextAlignment textAlignment;
         private GradientInfo gradientInfo;
@@ -44,6 +45,18 @@ namespace PaintDotNet
         private ColorPickerClickBehavior colorPickerClickBehavior;
         private ResamplingAlgorithm resamplingAlgorithm;
         private float tolerance;
+
+        // Added in v3.20. If not found in the serialized data, must default to CombineMode.Replace.
+        // Conveniently for us, this is equal to (CombineMode)0. Otherwise we would need to have a
+        // boolean flag as well in order to detect if the data needed to be reset to default.
+        [OptionalField]
+        private CombineMode selectionCombineMode;
+
+        [OptionalField]
+        private FloodMode floodMode;
+
+        [OptionalField]
+        private SelectionDrawModeInfo selectionDrawModeInfo;
 
         public static AppEnvironment GetDefaultAppEnvironment()
         {
@@ -110,6 +123,9 @@ namespace PaintDotNet
             this.colorPickerClickBehavior = appEnvironment.colorPickerClickBehavior;
             this.resamplingAlgorithm = appEnvironment.resamplingAlgorithm;
             this.tolerance = appEnvironment.tolerance;
+            this.selectionCombineMode = appEnvironment.selectionCombineMode;
+            this.floodMode = appEnvironment.floodMode;
+            this.selectionDrawModeInfo = appEnvironment.selectionDrawModeInfo.Clone();
             PerformAllChanged();
         }
 
@@ -719,6 +735,96 @@ namespace PaintDotNet
         }
         #endregion
 
+        #region SelectionCombineMode
+        [field: NonSerialized]
+        public event EventHandler SelectionCombineModeChanged;
+
+        private void OnSelectionCombineModeChanged()
+        {
+            if (SelectionCombineModeChanged != null)
+            {
+                SelectionCombineModeChanged(this, EventArgs.Empty);
+            }
+        }
+
+        public CombineMode SelectionCombineMode
+        {
+            get
+            {
+                return this.selectionCombineMode;
+            }
+
+            set
+            {
+                if (this.selectionCombineMode != value)
+                {
+                    this.selectionCombineMode = value;
+                    OnSelectionCombineModeChanged();
+                }
+            }
+        }
+        #endregion
+
+        #region FloodMode
+        [field: NonSerialized]
+        public event EventHandler FloodModeChanged;
+
+        private void OnFloodModeChanged()
+        {
+            if (FloodModeChanged != null)
+            {
+                FloodModeChanged(this, EventArgs.Empty);
+            }
+        }
+
+        public FloodMode FloodMode
+        {
+            get
+            {
+                return this.floodMode;
+            }
+
+            set
+            {
+                if (this.floodMode != value)
+                {
+                    this.floodMode = value;
+                    OnFloodModeChanged();
+                }
+            }
+        }
+        #endregion
+
+        #region SelectionDrawModeInfo
+        [field: NonSerialized]
+        public event EventHandler SelectionDrawModeInfoChanged;
+
+        private void OnSelectionDrawModeInfoChanged()
+        {
+            if (SelectionDrawModeInfoChanged != null)
+            {
+                SelectionDrawModeInfoChanged(this, EventArgs.Empty);
+            }
+        }
+
+        public SelectionDrawModeInfo SelectionDrawModeInfo
+        {
+            get
+            {
+                return this.selectionDrawModeInfo.Clone();
+            }
+
+            set
+            {
+                if (!this.selectionDrawModeInfo.Equals(value))
+                {
+                    this.selectionDrawModeInfo = value.Clone();
+                    OnSelectionDrawModeInfoChanged();
+                }
+            }
+        }
+        #endregion
+
         public void PerformAllChanged()
         {
             OnFontInfoChanged();
@@ -735,6 +841,9 @@ namespace PaintDotNet
             OnToleranceChanged();
             OnColorPickerClickBehaviorChanged();
             OnResamplingAlgorithmChanging();
+            OnSelectionCombineModeChanged();
+            OnFloodModeChanged();
+            OnSelectionDrawModeInfoChanged();
         }
 
         public void SetToDefaults()
@@ -764,6 +873,9 @@ namespace PaintDotNet
 
             this.colorPickerClickBehavior = ColorPickerClickBehavior.NoToolSwitch;
             this.resamplingAlgorithm = ResamplingAlgorithm.Bilinear;
+            this.selectionCombineMode = CombineMode.Replace;
+            this.floodMode = FloodMode.Local;
+            this.selectionDrawModeInfo = SelectionDrawModeInfo.CreateDefault();
         }
 
         public AppEnvironment()
@@ -804,6 +916,14 @@ namespace PaintDotNet
         object ICloneable.Clone()
         {
             return Clone();
+        }
+
+        void IDeserializationCallback.OnDeserialization(object sender)
+        {
+            if (this.selectionDrawModeInfo == null)
+            {
+                this.selectionDrawModeInfo = SelectionDrawModeInfo.CreateDefault();
+            }
         }
     }
 }

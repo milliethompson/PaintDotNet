@@ -152,8 +152,9 @@ namespace PaintDotNet.Menus
                 this.menuWindowTranslucent.Checked = false;
             }
 
+            this.menuWindowOpenMdiList.Enabled = (AppWorkspace.DocumentWorkspaces.Length > 0);
+
             bool pluralDocuments = (AppWorkspace.DocumentWorkspaces.Length > 1);
-            this.menuWindowOpenMdiList.Enabled = pluralDocuments;
             this.menuWindowNextTab.Enabled = pluralDocuments;
             this.menuWindowPreviousTab.Enabled = pluralDocuments;
 

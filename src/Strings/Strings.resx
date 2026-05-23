@@ -1283,6 +1283,37 @@ Current version: Paint.NET v{1}</value>
     <value>Repeat {0}</value>
     <comment>{0} is the effect name</comment>
   </data>
+  <data name="Effects.PluginLoadErrorsDialog.Text">
+    <value>Plugin Load Errors</value>
+  </data>
+  <data name="Effects.PluginLoadErrorsDialog.Message.Text">
+    <value>The following plugins failed to load. They may have been written for an older or newer version of Paint.NET. If you already have the most up-to-date version of Paint.NET, then you should check to see if there is an updated version of any plugin causing an error.</value>
+  </data>
+  <data name="EffectErrorMessage.InfoNotSupplied">
+    <value>(Not Supplied)</value>
+  </data>
+  <data name="EffectErrorMessage.HeaderFormat" xml:space="preserve">
+    <value>{0} of {1}
+--------------</value>
+    <comment>{0} and {1} are numbers, and {1} is always greater than or equal to {0}. For example: "3 of 5" to indicate the 3rd out of 5 errors.</comment>
+  </data>
+  <data name="EffectErrorMessage.ShortFormat" xml:space="preserve">
+    <value>File: {0}
+      Effect Name: {1}
+      Full error message: {2}
+</value>
+  </data>
+  <data name="EffectErrorMessage.FullFormat" xml:space="preserve">
+    <value>File: {0}
+      Name: {1}
+      Version: {2}
+      Author: {3}
+      Copyright: {4}
+      Website: {5}
+      Full error message: {6}
+</value>
+    <comment>{0} is a full path name, such as "C:\Program Files\Paint.NET\Effects\EdHarvey.dll" (localization not necessary). {1} is a display name such as "Surface Blur" (localization is handled by plugin). {2} is the version of the plugin or DLL, such as "1.2.345.6789" (localization handled by the .NET Framework's Version.ToString() method). {3} is a name or company name (localization handled by plugin), {4} is copyright information (localization handled by plugin), {5} is a valid website URL starting with http:// or https:// (localization handled by plugin). {6} is an exception string and is provided and localized by the .NET Framework (it is meant for the plugin author, and not necessarily important for the user to understand).</comment>
+  </data>
   <data name="Effects.Name.Format.Configurable" xml:space="preserve">
     <value>{0}...</value>
     <comment>{0} is the effect name</comment>
@@ -1353,6 +1384,9 @@ Expand canvas to fit pasted image?</value>
   </data>
   <data name="Menu.File.OpenRecent.ClearThisList" xml:space="preserve">
     <value>&amp;Clear this list</value>
+  </data>
+  <data name="Menu.File.ViewPluginLoadErrors.Text">
+    <value>&amp;View Plugin Load Errors...</value>
   </data>
   <data name="Menu.File.Text" xml:space="preserve">
     <value>&amp;File</value>
@@ -1766,8 +1800,14 @@ Expand canvas to fit pasted image?</value>
   <data name="ZoomBlurEffect.ConfigDialog.AmountLabel">
     <value>Zoom Amount</value>
   </data>
+  <data name="ZoomBlurEffect.ConfigDialog.Offset">
+    <value>Center</value>
+  </data>
   <data name="BlurEffect.Name" xml:space="preserve">
     <value>Gaussian Blur</value>
+  </data>
+  <data name="GlowEffect.Name" xml:space="preserve">
+    <value>Glow</value>
   </data>
   <data name="GlowEffect.Amount1.Name" xml:space="preserve">
     <value>Radius</value>
@@ -1777,9 +1817,6 @@ Expand canvas to fit pasted image?</value>
   </data>
   <data name="GlowEffect.Amount3.Name" xml:space="preserve">
     <value>Contrast</value>
-  </data>
-  <data name="GlowEffect.Name" xml:space="preserve">
-    <value>Glow</value>
   </data>
   <data name="BulgeEffect.Name" xml:space="preserve">
     <value>Bulge</value>
@@ -1796,20 +1833,32 @@ Expand canvas to fit pasted image?</value>
   <data name="BulgeEffect.BulgeAmount.Text" xml:space="preserve">
     <value>Bulge</value>
   </data>
+  <data name="BulgeEffect.Offset.Text" xml:space="preserve">
+    <value>Center</value>
+  </data>
   <data name="TileEffect.Intensity.Text" xml:space="preserve">
     <value>Curvature</value>
   </data>
+  <data name="TileEffect.Quality.Text" xml:space="preserve">
+    <value>Quality</value>
+  </data>
   <data name="TileEffect.Rotation.Text" xml:space="preserve">
-    <value>Rotation Angle (degrees)</value>
+    <value>Angle</value>
   </data>
   <data name="TileEffect.SquareSize.Text" xml:space="preserve">
-    <value>Square Size (pixels)</value>
+    <value>Tile Size</value>
   </data>
   <data name="TwistEffect.Antialias.Text" xml:space="preserve">
     <value>Quality</value>
   </data>
+  <data name="TwistEffect.Offset.Text" xml:space="preserve">
+    <value>Center</value>
+  </data>
+  <data name="TwistEffect.TwistSize.Text" xml:space="preserve">
+    <value>Size</value>
+  </data>
   <data name="TwistEffect.TwistAmount.Text" xml:space="preserve">
-    <value>Twisting amount</value>
+    <value>Amount / Direction</value>
   </data>
   <data name="PolarInversionEffect.Name" xml:space="preserve">
     <value>Polar Inversion</value>
@@ -1841,12 +1890,15 @@ Expand canvas to fit pasted image?</value>
   <data name="FrostedGlassEffect.Name" xml:space="preserve">
     <value>Frosted Glass</value>
   </data>
-  <data name="FrostedGlassEffect.ConfigDialog.SliderLabel" xml:space="preserve">
-    <value>Scatter radius</value>
+  <data name="FrostedGlassEffect.ConfigDialog.MinScatterRadius.DisplayName">
+    <value>Minimum Scatter Radius</value>
   </data>
-  <data name="FrostedGlassEffect.ConfigDialog.SliderUnitsName" xml:space="preserve">
-    <value>pixels</value>
+  <data name="FrostedGlassEffect.ConfigDialog.MaxScatterRadius.DisplayName">
+    <value>Maximum Scatter Radius</value>
   </data>
+  <data name="FrostedGlassEffect.ConfigDialog.NumSamples.DisplayName">
+    <value>Smoothness</value>
+  </data>  
   <data name="HueAndSaturationAdjustment.Name" xml:space="preserve">
     <value>Hue / Saturation</value>
   </data>
@@ -2231,6 +2283,9 @@ Click OK to go to the Paint.NET website where you may download a newer version.<
   <data name="AddNoiseEffect.Amount2Label" xml:space="preserve">
     <value>Color Saturation</value>
   </data>
+  <data name="AddNoiseEffect.Coverage" xml:space="preserve">
+    <value>Coverage</value>
+  </data>
   <data name="AddNoiseEffect.Name" xml:space="preserve">
     <value>Add Noise</value>
   </data>
@@ -2395,6 +2450,12 @@ Click "Next" to start the installation.</value>
   <data name="SetupWizard.InstallingPage.HeaderText.Failure" xml:space="preserve">
     <value>Error</value>
   </data>
+  <data name="SetupWizard.InstallingPage.InfoText.Text.OpenSRPoint">
+    <value>Creating system restore point...</value>
+  </data>
+  <data name="SetupWizard.InstallingPage.InfoText.Text.CloseSRPoint">
+    <value>Closing system restore point...</value>
+  </data>
   <data name="SetupWizard.InstallingPage.InfoText.Text.Uninstalling" xml:space="preserve">
     <value>Removing previous version...</value>
   </data>
@@ -2424,6 +2485,10 @@ Click "Next" to start the installation.</value>
   </data>
   <data name="SetupWizard.CreateMsiPage.IntroText.Text.Finished" xml:space="preserve">
     <value>The MSI packages have been placed into the following directory: '{0}'.</value>
+  </data>
+  <data name="SetupWizard.InstallingPage.WhileInstallingLabel.Text">
+    <value>Paint.NET is provided FREE OF CHARGE. If you paid money for it (other than to &lt;a&gt;donate at the Paint.NET website&lt;/a&gt;, of course) then we recommend that you get a refund!</value>
+    <comment>The area delimited with &lt;a&gt; and &lt;/a&gt; is treated as a link. The destination URL is the donation page at the Paint.NET website.</comment>
   </data>
   <data name="Setup.DesktopShortcut.LinkName" xml:space="preserve">
     <value>Paint.NET</value>
@@ -2505,7 +2570,16 @@ Click "Next" to start the installation.</value>
     <value>Radial Blur</value>
   </data>
   <data name="RadialBlurEffect.ConfigDialog.RadialLabel" xml:space="preserve">
-    <value>Radial amount (degrees)</value>
+    <value>Angle</value>
+  </data>
+  <data name="RadialBlurEffect.ConfigDialog.QualityLabel" xml:space="preserve">
+    <value>Quality</value>
+  </data>
+  <data name="RadialBlurEffect.ConfigDialog.QualityDescription" xml:space="preserve">
+    <value>Low quality is useful for quick previews, small images, or small angle values. High quality is useful for final quality, large images, or large angle values.</value>
+  </data>
+  <data name="RadialBlurEffect.ConfigDialog.OffsetLabel" xml:space="preserve">
+    <value>Center</value>
   </data>
   <data name="WebExceptionStatus.ConnectFailure" xml:space="preserve">
     <value>The remote service point could not be contacted at the transport level.</value>
@@ -2714,7 +2788,7 @@ www.getpaint.net</value>
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.Gradient.HeaderLabel.Text">
     <value>Gradient</value>
   </data>
-  <data name="ChooseToolDefaultsDialog.ToolConfigRow.Tolerance.HeaderLabel.Text">
+  <data name="ChooseToolDefaultsDialog.ToolConfigRow.ToleranceFloodMode.HeaderLabel.Text">
     <value>Magic Wand, Paint Bucket, and Recolor</value>
   </data>
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.ColorPickerBehavior.HeaderLabel.Text">
@@ -2722,6 +2796,9 @@ www.getpaint.net</value>
   </data>
   <data name="ChooseToolDefaultsDialog.ToolConfigRow.AlphaBlendingAntialiasing.HeaderLabel.Text">
     <value>Rasterization</value>
+  </data>
+  <data name="ChooseToolDefaultsDialog.ToolConfigRow.SelectionCombineModeSelectionDrawMode.HeaderLabel.Text">
+    <value>Selection Tools</value>
   </data>
   <data name="ChooseToolDefaultsDialog.Text">
     <value>Choose Defaults</value>
@@ -2813,6 +2890,54 @@ Shortcut key: /</value>
   </data>
   <data name="Effects.Render.Submenu.Name" xml:space="preserve">
     <value>Render</value>
+  </data>
+  <data name="Effects.Photo.Submenu.Name" xml:space="preserve">
+    <value>Photo</value>
+  </data>
+  <data name="Effects.Noise.Submenu.Name" xml:space="preserve">
+    <value>Noise</value>
+  </data>
+  <data name="Effects.Artistic.Submenu.Name">
+    <value>Artistic</value>
+  </data>
+  <data name="Effects.Stylize.Submenu.Name">
+    <value>Stylize</value>
+  </data>
+  <data name="MandelbrotFractalEffect.Name">
+    <value>Mandelbrot Fractal</value>
+  </data>
+  <data name="MandelbrotFractalEffect.ConfigDialog.Factor.DisplayName">
+    <value>Factor</value>
+  </data>
+  <data name="MandelbrotFractalEffect.ConfigDialog.Quality.DisplayName">
+    <value>Quality</value>
+  </data>
+  <data name="MandelbrotFractalEffect.ConfigDialog.Zoom.DisplayName">
+    <value>Zoom</value>
+  </data>
+  <data name="MandelbrotFractalEffect.ConfigDialog.Angle.DisplayName">
+    <value>Angle</value>
+  </data>
+  <data name="MandelbrotFractalEffect.ConfigDialog.Offset.DisplayName">
+    <value>Offset</value>
+  </data>
+  <data name="MandelbrotFractalEffect.ConfigDialog.InvertColors.Description">
+    <value>Invert Colors</value>
+  </data>
+  <data name="JuliaFractalEffect.Name">
+    <value>Julia Fractal</value>
+  </data>
+  <data name="JuliaFractalEffect.ConfigDialog.Factor.DisplayName">
+    <value>Factor</value>
+  </data>
+  <data name="JuliaFractalEffect.ConfigDialog.Angle.DisplayName">
+    <value>Angle</value>
+  </data>
+  <data name="JuliaFractalEffect.ConfigDialog.Quality.DisplayName">
+    <value>Quality</value>
+  </data>
+  <data name="JuliaFractalEffect.ConfigDialog.Zoom.DisplayName">
+    <value>Zoom</value>
   </data>
   <data name="CloudsEffect.Name">
     <value>Clouds</value>
@@ -3026,5 +3151,76 @@ Do you want to replace it?</value>
   </data>
   <data name="DdsFileType.SaveConfigWidget.AdditionalOptions.Text">
     <value>Additional Options</value>
+  </data>
+  <data name="ToolConfigStrip.SelectionCombineModeLabel.Text">
+    <value>Selection Mode:</value>
+  </data>
+  <data name="ToolConfigStrip.SelectionCombineModeSplitButton.Replace.Text">
+    <value>Replace</value>
+  </data>
+  <data name="ToolConfigStrip.SelectionCombineModeSplitButton.Union.Text">
+    <value>Add (union)</value>
+  </data>
+  <data name="ToolConfigStrip.SelectionCombineModeSplitButton.Exclude.Text">
+    <value>Subtract</value>
+  </data>
+  <data name="ToolConfigStrip.SelectionCombineModeSplitButton.Xor.Text">
+    <value>Invert (&quot;xor&quot;)</value>
+  </data>
+  <data name="ToolConfigStrip.FloodModeLabel.Text">
+    <value>Flood Mode:</value>
+  </data>
+  <data name="ToolConfigStrip.FloodModeSplitButton.Local.Text">
+    <value>Contiguous</value>
+  </data>
+  <data name="ToolConfigStrip.FloodModeSplitButton.Global.Text">
+    <value>Global</value>
+  </data>
+  <data name="ToolConfigStrip.SelectionDrawModeLabel.Text">
+    <value>Draw mode:</value>
+  </data>
+  <data name="ToolConfigStrip.SelectionDrawModeWidthLabel.Text">
+    <value>Width:</value>
+  </data>
+  <data name="ToolConfigStrip.SelectionDrawModeHeightLabel.Text">
+    <value>Height:</value>
+  </data>
+  <data name="ToolConfigStrip.SelectionDrawModeSplitButton.Normal.Text">
+    <value>Normal</value>
+  </data>
+  <data name="ToolConfigStrip.SelectionDrawModeSplitButton.FixedRatio.Text">
+    <value>Fixed Ratio</value>
+  </data>
+  <data name="ToolConfigStrip.SelectionDrawModeSplitButton.FixedSize.Text">
+    <value>Fixed Size</value>
+  </data>
+  <data name="Effect.PluginErrorDialog.Title">
+    <value>Plugin Error</value>
+  </data>
+  <data name="Effect.PluginErrorDialog.IntroText">
+    <value>This plugin has encountered an error, and must be closed.
+
+Because of the unpredictable nature of these types of errors, it is strongly recommended that you restart Paint.NET before proceeding. Otherwise, there could be further stability problems or data corruption.</value>
+  </data>
+  <data name="Effect.PluginErrorDialog.RestartTB.ActionText">
+    <value>Restart Paint.NET (recommended)</value>
+  </data>
+  <data name="Effect.PluginErrorDialog.RestartTB.ExplanationText">
+    <value>Closes the plugin, and then closes your opened images and restarts Paint.NET. You will be asked to save changes if necessary.</value>
+  </data>
+  <data name="Effect.PluginErrorDialog.DoNotRestartTB.ActionText">
+    <value>Do not restart Paint.NET (not recommended)</value>
+  </data>
+  <data name="Effect.PluginErrorDialog.DoNotRestartTB.ExplanationText">
+    <value>Closes the plugin, but does not close or restart Paint.NET.</value>
+  </data>
+  <data name="Effect.PluginErrorDialog.AuxButton1.Text">
+    <value>Error Details...</value>
+  </data>
+  <data name="BlockedPluginException.UnstablePlugin">
+    <value>This plugin is known to cause stability problems, and has been blocked from loading.</value>
+  </data>
+  <data name="BlockedPluginException.PluginIsNowBuiltIn">
+    <value>This plugin is now built-in to Paint.NET, so the old plugin DLL has been blocked from loading. You may safely delete this plugin DLL.</value>
   </data>
 </root>

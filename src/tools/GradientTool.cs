@@ -7,7 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
+using PaintDotNet;
 using PaintDotNet.HistoryMementos;
 using PaintDotNet.SystemLayer;
 using System;
@@ -35,7 +35,7 @@ namespace PaintDotNet.Tools
         {
             get
             {
-                return ImageResource.Get("Icons.GradientToolIcon.png");
+                return PdnResources.GetImageResource("Icons.GradientToolIcon.png");
             }
         }
 
@@ -103,8 +103,8 @@ namespace PaintDotNet.Tools
                     // sin is [0.25, 1]
 
                     int newAlpha = (int)(sin * 255.0);
-
-                    this.moveNubs[i].Alpha = newAlpha;
+                    int clampedAlpha = Utility.Clamp(newAlpha, 0, 255);
+                    this.moveNubs[i].Alpha = clampedAlpha;
                 }
             }
 

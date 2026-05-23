@@ -7,26 +7,23 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.IO;
-using PaintDotNet;
-using PaintDotNet.Effects;
 
 namespace PaintDotNet.Effects
 {
-    [Guid("1445F876-356D-4a7c-B726-50457F6E7AEF")]
     public sealed class PolarInversionEffect 
-        : Effect
+        : PropertyBasedEffect
     {
         public static Image StaticImage
         {
             get
             {
-                return PdnResources.GetImage("Icons.PolarInversionEffect.png");
+                return PdnResources.GetImageResource("Icons.PolarInversionEffect.png").Reference;
             }
         }
 
@@ -47,60 +44,69 @@ namespace PaintDotNet.Effects
         }
 
         public PolarInversionEffect()
-            : base(StaticName, StaticImage, StaticSubMenuName, true)
+            : base(StaticName, StaticImage, StaticSubMenuName, EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        public enum PropertyNames
         {
-            TwoAmountsConfigDialog tacd = new TwoAmountsConfigDialog();
-
-            tacd.Text = StaticName;
-            tacd.Amount1Label = PdnResources.GetString("PolarInversionEffect.PolarInversionAmount.Text");
-            tacd.Amount1Default = 100;
-            tacd.Amount1Minimum = -200;
-            tacd.Amount1Maximum = 200;
-            tacd.Amount2Label = PdnResources.GetString("PolarInversionEffect.Quality.Text");
-            tacd.Amount2Default = 2;
-            tacd.Amount2Maximum = 7;
-            tacd.Amount2Minimum = 0;
-
-            return tacd;
+            Amount,
+            Quality
         }
 
-        public unsafe override void Render(
-            EffectConfigToken parameters, 
-            RenderArgs dstArgs, 
-            RenderArgs srcArgs, 
-            System.Drawing.Rectangle[] rois, 
-            int startIndex, 
-            int length)
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            TwoAmountsConfigToken token = (TwoAmountsConfigToken)parameters;
+            List<Property> props = new List<Property>();
 
-            Surface dst = dstArgs.Surface;
-            Surface src = srcArgs.Surface;
+            props.Add(new DoubleProperty(PropertyNames.Amount, 1.0, -2.0, +2.0));
+            props.Add(new Int32Property(PropertyNames.Quality, 2, 1, 5));
+
+            return new PropertyCollection(props);
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.Amount, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("PolarInversionEffect.PolarInversionAmount.Text"));
+            configUI.SetPropertyControlValue(PropertyNames.Amount, ControlInfoPropertyNames.UseExponentialScale, true);
+            configUI.SetPropertyControlValue(PropertyNames.Amount, ControlInfoPropertyNames.SliderLargeChange, 0.25);
+            configUI.SetPropertyControlValue(PropertyNames.Amount, ControlInfoPropertyNames.SliderSmallChange, 0.05);
+            configUI.SetPropertyControlValue(PropertyNames.Amount, ControlInfoPropertyNames.UpDownIncrement, 0.01);
+
+            configUI.SetPropertyControlValue(PropertyNames.Quality, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("PolarInversionEffect.Quality.Text"));
+
+            return configUI;
+        }
+
+        private double amount;
+        private int quality;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.amount = newToken.GetProperty<DoubleProperty>(PropertyNames.Amount).Value;
+            this.quality = newToken.GetProperty<Int32Property>(PropertyNames.Quality).Value;
+            
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            Surface dst = DstArgs.Surface;
+            Surface src = SrcArgs.Surface;
 
             float hw = dst.Width / 2.0f;
             float hh = dst.Height / 2.0f;
             float maxrad = Math.Min(hw, hh);
             float maxrad2 = maxrad * maxrad;
-            float amt = token.Amount1 / 100.0f;
+            float amt = (float)this.amount;
 
-            int aaLevel = token.Amount2;
-            int aaSamples = aaLevel * aaLevel + 1;
+            int aaLevel = this.quality;
+            int aaSamples = aaLevel * aaLevel;
             PointF* aaPoints = stackalloc PointF[aaSamples];
+            Utility.GetRgssOffsets(aaPoints, aaSamples, aaLevel);
 
-            for (int i = 0; i < aaSamples; ++i)
-            {
-                double x = (i * aaLevel) / (double)aaSamples;
-                double y = i / (double)aaSamples;
-
-                x -= (int)x;
-
-                // RGSS + rotation to maximize AA quality
-                aaPoints[i] = new PointF((float)x, (float)y);
-            }
+            ColorBgra* samples = stackalloc ColorBgra[aaSamples];
 
             for (int n = startIndex; n < startIndex + length; ++n)
             {
@@ -113,8 +119,8 @@ namespace PaintDotNet.Effects
 
                     for (int x = rect.Left; x < rect.Right; x++)
                     {
-                        int b = 0, g = 0, r = 0, a = 0;
                         float i = x - hw;
+                        int sampleCount = 0;
 
                         for (int z = 0; z < aaSamples; ++z)
                         {
@@ -124,20 +130,11 @@ namespace PaintDotNet.Effects
                             float xp = u * scale;
                             float yp = v * scale;
 
-                            ColorBgra sample = src.GetBilinearSampleWrapped(xp + hw, yp + hh);
-
-                            b += sample.B;
-                            g += sample.G;
-                            r += sample.R;
-                            a += sample.A;
+                            samples[sampleCount] = src.GetBilinearSampleWrapped(xp + hw, yp + hh);
+                            ++sampleCount;
                         }
 
-                        *dstPtr = ColorBgra.FromBgra(
-                            (byte)(b / aaSamples),
-                            (byte)(g / aaSamples),
-                            (byte)(r / aaSamples),
-                            (byte)(a / aaSamples));
-
+                        *dstPtr = ColorBgra.Blend(samples, sampleCount);
                         ++dstPtr;
                     }
                 }

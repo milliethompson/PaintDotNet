@@ -31,6 +31,11 @@ namespace PaintDotNet.Actions
 
         public override void PerformAction(AppWorkspace appWorkspace)
         {
+            if (appWorkspace == null)
+            {
+                throw new ArgumentNullException("appWorkspace");
+            }
+
             DocumentWorkspace dw;
 
             if (this.closeMe == null)
@@ -57,17 +62,17 @@ namespace PaintDotNet.Actions
                     appWorkspace.ActiveDocumentWorkspace = dw;
 
                     TaskButton saveTB = new TaskButton(
-                        ImageResource.Get("Icons.MenuFileSaveIcon.png").Reference,
+                        PdnResources.GetImageResource("Icons.MenuFileSaveIcon.png").Reference,
                         PdnResources.GetString("CloseWorkspaceAction.SaveButton.ActionText"),
                         PdnResources.GetString("CloseWorkspaceAction.SaveButton.ExplanationText"));
 
                     TaskButton dontSaveTB = new TaskButton(
-                        ImageResource.Get("Icons.MenuFileCloseIcon.png").Reference,
+                        PdnResources.GetImageResource("Icons.MenuFileCloseIcon.png").Reference,
                         PdnResources.GetString("CloseWorkspaceAction.DontSaveButton.ActionText"),
                         PdnResources.GetString("CloseWorkspaceAction.DontSaveButton.ExplanationText"));
 
                     TaskButton cancelTB = new TaskButton(
-                        ImageResource.Get("Icons.CancelIcon.png").Reference,
+                        PdnResources.GetImageResource("Icons.CancelIcon.png").Reference,
                         PdnResources.GetString("CloseWorkspaceAction.CancelButton.ActionText"),
                         PdnResources.GetString("CloseWorkspaceAction.CancelButton.ExplanationText"));
 
@@ -76,6 +81,12 @@ namespace PaintDotNet.Actions
                     string introText = string.Format(introTextFormat, dw.GetFriendlyName());
 
                     Image thumb = appWorkspace.GetDocumentWorkspaceThumbnail(dw);
+
+                    if (thumb == null)
+                    {
+                        thumb = new Bitmap(32, 32);
+                    }
+
                     Bitmap taskImage = new Bitmap(thumb.Width + 2, thumb.Height + 2, PixelFormat.Format32bppArgb);
 
                     using (Graphics g = Graphics.FromImage(taskImage))
@@ -102,9 +113,22 @@ namespace PaintDotNet.Actions
                         }
                     }
 
+                    Icon warningIcon;
+                    ImageResource warningIconImageRes = PdnResources.GetImageResource("Icons.WarningIcon.png");
+
+                    if (warningIconImageRes != null)
+                    {
+                        Image warningIconImage = warningIconImageRes.Reference;
+                        warningIcon = Utility.ImageToIcon(warningIconImage, false);
+                    }
+                    else
+                    {
+                        warningIcon = null;
+                    }                     
+
                     TaskButton clickedTB = TaskDialog.Show(
                         appWorkspace,
-                        Utility.ImageToIcon(ImageResource.Get("Icons.WarningIcon.png").Reference, false),
+                        warningIcon,
                         title,
                         taskImage,
                         false,

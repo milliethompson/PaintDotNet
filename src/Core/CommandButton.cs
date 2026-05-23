@@ -121,12 +121,12 @@ namespace PaintDotNet
             this.explanationTextFont = this.Font;
         }
 
-        protected override void OnPaintButton(Graphics g, UI.ButtonState state, bool drawAsDefault, bool drawFocusCues, bool drawKeyboardCues)
+        protected override void OnPaintButton(Graphics g, PushButtonState state, bool drawFocusCues, bool drawKeyboardCues)
         {
-            MeasureAndDraw(g, true, state, drawAsDefault, drawFocusCues, drawKeyboardCues);
+            MeasureAndDraw(g, true, state, drawFocusCues, drawKeyboardCues);
         }
 
-        private Size MeasureAndDraw(Graphics g, bool enableDrawing, UI.ButtonState state, bool drawAsDefault, bool drawFocusCues, bool drawKeyboardCues)
+        private Size MeasureAndDraw(Graphics g, bool enableDrawing, PushButtonState state, bool drawFocusCues, bool drawKeyboardCues)
         {
             if (enableDrawing)
             {
@@ -143,6 +143,8 @@ namespace PaintDotNet
             int offsetX = 0;
             int offsetY = 0;
 
+            bool drawAsDefault = (state == PushButtonState.Default);
+
             if (enableDrawing)
             {
                 using (Brush backBrush = new SolidBrush(this.BackColor))
@@ -155,45 +157,13 @@ namespace PaintDotNet
 
                 Rectangle ourRect = new Rectangle(0, 0, ClientSize.Width, ClientSize.Height);
 
-                switch (state)
+                if (state == PushButtonState.Pressed)
                 {
-                    case UI.ButtonState.Disabled:
-                        ButtonRenderer.DrawButton(g, ourRect, PushButtonState.Disabled);
-                        break;
-
-                    case UI.ButtonState.Pressed:
-                        ButtonRenderer.DrawButton(g, ourRect, PushButtonState.Pressed);
-                        offsetX = 1;
-                        offsetY = 1;
-                        break;
-
-                    case UI.ButtonState.Hot:
-                        ButtonRenderer.DrawButton(g, ourRect, PushButtonState.Hot);
-                        break;
-
-                    case UI.ButtonState.Normal:
-                        int alpha;
-
-                        if (drawAsDefault)
-                        {
-                            ButtonRenderer.DrawButton(g, ourRect, PushButtonState.Default);
-                            alpha = 160;
-                        }
-                        else
-                        {
-                            alpha = 255;
-                        }
-
-                        using (Brush backBrush = new SolidBrush(Color.FromArgb(alpha, this.BackColor)))
-                        {
-                            CompositingMode oldCM = g.CompositingMode;
-                            g.CompositingMode = CompositingMode.SourceOver;
-                            g.FillRectangle(backBrush, ClientRectangle);
-                            g.CompositingMode = oldCM;
-                        }
-
-                        break;
+                    offsetX = 1;
+                    offsetY = 1;
                 }
+
+                UI.DrawCommandButton(g, state, ourRect, BackColor, this);
             }
 
             Rectangle actionImageRect;
@@ -215,8 +185,6 @@ namespace PaintDotNet
                 {
                     Image drawMe = Enabled ? this.actionImage : this.actionImageDisabled;
 
-                    /*
-                     * This code gives us a slightly "3D-with-a-shadow" look. Not sure if I like it.
                     if (Enabled)
                     {
                         actionImageRect.Y += 3;
@@ -225,7 +193,6 @@ namespace PaintDotNet
                         actionImageRect.X -= 1;
                         actionImageRect.Y -= 3;
                     }
-                     * */
 
                     actionImageRect.Y += 2;
                     g.DrawImage(drawMe, actionImageRect, srcRect, GraphicsUnit.Pixel);
@@ -247,7 +214,7 @@ namespace PaintDotNet
 
             if (enableDrawing)
             {
-                if (state == UI.ButtonState.Disabled)
+                if (state == PushButtonState.Disabled)
                 {
                     ControlPaint.DrawStringDisabled(g, this.actionText, this.actionTextFont, this.BackColor, actionTextRect, stringFormat);
                 }
@@ -269,7 +236,7 @@ namespace PaintDotNet
 
             if (enableDrawing)
             {
-                if (state == UI.ButtonState.Disabled)
+                if (state == PushButtonState.Disabled)
                 {
                     ControlPaint.DrawStringDisabled(g, this.explanationText, this.explanationTextFont, this.BackColor, descriptionTextRect, stringFormat);
                 }
@@ -308,7 +275,7 @@ namespace PaintDotNet
 
                 using (Graphics g = CreateGraphics())
                 {
-                    layoutSize = MeasureAndDraw(g, false, UI.ButtonState.Normal, false, false, false);
+                    layoutSize = MeasureAndDraw(g, false, PushButtonState.Normal, false, false);
                 }
 
                 this.ClientSize = layoutSize;

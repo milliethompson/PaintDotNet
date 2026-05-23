@@ -13,7 +13,7 @@ namespace PaintDotNet.Effects
 {
     /// <summary>
     /// Categories for effects that determine their placement within
-    /// Paint.NET                                                                   //'s menu hierarchy.
+    /// Paint.NET's menu hierarchy.
     /// </summary>
     public enum EffectCategory
     {

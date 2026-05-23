@@ -25,7 +25,7 @@ namespace PaintDotNet.Actions
 
         public FlipLayerHorizontalFunction(int layerIndex)
             : base(StaticName,
-                   ImageResource.Get("Icons.MenuLayersFlipHorizontalIcon.png"), 
+                   PdnResources.GetImageResource("Icons.MenuLayersFlipHorizontalIcon.png"), 
                    FlipType.Horizontal,
                    layerIndex)
         {

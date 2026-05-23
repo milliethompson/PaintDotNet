@@ -9,7 +9,7 @@
 
 using System;
 
-namespace PaintDotNet.Base
+namespace PaintDotNet
 {
     public enum IOOperationType
     {

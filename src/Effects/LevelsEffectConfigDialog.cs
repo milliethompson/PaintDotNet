@@ -131,6 +131,7 @@ namespace PaintDotNet.Effects
             this.redMaskCheckBox.TabIndex = 8;
             this.redMaskCheckBox.Click += new System.EventHandler(this.redMaskCheckBox_CheckedChanged);
             this.redMaskCheckBox.CheckedChanged += new System.EventHandler(this.redMaskCheckBox_CheckedChanged);
+            this.redMaskCheckBox.FlatStyle = FlatStyle.System;
             // 
             // greenMaskCheckBox
             // 
@@ -143,6 +144,7 @@ namespace PaintDotNet.Effects
             this.greenMaskCheckBox.TabIndex = 9;
             this.greenMaskCheckBox.Click += new System.EventHandler(this.greenMaskCheckBox_CheckedChanged);
             this.greenMaskCheckBox.CheckedChanged += new System.EventHandler(this.greenMaskCheckBox_CheckedChanged);
+            this.greenMaskCheckBox.FlatStyle = FlatStyle.System;
             // 
             // blueMaskCheckBox
             // 
@@ -155,6 +157,7 @@ namespace PaintDotNet.Effects
             this.blueMaskCheckBox.TabIndex = 10;
             this.blueMaskCheckBox.Click += new System.EventHandler(this.blueMaskCheckBox_CheckedChanged);
             this.blueMaskCheckBox.CheckedChanged += new System.EventHandler(this.blueMaskCheckBox_CheckedChanged);
+            this.blueMaskCheckBox.FlatStyle = FlatStyle.System;
             // 
             // okButton
             // 

@@ -25,7 +25,7 @@ namespace PaintDotNet.Actions
 
         public FlipLayerVerticalFunction(int layerIndex)
             : base(StaticName,
-                   ImageResource.Get("Icons.MenuLayersFlipVerticalIcon.png"), 
+                   PdnResources.GetImageResource("Icons.MenuLayersFlipVerticalIcon.png"), 
                    FlipType.Vertical,
                    layerIndex)
         {

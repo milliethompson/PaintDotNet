@@ -184,10 +184,10 @@ namespace PaintDotNet
             this.zoomComboBox.Text = percent100;
             this.ScaleFactor = ScaleFactor.OneToOne;
 
-            this.zoomOutButton.Image = PdnResources.GetImage("Icons.MenuViewZoomOutIcon.png");
-            this.zoomInButton.Image = PdnResources.GetImage("Icons.MenuViewZoomInIcon.png");
-            this.gridButton.Image = PdnResources.GetImage("Icons.MenuViewGridIcon.png");
-            this.rulersButton.Image = PdnResources.GetImage("Icons.MenuViewRulersIcon.png");
+            this.zoomOutButton.Image = PdnResources.GetImageResource("Icons.MenuViewZoomOutIcon.png").Reference;
+            this.zoomInButton.Image = PdnResources.GetImageResource("Icons.MenuViewZoomInIcon.png").Reference;
+            this.gridButton.Image = PdnResources.GetImageResource("Icons.MenuViewGridIcon.png").Reference;
+            this.rulersButton.Image = PdnResources.GetImageResource("Icons.MenuViewRulersIcon.png").Reference;
 
             this.zoomOutButton.ToolTipText = PdnResources.GetString("ZoomConfigWidget.ZoomOutButton.ToolTipText");
             this.zoomInButton.ToolTipText = PdnResources.GetString("ZoomConfigWidget.ZoomInButton.ToolTipText");

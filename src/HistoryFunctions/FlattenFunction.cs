@@ -42,7 +42,7 @@ namespace PaintDotNet.HistoryFunctions
 
             CompoundHistoryMemento chm = new CompoundHistoryMemento(
                 StaticName,
-                ImageResource.Get("Icons.MenuImageFlattenIcon.png"),
+                PdnResources.GetImageResource("Icons.MenuImageFlattenIcon.png"),
                 actions);
 
             // TODO: we can save memory here by serializing, then flattening on to an existing layer

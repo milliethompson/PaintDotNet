@@ -10,6 +10,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -58,13 +59,56 @@ namespace PaintDotNet.Tools
             Point b = tracePoints[tracePoints.Count - 1];
 
             Rectangle rect;
-            if ((ModifierKeys & Keys.Shift) != 0)
+
+            SelectionDrawModeInfo sdmInfo = AppEnvironment.SelectionDrawModeInfo;
+            switch (sdmInfo.DrawMode)
             {
-                rect = Utility.PointsToConstrainedRectangle(a, b);
-            }
-            else
-            {
-                rect = Utility.PointsToRectangle(a, b);
+                case SelectionDrawMode.Normal:
+                    if ((ModifierKeys & Keys.Shift) != 0)
+                    {
+                        rect = Utility.PointsToConstrainedRectangle(a, b);
+                    }
+                    else
+                    {
+                        rect = Utility.PointsToRectangle(a, b);
+                    }
+                    break;
+
+                case SelectionDrawMode.FixedRatio:
+                    int drawnWidth = b.X - a.X;
+                    int drawnHeight = b.Y - a.Y;
+
+                    double drawnWidthScale = (double)drawnWidth / (double)sdmInfo.Width;
+                    double drawnWidthSign = Math.Sign(drawnWidthScale);
+                    double drawnHeightScale = (double)drawnHeight / (double)sdmInfo.Height;
+                    double drawnHeightSign = Math.Sign(drawnHeightScale);
+
+                    double aspect = (double)sdmInfo.Width / (double)sdmInfo.Height;
+
+                    if (drawnWidthScale < drawnHeightScale)
+                    {
+                        rect = Utility.PointsToRectangle(
+                            new Point(a.X, a.Y),
+                            new Point(a.X + drawnWidth, a.Y + (int)(drawnHeightSign * Math.Abs((double)drawnWidth / aspect))));
+                    }
+                    else
+                    {
+                        rect = Utility.PointsToRectangle(
+                            new Point(a.X, a.Y),
+                            new Point(a.X + (int)(drawnWidthSign * Math.Abs((double)drawnHeight * aspect)), a.Y + drawnHeight));
+                    }
+                    break;
+
+                case SelectionDrawMode.FixedSize:
+                    double pxWidth = Document.ConvertMeasurement(sdmInfo.Width, sdmInfo.Units, this.Document.DpuUnit, this.Document.DpuX, MeasurementUnit.Pixel);
+                    double pxHeight = Document.ConvertMeasurement(sdmInfo.Height, sdmInfo.Units, this.Document.DpuUnit, this.Document.DpuY, MeasurementUnit.Pixel);
+
+                    rect = new Rectangle(b.X, b.Y, (int)pxWidth, (int)pxHeight);
+
+                    break;
+
+                default:
+                    throw new InvalidEnumArgumentException();
             }
 
             rect.Intersect(DocumentWorkspace.Document.Bounds);
@@ -116,11 +160,11 @@ namespace PaintDotNet.Tools
 
         public RectangleSelectTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.RectangleSelectToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.RectangleSelectToolIcon.png"),
                    PdnResources.GetString("RectangleSelectTool.Name"),
                    PdnResources.GetString("RectangleSelectTool.HelpText"),
                    's',
-                   ToolBarConfigItems.None)
+                   ToolBarConfigItems.SelectionDrawMode)
         {
         }
     }

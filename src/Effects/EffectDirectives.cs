@@ -16,6 +16,7 @@ namespace PaintDotNet.Effects
     /// must be aware of and take into consideration when executing a particular
     /// effect.
     /// </summary>
+    [Obsolete]
     [Flags]
     public enum EffectDirectives
     {

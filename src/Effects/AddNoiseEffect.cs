@@ -8,7 +8,10 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -17,7 +20,7 @@ namespace PaintDotNet.Effects
 {
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public sealed class AddNoiseEffect
-        : Effect
+        : PropertyBasedEffect
     {
         public static string StaticName
         {
@@ -31,7 +34,7 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return PdnResources.GetImage("Icons.AddNoiseEffect.png");
+                return PdnResources.GetImageResource("Icons.AddNoiseEffect.png").Reference;
             }
         }
 
@@ -41,30 +44,51 @@ namespace PaintDotNet.Effects
         }
 
         public AddNoiseEffect()
-            : base(StaticName, StaticImage, true)
+            : base(StaticName, StaticImage, SubmenuNames.Noise, EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        public enum PropertyNames
         {
-            TwoAmountsConfigDialog tacd = new TwoAmountsConfigDialog();
+            Intensity,
+            Saturation,
+            Coverage
+        }
 
-            tacd.Text = StaticName;
-            tacd.Icon = Utility.ImageToIcon(StaticImage);
+        protected override PropertyCollection OnCreatePropertyCollection()
+        {
+            List<Property> props = new List<Property>();
 
-            // Standard Deviation
-            tacd.Amount1Default = 64;
-            tacd.Amount1Label = PdnResources.GetString("AddNoiseEffect.Amount1Label");
-            tacd.Amount1Maximum = 100;
-            tacd.Amount1Minimum = 0;
+            props.Add(new Int32Property(PropertyNames.Intensity, 64, 0, 100));
+            props.Add(new Int32Property(PropertyNames.Saturation, 100, 0, 400));
+            props.Add(new DoubleProperty(PropertyNames.Coverage, 100, 0, 100));
 
-            // Saturaion
-            tacd.Amount2Default = 100;
-            tacd.Amount2Label = PdnResources.GetString("AddNoiseEffect.Amount2Label");
-            tacd.Amount2Maximum = 400;
-            tacd.Amount2Minimum = 0;
+            return new PropertyCollection(props);
+        }
 
-            return tacd;
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.Intensity, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("AddNoiseEffect.Amount1Label"));
+            configUI.SetPropertyControlValue(PropertyNames.Saturation, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("AddNoiseEffect.Amount2Label"));
+            configUI.SetPropertyControlValue(PropertyNames.Coverage, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("AddNoiseEffect.Coverage"));
+            configUI.SetPropertyControlValue(PropertyNames.Coverage, ControlInfoPropertyNames.UseExponentialScale, true);
+
+            return configUI;
+        }
+
+        private int intensity;
+        private int saturation;
+        private double coverage;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.intensity = newToken.GetProperty<Int32Property>(PropertyNames.Intensity).Value;
+            this.saturation = newToken.GetProperty<Int32Property>(PropertyNames.Saturation).Value;
+            this.coverage = 0.01 * newToken.GetProperty<DoubleProperty>(PropertyNames.Coverage).Value;
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
         }
 
         private const int tableSize = 16384;
@@ -133,13 +157,11 @@ namespace PaintDotNet.Effects
 
         [ThreadStatic]
         private static Random threadRand = new Random();
-        
-        public override unsafe void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
-            Rectangle[] rois, int startIndex, int length)
+
+        protected override unsafe void OnRender(Rectangle[] rois, int startIndex, int length)
         {
-            TwoAmountsConfigToken tact = (TwoAmountsConfigToken)parameters;
-            int dev = tact.Amount1 * tact.Amount1 / 64; //dev = target stddev / 16
-            int sat = tact.Amount2 * 4096 / 100;
+            int dev = this.intensity * this.intensity / 64;
+            int sat = this.saturation * 4096 / 100;
 
             if (threadRand == null)
             {
@@ -156,30 +178,37 @@ namespace PaintDotNet.Effects
 
                 for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
-                    ColorBgra *srcPtr = srcArgs.Surface.GetPointAddressUnchecked(rect.Left, y);
-                    ColorBgra *dstPtr = dstArgs.Surface.GetPointAddressUnchecked(rect.Left, y);
+                    ColorBgra *srcPtr = SrcArgs.Surface.GetPointAddressUnchecked(rect.Left, y);
+                    ColorBgra *dstPtr = DstArgs.Surface.GetPointAddressUnchecked(rect.Left, y);
 
                     for (int x = 0; x < rect.Width; ++x)
                     {
-                        int r;
-                        int g;
-                        int b;
-                        int i;
+                        if (localRand.NextDouble() > this.coverage)
+                        {
+                            *dstPtr = *srcPtr;
+                        }
+                        else
+                        {
+                            int r;
+                            int g;
+                            int b;
+                            int i;
 
-                        r = localLookup[localRand.Next(tableSize)];
-                        g = localLookup[localRand.Next(tableSize)];
-                        b = localLookup[localRand.Next(tableSize)];
+                            r = localLookup[localRand.Next(tableSize)];
+                            g = localLookup[localRand.Next(tableSize)];
+                            b = localLookup[localRand.Next(tableSize)];
 
-                        i = (1867 * r + 9618 * g + 4899 * b) >> 14;
+                            i = (1867 * r + 9618 * g + 4899 * b) >> 14;
 
-                        r = i + (((r - i) * sat) >> 12);
-                        g = i + (((g - i) * sat) >> 12);
-                        b = i + (((b - i) * sat) >> 12);
+                            r = i + (((r - i) * sat) >> 12);
+                            g = i + (((g - i) * sat) >> 12);
+                            b = i + (((b - i) * sat) >> 12);
 
-                        dstPtr->R = Utility.ClampToByte(srcPtr->R + ((r * dev * 16 + 32768) >> 16));
-                        dstPtr->G = Utility.ClampToByte(srcPtr->G + ((g * dev * 16 + 32768) >> 16));
-                        dstPtr->B = Utility.ClampToByte(srcPtr->B + ((b * dev * 16 + 32768) >> 16));
-                        dstPtr->A = srcPtr->A;
+                            dstPtr->R = Utility.ClampToByte(srcPtr->R + ((r * dev * 16 + 32768) >> 16));
+                            dstPtr->G = Utility.ClampToByte(srcPtr->G + ((g * dev * 16 + 32768) >> 16));
+                            dstPtr->B = Utility.ClampToByte(srcPtr->B + ((b * dev * 16 + 32768) >> 16));
+                            dstPtr->A = srcPtr->A;
+                        }
 
                         ++srcPtr;
                         ++dstPtr;

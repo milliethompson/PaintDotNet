@@ -664,7 +664,7 @@ namespace PaintDotNet
 
             this.percentUpDown.Enabled = false;
 
-            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuImageResizeIcon.png"), Utility.TransparentKey);
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.MenuImageResizeIcon.png").Reference, Utility.TransparentKey);
             PopulateAsteriskLabels();
             OnRadioButtonCheckedChanged(this, EventArgs.Empty);    
         }
@@ -888,6 +888,7 @@ namespace PaintDotNet
             this.absoluteRB.AutoSize = true;
             this.absoluteRB.TabIndex = 24;
             this.absoluteRB.TabStop = true;
+            this.absoluteRB.FlatStyle = FlatStyle.System;
             this.absoluteRB.CheckedChanged += new System.EventHandler(this.OnRadioButtonCheckedChanged);
             // 
             // percentRB
@@ -897,6 +898,7 @@ namespace PaintDotNet
             this.percentRB.TabIndex = 22;
             this.percentRB.AutoSize = true;
             this.percentRB.Width = 10;
+            this.percentRB.FlatStyle = FlatStyle.System;
             this.percentRB.CheckedChanged += new System.EventHandler(this.OnRadioButtonCheckedChanged);
             // 
             // pixelsLabel1
@@ -1114,6 +1116,7 @@ namespace PaintDotNet
             this.resamplingAlgorithmComboBox.Size = new System.Drawing.Size(152, 21);
             this.resamplingAlgorithmComboBox.Sorted = true;
             this.resamplingAlgorithmComboBox.TabIndex = 21;
+            this.resamplingAlgorithmComboBox.FlatStyle = FlatStyle.System;
             this.resamplingAlgorithmComboBox.SelectedIndexChanged += new System.EventHandler(this.OnResamplingAlgorithmComboBoxSelectedIndexChanged);
             // 
             // ResizeDialog

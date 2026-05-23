@@ -10,7 +10,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace PaintDotNet.Base
+namespace PaintDotNet
 {
     public interface ISimpleCollection<K, V>
     {

@@ -7,7 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
+using PaintDotNet;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -84,7 +84,7 @@ namespace PaintDotNet.SystemLayer
         {
             get
             {
-                return (string[])this.fileNames.Clone();
+                return (string[])(this.fileNames ?? new string[0]).Clone();
             }
 
             private set

@@ -403,8 +403,8 @@ namespace PaintDotNet.Data
 
             for (int i = 0; i < palette.Length; ++i)
             {
-                int red = input.ReadByte();
-                if (red == -1)
+                int blue = input.ReadByte();
+                if (blue == -1)
                 {
                     throw new EndOfStreamException();
                 }
@@ -415,8 +415,8 @@ namespace PaintDotNet.Data
                     throw new EndOfStreamException();
                 }
 
-                int blue = input.ReadByte();
-                if (blue == -1)
+                int red = input.ReadByte();
+                if (red == -1)
                 {
                     throw new EndOfStreamException();
                 }

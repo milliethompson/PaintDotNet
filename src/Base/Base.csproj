@@ -38,14 +38,19 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="ImageResource.cs" />
     <Compile Include="BoxedConstants.cs" />
     <Compile Include="DeferredFormatter.cs" />
     <Compile Include="Function.cs" />
     <Compile Include="ICancelable.cs" />
+    <Compile Include="ICloneable`1.cs" />
     <Compile Include="IDeferredSerializable.cs" />
     <Compile Include="IDisposedEvent.cs" />
     <Compile Include="IOEventArgs.cs" />
@@ -54,11 +59,46 @@
     <Compile Include="IProgressEvents.cs" />
     <Compile Include="ISimpleCollection.cs" />
     <Compile Include="OperationResult.cs" />
+    <Compile Include="Pair.cs" />
     <Compile Include="Pair`2.cs" />
     <Compile Include="Procedure.cs" />
+    <Compile Include="PropertySystem\BooleanProperty.cs" />
+    <Compile Include="PropertySystem\DoubleProperty.cs" />
+    <Compile Include="PropertySystem\DoubleVectorProperty.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PropertySystem\ImageProperty.cs" />
+    <Compile Include="PropertySystem\IPropertyRef.cs" />
+    <Compile Include="PropertySystem\ReadOnlyBoundToBooleanRule.cs" />
+    <Compile Include="PropertySystem\StaticListChoiceProperty.cs" />
+    <Compile Include="PropertySystem\Int32Property.cs" />
+    <Compile Include="PropertySystem\Property.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PropertySystem\PropertyCollection.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PropertySystem\PropertyCollectionRule`1.cs" />
+    <Compile Include="PropertySystem\Property`1.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PropertySystem\ScalarProperty`1.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PropertySystem\SoftMutuallyBoundMinMaxRule`2.cs" />
+    <Compile Include="PropertySystem\StringProperty.cs" />
+    <Compile Include="PropertySystem\ValueValidationFailureResult.cs" />
+    <Compile Include="PropertySystem\VectorProperty`1.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Quadruple.cs" />
+    <Compile Include="Quadruple`4.cs" />
+    <Compile Include="ReadOnlyException.cs" />
+    <Compile Include="Resource`1.cs" />
     <Compile Include="Set.cs" />
     <Compile Include="Set`1.cs" />
     <Compile Include="SiphonStream.cs" />
+    <Compile Include="Triple.cs" />
     <Compile Include="Triple`3.cs" />
     <Compile Include="Vector`1.cs" />
     <Compile Include="WeakReference`1.cs" />

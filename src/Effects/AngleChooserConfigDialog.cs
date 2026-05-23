@@ -17,6 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
+    [Obsolete]
     public sealed class AngleChooserConfigDialog
         : AngleChooserConfigDialogBase
     {
@@ -25,6 +26,7 @@ namespace PaintDotNet.Effects
         }
     }
 
+    [Obsolete]
     public abstract class AngleChooserConfigDialogBase
         : EffectConfigDialog
     {

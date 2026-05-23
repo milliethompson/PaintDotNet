@@ -16,6 +16,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.Serialization;
+using System.Text;
 using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
@@ -405,8 +406,8 @@ namespace PaintDotNet.Tools
                     // sin is [0.25, 1]
 
                     int newAlpha = (int)(sin * 255.0);
-
-                    this.moveNubs[i].Alpha = newAlpha;
+                    int clampedAlpha = Utility.Clamp(newAlpha, 0, 255);
+                    this.moveNubs[i].Alpha = clampedAlpha;
                 }
             }
 
@@ -678,7 +679,7 @@ namespace PaintDotNet.Tools
             {
                 SelectionHistoryMemento shm = new SelectionHistoryMemento(
                     HistoryFunctions.SelectAllFunction.StaticName,
-                    ImageResource.Get("Icons.MenuEditSelectAllIcon.png"),
+                    PdnResources.GetImageResource("Icons.MenuEditSelectAllIcon.png"),
                     DocumentWorkspace);
 
                 DocumentWorkspace.History.PushNewMemento(shm);
@@ -775,31 +776,53 @@ namespace PaintDotNet.Tools
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
+            StringBuilder sbLogger = new StringBuilder();
 
-            if (!tracking)
+            try
             {
+                OnMouseMoveImpl(e, sbLogger);
+            }
+
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Tracing data: " + sbLogger.ToString(), ex);
+            }
+        }
+
+        private void OnMouseMoveImpl(MouseEventArgs e, StringBuilder sbLogger)
+        {
+            if (!this.tracking)
+            {
+                sbLogger.Append("1 ");
                 Cursor cursor = this.moveToolCursor;
 
                 for (int i = 0; i < this.moveNubs.Length; ++i)
                 {
+                    sbLogger.Append("2 ");
                     MoveNubRenderer nub = this.moveNubs[i];
+                    sbLogger.Append("3 ");
 
                     if (nub.Visible && nub.IsPointTouching(new Point(e.X, e.Y), true))
                     {
+                        sbLogger.Append("4 ");
                         cursor = this.handCursor;
                         break;
                     }
                 }
 
                 this.Cursor = cursor;
+                sbLogger.Append("5 ");
             }
             else
             {
+                sbLogger.Append("6 ");
                 if (this.context.currentMode != Mode.Translate)
                 {
+                    sbLogger.Append("7 ");
                     this.Cursor = this.handCursorMouseDown;
                 }
 
+                sbLogger.Append("8 ");
                 Point newMouseXY = new Point(e.X, e.Y);
                 Point newOffset = new Point(newMouseXY.X - context.startMouseXY.X, newMouseXY.Y - context.startMouseXY.Y);
 
@@ -807,6 +830,7 @@ namespace PaintDotNet.Tools
 
                 this.dontDrop = true;
 
+                sbLogger.Append("9 ");
                 Selection.PerformChanging();
 
                 using (Matrix translateMatrix = new Matrix())
@@ -1003,13 +1027,20 @@ namespace PaintDotNet.Tools
                 Render(newOffset, true);
                 Update();
 
+                sbLogger.Append("a ");
                 this.context.offset = newOffset;
+
+                sbLogger.Append("b ");
 
                 if (this.enableOutline)
                 {
                     DocumentWorkspace.ResetOutlineWhiteOpacity();
                 }
+
+                sbLogger.Append("c ");
             }
+
+            sbLogger.Append("d ");
         }
 
         protected override void OnMouseUp(MouseEventArgs e)

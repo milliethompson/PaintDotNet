@@ -118,6 +118,7 @@ namespace PaintDotNet.Data
             this.bpp24Radio.Size = new System.Drawing.Size(168, 24);
             this.bpp24Radio.TabIndex = 2;
             this.bpp24Radio.CheckedChanged += new System.EventHandler(this.OnCheckedChanged);
+            this.bpp24Radio.FlatStyle = FlatStyle.System;
             // 
             // bpp32Radio
             // 
@@ -126,6 +127,7 @@ namespace PaintDotNet.Data
             this.bpp32Radio.Size = new System.Drawing.Size(168, 24);
             this.bpp32Radio.TabIndex = 3;
             this.bpp32Radio.CheckedChanged += new System.EventHandler(this.OnCheckedChanged);
+            this.bpp32Radio.FlatStyle = FlatStyle.System;
             // 
             // rleCompressCheckBox
             // 
@@ -134,6 +136,7 @@ namespace PaintDotNet.Data
             this.rleCompressCheckBox.Size = new System.Drawing.Size(184, 24);
             this.rleCompressCheckBox.TabIndex = 0;
             this.rleCompressCheckBox.CheckedChanged += new System.EventHandler(this.OnCheckedChanged);
+            this.rleCompressCheckBox.FlatStyle = FlatStyle.System;
             // 
             // bppLabel
             // 

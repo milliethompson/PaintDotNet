@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.Data;
 using PaintDotNet.Effects;
 using PaintDotNet.HistoryFunctions;
@@ -221,7 +220,7 @@ namespace PaintDotNet
                 string contextFormat = PdnResources.GetString("StatusBar.Context.Help.Text.Format");
                 string contextText = string.Format(contextFormat, toolName, helpText);
 
-                SetStatus(contextText, ImageResource.Get("Icons.MenuHelpHelpTopicsIcon.png"));
+                SetStatus(contextText, PdnResources.GetImageResource("Icons.MenuHelpHelpTopicsIcon.png"));
             }
         }
 
@@ -324,7 +323,7 @@ namespace PaintDotNet
                         pluralUnits.ToLower());
                 }
 
-                SetStatus(newStatusText, ImageResource.Get("Icons.SelectionIcon.png"));
+                SetStatus(newStatusText, PdnResources.GetImageResource("Icons.SelectionIcon.png"));
             }
         }
 
@@ -862,7 +861,7 @@ namespace PaintDotNet
 
             LayerPropertyHistoryMemento lpha = new LayerPropertyHistoryMemento(
                 haName,
-                ImageResource.Get("Icons.MenuLayersLayerPropertiesIcon.png"),
+                PdnResources.GetImageResource("Icons.MenuLayersLayerPropertiesIcon.png"),
                 this,
                 this.Document.Layers.IndexOf(sender));
 
@@ -1850,7 +1849,7 @@ namespace PaintDotNet
 
                 this.progressDialog = new TransferProgressDialog();
                 this.progressDialog.Text = PdnResources.GetString("DocumentWorkspace.ShowFileDialog.TransferProgress.Title");
-                this.progressDialog.Icon = Utility.ImageToIcon(ImageResource.Get("Icons.MenuFileOpenIcon.png").Reference);
+                this.progressDialog.Icon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.MenuFileOpenIcon.png").Reference);
                 this.progressDialog.ItemText = PdnResources.GetString("DocumentWorkspace.ShowFileDialog.ItemText.Initializing");
                 this.progressDialog.ProgressBar.Style = ProgressBarStyle.Marquee;
                 this.progressDialog.ProgressBar.Maximum = maxPBValue;
@@ -2018,23 +2017,23 @@ namespace PaintDotNet
 
                 string formTitle = PdnResources.GetString("DocumentWorkspace.ShowFileDialog.ItemFailureDialog.Title");
 
-                Image taskImage = ImageResource.Get("Icons.WarningIcon.png").Reference;
+                Image taskImage = PdnResources.GetImageResource("Icons.WarningIcon.png").Reference;
 
                 string introTextFormat = PdnResources.GetString("DocumentWorkspace.ShowFileDialog.ItemFailureDialog.IntroText.Format");
                 string introText = string.Format(introTextFormat, ex.Message);
 
                 TaskButton retryTB = new TaskButton(
-                    ImageResource.Get("Icons.MenuImageRotate90CWIcon.png").Reference,
+                    PdnResources.GetImageResource("Icons.MenuImageRotate90CWIcon.png").Reference,
                     PdnResources.GetString("DocumentWorkspace.ShowFileDialog.RetryTB.ActionText"),
                     PdnResources.GetString("DocumentWorkspace.ShowFileDialog.RetryTB.ExplanationText"));
 
                 TaskButton skipTB = new TaskButton(
-                    ImageResource.Get("Icons.HistoryFastForwardIcon.png").Reference,
+                    PdnResources.GetImageResource("Icons.HistoryFastForwardIcon.png").Reference,
                     PdnResources.GetString("DocumentWorkspace.ShowFileDialog.SkipTB.ActionText"),
                     PdnResources.GetString("DocumentWorkspace.ShowFileDialog.SkipTB.ExplanationText"));
 
                 TaskButton cancelTB = new TaskButton(
-                    ImageResource.Get("Icons.CancelIcon.png").Reference,
+                    PdnResources.GetImageResource("Icons.CancelIcon.png").Reference,
                     PdnResources.GetString("DocumentWorkspace.ShowFileDialog.CancelTB.ActionText"),
                     PdnResources.GetString("DocumentWorkspace.ShowFileDialog.CancelTB.ExplanationText"));
 
@@ -2365,14 +2364,14 @@ namespace PaintDotNet
         /// <returns>Returns DialogResult.Yes if they want to proceed or DialogResult.No if they don't.</returns>
         private DialogResult WarnAboutFlattening()
         {
-            Icon formIcon = Utility.ImageToIcon(ImageResource.Get("Icons.MenuFileSaveIcon.png").Reference);
+            Icon formIcon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.MenuFileSaveIcon.png").Reference);
             string formTitle = PdnResources.GetString("WarnAboutFlattening.Title");
 
             string introText = PdnResources.GetString("WarnAboutFlattening.IntroText");
             Image taskImage = null;
 
             TaskButton flattenTB = new TaskButton(
-                ImageResource.Get("Icons.MenuImageFlattenIcon.png").Reference,
+                PdnResources.GetImageResource("Icons.MenuImageFlattenIcon.png").Reference,
                 PdnResources.GetString("WarnAboutFlattening.FlattenTB.ActionText"),
                 PdnResources.GetString("WarnAboutFlattening.FlattenTB.ExplanationText"));
 

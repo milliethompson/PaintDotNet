@@ -206,8 +206,8 @@ namespace PaintDotNet.Tools
                     // sin is [0.25, 1]
 
                     int newAlpha = (int)(sin * 255.0);
-
-                    this.moveNubs[i].Alpha = newAlpha;
+                    int clampedAlpha = Utility.Clamp(newAlpha, 0, 255);
+                    this.moveNubs[i].Alpha = clampedAlpha;
                 }
             }
             
@@ -591,7 +591,7 @@ namespace PaintDotNet.Tools
 
         public LineTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.LineToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.LineToolIcon.png"),
                    PdnResources.GetString("LineTool.Name"),
                    PdnResources.GetString("LineTool.HelpText"),
                    ToolBarConfigItems.None | ToolBarConfigItems.PenCaps, 

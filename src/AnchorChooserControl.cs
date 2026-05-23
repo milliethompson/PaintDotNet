@@ -66,7 +66,7 @@ namespace PaintDotNet
 
             this.ResizeRedraw = true;
 
-            this.centerImage = PdnResources.GetImage("Images.AnchorChooserControl.AnchorImage.png");
+            this.centerImage = PdnResources.GetImageResource("Images.AnchorChooserControl.AnchorImage.png").Reference;
             this.xyToAnchorEdge = new AnchorEdge[][] {
                                                          new AnchorEdge[] { AnchorEdge.TopLeft, AnchorEdge.Top, AnchorEdge.TopRight },
                                                          new AnchorEdge[] { AnchorEdge.Left, AnchorEdge.Middle, AnchorEdge.Right },

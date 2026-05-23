@@ -72,6 +72,7 @@ namespace PaintDotNet
             this.baseOkButton.Location = new System.Drawing.Point(77, 128);
             this.baseOkButton.Name = "baseOkButton";
             this.baseOkButton.TabIndex = 1;
+            this.baseOkButton.FlatStyle = FlatStyle.System;
             this.baseOkButton.Click += new System.EventHandler(this.baseOkButton_Click);
             // 
             // baseCancelButton
@@ -80,6 +81,7 @@ namespace PaintDotNet
             this.baseCancelButton.Location = new System.Drawing.Point(165, 128);
             this.baseCancelButton.Name = "baseCancelButton";
             this.baseCancelButton.TabIndex = 2;
+            this.baseCancelButton.FlatStyle = FlatStyle.System; 
             this.baseCancelButton.Click += new System.EventHandler(this.baseCancelButton_Click);
             // 
             // PdnBaseDialog

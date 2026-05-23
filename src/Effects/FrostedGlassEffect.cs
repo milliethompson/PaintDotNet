@@ -11,15 +11,19 @@
 // http://www.jasonwaltman.com/thesis/index.html
 
 using PaintDotNet;
+using PaintDotNet.Core;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using PaintDotNet.Effects;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
     public sealed class FrostedGlassEffect
-        : Effect
+        : PropertyBasedEffect
     {
         public static string StaticName
         {
@@ -33,7 +37,7 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return PdnResources.GetImage("Icons.FrostedGlassEffect.png");
+                return PdnResources.GetImageResource("Icons.FrostedGlassEffect.png").Reference;
             }
         }
 
@@ -43,151 +47,112 @@ namespace PaintDotNet.Effects
         public FrostedGlassEffect() 
             : base(StaticName, 
                    StaticImage,
-                   null,
-                   EffectDirectives.None,
-                   true)
+                   SubmenuNames.Distort,
+                   EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        private enum PropertyNames
         {
-            AmountEffectConfigDialog aecd = new AmountEffectConfigDialog();
-            aecd.SliderMinimum = 1;
-            aecd.SliderMaximum = 10;
-            aecd.Text = StaticName;
-            aecd.SliderLabel = PdnResources.GetString("FrostedGlassEffect.ConfigDialog.SliderLabel");
-            aecd.SliderUnitsName = PdnResources.GetString("FrostedGlassEffect.ConfigDialog.SliderUnitsName");
-
-            aecd.Icon = Utility.ImageToIcon(StaticImage, true);
-            return aecd;
+            MaxScatterRadius,
+            MinScatterRadius,
+            NumSamples
         }
 
-        public unsafe override void Render(EffectConfigToken token, RenderArgs dstArgs, RenderArgs srcArgs, 
-            Rectangle[] rois, int startIndex, int length)
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            AmountEffectConfigToken realToken = (AmountEffectConfigToken)token;
-            Surface src = srcArgs.Surface;
-            Surface dst = dstArgs.Surface;
+            List<Property> props = new List<Property>();
 
-            int width = src.Width;
-            int height = src.Height;
-            int r = realToken.Amount;
+            props.Add(new DoubleProperty(PropertyNames.MaxScatterRadius, 3.0, 0.0, 200.0));
+            props.Add(new DoubleProperty(PropertyNames.MinScatterRadius, 0.0, 0.0, 200.0));
+            props.Add(new Int32Property(PropertyNames.NumSamples, 2, 1, 8));
 
+            List<PropertyCollectionRule> propertyRules = new List<PropertyCollectionRule>();
+            propertyRules.Add(new SoftMutuallyBoundMinMaxRule<double, DoubleProperty>(PropertyNames.MinScatterRadius, PropertyNames.MaxScatterRadius));
+
+            PropertyCollection propertyCollection = new PropertyCollection(props, propertyRules);
+            return propertyCollection;
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.MaxScatterRadius, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("FrostedGlassEffect.ConfigDialog.MaxScatterRadius.DisplayName"));
+            configUI.FindControlForPropertyName(PropertyNames.MaxScatterRadius).ControlProperties["UseExponentialScale"].Value = true;
+            configUI.SetPropertyControlValue(PropertyNames.MinScatterRadius, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("FrostedGlassEffect.ConfigDialog.MinScatterRadius.DisplayName"));
+            configUI.FindControlForPropertyName(PropertyNames.MinScatterRadius).ControlProperties["UseExponentialScale"].Value = true;
+            configUI.SetPropertyControlValue(PropertyNames.NumSamples, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("FrostedGlassEffect.ConfigDialog.NumSamples.DisplayName"));
+
+            return configUI;
+        }
+
+        private double minRadius;
+        private double maxRadius;
+        private int sampleCount;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            double minRadiusP = newToken.GetProperty<DoubleProperty>(PropertyNames.MinScatterRadius).Value;
+
+            this.minRadius = Math.Min(minRadiusP, Math.Min(srcArgs.Width, srcArgs.Height) / 2); 
+            this.maxRadius = newToken.GetProperty<DoubleProperty>(PropertyNames.MaxScatterRadius).Value;
+            this.sampleCount = newToken.GetProperty<Int32Property>(PropertyNames.NumSamples).Value;
+
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected override unsafe void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            double radiusDelta = this.maxRadius - this.minRadius;
+            double effectiveRadiusDelta = radiusDelta;
+            
             if (threadRand == null)
             {
-                threadRand = new Random(unchecked(System.Threading.Thread.CurrentThread.GetHashCode() ^ 
+                threadRand = new Random(unchecked(System.Threading.Thread.CurrentThread.GetHashCode() ^
                     unchecked((int)DateTime.Now.Ticks)));
             }
 
-            Random localRandom = threadRand;
+            ColorBgra* samples = stackalloc ColorBgra[sampleCount];
 
-            int intensityChoicesLen = (1 + (r * 2)) * (1 + (r * 2));
+            Random localRand = threadRand;
 
-            int localStoreSize = (5 * 256 * sizeof(int)) + (intensityChoicesLen * sizeof(byte));
-
-            byte* localStore = stackalloc byte[localStoreSize];
-
-            byte* p = localStore;
-
-            int* intensityCount = (int*)p;
-            p += 256 * sizeof(int);
-
-            uint* avgRed = (uint*)p;
-            p += 256 * sizeof(uint);
-
-            uint* avgGreen = (uint*)p;
-            p += 256 * sizeof(uint);
-
-            uint* avgBlue = (uint*)p;
-            p += 256 * sizeof(uint);
-
-            uint* avgAlpha = (uint*)p;
-            p += 256 * sizeof(uint);
-
-            byte* intensityChoices = p;
-            p += intensityChoicesLen;
-
-            for (int ri = startIndex; ri < startIndex + length; ++ri)
+            for (int r = startIndex; r < startIndex + length; ++r)
             {
-                Rectangle rect = rois[ri];
+                Rectangle roi = rois[r];
 
-                int rectTop = rect.Top;
-                int rectBottom = rect.Bottom;
-                int rectLeft = rect.Left;
-                int rectRight = rect.Right;
-
-                for (int y = rectTop; y < rectBottom; ++y)
+                for (int y = roi.Top; y < roi.Bottom; ++y)
                 {
-                    ColorBgra *dstPtr = dst.GetPointAddressUnchecked(rect.Left, y);
-                    int top = y - r;
-                    int bottom = y + r + 1;
+                    ColorBgra* dstPtr = DstArgs.Surface.GetPointAddressUnchecked(roi.Left, y);
 
-                    if (top < 0)
+                    for (int x = roi.Left; x < roi.Right; ++x)
                     {
-                        top = 0;
-                    }
-
-                    if (bottom > height)
-                    {
-                        bottom = height;
-                    }
-
-                    for (int x = rectLeft; x < rectRight; ++x)
-                    {
-                        int intensityChoicesIndex = 0;
-
-                        SystemLayer.Memory.SetToZero(localStore, (ulong)localStoreSize);
-
-                        int left = x - r;
-                        int right = x + r + 1;
-
-                        if (left < 0)
+                        for (int sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex)
                         {
-                            left = 0;
-                        }
+                            double srcX;
+                            double srcY;
 
-                        if (right > width)
-                        {
-                            right = width;
-                        }
-
-                        for (int j = top; j < bottom; ++j)
-                        {
-                            if (j < 0 || j >= height)
+                            while (true)
                             {
-                                continue;
+                                double angle = localRand.NextDouble() * Math.PI * 2.0;
+                                double distanceDelta = localRand.NextDouble() * effectiveRadiusDelta;
+                                double distance = distanceDelta + this.minRadius;
+
+                                srcX = x + (Math.Cos(angle) * distance);
+                                srcY = y + (Math.Sin(angle) * distance);
+
+                                if (srcX >= 0 && srcX <= SrcArgs.Width && srcY >= 0 && srcY <= SrcArgs.Height)
+                                {
+                                    break;
+                                }
                             }
 
-                            ColorBgra *srcPtr = src.GetPointAddressUnchecked(left, j);
-
-                            for (int i = left; i < right; ++i)
-                            {
-                                byte intensity = srcPtr->GetIntensityByte();
-
-                                intensityChoices[intensityChoicesIndex] = intensity;
-                                ++intensityChoicesIndex;
-
-                                ++intensityCount[intensity];
-
-                                avgRed[intensity] += srcPtr->R;
-                                avgGreen[intensity] += srcPtr->G;
-                                avgBlue[intensity] += srcPtr->B;
-                                avgAlpha[intensity] += srcPtr->A;
-
-                                ++srcPtr;
-                            }
+                            samples[sampleIndex] = SrcArgs.Surface.GetBilinearSample((float)srcX, (float)srcY);
                         }
 
-                        int randNum = localRandom.Next(intensityChoicesIndex);
+                        ColorBgra result = ColorBgra.Blend(samples, sampleCount);
 
-                        byte chosenIntensity = intensityChoices[randNum];
-
-                        byte R = (byte)(avgRed[chosenIntensity] / intensityCount[chosenIntensity]);
-                        byte G = (byte)(avgGreen[chosenIntensity] / intensityCount[chosenIntensity]);
-                        byte B = (byte)(avgBlue[chosenIntensity] / intensityCount[chosenIntensity]);
-                        byte A = (byte)(avgAlpha[chosenIntensity] / intensityCount[chosenIntensity]);
-
-                        *dstPtr = ColorBgra.FromBgra(B, G, R, A);
+                        dstPtr->Bgra = result.Bgra;
                         ++dstPtr;
                     }
                 }

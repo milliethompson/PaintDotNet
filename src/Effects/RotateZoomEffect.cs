@@ -37,7 +37,7 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return ImageResource.Get("Icons.RotateZoomIcon.png");
+                return PdnResources.GetImageResource("Icons.RotateZoomIcon.png");
             }
         }
 
@@ -264,7 +264,7 @@ namespace PaintDotNet.Effects
         public RotateZoomEffect()
             : base(StaticName, 
                    StaticImage.GetCopy(),
-                   true)
+                   EffectFlags.Configurable)
         {
         }
     }

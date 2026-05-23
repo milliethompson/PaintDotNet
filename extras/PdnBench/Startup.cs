@@ -8,6 +8,7 @@
 using Microsoft.Win32;
 using PaintDotNet;
 using PaintDotNet.Effects;
+using PaintDotNet.PropertySystem;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
@@ -191,86 +192,157 @@ namespace PdnBench
             {
                 for (int j = 10; j < 100; j += 75)
                 {
+                    OilPaintingEffect e = new OilPaintingEffect();
+                    PropertyCollection props = e.CreatePropertyCollection();
+                    props[OilPaintingEffect.PropertyNames.BrushSize].Value = i;
+                    props[OilPaintingEffect.PropertyNames.Coarseness].Value = j;
+
                     benchmarks.Add(
                         new EffectBenchmark(
                             "Oil Painting, brush size = " + i + ", coarseness = " + j,
                             1,
-                            new OilPaintingEffect(),
-                            new TwoAmountsConfigToken(i, j),
+                            e,
+                            new PropertyBasedEffectConfigToken(props),
                             surface));
                 }
             }
 
             for (int i = 2; i <= 50; i += i)
             {
+                GaussianBlurEffect e = new GaussianBlurEffect();
+                PropertyCollection props = e.CreatePropertyCollection();
+                props[GaussianBlurEffect.PropertyNames.Radius].Value = i;
+
                 benchmarks.Add(
                     new EffectBenchmark(
-                        "Blur with radius of " + i,
+                        "Gaussian Blur with radius of " + i,
                         1,
-                        new BlurEffect(),
-                        new AmountEffectConfigToken(i),
+                        e,
+                        new PropertyBasedEffectConfigToken(props),
                         surface));
             }
 
             for (int i = 1; i <= 4; i += 3)
             {
+                SharpenEffect e = new SharpenEffect();
+                PropertyCollection props = e.CreatePropertyCollection();
+                props[SharpenEffect.PropertyNames.Amount].Value = i;
+
                 benchmarks.Add(
                     new EffectBenchmark(
                         "Sharpen with value of " + i,
                         1,
-                        new SharpenEffect(),
-                        new AmountEffectConfigToken(i),
+                        e,
+                        new PropertyBasedEffectConfigToken(props),
                         surface));
             }
 
             for (int i = 81; i >= 5; i /= 3)
             {
+                CloudsEffect e = new CloudsEffect();
+                PropertyCollection props = e.CreatePropertyCollection();
+                props["Scale"].Value = 50;
+                props["Power"].Value = (double)i / 100.0;
+                props["Seed"].Value = 12345 % 255;
+                props["BlendOp"].Value = typeof(UserBlendOps.NormalBlendOp);
+
                 benchmarks.Add(
                     new EffectBenchmark(
                         "Clouds, roughness = " + i,
                         2,
-                        new CloudsEffect(),
-                        new CloudsEffectConfigToken(50, i, 12345, new UserBlendOps.NormalBlendOp()),
+                        e,
+                        new PropertyBasedEffectConfigToken(props),
                         surface));
             }
 
             for (int i = 4; i <= 64; i *= 4)
             {
+                MedianEffect e = new MedianEffect();
+                PropertyCollection props = e.CreatePropertyCollection();
+                props[MedianEffect.PropertyNames.Radius].Value = i;
+                props[MedianEffect.PropertyNames.Percentile].Value = 50;
+
                 benchmarks.Add(
                     new EffectBenchmark(
                         "Median, radius " + i,
                         1,
-                        new MedianEffect(),
-                        new TwoAmountsConfigToken(/*radius*/i, /*roughness*/50),
+                        e,
+                        new PropertyBasedEffectConfigToken(props),
                         surface));
             }
 
             for (int i = 4; i <= 64; i *= 4)
             {
+                UnfocusEffect e = new UnfocusEffect();
+                PropertyCollection props = e.CreatePropertyCollection();
+                props[UnfocusEffect.PropertyNames.Radius].Value = i;
+
                 benchmarks.Add(
                    new EffectBenchmark(
                        "Unfocus, radius " + i,
                        1,
-                       new UnfocusEffect(),
-                       new AmountEffectConfigToken(i),
+                       e,
+                       new PropertyBasedEffectConfigToken(props),
+                       surface));
+            }
+
+            {
+                MotionBlurEffect e = new MotionBlurEffect();
+                PropertyCollection props = e.CreatePropertyCollection();
+                props[MotionBlurEffect.PropertyNames.Angle].Value = 0.0;
+                props[MotionBlurEffect.PropertyNames.Distance].Value = 15;
+                props[MotionBlurEffect.PropertyNames.Centered].Value = true;
+
+                benchmarks.Add(
+                    new EffectBenchmark(
+                        "Motion Blur, Horizontal",
+                        1,
+                        e,
+                        new PropertyBasedEffectConfigToken(props),
                         surface));
             }
 
-            benchmarks.Add(
-                new EffectBenchmark(
-                    "Motion Blur, Horizontal",
-                    1,
-                    new MotionBlurEffect(),
-                    new MotionBlurEffectConfigToken(0, 100, true),
-                        surface));
+            {
+                MotionBlurEffect e = new MotionBlurEffect();
+                PropertyCollection props = e.CreatePropertyCollection();
+                props[MotionBlurEffect.PropertyNames.Angle].Value = 90.0;
+                props[MotionBlurEffect.PropertyNames.Distance].Value = 15;
+                props[MotionBlurEffect.PropertyNames.Centered].Value = true;
 
-            benchmarks.Add(
-                new EffectBenchmark(
-                    "Motion Blur, Vertical",
-                    1,
-                    new MotionBlurEffect(),
-                    new MotionBlurEffectConfigToken(90, 100, true),
+                benchmarks.Add(
+                    new EffectBenchmark(
+                        "Motion Blur, Vertical",
+                        1,
+                        e,
+                        new PropertyBasedEffectConfigToken(props),
                         surface));
+            }
+
+            {
+                MandelbrotFractalEffect e = new MandelbrotFractalEffect();
+                PropertyCollection props = e.CreatePropertyCollection();
+
+                benchmarks.Add(
+                    new EffectBenchmark(
+                        "Mandelbrot Fractal",
+                        1,
+                        e,
+                        new PropertyBasedEffectConfigToken(props),
+                        surface));
+            }
+
+            {
+                JuliaFractalEffect e = new JuliaFractalEffect();
+                PropertyCollection props = e.CreatePropertyCollection();
+
+                benchmarks.Add(
+                    new EffectBenchmark(
+                        "Julia Fractal",
+                        1,
+                        e,
+                        new PropertyBasedEffectConfigToken(props),
+                        surface));
+            }
 
 #endif
 

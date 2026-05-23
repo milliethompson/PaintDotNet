@@ -10,7 +10,7 @@ namespace PdnBench
     public class CompositionBenchmark
         : Benchmark
     {
-        public const int Iterations = 20;
+        public const int Iterations = 30;
 
         private Document composeMe;
         private Surface dstSurface;

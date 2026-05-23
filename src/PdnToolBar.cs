@@ -7,7 +7,6 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
 using PaintDotNet.Menus;
 using PaintDotNet.SystemLayer;
 using System;
@@ -463,6 +462,11 @@ namespace PaintDotNet
                 delegate(object sender, LayoutEventArgs e)
                 {
                     PerformLayout();
+                };
+            this.toolConfigStrip.SelectionDrawModeInfoChanged +=
+                delegate(object sender, EventArgs e)
+                {
+                    BeginInvoke(new Procedure(PerformLayout));
                 };
             //
             // documentStrip

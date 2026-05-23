@@ -8,7 +8,10 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -18,7 +21,7 @@ namespace PaintDotNet.Effects
     [EffectCategory(EffectCategory.Adjustment)]
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public sealed class HueAndSaturationAdjustment
-        : Effect
+        : PropertyBasedEffect
     {
         public static string StaticName
         {
@@ -32,71 +35,82 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return PdnResources.GetImage("Icons.HueAndSaturationAdjustment.png");
+                return PdnResources.GetImageResource("Icons.HueAndSaturationAdjustment.png").Reference;
             }
         }
 
         public HueAndSaturationAdjustment()
             : base(StaticName,
                    StaticImage,
-                   true)
+                   null,
+                   EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        public enum PropertyNames
         {
-            ThreeAmountsConfigDialog tacg = new ThreeAmountsConfigDialog();
-
-            tacg.Text = HueAndSaturationAdjustment.StaticName;
-
-            tacg.Amount1Default = 0;
-            tacg.Amount1Label = PdnResources.GetString("HueAndSaturationAdjustment.Amount1Label");
-            tacg.Amount1Maximum = 180;
-            tacg.Amount1Minimum = -180;
-
-            tacg.Amount2Default = 100;
-            tacg.Amount2Label = PdnResources.GetString("HueAndSaturationAdjustment.Amount2Label");
-            tacg.Amount2Maximum = 200;
-            tacg.Amount2Minimum = 0;
-
-            tacg.Amount3Default = 0;
-            tacg.Amount3Label = PdnResources.GetString("HueAndSaturationAdjustment.Amount3Label");
-            tacg.Amount3Maximum = 100;
-            tacg.Amount3Minimum = -100;
-
-            tacg.Icon = PdnResources.GetIconFromImage("Icons.HueAndSaturationAdjustment.png");
-
-            return tacg;
+            Hue,
+            Saturation,
+            Lightness
         }
 
-        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            ThreeAmountsConfigToken token = (ThreeAmountsConfigToken)parameters;
-            int hueDelta = token.Amount1;
-            int satDelta = token.Amount2;
-            int lightness = token.Amount3;
+            List<Property> props = new List<Property>();
+
+            props.Add(new Int32Property(PropertyNames.Hue, 0, -180, +180));
+            props.Add(new Int32Property(PropertyNames.Saturation, 100, 0, 200));
+            props.Add(new Int32Property(PropertyNames.Lightness, 0, -100, +100));
+
+            return new PropertyCollection(props);
+        }
+
+        private int hue;
+        private int saturation;
+        private int lightness;
+        private UnaryPixelOp pixelOp;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.hue = newToken.GetProperty<Int32Property>(PropertyNames.Hue).Value;
+            this.saturation = newToken.GetProperty<Int32Property>(PropertyNames.Saturation).Value;
+            this.lightness = newToken.GetProperty<Int32Property>(PropertyNames.Lightness).Value;
 
             // map the range [0,100] -> [0,100] and the range [101,200] -> [103,400]
-            if (satDelta > 100)
+            if (this.saturation > 100)
             {
-                satDelta = ((satDelta - 100) * 3) + 100;
+                this.saturation = ((this.saturation - 100) * 3) + 100;
             }
 
-            UnaryPixelOp op;
-
-            Surface dst = dstArgs.Surface;
-            Surface src = srcArgs.Surface;
-
-            if (hueDelta == 0 && satDelta == 100 && lightness == 0)
+            if (this.hue == 0 && this.saturation == 100 && this.lightness == 0)
             {
-                op = new UnaryPixelOps.Identity();
+                this.pixelOp = new UnaryPixelOps.Identity();
             }
             else
             {
-                op = new UnaryPixelOps.HueSaturationLightness(hueDelta, satDelta, lightness);
+                this.pixelOp = new UnaryPixelOps.HueSaturationLightness(this.hue, this.saturation, this.lightness);
             }
 
-            op.Apply(dst, src, rois, startIndex, length);
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.Hue, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("HueAndSaturationAdjustment.Amount1Label"));
+            configUI.SetPropertyControlValue(PropertyNames.Saturation, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("HueAndSaturationAdjustment.Amount2Label"));
+            configUI.SetPropertyControlValue(PropertyNames.Lightness, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("HueAndSaturationAdjustment.Amount3Label"));
+
+            return configUI;
+        }
+
+        protected override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            Surface dst = DstArgs.Surface;
+            Surface src = SrcArgs.Surface;
+
+            this.pixelOp.Apply(dst, src, rois, startIndex, length);
         }
     }
 }

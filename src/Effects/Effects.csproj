@@ -192,6 +192,9 @@
     <Compile Include="EffectConfigDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="EffectConfigDialog`2.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="EffectConfigToken.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -201,6 +204,7 @@
     <Compile Include="EffectEnvironmentParameters.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="EffectFlags.cs" />
     <Compile Include="EffectsCollection.cs" />
     <Compile Include="EffectTypeHint.cs">
       <SubType>Code</SubType>
@@ -208,6 +212,7 @@
     <Compile Include="EffectTypeHintAttribute.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Effect`1.cs" />
     <Compile Include="EmbossEffect.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -220,6 +225,7 @@
     <Compile Include="FrostedGlassEffect.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="GaussianBlurEffect.cs" />
     <Compile Include="GlowEffect.cs" />
     <Compile Include="HueAndSaturationAdjustment.cs">
       <SubType>Code</SubType>
@@ -228,6 +234,7 @@
     <Compile Include="InvertColorsEffect.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="JuliaFractalEffect.cs" />
     <Compile Include="LevelsEffect.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -238,6 +245,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="LocalHistogramEffect.cs" />
+    <Compile Include="MandelbrotFractalEffect.cs" />
     <Compile Include="MedianEffect.cs" />
     <Compile Include="MotionBlurEffect.cs">
       <SubType>Code</SubType>
@@ -259,6 +267,12 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="PolarInversionEffect.cs" />
+    <Compile Include="PropertyBasedEffect.cs" />
+    <Compile Include="PropertyBasedEffectConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PropertyBasedEffectConfigToken.cs">
+    </Compile>
     <Compile Include="RadialBlurEffect.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -8,7 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
-using PaintDotNet.Base;
+using PaintDotNet;
 
 namespace PaintDotNet.SystemLayer
 {

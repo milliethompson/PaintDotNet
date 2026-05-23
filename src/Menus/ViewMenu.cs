@@ -42,11 +42,18 @@ namespace PaintDotNet.Menus
             return true;
         }
 
+        private bool OnCtrlAltZero(Keys keys)
+        {
+            this.menuViewActualSize.PerformClick();
+            return true;
+        }
+
         public ViewMenu()
         {
             InitializeComponent();
             PdnBaseForm.RegisterFormHotKey(Keys.Control | Keys.OemMinus, OnOemMinusShortcut);
             PdnBaseForm.RegisterFormHotKey(Keys.Control | Keys.Oemplus, OnOemPlusShortcut);
+            PdnBaseForm.RegisterFormHotKey(Keys.Control | Keys.Alt | Keys.D0, OnCtrlAltZero);
         }
 
         private void InitializeComponent()

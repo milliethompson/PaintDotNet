@@ -29,7 +29,7 @@ namespace PaintDotNet.Actions
         {
             get
             {
-                return ImageResource.Get("Icons.MenuLayersDuplicateLayerIcon.png");
+                return PdnResources.GetImageResource("Icons.MenuLayersDuplicateLayerIcon.png");
             }
         }
 

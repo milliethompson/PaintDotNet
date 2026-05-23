@@ -109,14 +109,14 @@ namespace PaintDotNet
 
         private int indexOffset;
         private int firstTick = Environment.TickCount;
-        private Image pdnLogo = PdnResources.GetImage("Images.TransparentLogo.png");
+        private Image pdnLogo = PdnResources.GetImageResource("Images.TransparentLogo.png").GetCopy();
         private int bannerIndex = 0;
         private float bannerAlpha = 1.0f;
         private Bitmap logoAndGradient = new Bitmap(495, 71, PixelFormat.Format24bppRgb);
         private Bitmap highQualityBmp = null;
         private Image[] banners = new Image[]
             {
-                PdnResources.GetImage("Images.Banner.png"),
+                PdnResources.GetImageResource("Images.Banner.png").GetCopy(),
             };
 
         private void SetUpBannerImage()

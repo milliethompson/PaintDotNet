@@ -7,7 +7,10 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -15,123 +18,98 @@ using System.Windows.Forms;
 namespace PaintDotNet.Effects
 {
     public sealed class MotionBlurEffect
-        : Effect
+        : PropertyBasedEffect
     {
         public MotionBlurEffect()
             : base(PdnResources.GetString("MotionBlurEffect.Name"),
-                   PdnResources.GetImage("Icons.MotionBlurEffect.png"),
+                   PdnResources.GetImageResource("Icons.MotionBlurEffect.png").Reference,
                    SubmenuNames.Blurs,
-                   EffectDirectives.None,
-                   true)
+                   EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        public enum PropertyNames
         {
-            return new MotionBlurEffectConfigDialog();
+            Angle,
+            Distance,
+            Centered,
         }
 
-        private unsafe ColorBgra DoLineAverage(Point[] points, int x, int y, Surface dst, Surface src)
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            long bSum = 0;
-            long gSum = 0;
-            long rSum = 0;
-            long aSum = 0;
-            int cDiv = 0;
-            int aDiv = 0;
-                        
-            foreach (Point p in points)
+            List<Property> props = new List<Property>();
+
+            props.Add(new DoubleProperty(PropertyNames.Angle, 25, -180, +180));
+            props.Add(new BooleanProperty(PropertyNames.Centered, true));
+            props.Add(new Int32Property(PropertyNames.Distance, 10, 1, 200));
+
+            return new PropertyCollection(props);
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.Angle, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("MotionBlurEffectConfigDialog.AngleHeader.Text"));
+            configUI.SetPropertyControlType(PropertyNames.Angle, PropertyControlType.AngleChooser);
+            configUI.SetPropertyControlValue(PropertyNames.Centered, ControlInfoPropertyNames.DisplayName, string.Empty);
+            configUI.SetPropertyControlValue(PropertyNames.Centered, ControlInfoPropertyNames.Description, PdnResources.GetString("MotionBlurEffectConfigDialog.CenteredCheckBox.Text"));
+            configUI.SetPropertyControlValue(PropertyNames.Distance, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("MotionBlurEffectConfigDialog.DistanceHeader.Text"));
+
+            return configUI;
+        }
+
+        private double angle;
+        private int distance;
+        private bool centered;
+        private PointF[] points;
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.angle = newToken.GetProperty<DoubleProperty>(PropertyNames.Angle).Value;
+            this.distance = newToken.GetProperty<Int32Property>(PropertyNames.Distance).Value;
+            this.centered = newToken.GetProperty<BooleanProperty>(PropertyNames.Centered).Value;
+
+            PointF start = new PointF(0, 0);
+            double theta = ((double)(this.angle + 180) * 2 * Math.PI) / 360.0;
+            double alpha = (double)distance;
+            double x = alpha * Math.Cos(theta);
+            double y = alpha * Math.Sin(theta);
+            PointF end = new PointF((float)x, (float)(-y));
+
+            if (this.centered)
             {
-                Point srcPoint = new Point(x + p.X, y + p.Y);
+                start.X = -end.X / 2.0f;
+                start.Y = -end.Y / 2.0f;
 
-                if (src.Bounds.Contains(srcPoint))
+                end.X /= 2.0f;
+                end.Y /= 2.0f;
+            }
+
+            this.points = new PointF[((1 + this.distance) * 3) / 2];
+
+            if (this.points.Length == 1)
+            {
+                this.points[0] = new PointF(0, 0);
+            }
+            else
+            {
+                for (int i = 0; i < this.points.Length; ++i)
                 {
-                    ColorBgra c = src.GetPointUnchecked(srcPoint.X, srcPoint.Y);
-
-                    bSum += c.B * c.A;
-                    gSum += c.G * c.A;
-                    rSum += c.R * c.A;
-                    aSum += c.A;
-
-                    aDiv++;
-                    cDiv += c.A;
+                    float frac = (float)i / (float)(this.points.Length - 1);
+                    this.points[i] = Utility.Lerp(start, end, frac);
                 }
             }
 
-            int b;
-            int g;
-            int r;
-            int a;
-
-            if (cDiv == 0)
-            {
-                b = 0;
-                g = 0;
-                r = 0;
-                a = 0;
-            }
-            else
-            {
-                b = (int)(bSum /= cDiv);
-                g = (int)(gSum /= cDiv);
-                r = (int)(rSum /= cDiv);
-                a = (int)(aSum /= aDiv);
-            }
-
-            return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
         }
 
-        private unsafe ColorBgra DoLineAverageUnclipped(Point[] points, int x, int y, Surface dst, Surface src)
+        protected override unsafe void OnRender(Rectangle[] rois, int startIndex, int length)
         {
-            long bSum = 0;
-            long gSum = 0;
-            long rSum = 0;
-            long aSum = 0;
-            int cDiv = 0;
-            int aDiv = 0;
-                        
-            foreach (Point p in points)
-            {
-                Point srcPoint = new Point(x + p.X, y + p.Y);
-                ColorBgra c = src.GetPointUnchecked(srcPoint.X, srcPoint.Y);
+            Surface dst = DstArgs.Surface;
+            Surface src = SrcArgs.Surface;
 
-                bSum += c.B * c.A;
-                gSum += c.G * c.A;
-                rSum += c.R * c.A;
-                aSum += c.A;
-
-                aDiv++;
-                cDiv += c.A;
-            }
-
-            int b;
-            int g;
-            int r;
-            int a;
-
-            if (cDiv == 0)
-            {
-                b = 0;
-                g = 0;
-                r = 0;
-                a = 0;
-            }
-            else
-            {
-                b = (int)(bSum /= cDiv);
-                g = (int)(gSum /= cDiv);
-                r = (int)(rSum /= cDiv);
-                a = (int)(aSum /= aDiv);
-            }
-
-            return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
-        }
-
-        public override unsafe void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
-        {
-            Point[] points = ((MotionBlurEffectConfigToken)parameters).LinePoints;
-            Surface dst = dstArgs.Surface;
-            Surface src = srcArgs.Surface;
+            ColorBgra* samples = stackalloc ColorBgra[this.points.Length];
 
             for (int i = startIndex; i < startIndex + length; ++i)
             {
@@ -143,19 +121,23 @@ namespace PaintDotNet.Effects
 
                     for (int x = rect.Left; x < rect.Right; ++x)
                     {
-                        Point a = new Point(x + points[0].X, y + points[0].Y);
-                        Point b = new Point(x + points[points.Length - 1].X, y + points[points.Length - 1].Y);
+                        int sampleCount = 0;
 
-                        // If both ends of this line are in bounds, we don't need to do silly clipping
-                        if (src.Bounds.Contains(a) && src.Bounds.Contains(b))
+                        PointF a = new PointF((float)x + points[0].X, (float)y + points[0].Y);
+                        PointF b = new PointF((float)x + points[points.Length - 1].X, (float)y + points[points.Length - 1].Y);
+
+                        for (int j = 0; j < this.points.Length; ++j)
                         {
-                            *dstPtr = DoLineAverageUnclipped(points, x, y, dst, src);
-                        }
-                        else
-                        {
-                            *dstPtr = DoLineAverage(points, x, y, dst, src);
+                            PointF pt = new PointF(this.points[j].X + (float)x, this.points[j].Y + (float)y);
+
+                            if (pt.X >= 0 && pt.Y >= 0 && pt.X <= (src.Width - 1) && pt.Y <= (src.Height - 1))
+                            {
+                                samples[sampleCount] = src.GetBilinearSample(pt.X, pt.Y);
+                                ++sampleCount;
+                            }
                         }
 
+                        *dstPtr = ColorBgra.Blend(samples, sampleCount);
                         ++dstPtr;
                     }
                 }

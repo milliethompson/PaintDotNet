@@ -8,7 +8,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using Microsoft.Win32;
-using PaintDotNet.Base;
 using PaintDotNet.Threading;
 using PaintDotNet.SystemLayer;
 using System;
@@ -40,6 +39,58 @@ namespace PaintDotNet
     {
         private Utility()
         {
+        }
+
+        public static PointF[] GetRgssOffsets(int quality)
+        {
+            unsafe
+            {
+                int sampleCount = quality * quality;
+                PointF[] samplesArray = new PointF[sampleCount];
+
+                fixed (PointF* pSamplesArray = samplesArray)
+                {
+                    GetRgssOffsets(pSamplesArray, sampleCount, quality);
+                }
+
+                return samplesArray;
+            }
+        }
+
+        public static unsafe void GetRgssOffsets(PointF* samplesArray, int sampleCount, int quality)
+        {
+            if (sampleCount < 1)
+            {
+                throw new ArgumentOutOfRangeException("sampleCount", "sampleCount must be [0, int.MaxValue]");
+            }
+
+            if (sampleCount != quality * quality)
+            {
+                throw new ArgumentOutOfRangeException("sampleCount != (quality * quality)");
+            }
+
+            if (sampleCount == 1)
+            {
+                samplesArray[0] = new PointF(0.0f, 0.0f);
+            }
+            else
+            {
+                for (int i = 0; i < sampleCount; ++i)
+                {
+                    double y = (i + 1d) / (sampleCount + 1d);
+                    double x = y * quality;
+
+                    x -= (int)x;
+
+                    samplesArray[i] = new PointF((float)(x - 0.5d), (float)(y - 0.5d));
+                }
+            }
+        }
+
+        public static bool IsObsolete(Type type, bool inherit)
+        {
+            object[] attrs = type.GetCustomAttributes(typeof(ObsoleteAttribute), inherit);
+            return (attrs.Length != 0);
         }
 
         public static void DrawDropShadow1px(Graphics g, Rectangle rect)
@@ -476,6 +527,7 @@ namespace PaintDotNet
             return sum;
         }
 
+        // TODO: obsolete these NUD funcitons, move them into PdnNumericUpDown
         public static void ClipNumericUpDown(NumericUpDown upDown)
         {
             if (upDown.Value < upDown.Minimum)
@@ -2072,9 +2124,16 @@ namespace PaintDotNet
             Control control = owner as Control;
             if (control != null)
             {
+                Form form = control.FindForm();
+
+                if (form != null)
+                {
+                    form.Activate();
+                }
+
                 control.Update();
             }
-
+            
             return dr;
         }
 

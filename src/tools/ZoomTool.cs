@@ -35,7 +35,7 @@ namespace PaintDotNet.Tools
 
         public ZoomTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.ZoomToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.ZoomToolIcon.png"),
                    PdnResources.GetString("ZoomTool.Name"),
                    PdnResources.GetString("ZoomTool.HelpText"),
                    'z',

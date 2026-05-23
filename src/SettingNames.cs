@@ -12,7 +12,6 @@ using System;
 
 namespace PaintDotNet
 {
-    // TODO: rename to SettingNames (get rid of silly 'Pdn' prefix where possible)
     /// <summary>
     /// Symbolic constants for our settings. Settings are stored in CurrentUser unless
     /// otherwise specified.

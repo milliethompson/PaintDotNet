@@ -7,7 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
+using PaintDotNet;
 using PaintDotNet.HistoryMementos;
 using System;
 using System.Drawing;
@@ -108,7 +108,7 @@ namespace PaintDotNet.Tools
 
         public CloneStampTool(DocumentWorkspace documentWorkspace) 
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.CloneStampToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.CloneStampToolIcon.png"),
                    PdnResources.GetString("CloneStampTool.Name"),
                    PdnResources.GetString("CloneStampTool.HelpText"),
                    'l',

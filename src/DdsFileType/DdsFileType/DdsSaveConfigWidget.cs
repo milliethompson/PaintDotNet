@@ -145,6 +145,7 @@ namespace DdsFileTypePlugin
             this.rangeFit.Text = PdnResources.GetString("DdsFileType.SaveConfigWidget.RangeFit.Text"); // "Range fit (Fast/LQ)"
             this.rangeFit.UseVisualStyleBackColor = true;
             this.rangeFit.CheckedChanged += new System.EventHandler(this.rangeFit_CheckedChanged);
+            this.rangeFit.FlatStyle = FlatStyle.System;
             // 
             // clusterFit
             // 
@@ -155,6 +156,7 @@ namespace DdsFileTypePlugin
             this.clusterFit.Text = PdnResources.GetString("DdsFileType.SaveConfigWidget.ClusterFit.Text"); // "Cluster fit (Slow/HQ)"
             this.clusterFit.UseVisualStyleBackColor = true;
             this.clusterFit.CheckedChanged += new System.EventHandler(this.clusterFit_CheckedChanged);
+            this.clusterFit.FlatStyle = FlatStyle.System;
             // 
             // iterativeFit
             // 
@@ -165,6 +167,7 @@ namespace DdsFileTypePlugin
             this.iterativeFit.Text = PdnResources.GetString("DdsFileType.SaveConfigWidget.IterativeFit.Text"); // "Iterative fit (Slowest/HQ)";
             this.iterativeFit.UseVisualStyleBackColor = true;
             this.iterativeFit.CheckedChanged += new System.EventHandler(this.iterativeFit_CheckedChanged);
+            this.iterativeFit.FlatStyle = FlatStyle.System;
             // 
             // uniformMetric
             // 
@@ -175,6 +178,7 @@ namespace DdsFileTypePlugin
             this.uniformMetric.Text = PdnResources.GetString("DdsFileType.SaveConfigWidget.Uniform.Text"); // "Uniform";
             this.uniformMetric.UseVisualStyleBackColor = true;
             this.uniformMetric.CheckedChanged += new System.EventHandler(this.uniformMetric_CheckedChanged);
+            this.uniformMetric.FlatStyle = FlatStyle.System;
             // 
             // perceptualMetric
             // 
@@ -185,6 +189,7 @@ namespace DdsFileTypePlugin
             this.perceptualMetric.Text = PdnResources.GetString("DdsFileType.SaveConfigWidget.Perceptual.Text"); // "Perceptual";
             this.perceptualMetric.UseVisualStyleBackColor = true;
             this.perceptualMetric.CheckedChanged += new System.EventHandler(this.perceptualMetric_CheckedChanged);
+            this.perceptualMetric.FlatStyle = FlatStyle.System;
             // 
             // generateMipMaps
             // 
@@ -194,6 +199,7 @@ namespace DdsFileTypePlugin
             this.generateMipMaps.Text = PdnResources.GetString("DdsFileType.SaveConfigWidget.GenerateMipMaps.Text"); // "Generate Mip Maps";
             this.generateMipMaps.UseVisualStyleBackColor = true;
             this.generateMipMaps.CheckedChanged += new System.EventHandler(this.generateMipLevels_CheckedChanged);
+            this.generateMipMaps.FlatStyle = FlatStyle.System;  
             // 
             // weightColourByAlpha
             // 
@@ -203,6 +209,7 @@ namespace DdsFileTypePlugin
             this.weightColourByAlpha.Text = PdnResources.GetString("DdsFileType.SaveConfigWidget.WeightColourByAlpha"); // "Weight Colour By Alpha";
             this.weightColourByAlpha.UseVisualStyleBackColor = true;
             this.weightColourByAlpha.CheckedChanged += new System.EventHandler(this.weightColourByAlpha_CheckedChanged);
+            this.weightColourByAlpha.FlatStyle = FlatStyle.System;
             // 
             // fileFormatList
             // 
@@ -224,6 +231,7 @@ namespace DdsFileTypePlugin
             this.fileFormatList.Name = "fileFormatList";
             this.fileFormatList.TabIndex = 0;
             this.fileFormatList.SelectedIndexChanged += new System.EventHandler(this.fileFormatList_SelectedIndexChanged);
+            this.fileFormatList.FlatStyle = FlatStyle.System;
             // 
             // compressorTypeLabel
             // 
@@ -290,8 +298,6 @@ namespace DdsFileTypePlugin
             this.additionalOptionsPanel.PerformLayout();
             this.ResumeLayout(false);
         }
-
-
 
         protected override void OnLayout(LayoutEventArgs e)
         {

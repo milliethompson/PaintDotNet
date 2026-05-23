@@ -9,7 +9,7 @@
 
 using System;
 
-namespace PaintDotNet
+namespace PaintDotNet.Base
 {
     public abstract class Resource<T>
     {

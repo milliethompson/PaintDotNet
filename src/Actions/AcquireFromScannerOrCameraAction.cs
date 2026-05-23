@@ -104,7 +104,7 @@ namespace PaintDotNet.Actions
 
                     HistoryMemento newHA = new NullHistoryMemento(
                         PdnResources.GetString("AcquireImageAction.Name"),
-                        ImageResource.Get("Icons.MenuLayersAddNewLayerIcon.png"));
+                        PdnResources.GetImageResource("Icons.MenuLayersAddNewLayerIcon.png"));
 
                     dw.History.PushNewMemento(newHA);
 

@@ -43,8 +43,7 @@ namespace PaintDotNet
         public NewFileDialog()
         {
             InitializeComponent();
-            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileNewIcon.png"), Utility.TransparentKey);
-
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.MenuFileNewIcon.png").Reference, Utility.TransparentKey);
             this.Text = PdnResources.GetString("NewFileDialog.Text"); // "New";
         }
 

@@ -302,7 +302,6 @@ namespace PaintDotNet.Updates
         /// Downloads the latest updates manifest from the Paint.NET web server.
         /// </summary>
         /// <returns>The latest updates manifest, or null if there was an error in which case the exception argument will be non-null.</returns>
-        // TODO: throw the exception, don't return it via an out parameter
         private static PdnVersionManifest GetUpdatesManifest(out Exception exception)
         {
             try

@@ -10,7 +10,7 @@
 using System;
 using System.IO;
 
-namespace PaintDotNet.Base
+namespace PaintDotNet
 {
     /// <summary>
     /// This was written as a workaround for a bug in SharpZipLib that prevents it

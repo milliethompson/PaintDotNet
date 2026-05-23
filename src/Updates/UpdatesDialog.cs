@@ -7,7 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Base;
+using PaintDotNet;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
@@ -133,7 +133,7 @@ namespace PaintDotNet.Updates
         private void UpdateDynamicUI()
         {
             this.Text = PdnResources.GetString("UpdatesDialog.Text");
-            this.closeButton.Text = PdnResources.GetString("UpdatesDialog.CloseButton.Text");
+            string closeButtonText = PdnResources.GetString("UpdatesDialog.CloseButton.Text");
             this.optionsButton.Text = PdnResources.GetString("UpdatesDialog.OptionsButton.Text");
             this.moreInfoLink.Text = PdnResources.GetString("UpdatesDialog.MoreInfoLink.Text");
             this.newVersionLabel.Text = PdnResources.GetString("UpdatesDialog.NewVersionLabel.Text");
@@ -163,11 +163,11 @@ namespace PaintDotNet.Updates
 
                 if (this.continueButton.Enabled || currentState is ErrorState || currentState is DoneState)
                 {
-                    this.closeButton.Text = PdnResources.GetString("UpdatesDialog.CloseButton.Text");
+                    closeButtonText = PdnResources.GetString("UpdatesDialog.CloseButton.Text");
                 }
                 else
                 {
-                    this.closeButton.Text = PdnResources.GetString("Form.CancelButton.Text");
+                    closeButtonText = PdnResources.GetString("Form.CancelButton.Text");
                 }
 
                 if (currentState is ErrorState)
@@ -203,6 +203,8 @@ namespace PaintDotNet.Updates
                 }
             }
 
+            this.closeButton.Text = closeButtonText;
+
             Update();
         }
 
@@ -210,8 +212,8 @@ namespace PaintDotNet.Updates
         {
             InitializeComponent();
 
-            Image iconImage = PdnResources.GetImage("Icons.MenuHelpCheckForUpdatesIcon.png");
-            this.Icon = Utility.ImageToIcon(iconImage, Utility.TransparentKey, true);
+            Image iconImage = PdnResources.GetImageResource("Icons.MenuHelpCheckForUpdatesIcon.png").Reference;
+            this.Icon = Utility.ImageToIcon(iconImage, Utility.TransparentKey);
 
             if (Security.IsAdministrator)
             {
@@ -278,6 +280,7 @@ namespace PaintDotNet.Updates
             this.closeButton.TabIndex = 0;
             this.closeButton.Text = "_close";
             this.closeButton.UseVisualStyleBackColor = true;
+            this.closeButton.FlatStyle = FlatStyle.System;
             this.closeButton.Click += new System.EventHandler(this.CloseButton_Click);
             // 
             // optionsButton
@@ -290,6 +293,7 @@ namespace PaintDotNet.Updates
             this.optionsButton.Size = new System.Drawing.Size(91, 23);
             this.optionsButton.TabIndex = 1;
             this.optionsButton.Text = "_options...";
+            this.optionsButton.FlatStyle = FlatStyle.System;
             this.optionsButton.UseVisualStyleBackColor = true;
             // 
             // continueButton
@@ -301,6 +305,7 @@ namespace PaintDotNet.Updates
             this.continueButton.TabIndex = 3;
             this.continueButton.Text = "_continue";
             this.continueButton.UseVisualStyleBackColor = true;
+            this.continueButton.FlatStyle = FlatStyle.System;
             this.continueButton.Click += new System.EventHandler(this.ContinueButton_Click);
             // 
             // progressBar

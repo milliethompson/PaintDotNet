@@ -75,7 +75,22 @@ namespace PaintDotNet.Effects
             }
         }
 
+        protected internal virtual void OnBeforeConstructor(object context)
+        {
+        }
+
+        protected internal EffectConfigDialog(object context)
+        {
+            OnBeforeConstructor(context);
+            Constructor();
+        }
+
         public EffectConfigDialog()
+        {
+            Constructor();
+        }
+
+        private void Constructor()
         {
             InitializeComponent();
             InitialInitToken();
@@ -85,6 +100,8 @@ namespace PaintDotNet.Effects
 
         private void InitializeComponent()
         {
+            SuspendLayout();
+
             // 
             // EffectConfigDialog
             // 
@@ -98,6 +115,8 @@ namespace PaintDotNet.Effects
             this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+
+            ResumeLayout(false);
         }
 
         /// <summary>
@@ -110,8 +129,18 @@ namespace PaintDotNet.Effects
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            InitDialogFromToken();
-            FinishTokenUpdate();
+
+            try
+            {
+                InitDialogFromToken();
+                FinishTokenUpdate();
+            }
+
+            catch (Exception ex)
+            {
+                SystemLayer.Tracing.Ping(ex.ToString());
+                throw;
+            }
         }
 
         [Browsable(false)]

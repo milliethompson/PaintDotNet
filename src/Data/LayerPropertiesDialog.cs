@@ -125,6 +125,7 @@ namespace PaintDotNet
             this.visibleCheckBox.Size = new System.Drawing.Size(90, 16);
             this.visibleCheckBox.TabIndex = 3;
             this.visibleCheckBox.TextAlign = System.Drawing.ContentAlignment.TopLeft;
+            this.visibleCheckBox.FlatStyle = FlatStyle.System;
             this.visibleCheckBox.CheckedChanged += new System.EventHandler(this.VisibleCheckBox_CheckedChanged);
             // 
             // nameBox
@@ -159,6 +160,7 @@ namespace PaintDotNet
             this.okButton.Location = new System.Drawing.Point(114, 69);
             this.okButton.Name = "okButton";
             this.okButton.TabIndex = 0;
+            this.okButton.FlatStyle = FlatStyle.System;
             this.okButton.Click += new System.EventHandler(this.OkButton_Click);
             // 
             // generalHeader

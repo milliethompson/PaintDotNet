@@ -11,14 +11,17 @@
 
 using PaintDotNet;
 using PaintDotNet.Effects;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
     public sealed class OilPaintingEffect
-        : Effect
+        : PropertyBasedEffect
     {
         public static string StaticName
         {
@@ -30,46 +33,56 @@ namespace PaintDotNet.Effects
 
         public OilPaintingEffect()
             : base(StaticName,
-                   PdnResources.GetImage("Icons.OilPaintingEffect.png"),
-                   null,
-                   EffectDirectives.None,
-                   true)
+                   PdnResources.GetImageResource("Icons.OilPaintingEffect.png").Reference,
+                   SubmenuNames.Artistic,
+                   EffectFlags.Configurable)
         {
         }
 
-        public override EffectConfigDialog CreateConfigDialog()
+        public enum PropertyNames
         {
-            TwoAmountsConfigDialog tacg = new TwoAmountsConfigDialog();
-
-            tacg.Text = StaticName;
-
-            tacg.Amount1Minimum = 1;
-            tacg.Amount1Maximum = 8;
-            tacg.Amount1Default = 3;
-            tacg.Amount1Label = PdnResources.GetString("OilPaintingEffect.ConfigDialog.Amount1Label");
-            
-            tacg.Amount2Minimum = 3;
-            tacg.Amount2Maximum = 255;
-            tacg.Amount2Default = 50;
-            tacg.Amount2Label = PdnResources.GetString("OilPaintingEffect.ConfigDialog.Amount2Label");
-
-            tacg.Icon = PdnResources.GetIconFromImage("Icons.OilPaintingEffect.png");
-
-            return tacg;
+            BrushSize,
+            Coarseness
         }
 
-        public unsafe override void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, 
-            Rectangle[] rois, int startIndex, int length)
+        private int brushSize;
+        private byte coarseness;
+
+        protected override PropertyCollection OnCreatePropertyCollection()
         {
-            TwoAmountsConfigToken token = (TwoAmountsConfigToken)properties;
-            int brushSize = token.Amount1;
-            byte smoothness = (byte)token.Amount2;
-            Surface src = srcArgs.Surface;
-            Surface dst = dstArgs.Surface;
+            List<Property> props = new List<Property>();
+
+            props.Add(new Int32Property(PropertyNames.BrushSize, 3, 1, 8));
+            props.Add(new Int32Property(PropertyNames.Coarseness, 50, 3, 255));
+
+            return new PropertyCollection(props);
+        }
+
+        protected override ControlInfo OnCreateConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultConfigUI(props);
+
+            configUI.SetPropertyControlValue(PropertyNames.BrushSize, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("OilPaintingEffect.ConfigDialog.Amount1Label"));
+            configUI.SetPropertyControlValue(PropertyNames.Coarseness, ControlInfoPropertyNames.DisplayName, PdnResources.GetString("OilPaintingEffect.ConfigDialog.Amount2Label"));
+
+            return configUI;
+        }
+
+        protected override void OnSetRenderInfo(PropertyBasedEffectConfigToken newToken, RenderArgs dstArgs, RenderArgs srcArgs)
+        {
+            this.brushSize = newToken.GetProperty<Int32Property>(PropertyNames.BrushSize).Value;
+            this.coarseness = (byte)newToken.GetProperty<Int32Property>(PropertyNames.Coarseness).Value;
+            base.OnSetRenderInfo(newToken, dstArgs, srcArgs);
+        }
+
+        protected unsafe override void OnRender(Rectangle[] rois, int startIndex, int length)
+        {
+            Surface src = SrcArgs.Surface;
+            Surface dst = DstArgs.Surface;
             int width = src.Width;
             int height = src.Height;
 
-            int arrayLens = 1 + smoothness;
+            int arrayLens = 1 + this.coarseness;
 
             int localStoreSize = arrayLens * 5 * sizeof(int);
 
@@ -91,7 +104,7 @@ namespace PaintDotNet.Effects
             uint* avgAlpha = (uint*)p;
             p += arrayLens * sizeof(uint);
 
-            byte maxIntensity = smoothness;
+            byte maxIntensity = this.coarseness;
 
             for (int r = startIndex; r < startIndex + length; ++r)
             {
@@ -169,6 +182,8 @@ namespace PaintDotNet.Effects
                                 maxInstance = intensityCount[i];
                             }
                         }
+
+                        // TODO: correct handling of alpha values?
 
                         byte R = (byte)(avgRed[chosenIntensity] / maxInstance);
                         byte G = (byte)(avgGreen[chosenIntensity] / maxInstance);

@@ -24,7 +24,7 @@ namespace PaintDotNet.Tools
         private Cursor cursorMouseUp;
         private CombineMode combineMode;
 
-        // nothing = replace
+        // nothing = replace (or rather, whatever is set in the toolbar)
         // Ctrl = union
         // RMB = exclude
         // Ctrl+RMB = xor
@@ -49,7 +49,7 @@ namespace PaintDotNet.Tools
             base.OnDeactivate();
         }
 
-        protected override void OnMouseUp(System.Windows.Forms.MouseEventArgs e)
+        protected override void OnMouseUp(MouseEventArgs e)
         {
             Cursor = cursorMouseUp;
             base.OnMouseUp(e);
@@ -73,7 +73,7 @@ namespace PaintDotNet.Tools
             }
             else
             {
-                this.combineMode = CombineMode.Replace;
+                this.combineMode = AppEnvironment.SelectionCombineMode;
             }
 
             base.OnMouseDown(e);
@@ -93,14 +93,14 @@ namespace PaintDotNet.Tools
 
         public MagicWandTool(DocumentWorkspace documentWorkspace)
             : base(documentWorkspace,
-                   ImageResource.Get("Icons.MagicWandToolIcon.png"),
+                   PdnResources.GetImageResource("Icons.MagicWandToolIcon.png"),
                    PdnResources.GetString("MagicWandTool.Name"),
                    PdnResources.GetString("MagicWandTool.HelpText"), 
                    's',
                    false,
-                   ToolBarConfigItems.None)
+                   ToolBarConfigItems.SelectionCombineMode)
         {
-            LimitToSelection = false;
+            ClipToSelection = false;
         }
     }
 }
