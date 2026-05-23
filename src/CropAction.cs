@@ -1,0 +1,89 @@
+using System;
+using System.Drawing;
+
+namespace PaintDotNet
+{
+	/// <summary>
+	/// Crops the image to the currently selected region.
+	/// </summary>
+	public class CropAction
+        : DocumentAction
+	{
+        public override HistoryAction PerformAction()
+        {
+            SelectionHistoryAction sha = new SelectionHistoryAction(name, null, Workspace);
+            ReplaceDocumentHistoryAction rdha = new ReplaceDocumentHistoryAction(name, null, Workspace);
+            Rectangle boundingBox;
+            Region inverseRegion = null;
+            RectangleF[] inverseRegionRectsF = null;
+            Rectangle[] inverseRegionRects = null;
+
+            if (Workspace.Environment.IsSelectionEmpty)
+            {
+                throw new InvalidOperationException("There must be an area selected in order to perform the Crop action");
+            }
+            else
+            {
+                Region region = Workspace.Environment.CreateSelectedRegion();
+                region.Intersect(Workspace.Document.Bounds);
+
+                boundingBox = Rectangle.Truncate(Utility.GetRegionBounds(region));
+                inverseRegion = new Region(boundingBox);
+                inverseRegion.Exclude(region);
+
+                inverseRegionRectsF = inverseRegion.GetRegionScans(Utility.IdentityMatrix);
+                inverseRegionRects = Utility.TruncateRectangles(Utility.TranslateRectangles(inverseRegionRectsF, new Point(-boundingBox.X, -boundingBox.Y)));
+            }
+
+            Document oldDocument = Workspace.Document;
+            Document newDocument = new Document(boundingBox.Width, boundingBox.Height);
+            
+            // copy the document's meta data over
+            // TODO: have Save/LoadProperties for Document. However, since this is the only property we need to copy over at this time, we may wait until we have more (if we have more)
+            foreach (string key in oldDocument.UserMetaData)
+            {
+                newDocument.UserMetaData.Set(key, oldDocument.UserMetaData[key]);
+            }
+
+            // ok well we have to copy the Name over as well 
+            // TODO: however, if they Save As and then change the name, undoing our action will reset their
+            // filename. This will not make the user happy!
+			// NOTE: this code is also in ResizeAction
+            newDocument.Name = oldDocument.Name;
+
+            foreach (Layer layer in oldDocument.Layers)
+            {
+                if (layer is BitmapLayer)
+                {
+                    BitmapLayer oldLayer = (BitmapLayer)layer;
+                    Surface croppedSurface = oldLayer.Surface.CreateWindow(boundingBox);
+                    BitmapLayer newLayer = new BitmapLayer(croppedSurface);
+
+                    UnaryPixelOp op = new UnaryPixelOps.Constant(ColorBgra.FromBgra(255, 255, 255, 0));
+                    foreach (Rectangle rect in inverseRegionRects)
+                    {
+                        op.Apply(newLayer.Surface, rect);
+                    }
+
+                    newLayer.LoadProperties(oldLayer.SaveProperties());
+                    newDocument.Layers.Add(newLayer);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Crop does not support Layers that are not BitmapLayers");
+                }
+            }
+            
+            Workspace.SetDocument(newDocument);
+
+            CompoundHistoryAction cha = new CompoundHistoryAction(Name, null, new HistoryAction[] { sha, rdha });
+
+            return cha;
+        }
+
+		public CropAction(DocumentWorkspace workspace)
+            : base(workspace, "Crop")
+		{
+		}
+	}
+}

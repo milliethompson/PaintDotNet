@@ -1,0 +1,100 @@
+Paint.NET Source Code Readme
+
+Instructions:
+
+    1. Open src/paintdotnet.sln with Microsoft Visual Studio .NET 2003. 
+    
+    2. Make sure the project configuration is set to "Release."
+       This can be done by going to the "Build" menu, selecting "Configuration
+       Manager...", selecting "Release" under "Active Solution Configuration:"
+       and then clicking Close.
+       
+    3. Go to the "Build" menu and click "Rebuild Solution."
+    
+    4. The output files are now in src/Setup/Release:
+    
+           * PaintDotNet.msi
+                 Suitable for web-based distribution. This is fairly small and
+                 installs just Paint.NET. 
+                 
+                 Successful installation requires that the following be true:
+                     1. Windows XP SP1 or later is installed.
+                     2. .NET Framework 1.1 or later is installed.
+                     3. The user has Administrator priviledges.
+                     
+           * PaintDotNetFull.exe
+                 This is the "full" installer that will install .NET 1.1 if it
+                 is not already installed. This file is over 20MB larger than
+                 PaintDotNet.msi, but provides a very convenient "dummy-proof"
+                 installation.
+
+Directory Layout:
+
+src/
+    The main folder containing all the Paint.NET source code.
+
+src/bin
+    This is where the main Paint.NET executable and DLLS will be placed.
+    When you build PDN, you should be able to run PaintDotNet.exe from this
+    directory (i.e. all dependencies are in that directory).
+
+src/chm
+    Contains all the help files that are compiled into PaintDotNet.chm.
+
+src/CpuCount
+    A small DLL written in C that allows us to detect the number of physical
+    processors present in a system. The reason for having this is that a
+    Pentium 4 (or Xeon) with HyperThreading normally shows up as having twice
+    as many CPUs as it actually has. So a dual-Xeon shows up as having four
+    "logical" CPUs but only two "physical" CPUs. We use this number to 
+    optimize rendering by using an appropriate number of threads.
+
+src/CpuCount.NET
+    Exposes the functions in CpuCount using P/Invoke so that they are easily
+    usable by a .NET assembly (i.e. our C# program).
+
+src/Cursors
+    Contains all the *.cur files used by Paint.NET, mostly for tools.
+
+src/dotnetwidgets
+    Contains the DLL for DotNetWidgets which we use to provide a "Office XP"
+    style user interface.
+
+src/icons
+    Contains all the *.ico and *.bmp icons that are used throughout the 
+    program.
+
+src/makechm
+    A quick program that is used for compiling the help file. The reason we
+    have this is that hhc.exe (the help compiler) returns 1 on success, but
+    the Visual Studio build environment requires tools to return 0 on success
+    (which is normal!). So we bootstrap the hhc.exe and force it to return 0.
+
+src/obj
+    Intermediate files used during compilation go here.
+
+src/Setup
+    Contains a project that is used to build PaintDotNet.msi. Note that the
+    MSI file is not complete until the "Setup-Config" project has finished!
+
+src/Setup-Config
+    This is the final stage of the build process. It modifies PaintDotNet.msi
+    using a VBS script so that it defaults to "Install for Everyone" instead
+    of "Install for Just Me." It then packages together PaintDotNet.msi with
+    dotnetfx.exe using a NSIS (Nullsoft Scriptable Installation System).
+
+src/SharpZipLib
+    Contains the source code for #ziplib, by Mike Krueger.
+
+src/Threading
+    Contains a simple thread pool wrapper. The functionality we add is the
+    ability to "drain" the thread pool. That is, you can perform an efficient
+    wait-operation that completes when the jobs in the thread pool have all
+    finished.
+
+src/tools
+    Contains various tools necessary for building Paint.NET.
+
+src/WIAAutSDK
+    Contains the WIA 2.0 Automation library.
+
