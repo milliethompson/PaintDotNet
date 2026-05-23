@@ -7,452 +7,715 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Encapsulates the functionality for a tool that goes in the main window's toolbar
-    /// and that affects the Document.
-    /// A Tool should only emit a HistoryAction when it actually modifies the canvas.
-    /// So, for instance, if the user draws a line but that line doesn't fall within
-    /// the canvas (like if the seleciton region excludes it), then since the user
-    /// hasn't really done anything there should be no HistoryAction emitted.
-    /// </summary>
-    public class Tool
-    {
-        protected Image toolBarImage;
-        protected Cursor cursor;
-        protected string name;
-        protected string description;
-        private DocumentWorkspace workspace;
-        private EventHandler selectionChangedDelegate;
-        private EventHandler selectionChangingDelegate;
-        private bool active = false;
-        private Hashtable keysThatAreDown = new Hashtable();
+	/// <summary>
+	/// Encapsulates the functionality for a tool that goes in the main window's toolbar
+	/// and that affects the Document.
+	/// A Tool should only emit a HistoryAction when it actually modifies the canvas.
+	/// So, for instance, if the user draws a line but that line doesn't fall within
+	/// the canvas (like if the seleciton region excludes it), then since the user
+	/// hasn't really done anything there should be no HistoryAction emitted.
+	/// </summary>
+	public class Tool
+	{
+		protected Image toolBarImage;
+		protected Cursor cursor;
+		protected string name;
+		protected string description;
+		protected string helpText;
 
-        private class KeyTimeInfo
-        {
-            public DateTime KeyDownTime;
-            public DateTime LastKeyPressPulse;
+		private DocumentWorkspace workspace;
+		private EventHandler selectionChangedDelegate;
+		private EventHandler selectionChangingDelegate;
+		private bool active = false;
+		protected bool autoScroll = true;
+		private Hashtable keysThatAreDown = new Hashtable();
+		MouseButtons lastButton = MouseButtons.None;
 
-            public KeyTimeInfo()
-            {
-                KeyDownTime = DateTime.Now;
-                LastKeyPressPulse = KeyDownTime;
-            }
-        }
+		private class KeyTimeInfo
+		{
+			public DateTime KeyDownTime;
+			public DateTime LastKeyPressPulse;
+			private int repeats = 0;
+			public int Repeats 
+			{
+				get 
+				{
+					return repeats;
+				}
+				set 
+				{
+					repeats = value;
+				}
+			}
 
-        /// <summary>
-        /// Tells you whether the tool is "active" or not. If the tool is not active
-        /// it is not safe to call any other method besides PerformActive. All
-        /// properties are safe to get values from.
-        /// </summary>
-        public bool Active
-        {
-            get
-            {
-                return active;
-            }
-        }
+			public KeyTimeInfo()
+			{
+				KeyDownTime = DateTime.Now;
+				LastKeyPressPulse = KeyDownTime;
+			}
+		}
 
-        /// <summary>
-        /// Tells you which keys are pressed
-        /// </summary>
-        public Keys ModifierKeys
-        {
-            get
-            {
-                return Control.ModifierKeys;
-            }
-        }
+		/// <summary>
+		/// Tells you whether the tool is "active" or not. If the tool is not active
+		/// it is not safe to call any other method besides PerformActive. All
+		/// properties are safe to get values from.
+		/// </summary>
+		public bool Active
+		{
+			get
+			{
+				return active;
+			}
+		}
 
-        /// <summary>
-        /// Represents the Image that is displayed in the toolbar.
-        /// </summary>
-        public Image Image
-        {
-            get
-            {
-                return toolBarImage;
-            }
-        }
+		/// <summary>
+		/// Tells you which keys are pressed
+		/// </summary>
+		public Keys ModifierKeys
+		{
+			get
+			{
+				return Control.ModifierKeys;
+			}
+		}
 
-        public event EventHandler CursorChanging;
+		/// <summary>
+		/// Represents the Image that is displayed in the toolbar.
+		/// </summary>
+		public Image Image
+		{
+			get
+			{
+				return toolBarImage;
+			}
+		}
 
-        protected virtual void OnCursorChanging()
-        {
-            if (CursorChanging != null)
-            {
-                CursorChanging(this, EventArgs.Empty);
-            }
-        }
+		public event EventHandler CursorChanging;
 
-        public event EventHandler CursorChanged;
+		protected virtual void OnCursorChanging()
+		{
+			if (CursorChanging != null)
+			{
+				CursorChanging(this, EventArgs.Empty);
+			}
+		}
 
-        protected virtual void OnCursorChanged()
-        {
-            if (CursorChanged != null)
-            {
-                CursorChanged(this, EventArgs.Empty);
-            }
-        }
+		public event EventHandler CursorChanged;
 
-        /// <summary>
-        /// The Cursor that is displayed when this Tool is active and the
-        /// mouse cursor is inside the document view.
-        /// </summary>
-        public Cursor Cursor
-        {
-            get
-            {
-                return cursor;
-            }
+		protected virtual void OnCursorChanged()
+		{
+			if (CursorChanged != null)
+			{
+				CursorChanged(this, EventArgs.Empty);
+			}
+		}
 
-            set
-            {
-                OnCursorChanging();
-                cursor = value;
-                OnCursorChanged();
-            }
-        }
+		/// <summary>
+		/// The Cursor that is displayed when this Tool is active and the
+		/// mouse cursor is inside the document view.
+		/// </summary>
+		public Cursor Cursor
+		{
+			get
+			{
+				return cursor;
+			}
 
-        /// <summary>
-        /// The name of the Tool. For instance, "Pencil"
-        /// </summary>
-        public string Name
-        {
-            get
-            {
-                return name;
-            }
-        }
+			set
+			{
+				OnCursorChanging();
+				cursor = value;
+				OnCursorChanged();
+			}
+		}
 
-        /// <summary>
-        /// A short description of what the Tool does.
-        /// </summary>
-        public string Description
-        {
-            get
-            {
-                return description;
-            }
-        }
+		/// <summary>
+		/// The name of the Tool. For instance, "Pencil"
+		/// </summary>
+		public string Name
+		{
+			get
+			{
+				return name;
+			}
+		}
 
-        /// <summary>
-        /// A reference to the workspace that contains this Tool.
-        /// </summary>
-        public DocumentWorkspace Workspace
-        {
-            get
-            {
-                return workspace;
-            }
-        }
+		/// <summary>
+		/// A short description of what the Tool does.
+		/// </summary>
+		public string Description
+		{
+			get
+			{
+				return description;
+			}
+		}
 
-        // Methods to send messages to this class
-        public void PerformActivate()
-        {
-            OnActivate();
-        }
+		/// <summary>
+		/// A short description of how to use the tool.
+		/// </summary>
+		public string HelpText
+		{
+			get
+			{
+				return helpText;
+			}
+		}
 
-        public void PerformDeactivate()
-        {
-            OnDeactivate();
-        }
+		/// <summary>
+		/// Specifies whether or not an inherited tool should take Ink commands
+		/// </summary>
+		protected virtual bool SupportsInk 
+		{
+			get
+			{
+				return false;
+			}
+		}
 
-        public void PerformMouseMove(MouseEventArgs e)
-        {
-            OnMouseMove(e);
-        }
+		public virtual char HotKey
+		{
+			get
+			{
+				return '\0';
+			}
+		}
 
-        public void PerformMouseDown(MouseEventArgs e)
-        {
-            OnMouseDown(e);
-        }
+		/// <summary>
+		/// A reference to the workspace that contains this Tool.
+		/// </summary>
+		public DocumentWorkspace Workspace
+		{
+			get
+			{
+				return workspace;
+			}
+		}
 
-        public void PerformMouseUp(MouseEventArgs e)
-        {
-            OnMouseUp(e);
-        }
+		// Methods to send messages to this class
+		public void PerformActivate()
+		{
+			OnActivate();
+		}
 
-        public void PerformKeyPress(KeyPressEventArgs e)
-        {
-            OnKeyPress(e);
-        }
+		public void PerformDeactivate()
+		{
+			OnDeactivate();
+		}
 
-        public void PerformKeyPress(Keys key)
-        {
-            OnKeyPress(key);
-        }
+		private bool IsOverflow(MouseEventArgs e) 
+		{
+			PointF clientPt = workspace.DocumentView.DocumentToClient(new PointF(e.X, e.Y));
+			return (clientPt.X < -16384 || clientPt.Y < -16384);
+		}
 
-        public void PerformKeyUp(KeyEventArgs e)
-        {
-            OnKeyUp(e);
-        }
+		public void PerformMouseMove(MouseEventArgs e)
+		{
+			if (IsOverflow(e)) 
+			{
+				return;
+			}
+			if (e is StylusEventArgs)
+			{
+				if (this.SupportsInk) 
+				{
+					OnStylusMove(e as StylusEventArgs);
+				}
+			}
+			else
+			{
+				//if (!this.SupportsInk)
+				{
+					OnMouseMove(e);
+				}
+			}
+		}
 
-        public void PerformKeyDown(KeyEventArgs e)
-        {
-            OnKeyDown(e);
-        }
+		public void PerformMouseDown(MouseEventArgs e)
+		{
+			if (IsOverflow(e)) 
+			{
+				return;
+			}
+			if (e is StylusEventArgs) 
+			{
+				if (this.SupportsInk) 
+				{
+					OnStylusDown(e as StylusEventArgs);
+				}
+			}
+			else
+			{
+				if (this.SupportsInk) 
+				{
+					Workspace.DocumentView.Focus();
+				} 
+				else
+				{
+					OnMouseDown(e);
+				}
+			}
+		}
 
-        public void PerformClick()
-        {
-            OnClick();
-        }
+		public void PerformMouseUp(MouseEventArgs e)
+		{
+			if (IsOverflow(e)) 
+			{
+				return;
+			}
+			if (e is StylusEventArgs) 
+			{
+				if (this.SupportsInk) 
+				{
+					OnStylusUp(e as StylusEventArgs);
+				}
+			}
+			else
+			{
+				OnMouseUp(e);
+			}
+		}
 
-        public void PerformPulse()
-        {
-            OnPulse();
-        }
+		public void PerformKeyPress(KeyPressEventArgs e)
+		{
+			OnKeyPress(e);
+		}
 
-        public void PerformPaste(IDataObject data, out bool handled)
-        {
-            OnPaste(data, out handled);
-        }
+		public void PerformKeyPress(Keys key)
+		{
+			OnKeyPress(key);
+		}
 
-        public void PerformPasteQuery(IDataObject data, out bool canHandle)
-        {
-            OnPasteQuery(data, out canHandle);
-        }
+		public void PerformKeyUp(KeyEventArgs e)
+		{
+			OnKeyUp(e);
+		}
 
-        // Messages for derived classes to override
+		public void PerformKeyDown(KeyEventArgs e)
+		{
+			OnKeyDown(e);
+		}
 
-        /// <summary>
-        /// This method is called when the tool is being activated; that is, when the
-        /// user has chosen to use this tool by clicking on it on a toolbar.
-        /// </summary>
-        protected virtual void OnActivate()
-        {
-            active = true;
-            Workspace.Environment.SelectedPathChanging += selectionChangingDelegate;
-            Workspace.Environment.SelectedPathChanged += selectionChangedDelegate;
-        }
+		public void PerformClick()
+		{
+			OnClick();
+		}
 
-        /// <summary>
-        /// This method is called when the tool is being deactivated; that is, when the
-        /// user has chosen to use another tool by clicking on another tool on a
-        /// toolbar.
-        /// </summary>
-        protected virtual void OnDeactivate()
-        {
-            active = false;
-            Workspace.Environment.SelectedPathChanging -= selectionChangingDelegate;
-            Workspace.Environment.SelectedPathChanged -= selectionChangedDelegate;
-        }
+		public void PerformPulse()
+		{
+			OnPulse();
+		}
 
-        /// <summary>
-        /// This method is called when the Tool is active and the mouse is moving within
-        /// the document canvas area.
-        /// </summary>
-        /// <param name="e">Contains information about where the mouse cursor is, in document coordinates.</param>
-        protected virtual void OnMouseMove(MouseEventArgs e)
-        {
-        }
+		public void PerformPaste(IDataObject data, out bool handled)
+		{
+			OnPaste(data, out handled);
+		}
 
-        /// <summary>
-        /// This method is called when the Tool is active and a mouse button has been
-        /// pressed within the document area.
-        /// </summary>
-        /// <param name="e">Contains information about where the mouse cursor is, in document coordinates, and which mouse buttons were pressed.</param>
-        protected virtual void OnMouseDown(MouseEventArgs e)
-        {
-        }
+		public void PerformPasteQuery(IDataObject data, out bool canHandle)
+		{
+			OnPasteQuery(data, out canHandle);
+		}
 
-        /// <summary>
-        /// This method is called when the Tool is active and a mouse button has been
-        /// released within the document area.
-        /// </summary>
-        /// <param name="e">Contains information about where the mouse cursor is, in document coordinates, and which mouse buttons were released.</param>
-        protected virtual void OnMouseUp(MouseEventArgs e)
-        {
-        }
+		// Messages for derived classes to override
 
-        /// <summary>
-        /// This method is called when the Tool is active and a mouse button has been
-        /// clicked within the document area. If you need more specific information,
-        /// such as where the mouse was clicked and which button was used, respond to
-        /// the MouseDown/MouseUp events.
-        /// </summary>
-        protected virtual void OnClick()
-        {
-        }
+		/// <summary>
+		/// This method is called when the tool is being activated; that is, when the
+		/// user has chosen to use this tool by clicking on it on a toolbar.
+		/// </summary>
+		protected virtual void OnActivate()
+		{
+			active = true;
+			Workspace.Environment.SelectedPathChanging += selectionChangingDelegate;
+			Workspace.Environment.SelectedPathChanged += selectionChangedDelegate;
+//			Workspace.Widgets.MainToolBar.ToleranceSliderWidget.ToleranceChanged += new ToleranceEventHandler(ToleranceSliderWidget_ToleranceChanged);
+//			tolerance = Workspace.Widgets.MainToolBar.Tolerance;
+		}
 
-        /// <summary>
-        /// This method is called when the tool is active and a keyboard key is pressed
-        /// and released. If you respond to the keyboard key, set e.Handled to true.
-        /// </summary>
-        protected virtual void OnKeyPress(KeyPressEventArgs e)
-        {            
-        }
+		/// <summary>
+		/// This method is called when the tool is being deactivated; that is, when the
+		/// user has chosen to use another tool by clicking on another tool on a
+		/// toolbar.
+		/// </summary>
+		protected virtual void OnDeactivate()
+		{
+			active = false;
+			Workspace.Environment.SelectedPathChanging -= selectionChangingDelegate;
+			Workspace.Environment.SelectedPathChanged -= selectionChangedDelegate;
+		}
 
-        /// <summary>
-        /// This method is called when the tool is active and a keyboard key is pressed
-        /// and released that is not representable with a regular Unicode chararacter.
-        /// An example would be the arrow keys.
-        /// </summary>
-        protected virtual void OnKeyPress(Keys key)
-        {
-        }
+		protected virtual void OnStylusDown(StylusEventArgs e)
+		{
+		}
 
-        /// <summary>
-        /// This method is called when the tool is active and a keyboard key is pressed.
-        /// If you respond to the keyboard key, set e.Handled to true.
-        /// </summary>
-        protected virtual void OnKeyUp(KeyEventArgs e)
-        {
-            keysThatAreDown.Clear();
-        }
+		protected virtual void OnStylusMove(StylusEventArgs e)
+		{
+			if (e.Button != MouseButtons.None)
+			{
+				ScrollIfNecessary(new PointF(e.X, e.Y));
+			}
+		}
 
-        /// <summary>
-        /// This method is called when the tool is active and a keyboard key is released
-        /// Before responding, check the e.Handled is false, and if you then respond to 
-        /// the keyboard key, set e.Handled to true.
-        /// </summary>
-        protected virtual void OnKeyDown(KeyEventArgs e)
-        {
-            if (!e.Handled)
-            {
-                try
-                {
-                    keysThatAreDown.Add(e.KeyData, new KeyTimeInfo());
-                }
+		protected virtual void OnStylusUp(StylusEventArgs e)
+		{
+		}
+		/// <summary>
+		/// This method is called when the Tool is active and the mouse is moving within
+		/// the document canvas area.
+		/// </summary>
+		/// <param name="e">Contains information about where the mouse cursor is, in document coordinates.</param>
+		protected virtual void OnMouseMove(MouseEventArgs e)
+		{
+			if (e.Button != MouseButtons.None)
+			{
+				ScrollIfNecessary(new PointF(e.X, e.Y));
+			}
+			lastButton = e.Button;
+		}
 
-                catch (ArgumentException)
-                {
-                    // item was already in the hashtable
-                    // exception is ignored because we don't really care
-                }
+		/// <summary>
+		/// This method is called when the Tool is active and a mouse button has been
+		/// pressed within the document area.
+		/// </summary>
+		/// <param name="e">Contains information about where the mouse cursor is, in document coordinates, and which mouse buttons were pressed.</param>
+		protected virtual void OnMouseDown(MouseEventArgs e)
+		{
+			lastButton = e.Button;
+		}
 
-                // arrow keys are processed in another way
-                // we get their KeyDown but no KeyUp, so they can not be handled
-                // by our normal methods
-                OnKeyPress(e.KeyData);
-            }
-        }
+		/// <summary>
+		/// This method is called when the Tool is active and a mouse button has been
+		/// released within the document area.
+		/// </summary>
+		/// <param name="e">Contains information about where the mouse cursor is, in document coordinates, and which mouse buttons were released.</param>
+		protected virtual void OnMouseUp(MouseEventArgs e)
+		{
+			lastButton = e.Button;
+		}
 
-        /// <summary>
-        /// This method is called when the Tool is active and the selection area is
-        /// about to be changed.
-        /// </summary>
-        protected virtual void OnSelectionChanging()
-        {
-        }
+		/// <summary>
+		/// This method is called when the Tool is active and a mouse button has been
+		/// clicked within the document area. If you need more specific information,
+		/// such as where the mouse was clicked and which button was used, respond to
+		/// the MouseDown/MouseUp events.
+		/// </summary>
+		protected virtual void OnClick()
+		{
+		}
 
-        /// <summary>
-        /// This method is called when the Tool is active and the selection area has
-        /// been changed.
-        /// </summary>
-        protected virtual void OnSelectionChanged()
-        {
-        }
+		/// <summary>
+		/// This method is called when the tool is active and a keyboard key is pressed
+		/// and released. If you respond to the keyboard key, set e.Handled to true.
+		/// </summary>
+		protected virtual void OnKeyPress(KeyPressEventArgs e)
+		{
+			if (!e.Handled && workspace.DocumentView.Focused) 
+			{
+				Type [] toolTypes = Workspace.Tools;
+				Type currentToolType = Workspace.Environment.Tool.GetType();
+				int currentTool = 0;
 
-        /// <summary>
-        /// This method is called when the system is querying a tool as to whether
-        /// it can handle a pasted object.
-        /// </summary>
-        /// <param name="data">
-        /// The clipboard data that was pasted by the user that should be inspected.
-        /// </param>
-        /// <param name="canHandle">
-        /// <b>true</b> if the data can be handled by the tool, <b>false</b> if not.
-        /// </param>
-        /// <remarks>
-        /// If you do not set canHandle to <b>true</b> then the tool will not be
-        /// able to respond to the Edit menu's Paste item.
-        /// </remarks>
-        protected virtual void OnPasteQuery(IDataObject data, out bool canHandle)
-        {
-            canHandle = false;
-        }
+				for (int t = 0; t < toolTypes.Length; t++) 
+				{
+					if (toolTypes[t] == currentToolType)
+					{
+						currentTool = t;
+						break;
+					}
+				}
+				for (int t = 0; t < toolTypes.Length; t++) 
+				{
+					int newTool = (t + currentTool + 1) % toolTypes.Length;
+					Type toolType = toolTypes[newTool];
+					Tool tool = Tool.CreateTool(toolType, Workspace);
 
-        /// <summary>
-        /// This method is called when the user invokes a paste operation. Tools get
-        /// the first chance to handle this data.
-        /// </summary>
-        /// <param name="data">
-        /// The data that was pasted by the user.
-        /// </param>
-        /// <param name="handled">
-        /// <b>true</b> if the data was handled and pasted, <b>false</b> if not.
-        /// </param>
-        /// <remarks>
-        /// If you do not set handled to <b>true</b> the event will be passed to the 
-        /// global paste handler.
-        /// </remarks>
-        protected virtual void OnPaste(IDataObject data, out bool handled)
-        {
-            handled = false;
-        }
+					if (char.ToLower(tool.HotKey) == char.ToLower(e.KeyChar)) 
+					{
+						Workspace.Widgets.MainToolBar.SelectTool(toolType);
+						e.Handled = true;
+						return;
+					}
+				}
+			}
+		}
 
-        /// <summary>
-        /// This method is called many times per second, called by the DocumentWorkspace.
-        /// </summary>
-        protected virtual void OnPulse()
-        {
-            uint kbDelay;
-            uint kbRepeat;
-            DateTime now = DateTime.Now;
+		/// <summary>
+		/// This method is called when the tool is active and a keyboard key is pressed
+		/// and released that is not representable with a regular Unicode chararacter.
+		/// An example would be the arrow keys.
+		/// </summary>
+		private DateTime lastKeyboardMove = DateTime.MinValue;
+		private Keys lastKey;
+		private int keyboardMoveSpeed = 1;
+		private int keyboardMoveRepeats = 0;
+		protected virtual void OnKeyPress(Keys key)
+		{
+			Point dir = Point.Empty;
 
-            unsafe
-            {
-                uint *kbDelayPtr = &kbDelay;
-                uint *kbRepeatPtr = &kbRepeat;
+			if (key != lastKey) 
+			{
+				lastKeyboardMove = DateTime.MinValue;
+			}
+			lastKey = key;
 
-                NativeMethods.SystemParametersInfo(NativeMethods.SpiConstants.SPI_GETKEYBOARDDELAY, 0, kbDelayPtr, 0);
-                NativeMethods.SystemParametersInfo(NativeMethods.SpiConstants.SPI_GETKEYBOARDSPEED, 0, kbRepeatPtr, 0);
-            }
+			switch (key) {
+				case Keys.Left:
+					dir.X--;
+					break;
+				case Keys.Right:
+					dir.X++;
+					break;
+				case Keys.Up:
+					dir.Y--;
+					break;
+				case Keys.Down:
+					dir.Y++;
+					break;				
+			}
 
-            TimeSpan kbDelaySpan = new TimeSpan (0, 0, 0, 0, ((int)kbDelay + 1) * 250);
-            TimeSpan kbRepeatSpan = new TimeSpan(0, 0, 0, 0, (12 * (int)kbRepeat) + 33);
+			if (!dir.Equals(Point.Empty)) 
+			{
+				long span = DateTime.Now.Ticks - lastKeyboardMove.Ticks;
+				
+				if (span * 4 > TimeSpan.TicksPerSecond) 
+				{
+					keyboardMoveRepeats = 0;
+					keyboardMoveSpeed = 1;
+				}
+				else
+				{
+					keyboardMoveRepeats++;
+					if (keyboardMoveRepeats > 15 && keyboardMoveRepeats % 4 == 0)
+						keyboardMoveSpeed++;
+				}
+				lastKeyboardMove = DateTime.Now;
+				
+				int offset = workspace.DocumentView.ScaleFactor.Numerator * keyboardMoveSpeed;
+				Cursor.Position = new Point(Cursor.Position.X + offset * dir.X, Cursor.Position.Y + offset * dir.Y);
+				
+				Point location = workspace.DocumentView.PointToScreen(Point.Truncate(workspace.DocumentView.DocumentToClient(PointF.Empty)));
+				PointF stylusLoc = new PointF(
+					(float)Cursor.Position.X - (float)location.X,
+					(float)Cursor.Position.Y - (float)location.Y);
 
-            if (keysThatAreDown.Count > 1)
-            {
-                foreach (Keys key in keysThatAreDown.Keys)
-                {
-                    KeyTimeInfo keyTimeInfo = (KeyTimeInfo)keysThatAreDown[key];
-                    DateTime firstRepeat = keyTimeInfo.KeyDownTime + kbDelaySpan;
+				stylusLoc = workspace.DocumentView.ScaleFactor.UnscalePoint(stylusLoc);
+				workspace.DocumentView.PerformDocumentMouseMove(new MouseEventArgs(lastButton, 1, (int)stylusLoc.X, (int)stylusLoc.Y, 0));
+				workspace.DocumentView.PerformDocumentMouseMove(new StylusEventArgs(lastButton, 1, stylusLoc.X, stylusLoc.Y, 0, 1.0f));
+			}
+		}
 
-                    if (keyTimeInfo.LastKeyPressPulse == keyTimeInfo.KeyDownTime)
-                    {
-                        if (now > firstRepeat)
-                        {
-                            keyTimeInfo.LastKeyPressPulse = now;
-                            OnKeyPress(key);
-                        }
-                    }
-                    else
-                    {
-                        if ((now - keyTimeInfo.LastKeyPressPulse) > kbRepeatSpan)
-                        {
-                            keyTimeInfo.LastKeyPressPulse = now;
-                            OnKeyPress(key);
-                        }
-                    }
-                }
-            }
-        }
+		/// <summary>
+		/// This method is called when the tool is active and a keyboard key is pressed.
+		/// If you respond to the keyboard key, set e.Handled to true.
+		/// </summary>
+		protected virtual void OnKeyUp(KeyEventArgs e)
+		{
+			keysThatAreDown.Clear();
+		}
 
-        private void SelectionChangingHandler(object sender, EventArgs e)
-        {
-            OnSelectionChanging();
-        }
+		/// <summary>
+		/// This method is called when the tool is active and a keyboard key is released
+		/// Before responding, check the e.Handled is false, and if you then respond to 
+		/// the keyboard key, set e.Handled to true.
+		/// </summary>
+		protected virtual void OnKeyDown(KeyEventArgs e)
+		{
+			if (!e.Handled)
+			{
+				try
+				{
+					keysThatAreDown.Add(e.KeyData, new KeyTimeInfo());
+				}
 
-        private void SelectionChangedHandler(object sender, EventArgs e)
-        {
-            OnSelectionChanged();
-        }
+				catch (ArgumentException)
+				{
+					// item was already in the hashtable
+					// exception is ignored because we don't really care
+				}
 
-        public Tool(DocumentWorkspace workspace)
-        {
-            this.workspace = workspace;
-            this.toolBarImage = null;
-            this.name = string.Empty;
-            this.selectionChangingDelegate = new EventHandler(SelectionChangingHandler);
-            this.selectionChangedDelegate = new EventHandler(SelectionChangedHandler);
-        }
+				// arrow keys are processed in another way
+				// we get their KeyDown but no KeyUp, so they can not be handled
+				// by our normal methods
+				OnKeyPress(e.KeyData);
+			}
+		}
 
-        public static Tool CreateTool(Type toolType, DocumentWorkspace workspace)
-        {
-            ConstructorInfo ci = toolType.GetConstructor(new Type[] { typeof(DocumentWorkspace) });
-            Tool tool = (Tool)ci.Invoke(new object[] { workspace });
-            return tool;
-        }
-    }
+		/// <summary>
+		/// This method is called when the Tool is active and the selection area is
+		/// about to be changed.
+		/// </summary>
+		protected virtual void OnSelectionChanging()
+		{
+		}
+
+		/// <summary>
+		/// This method is called when the Tool is active and the selection area has
+		/// been changed.
+		/// </summary>
+		protected virtual void OnSelectionChanged()
+		{
+		}
+
+		/// <summary>
+		/// This method is called when the system is querying a tool as to whether
+		/// it can handle a pasted object.
+		/// </summary>
+		/// <param name="data">
+		/// The clipboard data that was pasted by the user that should be inspected.
+		/// </param>
+		/// <param name="canHandle">
+		/// <b>true</b> if the data can be handled by the tool, <b>false</b> if not.
+		/// </param>
+		/// <remarks>
+		/// If you do not set canHandle to <b>true</b> then the tool will not be
+		/// able to respond to the Edit menu's Paste item.
+		/// </remarks>
+		protected virtual void OnPasteQuery(IDataObject data, out bool canHandle)
+		{
+			canHandle = false;
+		}
+
+		/// <summary>
+		/// This method is called when the user invokes a paste operation. Tools get
+		/// the first chance to handle this data.
+		/// </summary>
+		/// <param name="data">
+		/// The data that was pasted by the user.
+		/// </param>
+		/// <param name="handled">
+		/// <b>true</b> if the data was handled and pasted, <b>false</b> if not.
+		/// </param>
+		/// <remarks>
+		/// If you do not set handled to <b>true</b> the event will be passed to the 
+		/// global paste handler.
+		/// </remarks>
+		protected virtual void OnPaste(IDataObject data, out bool handled)
+		{
+			handled = false;
+		}
+
+		/// <summary>
+		/// This method is called many times per second, called by the DocumentWorkspace.
+		/// </summary>
+		protected virtual void OnPulse()
+		{
+			uint kbDelay;
+			uint kbRepeat;
+			DateTime now = DateTime.Now;
+
+			unsafe
+			{
+				uint *kbDelayPtr = &kbDelay;
+				uint *kbRepeatPtr = &kbRepeat;
+
+				NativeMethods.SystemParametersInfo(NativeMethods.SpiConstants.SPI_GETKEYBOARDDELAY, 0, kbDelayPtr, 0);
+				NativeMethods.SystemParametersInfo(NativeMethods.SpiConstants.SPI_GETKEYBOARDSPEED, 0, kbRepeatPtr, 0);
+			}
+
+			TimeSpan kbDelaySpan = new TimeSpan (0, 0, 0, 0, ((int)kbDelay + 1) * 250);
+			TimeSpan kbRepeatSpan = new TimeSpan(0, 0, 0, 0, (12 * (int)kbRepeat) + 33);
+
+			if (keysThatAreDown.Count > 1)
+			{
+				foreach (Keys key in keysThatAreDown.Keys)
+				{
+					KeyTimeInfo keyTimeInfo = (KeyTimeInfo)keysThatAreDown[key];
+					DateTime firstRepeat = keyTimeInfo.KeyDownTime + kbDelaySpan;
+
+					if (keyTimeInfo.LastKeyPressPulse == keyTimeInfo.KeyDownTime)
+					{
+						//Send first key repeat after delay
+						if (now > firstRepeat)
+						{
+							keyTimeInfo.LastKeyPressPulse = now;
+							keyTimeInfo.Repeats++;
+							OnKeyPress(key);
+						}
+					}
+					else
+					{
+						//Send rapid key repeats
+						if ((now - keyTimeInfo.LastKeyPressPulse) > kbRepeatSpan)
+						{
+							keyTimeInfo.LastKeyPressPulse = now;
+							keyTimeInfo.Repeats++;
+							OnKeyPress(key);
+						}
+					}
+				}
+			}
+		}
+
+		private void SelectionChangingHandler(object sender, EventArgs e)
+		{
+			OnSelectionChanging();
+		}
+
+		private void SelectionChangedHandler(object sender, EventArgs e)
+		{
+			OnSelectionChanged();
+		}
+
+		public Tool(DocumentWorkspace workspace)
+		{
+			this.workspace = workspace;
+			this.toolBarImage = null;
+			this.name = string.Empty;
+			this.description = string.Empty;
+			this.helpText = "No help available";
+			this.selectionChangingDelegate = new EventHandler(SelectionChangingHandler);
+			this.selectionChangedDelegate = new EventHandler(SelectionChangedHandler);
+		}
+
+		public static Tool CreateTool(Type toolType, DocumentWorkspace workspace)
+		{
+			ConstructorInfo ci = toolType.GetConstructor(new Type[] { typeof(DocumentWorkspace) });
+			Tool tool = (Tool)ci.Invoke(new object[] { workspace });
+			return tool;
+		}
+
+		protected bool ScrollIfNecessary(PointF position) 
+		{
+			if (!autoScroll) 
+			{
+				return false;
+			}
+
+			Rectangle visible = Workspace.DocumentView.VisibleDocumentRectangle;
+			PointF lastScrollPosition = Workspace.DocumentView.DocumentScrollPosition;
+			PointF delta = PointF.Empty, zoomedPoint = PointF.Empty;
+
+			zoomedPoint.X = Utility.Lerp((visible.Left + visible.Right) / 2.0f, position.X, 1.02f);
+			zoomedPoint.Y = Utility.Lerp((visible.Top + visible.Bottom) / 2.0f, position.Y, 1.02f);
+
+			if (zoomedPoint.X < visible.Left) 
+			{
+				delta.X = zoomedPoint.X - visible.Left;
+			}
+			else if (zoomedPoint.X > visible.Right) 
+			{
+				delta.X = zoomedPoint.X - visible.Right;
+			} 
+			if (zoomedPoint.Y < visible.Top) 
+			{
+				delta.Y = zoomedPoint.Y - visible.Top;
+			} 
+			else if (zoomedPoint.Y > visible.Bottom) 
+			{
+				delta.Y = zoomedPoint.Y - visible.Bottom;
+			}
+			if (!delta.IsEmpty) 
+			{
+				lastScrollPosition.X += delta.X;
+				lastScrollPosition.Y += delta.Y;
+				Workspace.DocumentView.DocumentScrollPosition = lastScrollPosition;
+				Workspace.DocumentView.Update();
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+	}
 }

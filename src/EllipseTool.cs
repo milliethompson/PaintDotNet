@@ -72,9 +72,10 @@ namespace PaintDotNet
             : base(parent)
         {
             toolBarImage = Utility.GetImageResource("Icons.EllipseToolIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.RectangleToolCursor.cur"));
+            cursor = new Cursor(Utility.GetResourceStream("Cursors.EllipseToolCursor.cur"));
             name = "Ellipse";
             description = "Draws an Ellipse";
+			helpText = "Left click to draw an ellipse with the foreground color, right click to use the background color";
         }
     }
 }

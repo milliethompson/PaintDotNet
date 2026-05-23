@@ -1,0 +1,160 @@
+// Oil Painting effect
+// Paint.NET implementation by Rick Brewster
+// Original C++ implementation by Jason Waltman as part of "Filter Explorer," http://www.jasonwaltman.com/thesis/index.html
+
+using PaintDotNet;
+using PaintDotNet.Effects;
+using System;
+using System.Drawing;
+
+namespace PaintDotNet.Effects
+{
+	/// <summary>
+	/// Summary description for OilPaintingEffect.
+	/// </summary>
+	public class OilPaintingEffect
+        : Effect,
+          IConfigurableEffect
+	{
+		public OilPaintingEffect()
+            : base("Oil Painting",
+                   "Makes the image look like it was drawn with oil paints",
+                   Utility.GetImageResource("Icons.OilPaintingEffect.bmp"))
+		{
+        }
+
+        public EffectConfigDialog CreateConfigDialog()
+        {
+            TwoAmountsConfigDialog tacg = new TwoAmountsConfigDialog();
+
+            tacg.Text = "Oil Painting";
+
+            tacg.Amount1Minimum = 1;
+            tacg.Amount1Maximum = 8;
+            tacg.Amount1Default = 3;
+            tacg.Amount1Label = "Brush Size";
+            
+            tacg.Amount2Minimum = 3;
+            tacg.Amount2Maximum = 255;
+            tacg.Amount2Default = 50;
+			tacg.Amount2Label = "Coarseness";
+
+			tacg.Icon = Utility.GetIconResource("Icons.OilPaintingEffect.bmp");
+
+            return tacg;
+        }
+
+        public unsafe void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        {
+            TwoAmountsConfigToken token = (TwoAmountsConfigToken)properties;
+            int brushSize = token.Amount1;
+            byte smoothness = (byte)token.Amount2;
+            Surface src = srcArgs.Surface;
+            Surface dst = dstArgs.Surface;
+            int width = src.Width;
+            int height = src.Height;
+
+            int arrayLens = 1 + smoothness;
+            int[] intensityCount = new int[arrayLens];
+            uint[] avgRed = new uint[arrayLens];
+            uint[] avgGreen = new uint[arrayLens];
+            uint[] avgBlue = new uint[arrayLens];
+            uint[] avgAlpha = new uint[arrayLens];
+
+            byte maxIntensity = smoothness;
+
+            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
+            {
+                int rectTop = rect.Top;
+                int rectBottom = rect.Bottom;
+                int rectLeft = rect.Left;
+                int rectRight = rect.Right;
+
+                for (int y = rectTop; y < rectBottom; ++y)
+                {
+                    ColorBgra *dstPtr = dst.GetPointAddress(rect.Left, y);
+
+                    int top = y - brushSize;
+                    int bottom = y + brushSize + 1;
+
+                    if (top < 0)
+                    {
+                        top = 0;
+                    }
+
+                    if (bottom > height)
+                    {
+                        bottom = height;
+                    }
+
+                    for (int x = rectLeft; x < rectRight; ++x)
+                    {
+                        int left = x - brushSize;
+                        int right = x + brushSize + 1;
+
+                        if (left < 0)
+                        {
+                            left = 0;
+                        }
+
+                        if (right > width)
+                        {
+                            right = width;
+                        }
+
+                        for (int i = 0; i < arrayLens; ++i)
+                        {
+                            intensityCount[i] = 0;
+                            avgRed[i] = 0;
+                            avgGreen[i] = 0;
+                            avgBlue[i] = 0;
+                            avgAlpha[i] = 0;
+                        }
+
+                        int numInt = 0;
+
+                        for (int j = top; j < bottom; ++j)
+                        {
+                            ColorBgra *srcPtr = src.GetPointAddress(left, j);
+
+                            for (int i = left; i < right; ++i)
+                            {
+                                byte intensity = (byte)((srcPtr->GetIntensityByte() * maxIntensity) / 255);
+                                ++intensityCount[intensity];
+                                ++numInt;
+
+                                avgRed[intensity] += srcPtr->R;
+                                avgGreen[intensity] += srcPtr->G;
+                                avgBlue[intensity] += srcPtr->B;
+                                avgAlpha[intensity] += srcPtr->A;
+
+                                ++srcPtr;
+                            }
+                        }
+
+                        byte chosenIntensity = 0;
+                        int maxInstance = 0;
+
+                        for (int i = 0; i <= maxIntensity; ++i)
+                        {
+                            if (intensityCount[i] > maxInstance)
+                            {
+                                chosenIntensity = (byte)i;
+                                maxInstance = intensityCount[i];
+                            }
+                        }
+
+                        byte R = (byte)(avgRed[chosenIntensity] / maxInstance);
+                        byte G = (byte)(avgGreen[chosenIntensity] / maxInstance);
+                        byte B = (byte)(avgBlue[chosenIntensity] / maxInstance);
+                        byte A = (byte)(avgAlpha[chosenIntensity] / maxInstance);
+
+                        *dstPtr = ColorBgra.FromBgra(B, G, R, A); 
+                        ++dstPtr;
+                    }
+                }
+            }
+        }
+
+    }
+}

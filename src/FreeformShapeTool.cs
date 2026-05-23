@@ -69,6 +69,7 @@ namespace PaintDotNet
             cursor = new Cursor(Utility.GetResourceStream("Cursors.FreeformShapeToolCursor.cur"));
             name = "Freeform Shape";
             description = "Draws a freeform shape";
+			helpText = "Left click to draw a freeform shape with the foreground color, right click to use the background color";
         }
     }
 }

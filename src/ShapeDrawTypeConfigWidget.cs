@@ -30,8 +30,6 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
-
             // Create ImageList
             imageList = new ImageList();
             imageList.ImageSize = new Size(16, 16);

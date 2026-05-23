@@ -31,7 +31,6 @@ namespace PaintDotNet
             // This call is required by the Windows Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
             anchorChooserControl_AnchorEdgeChanged(anchorChooserControl, EventArgs.Empty);
 
             this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.MenuImageCanvasSizeIcon.bmp"), Color.FromArgb(192, 192, 192));

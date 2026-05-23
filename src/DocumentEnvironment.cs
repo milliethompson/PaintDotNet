@@ -507,6 +507,44 @@ namespace PaintDotNet
         }
         #endregion
 
+		#region Tolerance
+		public event EventHandler ToleranceChanged;
+		protected void OnToleranceChanged()
+		{
+			if (ToleranceChanged != null)
+			{
+				ToleranceChanged(this, EventArgs.Empty);
+			}
+		}
+
+		public event EventHandler ToleranceChanging;
+		protected void OnToleranceChanging()
+		{
+			if (ToleranceChanging != null)
+			{
+				ToleranceChanging(this, EventArgs.Empty);
+			}
+		}
+
+		private int tolerance;
+		public int Tolerance
+		{
+			get
+			{
+				return tolerance;
+			}
+
+			set
+			{
+				if (tolerance != value)
+				{
+					tolerance = value;
+					OnToleranceChanged();
+				}
+			}
+		}
+		#endregion
+
         public void PerformAllChanged()
         {
             OnFontInfoChanged();
@@ -517,6 +555,7 @@ namespace PaintDotNet
             OnForeColorChanged();
             OnBackColorChanged();
             OnShapeDrawTypeChanged();
+			OnToleranceChanged();
         }
 
         public void ResetToDefaults()
@@ -532,6 +571,10 @@ namespace PaintDotNet
             fontInfo = new FontInfo(new FontFamily("Arial"), 12, 0); // Arial size 12, no bold/italic/underline
             textAlignment = TextAlignment.Left;
             shapeDrawType = ShapeDrawType.Outline;
+			
+			OnToleranceChanging();
+			tolerance = 20;
+			OnToleranceChanged();
 
             OnSelectedPathChanging();
             SelectedPath.Reset();

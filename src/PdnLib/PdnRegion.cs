@@ -590,7 +590,6 @@ namespace PaintDotNet
             }
         }
 
-        [Obsolete]
         public bool IsEmpty(Graphics g)
         {
             lock (lockObject)

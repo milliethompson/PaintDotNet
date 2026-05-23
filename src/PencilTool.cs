@@ -15,14 +15,25 @@ namespace PaintDotNet
     public class PencilTool
         : Tool 
     {
-        private BinaryPixelOp blender = new BinaryPixelOps.AlphaBlend();
         private bool mouseDown = false;
         private MouseButtons mouseButton;
         private ArrayList savedSurfaces;
         private BitmapLayer bitmapLayer;
         private RenderArgs renderArgs;
         private ArrayList tracePoints;
-        private Pen pen;
+		private Pen pen;
+		private PdnRegion clipRegion;
+
+		private Point lastPoint;
+		private Point difference;
+
+		public override char HotKey
+		{
+			get
+			{
+				return 'p';
+			}
+		}
 
         protected override void OnActivate()
         {
@@ -83,60 +94,84 @@ namespace PaintDotNet
                 pen.Dispose();
                 pen = null;
             }
+
+			Utility.Dispose(clipRegion);
         }
 
-        private void DrawLines(RenderArgs ra, ArrayList points, int startIndex, int length, Pen pen, bool antiAliasing)
+
+		// Draws a point, but first intersects it with the selections
+		// This code was ripped off from the clone stamp tool
+		private void DrawPoint(RenderArgs ra, Point p, ColorBgra color)
+		{
+			if (Utility.IsPointInRectangle(p, ra.Surface.Bounds))
+			{
+				Rectangle[] rectSelRegions;
+
+				if (Workspace.Environment.IsSelectionEmpty)
+				{
+					rectSelRegions = 
+						new Rectangle [] {
+											 new Rectangle(0,0,
+											 this.Workspace.Document.Width,
+											 this.Workspace.Document.Height)
+										 };
+				}
+				else
+				{
+					rectSelRegions = clipRegion.GetRegionScansInt();
+				}
+
+				foreach (Rectangle rectSel in rectSelRegions)
+				{
+					Rectangle rectBrushArea =   new Rectangle(p.X,p.Y,1,1);
+				
+					if (rectBrushArea.IntersectsWith(rectSel))
+					{
+						rectBrushArea.Intersect(rectSel);
+						ra.Surface[p.X, p.Y] = color;
+					}
+				}
+			}
+			
+		}
+
+        private void DrawLines(RenderArgs ra, ArrayList points, int startIndex, int length, Pen pen, Point currentMouse)
         {
-            if (points.Count == 0)
-            {
-                return;
-            }
-            else if (points.Count == 1)
-            {
-                Point p = (Point)points[0];
+			// Draw a point in the line
+			if (points.Count == 0)
+			{
+				return;
+			}
+			else if (points.Count == 1)
+			{
+				Point p = (Point)points[0];
 
-                if (Utility.IsPointInRectangle(p, ra.Surface.Bounds))
-                {
-                    ra.Surface[p.X, p.Y] = new BinaryPixelOps.AlphaBlend().Apply(ra.Surface[p.X, p.Y], ColorBgra.FromColor(pen.Color));
-                }
-            }
-            else
-            {
-                if (antiAliasing)
-                {
-                    ra.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                    ra.Graphics.CompositingMode = CompositingMode.SourceOver;
+				if (Utility.IsPointInRectangle(p, ra.Surface.Bounds))
+				{
+					DrawPoint(ra,p,ColorBgra.FromColor(pen.Color));
+				}
+			}
+			else
+			{
+				ColorBgra color = ColorBgra.FromColor(pen.Color);
 
-                    Point[] points2 = new Point[length];
-                    points.CopyTo(startIndex, points2, 0, length);
-                    ra.Graphics.DrawLines(pen, points2);
-                }
-                else
-                {
-                    ColorBgra color = ColorBgra.FromColor(pen.Color);
+				for (int i = 1; i < points.Count; ++i)
+				{
+					Point[] linePoints = Utility.GetLinePoints((Point)points[i - 1], (Point)points[i]);
+					int startPoint = 0;
 
-                    for (int i = 1; i < points.Count; ++i)
-                    {
-                        Point[] linePoints = Utility.GetLinePoints((Point)points[i - 1], (Point)points[i]);
-                        int startPoint = 0;
+					if (i != 1)
+					{
+						startPoint = 1;
+					}
 
-                        if (i != 1)
-                        {
-                            startPoint = 1;
-                        }
-
-                        for (int pi = startPoint; pi < linePoints.Length; ++pi)
-                        {
-                            Point p = linePoints[pi];
-
-                            if (Utility.IsPointInRectangle(p, ra.Surface.Bounds))
-                            {
-                                ra.Surface[p.X, p.Y] = blender.Apply(ra.Surface[p.X, p.Y], color);
-                            }
-                        }
-                    }
-                }
-            }
+					for (int pi = startPoint; pi < linePoints.Length; ++pi)
+					{
+						Point p = linePoints[pi];
+						DrawPoint(ra,p,color);
+					}
+				}
+			}		
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -157,7 +192,6 @@ namespace PaintDotNet
                 bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
                 renderArgs = new RenderArgs(bitmapLayer.Surface);
 
-                PdnRegion clipRegion;
 
                 if (!Workspace.Environment.IsSelectionEmpty)
                 {
@@ -170,7 +204,6 @@ namespace PaintDotNet
                 }
 
                 renderArgs.Graphics.SetClip(clipRegion, CombineMode.Replace);
-                clipRegion.Dispose();
                 OnMouseMove(e);
             }
         }
@@ -181,6 +214,20 @@ namespace PaintDotNet
 
             if (mouseDown && ((e.Button & mouseButton) != MouseButtons.None))
             {
+                Point mouseXY = new Point(e.X, e.Y);
+				if(lastPoint == Point.Empty)
+					lastPoint = mouseXY;
+
+				difference = new Point(mouseXY.X - lastPoint.X, mouseXY.Y - lastPoint.Y);
+
+				if (tracePoints.Count > 0) 
+				{
+					Point lastMouseXY = (Point)tracePoints[tracePoints.Count - 1];
+					if (lastMouseXY == mouseXY) 
+					{
+						return;
+					}
+				}
                 if (pen == null)
                 {
                     PenInfo pi = Workspace.Environment.PenInfo;
@@ -198,7 +245,6 @@ namespace PaintDotNet
                     }
                 }
 
-                Point mouseXY = new Point(e.X, e.Y);
 
                 if (!(tracePoints.Count > 0 && mouseXY == (Point)tracePoints[tracePoints.Count - 1]))
                 {
@@ -218,12 +264,7 @@ namespace PaintDotNet
                         saveRect = Utility.PointsToRectangle((Point)tracePoints[tracePoints.Count - 1], (Point)tracePoints[tracePoints.Count - 2]);
                     }
 
-                    saveRect.Inflate((int)Math.Ceiling(pen.Width), (int)Math.Ceiling(pen.Width));
-
-                    if (renderArgs.Graphics.SmoothingMode == SmoothingMode.AntiAlias)
-                    {
-                        saveRect.Inflate(1, 1);
-                    }
+                    saveRect.Inflate(2,2);
 
                     saveRect.Intersect(Workspace.ActiveLayer.Bounds);
 
@@ -249,7 +290,7 @@ namespace PaintDotNet
                             length = 2;
                         }
 
-                        DrawLines(this.renderArgs, tracePoints, startIndex, length, pen, Workspace.Environment.AntiAliasing);
+                        DrawLines(this.renderArgs, tracePoints, startIndex, length, pen, mouseXY);
 
                         bitmapLayer.Invalidate(saveRect);
                         Workspace.Update();
@@ -257,8 +298,9 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    // TODO throw exception?
+                    // will have to do something here if we add other layer types besides BitmapLayer
                 }
+				lastPoint = mouseXY;
             }
         }
 
@@ -294,7 +336,7 @@ namespace PaintDotNet
                     savedSurfaces.Clear();
 
                     HistoryAction ha = bitmapLayer.CreateHistoryAction(Name, Image, simplifiedRegion);
-                    DrawLines(renderArgs, tracePoints, 0, tracePoints.Count, pen, Workspace.Environment.AntiAliasing);
+                    DrawLines(renderArgs, tracePoints, 0, tracePoints.Count, pen,new Point(e.X,e.Y));
                     bitmapLayer.Invalidate(simplifiedRegion);
                     Workspace.History.PushNewAction(ha);
 
@@ -315,6 +357,7 @@ namespace PaintDotNet
             cursor = new Cursor(Utility.GetResourceStream("Cursors.PencilToolCursor.cur"));
             name = "Pencil";
             description = "Draws a freeform, one-pixel wide line.";
+			helpText = "Left click to draw freeform, one-pixel wide lines with the foreground color, right click to use the background color";
 
             // initialize any state information you need
             mouseDown = false;

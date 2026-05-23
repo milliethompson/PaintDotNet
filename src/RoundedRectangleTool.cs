@@ -79,9 +79,10 @@ namespace PaintDotNet
             : base(parent)
         {
             toolBarImage = Utility.GetImageResource("Icons.RoundedRectangleToolIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.RectangleToolCursor.cur"));
+            cursor = new Cursor(Utility.GetResourceStream("Cursors.RoundedRectangleToolCursor.cur"));
             name = "Rounded Rectangle";
             description = "Draws a rounded rectangle";
+			helpText = "Left click to draw a rounded rectangle with the foreground color, right click to use the background color";
         }
 
         // credit for the this function is given to Aaron Reginald http://www.codeproject.com/cs/media/ExtendedGraphics.asp

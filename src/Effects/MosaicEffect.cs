@@ -11,18 +11,14 @@ namespace PaintDotNet.Effects
         : Effect, 
           IConfigurableEffect
     {
-        public MosaicEffect() 
-            : base("Mosaic", "Tiles a Picture", null)
-        {
-            //
-            // TODO: Add constructor logic here
-            //
-        }
+		public MosaicEffect() 
+			: base("Mosaic", "Tiles a Picture", Utility.GetImageResource("Icons.MosaicEffect.bmp"), System.Windows.Forms.Shortcut.CtrlShiftM)
+		{
+		}
 
         public override void Render(RenderArgs dstArgs, RenderArgs srcArgs, Rectangle roi)
         {
             throw new InvalidOperationException("MosaicEffect must be used via the other Render overload");
-            // Render the Effect all over dat bish
         }
 
         private ColorBgra RenderPixel(int x, int y, RenderArgs src, int cellSize)
@@ -59,7 +55,7 @@ namespace PaintDotNet.Effects
 
             ColorBgra colorTopLeft     = src.Surface[topLeft.X, topLeft.Y];
             ColorBgra colorTopRight    = src.Surface[topRight.X, topRight.Y];
-            ColorBgra colorBottomLeft  = src.Surface[bottomLeft.X, bottomRight.Y];
+            ColorBgra colorBottomLeft  = src.Surface[bottomLeft.X, bottomLeft.Y];
             ColorBgra colorBottomRight = src.Surface[bottomRight.X, bottomRight.Y];
 
             byte a = (byte)((colorTopLeft.A + colorTopRight.A + colorBottomLeft.A + colorBottomRight.A) / 4);
@@ -87,7 +83,9 @@ namespace PaintDotNet.Effects
 
         void IConfigurableEffect.Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
         {
-            MosaicEffectConfigToken mect = (MosaicEffectConfigToken)properties;
+			// Uncomment the cast below, and Mosaic will crash!
+//          MosaicEffectConfigToken aecd = (MosaicEffectConfigToken)properties;
+			AmountEffectConfigToken aecd = (AmountEffectConfigToken)properties;
 
             foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
             {
@@ -95,7 +93,7 @@ namespace PaintDotNet.Effects
                 {
                     for (int y = rect.Top; y < rect.Bottom; y++)
                     {
-                        dstArgs.Surface[x,y] = RenderPixel(x,y,srcArgs, mect.CellSize);
+                        dstArgs.Surface[x,y] = RenderPixel(x,y,srcArgs, aecd.Amount);
                     }
                 }
             }

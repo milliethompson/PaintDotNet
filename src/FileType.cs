@@ -101,24 +101,24 @@ namespace PaintDotNet
 
                     using (RenderArgs ra = new RenderArgs(surface))
                     {
-                        input.Render(ra, surface.Bounds);
+                        input.RenderFlat(ra);
                     }
 
                     using (Bitmap bitmap = surface.CreateAliasedBitmap())
                     {
                         // HACK: disallow lame-quality JPEG saving
-                        if (this.ImageFormat.Guid == ImageFormat.Jpeg.Guid)
-                        {
-                            ImageCodecInfo icf = FileType.GetImageCodecInfo(this.ImageFormat);
-                            EncoderParameters parms = new EncoderParameters(1);
-                            EncoderParameter parm = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 95L); // force '90% quality'
-                            parms.Param[0] = parm;
+						if (this.ImageFormat.Guid == ImageFormat.Jpeg.Guid)
+						{
+							ImageCodecInfo icf = FileType.GetImageCodecInfo(this.ImageFormat);
+							EncoderParameters parms = new EncoderParameters(1);
+							EncoderParameter parm = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 95L); // force '95% quality'
+							parms.Param[0] = parm;
 
-                            bitmap.Save(output, icf, parms);
-                        }
-                        else
-                        {
-                            bitmap.Save(output, format);
+							bitmap.Save(output, icf, parms);
+						}
+						else
+						{
+							bitmap.Save(output, format);
                         }
                     }
                 }

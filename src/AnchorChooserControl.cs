@@ -95,7 +95,6 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
             buttons = new System.Windows.Forms.RadioButton[3,3];
             topLeftButton.Tag = AnchorEdge.TopLeft;
             topButton.Tag = AnchorEdge.Top;

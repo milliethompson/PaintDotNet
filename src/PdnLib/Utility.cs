@@ -1,3 +1,4 @@
+using PaintDotNet.Threading;
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -10,15 +11,14 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Windows.Forms;
 using System.Text;
 using System.Threading;
-using PaintDotNet.Threading;
+using System.Windows.Forms;
 
 namespace PaintDotNet
 {
     /// <summary>
-    /// Defines a few miscellaneous constants and static functions.
+    /// Defines miscellaneous constants and static functions.
     /// </summary>
     public sealed class Utility
     {
@@ -383,22 +383,52 @@ namespace PaintDotNet
             return MessageBox.Show(parent, question, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
         }
 
-        public static Icon ImageToIcon(Image image, Color seeThru)
+		public static Icon ImageToIcon(Image image)
+		{
+			return ImageToIcon(image, Color.FromArgb(192, 192, 192));
+		}
+
+		public static Icon ImageToIcon(Image image, bool disposeImage)
+		{
+			return ImageToIcon(image, Color.FromArgb(192, 192, 192), disposeImage);
+		}
+
+		public static Icon ImageToIcon(Image image, Color seeThru)
+		{
+			return ImageToIcon(image, seeThru, false);
+		}
+
+		/// <summary>
+		/// Converts an Image to an Icon.
+		/// </summary>
+		/// <param name="image">The Image to convert to an icon. Must be an appropriate icon size (32x32, 16x16, etc).</param>
+		/// <param name="seeThru">The color that will be treated as transparent in the icon.</param>
+		/// <param name="disposeImage">Whether or not to dispose the passed-in Image.</param>
+		/// <returns>An Icon representation of the Image.</returns>
+		public static Icon ImageToIcon(Image image, Color seeThru, bool disposeImage)
         {
-            Bitmap bitmap = new Bitmap(image);
+			Bitmap bitmap = new Bitmap(image);
 
-            for (int y = 0; y < bitmap.Height; ++y)
-            {
-                for (int x = 0; x < bitmap.Height; ++x)
-                {
-                    if (bitmap.GetPixel(y, x) == seeThru)
-                    {
-                        bitmap.SetPixel(y, x, Color.FromArgb(0));
-                    }
-                }
-            }
+			for (int y = 0; y < bitmap.Height; ++y)
+			{
+				for (int x = 0; x < bitmap.Width; ++x)
+				{
+					if (bitmap.GetPixel(x, y) == seeThru)
+					{
+						bitmap.SetPixel(x, y, Color.FromArgb(0));
+					}
+				}
+			}
 
-            return Icon.FromHandle(bitmap.GetHicon());
+			Icon icon = Icon.FromHandle(bitmap.GetHicon());
+			bitmap.Dispose();
+
+			if (disposeImage)
+			{
+				image.Dispose();
+			}
+
+            return icon;
         }
 
         public static Image GetImageResource(string fileName)
@@ -413,6 +443,17 @@ namespace PaintDotNet
             return image;
         }
 
+		public static Icon GetIconResource(string fileName) 
+		{
+			StackTrace trace = new StackTrace();
+			StackFrame parentFrame = trace.GetFrame(1);
+			MethodBase parentMethod = parentFrame.GetMethod();
+			Type parentType = parentMethod.DeclaringType;
+			Assembly parentAssembly = parentType.Assembly;
+			Stream stream = GetResourceStream(parentAssembly, parentType.Namespace, fileName);
+			Image image = Image.FromStream(stream);
+			return Icon.FromHandle(((Bitmap)image).GetHicon());
+		}
         public static Stream GetResourceStream(string fileName)
         {
             StackTrace trace = new StackTrace();
@@ -659,6 +700,13 @@ namespace PaintDotNet
 
             return area;
         }
+
+		public static RectangleF RectFromCenter(PointF center, float size) 
+		{
+			RectangleF ret = new RectangleF(center.X, center.Y, 0, 0);
+			ret.Inflate(size, size);
+			return ret;
+		}
 
         public static Rectangle[] InflateRectangles(Rectangle[] rects, int amount)
         {
@@ -1524,179 +1572,131 @@ namespace PaintDotNet
             return Utility.TicksToMs(DateTime.Now.Ticks);        
         }
 
-#if DEBUG
-        //
-        public static string Indent(int indentLevel)
+		/// <summary>
+		/// Returns the Distance between two points
+		/// </summary>
+		public static float Distance(PointF a, PointF b)
+		{
+			return Magnitude(new PointF(a.X - b.X, a.Y - b.Y));
+		}
+
+		/// <summary>
+		/// Returns the Magnitude (distance to origin) of a point
+		/// </summary>
+		public static float Magnitude(PointF p)
+		{
+			return (float)Math.Sqrt(p.X * p.X + p.Y * p.Y);
+		}
+
+		public static double Clamp(double x, double min, double max) 
+		{
+			if (x < min)
+				return min;
+			else if (x > max)
+				return max;
+			else
+				return x;
+		}
+
+		public static float Clamp(float x, float min, float max) 
+		{
+			if (x < min)
+				return min;
+			else if (x > max)
+				return max;
+			else
+				return x;
+		}
+
+        public static int Clamp(int x, int min, int max)
         {
-            StringBuilder sb = new StringBuilder();
-
-            for (int i = 0; i < 4 * indentLevel; ++i)
+            if (x < min)
             {
-                sb.Append(" ");
+                return min;
             }
-
-            return sb.ToString();
-        }
-
-        public static void WalkGraph(object walkMe)
-        {
-            Hashtable walkedObjects = new Hashtable();
-            StreamWriter output = new StreamWriter(@"c:\walk.txt");
-            output.WriteLine("GC.GetTotalMemory returned " + GC.GetTotalMemory(true).ToString());
-            output.WriteLine("Starting walk:");
-            
-            WalkGraph(output, walkMe, walkedObjects, 0);
-
-            output.Close();
-        }
-
-        public static void AddToSet(Hashtable objects, object o)
-        {
-            Type type = o.GetType();
-            Set set = (Set)objects[type];
-
-            if (set == null)
+            else if (x > max)
             {
-                set = new Set();
-                objects[type] = set;
+                return max;
             }
-
-            if (set.Contains(o))
+            else
             {
-                throw new ArgumentException();
+                return x;
             }
+		}
+        
+		public static byte ClampToByte(double x) 
+		{
+			if (x > 255)
+				return 255;
+			else if (x < 0)
+				return 0;
+			else
+				return (byte)x;
+		}
+        
+		public static byte ClampToByte(float x) 
+		{
+			if (x > 255)
+				return 255;
+			else if (x < 0)
+				return 0;
+			else
+				return (byte)x;
+		}
+        
+		public static byte ClampToByte(int x) 
+		{
+			if (x > 255)
+				return 255;
+			else if (x < 0)
+				return 0;
+			else
+				return (byte)x;
+		}
 
-            set.Add(o);
-        }
+		public static float Lerp(float from, float to, float frac) 
+		{
+			return (from * (1 - frac) + to * frac);
+		}
 
-        private unsafe static void WalkGraph(TextWriter output, object walkMe, Hashtable walkedObjects, int indentLevel)
-        {
-            if (walkMe == null)
-            {
-                output.WriteLine(Indent(indentLevel) + "(null)");
-                return;
-            }
+		public static double Lerp(double from, double to, double frac) 
+		{
+			return (from * (1 - frac) + to * frac);
+		}
 
-            Type walkMeType = walkMe.GetType();
-            MemberInfo[] fields = walkMeType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            MemberInfo[] properties = walkMeType.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+		public static int ColorDifference(ColorBgra a, ColorBgra b) 
+		{
+			return (int)Math.Ceiling(Math.Sqrt(ColorDifferenceSquared(a, b)));
+		}
 
-            ArrayList members = new ArrayList();
+		public static int ColorDifferenceSquared(ColorBgra a, ColorBgra b) 
+		{
+			int diffSq = 0, tmp;
 
-            if (fields.Length > 0)
-            {
-                output.WriteLine(Indent(indentLevel) + " fields:");
-            }
+			tmp = a.R - b.R;
+			diffSq += tmp * tmp;
+			tmp = a.G - b.G;
+			diffSq += tmp * tmp;
+			tmp = a.B - b.B;
+			diffSq += tmp * tmp;
 
-            foreach (FieldInfo fi in fields)
-            {
-                object fieldValue = fi.GetValue(walkMe);
-                bool traversed = false;
+			return diffSq / 3;
+		}
 
-                try
-                {
-                    if (fieldValue != null)
-                    {
-                        AddToSet(walkedObjects, fieldValue);
-                    }
-                }
+		public static Rectangle [] MakeRectangleOutline(Rectangle roi) 
+		{
+			Rectangle [] ret = new Rectangle[4];
 
-                catch (ArgumentException)
-                {
-                    traversed = true;
-                }
+			//Left
+			ret[0] = new Rectangle(roi.Left - 2, roi.Top - 2, 5, roi.Height + 5);
+			//Right
+			ret[1] = new Rectangle(roi.Right - 2, roi.Top - 2, 5, roi.Height + 5);
+			//Top
+			ret[2] = new Rectangle(roi.Left - 2, roi.Top - 2, roi.Width + 5, 5);
+			//Bottom
+			ret[2] = new Rectangle(roi.Left - 2, roi.Bottom - 2, roi.Width + 5, 5);
 
-                output.WriteLine(Indent(indentLevel + 1)  + fi.FieldType.ToString() + " " + fi.Name + " (hash=" + (fieldValue == null ? "n/a" : fieldValue.GetHashCode().ToString()) + ")" + (traversed ? (fieldValue == null ? "" : " (already traversed)") : ":"));
-
-                if (!traversed && fi.FieldType != typeof(void*) && fieldValue != null)
-                {
-                    WalkGraph(output, fieldValue, walkedObjects, indentLevel + 1);
-                }
-            }
-
-            if (properties.Length > 0)
-            {
-                output.WriteLine(Indent(indentLevel) + " properties:");
-            }
-
-            foreach (PropertyInfo pi in properties)
-            {
-                if (pi.GetIndexParameters().Length > 0)
-                {
-                    continue;
-                }
-
-                object fieldValue = null;
-                try
-                {
-                    fieldValue = pi.GetValue(walkMe, new object[0] {} );
-                }
-
-                catch
-                {
-                    output.WriteLine(Indent(indentLevel) + "exception calling PropertyInfo.GetValue(" + pi.Name + ")");
-                }
-
-
-                bool traversed = false;
-
-                try
-                {
-                    if (fieldValue != null)
-                    {
-                        AddToSet(walkedObjects, fieldValue);
-                    }
-                }
-
-                catch (ArgumentException)
-                {
-                    traversed = true;
-                }
-
-                output.WriteLine(Indent(indentLevel + 1)  + pi.PropertyType.ToString() + " " + pi.Name + " (hash=" + (fieldValue == null ? "n/a" : fieldValue.GetHashCode().ToString()) + ")" + (traversed ? (fieldValue == null ? "" : " (already traversed)") : ":"));
-
-                if (!traversed && pi.PropertyType != typeof(void*) && fieldValue != null)
-                {
-                    WalkGraph(output, fieldValue, walkedObjects, indentLevel + 1);
-                }
-            }
-
-            if (walkMe is IEnumerable && !(walkMe is string))
-            {
-                int count = 0;
-
-                output.WriteLine(Indent(indentLevel) + " enumerated items via IEnumerable:");
-
-                foreach (object o in (IEnumerable)walkMe)
-                {
-                    if (count > 10)
-                    {
-                        break;
-                    }
-
-                    ++count;
-
-                    if (o != null)
-                    {
-                        bool traversed = false;
-
-                        try
-                        {
-                            AddToSet(walkedObjects, o);
-                        }
-
-                        catch (ArgumentException)
-                        {
-                            traversed = true;
-                        }
-
-                        output.WriteLine(Indent(indentLevel + 1)  + count.ToString() + ": typeof(" + o.GetType().ToString() + ") (hash=" + (o == null ? "n/a" : o.GetHashCode().ToString()) + ")" + (traversed ? (o == null ? "" : " (already traversed)") : ":"));
-                        WalkGraph(output, o, walkedObjects, indentLevel + 1);
-                    }
-                }
-            }
-        }
-        //
-#endif
+			return ret;
+		}
     }
 }

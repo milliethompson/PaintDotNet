@@ -8,6 +8,14 @@ namespace PaintDotNet
     {
         private bool mouseDown;
 
+		public override char HotKey
+		{
+			get
+			{
+				return 'd';
+			}
+		}
+
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
@@ -48,12 +56,15 @@ namespace PaintDotNet
 
             if ((e.Button & MouseButtons.Left) == MouseButtons.Left)
             {
-                this.Workspace.Environment.ForeColor = LiftColor(e.X, e.Y);
+				ColorBgra col;
+				col = LiftColor(e.X, e.Y);
+				this.Workspace.Environment.ForeColor = col;
             }
-            else
-                if ((e.Button & MouseButtons.Right) == MouseButtons.Right)
+            else if ((e.Button & MouseButtons.Right) == MouseButtons.Right)
             {   
-                this.Workspace.Environment.BackColor = LiftColor(e.X, e.Y);
+				ColorBgra col;
+				col = LiftColor(e.X, e.Y);
+				this.Workspace.Environment.BackColor = col;
             }
         }
 
@@ -61,9 +72,10 @@ namespace PaintDotNet
             : base(parent)
         {
             toolBarImage = Utility.GetImageResource("Icons.ColorPickerToolIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.ColorPickerCursor.cur"));
+            cursor = new Cursor(Utility.GetResourceStream("Cursors.ColorPickerToolCursor.cur"));
             name = "Color Picker";
             description = "Gets current color from canvas";
+			helpText = "Left click to set foreground color, right click to set background color";
 
             // initialize any state information you need
             mouseDown = false;

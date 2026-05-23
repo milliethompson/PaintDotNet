@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Data;
 using System.Windows.Forms;
 
@@ -40,19 +41,20 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
             this.ResizeRedraw = true;
         }
 
         private void DrawColorRectangle(Graphics g, Rectangle rect, Color color)
         {
-            g.FillRectangle(Brushes.Black, rect);
-            g.FillRectangle(Brushes.White, Rectangle.Inflate(rect, -1, -1));
+			Rectangle colorRectangle = Rectangle.Inflate(rect, -2, -2);
+			Brush colorBrush = new LinearGradientBrush(colorRectangle, Color.FromArgb(255, color), color, 90.0f, false);
+			HatchBrush backgroundBrush = new HatchBrush(HatchStyle.LargeCheckerBoard, Color.FromArgb(128, 128, 128), Color.FromArgb(192, 192, 192));
 
-            using (Brush colorBrush = new SolidBrush(Color.FromArgb(255, color.R, color.G, color.B)))
-            {
-                g.FillRectangle(colorBrush, Rectangle.Inflate(rect, -2, -2));
-            }
+			g.DrawRectangle(Pens.Black, 0, 0, rect.Width - 1, rect.Height - 1);
+			g.DrawRectangle(Pens.White, 1, 1, rect.Width - 3, rect.Height - 3);
+
+			g.FillRectangle(backgroundBrush, colorRectangle);
+            g.FillRectangle(colorBrush, colorRectangle);
         }
 
         protected override void OnResize(EventArgs e)

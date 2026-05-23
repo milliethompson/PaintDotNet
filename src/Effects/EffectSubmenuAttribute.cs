@@ -5,6 +5,7 @@ namespace PaintDotNet.Effects
     /// <summary>
     /// Allows you to place an effect into a subMenu, which allows logical grouping.
     /// </summary>
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public class EffectSubMenuAttribute
         : Attribute
     {

@@ -27,19 +27,33 @@ namespace PaintDotNet
             }
         }
 
-        private PenConfigWidget penConfigWidget;
-        public PenConfigWidget PenConfigWidget
-        {
-            get
-            {
-                return penConfigWidget;
-            }
+		private PenConfigWidget penConfigWidget;
+		public PenConfigWidget PenConfigWidget
+		{
+			get
+			{
+				return penConfigWidget;
+			}
 
-            set
-            {
-                penConfigWidget = value;
-            }
-        }
+			set
+			{
+				penConfigWidget = value;
+			}
+		}
+
+		private ZoomConfigWidget zoomConfigWidget;
+		public ZoomConfigWidget ZoomConfigWidget
+		{
+			get
+			{
+				return zoomConfigWidget;
+			}
+
+			set
+			{
+				zoomConfigWidget = value;
+			}
+		}
 
         private BrushConfigWidget brushConfigWidget;
         public BrushConfigWidget BrushConfigWidget

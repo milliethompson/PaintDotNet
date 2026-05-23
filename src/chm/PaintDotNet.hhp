@@ -38,7 +38,7 @@ FlattenImage.htm
 FlipImage.htm
 FlipLayerOperation.htm
 freeformtool.htm
-history.htm
+history\history.htm
 ImageOperations.htm
 InvertColors.htm
 lassoselect.htm
@@ -70,8 +70,8 @@ zoomtool.htm
 NewWindow.htm
 OpenInNewWindow.htm
 EditOperations.htm
-UndoOperation.htm
-RedoOperation.htm
+undoredo\UndoOperation.htm
+undoredo\RedoOperation.htm
 Cut Operation.htm
 CopyOperation.htm
 Paste Operation.htm

@@ -4,18 +4,40 @@ using System.Drawing;
 namespace PaintDotNet
 {
     /// <summary>
-    /// Summary description for ScaleFactor.
+    /// Encapsulates functionality for zooming/scaling coordinates.
+    /// Includes functionality for Size[F]'s, Point[F]'s, Rectangle[F]'s,
+    /// and various scalars
     /// </summary>
     public struct ScaleFactor
     {
-        private int numerator;
-        private int denominator;
+		private float factor;
 
-        public static readonly ScaleFactor OneToOne = new ScaleFactor(1, 1);
+		public int Denominator 
+		{
+			get 
+			{
+				return (int)Math.Ceiling(1.0f / factor);
+			}
+		}
+
+		public int Numerator 
+		{
+			get 
+			{
+				return (int)Math.Ceiling(factor);
+			}
+		}
+
+        public static readonly ScaleFactor OneToOne = new ScaleFactor(1.0f);
+		public const float MinZoom = 0.01f, MaxZoom = 16.0f;
+		private void Clamp() 
+		{
+			factor = Utility.Clamp(factor, MinZoom, MaxZoom);
+		}
 
         public static bool operator== (ScaleFactor lhs, ScaleFactor rhs)
         {
-            return lhs.numerator == rhs.numerator && lhs.denominator == rhs.denominator;
+            return lhs.factor == rhs.factor;
         }
 
         public static bool operator!= (ScaleFactor lhs, ScaleFactor rhs)
@@ -25,89 +47,61 @@ namespace PaintDotNet
 
         public override bool Equals(object obj)
         {
-            ScaleFactor rhs = (ScaleFactor)obj;
-            return (numerator == rhs.numerator) && (denominator == rhs.denominator);
+			if (obj is ScaleFactor) 
+			{
+				ScaleFactor rhs = (ScaleFactor)obj;
+				return factor == rhs.factor;
+			}
+			else
+				return false;
         } 
 
         public override int GetHashCode()
         {
-            return (int)((ushort)denominator + ((ushort)numerator << 16));
-        }
-
-        public int Numerator
-        {
-            get
-            {
-                return numerator;
-            }
-        }
-
-        public int Denominator
-        {
-            get
-            {
-                return denominator;
-            }
+            return factor.GetHashCode();
         }
 
         public override string ToString()
         {
-            return numerator.ToString() + ":" + denominator.ToString();
+			return Math.Round(100 * factor).ToString() + "%";
         }
 
         public double Ratio
         {
             get
             {
-                double d = (double)numerator / (double)denominator;
-                return d;
+                return factor;
             }
-        }
-
-        private int CountBits(int x)
-        {
-            uint y = (uint)x;
-            int count = 0;
-
-            for (int bit = 0; bit < 32; ++bit)
-            {
-                if ((y & ((uint)1 << bit)) != 0)
-                {
-                    ++count;
-                }
-            }
-
-            return count;
         }
 
         public int ScaleScalar(int x)
         {
-            return (x * numerator) / denominator;
+            return (int)Math.Round(x * factor);
         }
 
         public int UnscaleScalar(int x)
         {
-            return (x * denominator) / numerator;
+            return (int)Math.Round(x / factor);
         }
 
         public float ScaleScalar(float x)
         {
-            return (x * (float)numerator) / (float)denominator;
+            return x * factor;
         }
 
         public float UnscaleScalar(float x)
         {
-            return (x * (float)denominator) / (float)numerator;
+            return x / factor;
         }
 
         public double ScaleScalar(double x)
         {
-            return (x * (double)numerator) / (double)denominator;
+            return x * factor;
         }
 
         public double UnscaleScalar(double x)
         {
-            return (x * (double)denominator) / (double)numerator;
+            return x / factor;
         }
 
         public PointF ScalePoint(PointF p)
@@ -212,35 +206,32 @@ namespace PaintDotNet
 
         public ScaleFactor GetNextLarger()
         {
-            if (numerator == 1 && denominator > 1)
-            {
-                return new ScaleFactor(1, denominator / 2);
-            }
-            else
-            //if (numerator >= 1 && denominator == 1)
-            {
-                return new ScaleFactor(2 * numerator, 1);
-            }
+			double log = Math.Log(factor, 2.0f), newzoom;
+			log = Math.Ceiling(log + 0.25);
+			newzoom = Math.Pow(2.0, log);
+			if (newzoom > MaxZoom)
+				newzoom = MaxZoom;
+			return new ScaleFactor((float)newzoom);
         }
 
         public ScaleFactor GetNextSmaller()
-        {
-            if (numerator == 1 && denominator >= 1)
-            {
-                return new ScaleFactor(1, 2 * denominator);
-            }
-            else
-            //if (numerator > 1 && denominator == 1)
-            {
-                return new ScaleFactor(numerator / 2, 1);
-            }
-        }
+		{
+			double log = Math.Log(factor, 2.0f), newzoom;
+			log = Math.Floor(log - 0.25);
+			newzoom = Math.Pow(2.0, log);
+			if (newzoom < MinZoom) 
+				newzoom = MinZoom;
+			return new ScaleFactor((float)newzoom);
+		}
+
+		public ScaleFactor(float ratio) 
+		{
+			factor = Utility.Clamp(ratio, MinZoom, MaxZoom);
+			this.Clamp();
+		}
 
         public ScaleFactor(int numerator, int denominator)
         {
-            this.numerator = numerator;
-            this.denominator = denominator;
-
             if (denominator <= 0)
             {
                 throw new ArgumentOutOfRangeException("denominator", "must be greater than 0");
@@ -250,17 +241,8 @@ namespace PaintDotNet
             {
                 throw new ArgumentOutOfRangeException("numerator", "must be greater than 0");
             }
-
-            if (denominator != 1 && numerator != 1)
-            {
-                throw new ArgumentOutOfRangeException("numerator, denominator", "either numerator or denominator must equal 1");
-            }
-
-            // If we have a 1/x situation, make sure that it is 1/(2^n) where x=2^n
-            if (CountBits(denominator) != 1)
-            {
-                throw new ArgumentOutOfRangeException("denominator", "denominator must be a power of 2");
-            }
+			factor = (float)numerator / (float)denominator;
+			this.Clamp();
         }
     }
 }

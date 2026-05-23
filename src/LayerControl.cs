@@ -28,6 +28,17 @@ namespace PaintDotNet
         private DocumentWorkspace workspace; 
         private ArrayList layerControls;
         private PanelEx layerControlPanel;
+		public ArrayList LayerControls
+		{
+			get
+			{
+				return this.layerControls;
+			}
+			set
+			{
+				this.layerControls = value; //not sure if this is needed.. prob not but will leave in for now
+			}
+		}
 
         /// <summary> 
         /// Required designer variable.

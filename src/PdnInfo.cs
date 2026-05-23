@@ -9,6 +9,8 @@ namespace PaintDotNet
     /// </summary>
     internal sealed class PdnInfo
     {
+		private const string webSite = "http://www.eecs.wsu.edu/paint.net";
+
         private PdnInfo()
         {
         }
@@ -68,5 +70,10 @@ namespace PaintDotNet
                 return Application.ProductName;
             }
         }
+
+		public static void LaunchWebSite()
+		{
+			System.Diagnostics.Process.Start(webSite);
+		}
     }
 }

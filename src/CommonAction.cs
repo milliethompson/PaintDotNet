@@ -10,6 +10,7 @@ namespace PaintDotNet
         New,
         Open,
         Save,
+		Print,
         Cut,
         Copy,
         Paste,

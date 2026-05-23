@@ -24,11 +24,14 @@ namespace PaintDotNet
         private Layer activeLayer;
         private DocumentEnvironment environment;
         private Type[] tools;
-        private Type[] effects = null;
-        private PenConfigWidget penConfigWidget;
+		private Type[] effects = null;
+		private PenConfigWidget penConfigWidget;
+		private ZoomConfigWidget zoomConfigWidget;
         private BrushConfigWidget brushConfigWidget;
         private ShapeDrawTypeConfigWidget shapeDrawTypeConfigWidget;
         private DocumentView documentView;
+
+		private EventHandler zoomChangedDelegate;
 
         private EventHandler selectedPathChangingDelegate;
         private EventHandler selectedPathChangedDelegate;
@@ -36,6 +39,7 @@ namespace PaintDotNet
         private EventHandler foreColorChangedDelegate;
         private EventHandler backColorChangedDelegate;
         private EventHandler shapeDrawTypeChangedDelegate;
+		private EventHandler toleranceChangedDelegate;
 
         private IndexEventHandler layerRemovingDelegate;
         private IndexEventHandler layerRemovedDelegate;
@@ -70,7 +74,6 @@ namespace PaintDotNet
         // DocumentChanged
         // This event is raised right after the 'document' is changed via the 'Document' property.
         public event EventHandler DocumentChanged;
-
         protected void OnDocumentChanged()
         {
             if (DocumentChanged != null)
@@ -129,6 +132,18 @@ namespace PaintDotNet
             }
         }
 
+		public ZoomBasis ZoomBasis 
+		{
+			get 
+			{
+				return zoomConfigWidget.ZoomBasis;
+			}
+			set 
+			{
+				zoomConfigWidget.ZoomBasis = value;
+			}
+		}
+
         /// <summary>
         /// Sets the Document instance to be managed by DocumentWorkspace.
         /// Before the document is changed, a DocumentChanging event is raised.
@@ -143,6 +158,7 @@ namespace PaintDotNet
         public void SetDocument(Document document)
         {
             Tool oldTool = Environment.Tool;
+			string oldName = (this.document == null) ? null : this.document.Name;
 
             Environment.SetTool(null);
             ActiveLayer = null;
@@ -169,7 +185,11 @@ namespace PaintDotNet
             }
 
             documentView.Document = document;
-            this.document = document;
+			this.document = null;
+			Utility.GCFullCollect();
+			this.document = document;
+
+			this.document.Name = oldName;
 
             OnDocumentChanged();
 
@@ -291,7 +311,6 @@ namespace PaintDotNet
                     toolPulseTimer.Enabled = true;
                 }
 
-                // TODO: depending on type of layer, change which toolbar we're using, etc?
                 OnLayerChanged();
             }
         }
@@ -365,10 +384,10 @@ namespace PaintDotNet
             this.history = new HistoryStack(this);
 
             // initialize!
-            InitializeFloatingForms();
             InitializeTools();
             InitializeComponent();
-            InitializeToolBars();
+            InitializeFloatingForms();
+			InitializeToolBars();
             InitializeEffects();
 
             this.historyForm.HistoryControl.HistoryStack = this.history;
@@ -378,6 +397,7 @@ namespace PaintDotNet
             // set the workspace toggle buttons correctly
             this.workspaceOptionsConfigWidget.AntiAliasing = Environment.AntiAliasing;
             this.workspaceOptionsConfigWidget.RulersEnabled = documentView.RulersEnabled;
+			this.workspaceOptionsConfigWidget.DrawGrid = documentView.DrawGrid;
 
             // hook the DocumentView with its selectedPath ...
             this.documentView.SelectedPath = Environment.SelectedPath;
@@ -393,10 +413,16 @@ namespace PaintDotNet
             Environment.ShapeDrawTypeChanged += shapeDrawTypeChangedDelegate;
             mainToolBarForm.MainToolBar.ColorDisplay.UserBackColorChanged += backColorChangedDelegate;
 
+			
+			toleranceChangedDelegate = new EventHandler(ToleranceChangedHandler);
+			Environment.ToleranceChanged += toleranceChangedDelegate;
+			mainToolBarForm.MainToolBar.ToleranceSlider.ToleranceChanged += toleranceChangedDelegate;
+
             Environment.FontInfo = textConfigWidget.FontInfo;
             Environment.TextAlignment = textConfigWidget.TextAlignment;
             textConfigWidget.TextAlignmentChanged += new EventHandler(textConfigWidget_TextAlignmentChanged);
             textConfigWidget.FontTextChanged += new EventHandler(textConfigWidget_FontTextChanged);
+			Environment.AntiAliasingChanged += new EventHandler(Environment_AntiAliasingChanged);
             Environment.FontInfoChanged += new EventHandler(Environment_FontInfoChanged);
             Environment.TextAlignmentChanged += new EventHandler(Environment_TextAlignmentChanged);
 
@@ -406,6 +432,10 @@ namespace PaintDotNet
             selectedPathChangedDelegate = new EventHandler(SelectedPathChangedHandler);
             Environment.SelectedPathChanged += selectedPathChangedDelegate;
 
+			// hook into the ZoomChanged event
+			zoomChangedDelegate = new EventHandler(ZoomChangedHandler);
+			documentView.ScaleFactorChanged += zoomChangedDelegate;
+
             // layer events
             layerRemovingDelegate = new IndexEventHandler(LayerRemovingHandler);
             layerRemovedDelegate = new IndexEventHandler(LayerRemovedHandler);
@@ -414,8 +444,9 @@ namespace PaintDotNet
 
             // init the Widgets container
             widgets = new DocumentWidgets(this);
-            widgets.TopDock = this.topDock;
-            widgets.PenConfigWidget = penConfigWidget;
+			widgets.TopDock = this.topDock;
+			widgets.PenConfigWidget = penConfigWidget;
+			widgets.ZoomConfigWidget = zoomConfigWidget;
             widgets.BrushConfigWidget = brushConfigWidget;
             widgets.ShapeDrawTypeConfigWidget = this.shapeDrawTypeConfigWidget;
             widgets.CommonActionsWidget = this.commonActionsWidget;
@@ -429,6 +460,7 @@ namespace PaintDotNet
             penConfigWidget.PerformPenChanged();
             brushConfigWidget.PerformBrushChanged();
             shapeDrawTypeConfigWidget.PerformShapeDrawTypeChanged();
+			
 
             // Synchronize
             Environment.PerformAllChanged();
@@ -446,6 +478,7 @@ namespace PaintDotNet
             mainToolBarForm.Show();
             layerForm.Show();
             historyForm.Show();
+			this.Focus();
         }
 
         /// <summary>
@@ -476,6 +509,17 @@ namespace PaintDotNet
             }
         }
 
+
+		/// <summary>
+		/// Handles the ToleranceChanged event that is raised by the DocumentEnviroment
+		/// </summary>
+		private void ToleranceChangedHandler(object sender, EventArgs e)
+		{
+			Environment.Tolerance = widgets.MainToolBar.ToleranceSlider.Tolerance;
+			this.Focus();
+		}
+
+
         /// <summary>
         /// Handles the BackColorChanged event that is raised by the DocumentEnvironment.
         /// </summary>
@@ -498,14 +542,22 @@ namespace PaintDotNet
             ColorsForm cf = (ColorsForm)sender;
             Environment.ForeColor = e.Color;
             widgets.ColorDisplayWidget.UserForeColor = e.Color;
+			if (e.TakeFocus) 
+			{
+				this.Focus();
+			}
         }
 
         private void colorsForm_UserBackColorChanged(object sender, ColorEventArgs e)
         {
             ColorsForm cf = (ColorsForm)sender;
             Environment.BackColor = e.Color;
-            widgets.ColorDisplayWidget.UserBackColor = e.Color;
-        }
+			widgets.ColorDisplayWidget.UserBackColor = e.Color;
+			if (e.TakeFocus) 
+			{
+				this.Focus();
+			}        
+		}
 
         private void colorDisplay_ForeColorClicked(object sender, System.EventArgs e)
         {
@@ -652,126 +704,149 @@ namespace PaintDotNet
             }
         }
 
+		
+		private void ZoomChangedHandler(object sender, EventArgs e)
+		{
+			zoomConfigWidget.ScaleFactor = documentView.ScaleFactor;
+			zoomConfigWidget.ZoomBasis = ZoomBasis.Factor;
+		}
+
         private void InitializeComponent()
         {
-            Utility.TraceMe("starting with news");
-            System.Resources.ResourceManager resources = new System.Resources.ResourceManager(typeof(DocumentWorkspace));
-            this.documentView = new PaintDotNet.DocumentView();
-            this.topDock = new PaintDotNet.FlowPanel();
-            this.textConfigWidget = new PaintDotNet.TextConfigWidget();
-            this.shapeDrawTypeConfigWidget = new PaintDotNet.ShapeDrawTypeConfigWidget();
-            this.penConfigWidget = new PaintDotNet.PenConfigWidget();
-            this.brushConfigWidget = new PaintDotNet.BrushConfigWidget();
-            this.workspaceOptionsConfigWidget = new PaintDotNet.WorkspaceOptionsConfigWidget();
-            this.commonActionsWidget = new PaintDotNet.CommonActionsWidget();
-            this.toolPulseTimer = new System.Timers.Timer();
-            this.topDock.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.toolPulseTimer)).BeginInit();
-            this.SuspendLayout();
-            Utility.TraceMe("done with news");
-            // 
-            // documentView
-            // 
-            this.documentView.BackColor = System.Drawing.SystemColors.ControlDark;
-            this.documentView.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.documentView.Document = null;
-            this.documentView.DocumentScrollPosition = ((System.Drawing.PointF)(resources.GetObject("documentView.DocumentScrollPosition")));
-            this.documentView.EnableOutlineAnimation = true;
-            this.documentView.Location = new System.Drawing.Point(0, 54);
-            this.documentView.Name = "documentView";
-            this.documentView.RulersEnabled = false;
-            this.documentView.Size = new System.Drawing.Size(872, 586);
-            this.documentView.TabIndex = 0;
-            this.documentView.Scroll += new System.EventHandler(this.documentView_Scroll);
-            this.documentView.DocumentMouseMove += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseMoveHandler);
-            this.documentView.DocumentMouseDown += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseDownHandler);
-            this.documentView.DocumentClick += new System.EventHandler(this.DocumentClick);
-            this.documentView.DocumentMouseUp += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseUpHandler);
-            this.documentView.DocumentKeyPress += new System.Windows.Forms.KeyPressEventHandler(this.DocumentKeyPress);
-            // 
-            // topDock
-            // 
-            this.topDock.Controls.Add(this.textConfigWidget);
-            this.topDock.Controls.Add(this.shapeDrawTypeConfigWidget);
-            this.topDock.Controls.Add(this.penConfigWidget);
-            this.topDock.Controls.Add(this.brushConfigWidget);
-            this.topDock.Controls.Add(this.workspaceOptionsConfigWidget);
-            this.topDock.Controls.Add(this.commonActionsWidget);
-            this.topDock.Dock = System.Windows.Forms.DockStyle.Top;
-            this.topDock.Location = new System.Drawing.Point(0, 0);
-            this.topDock.Name = "topDock";
-            this.topDock.Size = new System.Drawing.Size(872, 54);
-            this.topDock.TabIndex = 3;
-            // 
-            // textConfigWidget
-            // 
-            this.textConfigWidget.FontSize = 10F;
-            this.textConfigWidget.FontStyle = System.Drawing.FontStyle.Regular;
-            this.textConfigWidget.Location = new System.Drawing.Point(0, 27);
-            this.textConfigWidget.Name = "textConfigWidget";
-            this.textConfigWidget.Size = new System.Drawing.Size(397, 27);
-            this.textConfigWidget.TabIndex = 2;
-            this.textConfigWidget.TextAlignment = PaintDotNet.TextAlignment.Left;
-            // 
-            // shapeDrawTypeConfigWidget
-            // 
-            this.shapeDrawTypeConfigWidget.Location = new System.Drawing.Point(691, 0);
-            this.shapeDrawTypeConfigWidget.Name = "shapeDrawTypeConfigWidget";
-            this.shapeDrawTypeConfigWidget.ShapeDrawType = PaintDotNet.ShapeDrawType.Outline;
-            this.shapeDrawTypeConfigWidget.Size = new System.Drawing.Size(78, 27);
-            this.shapeDrawTypeConfigWidget.TabIndex = 1;
-            this.shapeDrawTypeConfigWidget.ShapeDrawTypeChanged += new System.EventHandler(this.shapeDrawTypeConfigWidget_ShapeDrawTypeChanged);
-            // 
-            // penConfigWidget
-            // 
-            this.penConfigWidget.Location = new System.Drawing.Point(547, 0);
-            this.penConfigWidget.Name = "penConfigWidget";
-            this.penConfigWidget.Size = new System.Drawing.Size(144, 27);
-            this.penConfigWidget.TabIndex = 0;
-            this.penConfigWidget.PenChanged += new System.EventHandler(this.penConfigWidget_PenChanged);
-            // 
-            // brushConfigWidget
-            // 
-            this.brushConfigWidget.Location = new System.Drawing.Point(344, 0);
-            this.brushConfigWidget.Name = "brushConfigWidget";
-            this.brushConfigWidget.Size = new System.Drawing.Size(203, 27);
-            this.brushConfigWidget.TabIndex = 0;
-            this.brushConfigWidget.BrushChanged += new System.EventHandler(this.brushConfigWidget_BrushChanged);
-            // 
-            // workspaceOptionsConfigWidget
-            // 
-            this.workspaceOptionsConfigWidget.AntiAliasing = false;
-            this.workspaceOptionsConfigWidget.Location = new System.Drawing.Point(286, 0);
-            this.workspaceOptionsConfigWidget.Name = "workspaceOptionsConfigWidget";
-            this.workspaceOptionsConfigWidget.RulersEnabled = false;
-            this.workspaceOptionsConfigWidget.Size = new System.Drawing.Size(58, 27);
-            this.workspaceOptionsConfigWidget.TabIndex = 3;
-            this.workspaceOptionsConfigWidget.AntiAliasChanged += new System.EventHandler(this.workspaceOptionsConfigWidget_AntiAliasChanged);
-            this.workspaceOptionsConfigWidget.RulersEnabledChanged += new System.EventHandler(this.workspaceOptionsConfigWidget_RulersEnabledChanged);
-            // 
-            // commonActionsWidget
-            // 
-            this.commonActionsWidget.Location = new System.Drawing.Point(0, 0);
-            this.commonActionsWidget.Name = "commonActionsWidget";
-            this.commonActionsWidget.Size = new System.Drawing.Size(286, 27);
-            this.commonActionsWidget.TabIndex = 4;
-            // 
-            // toolPulseTimer
-            // 
-            this.toolPulseTimer.Interval = 25;
-            this.toolPulseTimer.SynchronizingObject = this;
-            this.toolPulseTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.toolPulseTimer_Elapsed);
-            // 
-            // DocumentWorkspace
-            // 
-            this.Controls.Add(this.documentView);
-            this.Controls.Add(this.topDock);
-            this.Name = "DocumentWorkspace";
-            this.Size = new System.Drawing.Size(872, 640);
-            this.topDock.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.toolPulseTimer)).EndInit();
-            this.ResumeLayout(false);
-        }
+			System.Resources.ResourceManager resources = new System.Resources.ResourceManager(typeof(DocumentWorkspace));
+			this.documentView = new PaintDotNet.DocumentView();
+			this.topDock = new PaintDotNet.FlowPanel();
+			this.textConfigWidget = new PaintDotNet.TextConfigWidget();
+			this.shapeDrawTypeConfigWidget = new PaintDotNet.ShapeDrawTypeConfigWidget();
+			this.penConfigWidget = new PaintDotNet.PenConfigWidget();
+			this.brushConfigWidget = new PaintDotNet.BrushConfigWidget();
+			this.workspaceOptionsConfigWidget = new PaintDotNet.WorkspaceOptionsConfigWidget();
+			this.zoomConfigWidget = new PaintDotNet.ZoomConfigWidget();
+			this.commonActionsWidget = new PaintDotNet.CommonActionsWidget();
+			this.toolPulseTimer = new System.Timers.Timer();
+			this.topDock.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)(this.toolPulseTimer)).BeginInit();
+			this.SuspendLayout();
+			// 
+			// documentView
+			// 
+			this.documentView.BackColor = System.Drawing.SystemColors.ControlDark;
+			this.documentView.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.documentView.Document = null;
+			this.documentView.DocumentScrollPosition = ((System.Drawing.PointF)(resources.GetObject("documentView.DocumentScrollPosition")));
+			this.documentView.EnableOutlineAnimation = true;
+			this.documentView.Location = new System.Drawing.Point(0, 54);
+			this.documentView.Name = "documentView";
+			this.documentView.RulersEnabled = false;
+			this.documentView.EnableSelectionOutline = true;
+			this.documentView.Size = new System.Drawing.Size(872, 586);
+			this.documentView.TabIndex = 0;
+			this.documentView.Scroll += new System.EventHandler(this.documentView_Scroll);
+			this.documentView.RulersEnabledChanged += new EventHandler(documentView_RulersEnabledChanged);
+			this.documentView.DrawGridChanged += new EventHandler(documentView_DrawGridChanged);
+			this.documentView.DocumentMouseMove += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseMoveHandler);
+			this.documentView.DocumentMouseDown += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseDownHandler);
+			this.documentView.DocumentClick += new System.EventHandler(this.DocumentClick);
+			this.documentView.DocumentMouseUp += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseUpHandler);
+			this.documentView.DocumentKeyPress += new System.Windows.Forms.KeyPressEventHandler(this.DocumentKeyPress);
+			// 
+			// topDock
+			// 
+			this.topDock.Controls.Add(this.textConfigWidget);
+			this.topDock.Controls.Add(this.shapeDrawTypeConfigWidget);
+			this.topDock.Controls.Add(this.penConfigWidget);
+			this.topDock.Controls.Add(this.brushConfigWidget);
+			this.topDock.Controls.Add(this.workspaceOptionsConfigWidget);
+			this.topDock.Controls.Add(this.zoomConfigWidget);
+			this.topDock.Controls.Add(this.commonActionsWidget);
+			this.topDock.Dock = System.Windows.Forms.DockStyle.Top;
+			this.topDock.Location = new System.Drawing.Point(0, 0);
+			this.topDock.Name = "topDock";
+			this.topDock.Size = new System.Drawing.Size(872, 54);
+			this.topDock.TabIndex = 3;
+			// 
+			// textConfigWidget
+			// 
+			this.textConfigWidget.FontSize = 10F;
+			this.textConfigWidget.FontStyle = System.Drawing.FontStyle.Regular;
+			this.textConfigWidget.Location = new System.Drawing.Point(78, 27);
+			this.textConfigWidget.Name = "textConfigWidget";
+			this.textConfigWidget.Size = new System.Drawing.Size(397, 27);
+			this.textConfigWidget.TabIndex = 2;
+			this.textConfigWidget.TextAlignment = PaintDotNet.TextAlignment.Left;
+			// 
+			// shapeDrawTypeConfigWidget
+			// 
+			this.shapeDrawTypeConfigWidget.Location = new System.Drawing.Point(0, 27);
+			this.shapeDrawTypeConfigWidget.Name = "shapeDrawTypeConfigWidget";
+			this.shapeDrawTypeConfigWidget.ShapeDrawType = PaintDotNet.ShapeDrawType.Outline;
+			this.shapeDrawTypeConfigWidget.Size = new System.Drawing.Size(78, 27);
+			this.shapeDrawTypeConfigWidget.TabIndex = 1;
+			this.shapeDrawTypeConfigWidget.ShapeDrawTypeChanged += new System.EventHandler(this.shapeDrawTypeConfigWidget_ShapeDrawTypeChanged);
+			// 
+			// penConfigWidget
+			// 
+			this.penConfigWidget.Location = new System.Drawing.Point(659, 0);
+			this.penConfigWidget.Name = "penConfigWidget";
+			this.penConfigWidget.Size = new System.Drawing.Size(144, 27);
+			this.penConfigWidget.TabIndex = 0;
+			this.penConfigWidget.PenChanged += new System.EventHandler(this.penConfigWidget_PenChanged);
+			// 
+			// brushConfigWidget
+			// 
+			this.brushConfigWidget.Location = new System.Drawing.Point(456, 0);
+			this.brushConfigWidget.Name = "brushConfigWidget";
+			this.brushConfigWidget.Size = new System.Drawing.Size(203, 27);
+			this.brushConfigWidget.TabIndex = 0;
+			this.brushConfigWidget.BrushChanged += new System.EventHandler(this.brushConfigWidget_BrushChanged);
+			// 
+			// workspaceOptionsConfigWidget
+			// 
+			this.workspaceOptionsConfigWidget.AntiAliasing = false;
+			this.workspaceOptionsConfigWidget.DrawGrid = false;
+			this.workspaceOptionsConfigWidget.Location = new System.Drawing.Point(374, 0);
+			this.workspaceOptionsConfigWidget.Name = "workspaceOptionsConfigWidget";
+			this.workspaceOptionsConfigWidget.RulersEnabled = false;
+			this.workspaceOptionsConfigWidget.Size = new System.Drawing.Size(82, 27);
+			this.workspaceOptionsConfigWidget.TabIndex = 3;
+			this.workspaceOptionsConfigWidget.AntiAliasChanged += new System.EventHandler(this.workspaceOptionsConfigWidget_AntiAliasChanged);
+			this.workspaceOptionsConfigWidget.RulersEnabledChanged += new System.EventHandler(this.workspaceOptionsConfigWidget_RulersEnabledChanged);
+			this.workspaceOptionsConfigWidget.DrawGridChanged += new System.EventHandler(this.workspaceOptionsConfigWidget_DrawGridChanged);
+			// 
+			// zoomConfigWidget
+			// 
+			this.zoomConfigWidget.Location = new System.Drawing.Point(256, 0);
+			this.zoomConfigWidget.Name = "zoomConfigWidget";
+			this.zoomConfigWidget.Size = new System.Drawing.Size(127, 27);
+			this.zoomConfigWidget.TabIndex = 0;
+			this.zoomConfigWidget.ZoomBasisChanged += new EventHandler(zoomConfigWidget_ZoomBasisChanged);
+			this.zoomConfigWidget.ZoomScaleChanged += new EventHandler(zoomConfigWidget_ZoomScaleChanged);
+			// 
+			// commonActionsWidget
+			// 
+			this.commonActionsWidget.Location = new System.Drawing.Point(0, 0);
+			this.commonActionsWidget.Name = "commonActionsWidget";
+			this.commonActionsWidget.Size = new System.Drawing.Size(256, 27);
+			this.commonActionsWidget.TabIndex = 4;
+			// 
+			// toolPulseTimer
+			// 
+			this.toolPulseTimer.Interval = 25;
+			this.toolPulseTimer.SynchronizingObject = this;
+			this.toolPulseTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.toolPulseTimer_Elapsed);
+			// 
+			// DocumentWorkspace
+			// 
+			this.Controls.Add(this.documentView);
+			this.Controls.Add(this.topDock);
+			this.Name = "DocumentWorkspace";
+			this.Size = new System.Drawing.Size(872, 640);
+			this.Resize += new EventHandler(DocumentWorkspace_Resize);
+			this.topDock.ResumeLayout(false);
+			((System.ComponentModel.ISupportInitialize)(this.toolPulseTimer)).EndInit();
+			this.ResumeLayout(false);
+
+		}
 
         // The Document* events are raised by the Document class, handled here,
         // and relayed as necessary. For instance, for the DocumentMouse* events, 
@@ -824,6 +899,8 @@ namespace PaintDotNet
             mainToolBarForm = new MainToolBarForm();
             mainToolBarForm.MainToolBar.ColorDisplay.UserForeColorClick += new EventHandler(colorDisplay_ForeColorClicked);
             mainToolBarForm.MainToolBar.ColorDisplay.UserBackColorClick += new EventHandler(colorDisplay_BackColorClicked);
+			mainToolBarForm.AttachControl = this.DocumentView;
+			mainToolBarForm.SnapToEdge = WhichEdge.TopLeft;
 
             // LayerForm
             layerForm = new LayerForm();
@@ -835,6 +912,8 @@ namespace PaintDotNet
             layerForm.MoveLayerUpButtonClick += new EventHandler(layerForm_MoveLayerUpButtonClicked);
             layerForm.MoveLayerDownButtonClick += new EventHandler(layerForm_MoveLayerDownButtonClicked);
             layerForm.PropertiesButtonClick += new EventHandler(layerForm_PropertiesButtonClick);
+			layerForm.AttachControl = this.DocumentView;
+			layerForm.SnapToEdge = WhichEdge.BottomRight;
 
             // HistoryForm
             historyForm = new HistoryForm();
@@ -843,6 +922,10 @@ namespace PaintDotNet
             historyForm.UndoButtonClicked += new EventHandler(historyForm_UndoButtonClicked);
             historyForm.RedoButtonClicked += new EventHandler(historyForm_RedoButtonClicked);
             historyForm.FastForwardButtonClicked += new EventHandler(historyForm_FastForwardButtonClicked);
+			historyForm.LimitButtonClicked += new EventHandler(historyForm_LimitButtonClicked);
+			historyForm.AttachControl = this.DocumentView;
+			historyForm.SnapToEdge = WhichEdge.TopRight;
+
 
             // ColorsForm
             colorsForm = new ColorsForm();
@@ -851,6 +934,8 @@ namespace PaintDotNet
             colorsForm.WhichUserColor = WhichUserColor.Foreground;
             colorsForm.UserForeColorChanged += new ColorEventHandler(colorsForm_UserForeColorChanged);
             colorsForm.UserBackColorChanged += new ColorEventHandler(colorsForm_UserBackColorChanged);
+			colorsForm.AttachControl = this.DocumentView;
+			colorsForm.SnapToEdge = WhichEdge.BottomLeft;
         }
 
         protected override void InitLayout()
@@ -873,20 +958,24 @@ namespace PaintDotNet
             tools.Add(typeof(RectangleSelectTool));
             tools.Add(typeof(MoveTool));
             tools.Add(typeof(LassoSelectTool));
+			// tools.Add(typeof(MagicWandTool));
 
-            tools.Add(typeof(PanTool));
-
-            tools.Add(typeof(PencilTool));
-            tools.Add(typeof(PaintBrushTool));
+			tools.Add(typeof(PanTool));
+			tools.Add(typeof(ZoomTool));
+            
             tools.Add(typeof(EraserTool));
-
-            tools.Add(typeof(RectangleTool));
-            tools.Add(typeof(EllipseTool));
-            tools.Add(typeof(RoundedRectangleTool));
-            tools.Add(typeof(LineTool));
-            tools.Add(typeof(FreeformShapeTool));
+			tools.Add(typeof(PencilTool));
+            tools.Add(typeof(PaintBrushTool));
+			tools.Add(typeof(CloneStampTool)); 
+			tools.Add(typeof(RecolorTool));
             tools.Add(typeof(ColorPickerTool));
             tools.Add(typeof(PaintBucketTool));
+
+            tools.Add(typeof(LineTool));
+            tools.Add(typeof(RectangleTool));
+            tools.Add(typeof(RoundedRectangleTool));
+            tools.Add(typeof(EllipseTool));
+            tools.Add(typeof(FreeformShapeTool));
             tools.Add(typeof(TextTool));
 
             // convert from ArrayList to a normal array
@@ -1059,6 +1148,7 @@ namespace PaintDotNet
         
         private void mainToolBar_ToolClicked(object sender, ToolClickedEventArgs e)
         {
+			documentView.Focus();
             Environment.SetTool(e.ToolType, this);
         }
 
@@ -1094,6 +1184,12 @@ namespace PaintDotNet
             Environment.ToolChanging += new EventHandler(this.ToolChangingHandler);
             Environment.ToolChanged += new EventHandler(this.ToolChangedHandler);
         }
+
+
+		private void workspaceOptionsConfigWidget_DrawGridChanged(object sender, EventArgs e)
+		{
+			documentView.DrawGrid = ((WorkspaceOptionsConfigWidget)sender).DrawGrid;
+		}
 
         private void workspaceOptionsConfigWidget_AntiAliasChanged(object sender, System.EventArgs e)
         {
@@ -1256,7 +1352,7 @@ namespace PaintDotNet
         {
             if (History.UndoStack.Count > 0)
             {
-                if (!(History.UndoStack.Peek() is NullHistoryAction))
+                if (!(History.UndoStack[History.UndoStack.Count - 1] is NullHistoryAction))
                 {
                     using (new WaitCursorChanger(this))
                     {
@@ -1264,14 +1360,14 @@ namespace PaintDotNet
                         Update();
                     }
                 }
-            }
+			}
         }
 
         private void historyForm_RedoButtonClicked(object sender, System.EventArgs e)
         {
             if (History.RedoStack.Count > 0)
             {
-                if (!(History.RedoStack.Peek() is NullHistoryAction))
+                if (!(History.RedoStack[History.RedoStack.Count - 1] is NullHistoryAction))
                 {
                     using (new WaitCursorChanger(this))
                     {
@@ -1279,7 +1375,7 @@ namespace PaintDotNet
                         Update();
                     }
                 }
-            }
+			}
         }
 
         private void workspaceOptionsConfigWidget_RulersEnabledChanged(object sender, System.EventArgs e)
@@ -1296,8 +1392,28 @@ namespace PaintDotNet
                     History.StepBackward();
                     Update();
                 }
-            }
+			}
         }
+
+		private void historyForm_LimitButtonClicked(object sender, EventArgs e)
+		{
+			using (HistoryLimitDialog hld = new HistoryLimitDialog())
+			{
+				hld.Limit = History.Limit;
+				hld.ShowDialog(FindForm());
+
+				if (hld.DialogResult == DialogResult.OK)
+				{
+					if (History.Limit != hld.Limit)
+					{
+						History.Limit = hld.Limit;
+						History.Truncate();
+						Update();
+					}
+				}
+			}
+			Focus();
+		}
 
         private void historyForm_FastForwardButtonClicked(object sender, EventArgs e)
         {
@@ -1308,7 +1424,7 @@ namespace PaintDotNet
                     History.StepForward();
                     Update();
                 }            
-            }
+			}
         }
 
         private void layerForm_PropertiesButtonClick(object sender, EventArgs e)
@@ -1383,6 +1499,111 @@ namespace PaintDotNet
         private void documentView_Scroll(object sender, System.EventArgs e)
         {
             OnScroll();
-        }
-    }
+		}
+
+		public void ZoomIn()
+		{
+			documentView.ScaleFactor = documentView.ScaleFactor.GetNextLarger();
+		}
+
+		public void ZoomOut()
+		{
+			documentView.ScaleFactor = documentView.ScaleFactor.GetNextSmaller();
+		}
+
+		public void ZoomToWindow()
+		{
+			float zoom = Math.Min(
+				(documentView.ClientRectantangleMax.Width - 10.0f) / document.Width,
+				(documentView.ClientRectantangleMax.Height - 10.0f) / document.Height);
+
+			//Zoom out to fit the image
+			documentView.ScaleFactor = new ScaleFactor(Math.Min(zoom, 1.0f));
+		}
+
+		public void ZoomToRectangle(RectangleF selectionBounds)
+		{
+			PointF selectionCenter = new PointF((selectionBounds.Left + selectionBounds.Right + 1.0f) / 2.0f,
+				(selectionBounds.Top + selectionBounds.Bottom + 1.0f) / 2.0f);
+			PointF cornerPosition;
+			float zoom = Math.Min(
+				(documentView.ClientRectantangleMin.Width) / (selectionBounds.Width + 2.0f),
+				(documentView.ClientRectantangleMin.Height) / (selectionBounds.Height + 2.0f));
+
+			//Zoom out to fit the image
+			documentView.ScaleFactor = new ScaleFactor(zoom);
+			cornerPosition = new PointF(selectionCenter.X - VisibleDocumentRectangle.Width / 2,
+				selectionCenter.Y - VisibleDocumentRectangle.Height / 2);
+			documentView.DocumentScrollPosition = cornerPosition;
+		}
+
+		public void ZoomToSelection()
+		{
+			if (environment.IsSelectionEmpty) 
+			{
+				ZoomToWindow();
+			} 
+			else 
+			{
+				ZoomToRectangle(environment.CreateSelectedRegion().GetBounds());
+			}
+		}
+		private uint ignore = 0; //to stop the feedback loop
+		private void zoomConfigWidget_ZoomBasisChanged(object sender, EventArgs e)
+		{
+			if (ignore == 0) 
+			{
+				ignore++;
+				switch (zoomConfigWidget.ZoomBasis) 
+				{
+					case ZoomBasis.Window:
+						ZoomToWindow();
+						/* Enable PanelAutoScroll only long enough to recenter the view */
+						documentView.PanelAutoScroll = true;
+						documentView.PanelAutoScroll = false;
+						//This will be unset by the scalefactor change.
+						zoomConfigWidget.ZoomBasis = ZoomBasis.Window;
+						break;
+					case ZoomBasis.Selection:
+						ZoomToSelection();
+						documentView.PanelAutoScroll = true;
+						zoomConfigWidget.ZoomBasis = ZoomBasis.Factor;
+						break;
+					case ZoomBasis.Factor:
+						documentView.PanelAutoScroll = true;
+						break;
+				}
+				ignore--;
+			}
+		}
+
+		private void zoomConfigWidget_ZoomScaleChanged(object sender, EventArgs e)
+		{
+			if (zoomConfigWidget.ZoomBasis == ZoomBasis.Factor) 
+			{
+				documentView.ScaleFactor = zoomConfigWidget.ScaleFactor;
+			}
+		}
+
+		private void DocumentWorkspace_Resize(object sender, EventArgs e)
+		{
+			zoomConfigWidget_ZoomBasisChanged(this, EventArgs.Empty);
+		}
+
+		private void documentView_RulersEnabledChanged(object sender, EventArgs e)
+		{
+			workspaceOptionsConfigWidget.RulersEnabled = documentView.RulersEnabled;
+		}
+
+		private void documentView_DrawGridChanged(object sender, EventArgs e)
+		{
+			workspaceOptionsConfigWidget.DrawGrid = documentView.DrawGrid;
+		}
+
+		private void Environment_AntiAliasingChanged(object sender, EventArgs e)
+		{
+			workspaceOptionsConfigWidget.AntiAliasing = Environment.AntiAliasing;
+
+		}
+	}
 }

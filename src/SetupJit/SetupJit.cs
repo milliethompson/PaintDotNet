@@ -45,25 +45,34 @@ namespace SetupJit
                 return;
             }
 
-            bool delete = false;
-            string appDir = string.Empty;
 
-            if (args.Length == 1)
+            try
             {
-                appDir = args[0];
-            }
+                bool delete = false;
+                string appDir = string.Empty;
 
-            if (args.Length == 2 && args[0] == "/d")
-            {
-                appDir = args[1];
-                delete = true;
-            }
+                if (args.Length == 1)
+                {
+                    appDir = args[0];
+                }
+
+                if (args.Length == 2 && args[0] == "/d")
+                {
+                    appDir = args[1];
+                    delete = true;
+                }
             
-            NgenAssembly(Path.Combine(appDir, "CpuCount.NET.dll"), delete);
-            NgenAssembly(Path.Combine(appDir, "DotNetWidgets.dll"), delete);
-            NgenAssembly(Path.Combine(appDir, "Interop.WIA.dll"), delete);
-            NgenAssembly(Path.Combine(appDir, "SharpZipLib.dll"), delete);
-            NgenAssembly(Path.Combine(appDir, "Skybound.VisualStyles.dll"), delete);
+                NgenAssembly(Path.Combine(appDir, "CpuCount.NET.dll"), delete);
+                NgenAssembly(Path.Combine(appDir, "DotNetWidgets.dll"), delete);
+                NgenAssembly(Path.Combine(appDir, "Interop.WIA.dll"), delete);
+                NgenAssembly(Path.Combine(appDir, "ICSharpCode.SharpZipLib.dll"), delete);
+                NgenAssembly(Path.Combine(appDir, "Skybound.VisualStyles.dll"), delete);
+            }
+
+            catch
+            {
+                // We don't want installation to fail if we can't ngen
+            }
         }
     }
 }

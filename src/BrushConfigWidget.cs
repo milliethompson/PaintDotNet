@@ -47,10 +47,6 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
-            
-            //this.styleComboBox = (DotNetWidgets.FlatComboBox)styleComboBoxTB.ContainedControl;
-            
             this.styleComboBox.Items.Add("Solid Brush");
             foreach (string styleName in Enum.GetNames(typeof(HatchStyle))) 
             { 
@@ -66,8 +62,6 @@ namespace PaintDotNet
             this.styleComboBox.MeasureItem += new System.Windows.Forms.MeasureItemEventHandler(this.comboBoxStyle_MeasureItem);
             this.styleComboBox.SelectedValueChanged += new System.EventHandler(this.comboBoxStyle_SelectedValueChanged);
             this.styleComboBox.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.comboBoxStyle_DrawItem);
-
-            
         }
 
         public event EventHandler BrushChanged;
@@ -220,7 +214,6 @@ namespace PaintDotNet
                     string displayText = this.styleComboBox.Items[e.Index].ToString();
                     HatchStyle hs = this.getHatchStyle(displayText);
 
-                    // TODO add user selected foreground and background colors here
                     using (HatchBrush b = new HatchBrush(hs, e.ForeColor, e.BackColor))
                     {
                         e.Graphics.FillRectangle(b, rd);
@@ -231,7 +224,7 @@ namespace PaintDotNet
 
                     using (SolidBrush sb = new SolidBrush(Color.White))
                     {
-                        if ((e.State & DrawItemState.Focus)==0)
+                        if ((e.State & DrawItemState.Focus) == 0)
                         {
                             sb.Color = SystemColors.Window;
                             e.Graphics.FillRectangle(sb, r);
@@ -251,7 +244,7 @@ namespace PaintDotNet
                 {
                     using (SolidBrush sb = new SolidBrush(Color.White))
                     {
-                        if ((e.State & DrawItemState.Focus)==0)
+                        if ((e.State & DrawItemState.Focus) == 0)
                         {
                             sb.Color = SystemColors.Window;
                             e.Graphics.FillRectangle(sb, e.Bounds);

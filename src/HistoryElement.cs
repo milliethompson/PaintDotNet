@@ -10,11 +10,24 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for HistoryElement.
     /// </summary>
-    public class HistoryElement : System.Windows.Forms.UserControl
-    {
-        private System.Windows.Forms.Label historyDescription;
-        private IconBox historyIcon;
-        private bool isUndo;
+	public class HistoryElement : System.Windows.Forms.UserControl
+	{
+		private System.Windows.Forms.Label historyDescription;
+		private IconBox historyIcon;
+		private bool isUndo;
+
+		protected override void WndProc(ref Message m)
+		{
+			IntPtr preR = m.Result;
+
+			// Ignore focus
+			if (m.Msg == NativeMethods.WmConstants.WM_SETFOCUS)
+			{
+				return;
+			}
+
+			base.WndProc (ref m);
+		}	
 
         /// <summary> 
         /// Required designer variable.
@@ -26,7 +39,6 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
             IsUndo = true;
             historyIcon.TransparentColor = Color.FromArgb(192, 192, 192);
 
@@ -188,6 +200,7 @@ namespace PaintDotNet
 
         protected override void OnPaintBackground(PaintEventArgs pevent)
         {
+			// Do not call base so as to avoid flickering
             //base.OnPaintBackground (pevent);
         }
 

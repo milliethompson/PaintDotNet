@@ -9,9 +9,9 @@ namespace PaintDotNet.Effects
     /// </summary>
     public class MotionBlurEffectConfigToken
         : EffectConfigToken
-    {
-        private int angle;
-        public int Angle
+	{
+        private double angle;
+        public double Angle
         {
             get
             {

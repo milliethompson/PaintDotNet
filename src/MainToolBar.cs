@@ -11,14 +11,23 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for MainToolBar.
     /// </summary>
-    public class MainToolBar : System.Windows.Forms.UserControl
-    {
-        private ColorDisplayWidget colorDisplayWidget;
-        private DotNetWidgets.DotNetToolbar[] dotNetToolbars;
-        private ImageList imageList;
-        private DotNetWidgets.DotNetToolbar.ButtonClickEventHandler toolClickedDelegate;
-        private const int tbWidth = 2; // two buttons per line in the toolbars
+	public class MainToolBar : System.Windows.Forms.UserControl
+	{
+		private ColorDisplayWidget colorDisplayWidget;
+		private DotNetWidgets.DotNetToolbar[] dotNetToolbars;
+		private ImageList imageList;
+		private DotNetWidgets.DotNetToolbar.ButtonClickEventHandler toolClickedDelegate;
+		private const int tbWidth = 2; // two buttons per line in the toolbars
+		private ToleranceSliderControl  toleranceSlider;
 
+		public ToleranceSliderControl ToleranceSlider
+		{
+			get
+			{
+				return toleranceSlider;
+			}
+		}
+	
         /// <summary> 
         /// Required designer variable.
         /// </summary>
@@ -29,7 +38,6 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
             this.toolClickedDelegate = new DotNetWidgets.DotNetToolbar.ButtonClickEventHandler(dotNetToolbar_ButtonClick);
         }
 
@@ -107,7 +115,7 @@ namespace PaintDotNet
                 int index = imageList.Images.Add(tool.Image, imageList.TransparentColor);
                 tbb.ImageIndex = index;
                 tbb.Tag = type;
-                tbb.ToolTipText = tool.Name;
+                tbb.ToolTipText = tool.Name + " (" + tool.HotKey.ToString().ToUpper() + ")";
                 dotNetToolbars[tbIndex / tbWidth].Buttons.Add(tbb);
                 tool = null;
 
@@ -147,7 +155,7 @@ namespace PaintDotNet
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad (e);
-            this.ClientSize = new Size(dotNetToolbars[0].Width, colorDisplayWidget.Height + ToolbarsHeight());
+            this.ClientSize = new Size(dotNetToolbars[0].Width, colorDisplayWidget.Height + toleranceSlider.Height + ToolbarsHeight());
         }
 
         /// <summary> 
@@ -172,24 +180,36 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            this.colorDisplayWidget = new PaintDotNet.ColorDisplayWidget();
-            this.SuspendLayout();
-            // 
-            // colorDisplayWidget
-            // 
-            this.colorDisplayWidget.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.colorDisplayWidget.Location = new System.Drawing.Point(0, 256);
-            this.colorDisplayWidget.Name = "colorDisplayWidget";
-            this.colorDisplayWidget.TabIndex = 0;
-            // 
-            // MainToolBar
-            // 
-            this.Controls.Add(this.colorDisplayWidget);
-            this.Name = "MainToolBar";
-            this.Size = new System.Drawing.Size(48, 304);
-            this.ResumeLayout(false);
+			this.colorDisplayWidget = new PaintDotNet.ColorDisplayWidget();
+			this.toleranceSlider = new PaintDotNet.ToleranceSliderControl();
+			this.SuspendLayout();
+			// 
+			// colorDisplayWidget
+			// 
+			this.colorDisplayWidget.Dock = System.Windows.Forms.DockStyle.Bottom;
+			this.colorDisplayWidget.Location = new System.Drawing.Point(0, 280);
+			this.colorDisplayWidget.Name = "colorDisplayWidget";
+			this.colorDisplayWidget.TabIndex = 1;
+			// 
+			// toleranceSlider
+			// 
+			this.toleranceSlider.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+				| System.Windows.Forms.AnchorStyles.Right)));
+			this.toleranceSlider.Location = new System.Drawing.Point(2, 264);
+			this.toleranceSlider.Name = "toleranceSlider";
+			this.toleranceSlider.Size = new System.Drawing.Size(44, 16);
+			this.toleranceSlider.TabIndex = 0;
+			this.toleranceSlider.Tolerance = 128;
+			// 
+			// MainToolBar
+			// 
+			this.Controls.Add(this.toleranceSlider);
+			this.Controls.Add(this.colorDisplayWidget);
+			this.Name = "MainToolBar";
+			this.Size = new System.Drawing.Size(48, 328);
+			this.ResumeLayout(false);
 
-        }
+		}
         #endregion
 
         private void dotNetToolbar_ButtonClick(object sender, DotNetWidgets.DotNetToolbarItemClickEventArgs e)

@@ -10,7 +10,7 @@
 #define CPUCOUNT_API __declspec(dllimport)
 #endif
 
-#ifdef __cpluplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif

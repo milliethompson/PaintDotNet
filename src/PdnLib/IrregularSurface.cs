@@ -70,7 +70,7 @@ namespace PaintDotNet
 
                 if (!ri.IsEmpty)
                 {
-                    placedSurfaces.Add(new PlacedSurface(source, Rectangle.Truncate(rectF)));
+                    placedSurfaces.Add(new PlacedSurface(source, Rectangle.Truncate(ri)));
                 }
             }
 
@@ -80,8 +80,7 @@ namespace PaintDotNet
 
         public IrregularSurface (Surface source, Rectangle[] roi)
         {
-            placedSurfaces = new ArrayList();
-            placedSurfaces.Capacity = roi.Length;
+            placedSurfaces = new ArrayList(roi.Length);
 
             foreach (Rectangle rect in roi)
             {
@@ -89,7 +88,7 @@ namespace PaintDotNet
 
                 if (!ri.IsEmpty)
                 {
-                    placedSurfaces.Add(new PlacedSurface(source, rect));
+                    placedSurfaces.Add(new PlacedSurface(source, ri));
                 }
             }
 

@@ -12,11 +12,21 @@ namespace PaintDotNet
         : Tool
     {
         private bool tracking = false;
-        private Point lastMouseXY;
+		private Point lastMouseXY;
+		private Cursor cursorMouseDown, cursorMouseUp;
+
+		public override char HotKey
+		{
+			get
+			{
+				return 'h';
+			}
+		}
 
         protected override void OnMouseDown(System.Windows.Forms.MouseEventArgs e)
         {
             base.OnMouseDown (e);
+			Cursor = cursorMouseDown;
             lastMouseXY = new Point(e.X, e.Y);
             tracking = true;
         }
@@ -24,6 +34,7 @@ namespace PaintDotNet
         protected override void OnMouseUp(System.Windows.Forms.MouseEventArgs e)
         {
             base.OnMouseUp (e);
+			Cursor = cursorMouseUp;
             tracking = false;
         }
 
@@ -41,11 +52,14 @@ namespace PaintDotNet
                     Point scrollPos = Point.Round(Workspace.DocumentView.DocumentScrollPosition);
                     Point newScrollPos = new Point(scrollPos.X - delta.Width, scrollPos.Y - delta.Height);
 
-                    Workspace.DocumentView.DocumentScrollPosition = newScrollPos;
+                    
+					Workspace.DocumentView.DocumentScrollPosition = newScrollPos;
+					Workspace.DocumentView.Update();
 
                     lastMouseXY = mouseXY;
                     lastMouseXY.X -= delta.Width;
                     lastMouseXY.Y -= delta.Height;
+
                 }
             }
         }
@@ -54,9 +68,15 @@ namespace PaintDotNet
             : base(workspace)
         {
             toolBarImage = Utility.GetImageResource("Icons.PanToolIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.PanToolCursor.cur"));
             name = "Pan";
             description = "Allows you to scroll throughout the document.";
+			helpText = "When zoomed in close, click and drag to navigate the image";
+
+			// cursor-action assignments
+			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.PanToolCursorMouseDown.cur"));
+			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.PanToolCursor.cur"));
+			Cursor = cursorMouseUp;
+			autoScroll = false;
 
             tracking = false;
         }

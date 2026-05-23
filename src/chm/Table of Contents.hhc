@@ -71,11 +71,11 @@
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Undo">
-				<param name="Local" value="UndoOperation.htm">
+				<param name="Local" value="UndoRedo\UndoOperation.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Redo">
-				<param name="Local" value="RedoOperation.htm">
+				<param name="Local" value="UndoRedo\RedoOperation.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Cut">
@@ -140,7 +140,7 @@
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Zoom">
-				<param name="Local" value="zoomtool.htm">
+				<param name="Local" value="zoom.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Actual Size">
@@ -168,9 +168,17 @@
 				<param name="Local" value="DuplicateLayers.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Import From File">
+				<param name="Local" value="LayerImportFromFile.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Adjustments">
 				</OBJECT>
 			<UL>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Auto-Level">
+					<param name="Local" value="autolevel.htm">
+					</OBJECT>
 				<LI> <OBJECT type="text/sitemap">
 					<param name="Name" value="Brightness/Contrast">
 					<param name="Local" value="BrightnessContrast.htm">
@@ -180,9 +188,21 @@
 					<param name="Local" value="Desaturate.htm">
 					</OBJECT>
 				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Hue / Saturation">
+					<param name="Local" value="huesat.htm">
+					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
 					<param name="Name" value="Invert Colors">
 					<param name="Local" value="InvertColors.htm">
 					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Levels">
+					<param name="Local" value="levels.htm">
+					</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Rotate / Zoom">
+				<param name="Local" value="RotateZoom\RotateZoom.htm">
+				</OBJECT>
 			</UL>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Flatten Image">
@@ -210,6 +230,18 @@
 				<param name="Local" value="Blur.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Edge Detect">
+				<param name="Local" value="edgedetect.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Emboss">
+				<param name="Local" value="emboss.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Frosted Glass">
+				<param name="Local" value="frostedglass.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Mosaic">
 				<param name="Local" value="Mosaic2.htm">
 				</OBJECT>
@@ -218,12 +250,20 @@
 				<param name="Local" value="MotionBlur.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Sharpen">
-				<param name="Local" value="Sharpen.htm">
+				<param name="Name" value="Oil Painting">
+				<param name="Local" value="oilpainting.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Roto Zoomer">
-				<param name="Local" value="RotoZoomer.htm">
+				<param name="Name" value="Red Eye Removal">
+				<param name="Local" value="RedEye\RedEyeEffect.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Relief">
+				<param name="Local" value="Relief.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Sharpen">
+				<param name="Local" value="Sharpen.htm">
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
@@ -251,6 +291,14 @@
 				<param name="Local" value="pantool.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Zoom Tool">
+				<param name="Local" value="zoomtool.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Eraser Tool">
+				<param name="Local" value="EraserTool.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Pencil Tool">
 				<param name="Local" value="Penciltool.htm">
 				</OBJECT>
@@ -259,20 +307,12 @@
 				<param name="Local" value="PaintBrush.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Eraser Tool">
-				<param name="Local" value="EraserTool.htm">
+				<param name="Name" value="Clone Stamp Tool">
+				<param name="Local" value="clonestamptool.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Rectangle, Ellipse and Rounded Rectangle Tool">
-				<param name="Local" value="rectangletool.htm">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Line Tool">
-				<param name="Local" value="Linetool.htm">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Free Form Shape Tool">
-				<param name="Local" value="freeformtool.htm">
+				<param name="Name" value="Recoloring Tool">
+				<param name="Local" value="Recoloring\recoloringtool.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Color Picker Tool">
@@ -283,12 +323,28 @@
 				<param name="Local" value="Paintbuckettool.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Line Tool">
+				<param name="Local" value="Linetool.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Rectangle, Ellipse and Rounded Rectangle Tool">
+				<param name="Local" value="rectangletool.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Free Form Shape Tool">
+				<param name="Local" value="freeformtool.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Text Tool">
 				<param name="Local" value="texttool.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Background/Forground Selection Tool">
 				<param name="Local" value="backgroundandforegroundselection.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Tolerance">
+				<param name="Local" value="tolerance.htm">
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
@@ -309,7 +365,7 @@
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="History Window">
-				<param name="Local" value="history.htm">
+				<param name="Local" value="History\history.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Layers Window">

@@ -20,6 +20,7 @@ namespace PaintDotNet
             }
         }
 
+
         private PaintDotNet.MainToolBar mainToolBar = null;
         /// <summary>
         /// Required designer variable.
@@ -39,9 +40,6 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            //
-            // TODO: Add any constructor code after InitializeComponent call
-            //
         }
 
         /// <summary>

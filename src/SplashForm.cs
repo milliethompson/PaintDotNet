@@ -27,10 +27,6 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            //
-            // TODO: Add any constructor code after InitializeComponent call
-            //
-
             // Initialize logo
             Utility.TraceMe("loading logo");
             logoPicture.Image = Utility.GetImageResource("PaintDotNetLogo.png");

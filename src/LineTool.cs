@@ -66,8 +66,11 @@ namespace PaintDotNet
             cursor = new Cursor(Utility.GetResourceStream("Cursors.LineToolCursor.cur"));
             name = "Line";
             description = "Draws a Line";
+			helpText = "Left click to draw a line with the foreground color, right click to use the background color";
+
             this.ForceShapeDrawType = true;
             this.ForcedShapeDrawType = ShapeDrawType.Outline;
+
         }
     }
 }

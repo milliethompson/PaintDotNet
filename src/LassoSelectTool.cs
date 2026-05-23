@@ -17,7 +17,15 @@ namespace PaintDotNet
         private SelectionHistoryAction undoAction;
         private PdnGraphicsPath originalCopy;
         private ArrayList tracePoints = null;
-        private DateTime startTime;
+		private DateTime startTime;
+
+		public override char HotKey
+		{
+			get
+			{
+				return 's';
+			}
+		}
 
         protected override void OnActivate()
         {
@@ -143,12 +151,12 @@ namespace PaintDotNet
                         {
                             if (this.ModifierKeys == Keys.None)
                             {
-                                undoAction.Name = "Deselect";
-                                undoAction.Image = Image.FromStream(Utility.GetResourceStream("Icons.MenuEditDeselectIcon.bmp"));
-                                Workspace.History.PushNewAction(undoAction);
-                                Workspace.Environment.PerformSelectedPathChanging();
-                                Workspace.Environment.SelectedPath.Reset();
-                                Workspace.Environment.PerformSelectedPathChanged();
+//                                undoAction.Name = "Deselect";
+//                                undoAction.Image = Image.FromStream(Utility.GetResourceStream("Icons.MenuEditDeselectIcon.bmp"));
+//                                Workspace.History.PushNewAction(undoAction);
+//                                Workspace.Environment.PerformSelectedPathChanging();
+//                                Workspace.Environment.SelectedPath.Reset();
+//                                Workspace.Environment.PerformSelectedPathChanged();
                             }
                         }
                     }
@@ -156,6 +164,7 @@ namespace PaintDotNet
 
                 tracking = false;
                 hasMoved = false;
+				undoAction = null;
             }
         }
 
@@ -172,6 +181,8 @@ namespace PaintDotNet
 
             if (!hasMoved || polygon.Length <= 2)
             {
+				if(undoAction == null)
+					undoAction = new SelectionHistoryAction("sentinel", toolBarImage, Workspace);
 
                 if (!(undoAction.IsSelectionEmpty && Workspace.Environment.IsSelectionEmpty))
                 {
@@ -179,15 +190,17 @@ namespace PaintDotNet
                     {
                         undoAction.Name = "Deselect";
                         undoAction.Image = Image.FromStream(Utility.GetResourceStream("Icons.MenuEditDeselectIcon.bmp"));
-                        Workspace.History.PushNewAction(undoAction);
+						Workspace.History.PushNewAction(undoAction);
                         Workspace.Environment.PerformSelectedPathChanging();
                         Workspace.Environment.SelectedPath.Reset();
                         Workspace.Environment.PerformSelectedPathChanged();
+						                        
                     }
                 }
 
                 tracking = false;
                 hasMoved = false;
+				undoAction = null;
             }
         }
 
@@ -198,6 +211,7 @@ namespace PaintDotNet
             this.description = "Allows you to select an arbitrary region of the image.";
             this.toolBarImage = Utility.GetImageResource("Icons.LassoSelectToolIcon.bmp");
             this.cursor = new Cursor(Utility.GetResourceStream("Cursors.LassoSelectToolCursor.cur"));
+			helpText = "Click and move the mouse to select an arbitrary region of the image";
 
             tracking = false;
         }

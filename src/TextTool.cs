@@ -34,7 +34,15 @@ namespace PaintDotNet
         private const int cursorInterval = 300;
         private bool pulseEnabled;
         private System.DateTime startTime;
-        private bool lastPulseCursorState;
+		private bool lastPulseCursorState;
+
+		public override char HotKey
+		{
+			get
+			{
+				return 'x';
+			}
+		}
 
         #region Event Handlers
 
@@ -186,6 +194,8 @@ namespace PaintDotNet
             linePos++;
             textPos = 0;
         }
+
+
 
         private void PerformBackspace()
         {   
@@ -708,11 +718,10 @@ namespace PaintDotNet
 
         protected override void OnKeyPress(KeyPressEventArgs e)
         {
-            base.OnKeyPress (e);
-
             if (mode != EditingMode.NotEditing)
             {
-                if (mode == EditingMode.EmptyEdit)
+				e.Handled = true;
+				if (mode == EditingMode.EmptyEdit)
                 {
                     mode = EditingMode.Editing;
                 }
@@ -724,12 +733,12 @@ namespace PaintDotNet
                     RedrawText(true);
                 }
             }
+			base.OnKeyPress (e);
         }
 
         protected override void OnKeyPress(Keys keyData)
         {
-            base.OnKeyPress (keyData);
-
+			bool keyHandled = true;
             Keys key = keyData & Keys.KeyCode;
             Keys modifier = keyData & Keys.Modifiers;
 
@@ -827,6 +836,9 @@ namespace PaintDotNet
 
                         textPos = ((string)lines[linePos]).Length;
                         break;
+					default:
+						keyHandled = false;
+						break;
                 }
 
                 this.startTime = DateTime.Now;
@@ -835,7 +847,12 @@ namespace PaintDotNet
                 {
                     RedrawText(true);
                 }
-            }
+			}
+
+			if (!keyHandled) 
+			{
+				base.OnKeyPress (keyData);
+			}
         }
 
         PointF TextPositionToPoint(Position p)
@@ -1002,14 +1019,14 @@ namespace PaintDotNet
 
                 foreach (char c in text)
                 {
-                    if (c == '\n')
-                    {
-                        this.PerformEnter();
-                    }
-                    else
-                    {
-                        this.PerformKeyPress(new KeyPressEventArgs(c));
-                    }
+					if (c == '\n')
+					{
+						this.PerformEnter();
+					}
+					else
+					{
+						this.PerformKeyPress(new KeyPressEventArgs(c));
+					}
                 }
 
                 handled = true;
@@ -1028,6 +1045,7 @@ namespace PaintDotNet
             cursor = Cursors.IBeam;
             name = "Text";
             description = "Draws Text";
+			helpText = "Left click to place the text cursor, and type to enter text. The text color is the foreground color";
 
             fontChangedDelegate = new EventHandler(FontChangedHandler);
             alignmentChangedDelegate = new EventHandler(AlignmentChangedHandler);

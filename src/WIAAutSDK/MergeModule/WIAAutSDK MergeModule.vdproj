@@ -90,7 +90,7 @@
             "TargetName" = "8:wiaaut.dll"
             "Tag" = "8:"
             "Folder" = "8:_B4E7CF6DFB2E43AA8C11D62072AD6AFC"
-            "Condition" = "8:"
+            "Condition" = "8:(VersionNT >= 502) or (VersionNT = 501 and ServicePackLevel >= 1)"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
             "ReadOnly" = "11:FALSE"

@@ -87,7 +87,6 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
             swapIconBox.Icon = new Bitmap(Utility.GetImageResource("Icons.SwapIcon.bmp"));
             swapIconBox.TransparentColor = Color.FromArgb(192, 192, 192);
             blackAndWhiteIconBox.Icon = new Bitmap(Utility.GetImageResource("Icons.BlackAndWhiteIcon.bmp"));

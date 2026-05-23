@@ -71,6 +71,7 @@ namespace PaintDotNet
             cursor = new Cursor(Utility.GetResourceStream("Cursors.RectangleToolCursor.cur"));
             name = "Rectangle";
             description = "Draws a rectangle";
+			helpText = "Left click to draw a rectangle with the foreground color, right click to use the background color";
         }
     }
 }

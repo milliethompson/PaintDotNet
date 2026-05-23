@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Specialized;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -171,6 +172,14 @@ namespace PaintDotNet
             }
         }
 
+		public void CopyProperties(Document other) 
+		{
+			foreach (string key in other.userMetaData)
+			{
+				userMetaData.Set(key, other.userMetaData[key]);
+			}
+		}
+
         /// <summary>
         /// The "tag" is used in case we want to extend the file format but keep backwards
         /// compatibility.
@@ -208,7 +217,119 @@ namespace PaintDotNet
             }
         }
 
+
+        /// <summary>
+        /// Clears a portion of the surface to a background checkerboard
+        /// pattern. The x and y position are necessary to determine where in
+        /// the checkerboard pattern the target pixel lies.
+        /// </summary>
+        /// <param name="ptr">The address of the first pixel to clear</param>
+        /// <param name="length">The number of pixels (including the start pixel) to clear</param>
+        /// <param name="x">The x-value of the start pixel</param>
+        /// <param name="y">The y-value of the start pixel</param>
+        private unsafe void ClearToBackground(ColorBgra *ptr, int length, int x, int y) 
+        {
+            for (int i = 0; i < length; i++) {
+                //We take the xor or the 3rd bit the color used.
+                //Ends up being 128 or 192
+                int v = (((x + i) ^ y) & 8) * 8 + 128;
+                //Set the pixel value to be opaque + RGB(1, 1, 1) * v
+                ptr[i].Bgra = (uint)0xff000000 | ((uint)0x00010101 * (uint)v);
+            }
+        }
+
+        /// <summary>
+        /// Clears a scanline of a surface to a background checkerboard
+        /// pattern.
+        /// </summary>
+        /// <param name="surface">The surface to partially clear</param>
+        /// <param name="scan">The scanline within the surface to clear</param>
+        private unsafe void ClearToBackground(Surface surface, Scanline scan) 
+        {
+            ClearToBackground(surface.GetPointAddress(scan.Point), scan.Length, scan.Point.X, scan.Point.Y);
+        }
+
+        /// <summary>
+        /// Clears a portion of a surface to a background checkerboard
+        /// pattern.
+        /// </summary>
+        /// <param name="surface">The surface to partially clear</param>
+        /// <param name="roi">The rectangle to clear</param>
+        private unsafe void ClearToBackground(Surface surface, Rectangle roi) 
+        {
+            for (int y = roi.Top; y < roi.Bottom; y++)
+            {
+                ClearToBackground(surface.GetPointAddress(roi.Left, y), roi.Width, roi.Left, y);
+            }
+        }
+
+        /// <summary>
+        /// Clears a portion of a surface to a background checkerboard
+        /// pattern.
+        /// </summary>
+        /// <param name="surface">The surface to partially clear</param>
+        /// <param name="rois">The array of Rectangles designating the areas to clear</param>
+        /// <param name="startIndex">The start index within the rois array to clear</param>
+        /// <param name="length">The number of Rectangles in the rois array (staring with startIndex) to clear</param>
+        private void ClearToBackground(Surface surface, Rectangle [] rois, int startIndex, int length) 
+        {
+            for (int i = startIndex; i < startIndex + length; i++) 
+            {
+                ClearToBackground(surface, rois[i]);
+            }
+        }
+
+        /// <summary>
+        /// Clears a portion of a surface to a background checkerboard
+        /// pattern.
+        /// </summary>
+        /// <param name="surface">The surface to partially clear</param>
+        /// <param name="roifs">The array of RectangleFs designating the areas to clear</param>
+        /// <param name="startIndex">The start index within the rois array to clear</param>
+        /// <param name="length">The number of RectangleFs in the rois array (staring with startIndex) to clear</param>
+        private void ClearToBackground(Surface surface, RectangleF [] roifs, int startIndex, int length) 
+        {
+            for (int i = startIndex; i < startIndex + length; i++) 
+            {
+                ClearToBackground(surface, Rectangle.Truncate(roifs[i]));
+            }
+        }
+
+        /// <summary>
+        /// Clears a portion of a surface to a background checkerboard
+        /// pattern.
+        /// </summary>
+        /// <param name="surface">The surface to partially clear</param>
+        /// <param name="scans">The array of Scanlines designating the areas to clear</param>
+        /// <param name="startIndex">The start index within the scans array to clear</param>
+        /// <param name="length">The number of Scanlines in the scans array (staring with startIndex) to clear</param>
+        private void ClearToBackground(Surface surface, Scanline [] scans, int startIndex, int length) 
+        {
+            for (int i = startIndex; i < startIndex + length; i++) 
+            {
+                ClearToBackground(surface, scans[i]);
+            }
+        }
+        
+
         private static readonly UnaryPixelOps.Constant constantWhite = new UnaryPixelOps.Constant(ColorBgra.FromUInt32(0xffffffff)); 
+
+        /// <summary>
+        /// Renders the document onto the given RenderArgs as one opaque layer.
+        /// </summary>
+        /// <param name="args">The target RenderArgs</param>
+        public void RenderFlat(RenderArgs args)
+        {
+            constantWhite.Apply(args.Surface, args.Surface.Bounds);
+
+            foreach (Layer layer in Layers)
+            {
+                if (layer.Visible)
+                {
+                    layer.Render(args, args.Surface.Bounds);
+                }
+            }
+        }
 
         /// <summary>
         /// Explicitely renders a requested region of the document.
@@ -217,7 +338,7 @@ namespace PaintDotNet
         /// <param name="roi">The rectangular region to render.</param>
         public void Render(RenderArgs args, Rectangle roi)
         {
-            constantWhite.Apply(args.Surface, roi);
+            ClearToBackground(args.Surface, roi);
 
             foreach (Layer layer in Layers)
             {
@@ -240,10 +361,7 @@ namespace PaintDotNet
 
         public void Render(RenderArgs args, Scanline[] scans, int startIndex, int length)
         {
-            for (int i = startIndex; i < startIndex + length; ++i)
-            {
-                constantWhite.Apply(args.Surface, scans[i]);
-            }
+            ClearToBackground(args.Surface, scans, startIndex, length);
 
             foreach (Layer layer in Layers)
             {
@@ -259,10 +377,7 @@ namespace PaintDotNet
 
         public void Render(RenderArgs args, Rectangle[] roi, int startIndex, int length)
         {
-            for (int i = startIndex; i < startIndex + length; ++i)
-            {
-                constantWhite.Apply(args.Surface, roi[i]);
-            }
+            ClearToBackground(args.Surface, roi, startIndex, length);
 
             foreach (Layer layer in Layers)
             {
@@ -283,7 +398,7 @@ namespace PaintDotNet
 
         public void Render(RenderArgs args, RectangleF[] roi, int startIndex, int length)
         {
-            constantWhite.Apply(args.Surface, roi, startIndex, length);
+            ClearToBackground(args.Surface, roi, startIndex, length);
 
             foreach (Layer layer in Layers)
             {
@@ -346,33 +461,30 @@ namespace PaintDotNet
 
             updateRegion.Intersect(Bounds);
             Rectangle[] rectsOriginal = updateRegion.GetRegionScansReadOnlyInt();
-            Rectangle[] rects = rectsOriginal;
+            Rectangle[] rectsToUse;
 
-            // Special case where we're drawing 1 big rectangle: split it in half! Makes it much faster for dual proc
-            if (rects.Length == 1)
+            // Special case where we're drawing 1 big rectangle: split it in half!
+            // This case happens quite frequently, but we don't want to spend a lot of
+            // time analyzing any other case that is more complicated.
+            if (rectsOriginal.Length == 1 && rectsOriginal[0].Height > 1)
             {
-                if (rects[0].Height > 1)
-                {
-                    Rectangle[] rectsNew = new Rectangle[2];
-                    rectsNew[0] = Rectangle.FromLTRB(rects[0].Left, rects[0].Top, rects[0].Right, rects[0].Top + (rects[0].Bottom - rects[0].Top) / 2);
-                    rectsNew[1] = Rectangle.FromLTRB(rects[0].Left, rects[0].Top + (rects[0].Bottom - rects[0].Top) / 2, rects[0].Right, rects[0].Bottom);
-                    rects = rectsNew;
-                }
-            }
-           
-            if (CpuCount.Info.LogicalCpuCount == 1)
-            {
-                UpdateScansContext usc = new UpdateScansContext(this, dst, rects, 0, rects.Length);
-                usc.UpdateScans(null);
+                Rectangle[] rectsNew = new Rectangle[2];
+                rectsNew[0] = Rectangle.FromLTRB(rectsOriginal[0].Left, rectsOriginal[0].Top, rectsOriginal[0].Right, rectsOriginal[0].Top + (rectsOriginal[0].Bottom - rectsOriginal[0].Top) / 2);
+                rectsNew[1] = Rectangle.FromLTRB(rectsOriginal[0].Left, rectsOriginal[0].Top + (rectsOriginal[0].Bottom - rectsOriginal[0].Top) / 2, rectsOriginal[0].Right, rectsOriginal[0].Bottom);
+                rectsToUse = rectsNew;
             }
             else
-            {   // Split the task of rendering into 2 batches, and use background threads to handle them.
-                UpdateScansContext usc1 = new UpdateScansContext(this, dst, rects, 0, rects.Length / 2);
-                UpdateScansContext usc2 = new UpdateScansContext(this, dst, rects, rects.Length / 2, rects.Length - (rects.Length / 2));
-                Utility.ThreadPool.QueueUserWorkItem(new WaitCallback(usc1.UpdateScans));
-                Utility.ThreadPool.QueueUserWorkItem(new WaitCallback(usc2.UpdateScans));
-                Utility.ThreadPool.Drain();
+            {
+                rectsToUse = rectsOriginal;
             }
+        
+            // Split the task of rendering into 2 batches, and use background threads to handle them. 
+            // Runs faster on multi-CPU/multi-core systems, maybe on those with HyperThreading.
+            UpdateScansContext usc1 = new UpdateScansContext(this, dst, rectsToUse, 0, rectsToUse.Length / 2);
+            UpdateScansContext usc2 = new UpdateScansContext(this, dst, rectsToUse, rectsToUse.Length / 2, rectsToUse.Length - (rectsToUse.Length / 2));
+            Utility.ThreadPool.QueueUserWorkItem(new WaitCallback(usc1.UpdateScans));
+            Utility.ThreadPool.QueueUserWorkItem(new WaitCallback(usc2.UpdateScans));
+            Utility.ThreadPool.Drain();
 
             Validate();
         }
@@ -683,8 +795,7 @@ namespace PaintDotNet
 
             using (RenderArgs renderArgs = new RenderArgs(surface))
             {
-                renderArgs.Graphics.Clear(Color.White);
-                Render(renderArgs, surface.Bounds);            
+                RenderFlat(renderArgs);
                 Document newDocument = Document.FromImage(renderArgs.Bitmap);
                 newDocument.Name = Name;
                 newDocument.userMetaData = new NameValueCollection(userMetaData);

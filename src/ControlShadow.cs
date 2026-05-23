@@ -41,7 +41,6 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitComponent call
             this.Dock = DockStyle.Fill;
             this.ResizeRedraw = true;
         }
@@ -72,8 +71,6 @@ namespace PaintDotNet
 
         protected override void OnPaint(PaintEventArgs pe)
         {
-            // TODO: Add custom paint code here
-
             // Calling the base class OnPaint
             base.OnPaint(pe);
             DrawShadow(pe.Graphics);

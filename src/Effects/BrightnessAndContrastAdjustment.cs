@@ -12,41 +12,41 @@ namespace PaintDotNet.Effects
         : Effect,
           IConfigurableEffect
     {
+        public static string StaticName
+        {
+            get
+            {
+                return "Brightness / Contrast";
+            }
+        }
+
         public EffectConfigDialog CreateConfigDialog()
         {
             return new BrightnessAndContrastAdjustmentConfigDialog();
         }
 
-        private float Clamp(float value, float min, float max)
-        {
-            if (value < min)
-            {
-                return min;
-            }
-            else if (value > max)
-            {
-                return max;
-            }
-            else
-            {
-                return value;
-            }
-        }
+		public void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+		{
+			BrightnessAndContrastAdjustmentConfigToken token = (BrightnessAndContrastAdjustmentConfigToken)properties;
+			int contrast = token.Contrast;
+			int brightness = token.Brightness;
 
-        private float ApplyContrast(float value, float contrastFactor)
-        {
-            //value -= 127.50f;
-            value *= contrastFactor;
-            //value += 127.50f;
-            return value;
-        }
-
-        public void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
-        {
-            BrightnessAndContrastAdjustmentConfigToken token = (BrightnessAndContrastAdjustmentConfigToken)properties;
-            float contrast = (100.0f + token.Contrast) / 100.0f;
-            contrast *= contrast;
-            int brightness = token.Brightness;
+			int multiply, divide;
+			if (contrast < 0) 
+			{
+				multiply = contrast + 100;
+				divide = 100;
+			} 
+			else if (contrast > 0) 
+			{
+				multiply = 100;
+				divide = 100 - contrast;
+			} 
+			else 
+			{
+				multiply = 1;
+				divide = 1;
+			}
 
             unsafe
             {
@@ -60,26 +60,23 @@ namespace PaintDotNet.Effects
                         for (int x = 0; x < rect.Width; ++x)
                         {
                             // read
-                            ColorBgra c = *srcRowPtr;
+                            ColorBgra col = *srcRowPtr;
                             ++srcRowPtr;
 
-                            // apply Brightness
-                            float r = (float)(c.R + brightness);
-                            float g = (float)(c.G + brightness);
-                            float b = (float)(c.B + brightness);
-
-                            // apply Contrast
-                            r = ApplyContrast(r, contrast);
-                            g = ApplyContrast(g, contrast);
-                            b = ApplyContrast(b, contrast);
-
-                            // clamp
-                            r = Clamp(r, 0, 255.0f);
-                            g = Clamp(g, 0, 255.0f);
-                            b = Clamp(b, 0, 255.0f);
+							for (int c = 0; c < 3; c++) 
+							{
+								if (divide != 0) 
+								{
+									col[c] = Utility.ClampToByte(127 + (col[c] - 127 + brightness) * multiply / divide);
+								} 
+								else 
+								{
+									col[c] = Utility.ClampToByte((col[c] + brightness > 127) ? 255 : 0);
+								}
+							}
 
                             // store
-                            *dstRowPtr = ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, c.A);
+                            *dstRowPtr = col;
                             ++dstRowPtr;
                         }
                     }
@@ -95,9 +92,10 @@ namespace PaintDotNet.Effects
         }
 
         public BrightnessAndContrastAdjustment()
-            : base("Brightness/Contrast", 
+            : base(StaticName,
                    "Adjusts the brightness and contrast levels of an image", 
-                   null)
+                   Utility.GetImageResource("Icons.BrightnessAndContrastAdjustment.bmp"),
+                   System.Windows.Forms.Shortcut.CtrlShiftC)
         {
         }
     }

@@ -9,10 +9,39 @@ using System.Windows.Forms;
 namespace PaintDotNet
 {
     /// <summary>
-    /// History User Control : Chris Trevino
-    /// Last Modified: 2-21-2004 (Optimization)
+    /// Summary description for HistoryControl
     /// </summary>
-    ///
+    // Outstanding: correct comment header block for legacy code prior to version 2.0
+    // Parameters: none
+    // Properties: HistoryStack
+    // Returns: none
+	// Initial Conception: Chris Trevino
+    // ..Alterations: provide a user control for the history "concept"
+    // Changes: Michael Kelsey
+    // ..Alterations: incorporate support for Limited History length
+    // ..Alterations: added the following methods to support Limited History Length
+    //    private void HistoryTruncatedHandler(object sender, EventArgs e)
+    //       Purpose: event handler for truncation events originating from the HistoryStack
+    //       Parameters: see above
+    //       Returns: the big nothing
+	//    private void RefreshHistoryControl()
+	//       Purpose: synchronizes the redoActions and undoActions ArrayLists to match
+	//					up with the redoStack and undoStack
+	//		  Parameters: none
+	//		  Returns: nothing
+	// ..Alterations: modified the following methods to support Limited History Length
+	//    public class HistoryControl : System.Windows.Forms.UserControl
+    //    private void HistorySteppedForwardHandler(object sender, EventArgs e)
+	//    public HistoryStack HistoryStack
+	//    public void DrawHistoryElement(HistoryElement hec)
+	//    private void HistorySteppedForwardHandler(object sender, EventArgs e)
+	//    private void HistorySteppedBackwardHandler(object sender, EventArgs e)
+	//    private void HistoryNewActionHandler(object sender, EventArgs e)
+	//    public HistoryControl() 
+	//    private void ElementClickedHandler(object sender, EventArgs e)              
+	// Most Recent Changes: Michael Kelsey
+	// ..Alterations: add comment header block
+	// End of Comment Header Block
     public class HistoryControl : System.Windows.Forms.UserControl
     {
         /// <summary> 
@@ -29,6 +58,7 @@ namespace PaintDotNet
         private EventHandler historySteppedForwardDelegate;
         private EventHandler historyNewActionDelegate;
         private EventHandler historyFlushedDelegate;
+		private EventHandler historyTruncatedDelegate;
         private bool scrollIntoView = true; // we use this flag for when the user clicks on a HistoryElement and we don't want to do lots of crazy scrolling and confuse the user
 
         private const int elementHeight = 16;
@@ -57,6 +87,7 @@ namespace PaintDotNet
                     historyStack.SteppedForward -= historySteppedForwardDelegate;
                     historyStack.SteppedBackward -= historySteppedBackwardDelegate;
                     historyStack.HistoryFlushed -= historyFlushedDelegate;
+					historyStack.HistoryTruncated -= historyTruncatedDelegate;
                     historyStack.Changed -= historyChangedDelegate;
                 }
 
@@ -68,6 +99,7 @@ namespace PaintDotNet
                     historyStack.SteppedForward += historySteppedForwardDelegate;
                     historyStack.SteppedBackward += historySteppedBackwardDelegate;
                     historyStack.HistoryFlushed += historyFlushedDelegate;
+					historyStack.HistoryTruncated += historyTruncatedDelegate;
                     historyStack.Changed += historyChangedDelegate;
 
                     DrawHistory();
@@ -104,7 +136,7 @@ namespace PaintDotNet
 
             int cursor = 0;
 
-            foreach (HistoryAction ha in Utility.Reverse(historyStack.UndoStack))
+            foreach (HistoryAction ha in historyStack.UndoStack)
             {
                 HistoryElement hec = new HistoryElement();
                 
@@ -140,16 +172,39 @@ namespace PaintDotNet
 
         private void ClearRedoHistoryControl()
         {
-            foreach (HistoryElement hec in redoActions)
-            {
-                hec.Click -= elementClickedDelegate;
-                historyControlPanel.Controls.Remove(hec);
-                hec.Dispose();
-            }
+			foreach (HistoryElement hec in redoActions)
+			{
+				hec.Click -= elementClickedDelegate;
+				historyControlPanel.Controls.Remove(hec);
+				hec.Dispose();
+			}
 
-            redoActions = new ArrayList();
+			redoActions = new ArrayList();
         }
 
+		private void RefreshHistoryControl()
+		{
+			if ((undoActions.Count - historyStack.UndoStack.Count) > 0)
+			{
+				for(int i = 0; i < (undoActions.Count - historyStack.UndoStack.Count); i++)
+				{
+					((HistoryElement)undoActions[i]).Click -= elementClickedDelegate;
+					historyControlPanel.Controls.Remove((HistoryElement)undoActions[i]);
+				}
+				undoActions.RemoveRange(0, undoActions.Count - historyStack.UndoStack.Count);
+			}
+
+			if ((redoActions.Count - historyStack.RedoStack.Count) > 0)
+			{
+				for(int i = 0; i < (redoActions.Count - historyStack.RedoStack.Count); i++)
+				{
+					((HistoryElement)redoActions[i]).Click -= elementClickedDelegate;
+					historyControlPanel.Controls.Remove((HistoryElement)redoActions[i]);
+				}
+				redoActions.RemoveRange(0, redoActions.Count - historyStack.RedoStack.Count);
+			}
+			this.PerformLayout();
+		}
 
         private void ClearHistoryControl()
         {
@@ -224,8 +279,8 @@ namespace PaintDotNet
                 {
                     if (undoActions.Count > 0)
                     {
-                        historyControlPanel.ScrollControlIntoView((Control)undoActions[undoActions.Count - 1]);
-                        ((Control)undoActions[undoActions.Count - 1]).Select();
+                        historyControlPanel.ScrollControlIntoView((HistoryElement)undoActions[undoActions.Count - 1]);
+                        ((HistoryElement)undoActions[undoActions.Count - 1]).Select();
                     }
                     else
                     {
@@ -242,10 +297,15 @@ namespace PaintDotNet
             ClearHistoryControl();
         }
 
+		private void HistoryTruncatedHandler(object sender, EventArgs e)
+		{
+			RefreshHistoryControl();
+		}
+
         private void HistoryNewActionHandler(object sender, EventArgs e)
         {
             HistoryElement hec = new HistoryElement();
-            HistoryAction ha = (HistoryAction)this.historyStack.UndoStack.Peek();
+            HistoryAction ha = (HistoryAction)this.historyStack.UndoStack[this.historyStack.UndoStack.Count - 1];
             InitializeHistoryElement(hec, ha, true);
 
             // Clear the Redo Stack and Control
@@ -253,8 +313,6 @@ namespace PaintDotNet
 
             DrawHistoryElement(hec);
             undoActions.Add(hec);
-            
-            PerformLayout();
 
             historyControlPanel.ScrollControlIntoView(hec);
             hec.Select();
@@ -273,7 +331,6 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
             historyStack = null;
             undoActions = new ArrayList();
             redoActions = new ArrayList();
@@ -283,6 +340,7 @@ namespace PaintDotNet
             elementClickedDelegate = new EventHandler(ElementClickedHandler);
             historyFlushedDelegate = new EventHandler(HistoryFlushedHandler);
             historyChangedDelegate = new EventHandler(HistoryChangedHandler);
+			historyTruncatedDelegate = new EventHandler(HistoryTruncatedHandler);
         }
 
         private void KeyUpHandler(object sender, KeyEventArgs e)
@@ -299,7 +357,7 @@ namespace PaintDotNet
 
             if (hec.IsUndo)
             {   // Step back to undo
-                if (haId == ((HistoryAction)historyStack.UndoStack.Peek()).ID)
+                if (haId == ((HistoryAction)historyStack.UndoStack[historyStack.UndoStack.Count - 1]).ID)
                 {
                     if (historyStack.UndoStack.Count > 1)
                     {
@@ -307,14 +365,14 @@ namespace PaintDotNet
                     }
                 }
                 else
-                while (((HistoryAction)historyStack.UndoStack.Peek()).ID != haId)
+                while (((HistoryAction)historyStack.UndoStack[historyStack.UndoStack.Count - 1]).ID != haId)
                 {
                     historyStack.StepBackward();
                 }
             }
             else 
             {   // Step forward to redo
-                while (((HistoryAction)historyStack.UndoStack.Peek()).ID != haId)
+                while (((HistoryAction)historyStack.UndoStack[historyStack.UndoStack.Count - 1]).ID != haId)
                 {
                     historyStack.StepForward();
                 }                  

@@ -3,66 +3,50 @@ using System;
 namespace PaintDotNet.Effects
 {
     /// <summary>
-    /// Summary description for BrightnessAndContrastAdjustmentConfigToken.
+    /// Provided for compatibility with v1.1.
     /// </summary>
     public class BrightnessAndContrastAdjustmentConfigToken
-        : EffectConfigToken
+        : TwoAmountsConfigToken
     {
-        private int brightness;
         public int Brightness
         {
             get
             {
-                return brightness;
+                return Amount1;
             }
 
             set
             {
-                if (value < -100 || value > +100)
-                {
-                    throw new ArgumentOutOfRangeException("brightness must be within the range [-100,+100]");
-                }
-
-                brightness = value;
+                this.Amount1 = value;
             }
         }
 
-        private int contrast;
         public int Contrast
         {
             get
             {
-                return contrast;
+                return Amount2;
             }
 
             set
             {
-                if (value < -100 || value > +100)
-                {
-                    throw new ArgumentOutOfRangeException("contrast must be within the range [-100,+100]");
-                }
-
-                contrast = value;
+                this.Amount2 = value;
             }
         }
-        
+
+        public BrightnessAndContrastAdjustmentConfigToken(int brightness, int contrast)
+            : base(brightness, contrast)
+        {
+        }
+
         public override object Clone()
         {
             return new BrightnessAndContrastAdjustmentConfigToken(this);
         }
 
-        public BrightnessAndContrastAdjustmentConfigToken(int brightness, int contrast)
-            : base()
-        {
-            this.brightness = brightness;
-            this.contrast = contrast;
-        }
-
         public BrightnessAndContrastAdjustmentConfigToken(BrightnessAndContrastAdjustmentConfigToken copyMe)
             : base(copyMe)
         {
-            this.brightness = copyMe.brightness;
-            this.contrast = copyMe.contrast;
         }
     }
 }

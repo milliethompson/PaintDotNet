@@ -25,9 +25,19 @@ namespace PaintDotNet
                 {
                     destArgs.Graphics.InterpolationMode = interpMode;
                     destArgs.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
-                    destArgs.Graphics.DrawImage(sourceArgs.Bitmap, destArgs.Bounds, sourceArgs.Bounds, GraphicsUnit.Pixel);
-                    sourceArgs.Dispose();
-                    destArgs.Dispose();
+
+                    try
+                    {
+                        destArgs.Graphics.DrawImage(sourceArgs.Bitmap, destArgs.Bounds, sourceArgs.Bounds, GraphicsUnit.Pixel);
+                    }
+
+                    // Sometimes GDI+ throws a hissy if you do a resize to, for example, a 1x65535 image to a 65535x1 image.
+                    // See Bug #761
+                    catch (ArgumentException)
+                    {
+						surface.Dispose();
+						return null;
+                    }
 
                     BitmapLayer newLayer = new BitmapLayer(surface);
                     newLayer.LoadProperties(layer.SaveProperties());            
@@ -74,18 +84,20 @@ namespace PaintDotNet
                     ReplaceDocumentHistoryAction rdha = new ReplaceDocumentHistoryAction(Name, Utility.GetImageResource("Icons.MenuImageResizeIcon.bmp"), Workspace);
                     Document nd = new Document(newWidth, newHeight);
 
-                    foreach (string key in Workspace.Document.UserMetaData)
-                    {
-                        nd.UserMetaData.Set(key, Workspace.Document.UserMetaData[key]);
-                    }
-
-                    nd.Name = Workspace.Document.Name;
+					nd.CopyProperties(Workspace.Document);
 
                     foreach (Layer layer in Workspace.Document.Layers)
                     {
                         if (layer is BitmapLayer)
                         {
                             Layer nl = ResizeLayer((BitmapLayer)layer, newWidth, newHeight, im);
+
+							if (nl == null)
+							{
+								Utility.ErrorBox(Workspace, "There was an unspecified error while trying to resize the image.");
+								return null;
+							}
+                            
                             nd.Layers.Add(nl);
                         }
                         else

@@ -42,8 +42,6 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
-
         }
 
         private Point[] GetLayoutPoints(Control.ControlCollection controls)

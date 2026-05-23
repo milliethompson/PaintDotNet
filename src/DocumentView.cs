@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -6,6 +7,9 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Reflection;
 using System.Windows.Forms;
+using Microsoft.StylusInput;
+using Microsoft.StylusInput.PluginData;
+using Microsoft.Ink;
 
 namespace PaintDotNet
 {
@@ -15,26 +19,51 @@ namespace PaintDotNet
     /// are properly translated to (x,y) pixel coordinates within the document
     /// (DocumentMouse* events).
     /// </summary>
-    public class DocumentView
-        : UserControl
-    {
-        private bool rulersEnabled;
-        private Document document;
-        private Surface renderSurface;
-        private PaintDotNet.Ruler leftRuler;
-        private PaintDotNet.PanelEx panel;
-        private PaintDotNet.Ruler topRuler;
-        private InvalidateEventHandler documentInvalidatedDelegate;
-        private InvalidateEventHandler surfaceBoxInvalidatedDelegate;
-        private PaintDotNet.SurfaceBox surfaceBox;
-        private System.Windows.Forms.Timer selectionTimer;
-        private System.ComponentModel.IContainer components = null;
-        private ControlShadow controlShadow;
-        private const int dancingAntsInterval = 50;
+	public class DocumentView
+		: UserControl
+	{
+		//rulers really are on by default, so 'true' was set to show this.
+		private bool rulersEnabled = true;
 
-        public event EventHandler Scroll;
+		private uint refreshSuspended = 0;
 
-        private bool enableOutlineAnimation = true;
+		private Document document;
+		private Surface renderSurface;
+		private PaintDotNet.Ruler leftRuler;
+		private PaintDotNet.PanelEx panel;
+		private PaintDotNet.Ruler topRuler;
+		private InvalidateEventHandler documentInvalidatedDelegate;
+		private InvalidateEventHandler surfaceBoxInvalidatedDelegate;
+		private PaintDotNet.SurfaceBox surfaceBox;
+		private System.Windows.Forms.Timer selectionTimer;
+		private System.ComponentModel.IContainer components = null;
+		private ControlShadow controlShadow;
+		private const int dancingAntsInterval = 50;
+
+		public event EventHandler Scroll;
+
+		private bool enableOutlineAnimation = true;
+
+		public bool DrawGrid 
+		{
+			get 
+			{
+				return surfaceBox.DrawGrid;
+			}
+
+			set 
+			{
+				if (surfaceBox.DrawGrid != value) 
+				{
+					surfaceBox.DrawGrid = value;
+					if (scaleFactor.Ratio >= SurfaceBox.DrawGridMinimumZoom) 
+					{
+						this.Invalidate(true);
+					}
+					OnDrawGridChanged();
+				}
+			}
+		}
 
         public bool EnableOutlineAnimation
         {
@@ -48,13 +77,20 @@ namespace PaintDotNet
                 enableOutlineAnimation = value;
             }
         }
-
+    
+		public override bool Focused
+		{
+			get
+			{
+				return base.Focused || panel.Focused || surfaceBox.Focused || controlShadow.Focused;
+			}
+		}
         /// <summary>
         /// Initializes an instance of the DocumentView class.
         /// </summary>
         public DocumentView()
         {
-            InitializeComponent();
+			InitializeComponent();
             document = null;
             renderSurface = null;
             documentInvalidatedDelegate = new InvalidateEventHandler(DocumentInvalidatedHandler);
@@ -67,6 +103,7 @@ namespace PaintDotNet
             controlShadow.OccludingControl = surfaceBox;
             panel.Controls.Add(controlShadow);
             panel.Controls.SetChildIndex(controlShadow, panel.Controls.Count - 1);
+
         }
 
         protected override void OnLoad(EventArgs e)
@@ -94,44 +131,16 @@ namespace PaintDotNet
             if (0 != (Control.ModifierKeys & Keys.Control))
             {
                 if (e.Delta > 0)
-                {
-                    ZoomIn();
-                }
-                else if (e.Delta < 0)
-                {
-                    ZoomOut();
-                }
-                else //if (e.Delta == 0)
-                {   // no op
+				{
+					this.ScaleFactor = this.ScaleFactor.GetNextLarger();
+				}
+				else if (e.Delta < 0)
+				{
+					this.ScaleFactor = this.ScaleFactor.GetNextSmaller();
                 }
             }
         }
 
-        public void ZoomIn()
-        {
-            ScaleFactor sf = this.ScaleFactor.GetNextLarger();
-
-            if (sf.Numerator > 8 && sf.Denominator == 1)
-            {
-            }
-            else
-            {
-                this.ScaleFactor = sf;
-            }
-        }
-
-        public void ZoomOut()
-        {
-            ScaleFactor sf = this.ScaleFactor.GetNextSmaller();
-
-            if (sf.Numerator == 1 && sf.Denominator > 8)
-            {
-            }
-            else
-            {
-                this.ScaleFactor = sf;
-            }
-        }
 
         [Browsable(false)]
         public bool IsMouseCaptured()
@@ -170,6 +179,8 @@ namespace PaintDotNet
                 {
                     panel.AutoScrollPosition = sbClient;
                 }
+				topRuler.Invalidate();
+				leftRuler.Invalidate();
             }
         }
 
@@ -189,7 +200,6 @@ namespace PaintDotNet
         }
 
         public event EventHandler ScaleFactorChanged;
-
         protected virtual void OnScaleFactorChanged()
         {
             if (ScaleFactorChanged != null)
@@ -197,6 +207,15 @@ namespace PaintDotNet
                 ScaleFactorChanged(this, EventArgs.Empty);
             }
         }
+
+		public event EventHandler DrawGridChanged;
+		protected virtual void OnDrawGridChanged() 
+		{
+			if (DrawGridChanged != null)
+			{
+				DrawGridChanged(this, EventArgs.Empty);
+			}
+		}
 
         private ScaleFactor scaleFactor = new ScaleFactor(1, 1);
 
@@ -210,32 +229,18 @@ namespace PaintDotNet
             set
             {
                 Rectangle visibleRect = this.VisibleDocumentRectangle;
+				ScaleFactor oldSF = scaleFactor;
+                scaleFactor = value;
 
                 // This value is used later below to re-center the document on screen
                 Point centerPt = new Point(visibleRect.X + visibleRect.Width / 2, 
                     visibleRect.Y + visibleRect.Height / 2);
 
-                scaleFactor = value;
-
                 if (surfaceBox != null && renderSurface != null)
                 {
-                    int factor = Math.Max(scaleFactor.Numerator, scaleFactor.Denominator);
-                    Size newSize = scaleFactor.ScaleSize(new Size(renderSurface.Width, renderSurface.Height));
-                    surfaceBox.Size = new Size(Math.Max(1, newSize.Width), Math.Max(1, newSize.Height));
+					surfaceBox.Size = Size.Truncate((SizeF)scaleFactor.ScaleSize(renderSurface.Bounds.Size));
+					scaleFactor = surfaceBox.ScaleFactor;
 
-                    // sometimes it ends up that we can't set the scale factor to what we want
-                    // this is because we can't have a Control with a dimension longer than 32,767
-                    // so if you take an image that's 10,000 pixels wide you can only go up to a 4x
-                    // zoom-in, otherwise an 8x zoom will chop stuff off
-                    if (surfaceBox.ScaleFactor != scaleFactor)
-                    {
-                        ScaleFactor = surfaceBox.ScaleFactor;
-                        return;
-                    }
-                }
-
-                if (surfaceBox != null)
-                {
                     if (leftRuler != null)
                     {
                         this.leftRuler.ScaleFactor = scaleFactor;
@@ -250,11 +255,25 @@ namespace PaintDotNet
                 // re center ourself
                 Rectangle visibleRect2 = this.VisibleDocumentRectangle;
 
-                Point cornerPt = new Point(centerPt.X - (visibleRect2.Width / 2), 
-                    centerPt.Y - (visibleRect2.Height / 2));
-
-                this.DocumentScrollPosition = cornerPt;
-
+				// zoom towards the selection
+				if (this.Parent is DocumentWorkspace) 
+				{
+					DocumentEnvironment env = (this.Parent as DocumentWorkspace).Environment;
+					if (!env.IsSelectionEmpty) 
+					{
+						Rectangle selectionBounds = Rectangle.Truncate(env.CreateSelectedRegion().GetBounds());
+						Point selectionCenter = new Point((selectionBounds.Left + selectionBounds.Right) / 2,
+							(selectionBounds.Top + selectionBounds.Bottom) / 2);
+						Point centerDifference = new Point(centerPt.X - selectionCenter.X,
+							centerPt.Y - selectionCenter.Y);
+						centerDifference = oldSF.ScalePoint(centerDifference);
+						centerDifference = scaleFactor.UnscalePoint(centerDifference);
+						centerDifference = scaleFactor.UnscalePoint(centerDifference);
+						centerPt = new Point(selectionCenter.X + centerDifference.X,
+							selectionCenter.Y + centerDifference.Y);
+					}
+				}
+				RecenterView(centerPt);
                 Invalidate(true);
                 this.OnResize(EventArgs.Empty);
                 this.OnScaleFactorChanged();
@@ -303,11 +322,28 @@ namespace PaintDotNet
         {
             get
             {
-
                 return RectangleToClient(panel.RectangleToScreen(panel.ClientRectangle));
             }
         }
 
+		public Rectangle ClientRectantangleMax 
+		{
+			get 
+			{
+				return RectangleToClient(panel.Bounds);
+			}
+		}
+
+		public Rectangle ClientRectantangleMin 
+		{
+			get 
+			{
+				Rectangle bounds = RectangleToClient(panel.Bounds);
+				bounds.Width -= SystemInformation.VerticalScrollBarWidth;
+				bounds.Height -= SystemInformation.HorizontalScrollBarHeight;
+				return bounds;
+			}
+		}
         /// <summary>
         /// We hold a reference to a PdnGraphicsPath that we use to draw the "selected region"
         /// Basically this is a way to get around the fact we do not have access to the 
@@ -333,7 +369,9 @@ namespace PaintDotNet
             }
 
             set
-            {
+			{
+				SuspendRefresh();
+
                 if (document != null)
                 {
                     document.Invalidated -= documentInvalidatedDelegate;
@@ -354,13 +392,15 @@ namespace PaintDotNet
 
                     this.renderSurface = newRenderSurface;
                     surfaceBox.Surface = newRenderSurface;
+					ScaleFactor = surfaceBox.ScaleFactor;
 
                     document.Invalidated += documentInvalidatedDelegate;
                 }
 
-                this.ScaleFactor = this.ScaleFactor;
                 Invalidate(true);
                 this.OnResize(EventArgs.Empty);
+				
+				ResumeRefresh();
             }
         }
 
@@ -452,23 +492,51 @@ namespace PaintDotNet
 
             set
             {
-                rulersEnabled = value;
+				if (rulersEnabled != value) 
+				{
+					rulersEnabled = value;
 
-                if (topRuler != null)
-                {
-                    topRuler.Enabled = value;
-                    topRuler.Visible = value;
-                }
+					if (topRuler != null)
+					{
+						topRuler.Enabled = value;
+						topRuler.Visible = value;
+					}
 
-                if (leftRuler != null)
-                {
-                    leftRuler.Enabled = value;
-                    leftRuler.Visible = value;
-                }
+					if (leftRuler != null)
+					{
+						leftRuler.Enabled = value;
+						leftRuler.Visible = value;
+					}
 
-                Invalidate();
+					Invalidate();
+					OnRulersEnabledChanged();
+				}
             }
         }
+
+		public event EventHandler RulersEnabledChanged;
+		protected void OnRulersEnabledChanged() 
+		{
+			if (RulersEnabledChanged != null) 
+			{
+				RulersEnabledChanged(this, EventArgs.Empty);
+			}
+		}
+
+		public bool PanelAutoScroll
+		{
+			get 
+			{
+				return panel.AutoScroll;
+			}
+			set
+			{
+				if (panel.AutoScroll != value) 
+				{
+					panel.AutoScroll = value;
+				}
+			}
+		}
 
         /// <summary>
         /// This is a memory usage optimization ONLY, provided for the MainForm to generate the
@@ -481,18 +549,39 @@ namespace PaintDotNet
             return this.renderSurface;
         }
 
-        /// <summary>
-        /// Converts a point from the Windows Forms "client" coordinate space (wrt the DocumentView)
-        /// into the Document coordinate space.
-        /// </summary>
-        /// <param name="clientPt">A Point that is in our client coordinates.</param>
-        /// <returns>A Point that is in Document coordinates.</returns>
-        public PointF ClientToDocument(Point clientPt)
-        {
-            Point screen = PointToScreen(clientPt);
-            Point sbClient = surfaceBox.PointToClient(screen);
-            return surfaceBox.ClientToSurface(sbClient);
-        }
+		/// <summary>
+		/// Converts a point from the Windows Forms "client" coordinate space (wrt the DocumentView)
+		/// into the Document coordinate space.
+		/// </summary>
+		/// <param name="clientPt">A Point that is in our client coordinates.</param>
+		/// <returns>A Point that is in Document coordinates.</returns>
+		public PointF ClientToDocument(Point clientPt)
+		{
+			Point screen = PointToScreen(clientPt);
+			Point sbClient = surfaceBox.PointToClient(screen);
+			return surfaceBox.ClientToSurface(sbClient);
+		}
+
+		/// <summary>
+		/// Converts a point from screen coordinates to document coordinates
+		/// </summary>
+		/// <param name="screen">The point in screen coordinates to convert to document coordinates</param>
+		public PointF ScreenToDocument(PointF screen)
+		{
+			Point offset = surfaceBox.PointToClient(new Point(0, 0));
+			return surfaceBox.ClientToSurface(new PointF(screen.X + offset.X, screen.Y + offset.Y));
+		}
+
+		/// <summary>
+		/// Converts a PointF from the RealTimeStylus coordinate space
+		/// into the Document coordinate space.
+		/// </summary>
+		/// <param name="clientPt">A Point that is in RealTimeStylus coordinate space.</param>
+		/// <returns>A Point that is in Document coordinates.</returns>
+		public PointF ClientToSurface(PointF clientPt)
+		{
+			return surfaceBox.ClientToSurface(clientPt);
+		}
 
         /// <summary>
         /// Converts a point from Document coordinate space into the Windows Forms "client"
@@ -533,9 +622,21 @@ namespace PaintDotNet
             return RectangleToClient(screen);
         }
 
+        
+		//If we don't keep the styluses, they get garbagecollected.
+		private ArrayList stylusList = new ArrayList();
         private void HookMouseEvents(Control c)
-        {
-            c.MouseUp += new System.Windows.Forms.MouseEventHandler(this.MouseUpHandler);
+		{
+			StylusReader stylusReader = new StylusReader(this, c);
+			RealTimeStylus stylus = new RealTimeStylus(c, true);
+			
+			stylus.AsyncPluginCollection.Add(stylusReader);
+			stylus.SetDesiredPacketDescription(new Guid[] {PacketProperty.X, PacketProperty.Y, PacketProperty.NormalPressure, PacketProperty.PacketStatus});
+			stylus.Enabled = true;
+
+			stylusList.Add(stylus);
+
+			c.MouseUp += new System.Windows.Forms.MouseEventHandler(this.MouseUpHandler);
             c.MouseMove += new System.Windows.Forms.MouseEventHandler(this.MouseMoveHandler);
             c.MouseDown += new System.Windows.Forms.MouseEventHandler(this.MouseDownHandler);
             c.Click += new EventHandler(this.ClickHandler);
@@ -546,34 +647,49 @@ namespace PaintDotNet
             }
         }
 
-        // these events will report mouse coordinates in document space
+		// these events will report mouse coordinates in document space
         // i.e. if the image is zoomed at 200% then the mouse coordinates will be divided in half
         public event MouseEventHandler DocumentMouseMove;
-        protected void OnDocumentMouseMove(MouseEventArgs e)
+        protected virtual void OnDocumentMouseMove(MouseEventArgs e)
         {
-            if (DocumentMouseMove != null)
-            {
+			if (DocumentMouseMove != null)
+			{
                 DocumentMouseMove(this, e);
             }
         }
 
+		public void PerformDocumentMouseMove(MouseEventArgs e) 
+		{
+			OnDocumentMouseMove(e);
+		}
+
         public event MouseEventHandler DocumentMouseUp;
-        protected void OnDocumentMouseUp(MouseEventArgs e)
+        protected virtual void OnDocumentMouseUp(MouseEventArgs e)
         {
             if (DocumentMouseUp != null)
             {
                 DocumentMouseUp(this, e);
             }
-        }
+		}
+
+		public void PerformDocumentMouseUp(MouseEventArgs e) 
+		{
+			OnDocumentMouseUp(e);
+		}
 
         public event MouseEventHandler DocumentMouseDown;
-        protected void OnDocumentMouseDown(MouseEventArgs e)
+        protected virtual void OnDocumentMouseDown(MouseEventArgs e)
         {
             if (DocumentMouseDown != null)
             {
                 DocumentMouseDown(this, e);
             }
-        }
+		}
+
+		public void PerformDocumentMouseDown(MouseEventArgs e) 
+		{
+			OnDocumentMouseDown(e);
+		}
 
         public event EventHandler DocumentClick;
         protected void OnDocumentClick()
@@ -601,7 +717,7 @@ namespace PaintDotNet
 
         protected override void OnResize(EventArgs e)
         {
-            base.OnResize (e);
+			base.OnResize (e);
 
             // If the client area is bigger than the area used to display the image, center it
             int newX = panel.AutoScrollPosition.X;
@@ -637,13 +753,24 @@ namespace PaintDotNet
                 selectionTimer.Enabled = true;
             }
         }
-
+		private Point MouseToDocument(object sender, Point mouse) 
+		{
+			if (!(sender is Control))
+			{
+				throw new ArgumentException("sender must reference a valid control", "sender");
+			}
+			Control control = (Control)sender;
+			Point screenPoint = control.PointToScreen(mouse);
+			Point sbClient = surfaceBox.PointToClient(screenPoint);
+			//Note:We're intentionally making this truncate instead of rounding so that
+			//when the image is zoomed in, the proper pixel is effected
+			Point docPoint = Point.Truncate(surfaceBox.ClientToSurface((PointF)sbClient));
+			
+			return docPoint;
+		}
         private void MouseMoveHandler(object sender, MouseEventArgs e)
         {
-            Control control = (Control)sender;
-            Point screenPoint = control.PointToScreen(new Point(e.X, e.Y));
-            Point sbClient = surfaceBox.PointToClient(screenPoint);
-            Point docPoint = Point.Truncate(surfaceBox.ClientToSurface(sbClient));
+            Point docPoint = MouseToDocument(sender, new Point(e.X, e.Y));
 
             if (RulersEnabled)
             {
@@ -658,10 +785,7 @@ namespace PaintDotNet
 
         private void MouseUpHandler(object sender, MouseEventArgs e)
         {
-            Control control = (Control)sender;
-            Point screenPoint = control.PointToScreen(new Point(e.X, e.Y));
-            Point sbClient = surfaceBox.PointToClient(screenPoint);
-            Point docPoint = Point.Truncate(surfaceBox.ClientToSurface(sbClient));
+            Point docPoint = MouseToDocument(sender, new Point(e.X, e.Y));
             Point pt = panel.AutoScrollPosition;
             panel.Focus();
 
@@ -670,12 +794,8 @@ namespace PaintDotNet
 
         private void MouseDownHandler(object sender, MouseEventArgs e)
         {
-            Control control = (Control)sender;
-            Point screenPoint = control.PointToScreen(new Point(e.X, e.Y));
-            Point sbClient = surfaceBox.PointToClient(screenPoint);
-            Point docPoint = Point.Truncate(surfaceBox.ClientToSurface(sbClient));
-
-            Point pt = panel.AutoScrollPosition;
+			Point docPoint = MouseToDocument(sender, new Point(e.X, e.Y));
+			Point pt = panel.AutoScrollPosition;
             panel.Focus();
 
             OnDocumentMouseDown(new MouseEventArgs(e.Button, e.Clicks, docPoint.X, docPoint.Y, e.Delta));
@@ -762,6 +882,22 @@ namespace PaintDotNet
             }
         }
 
+		// MK 26OCT2004 added property to draw selection without the Marching Ants
+		// when selection is in motion with a MoveTool class object
+		private bool enableSelectionOutline = true;
+		public bool EnableSelectionOutline
+		{
+			get
+			{
+				return(enableSelectionOutline);
+			}
+
+			set
+			{
+				enableSelectionOutline = value;
+			}
+		}
+
         private void DrawSelectionInterior(RenderArgs ra, PdnRegion clipInterior, PdnGraphicsPath outline)
         {
             if (clipInterior == null || outline == null)
@@ -783,7 +919,15 @@ namespace PaintDotNet
             }
 
             DrawSelectionInterior(surfaceRa, interior, outline);
-            DrawSelectionOutline(surfaceRa, gdiG, outline);
+
+			// MK new if block to see if we should draw the selection
+			// outline.  When we mouse drag our selection we don't
+			// want the outline present because we can't fine tune
+			// pixels
+			if (EnableSelectionOutline == true)
+			{
+				DrawSelectionOutline(surfaceRa, gdiG, outline);
+			}
         }
 
         private void panel_Scroll(object sender, System.EventArgs e)
@@ -819,8 +963,8 @@ namespace PaintDotNet
                         sRegion2.Intersect(docClipRect);
                         sRegion.Intersect(document.UpdateRegion);
 
-                        document.Update(ra);
-                        document.Render(ra, sRegion2);
+						document.Update(ra);
+						document.Render(ra, sRegion2);
 
                         // handle region interior
                         if (selectedPath.PointCount != 0)
@@ -863,11 +1007,37 @@ namespace PaintDotNet
                 lastTickMod = presentTickMod;
                 dancingAntsT = unchecked(dancingAntsT + 1);
 
-                using (PdnRegion simplified = Utility.RectanglesToRegion(Utility.SimplifyTrace(selectedPath)))
-                {
-                    this.document.Invalidate(simplified);
-                }
+				using (PdnRegion simplified = Utility.RectanglesToRegion(Utility.SimplifyTrace(selectedPath)))
+				{
+					this.Document.Invalidate(simplified);
+				}
             }
-        }
-    }
+		}
+		protected override void OnInvalidated(InvalidateEventArgs e)
+		{
+			base.OnInvalidated (e);
+		}
+
+		public void SuspendRefresh()
+		{
+			refreshSuspended++;
+			surfaceBox.Visible = controlShadow.Visible = (refreshSuspended == 0);
+		}
+
+		public void ResumeRefresh()
+		{
+			refreshSuspended--;
+			surfaceBox.Visible = controlShadow.Visible = (refreshSuspended == 0);
+		}
+
+		public void RecenterView(PointF newCenter) 
+		{
+			Rectangle visibleRect = VisibleDocumentRectangle;
+			PointF cornerPt = new PointF(
+				newCenter.X - (visibleRect.Width / 2), 
+				newCenter.Y - (visibleRect.Height / 2));
+
+			this.DocumentScrollPosition = cornerPt;
+		}
+	}
 }

@@ -40,17 +40,7 @@ namespace PaintDotNet
             Document newDocument = new Document(boundingBox.Width, boundingBox.Height);
             
             // copy the document's meta data over
-            // TODO: have Save/LoadProperties for Document. However, since this is the only property we need to copy over at this time, we may wait until we have more (if we have more)
-            foreach (string key in oldDocument.UserMetaData)
-            {
-                newDocument.UserMetaData.Set(key, oldDocument.UserMetaData[key]);
-            }
-
-            // ok well we have to copy the Name over as well 
-            // TODO: however, if they Save As and then change the name, undoing our action will reset their
-            // filename. This will not make the user happy!
-            // NOTE: this code is also in ResizeAction
-            newDocument.Name = oldDocument.Name;
+           newDocument.CopyProperties(oldDocument);
 
             foreach (Layer layer in oldDocument.Layers)
             {

@@ -210,10 +210,6 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            //
-            // TODO: Add any constructor code after InitializeComponent call
-            //
-
             ratioCheck.Checked = true;
             interpolationModeComboBox.Items.Clear();
             ratio = -1;

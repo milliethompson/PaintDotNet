@@ -19,7 +19,16 @@ namespace PaintDotNet
         private PdnGraphicsPath originalCopy;
         private SelectionHistoryAction undoAction;
         private Rectangle ourRect = Rectangle.Empty;
-        private DateTime startTime;
+		private DateTime startTime;
+		private Cursor cursorMouseUp, cursorMouseDown;
+
+		public override char HotKey
+		{
+			get
+			{
+				return 's';
+			}
+		}
 
         protected override void OnActivate()
         {
@@ -42,85 +51,98 @@ namespace PaintDotNet
         {
             base.OnMouseDown (e);
 
-            tracking = true;
-            firstXY = new Point(e.X, e.Y);
-            lastXY = firstXY;
+			Cursor = cursorMouseDown;
 
-            undoAction = new SelectionHistoryAction("sentinel", toolBarImage, Workspace);
+			if ((e.Button & MouseButtons.Left) == MouseButtons.Left)
+			{
 
-            // if they are NOT holding down control, reset the path
-            // we don't use the DeselectAction because we only want to end up adding
-            // one action to the history stack, not two
-            if (!((ModifierKeys & Keys.Control) == Keys.Control))
-            {
-                Workspace.Environment.PerformSelectedPathChanging();
-                Workspace.Environment.SelectedPath.Reset();
-                Workspace.Environment.PerformSelectedPathChanged();
-            }
+				tracking = true;
+				firstXY = new Point(e.X, e.Y);
+				lastXY = firstXY;
 
-            if (originalCopy != null)
-            {
-                originalCopy.Dispose();
-            }
+				undoAction = new SelectionHistoryAction("sentinel", toolBarImage, Workspace);
 
-            if (Workspace.Environment.IsSelectionEmpty)
-            {
-                originalCopy = null;
-            }
-            else
-            {
-                originalCopy = (PdnGraphicsPath)Workspace.Environment.SelectedPath.Clone();
-            }
+				// if they are NOT holding down control, reset the path
+				// we don't use the DeselectAction because we only want to end up adding
+				// one action to the history stack, not two
+				if (!((ModifierKeys & Keys.Control) == Keys.Control))
+				{
+					Workspace.Environment.PerformSelectedPathChanging();
+					Workspace.Environment.SelectedPath.Reset();
+					Workspace.Environment.PerformSelectedPathChanged();
+				}
 
-            hasMoved = false;
-            startTime = DateTime.Now;
+				if (originalCopy != null)
+				{
+					originalCopy.Dispose();
+				}
+
+				if (Workspace.Environment.IsSelectionEmpty)
+				{
+					originalCopy = null;
+				}
+				else
+				{
+					originalCopy = (PdnGraphicsPath)Workspace.Environment.SelectedPath.Clone();
+				}
+
+				hasMoved = false;
+				startTime = DateTime.Now;
+			}
         }
 
         protected override void OnMouseMove(System.Windows.Forms.MouseEventArgs e)
         {
             base.OnMouseMove (e);
 
-            if (tracking && Utility.TicksToMs((DateTime.Now - startTime).Ticks) > 100)
-            {
-                Point mouseXY = new Point(e.X, e.Y);
+//			if ((e.Button & MouseButtons.Left) == MouseButtons.Left)
+			{
+				if (tracking && Utility.TicksToMs((DateTime.Now - startTime).Ticks) > 100)
+				{
 
-                Workspace.Environment.PerformSelectedPathChanging();
-                Workspace.Environment.SelectedPath.Reset();
 
-                if (originalCopy != null)
-                {
-                    Workspace.Environment.SelectedPath.AddPath(originalCopy, false);
-                }
+					Point mouseXY = new Point(e.X, e.Y);
 
-                Rectangle rect;
+					Workspace.Environment.PerformSelectedPathChanging();
+					Workspace.Environment.SelectedPath.Reset();
+
+					if (originalCopy != null)
+					{
+						Workspace.Environment.SelectedPath.AddPath(originalCopy, false);
+					}
+
+					Rectangle rect;
                 
-                if ((ModifierKeys & Keys.Shift) != Keys.None)
-                {
-                    rect = Utility.PointsToConstrainedRectangle(firstXY, mouseXY);
-                }
-                else
-                {
-                    rect = Utility.PointsToRectangle(firstXY, mouseXY);
-                }
+					if ((ModifierKeys & Keys.Shift) != Keys.None)
+					{
+						rect = Utility.PointsToConstrainedRectangle(firstXY, mouseXY);
+					}
+					else
+					{
+						rect = Utility.PointsToRectangle(firstXY, mouseXY);
+					}
 
-                rect = Rectangle.Intersect(rect, Workspace.Document.Bounds);
-                ourRect = rect;
+					rect = Rectangle.Intersect(rect, Workspace.Document.Bounds);
+					ourRect = rect;
 
-                if (!rect.IsEmpty)
-                {
-                    Workspace.Environment.SelectedPath.AddRectangle(rect);
-                }
+					if (!rect.IsEmpty)
+					{
+						Workspace.Environment.SelectedPath.AddRectangle(rect);
+					}
 
-                Workspace.Environment.PerformSelectedPathChanged();
+					Workspace.Environment.PerformSelectedPathChanged();
 
-                lastXY = mouseXY;
-                hasMoved = true;
-            }
+					lastXY = mouseXY;
+					hasMoved = true;
+				}
+			}
         }
 
         protected override void OnMouseUp(System.Windows.Forms.MouseEventArgs e)
         {
             base.OnMouseUp (e);
+
+			Cursor = cursorMouseUp;
 
             if (tracking)
             {
@@ -148,6 +170,9 @@ namespace PaintDotNet
 
             if (!hasMoved)
             {
+				if(undoAction == null)
+					undoAction = new SelectionHistoryAction("sentinel", toolBarImage, Workspace);
+
                 if (!(undoAction.IsSelectionEmpty && Workspace.Environment.IsSelectionEmpty))
                 {
                     if (this.ModifierKeys == Keys.None)
@@ -171,9 +196,13 @@ namespace PaintDotNet
             : base(workspace)
         {
             toolBarImage = Utility.GetImageResource("Icons.RectangleSelectToolIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.RectangleSelectToolCursor.cur"));
             name = "Rectangle Select";
             description = "Allows you to select a rectangular region of the image.";
+			helpText = "Click and move the mouse to select a rectangular region of the image";
+
+			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.RectangleSelectToolCursor.cur"));
+			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.RectangleSelectToolCursorMouseDown.cur"));
+			Cursor = cursorMouseUp;
 
             tracking = false;
         }

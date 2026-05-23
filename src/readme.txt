@@ -1,6 +1,22 @@
 Paint.NET Source Code Readme
 
-Instructions:
+Prerequisites
+-------------
+1. Windows XP or Windows Server 2003, or newer
+
+2. Visual Studio .NET 2003
+
+3. .NET Framework 1.1 with SP1
+   Install .NET 1.1 using programs/dotnetfx.exe, and then apply SP1 with the
+   appropriate executable from the programs/dotnet_1_1_sp1 directory.
+
+4. Tablet PC SDK v1.7
+   Install this from the programs directory, or download from Microsoft:
+   http://www.microsoft.com/downloads/details.aspx?FamilyID=b46d4b83-a821-40bc-aa85-c9ee3d6e9699&DisplayLang=en
+
+
+Instructions
+------------
 
     1. Open src/paintdotnet.sln with Microsoft Visual Studio .NET 2003. 
     
@@ -32,7 +48,9 @@ For normal development work, use either the 'Release' or 'Debug'
 configurations. This will skip the process of building all the setup packages
 and merge modules.
 
-Directory Layout:
+
+Directory Layout
+----------------
 
 src/
     The main folder containing all the Paint.NET source code.
@@ -65,7 +83,7 @@ src/dotnetwidgets
     style user interface.
 
 src/Effects
-    Contains the code that is build for the PaintDotNet.Effects.dll. This is
+    Contains the code that is built for the PaintDotNet.Effects.dll. This is
     the Effects subsystem of Paint.NET that plugins will have to reference.
 
 src/icons
@@ -100,9 +118,10 @@ src/SetupJit
     JITs" a few of the utility DLLs (such as #ziplib and CpuCount.NET).
 
 src/SharpZipLib
-    Contains the source code for #ziplib, by Mike Krueger.
+    Contains the DLL for #ziplib, by Mike Krueger.
 
 src/Skybound.VisualStyles
+    Contains binaries for the Skybound VisualStyles component.
 
 src/Threading
     Contains a simple thread pool wrapper. The functionality we add is the

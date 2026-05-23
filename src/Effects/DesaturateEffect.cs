@@ -15,7 +15,7 @@ namespace PaintDotNet.Effects
         }
 
         public DesaturateEffect()
-            : base("Desaturate", "Desatures the image (converts it to black and white).", null)
+            : base("Desaturate", "Desatures the image (converts it to black and white).", Utility.GetImageResource("Icons.DesaturateEffect.bmp"), System.Windows.Forms.Shortcut.CtrlShiftG)
         {
         }
     }

@@ -20,7 +20,7 @@ namespace PaintDotNet.Effects
         }
 
         public SharpenEffect()
-            : base("Sharpen", "Sharpens the image.", null)
+			: base("Sharpen", "Sharpens the image.", Utility.GetImageResource("Icons.SharpenEffect.bmp"), System.Windows.Forms.Shortcut.CtrlShiftP)
         {
         }
 
@@ -31,8 +31,11 @@ namespace PaintDotNet.Effects
             AmountEffectConfigDialog aecg = new AmountEffectConfigDialog();
             aecg.Effect = this;
             aecg.Text = "Sharpen";
+            aecg.SliderLabel = "Amount";
+            aecg.SliderUnitsName = string.Empty;
             aecg.SliderMinimum = 1;
-            aecg.SliderMaximum = 4;
+			aecg.SliderMaximum = 4;
+			aecg.Icon = Utility.GetIconResource("Icons.SharpenEffect.bmp");
             return aecg;
         }
 
@@ -68,7 +71,7 @@ namespace PaintDotNet.Effects
                     }
                 }
             }
-
+			NormalizeWeightMatrix(weights);
             base.RenderConvolutionFilter (weights, 0, dstArgs, srcArgs, roi);
         }
 

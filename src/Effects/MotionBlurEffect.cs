@@ -12,7 +12,7 @@ namespace PaintDotNet.Effects
           IConfigurableEffect
     {
         public MotionBlurEffect()
-            : base("Motion Blur", "Blurs an image to give the effect of motion.", null)
+            : base("Motion Blur", "Blurs an image to give the effect of motion.", Utility.GetImageResource("Icons.MotionBlurEffect.bmp"))
         {
 
         }
@@ -30,62 +30,42 @@ namespace PaintDotNet.Effects
             return new MotionBlurEffectConfigDialog();
         }
 
-        private unsafe ColorBgra DoLineAverage(Point[] points, int x, int y, Surface dst, Surface src)
+        private unsafe ColorBgra DoLineAverage(bool clip, Point[] points, int x, int y, Surface dst, Surface src)
         {
-            int bSum = 0;
-            int gSum = 0;
-            int rSum = 0;
-            int aSum = 0;
-            int div = 0;
+            long bSum = 0;
+            long gSum = 0;
+            long rSum = 0;
+            long aSum = 0;
+            int cDiv = 1;
+			int aDiv = 0;
                         
             foreach (Point p in points)
             {
                 Point srcPoint = new Point(x + p.X, y + p.Y);
 
-                if (Utility.IsPointInRectangle(srcPoint, src.Bounds))
+                if (!clip || Utility.IsPointInRectangle(srcPoint, src.Bounds))
                 {
                     ColorBgra c = *src.GetPointAddress(srcPoint.X, srcPoint.Y);
-                    bSum += c.B;
-                    gSum += c.G;
-                    rSum += c.R;
-                    aSum += c.A;
-                    ++div;
+					if (c.A > 0) 
+					{
+						bSum += c.B * c.A;
+						gSum += c.G * c.A;
+						rSum += c.R * c.A;
+						aSum += c.A;
+					}
+
+					aDiv++;
+					cDiv += c.A;
                 }
             }
 
-            int b = bSum /= div;
-            int g = gSum /= div;
-            int r = rSum /= div;
-            int a = aSum /= div;
+            int b = (int)(bSum /= cDiv);
+            int g = (int)(gSum /= cDiv);
+            int r = (int)(rSum /= cDiv);
+            int a = (int)(aSum /= aDiv);
 
-            return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
-        }
-
-        private unsafe ColorBgra DoLineAverage_NoClip(Point[] points, int x, int y, Surface dst, Surface src)
-        {
-            int bSum = 0;
-            int gSum = 0;
-            int rSum = 0;
-            int aSum = 0;
-            int div = 0;
-                        
-            foreach (Point p in points)
-            {
-                int srcX = x + p.X;
-                int srcY = y + p.Y;
-                ColorBgra c = *src.GetPointAddress(srcX, srcY);
-
-                bSum += c.B;
-                gSum += c.G;
-                rSum += c.R;
-                aSum += c.A;
-                ++div;
-            }
-
-            int b = bSum /= div;
-            int g = gSum /= div;
-            int r = rSum /= div;
-            int a = aSum /= div;
+			if (cDiv > 1000)
+				cDiv++;
 
             return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
         }
@@ -110,11 +90,11 @@ namespace PaintDotNet.Effects
                         // If both ends of this line are in bounds, we don't need to do silly clipping
                         if (Utility.IsPointInRectangle(a, src.Bounds) && Utility.IsPointInRectangle(b, src.Bounds))
                         {
-                            *dstPtr = DoLineAverage_NoClip(points, x, y, dst, src);
+                            *dstPtr = DoLineAverage(false, points, x, y, dst, src);
                         }
                         else
                         {
-                            *dstPtr = DoLineAverage(points, x, y, dst, src);
+                            *dstPtr = DoLineAverage(true, points, x, y, dst, src);
                         }
 
                         ++dstPtr;

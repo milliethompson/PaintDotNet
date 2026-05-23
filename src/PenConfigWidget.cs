@@ -13,29 +13,15 @@ namespace PaintDotNet
 	/// </summary>
 	public class PenConfigWidget : System.Windows.Forms.UserControl
 	{
-		private System.Windows.Forms.ErrorProvider penSizeErrorProvider;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.ComboBox sizeComboBox;
-        private DotNetWidgets.DotNetToolbar dotNetToolbar1;
-        private DotNetWidgets.DotNetToolbarButtonItem dotNetToolbarButtonItem1;
-
-		/// <summary> 
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.Container components = null;
+		private DotNetWidgets.DotNetToolbar tbPenConfig;
+		private DotNetWidgets.DotNetToolbarLabelItem lblBrushWidth;
+		private System.Windows.Forms.ToolTip tooltipProvider;
+		private System.ComponentModel.IContainer components;
 
 		public PenConfigWidget()
 		{
-			// This call is required by the Windows.Forms Form Designer.
 			InitializeComponent();
-
-			// TODO: Add any initialization after the InitializeComponent call
-
-			// set the ErrorProvider for sizeComboBox data entry control.
-			
-			penSizeErrorProvider.SetIconAlignment (this.sizeComboBox, ErrorIconAlignment.MiddleRight);
-			penSizeErrorProvider.SetIconPadding (this.sizeComboBox, 2);
-			
     	}
 
 		public event EventHandler PenChanged;
@@ -82,97 +68,82 @@ namespace PaintDotNet
 		/// </summary>
 		private void InitializeComponent()
 		{
-            this.penSizeErrorProvider = new System.Windows.Forms.ErrorProvider();
-            this.label1 = new System.Windows.Forms.Label();
-            this.sizeComboBox = new System.Windows.Forms.ComboBox();
-            this.dotNetToolbar1 = new DotNetWidgets.DotNetToolbar();
-            this.dotNetToolbarButtonItem1 = new DotNetWidgets.DotNetToolbarButtonItem();
-            this.SuspendLayout();
-            // 
-            // penSizeErrorProvider
-            // 
-            this.penSizeErrorProvider.BlinkStyle = System.Windows.Forms.ErrorBlinkStyle.NeverBlink;
-            this.penSizeErrorProvider.ContainerControl = this;
-            // 
-            // label1
-            // 
-            this.label1.Location = new System.Drawing.Point(12, 1);
-            this.label1.Name = "label1";
-            this.label1.TabIndex = 11;
-            this.label1.Text = "Brush Width:";
-            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // sizeComboBox
-            // 
-            this.sizeComboBox.ItemHeight = 13;
-            this.sizeComboBox.Items.AddRange(new object[] {
-                                                              "1",
-                                                              "2",
-                                                              "3",
-                                                              "4",
-                                                              "5",
-                                                              "6",
-                                                              "7",
-                                                              "8",
-                                                              "9",
-                                                              "10",
-                                                              "11",
-                                                              "12",
-                                                              "13",
-                                                              "14",
-                                                              "15",
-                                                              "20",
-                                                              "25",
-                                                              "30",
-                                                              "35",
-                                                              "40",
-                                                              "45",
-                                                              "50",
-                                                              "55",
-                                                              "60",
-                                                              "65",
-                                                              "70",
-                                                              "75",
-                                                              "80",
-                                                              "85",
-                                                              "90",
-                                                              "95",
-                                                              "100"});
-            this.sizeComboBox.Location = new System.Drawing.Point(84, 3);
-            this.sizeComboBox.Name = "sizeComboBox";
-            this.sizeComboBox.Size = new System.Drawing.Size(44, 21);
-            this.sizeComboBox.TabIndex = 9;
-            this.sizeComboBox.Text = "2";
-            this.sizeComboBox.Validating += new System.ComponentModel.CancelEventHandler(this.sizeComboBox_Validating);
-            this.sizeComboBox.TextChanged += new System.EventHandler(this.sizeComboBox_TextChanged);
-            // 
-            // dotNetToolbar1
-            // 
-            this.dotNetToolbar1.Buttons.Add(this.dotNetToolbarButtonItem1);
-            this.dotNetToolbar1.Dock = System.Windows.Forms.DockStyle.None;
-            this.dotNetToolbar1.DrawGrabHandle = false;
-            this.dotNetToolbar1.ImageList = null;
-            this.dotNetToolbar1.Location = new System.Drawing.Point(0, 0);
-            this.dotNetToolbar1.MenuProvider = null;
-            this.dotNetToolbar1.Name = "dotNetToolbar1";
-            this.dotNetToolbar1.Size = new System.Drawing.Size(32, 26);
-            this.dotNetToolbar1.TabIndex = 12;
-            // 
-            // dotNetToolbarButtonItem1
-            // 
-            this.dotNetToolbarButtonItem1.BeginGroup = true;
-            this.dotNetToolbarButtonItem1.Enabled = false;
-            // 
-            // PenConfigWidget
-            // 
-            this.Controls.Add(this.sizeComboBox);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.dotNetToolbar1);
-            this.Name = "PenConfigWidget";
-            this.Size = new System.Drawing.Size(152, 48);
-            this.ResumeLayout(false);
+			this.components = new System.ComponentModel.Container();
+			this.sizeComboBox = new System.Windows.Forms.ComboBox();
+			this.tbPenConfig = new DotNetWidgets.DotNetToolbar();
+			this.lblBrushWidth = new DotNetWidgets.DotNetToolbarLabelItem();
+			this.tooltipProvider = new System.Windows.Forms.ToolTip(this.components);
+			this.SuspendLayout();
+			// 
+			// sizeComboBox
+			// 
+			this.sizeComboBox.ItemHeight = 13;
+			this.sizeComboBox.Items.AddRange(new object[] {
+															  "1",
+															  "2",
+															  "3",
+															  "4",
+															  "5",
+															  "6",
+															  "7",
+															  "8",
+															  "9",
+															  "10",
+															  "11",
+															  "12",
+															  "13",
+															  "14",
+															  "15",
+															  "20",
+															  "25",
+															  "30",
+															  "35",
+															  "40",
+															  "45",
+															  "50",
+															  "55",
+															  "60",
+															  "65",
+															  "70",
+															  "75",
+															  "80",
+															  "85",
+															  "90",
+															  "95",
+															  "100"});
+			this.sizeComboBox.Location = new System.Drawing.Point(87, 3);
+			this.sizeComboBox.Name = "sizeComboBox";
+			this.sizeComboBox.Size = new System.Drawing.Size(44, 21);
+			this.sizeComboBox.TabIndex = 9;
+			this.sizeComboBox.Text = "2";
+			this.sizeComboBox.Validating += new System.ComponentModel.CancelEventHandler(this.sizeComboBox_Validating);
+			this.sizeComboBox.TextChanged += new System.EventHandler(this.sizeComboBox_TextChanged);
+			// 
+			// tbPenConfig
+			// 
+			this.tbPenConfig.Buttons.Add(this.lblBrushWidth);
+			this.tbPenConfig.DrawGrabHandle = false;
+			this.tbPenConfig.ImageList = null;
+			this.tbPenConfig.Location = new System.Drawing.Point(0, 0);
+			this.tbPenConfig.MenuProvider = null;
+			this.tbPenConfig.Name = "tbPenConfig";
+			this.tbPenConfig.Size = new System.Drawing.Size(133, 26);
+			this.tbPenConfig.TabIndex = 12;
+			// 
+			// lblBrushWidth
+			// 
+			this.lblBrushWidth.BeginGroup = true;
+			this.lblBrushWidth.Text = "Brush Width:";
+			// 
+			// PenConfigWidget
+			// 
+			this.Controls.Add(this.sizeComboBox);
+			this.Controls.Add(this.tbPenConfig);
+			this.Name = "PenConfigWidget";
+			this.Size = new System.Drawing.Size(133, 26);
+			this.ResumeLayout(false);
 
-        }
+		}
 		#endregion
 
 
@@ -204,24 +175,28 @@ namespace PaintDotNet
 
 				if (invalid)
 				{
-					penSizeErrorProvider.SetError(this.sizeComboBox, "Invalid number");
+					this.sizeComboBox.BackColor = Color.Red;
+					this.tooltipProvider.SetToolTip(this.sizeComboBox, "ERROR: Invalid Number");
 				}
 				else
 				{
 					if (float.Parse(this.sizeComboBox.Text) < 1)
 					{
 						// Set the error if the size is too small.
-						penSizeErrorProvider.SetError(this.sizeComboBox, "Size is smaller than 1");
+						this.sizeComboBox.BackColor = Color.Red;
+						this.tooltipProvider.SetToolTip(this.sizeComboBox, "ERROR: Size is smaller than 1");
 					}
 					else if ((float.Parse(this.sizeComboBox.Text) > 100 ))
 					{
 						// Set the error if the size is too large.
-						penSizeErrorProvider.SetError(this.sizeComboBox, "Size is larger than 100");
+						this.sizeComboBox.BackColor = Color.Red;
+						this.tooltipProvider.SetToolTip(this.sizeComboBox, "Size is larger than 100");
 					}
 					else 
 					{
 						// Clear the error, if any, in the error provider.
-						penSizeErrorProvider.SetError(this.sizeComboBox, "");
+						this.sizeComboBox.BackColor = SystemColors.Window;
+						this.tooltipProvider.RemoveAll();
 						OnPenChanged();
 					}
 				}
@@ -229,7 +204,6 @@ namespace PaintDotNet
 
 			catch (FormatException)
 			{
-				e.Cancel = true;
 			}
 		}
 	}

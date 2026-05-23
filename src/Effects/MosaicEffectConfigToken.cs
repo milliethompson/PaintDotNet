@@ -3,39 +3,31 @@ using System;
 namespace PaintDotNet.Effects
 {
     /// <summary>
-    /// Summary description for MosaicEffectConfigToken.
+    /// Provided for compatibility with v1.1
     /// </summary>
     public class MosaicEffectConfigToken
-        : EffectConfigToken
+        : AmountEffectConfigToken
     {
         public int CellSize
         {
             get
             {
-                return cellSize;
+                return this.Amount;
             }
             set
             {
-                cellSize = value;
+                this.Amount = value;
             }
-        }
-        private int cellSize;
-
-        public override object Clone()
-        {
-            return new MosaicEffectConfigToken(this);
         }
 
         public MosaicEffectConfigToken(int newCellSize)
-            : base()
+            : base(newCellSize)
         {
-            this.CellSize = newCellSize;
         }
 
         protected MosaicEffectConfigToken(MosaicEffectConfigToken copyThis)
             : base(copyThis)
         {
-            this.CellSize = copyThis.CellSize;
         }
     }
 }

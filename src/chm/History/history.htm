@@ -1,0 +1,89 @@
+<html>
+	<head>
+		<title>History Window</title>
+		<meta http-equiv="Content-Language" content="en-us">
+		<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+		<meta name="ProgId" content="FrontPage.Editor.Document">
+		<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+	</head>
+	<body>
+		<p><b><font face="Tahoma">History Window</font></b></p>
+		<table>
+			<tr>
+				<td width="100%"><p><FONT face="Tahoma" size="2"> 
+                <img border="0" src="HistoryWindow.jpg" align="left" width="170" height="196">The 
+							History Window is the primary interface rolling back (<i>undoing</i>) or 
+							replaying (<i>redoing</i>) changes made to the <b>canvas</b>.&nbsp; It consists 
+							of two parts: an <b>action list </b>and the <b>action toolbar</b>.&nbsp; The 
+							History Window is closeable and moveable.&nbsp; If it is not currently on the 
+							screen, it can be restored by using the menu bar option Window--&gt;History 
+							(F6).</FONT></p>
+					<p><FONT face="Tahoma" size="2">The <b>action list </b>displays all<sup><b>¤ </b></sup>changes 
+							made to the canvas and presents them in the order in which they 
+							transpired.&nbsp; The most recent action appears at the bottom of the action 
+							list.&nbsp; Actions may be interactively rolled back 
+                    or replayed by clicking the desired action. <sup><b>¤</b></sup></FONT><FONT face="Tahoma" size="1"><i>Older actions 
+								in the action list may be automatically purged.&nbsp; See<b> <a href="#Purge Limit">purge 
+										limit</a></b><a href="#Purge Limit"> </a>below.</i></FONT></p>
+					<p><FONT face="Tahoma" size="2">The <b>action toolbar</b> has four buttons for rolling 
+							back or replaying actions (either as individual actions or as an aggregate) and 
+							two buttons for controlling action list behavior.</FONT></p>
+					<p>&nbsp;</p>
+					<p>
+						<img border="0" src="HistoryToolbarUndoRedoButtons.jpg" align="left" width="69" height="18"><font face="Tahoma" size="2">
+							The four buttons for rolling back and replaying actions are <b><a href="../UndoRedo/UndoOperation.htm">
+									undo</a></b>, <b><a href="../UndoRedo/RedoOperation.htm">redo</a></b>, <b>undo 
+								all</b>, and <b>redo all</b>. </font>
+					</p>
+					<blockquote>
+						<p><font face="Tahoma" size="2"> 
+                        <img border="0" src="HistoryToolbarUndoAllButton.jpg" align="left" width="18" height="18">
+								<b>undo all</b>: rolls back all changes to the topmost action in the action 
+								list.</font></p>
+						<p><font face="Tahoma" size="2"> 
+                        <img border="0" src="HistoryToolbarUndoButton.jpg" align="left" width="18" height="18">
+								<b>undo</b>: rolls back one action in the action list.</font></p>
+						<p><font face="Tahoma" size="2"> 
+                        <img border="0" src="HistoryToolbarRedoButton.jpg" align="left" width="18" height="18">
+								<b>redo</b>: replays one action in the action list.</font></p>
+						<p><font face="Tahoma" size="2"> 
+                        <img border="0" src="HistoryToolbarRedoAllButton.jpg" align="left" width="18" height="18">
+								<b>redo all</b>: replays all actions in the action list.</font></p>
+					</blockquote>
+					<p><font face="Tahoma" size="2"> 
+                    <img border="0" src="HistoryToolbarClearLimitButtons.jpg" align="left" width="38" height="18">
+							The two buttons for controlling action list behavior&nbsp;are <b>clear history</b>
+							and <b>limit history</b>.&nbsp;</font></p>
+					<blockquote>
+						<p>
+							<img border="0" src="HistoryToolbarClearButton.jpg" align="left" width="18" height="18"></p>
+						<p><font face="Tahoma" size="2"><b>Clear history</b> purges the contents of the action 
+								list.&nbsp; Changes cannot be rolled back or replayed unless new changes have 
+								been made to the canvas.&nbsp; </font>
+						</p>
+						<p>
+							<img border="0" src="HistoryToolbarLimitButton.jpg" align="left" width="18" height="18"></p>
+					</blockquote>
+					<p><font face="Tahoma" size="2"><b>Limit history</b> causes the oldest actions to be 
+							purged or truncation of the current action list to the size specified by the <b>purge 
+								limit</b>.&nbsp; </font>
+					</p>
+					<p>
+						<img border="0" src="LimitHistory.jpg" align="left" width="220" height="143"></p>
+					<p><FONT face="Tahoma" size="2">The <b><a name="Purge Limit">purge limit</a> </b>may be 
+							configured by clicking on the Limit History button and interacting with the 
+							slider in the Limit History dialog. As an example, if 25 actions are listed in 
+							the action list and the <b>purge limit</b> is reconfigured for 10 actions, the 
+							oldest 15 actions in the action list will be purged.&nbsp; With the <b>purge limit</b>
+							configured for 10 actions and 10 actions listed in the action list, a 
+							subsequent change to the canvas will purge the oldest action from the action 
+							list and append the new action to the bottom.&nbsp; Any actions in the action 
+							list that fall above the <b>purge limit</b> will be replayed prior to 
+							truncation of the action list via the Limit History dialog.</FONT></p>
+					<p>&nbsp;</p>
+				</td>
+			</tr>
+		</table>
+		<p><FONT face="Tahoma" size="2"></FONT> &nbsp;</p>
+	</body>
+</html>

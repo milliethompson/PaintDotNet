@@ -24,7 +24,17 @@ namespace PaintDotNet
         private IrregularSurface interiorSaveSurface;
         private IrregularSurface outlineSaveSurface;
         private ArrayList points;
-        private PdnRegion lastDrawnRegion = null;
+		private PdnRegion lastDrawnRegion = null;
+		private Cursor cursorMouseUp, cursorMouseDown;
+
+		public override char HotKey
+		{
+			get
+			{
+				return 'o';
+			}
+		}
+
 
         // This is for shapes that should only be draw in one ShapeDrawType
         // The line shape, for instance, should only ever be drawn in ShapeDrawType.Outline
@@ -148,6 +158,9 @@ namespace PaintDotNet
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+
+			cursorMouseUp = Cursor;
+			Cursor = cursorMouseDown;
 
             if (mouseDown)
             {
@@ -336,6 +349,8 @@ namespace PaintDotNet
         {
             base.OnMouseUp(e);
 
+			Cursor = cursorMouseUp;
+
             if (mouseDown)
             {
                 mouseDown = false;
@@ -398,6 +413,9 @@ namespace PaintDotNet
         {
             mouseDown = false;
             points = null;
+
+			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.ShapeToolCursor.cur")); 
+			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.ShapeToolCursorMouseDown.cur"));
         }
     }
 }

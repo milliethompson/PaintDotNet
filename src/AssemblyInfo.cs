@@ -9,10 +9,10 @@ using System.Runtime.CompilerServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-[assembly: AssemblyTitle("Paint.NET v1.1")]
+[assembly: AssemblyTitle("Paint.NET v2.0")]
 [assembly: AssemblyDescription("Successor to Microsoft Paint that uses .NET, C#, and GDI+ technologies.")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Paint.NET v1.1")]
+[assembly: AssemblyProduct("Paint.NET v2.0")]
 [assembly: AssemblyCopyright("Copyright © 2004 Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -26,8 +26,8 @@ using System.Runtime.CompilerServices;
 //      Revision
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
-// by using the '*' as shown below:
-[assembly: AssemblyVersion("1.1.*")]
+// by using the '*' as shown below: 
+[assembly: AssemblyVersion("2.0.*")]
 
 // Change this to say "Final" for final builds. Otherwise the titlebar will contain
 // a long version string. Final versions should just say the ApplicationProduct

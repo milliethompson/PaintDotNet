@@ -20,11 +20,20 @@ namespace PaintDotNet
         private PdnRegion currentRegion;
         private Surface surface;
         private int minX, maxX, minY, maxY;
-        private static int tolerance = 10;
+		private Cursor cursorMouseUp, cursorMouseDown;
+
+		public override char HotKey
+		{
+			get
+			{
+				return 'f';
+			}
+		}
 
         protected override void OnActivate()
         {
             base.OnActivate();
+
         }
 
         protected override void OnDeactivate()
@@ -109,73 +118,91 @@ namespace PaintDotNet
             return highX - 1;
         }
         
-        private bool IsWithinTolerance(byte check, byte src)
-        {
-            int a = (int)check;
-            int b = (int)src;
-            int diff = a - b;
-            diff = Math.Abs(diff);
+		#region Tolerence Checking
+		private bool CheckColorBgra(ColorBgra checkMe, ColorBgra source)
+		{
+			int ds = 0, t;
+			t = checkMe.R - source.R;
+			ds += t * t;
+			t = checkMe.G - source.G;
+			ds += t * t;
+			t = checkMe.B - source.B;
+			ds += t * t;
+			return (ds/3 <= Workspace.Environment.Tolerance * Workspace.Environment.Tolerance);
+		}
+		#endregion
 
-            if (diff <= tolerance)
-            {
-                return true;
-            }
-            else 
-            {
-                return false;
-            }
-        }
+		private class FillScanLinesInfo
+		{
+			public int X;
+			public int Y;
+			public bool[,] PixelsChecked;
+			public bool IsDraw;
 
-        private bool CheckColorBgra(ColorBgra checkMe, ColorBgra source)
-        {
-            if (IsWithinTolerance(checkMe.R, source.R) &&
-                IsWithinTolerance(checkMe.G, source.G) &&
-                IsWithinTolerance(checkMe.B, source.B))
-            {
-                return true;
-            }
-            else 
-            {
-                return false;
-            }
-        }
+			public FillScanLinesInfo(int x, int y, bool[,] pixelsChecked, bool isDraw)
+			{
+				this.X = x;
+				this.Y = y;
+				this.PixelsChecked = pixelsChecked;
+				this.IsDraw = isDraw;
+			}
+		}
 
-        private void FillScanLines(int x, int y, bool[,] pixelsChecked, bool isDraw)
+		private void FillScanLines(FillScanLinesInfo info, Queue infoQueue, int maxRecursionDepth)
         {
-            int lowX = FillLeft(x, y, pixelsChecked, isDraw);
-            int highX = FillRight(x + 1, y, pixelsChecked, isDraw);
-            int i;
+			if (maxRecursionDepth <= 0)
+			{
+				infoQueue.Enqueue(info);
+				return;
+			}
+
+            int lowX = FillLeft(info.X, info.Y, info.PixelsChecked, info.IsDraw);
+			int highX = FillRight(info.X + 1, info.Y, info.PixelsChecked, info.IsDraw);
+			int i;
         
             // For Creating the Bounding Box///
-            if (y > maxY)
+            if (info.Y > maxY)
             {
-                maxY = y;
+                maxY = info.Y;
             }
-            else if (y < minY)
+            else if (info.Y < minY)
             {
-                minY = y;
+                minY = info.Y;
             }
 
             // Vertical Scan
             for (i = lowX; i <= highX; i++)
             {
-                if (y > 0 && 
-                    !pixelsChecked[i, y - 1] && 
-                    currentRegion.IsVisible(i, y - 1) && 
-                    CheckColorBgra(surface[i, y - 1], currentColor))
+                if (info.Y > 0 && 
+                    !info.PixelsChecked[i, info.Y - 1] && 
+                    currentRegion.IsVisible(i, info.Y - 1) && 
+                    CheckColorBgra(surface[i, info.Y - 1], currentColor))
                 {
-                    FillScanLines(i,y-1,pixelsChecked, isDraw);
+                    FillScanLines(new FillScanLinesInfo(i, info.Y - 1, info.PixelsChecked, info.IsDraw), infoQueue, maxRecursionDepth - 1);
                 }
 
-                if (y < (Workspace.Document.Size.Height - 1) &&
-                    !pixelsChecked[i, y + 1] && 
-                    currentRegion.IsVisible(i, y + 1) && 
-                    CheckColorBgra(surface[i, y + 1], currentColor))
+                if (info.Y < (Workspace.Document.Size.Height - 1) &&
+                    !info.PixelsChecked[i, info.Y + 1] && 
+                    currentRegion.IsVisible(i, info.Y + 1) && 
+                    CheckColorBgra(surface[i, info.Y + 1], currentColor))
                 {
-                    FillScanLines(i, y + 1, pixelsChecked, isDraw);
+                    FillScanLines(new FillScanLinesInfo(i, info.Y + 1, info.PixelsChecked, info.IsDraw), infoQueue, maxRecursionDepth - 1);
                 }
             }
         }
+
+		private void FillScanLines(FillScanLinesInfo info)
+		{
+			Queue infoQueue = new Queue();
+
+			FillScanLines(info, infoQueue, 4);
+
+			while (infoQueue.Count > 0)
+			{
+				FillScanLinesInfo fsli = (FillScanLinesInfo)infoQueue.Dequeue();
+				FillScanLines(fsli, infoQueue, 4);
+			}
+		}
         #endregion
         
         #region DrawBoundingBox - Debug Purposes
@@ -217,86 +244,117 @@ namespace PaintDotNet
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
-            if (Utility.IsPointInRectangle(new Point(e.X, e.Y), Workspace.Document.Bounds))
-            {
-                bool[,] pixelsChecked;
-                base.OnMouseDown (e);
+			try
+			{
+				Cursor = cursorMouseDown;
+
+				if (Utility.IsPointInRectangle(new Point(e.X, e.Y), Workspace.Document.Bounds))
+				{
+					base.OnMouseDown (e);
+
+					bool[,] pixelsChecked;
+
+					try
+					{
+						pixelsChecked = new bool[Workspace.Document.Width + 1, Workspace.Document.Height + 1];
+					}
+
+					catch (OutOfMemoryException)
+					{
+						Utility.ErrorBox(this.Workspace, "Not enough memory to perform this operation.");
+						return;
+					}
+
+					// Create the Current Region
+					if (!Workspace.Environment.IsSelectionEmpty)
+					{
+						currentRegion = Workspace.Environment.CreateSelectedRegion();
+					}
+					else
+					{
+						currentRegion = new PdnRegion(Workspace.Document.Bounds);
+					}
+
+					// See if the mouse click is valid
+					if (!currentRegion.IsVisible(new Point(e.X,e.Y)))
+					{
+						return;
+					}           
             
-                // Create the Current Region
-                if (!Workspace.Environment.IsSelectionEmpty)
-                {
-                    currentRegion = Workspace.Environment.CreateSelectedRegion();
-                }
-                else
-                {
-                    currentRegion = new PdnRegion(Workspace.Document.Bounds);
-                }
+					// Set the current surface, color picked and color to draw
+					surface = ((BitmapLayer)Workspace.ActiveLayer).Surface;
+					currentColor = surface[e.X, e.Y];
 
-                // See if the Mouseclick is valid fo schizzle
-                if (!currentRegion.IsVisible(new Point(e.X,e.Y)))
-                {
-                    return;
-                }           
+					switch (e.Button)
+					{
+						case MouseButtons.Left:
+							colorToDraw = Workspace.Environment.ForeColor; 
+							break;
+
+						case MouseButtons.Right: 
+							colorToDraw = Workspace.Environment.BackColor; 
+							break;
+
+						default: 
+							return;
+					}
+
+					// These four variable help create the bounding box;
+					minX = e.X;
+					maxX = e.X; 
+					minY = e.Y;
+					maxY = e.Y;
+
+					// Bounding Box Pass
+					FillScanLines(new FillScanLinesInfo(e.X, e.Y, pixelsChecked, false));
             
-                // Set the current surface, color picked and color to draw
-                surface = ((BitmapLayer)Workspace.ActiveLayer).Surface;
-                currentColor = surface[e.X, e.Y];
-
-                switch (e.Button)
-                {
-                    case MouseButtons.Left:
-                        colorToDraw = Workspace.Environment.ForeColor; 
-                        break;
-
-                    case MouseButtons.Right: 
-                        colorToDraw = Workspace.Environment.BackColor; 
-                        break;
-
-                    default: 
-                        return;
-                }
-
-                pixelsChecked = new bool[Workspace.Document.Width + 1, Workspace.Document.Height + 1];
-                            
-                // These four variable help create the bounding box;
-                minX = e.X;
-                maxX = e.X; 
-                minY = e.Y;
-                maxY = e.Y;
-
-                // Bounding Box Pass
-                FillScanLines(e.X, e.Y, pixelsChecked, false);
-            
-                Rectangle boundingBox = Rectangle.FromLTRB(minX, minY, maxX + 1, maxY + 1);
-                HistoryAction ha = ((BitmapLayer)Workspace.ActiveLayer).CreateHistoryAction(this.name, this.Image, new PdnRegion(boundingBox));
+					Rectangle boundingBox = Rectangle.FromLTRB(minX, minY, maxX + 1, maxY + 1);
+					HistoryAction ha = ((BitmapLayer)Workspace.ActiveLayer).CreateHistoryAction(this.name, this.Image, new PdnRegion(boundingBox));
                 
-                pixelsChecked = new bool[Workspace.Document.Width + 1, Workspace.Document.Height + 1];
+					for (int x = 0; x < Workspace.Document.Width + 1; ++x)
+					{
+						for (int y = 0; y < Workspace.Document.Height + 1; ++y)
+						{
+							pixelsChecked[x, y] = false;
+						}
+					}
 
-                // Draw Pass
-                FillScanLines(e.X, e.Y, pixelsChecked, true);
+					// Draw Pass
+					FillScanLines(new FillScanLinesInfo(e.X, e.Y, pixelsChecked, true));
 
-                Workspace.History.PushNewAction(ha);
-                Workspace.ActiveLayer.Invalidate(boundingBox);
-                Workspace.Update();
-                pixelsChecked = null;
-            }
+					Workspace.History.PushNewAction(ha);
+					Workspace.ActiveLayer.Invalidate(boundingBox);
+					Workspace.Update();
+					pixelsChecked = null;
+
+					Utility.GCFullCollect();
+				}
+			}
+
+			finally
+			{
+				Cursor = cursorMouseUp;
+			}
         }
 
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp (e);
+			Cursor = cursorMouseUp;
         }
 
         public PaintBucketTool(DocumentWorkspace parent) : base(parent)
         {
-            //
-            // TODO: Add constructor logic here
-            //
-
             name = "Paint Bucket";
             toolBarImage = Utility.GetImageResource("Icons.PaintBucketIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.PaintBucketToolCursor.cur"));
+
             description = "Fills a Homogenous Color Region";
-        }
-    }
+			helpText = "Left click to fill a region with the foreground color, right click to fill with the background color";
+
+			// cursor-transitions
+			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.PaintBucketToolCursor.cur"));
+			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.PaintBucketToolCursorMouseDown.cur"));
+			Cursor = cursorMouseUp;
+		}
+	}
 }

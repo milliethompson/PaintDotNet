@@ -107,7 +107,7 @@ namespace PaintDotNet
         {
             get
             {
-                return majorDivisionLength;
+                return (int)(100 * Math.Pow(0.5, Math.Round(Math.Log(ScaleFactor.Ratio, 2.0))));
             }
 
             set
@@ -218,7 +218,7 @@ namespace PaintDotNet
             Pen pen = new Pen(ForeColor);
             Brush textBrush = new SolidBrush (ForeColor);
             StringFormat textFormat = new StringFormat();
-            float mediumMarkSize = (float)majorDivisionLength / (float)mediumDivisionCount;
+            float mediumMarkSize = (float)MajorDivisionLength / (float)mediumDivisionCount;
             int maxPixel;
 
             if (orientation == Orientation.Horizontal)
@@ -235,14 +235,14 @@ namespace PaintDotNet
                 textFormat.FormatFlags |= StringFormatFlags.DirectionVertical;
             }
 
-            int majorMarks = (int)(((float)maxPixel + (float)majorDivisionLength)) / majorDivisionLength;
-            int startMajor = (offset / majorDivisionLength) - 1;
-            int endMajor = ((offset + maxPixel) / majorDivisionLength) + 1;
+            int majorMarks = (int)(((float)maxPixel + (float)MajorDivisionLength)) / MajorDivisionLength;
+            int startMajor = (offset / MajorDivisionLength) - 1;
+            int endMajor = ((offset + maxPixel) / MajorDivisionLength) + 1;
 
             for (int major = startMajor; major < endMajor; ++major)
             {
-                int majorMarkPos = (major * majorDivisionLength) - offset;
-                string majorText = (major * majorDivisionLength).ToString();
+                int majorMarkPos = (major * MajorDivisionLength) - offset;
+                string majorText = (major * MajorDivisionLength).ToString();
 
                 if (orientation == Orientation.Horizontal)
                 {
@@ -262,7 +262,7 @@ namespace PaintDotNet
 
                 for (int medium = 0; medium < mediumDivisionCount; ++medium)
                 {
-                    int mediumMarkPos = (majorDivisionLength * medium) / mediumDivisionCount;
+                    int mediumMarkPos = (MajorDivisionLength * medium) / mediumDivisionCount;
 
                     if (orientation == Orientation.Horizontal)
                     {
@@ -281,7 +281,7 @@ namespace PaintDotNet
 
                 for (int minor = 0; minor < minorDivisionCount; ++minor)
                 {
-                    int minorMarkPos = (majorDivisionLength * minor) / minorDivisionCount;
+                    int minorMarkPos = (MajorDivisionLength * minor) / minorDivisionCount;
 
                     if (orientation == Orientation.Horizontal)
                     {

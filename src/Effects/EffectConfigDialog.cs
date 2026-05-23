@@ -1,3 +1,4 @@
+using PaintDotNet;
 using System;
 using System.Drawing;
 using System.ComponentModel;
@@ -11,11 +12,55 @@ namespace PaintDotNet.Effects
     public class EffectConfigDialog
         : PdnBaseForm
     {
+		private Surface effectSourceSurface;
+		private PdnRegion effectSelection = null;
+
+        /// <summary>
+        /// This is the surface that will be used as the source for rendering.
+        /// Its contents will not change for the lifetime of this dialog box
+        /// ("lifetime" being defined as "until Close() is called")
+        /// Treat this object as read-only. In your OnLoad method, feel free
+        /// to do any analysis of this surface to populate the dialog box.
+        /// </summary>
+		public Surface EffectSourceSurface
+		{
+			get
+			{
+				return effectSourceSurface;
+			}
+
+			set
+			{
+				effectSourceSurface = value;
+			}
+		}
+
+		[Browsable(false)]
+		public PdnRegion Selection
+		{
+			get
+			{
+				if (effectSelection == null || effectSelection.IsEmpty()) 
+				{
+					effectSelection = new PdnRegion();
+					effectSelection.MakeInfinite();
+				}
+				return effectSelection;
+			}
+
+			set
+			{
+				effectSelection = value;
+			}
+		}
+
         public EffectConfigDialog()
         {
             InitializeComponent();
             InitialInitToken();
             this.Opacity = 0.9;
+			effectSelection = new PdnRegion();
+			effectSelection.MakeInfinite();
         }
 
         private void InitializeComponent()
@@ -25,7 +70,7 @@ namespace PaintDotNet.Effects
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
             this.ClientSize = new System.Drawing.Size(282, 253);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "EffectConfigDialog";
@@ -35,6 +80,13 @@ namespace PaintDotNet.Effects
             this.Text = "EffectConfigDialog";
         }
 
+        /// <summary>
+        /// Overrides Form.OnLoad.
+        /// </summary>
+        /// <param name="e"></param>
+        /// <remarks>
+        /// Derived classes MUST call this base method if they override it!
+        /// E</remarks>
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad (e);
@@ -44,7 +96,7 @@ namespace PaintDotNet.Effects
 
         [Browsable(false)]
         public event EventHandler EffectTokenChanged;
-        protected void OnEffectTokenChanged()
+        protected virtual void OnEffectTokenChanged()
         {
             if (EffectTokenChanged != null)
             {

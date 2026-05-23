@@ -2,9 +2,6 @@ using System;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for InvertColorsEffect.
-    /// </summary>
     [EffectCategory(EffectCategory.Adjustment)]
     public class InvertColorsEffect
         : Effect
@@ -15,7 +12,7 @@ namespace PaintDotNet.Effects
         }
 
         public InvertColorsEffect()
-            : base("Invert Colors", "Inverts the colors. Alpha channel is not touched.", null)
+            : base("Invert Colors", "Inverts the colors. Alpha channel is not touched.", Utility.GetImageResource("Icons.InvertColorsEffect.bmp"), System.Windows.Forms.Shortcut.CtrlShiftI)
         {
         }
     }

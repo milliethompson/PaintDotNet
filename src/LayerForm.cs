@@ -23,6 +23,7 @@ namespace PaintDotNet
         private DotNetWidgets.DotNetToolbarButtonItem propertiesButton;
         private System.ComponentModel.IContainer components;
 
+
         public LayerControl LayerControl
         {
             get
@@ -40,9 +41,6 @@ namespace PaintDotNet
 
             //addNewLayerButton2.Image = Utility.GetImageResource("Icons.MenuLayersAddNewLayerIcon.bmp");
 
-            //
-            // TODO: Add any constructor code after InitializeComponent call
-            //
             imageList.TransparentColor = Color.FromArgb(192, 192, 192);
 
             int addNewLayerIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuLayersAddNewLayerIcon.bmp"), imageList.TransparentColor);

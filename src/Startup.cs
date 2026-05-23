@@ -139,7 +139,7 @@ namespace PaintDotNet
         /// </summary>
         [STAThread]
         public static int Main(string[] args) 
-        {          
+        {
             new Startup(args).Start();
             return 0;
         }

@@ -27,10 +27,12 @@ namespace PaintDotNet
         [CLSCompliant(false)]
         public uint Bgra;
 
-		public const int BlueChannel = 0;
+        public const int BlueChannel = 0;
         public const int GreenChannel = 1;
         public const int RedChannel = 2;
         public const int AlphaChannel = 3;
+
+        public const int SizeOf = 4;
 
         public unsafe byte this[int channel]
         {
@@ -64,7 +66,25 @@ namespace PaintDotNet
             }
         }
 
-		public static bool operator == (ColorBgra lhs, ColorBgra rhs)
+        /// <summary>
+        /// Gets the luminance intensity of the pixel based on the values of the red, green, and blue components. Alpha is ignored.
+        /// </summary>
+        /// <returns>A value in the range 0 to 1 inclusive.</returns>
+        public double GetIntensity()
+        {
+            return ((0.114 * (double)B) + (0.587 * (double)G) + (0.299 * (double)R)) / 255.0;
+        }
+
+        /// <summary>
+        /// Gets the luminance intensity of the pixel based on the values of the red, green, and blue components. Alpha is ignored.
+        /// </summary>
+        /// <returns>A value in the range 0 to 255 inclusive.</returns>
+        public byte GetIntensityByte()
+        {
+            return (byte)((0.114 * (double)B) + (0.587 * (double)G) + (0.299 * (double)R));
+        }
+
+        public static bool operator == (ColorBgra lhs, ColorBgra rhs)
 		{
 			return lhs.Bgra == rhs.Bgra;
 		}
@@ -145,5 +165,31 @@ namespace PaintDotNet
         {
             return Color.FromArgb(A, R, G, B);
         }
+
+		public static ColorBgra Lerp(ColorBgra from, ColorBgra to, float frac) 
+		{
+			ColorBgra ret = new ColorBgra();
+			for (int i = 0; i < 4; i++) 
+			{
+				ret[i] = (byte)Utility.ClampToByte(Utility.Lerp(from[i], to[i], frac));
+			}
+			return ret;
+		}
+
+		public static ColorBgra Lerp(ColorBgra from, ColorBgra to, double frac) 
+		{
+			ColorBgra ret = new ColorBgra();
+			for (int i = 0; i < 4; i++) 
+			{
+				ret[i] = (byte)Utility.ClampToByte(Utility.Lerp(from[i], to[i], frac));
+			}
+			return ret;
+		}
+
+		public override string ToString()
+		{
+			return "B: " + B + ", G: " + G + ", R: " + R + ", A: " + A;
+		}
+
     }
 }

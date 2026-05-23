@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
@@ -13,7 +14,10 @@ namespace PaintDotNet.Effects
         private string name;
         private string description;
         private Image image;
-
+		private Shortcut shortcut;
+		private PdnRegion effectSelection;
+		private bool singleThreaded;
+		private EffectEnvironmentParameters envParams;
         /// <summary>
         /// Returns the category of the effect. If there is no EffectCategoryAttribute
         /// applied to the runtime type, then the default category, EffectCategory.Effect,
@@ -36,6 +40,30 @@ namespace PaintDotNet.Effects
                 return EffectCategory.Effect;
             }
         }
+
+		public EffectEnvironmentParameters EnvironmentParameters 
+		{
+			get 
+			{
+				return envParams;
+			}
+			set 
+			{
+				envParams = value;
+			}
+		}
+
+		/// <summary>
+		/// Gets whether an Effect wants to be rendered using only 1 thread.
+		/// It is up to the caller of Render() to enforce this.
+		/// </summary>
+		public bool SingleThreaded
+		{
+			get
+			{
+				return singleThreaded;
+			}
+		}
 
         public string SubMenuName
         {
@@ -79,6 +107,31 @@ namespace PaintDotNet.Effects
             }
         }
 
+		public Shortcut Shortcut 
+		{
+			get 
+			{
+				return shortcut;
+			}
+		}
+
+		public PdnRegion Selection
+		{
+			get
+			{
+				if (effectSelection == null || effectSelection.IsEmpty()) 
+				{
+					effectSelection = new PdnRegion();
+					effectSelection.MakeInfinite();
+				}
+				return effectSelection;
+			}
+
+			set
+			{
+				effectSelection = value;
+			}
+		}
         /// <summary>
         /// Performs the effect's rendering. The source is to be treated as read-only,
         /// and only the destination pixels within the given rectangle-of-interest are
@@ -149,13 +202,31 @@ namespace PaintDotNet.Effects
             
             RenderInPlace(srcAndDstArgs, region);
             region.Dispose();
-        }
+		}
 
-        public Effect(string name, string description, Image image)
-        {
-            this.name = name;
-            this.description = description;
-            this.image = image;
-        }
+		public Effect(string name, string description, Image image, Shortcut shortcut)
+		{
+			this.name = name;
+			this.description = description;
+			this.image = image;
+			this.shortcut = shortcut;
+			this.singleThreaded = false;
+			this.envParams = null;
+
+			object[] attributes = this.GetType().GetCustomAttributes(true);
+
+			foreach (Attribute attribute in attributes)
+			{
+				if (attribute is SingleThreadedEffectAttribute)
+				{
+					this.singleThreaded = true;
+				}
+			}
+		}
+
+		public Effect(string name, string description, Image image)
+			: this(name, description, image, Shortcut.None)
+		{
+		}
     }
 }

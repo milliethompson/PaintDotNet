@@ -15,7 +15,7 @@ namespace PaintDotNet.Effects
 
         /// <summary>
         /// Signifies that this effect should be an "Image Adjustment", placing the effect in
-        /// the "Adjustments" submenu in the "Image" menu.
+        /// the "Adjustments" submenu in the "Layers" menu.
         /// These types of effects are typically quick to execute.
         /// </summary>
         Adjustment

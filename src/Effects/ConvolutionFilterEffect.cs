@@ -110,6 +110,49 @@ namespace PaintDotNet.Effects
             return extent;
         }
 
+		/// <summary>
+		/// Normalizes the weight matrix so that it does not overflow an int when
+		/// multiplied with a 1-byte channel intensity, and a 1-byte alpha. In
+		/// order to do this, the sum and maximum must be less than 32768. The
+		/// values of the matrix will be scaled by a power of two to be just below 32768
+		/// </summary>
+		/// <param name="weights">The weight matrix to be normalized.</param>
+		protected void NormalizeWeightMatrix(int [,] weights) 
+		{
+			int max = 0, sum = 0;
+			int shift = 0;
+			//Find the magnitude sum and maximum of the weights matrix
+			for (int x = 0; x < weights.GetLength(0); x++) 
+			{
+				for (int y = 0; y < weights.GetLength(1); y++) 
+				{
+					int mag = Math.Abs(weights[x, y]);
+					max = Math.Max(max, mag);
+					sum += mag;
+				}
+			}
+
+			max = Math.Max(sum, max);
+			while ((1 << shift) < max)
+				shift++;
+			shift = 15 - shift;
+			//shift it so that it's less than 32768
+			for (int x = 0; x < weights.GetLength(0); x++) 
+			{
+				for (int y = 0; y < weights.GetLength(1); y++) 
+				{
+					if (shift < 0) 
+					{
+						weights[x, y] >>= -shift;
+					} 
+					else if (shift > 0)
+					{
+						weights[x, y] <<= shift;
+					}
+				}
+			}
+		}
+
         public void RenderConvolutionFilter(int[,] weights, int offset, RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle roi)
         {
             base.Render (dstArgs, srcArgs, roi);
@@ -139,8 +182,9 @@ namespace PaintDotNet.Effects
                     int redSum = 0;
                     int greenSum = 0;
                     int blueSum = 0;
-                    int alphaSum = 0;
-                    int factor = 0;
+					int alphaSum = 0;
+                    int colorFactor = 0;
+					int alphaFactor = 0;
                     int fxStart = fxExtent.fStarts[x];
                     int fxEnd = fxExtent.fEnds[x];
 
@@ -158,25 +202,39 @@ namespace PaintDotNet.Effects
 
                             ColorBgra c = *srcPixel;
 
+							alphaFactor += weight;
+							weight = weight * (c.A + 1);
+							colorFactor += weight;
+							weight /= 256;
+
+							redSum += c.R * weight;
+							blueSum += c.B * weight;
+							greenSum += c.G * weight;
+							alphaSum += c.A * weight;
+/*
                             redSum += c.R * weight;
                             greenSum += c.G * weight;
                             blueSum += c.B * weight;
                             alphaSum += c.A * weight;
-                            factor += weight;
+  */
 
                             ++srcPixel;
                         }
                     }
 
-                    if (factor != 0)
-                    {
-                        redSum /= factor;
-                        greenSum /= factor;
-                        blueSum /= factor;
-                        alphaSum /= factor;
-                    }
+					colorFactor /= 256;
+					if (colorFactor != 0)
+					{
+						redSum /= colorFactor;
+						greenSum /= colorFactor;
+						blueSum /= colorFactor;
+					}                   
+					if (alphaFactor != 0)
+					{
+						alphaSum /= alphaFactor;
+					}
 
-                    redSum += offset;
+					redSum += offset;
                     greenSum += offset;
                     blueSum += offset;
                     alphaSum += offset;
@@ -229,9 +287,14 @@ namespace PaintDotNet.Effects
             }
         }
 
-        public ConvolutionFilterEffect(string name, string description, Image image)
-            : base(name, description, image)
-        {
-        }
+		public ConvolutionFilterEffect(string name, string description, Image image)
+			: base(name, description, image)
+		{
+		}
+
+		public ConvolutionFilterEffect(string name, string description, Image image, System.Windows.Forms.Shortcut shortcut)
+			: base(name, description, image, shortcut)
+		{
+		}
     }
 }

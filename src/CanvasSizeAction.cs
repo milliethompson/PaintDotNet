@@ -101,18 +101,36 @@ namespace PaintDotNet
 
             nd.Name = document.Name;
 
-            foreach (Layer l in document.Layers)
-            {
-                if (l is BitmapLayer)
-                {
-                    Layer nl = ResizeLayer((BitmapLayer)l, newSize, edge, background);
-                    nd.Layers.Add(nl);
-                }
-                else
-                {
-                    throw new InvalidOperationException("Canvas Size does not support Layers that are not BitmapLayers");
-                }
-            }        
+			Layer backgroundLayer = (Layer)document.Layers[0];
+			if(backgroundLayer is BitmapLayer)
+			{
+				if (backgroundLayer is BitmapLayer)
+				{
+					Layer nl = ResizeLayer((BitmapLayer)backgroundLayer, newSize, edge, background);
+					nd.Layers.Add(nl);
+				}
+				else
+				{
+					throw new InvalidOperationException("Canvas Size does not support Layers that are not BitmapLayers");
+				}
+			}
+
+			int i = 1;
+			while(i < document.Layers.Count)
+			{
+				Layer l = (Layer)document.Layers[i];
+				if (l is BitmapLayer)
+				{
+					Layer nl = ResizeLayer((BitmapLayer)l, newSize, edge, ColorBgra.FromBgra(255,255,255,0));
+					nd.Layers.Add(nl);
+				}
+				else
+				{
+					throw new InvalidOperationException("Canvas Size does not support Layers that are not BitmapLayers");
+				}
+				++i;
+			}
+                    
 
             return nd;
         }
@@ -160,7 +178,7 @@ namespace PaintDotNet
         public override HistoryAction PerformAction()
         {
             Document newDoc = ResizeDocument(Workspace.FindForm(), 
-                Workspace.Document, Workspace.Document.Size, AnchorEdge.Middle, Workspace.Environment.BackColor);
+                Workspace.Document, Workspace.Document.Size, AnchorEdge.Middle, ColorBgra.FromBgra(255,255,255,255));
 
             if (newDoc != null)
             {

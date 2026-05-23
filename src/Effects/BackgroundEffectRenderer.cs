@@ -168,77 +168,6 @@ namespace PaintDotNet.Effects
             }
         }
 
-#if false
-        private int CountScans(Rectangle[] rects)
-        {
-            int scans = 0;
-
-            foreach (Rectangle rect in rects)
-            {
-                scans += rect.Height;
-            }
-
-            return scans;
-        }
-
-        private void CopyScansToRegion(PdnRegion dst, int scanCount, Rectangle[] srcRects, ref int cursorRectIndex, ref int cursorRectScan)
-        {
-            Rectangle rect = srcRects[cursorRectIndex];
-            int scansLeftInRect = rect.Height - cursorRectScan;
-
-            if (scansLeftInRect < scanCount)
-            {
-                Rectangle copyMe = Rectangle.FromLTRB(rect.Left, rect.Top + cursorRectScan, rect.Right, rect.Bottom);
-
-                dst.Union(copyMe);
-                scanCount -= scansLeftInRect;
-                ++cursorRectIndex;
-                cursorRectScan = 0;
-
-                CopyScansToRegion(dst, scanCount, srcRects, ref cursorRectIndex, ref cursorRectScan);
-            }
-            else if (scansLeftInRect >= scanCount)
-            {
-                int scansNotToCopy = scansLeftInRect - scanCount;
-                Rectangle copyMe = Rectangle.FromLTRB(rect.Left, rect.Top + cursorRectScan, rect.Right, rect.Top + cursorRectScan + scanCount);
-                dst.Union(copyMe);
-
-                if (scansNotToCopy == 0)
-                {
-                    ++cursorRectIndex;
-                    cursorRectScan = 0;
-                }
-                else
-                {
-                    cursorRectScan += scanCount;
-                }
-            }
-        }
-
-        private PdnRegion[] SliceUpRegion(PdnRegion region, int sliceCount)
-        {
-            PdnRegion[] slices = new PdnRegion[sliceCount];
-            Rectangle[] regionScans = region.GetRegionScansReadOnlyInt();
-            int regionScansCount = CountScans(regionScans);
-
-            // cursors
-            int currentRectIndex = 0;
-            int currentRectScan = 0;
-
-            for (int i = 0; i < sliceCount; ++i)
-            {
-                int beginScan = (regionScansCount * i) / sliceCount;
-                int endScan = Math.Min(regionScansCount, (regionScansCount * (i + 1)) / sliceCount);
-                int scanCount = endScan - beginScan;
-
-                PdnRegion newRegion = PdnRegion.CreateEmpty();
-                CopyScansToRegion(newRegion, scanCount, regionScans, ref currentRectIndex, ref currentRectScan);
-                slices[i] = newRegion;
-            }
-
-            return slices;
-        }
-#else
         private PdnRegion[] SliceUpRegion(PdnRegion region, int sliceCount)
         {
             PdnRegion[] slices = new PdnRegion[sliceCount];
@@ -257,7 +186,6 @@ namespace PaintDotNet.Effects
 
             return slices;
         }
-#endif  
 
         public BackgroundEffectRenderer(Effect effect, 
                                         EffectConfigToken effectToken, 
@@ -276,6 +204,11 @@ namespace PaintDotNet.Effects
             this.tileRegions = SliceUpRegion(renderRegion, tileCount);
             this.tileCount = tileCount;
             this.workerThreads = workerThreads;
+
+			if (effect.SingleThreaded)
+			{
+				this.workerThreads = 1;
+			}
         }
     }
 }

@@ -24,11 +24,11 @@ InstallDir $TEMP\PdnSetup
 SilentInstall silent
 
 VIAddVersionKey ProductName "Paint.NET Full Setup"
-VIAddVersionKey ProductVersion "1.1.0.0"
-VIAddVersionKey FileVersion "1.1.0.0"
+VIAddVersionKey ProductVersion "2.0.0.0"
+VIAddVersionKey FileVersion "2.0.0.0"
 VIAddVersionKey LegalCopyright "Copyright © 2004 Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker"
 VIAddVersionKey FileDescription "Installs .NET Framework 1.1 and Paint.NET."
-VIProductVersion "1.1.0.0"
+VIProductVersion "2.0.0.0"
 
 ; The file to write
 !ifdef Debug

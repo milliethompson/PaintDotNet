@@ -32,7 +32,7 @@
                     DocumentationFile = ""
                     DebugSymbols = "true"
                     FileAlignment = "4096"
-                    IncrementalBuild = "false"
+                    IncrementalBuild = "true"
                     NoStdLib = "false"
                     NoWarn = ""
                     Optimize = "false"
@@ -134,12 +134,47 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "ColorGradientControl.cs"
+                    SubType = "UserControl"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ColorGradientControl.resx"
+                    DependentUpon = "ColorGradientControl.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "ColorGradientEventArgs.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "CursorChanger.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "GdiHandleWrapper.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Histogram.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "HistogramControl.cs"
+                    SubType = "UserControl"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "HistogramControl.resx"
+                    DependentUpon = "HistogramControl.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "HsvColor.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -169,6 +204,16 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "MovingEventArgs.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "MovingEventHandler.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "PdnBaseForm.cs"
                     SubType = "Form"
                     BuildAction = "Compile"
@@ -187,6 +232,16 @@
                     RelPath = "PdnGraphicsPath.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "PdnMessageBox.cs"
+                    SubType = "Form"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "PdnMessageBox.resx"
+                    DependentUpon = "PdnMessageBox.cs"
+                    BuildAction = "EmbeddedResource"
                 />
                 <File
                     RelPath = "PdnRegion.cs"
@@ -215,6 +270,11 @@
                 />
                 <File
                     RelPath = "RenderedTileEventHandler.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "RgbColor.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

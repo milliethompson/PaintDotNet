@@ -122,6 +122,16 @@ namespace PaintDotNet
             Apply(dst.GetPointAddress(dstOffset), src.GetPointAddress(srcOffset), scanLength);
         }
 
+        public void Apply(Surface dst, Surface src, Rectangle roi)
+        {
+            for (int y = roi.Top; y < roi.Bottom; ++y)
+            {
+                ColorBgra *dstPtr = dst.GetPointAddress(roi.Left, y);
+                ColorBgra *srcPtr = src.GetPointAddress(roi.Left, y);
+                Apply(dstPtr, srcPtr, roi.Width);
+            }
+        }
+
         public void Apply(Surface surface, PdnRegion roi)
         {
             Apply(surface, roi.GetRegionScansReadOnlyInt());

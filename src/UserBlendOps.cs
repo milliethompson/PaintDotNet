@@ -205,64 +205,126 @@ namespace PaintDotNet
             }
         }
 
-        [Serializable]
-            public sealed class AdditiveBlendOp
-            : UserBlendOp
-        {
-            public static string StaticName
-            {
-                get
-                {
-                    return "Additive";
-                }
-            }
+		[Serializable]
+			public sealed class AdditiveBlendOp
+			: UserBlendOp
+		{
+			public static string StaticName
+			{
+				get
+				{
+					return "Additive";
+				}
+			}
 
-            protected override unsafe void Apply(ColorBgra * dst, ColorBgra * lhs, ColorBgra * rhs, int length)
-            {
-                while (length > 0)
-                {
-                    int rhsA = rhs->A + 1;
+			protected override unsafe void Apply(ColorBgra * dst, ColorBgra * lhs, ColorBgra * rhs, int length)
+			{
+				while (length > 0)
+				{
+					int rhsA = rhs->A + 1;
 
-                    *dst = ColorBgra.FromBgra((byte)Math.Min(255, lhs->B + ((rhs->B * rhsA) / 256)),
-                        (byte)Math.Min(255, lhs->G + ((rhs->G * rhsA) / 256)),
-                        (byte)Math.Min(255, lhs->R + ((rhs->R * rhsA) / 256)),
-                        lhs->A);
+					*dst = ColorBgra.FromBgra((byte)Math.Min(255, lhs->B + ((rhs->B * rhsA) / 256)),
+						(byte)Math.Min(255, lhs->G + ((rhs->G * rhsA) / 256)),
+						(byte)Math.Min(255, lhs->R + ((rhs->R * rhsA) / 256)),
+						lhs->A);
 
-                    ++dst;
-                    ++lhs;
-                    ++rhs;
-                    --length;
-                }
-            }
+					++dst;
+					++lhs;
+					++rhs;
+					--length;
+				}
+			}
 
-            protected override unsafe void Apply(ColorBgra * dst, ColorBgra * src, int length)
-            {
-                while (length > 0)
-                {
-                    int srcA = src->A + 1;
+			protected override unsafe void Apply(ColorBgra * dst, ColorBgra * src, int length)
+			{
+				while (length > 0)
+				{
+					int srcA = src->A + 1;
 
-                    *dst = ColorBgra.FromBgra((byte)Math.Min(255, dst->B + ((src->B * srcA) / 256)),
-                        (byte)Math.Min(255, dst->G + ((src->G * srcA) / 256)),
-                        (byte)Math.Min(255, dst->R + ((src->R * srcA) / 256)),
-                        dst->A);
+					*dst = ColorBgra.FromBgra((byte)Math.Min(255, dst->B + ((src->B * srcA) / 256)),
+						(byte)Math.Min(255, dst->G + ((src->G * srcA) / 256)),
+						(byte)Math.Min(255, dst->R + ((src->R * srcA) / 256)),
+						dst->A);
 
-                    ++dst;
-                    ++src;
-                    --length;
-                }
-            }
+					++dst;
+					++src;
+					--length;
+				}
+			}
 
-            public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
-            {
-                int rhsA = rhs.A + 1;
+			public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
+			{
+				int rhsA = rhs.A + 1;
 
-                return ColorBgra.FromBgra((byte)Math.Min(255, lhs.B + ((rhs.B * rhsA) / 256)),
-                    (byte)Math.Min(255, lhs.G + ((rhs.G * rhsA) / 256)),
-                    (byte)Math.Min(255, lhs.R + ((rhs.R * rhsA) / 256)),
-                    lhs.A);
-            }
+				return ColorBgra.FromBgra((byte)Math.Min(255, lhs.B + ((rhs.B * rhsA) / 256)),
+					(byte)Math.Min(255, lhs.G + ((rhs.G * rhsA) / 256)),
+					(byte)Math.Min(255, lhs.R + ((rhs.R * rhsA) / 256)),
+					lhs.A);
+			}
 
-        }
+		}
+
+		[Serializable]
+			public sealed class DifferenceBlendOp
+			: UserBlendOp
+		{
+			public static string StaticName
+			{
+				get
+				{
+					return "Difference";
+				}
+			}
+
+			protected override unsafe void Apply(ColorBgra * dst, ColorBgra * lhs, ColorBgra * rhs, int length)
+			{
+				while (length > 0)
+				{
+					int rhsA = rhs->A + 1;
+
+					*dst = ColorBgra.FromBgra(
+						(byte)Math.Abs(lhs->B - ((rhs->B * rhsA) / 256)),
+						(byte)Math.Abs(lhs->G - ((rhs->G * rhsA) / 256)),
+						(byte)Math.Abs(lhs->R - ((rhs->R * rhsA) / 256)),
+						lhs->A);
+
+					++dst;
+					++lhs;
+					++rhs;
+					--length;
+				}
+			}
+
+			protected override unsafe void Apply(ColorBgra * dst, ColorBgra * src, int length)
+			{
+				while (length > 0)
+				{
+					int srcA = src->A + 1;
+
+					*dst = ColorBgra.FromBgra(
+						(byte)Math.Abs(dst->B - ((src->B * srcA) / 256)),
+						(byte)Math.Abs(dst->G - ((src->G * srcA) / 256)),
+						(byte)Math.Abs(dst->R - ((src->R * srcA) / 256)),
+						dst->A);
+
+					++dst;
+					++src;
+					--length;
+				}
+			}
+
+			public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
+			{
+				int rhsA = rhs.A + 1;
+
+				return ColorBgra.FromBgra(
+					(byte)Math.Abs(lhs.B - ((rhs.B * rhsA) / 256)),
+					(byte)Math.Abs(lhs.G - ((rhs.G * rhsA) / 256)),
+					(byte)Math.Abs(lhs.R - ((rhs.R * rhsA) / 256)),
+					lhs.A);
+			}
+
+		}
 
         [Serializable]
         public sealed class ScreenBlendOp

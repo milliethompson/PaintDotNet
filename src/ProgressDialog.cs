@@ -34,9 +34,6 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            //
-            // TODO: Add any constructor code after InitializeComponent call
-            //
             this.Value = 0.0;
             
             Point bottomPoint = this.PointToScreen(new Point(0, Bottom));

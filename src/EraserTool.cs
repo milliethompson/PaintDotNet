@@ -21,7 +21,16 @@ namespace PaintDotNet
         private ArrayList savedSurfaces;
         private Point lastMouseXY;
         private RenderArgs renderArgs;
-        private BitmapLayer bitmapLayer;        
+		private BitmapLayer bitmapLayer;
+		private Cursor cursorMouseDown, cursorMouseUp;
+
+		public override char HotKey
+		{
+			get
+			{
+				return 'e';
+			}
+		}     
 
         protected override void OnActivate()
         {
@@ -82,6 +91,8 @@ namespace PaintDotNet
         {
             base.OnMouseDown (e);
 
+			Cursor = cursorMouseDown;
+
             if (((e.Button & MouseButtons.Left) == MouseButtons.Left) ||
                 ((e.Button & MouseButtons.Right) == MouseButtons.Right))
             {
@@ -114,6 +125,8 @@ namespace PaintDotNet
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp (e);
+
+			Cursor = cursorMouseUp;
 
             if (mouseDown)
             {
@@ -220,13 +233,15 @@ namespace PaintDotNet
         
         public EraserTool(DocumentWorkspace parent) : base(parent)
         {
-            //
-            // TODO: Add constructor logic here
-            //
             name = "Eraser";
             toolBarImage = Utility.GetImageResource("Icons.EraserToolIcon.bmp");
-            cursor = new Cursor(Utility.GetResourceStream("Cursors.EraserToolCursor.cur"));
             description = "Brush-like erasing tool";
+			helpText = "Click and drag to erase a portion of the image";
+
+			// cursor-transitions
+			cursorMouseUp = new Cursor(Utility.GetResourceStream("Cursors.EraserToolCursor.cur"));
+			cursorMouseDown = new Cursor(Utility.GetResourceStream("Cursors.EraserToolCursorMouseDown.cur"));
+			Cursor = cursorMouseUp;
         }
     }
 }

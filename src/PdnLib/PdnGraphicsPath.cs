@@ -15,6 +15,7 @@ namespace PaintDotNet
           IDisposable
     { 
         private GraphicsPath gdiPath;
+
         internal PdnRegion regionCache = null;
 
         public static implicit operator GraphicsPath(PdnGraphicsPath convert)
@@ -27,7 +28,6 @@ namespace PaintDotNet
             if (regionCache == null)
             {
                 regionCache = new PdnRegion(this.gdiPath);
-                // RectangleF[] rectsF = regionCache.GetRegionScans(); // force cached region scans to be updated
             }
 
             return regionCache;
@@ -45,7 +45,6 @@ namespace PaintDotNet
         {
             if (regionCache != null)
             {
-                //Debug.WriteLine("Clearing PdnGraphicsPath.regionCache");
                 lock (regionCache.SyncRoot)
                 {
                     regionCache.Dispose();

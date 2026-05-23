@@ -22,8 +22,6 @@ namespace PaintDotNet
             // This call is required by the Windows Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
-
             // HACK: the designer keeps screwing up the location of the Apply button!
             //this.applyButton.Location = new System.Drawing.Point(applyButton.Left, okButton.Top);
 

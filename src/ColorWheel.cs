@@ -56,7 +56,6 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
             wheelRegion = new PdnRegion();
             hsvColor = new HsvColor(0, 0, 0);
         }
@@ -93,8 +92,8 @@ namespace PaintDotNet
 
             for (int i = 0; i < colorCount; i++)
             {
-                int hue = (i * 255) / colorCount;
-                colors[i] = new HsvColor(hue, 255, 255).ToColor();
+                int hue = (i * 360) / colorCount;
+                colors[i] = new HsvColor(hue, 100, 100).ToColor();
             }
 
             return colors;
@@ -142,14 +141,15 @@ namespace PaintDotNet
         private void wheelPictureBox_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
         {
             float radius = ComputeRadius(Size);
-            float theta = ((float)HsvColor.Hue / 255.0f) * 2.0f * (float)Math.PI;
-            float alpha = ((float)HsvColor.Saturation / 255.0f);
+            float theta = ((float)HsvColor.Hue / 360.0f) * 2.0f * (float)Math.PI;
+            float alpha = ((float)HsvColor.Saturation / 100.0f);
             float x = (alpha * (radius - 1) * (float)Math.Cos(theta)) + radius;
             float y = (alpha * (radius - 1) * (float)Math.Sin(theta)) + radius;
 
-            Rectangle rect = new Rectangle((int)x - 2, (int)y - 2, 4, 4);
-            e.Graphics.DrawRectangle(Pens.Black, rect);
-            e.Graphics.DrawRectangle(Pens.White, Rectangle.Inflate(rect, -1, -1));
+			e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+			e.Graphics.SmoothingMode = SmoothingMode.HighQuality;
+            e.Graphics.DrawRectangle(Pens.Black, x - 1, y - 1, 3, 3);
+			e.Graphics.DrawRectangle(Pens.White, x, y, 1, 1);
         }
 
         private void InitRenderSurface()
@@ -199,7 +199,7 @@ namespace PaintDotNet
             
             using (PathGradientBrush pgb = new PathGradientBrush(points))
             {
-                pgb.CenterColor = new HsvColor(255, 0, 255).ToColor();
+                pgb.CenterColor = new HsvColor(0, 0, 100).ToColor();
                 pgb.CenterPoint = new PointF(radius, radius);
                 pgb.SurroundColors = GetColors();
 
@@ -264,9 +264,9 @@ namespace PaintDotNet
 
             double alpha = Math.Sqrt((cx * cx) + (cy * cy));
 
-            int h = (int)((theta / (Math.PI * 2)) * 255.0);
-            int s = (int)Math.Min(255.0, (alpha / (double)(Width / 2)) * 255.0);
-            int v = 255;
+            int h = (int)((theta / (Math.PI * 2)) * 360.0);
+            int s = (int)Math.Min(100.0, (alpha / (double)(Width / 2)) * 100);
+            int v = 100;
 
             hsvColor = new HsvColor(h, s, v);
             OnColorChanged();

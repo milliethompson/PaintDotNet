@@ -22,7 +22,6 @@ namespace PaintDotNet
         private TextAlignment alignment;
         private ImageList imageList;
         private float oldSizeValue;
-        private System.Windows.Forms.ErrorProvider sizeErrorProvider;
         private DotNetWidgets.DotNetToolbar fontToolbar;
         private DotNetWidgets.DotNetToolbarButtonItem boldButton;
         private DotNetWidgets.DotNetToolbarButtonItem italicButton;
@@ -30,23 +29,17 @@ namespace PaintDotNet
         private DotNetWidgets.DotNetToolbarButtonItem alignCenterButton;
         private DotNetWidgets.DotNetToolbarButtonItem alignLeftButton;
         private DotNetWidgets.DotNetToolbarButtonItem alignRightButton;
-        private System.Windows.Forms.Label label1;
-        private DotNetWidgets.DotNetToolbar dotNetToolbar1;
-        private DotNetWidgets.DotNetToolbarButtonItem dotNetToolbarButtonItem1;
         private System.Windows.Forms.ComboBox fontComboBox;
         private System.Windows.Forms.ComboBox sizeComboBox;
-
-        /// <summary> 
-        /// Required designer variable.
-        /// </summary>
-        private System.ComponentModel.Container components = null;
+		private DotNetWidgets.DotNetToolbar dotNetToolbar1;
+		private DotNetWidgets.DotNetToolbarLabelItem lblFont;
+		private System.Windows.Forms.ToolTip tooltipProvider;
+		private System.ComponentModel.IContainer components;
 
         public TextConfigWidget()
         {
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
-
-            // TODO: Add any initialization after the InitializeComponent call
 
             Utility.TraceMe("init fontcombobox");
             #region initializaion of fontComboBox
@@ -77,16 +70,6 @@ namespace PaintDotNet
             this.sizeComboBox.TextChanged += new EventHandler(sizeComboBox_TextChanged);
             this.sizeComboBox.Validating += new CancelEventHandler(sizeComboBox_Validating);
             this.sizeComboBox.Text = "10";
-            #endregion
-
-            Utility.TraceMe("init sizeerrorprovider");
-            #region sizeErrorProvider
-            // Create and set the ErrorProvider for textBoxSize data entry control.
-            sizeErrorProvider = new  System.Windows.Forms.ErrorProvider();
-            sizeErrorProvider.SetIconAlignment (this.sizeComboBox, ErrorIconAlignment.MiddleRight);
-            sizeErrorProvider.SetIconPadding (this.sizeComboBox, 2);
-            sizeErrorProvider.BlinkRate = 1000;
-            sizeErrorProvider.BlinkStyle = System.Windows.Forms.ErrorBlinkStyle.NeverBlink;
             #endregion
     
             Utility.TraceMe("create imagelist");
@@ -155,7 +138,7 @@ namespace PaintDotNet
 
         public event EventHandler FontTextChanged;
         protected virtual void OnFontTextChanged()
-        {
+        { 
             if (FontTextChanged != null)
             {
                 FontTextChanged(this, EventArgs.Empty);
@@ -382,136 +365,126 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            this.fontToolbar = new DotNetWidgets.DotNetToolbar();
-            this.boldButton = new DotNetWidgets.DotNetToolbarButtonItem();
-            this.italicButton = new DotNetWidgets.DotNetToolbarButtonItem();
-            this.underlineButton = new DotNetWidgets.DotNetToolbarButtonItem();
-            this.alignLeftButton = new DotNetWidgets.DotNetToolbarButtonItem();
-            this.alignCenterButton = new DotNetWidgets.DotNetToolbarButtonItem();
-            this.alignRightButton = new DotNetWidgets.DotNetToolbarButtonItem();
-            this.fontComboBox = new System.Windows.Forms.ComboBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.dotNetToolbar1 = new DotNetWidgets.DotNetToolbar();
-            this.dotNetToolbarButtonItem1 = new DotNetWidgets.DotNetToolbarButtonItem();
-            this.sizeComboBox = new System.Windows.Forms.ComboBox();
-            this.SuspendLayout();
-            // 
-            // fontToolbar
-            // 
-            this.fontToolbar.Buttons.Add(this.boldButton);
-            this.fontToolbar.Buttons.Add(this.italicButton);
-            this.fontToolbar.Buttons.Add(this.underlineButton);
-            this.fontToolbar.Buttons.Add(this.alignLeftButton);
-            this.fontToolbar.Buttons.Add(this.alignCenterButton);
-            this.fontToolbar.Buttons.Add(this.alignRightButton);
-            this.fontToolbar.Dock = System.Windows.Forms.DockStyle.None;
-            this.fontToolbar.DrawGrabHandle = false;
-            this.fontToolbar.ImageList = null;
-            this.fontToolbar.Location = new System.Drawing.Point(240, 0);
-            this.fontToolbar.MenuProvider = null;
-            this.fontToolbar.Name = "fontToolbar";
-            this.fontToolbar.Size = new System.Drawing.Size(456, 26);
-            this.fontToolbar.TabIndex = 3;
-            this.fontToolbar.ButtonClick += new DotNetWidgets.DotNetToolbar.ButtonClickEventHandler(this.fontToolbar_ButtonClick);
-            // 
-            // boldButton
-            // 
-            this.boldButton.BeginGroup = true;
-            this.boldButton.ToolTipText = "Bold Text";
-            // 
-            // italicButton
-            // 
-            this.italicButton.ToolTipText = "Italics Text";
-            // 
-            // underlineButton
-            // 
-            this.underlineButton.ToolTipText = "Underline Text";
-            // 
-            // alignLeftButton
-            // 
-            this.alignLeftButton.BeginGroup = true;
-            this.alignLeftButton.ToolTipText = "Align Text Left";
-            // 
-            // alignCenterButton
-            // 
-            this.alignCenterButton.ToolTipText = "Center Text";
-            // 
-            // alignRightButton
-            // 
-            this.alignRightButton.ToolTipText = "Align Text Right";
-            // 
-            // fontComboBox
-            // 
-            this.fontComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.fontComboBox.Location = new System.Drawing.Point(48, 3);
-            this.fontComboBox.Name = "fontComboBox";
-            this.fontComboBox.Size = new System.Drawing.Size(120, 21);
-            this.fontComboBox.TabIndex = 4;
-            this.fontComboBox.SelectedIndexChanged += new System.EventHandler(this.fontComboBox_SelectedIndexChanged);
-            // 
-            // label1
-            // 
-            this.label1.Location = new System.Drawing.Point(12, 1);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(40, 23);
-            this.label1.TabIndex = 5;
-            this.label1.Text = "Font:";
-            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // dotNetToolbar1
-            // 
-            this.dotNetToolbar1.Buttons.Add(this.dotNetToolbarButtonItem1);
-            this.dotNetToolbar1.Dock = System.Windows.Forms.DockStyle.None;
-            this.dotNetToolbar1.DrawGrabHandle = false;
-            this.dotNetToolbar1.ImageList = null;
-            this.dotNetToolbar1.Location = new System.Drawing.Point(0, 0);
-            this.dotNetToolbar1.MenuProvider = null;
-            this.dotNetToolbar1.Name = "dotNetToolbar1";
-            this.dotNetToolbar1.Size = new System.Drawing.Size(32, 26);
-            this.dotNetToolbar1.TabIndex = 8;
-            // 
-            // dotNetToolbarButtonItem1
-            // 
-            this.dotNetToolbarButtonItem1.BeginGroup = true;
-            this.dotNetToolbarButtonItem1.Enabled = false;
-            // 
-            // sizeComboBox
-            // 
-            this.sizeComboBox.Items.AddRange(new object[] {
-                                                              "8",
-                                                              "9",
-                                                              "10",
-                                                              "11",
-                                                              "12",
-                                                              "14",
-                                                              "16",
-                                                              "18",
-                                                              "20",
-                                                              "22",
-                                                              "24",
-                                                              "26",
-                                                              "28",
-                                                              "36",
-                                                              "48",
-                                                              "72"});
-            this.sizeComboBox.Location = new System.Drawing.Point(176, 3);
-            this.sizeComboBox.Name = "sizeComboBox";
-            this.sizeComboBox.Size = new System.Drawing.Size(48, 21);
-            this.sizeComboBox.TabIndex = 9;
-            this.sizeComboBox.Text = "comboBox1";
-            // 
-            // TextConfigWidget
-            // 
-            this.Controls.Add(this.sizeComboBox);
-            this.Controls.Add(this.fontComboBox);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.fontToolbar);
-            this.Controls.Add(this.dotNetToolbar1);
-            this.Name = "TextConfigWidget";
-            this.Size = new System.Drawing.Size(456, 32);
-            this.ResumeLayout(false);
+			this.components = new System.ComponentModel.Container();
+			this.fontToolbar = new DotNetWidgets.DotNetToolbar();
+			this.boldButton = new DotNetWidgets.DotNetToolbarButtonItem();
+			this.italicButton = new DotNetWidgets.DotNetToolbarButtonItem();
+			this.underlineButton = new DotNetWidgets.DotNetToolbarButtonItem();
+			this.alignLeftButton = new DotNetWidgets.DotNetToolbarButtonItem();
+			this.alignCenterButton = new DotNetWidgets.DotNetToolbarButtonItem();
+			this.alignRightButton = new DotNetWidgets.DotNetToolbarButtonItem();
+			this.fontComboBox = new System.Windows.Forms.ComboBox();
+			this.sizeComboBox = new System.Windows.Forms.ComboBox();
+			this.dotNetToolbar1 = new DotNetWidgets.DotNetToolbar();
+			this.lblFont = new DotNetWidgets.DotNetToolbarLabelItem();
+			this.tooltipProvider = new System.Windows.Forms.ToolTip(this.components);
+			this.SuspendLayout();
+			// 
+			// fontToolbar
+			// 
+			this.fontToolbar.Buttons.Add(this.boldButton);
+			this.fontToolbar.Buttons.Add(this.italicButton);
+			this.fontToolbar.Buttons.Add(this.underlineButton);
+			this.fontToolbar.Buttons.Add(this.alignLeftButton);
+			this.fontToolbar.Buttons.Add(this.alignCenterButton);
+			this.fontToolbar.Buttons.Add(this.alignRightButton);
+			this.fontToolbar.Dock = System.Windows.Forms.DockStyle.None;
+			this.fontToolbar.DrawGrabHandle = false;
+			this.fontToolbar.ImageList = null;
+			this.fontToolbar.Location = new System.Drawing.Point(216, 0);
+			this.fontToolbar.MenuProvider = null;
+			this.fontToolbar.Name = "fontToolbar";
+			this.fontToolbar.Size = new System.Drawing.Size(456, 26);
+			this.fontToolbar.TabIndex = 3;
+			this.fontToolbar.ButtonClick += new DotNetWidgets.DotNetToolbar.ButtonClickEventHandler(this.fontToolbar_ButtonClick);
+			// 
+			// boldButton
+			// 
+			this.boldButton.ToolTipText = "Bold Text";
+			// 
+			// italicButton
+			// 
+			this.italicButton.ToolTipText = "Italics Text";
+			// 
+			// underlineButton
+			// 
+			this.underlineButton.ToolTipText = "Underline Text";
+			// 
+			// alignLeftButton
+			// 
+			this.alignLeftButton.BeginGroup = true;
+			this.alignLeftButton.ToolTipText = "Align Text Left";
+			// 
+			// alignCenterButton
+			// 
+			this.alignCenterButton.ToolTipText = "Center Text";
+			// 
+			// alignRightButton
+			// 
+			this.alignRightButton.ToolTipText = "Align Text Right";
+			// 
+			// fontComboBox
+			// 
+			this.fontComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+			this.fontComboBox.Location = new System.Drawing.Point(45, 3);
+			this.fontComboBox.Name = "fontComboBox";
+			this.fontComboBox.Size = new System.Drawing.Size(120, 21);
+			this.fontComboBox.TabIndex = 4;
+			this.fontComboBox.SelectedIndexChanged += new System.EventHandler(this.fontComboBox_SelectedIndexChanged);
+			// 
+			// sizeComboBox
+			// 
+			this.sizeComboBox.Items.AddRange(new object[] {
+															  "8",
+															  "9",
+															  "10",
+															  "11",
+															  "12",
+															  "14",
+															  "16",
+															  "18",
+															  "20",
+															  "22",
+															  "24",
+															  "26",
+															  "28",
+															  "36",
+															  "48",
+															  "72"});
+			this.sizeComboBox.Location = new System.Drawing.Point(168, 3);
+			this.sizeComboBox.Name = "sizeComboBox";
+			this.sizeComboBox.Size = new System.Drawing.Size(48, 21);
+			this.sizeComboBox.TabIndex = 9;
+			this.sizeComboBox.Text = "comboBox1";
+			// 
+			// dotNetToolbar1
+			// 
+			this.dotNetToolbar1.Buttons.Add(this.lblFont);
+			this.dotNetToolbar1.Dock = System.Windows.Forms.DockStyle.None;
+			this.dotNetToolbar1.DrawGrabHandle = false;
+			this.dotNetToolbar1.ImageList = null;
+			this.dotNetToolbar1.Location = new System.Drawing.Point(0, 0);
+			this.dotNetToolbar1.MenuProvider = null;
+			this.dotNetToolbar1.Name = "dotNetToolbar1";
+			this.dotNetToolbar1.Size = new System.Drawing.Size(72, 26);
+			this.dotNetToolbar1.TabIndex = 8;
+			// 
+			// lblFont
+			// 
+			this.lblFont.BeginGroup = true;
+			this.lblFont.Text = "Font:";
+			// 
+			// TextConfigWidget
+			// 
+			this.Controls.Add(this.sizeComboBox);
+			this.Controls.Add(this.fontComboBox);
+			this.Controls.Add(this.fontToolbar);
+			this.Controls.Add(this.dotNetToolbar1);
+			this.Name = "TextConfigWidget";
+			this.Size = new System.Drawing.Size(456, 26);
+			this.ResumeLayout(false);
 
-        }
+		}
         #endregion
 
         private void fontComboBox_DrawItem(object sender, System.Windows.Forms.DrawItemEventArgs e)
@@ -691,23 +664,27 @@ namespace PaintDotNet
                 }
 
                 if (invalid)
-                {
-                    sizeErrorProvider.SetError(this.sizeComboBox, "Invalid number");
+				{
+					this.sizeComboBox.BackColor = Color.Red;
+					this.tooltipProvider.SetToolTip(this.sizeComboBox, "Invalid number");
                 }
                 else
                 {
                     if ((float.Parse(sizeComboBox.Text) < 1))
-                    {   // Set the error if the size is too small.
-                        sizeErrorProvider.SetError(this.sizeComboBox, "Size is smaller than 1");
-                    }
+					{   // Set the error if the size is too small.
+						this.sizeComboBox.BackColor = Color.Red;
+						this.tooltipProvider.SetToolTip(this.sizeComboBox, "Size is smaller than 1");
+					}
                     else if ((float.Parse(sizeComboBox.Text) > 100 ))
-                    {   // Set the error if the size is too large.
-                        sizeErrorProvider.SetError(this.sizeComboBox, "Size is larger than 100");
+					{   // Set the error if the size is too large.
+						this.sizeComboBox.BackColor = Color.Red;
+						this.tooltipProvider.SetToolTip(this.sizeComboBox, "Size is larger than 100");
                     }
                     else 
                     {   // Clear the error, if any, in the error provider.
-                        sizeErrorProvider.SetError(this.sizeComboBox, "");
-                        OnFontTextChanged();
+						this.tooltipProvider.RemoveAll();
+						this.sizeComboBox.BackColor = SystemColors.Window;
+						OnFontTextChanged();
                     }
                 }
             }

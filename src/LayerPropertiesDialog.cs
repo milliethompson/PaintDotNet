@@ -67,9 +67,6 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            //
-            // TODO: Add any constructor code after InitializeComponent call
-            //
             this.Icon = Utility.ImageToIcon(Utility.GetImageResource("Icons.MenuLayersLayerPropertiesIcon.bmp"), Color.FromArgb(192, 192, 192));
         }
 

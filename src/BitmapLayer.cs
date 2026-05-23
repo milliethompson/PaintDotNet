@@ -344,39 +344,46 @@ namespace PaintDotNet
 
             if (Surface != null)
             {
-                int previewSide = 32;
-                Size previewSize;
+				try
+				{
+					int previewSide = 32;
+					Size previewSize;
 
-                // decide size ... are we 'tall' or 'wide' ?
-                if (Width > Height)
-                {   // wide
-                    previewSize = new Size(previewSide, Math.Max(1, (Height * previewSide) / Width));
-                }
-                else
-                {   
-                    previewSize = new Size(Math.Max(1, (Width * previewSide) / Height), previewSide);
-                }
+					// decide size ... are we 'tall' or 'wide' ?
+					if (Width > Height)
+					{   // wide
+						previewSize = new Size(previewSide, Math.Max(1, (Height * previewSide) / Width));
+					}
+					else
+					{   
+						previewSize = new Size(Math.Max(1, (Width * previewSide) / Height), previewSide);
+					}
 
-                Surface surface = new Surface(previewSide, previewSide);
-                new UnaryPixelOps.Constant(ColorBgra.FromBgra(255, 255, 255, 255)).Apply(surface, surface.Bounds);
-                Surface previewWindow = surface.CreateWindow(new Rectangle(new Point((previewSide - previewSize.Width) / 2, (previewSide - previewSize.Height) / 2), previewSize));
-                previewWindow.SuperSamplingFitSurface(Surface);
-                previewWindow.Dispose();
+					Surface surface = new Surface(previewSide, previewSide);
+					new UnaryPixelOps.Constant(ColorBgra.FromBgra(255, 255, 255, 255)).Apply(surface, surface.Bounds);
+					Surface previewWindow = surface.CreateWindow(new Rectangle(new Point((previewSide - previewSize.Width) / 2, (previewSide - previewSize.Height) / 2), previewSize));
+					previewWindow.SuperSamplingFitSurface(Surface);
+					previewWindow.Dispose();
 
-                new SharpenEffect().RenderInPlace(new RenderArgs(surface), surface.Bounds);
+					new SharpenEffect().RenderInPlace(new RenderArgs(surface), surface.Bounds);
 
-                Bitmap bitmap = new Bitmap(surface.Width, surface.Height);
+					Bitmap bitmap = new Bitmap(surface.Width, surface.Height);
 
-                for (int y = 0; y < bitmap.Height; ++y)
-                {
-                    for (int x = 0; x < bitmap.Width; ++x)
-                    {
-                        bitmap.SetPixel(x, y, surface[x,y].ToColor());
-                    }
-                }
+					for (int y = 0; y < bitmap.Height; ++y)
+					{
+						for (int x = 0; x < bitmap.Width; ++x)
+						{
+							bitmap.SetPixel(x, y, surface[x,y].ToColor());
+						}
+					}
 
-                surface.Dispose();
-                this.Preview = bitmap;
+					surface.Dispose();
+					this.Preview = bitmap;
+				}
+
+				catch (ObjectDisposedException)
+				{
+				}
             }
         }
 

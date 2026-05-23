@@ -10,7 +10,15 @@ namespace PaintDotNet
     /// </summary>
     public class MoveTool
         : Tool
-    {
+	{
+		public override char HotKey
+		{
+			get
+			{
+				return 'm';
+			}
+		}
+
         public static string StaticName
         {
             get
@@ -18,6 +26,7 @@ namespace PaintDotNet
                 return "Move";
             }
         }
+
 
         private IrregularSurface liftedPixels;
         private IrregularSurface saveSurface;
@@ -28,6 +37,7 @@ namespace PaintDotNet
         private Point offset;
         private IPixelOp pixelOp;
         private bool didPaste = false;
+		private bool didImport = false;
         private bool tracking;
         private bool dontDrop = false; // so that OnSelectionChanging() can tell who is raising the event ... don't drop the pixels if WE caused the event
 
@@ -39,6 +49,7 @@ namespace PaintDotNet
             activeLayer = (BitmapLayer)Workspace.ActiveLayer;
             renderArgs = new RenderArgs(activeLayer.Surface);
             tracking = false;
+			
         }
 
         protected override void OnDeactivate()
@@ -92,25 +103,36 @@ namespace PaintDotNet
                 activeLayer.Invalidate(simplifiedRegion);
             }
 
-            if (didPaste || !(offset.X == 0 && offset.Y == 0))
+            if (didPaste || didImport || !(offset.X == 0 && offset.Y == 0))
             {
                 string name;
                 Image image;
 
-                if (didPaste)
-                {
-                    name = "Paste";
-                    image = Utility.GetImageResource("Icons.MenuEditPasteIcon.bmp");
-                }
-                else
+				if (didPaste)
+				{
+					name = "Paste";
+					image = Utility.GetImageResource("Icons.MenuEditPasteIcon.bmp");
+				}
+				else
+					if(didImport)
+				{
+					name = "Import to New Layer";
+					image = null;
+				}
+				else
                 {
                     name = this.Name;
                     image = this.Image;
                 }
 
-                CompoundHistoryAction cha = new CompoundHistoryAction(name, Image, new HistoryAction[] { undoAction, bitmapAction2 });
+				CompoundHistoryAction cha = new CompoundHistoryAction(name, image, new HistoryAction[] { undoAction, bitmapAction2 });
+				if(didPaste)
+					didPaste = false;
+				if(didImport)
+					didImport = false;
+
                 Workspace.History.PushNewAction(cha);
-                didPaste = false;
+                
             }
         }
 
@@ -142,6 +164,47 @@ namespace PaintDotNet
             base.OnSelectionChanged();
         }
 
+
+		/// <summary>
+		/// Provided as a special entry point so that Import to new layer can work well.
+		/// </summary>
+		/// <param name="surface">What you want to import.</param>
+		/// <param name="offset">Where you want to import it.</param>
+		public void ImportMouseDown(Surface sfc, Point offset)
+		{
+			if(liftedPixels != null)
+			{
+				DropPixels();
+			}
+
+			liftedPixels = new IrregularSurface(sfc,new System.Drawing.Rectangle(0,0,sfc.Width,sfc.Height));
+			
+			undoAction = (HistoryAction)new SelectionHistoryAction("Import to New Layer", null, Workspace);
+			
+			// Reset selection
+			Workspace.Environment.SelectedPath.Reset();
+			
+			tracking = true;
+			pixelOp = new UnaryPixelOps.Identity();
+
+			this.didImport = true;
+			MouseEventArgs mea = new MouseEventArgs(MouseButtons.None, 0,offset.X, offset.Y, 0);
+						
+			OnMouseDown(mea);
+			OnMouseUp(mea);
+
+			// Add a selection to the image
+			dontDrop = true;
+			Workspace.Environment.PerformSelectedPathChanging();
+			Workspace.Environment.SelectedPath.Reset();
+			Rectangle selectRectangle = new Rectangle(offset.X,offset.Y,sfc.Width,sfc.Height);
+			Workspace.Environment.SelectedPath.AddRectangle(selectRectangle);
+			
+			Workspace.Environment.SelectedPath.Reverse();
+			Workspace.Environment.PerformSelectedPathChanged();
+			dontDrop = false;
+		}
+
         /// <summary>
         /// Provided as a special entry point so that Paste can work well.
         /// </summary>
@@ -168,7 +231,7 @@ namespace PaintDotNet
 
             dontDrop = true;
             Workspace.Environment.SelectedPath = translatedPath;
-            translatedPath = null;
+			translatedPath = null;
             dontDrop = false;
 
             tracking = true;
@@ -176,6 +239,7 @@ namespace PaintDotNet
 
             this.didPaste = true;
             MouseEventArgs mea = new MouseEventArgs(MouseButtons.None, 0, offset.X, offset.Y, 0);
+
             OnMouseDown(mea);
             OnMouseUp(mea);
         }
@@ -193,6 +257,8 @@ namespace PaintDotNet
             {
                 return;
             }
+
+			Workspace.DocumentView.EnableSelectionOutline = false;
 
             if (liftedPixels == null)
             {   // lift!
@@ -295,49 +361,52 @@ namespace PaintDotNet
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp (e);
-            OnMouseMove(e);
+			Workspace.DocumentView.EnableSelectionOutline  = true;
+			OnMouseMove(e);
             tracking = false;
         }
 
         protected override void OnKeyPress(Keys key)
         {
-            base.OnKeyPress(key);
+			if (!tracking)
+			{
+				int dx = 0;
+				int dy = 0;
 
-            if (!tracking)
-            {
-                int dx = 0;
-                int dy = 0;
+				if ((key & Keys.KeyCode) == Keys.Left)
+				{
+					dx = -1;
+				}
+				else if ((key & Keys.KeyCode) == Keys.Right)
+				{
+					dx = +1;
+				} 
+				else if ((key & Keys.KeyCode) == Keys.Up)
+				{
+					dy = -1;
+				}
+				else if ((key & Keys.KeyCode) == Keys.Down) 
+				{
+					dy = +1;
+				}
 
-                if ((key & Keys.KeyCode) == Keys.Left)
-                {
-                    dx = -1;
-                }
-                else if ((key & Keys.KeyCode) == Keys.Right)
-                {
-                    dx = +1;
-                } 
-                else if ((key & Keys.KeyCode) == Keys.Up)
-                {
-                    dy = -1;
-                }
-                else if ((key & Keys.KeyCode) == Keys.Down) 
-                {
-                    dy = +1;
-                }
+				if ((key & Keys.Control) != Keys.None)
+				{
+					dx *= 10;
+					dy *= 10;
+				}
 
-                if ((key & Keys.Control) != Keys.None)
-                {
-                    dx *= 10;
-                    dy *= 10;
-                }
-
-                if (dx != 0 || dy != 0)
-                {
-                    OnMouseDown(new MouseEventArgs(MouseButtons.Left, 0, 0, 0, 0));
-                    OnMouseMove(new MouseEventArgs(MouseButtons.Left, 0, dx, dy, 0));
-                    OnMouseUp(new MouseEventArgs(MouseButtons.Left, 0, dx, dy, 0));
-                }
-            }
+				if (dx != 0 || dy != 0)
+				{
+					OnMouseDown(new MouseEventArgs(MouseButtons.Left, 0, 0, 0, 0));
+					OnMouseMove(new MouseEventArgs(MouseButtons.Left, 0, dx, dy, 0));
+					OnMouseUp(new MouseEventArgs(MouseButtons.Left, 0, dx, dy, 0));
+				}
+			} 
+			else
+			{
+				base.OnKeyPress(key);
+			}
         }
 
         public MoveTool(DocumentWorkspace workspace)
@@ -347,6 +416,7 @@ namespace PaintDotNet
             this.description = "Allows you to move around pixels that have been selected.";
             this.toolBarImage = Utility.GetImageResource("Icons.MoveToolIcon.bmp");
             this.cursor = new Cursor(Utility.GetResourceStream("Cursors.MoveToolCursor.cur"));
+			helpText = "Click and drag to move a selected region";
         }
     }
 }

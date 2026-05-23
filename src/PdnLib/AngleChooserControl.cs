@@ -30,25 +30,46 @@ namespace PaintDotNet
             }
         }
 
-        public int angleValue;
-        public int Value
-        {
-            get
-            {
-                return angleValue;
-            }
+        public double angleValue;
+		public int Value
+		{
+			get
+			{
+				return (int)angleValue;
+			}
 
-            set
-            {
-                if (angleValue != (value % 360))
-                {
-                    angleValue = value % 360;
-                    OnValueChanged();
-                    Invalidate();
-                    Update();
-                }
-            }
-        }
+			set
+			{
+				double v = value % 360;
+				if (angleValue != v)
+				{
+					angleValue = v;
+					OnValueChanged();
+					Invalidate();
+				}
+			}
+		}
+		/// <summary>
+		/// ValueDouble exposes the double-precision angle
+		/// </summary>
+		public double ValueDouble
+		{
+			get
+			{
+				return angleValue;
+			}
+
+			set
+			{
+				double v = Math.IEEERemainder(value, 360.0);
+				if (angleValue != v)
+				{
+					angleValue = v;
+					OnValueChanged();
+					Invalidate();
+				}
+			}
+		}
 
         private void DrawToGraphics(Graphics g)
         {
@@ -129,7 +150,7 @@ namespace PaintDotNet
                 int dx = e.X - center.X;
                 int dy = e.Y - center.Y;
                 double theta = Math.Atan2(-dy, dx);
-                this.Value = (int)((theta * 360) / (2 * Math.PI));
+                this.ValueDouble = (theta * 360) / (2 * Math.PI);
             }
         }
 
@@ -154,7 +175,6 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            // TODO: Add any initialization after the InitializeComponent call
             this.ResizeRedraw = true;   
         }
 

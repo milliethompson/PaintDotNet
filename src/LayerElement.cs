@@ -21,6 +21,14 @@ namespace PaintDotNet
         private System.Windows.Forms.Label layerDescription;
         private System.Windows.Forms.PictureBox icon;
         private System.Windows.Forms.CheckBox layerVisible;
+		
+		public System.Windows.Forms.CheckBox LayerVisible
+		{
+			get
+			{
+				return this.layerVisible;
+			}
+		}
 
         /// <summary> 
         /// Required designer variable.
@@ -105,7 +113,6 @@ namespace PaintDotNet
             InitializeComponent();
             this.IsSelected = false;
 
-            // TODO: Add any initialization after the InitializeComponent call
             layerPreviewChangedDelegate = new EventHandler(LayerPreviewChangedHandler);
             layerPropertyChangedDelegate = new PropertyEventHandler(LayerPropertyChangedHandler);
         }

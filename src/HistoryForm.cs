@@ -9,6 +9,31 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for HistoryForm.
     /// </summary>
+    // Outstanding: correct comment header block for legacy code prior to version 2.0
+	// Modifications to support Limited History length: Michael Kelsey
+	// Parameters: none
+	// Properties: HistoryControl
+	// Initial Conception: Paint.NET v1.0 team
+	// ..Alterations: provide a form for the History "concept"
+	// Changes: Michael Kelsey
+	// ..Alterations: modified HistoryForm to support Limited History feature of version 2.0
+	// ..Alterations: add the following:
+	//    private DotNetWidgets.DotNetToolbarButtonItem limitButton
+	//		Purpose: it's the limit button on the .NET toolbar on the History Form
+	//    public event EventHandler LimitButtonClicked
+	//      Purpose: the event handler invoked when the limit button is clicked
+	//    protected virtual void OnLimitButtonClicked()
+	//      Purpose: the manual event trigger method for the event handler
+	//    public void PerformLimitButtonClick()
+	//      Purpose: the customary Paint.NET "perform" wrapper to the manual event trigger method
+	// ..Alterations: modified the following:
+	//    public class HistoryForm : FloatingToolForm
+	//    private void dotNetToolbar_ButtonClick(object sender, DotNetWidgets.DotNetToolbarItemClickEventArgs e)
+	//    private void historyControl_HistoryChanged(object sender, System.EventArgs e)
+	// Most Recent Changes: Michael Kelsey
+	// ..Alterations: add comment header block
+
+
     public class HistoryForm
         : FloatingToolForm
     {
@@ -20,6 +45,7 @@ namespace PaintDotNet
         private DotNetWidgets.DotNetToolbarButtonItem redoButton;
         private DotNetWidgets.DotNetToolbarButtonItem fastForwardButton;
         private DotNetWidgets.DotNetToolbarButtonItem rewindButton;
+        private DotNetWidgets.DotNetToolbarButtonItem limitButton;
         private System.ComponentModel.IContainer components;
 
         public HistoryControl HistoryControl
@@ -37,9 +63,6 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            //
-            // TODO: Add any constructor code after InitializeComponent call
-            //
             imageList.TransparentColor = Color.FromArgb(192, 192, 192);
 
             int clearHistoryIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuLayersDeleteLayerIcon.bmp"), imageList.TransparentColor);
@@ -47,12 +70,14 @@ namespace PaintDotNet
             int undoIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuEditUndoIcon.bmp"), imageList.TransparentColor);
             int redoIndex = imageList.Images.Add(Utility.GetImageResource("Icons.MenuEditRedoIcon.bmp"), imageList.TransparentColor);
             int fastForwardIndex = imageList.Images.Add(Utility.GetImageResource("Icons.HistoryFastForwardIcon.bmp"), imageList.TransparentColor);
+            int limitIndex = imageList.Images.Add(Utility.GetImageResource("Icons.HistoryLimitIcon.bmp"), imageList.TransparentColor);
 
             clearHistoryButton.ImageIndex = clearHistoryIndex;
             rewindButton.ImageIndex = rewindIndex;
             undoButton.ImageIndex = undoIndex;
             redoButton.ImageIndex = redoIndex;
             fastForwardButton.ImageIndex = fastForwardIndex;
+            limitButton.ImageIndex = limitIndex;
         }
 
         protected override void OnLayout(LayoutEventArgs levent)
@@ -97,6 +122,7 @@ namespace PaintDotNet
             this.redoButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.fastForwardButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.clearHistoryButton = new DotNetWidgets.DotNetToolbarButtonItem();
+            this.limitButton = new DotNetWidgets.DotNetToolbarButtonItem();
             this.imageList = new System.Windows.Forms.ImageList(this.components);
             this.SuspendLayout();
             // 
@@ -117,6 +143,7 @@ namespace PaintDotNet
             this.dotNetToolbar.Buttons.Add(this.redoButton);
             this.dotNetToolbar.Buttons.Add(this.fastForwardButton);
             this.dotNetToolbar.Buttons.Add(this.clearHistoryButton);
+            this.dotNetToolbar.Buttons.Add(this.limitButton);
             this.dotNetToolbar.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.dotNetToolbar.DrawGrabHandle = false;
             this.dotNetToolbar.ImageList = this.imageList;
@@ -130,7 +157,7 @@ namespace PaintDotNet
             // 
             // rewindButton
             // 
-            this.rewindButton.ToolTipText = "Rewind (Undo All)";
+            this.rewindButton.ToolTipText = "Undo All (Rewind)";
             // 
             // undoButton
             // 
@@ -142,11 +169,15 @@ namespace PaintDotNet
             // 
             // fastForwardButton
             // 
-            this.fastForwardButton.ToolTipText = "Fast Forward (Redo All)";
+            this.fastForwardButton.ToolTipText = "Redo All (Fast Forward)";
             // 
             // clearHistoryButton
             // 
             this.clearHistoryButton.ToolTipText = "Clear History";
+            //
+            // limitHistoryButton
+            //
+            this.limitButton.ToolTipText = "Limit History";
             // 
             // imageList
             // 
@@ -239,6 +270,20 @@ namespace PaintDotNet
             OnFastForwardButtonClicked();
         }
 
+        public event EventHandler LimitButtonClicked;
+        protected virtual void OnLimitButtonClicked()
+        {
+            if (LimitButtonClicked != null)
+            {
+                LimitButtonClicked(this, EventArgs.Empty);
+            }
+        }
+
+        public void PerformLimitButtonClick()
+        {
+            OnLimitButtonClicked();
+        }
+
         private void dotNetToolbar_ButtonClick(object sender, DotNetWidgets.DotNetToolbarItemClickEventArgs e)
         {
             if (e.Button == clearHistoryButton)
@@ -261,6 +306,10 @@ namespace PaintDotNet
             {
                 OnFastForwardButtonClicked();
             }
+            else if (e.Button == limitButton)
+            {
+                OnLimitButtonClicked();
+            }
         }
 
         private void HistoryForm_Enter(object sender, System.EventArgs e)
@@ -270,6 +319,11 @@ namespace PaintDotNet
 
         private void historyControl_HistoryChanged(object sender, System.EventArgs e)
         {
+            if (AttachControl != null) 
+            {
+                AttachControl.Focus();
+            }
+
             // Find reasons to disable the rewind and undo buttons
             if (historyControl.HistoryStack.UndoStack.Count <= 1)
             {

@@ -18,9 +18,11 @@ namespace PaintDotNet
         : System.Windows.Forms.Form
     {
         private bool enableOpacity = true;
+        private double ourOpacity = 1.0; // store opacity setting so that when we go from disabled->enabled opacity we can set the correct value
         private System.Windows.Forms.ToolTip toolTipSentinel;
         private System.Windows.Forms.Control fixNoToolTipsAndFocusBugSentinel;
         private System.ComponentModel.IContainer components;
+        private System.Windows.Forms.Timer win2kTsDetectionTimer; // this timer is used in Win2K so we can poll every few seconds to see if we are running in a remote session
 
         private static readonly Skybound.VisualStyles.VisualStyleProvider visualStyleProvider = 
             new Skybound.VisualStyles.VisualStyleProvider();
@@ -32,16 +34,23 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            //
-            // TODO: Add any constructor code after InitializeComponent call
-            //
             toolTipSentinel.SetToolTip(fixNoToolTipsAndFocusBugSentinel, "fixed");
         }
 
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated (e);
-            SafeNativeMethods.WTSRegisterSessionNotification(this.Handle, SafeNativeMethods.NOTIFY_FOR_ALL_SESSIONS);
+
+            try
+            {
+                SafeNativeMethods.WTSRegisterSessionNotification(this.Handle, SafeNativeMethods.NOTIFY_FOR_ALL_SESSIONS);
+            }
+
+            catch (EntryPointNotFoundException)
+            {
+                win2kTsDetectionTimer.Enabled = true;
+            }
+
             DecideOpacitySetting();
             OnRemoteSessionChange();
         }
@@ -49,7 +58,17 @@ namespace PaintDotNet
         protected override void OnHandleDestroyed(EventArgs e)
         {
             base.OnHandleDestroyed (e);
-            SafeNativeMethods.WTSUnRegisterSessionNotification(this.Handle);
+
+            win2kTsDetectionTimer.Enabled = false;
+
+            try
+            {
+                SafeNativeMethods.WTSUnRegisterSessionNotification(this.Handle);
+            }
+
+            catch (EntryPointNotFoundException)
+            {
+            }
         }
 
         protected override void OnLoad(EventArgs e)
@@ -114,7 +133,7 @@ namespace PaintDotNet
         {
             get
             {
-                return base.Opacity;
+                return ourOpacity;
             }
 
             set
@@ -123,6 +142,8 @@ namespace PaintDotNet
                 {
                     base.Opacity = value;
                 }
+
+                this.ourOpacity = value;
             }
         }
 
@@ -134,7 +155,8 @@ namespace PaintDotNet
             }
 
             public const int SM_REMOTESESSION = 0x1000;
-            public const uint WM_WTSSESSION_CHANGE = 0x2b1;
+            public const int WM_WTSSESSION_CHANGE = 0x2b1;
+            public const int WM_MOVING = 0x0216;
             public const uint NOTIFY_FOR_ALL_SESSIONS = 1;
             public const uint NOTIFY_FOR_THIS_SESSION = 0;
 
@@ -166,23 +188,81 @@ namespace PaintDotNet
         {
             if (IsRemoteSession())
             {
-                this.Opacity = 1.0;
+                try
+                {
+                    base.Opacity = 1.0;
+                }
+
+                // This fails in certain odd situations (bug #746), so we just eat the exception.
+                catch (System.ComponentModel.Win32Exception)
+                {
+                }
+
                 enableOpacity = false;
             }
             else
             {
                 enableOpacity = true;
+
+                // This fails in certain odd situations (bug #746), so we just eat the exception.
+                try
+                {
+                    base.Opacity = ourOpacity;
+                }
+
+                catch (System.ComponentModel.Win32Exception)
+                {
+                }
             }
         }
 
         protected override void WndProc(ref Message m)
         {
-            base.WndProc (ref m);
-
-            if (m.Msg == SafeNativeMethods.WM_WTSSESSION_CHANGE)
+            switch (m.Msg)
             {
-                DecideOpacitySetting();
-                OnRemoteSessionChange();
+                case SafeNativeMethods.WM_WTSSESSION_CHANGE:
+                    DecideOpacitySetting();
+                    OnRemoteSessionChange();
+                    break;
+
+                case SafeNativeMethods.WM_MOVING:
+                unsafe
+                {
+                    int* p = (int*)m.LParam;
+
+                    // The location is defined as two points, one in the top left, and one in the bottom right
+                    Point a = new Point((int)p[0],(int)p[1]);
+                    Point b = new Point((int)p[2],(int)p[3]);
+
+                    // Calculates the x,y and width, height of the rectangle
+                    Rectangle rect = new Rectangle(a.X,a.Y,b.X - a.X,b.Y - a.Y);
+                    
+                    MovingEventArgs mea = new MovingEventArgs(rect);
+                    
+                    OnMoving(mea); // The call
+
+                    // Grabs the new position of the rectangle, and turns it into the two points version
+                    p[0] = mea.Rectangle.X;
+                    p[1] = mea.Rectangle.Y;
+                    p[2] = mea.Rectangle.X + mea.Rectangle.Width;
+                    p[3] = mea.Rectangle.Y + mea.Rectangle.Height;
+
+                    m.Result = new IntPtr(1); // return that it was successfull
+                }
+                break;
+
+                default:
+                    base.WndProc (ref m);
+                    break;
+            }
+        }
+        
+        public event MovingEventHandler Moving;
+        protected virtual void OnMoving(MovingEventArgs mea)
+        {
+            if (Moving != null)
+            {
+                Moving(this, mea);
             }
         }
 
@@ -223,6 +303,7 @@ namespace PaintDotNet
             this.components = new System.ComponentModel.Container();
             this.toolTipSentinel = new System.Windows.Forms.ToolTip(this.components);
             this.fixNoToolTipsAndFocusBugSentinel = new System.Windows.Forms.Control();
+            this.win2kTsDetectionTimer = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // fixNoToolTipsAndFocusBugSentinel
@@ -233,6 +314,11 @@ namespace PaintDotNet
             this.fixNoToolTipsAndFocusBugSentinel.TabIndex = 0;
             this.fixNoToolTipsAndFocusBugSentinel.TabStop = false;
             this.fixNoToolTipsAndFocusBugSentinel.Text = "control1";
+            // 
+            // win2kTsDetectionTimer
+            // 
+            this.win2kTsDetectionTimer.Interval = 5000;
+            this.win2kTsDetectionTimer.Tick += new System.EventHandler(this.win2kTsDetectionTimer_Tick);
             // 
             // PdnBaseForm
             // 
@@ -247,5 +333,10 @@ namespace PaintDotNet
 
         }
         #endregion
+
+        private void win2kTsDetectionTimer_Tick(object sender, System.EventArgs e)
+        {
+            DecideOpacitySetting();
+        }
     }
 }

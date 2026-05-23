@@ -10,7 +10,7 @@ namespace PaintDotNet.Effects
         : ConvolutionFilterEffect, IConfigurableEffect
     {
         public BlurEffect()
-            : base("Blur", "Blurs the image.", null)
+            : base("Blur", "Blurs the image.", Utility.GetImageResource("Icons.BlurEffect.bmp"), System.Windows.Forms.Shortcut.CtrlShiftB)
         {
         }
 
@@ -28,6 +28,10 @@ namespace PaintDotNet.Effects
             aecg.Text = "Blur";
             aecg.SliderMinimum = 1;
             aecg.SliderMaximum = 16;
+            aecg.SliderLabel = "Radius";
+            aecg.SliderUnitsName = "pixels";
+
+			aecg.Icon = Utility.GetIconResource("Icons.BlurEffect.bmp");
             return aecg;
         }
 
