@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -88,6 +88,9 @@ namespace PaintDotNet.Setup
 
         private void LoadMirrorInfo(out Image mirrorImage, out string mirrorClickUrl)
         {
+            mirrorImage = null;
+            mirrorClickUrl = null;
+
             try
             {
                 FileInfo mirrorCfgInfo = new FileInfo("MirrorBanner.cfg");
@@ -98,27 +101,64 @@ namespace PaintDotNet.Setup
                     throw new Exception();
                 }
 
-                StreamReader mciReader = mirrorCfgInfo.OpenText();
-                string clickUrl = mciReader.ReadLine();
-
-                const string clickUrlText = "ClickUrl=";
-                int clickUrlIndex = clickUrl.IndexOf(clickUrlText);
-
-                if (clickUrlIndex != 0)
+                using (StreamReader mciReader = mirrorCfgInfo.OpenText())
                 {
-                    throw new Exception();
-                }
+                    while (true)
+                    {
+                        string textLine = mciReader.ReadLine();
 
-                string url = clickUrl.Substring(clickUrlText.Length);
-                mirrorClickUrl = url;
+                        if (textLine == null || textLine.Length == 0)
+                        {
+                            break;
+                        }
 
-                using (Stream mirrorBannerStream = new FileStream("MirrorBanner.png", FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    mirrorImage = Image.FromStream(mirrorBannerStream);
+                        const string clickUrlText = "ClickUrl=";
+                        const string localeFilterText = "LocaleFilter=en*"; // right now the only accepted filter is 'en*', for 'only display this to english users'
+
+                        int clickUrlIndex = textLine.IndexOf(clickUrlText);
+                        int localeFilterIndex = textLine.IndexOf(localeFilterText);
+
+                        if (clickUrlIndex == 0)
+                        {
+                            string url = textLine.Substring(clickUrlText.Length);
+                            mirrorClickUrl = url;
+
+                            using (Stream mirrorBannerStream = new FileStream("MirrorBanner.png", FileMode.Open, FileAccess.Read, FileShare.Read))
+                            {
+                                mirrorImage = Image.FromStream(mirrorBannerStream);
+                            }
+                        }
+                        else if (localeFilterIndex == 0)
+                        {
+                            CultureInfo culture_en = new CultureInfo("en");
+                            CultureInfo culture_en_US = new CultureInfo("en-US");
+                            CultureInfo culture_current = PdnResources.Culture;
+
+                            bool a = culture_current.Equals(culture_en_US);
+                            bool b = culture_current.Equals(culture_en);
+                            bool c = (culture_current.Parent != null && culture_current.Parent.Equals(culture_en));
+                            bool d = culture_current.Equals(CultureInfo.InvariantCulture);
+
+                            if (a || b || c || d)
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                mirrorImage = null;
+                                mirrorClickUrl = null;
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            throw new Exception();
+                        }
+                    }
                 }
             }
 
-            catch
+            catch (Exception)
             {
                 mirrorImage = null;
                 mirrorClickUrl = null;
@@ -248,6 +288,24 @@ namespace PaintDotNet.Setup
                 }
             }
 
+            // If FileTypes/DdsFileType.dll still exists, then delete it. This is because
+            // I've seen the old version (1.10 or ealier) "stick around" even though we
+            // are trying to overwrite it with 1.11+
+            try
+            {
+                string ddsFileTypePath = Path.Combine(targetDir, @"FileTypes\DdsFileType.dll");
+
+                if (File.Exists(ddsFileTypePath))
+                {
+                    File.Delete(ddsFileTypePath);
+                }
+            }
+
+            catch (Exception)
+            {
+                // But don't bomb out if there's an error
+            }
+
             // Proceed with installation
             this.infoText.Text = this.installingText;
 
@@ -259,9 +317,6 @@ namespace PaintDotNet.Setup
             // be available when Windows Installer needs to refer to it.
             FileInfo info = new FileInfo(originalPackagePath);
             info.CopyTo(dstPackagePath, true);
-
-            // Keep an open file handle so that setupngen.exe cannot delete the file.
-            // This happens if the current installation of Paint.NET 
 
             // We need to set the Target Platform property of the MSI before we install it.
             // This way if the user types "C:\Program Files\Whatever" on an x64 system, it will

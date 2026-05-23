@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -306,6 +306,52 @@ namespace PaintDotNet.SystemLayer
 
                 return mhz;
             }
+        }
+
+        private static ProcessorFeature features = (ProcessorFeature)0;
+
+        public static ProcessorFeature Features
+        {
+            get
+            {
+                if (features == (ProcessorFeature)0)
+                {
+                    ProcessorFeature newFeatures = (ProcessorFeature)0;
+
+                    // DEP
+                    if (SafeNativeMethods.IsProcessorFeaturePresent(NativeConstants.PF_NX_ENABLED))
+                    {
+                        newFeatures |= ProcessorFeature.DEP;
+                    }
+
+                    // SSE
+                    if (SafeNativeMethods.IsProcessorFeaturePresent(NativeConstants.PF_XMMI_INSTRUCTIONS_AVAILABLE))
+                    {
+                        newFeatures |= ProcessorFeature.SSE;
+                    }
+
+                    // SSE2
+                    if (SafeNativeMethods.IsProcessorFeaturePresent(NativeConstants.PF_XMMI64_INSTRUCTIONS_AVAILABLE))
+                    {
+                        newFeatures |= ProcessorFeature.SSE2;
+                    }
+
+                    // SSE3
+                    if (SafeNativeMethods.IsProcessorFeaturePresent(NativeConstants.PF_SSE3_INSTRUCTIONS_AVAILABLE))
+                    {
+                        newFeatures |= ProcessorFeature.SSE3;
+                    }
+
+                    features = newFeatures;
+                }
+
+                return features;
+            }
+        }
+
+        public static bool IsFeaturePresent(ProcessorFeature feature)
+        {
+            return ((Features & feature) == feature);
         }
     }
 }

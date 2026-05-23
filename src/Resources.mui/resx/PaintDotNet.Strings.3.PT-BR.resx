@@ -817,8 +817,14 @@ Tecla de atalho: X</value>
   <data name="PenConfigWidget.Error.TooSmall" xml:space="preserve">
     <value>O tamanho é menor do que 1</value>
   </data>
+  <data name="PenConfigWidget.Error.TooSmall.Format" xml:space="preserve">
+    <value>O tamanho é menor do que {0}</value>
+  </data>
   <data name="PenConfigWidget.Error.TooLarge" xml:space="preserve">
-    <value>O tamanho é maior do que 100</value>
+    <value>O tamanho é maior que 500</value>
+  </data>
+  <data name="PenConfigWidget.Error.TooLarge.Format" xml:space="preserve">
+    <value>O tamanho é maior do que {0}</value>
   </data>
   <data name="ProgressDialog.PercentText.Text.Format" xml:space="preserve">
     <value>{0}%</value>
@@ -1037,11 +1043,11 @@ Tecla de atalho: X</value>
     <value>Número inválido</value>
   </data>
   <data name="TextConfigWidget.Error.TooSmall.Format" xml:space="preserve">
-    <value>O tamanho é menor do que {0}</value>
+    <value>O tamanho é menor que {0}</value>
     <comment>{0} is an integer</comment>
   </data>
   <data name="TextConfigWidget.Error.TooLarge.Format" xml:space="preserve">
-    <value>O tamanho é maior do que {0}</value>
+    <value>O tamanho é maior que {0}</value>
     <comment>{0} is an integer</comment>
   </data>
   <data name="TextConfigWidget.FontLabel.Text" xml:space="preserve">
@@ -1212,6 +1218,9 @@ Tecla de atalho: X</value>
 Salvo com: Paint.NET v{0}
 Versão atual: Paint.NET v{1}</value>
     <comment>{0} and {1} are version numbers</comment>
+  </data>
+  <data name="FileDialog.PathTooLongException.Message">
+    <value>O nome do arquivo é muito longo. Use um nome mais curto. </value>
   </data>
   <data name="FileDialog.Types.AllImages" xml:space="preserve">
     <value>Todos os tipos de imagens</value>
@@ -1565,10 +1574,13 @@ Deseja expandir a tela para fazer caber a imagem?</value>
     <value>&amp;Tópicos da ajuda</value>
   </data>
   <data name="Menu.Help.PdnWebsite.Text" xml:space="preserve">
-    <value>Website do &amp;Paint.NET </value>
+    <value>&amp;Website do Paint.NET </value>
+  </data>
+  <data name="Menu.Help.PdnSearch.Text">
+    <value>Pes&amp;quisar no Paint.NET...</value>
   </data>
   <data name="Menu.Help.Donate.Text" xml:space="preserve">
-    <value>&amp;Fazer uma doação...</value>
+    <value>Fazer uma &amp;doação...</value>
   </data>
   <data name="Menu.Help.Forum.Text" xml:space="preserve">
     <value>&amp;Forum</value>
@@ -2242,6 +2254,9 @@ Clique em OK para ir ao web site do Paint.Net e baixar uma versão mais atual. <
   </data>
   <data name="GifSaveConfigWidget.ThresholdInfoLabel.Text">
     <value>Pixels com um valor alpha menor que o limite serão totalmente transparentes. </value>
+  </data>
+  <data name="SetupWizard.MustCloseAppFirst.Text">
+    <value>Verifique que o Paint.NET está fechado e clique em Tentar novamente ou clique em Cancelar para sair do assistente de instalação.</value>
   </data>
   <data name="SetupWizard.HelpText" xml:space="preserve">
     <value>Ajuda da instalação do Paint.Net
@@ -2927,5 +2942,89 @@ Tecla de atalho: /</value>
     <value>{0} já existe.
 Deseja substituir?</value>
     <comment>{0} is a relative filename. e.g. "Untitled.png"</comment>
+  </data>
+  <data name="InkSketchEffect.Name">
+    <value>Esboço com tinta</value>
+  </data>
+  <data name="InkSketchEffect.ConfigDialog.InkOutlineLabel">
+    <value>Contorno com tinta</value>
+  </data>
+  <data name="InkSketchEffect.ConfigDialog.ColoringLabel">
+    <value>Coloração</value>
+  </data>  
+  <data name="SoftenPortraitEffect.Name">
+    <value>Suavizar imagem</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.SoftnessLabel">
+    <value>Suavidade</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.LightingLabel">
+    <value>Luminosidade</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.WarmthLabel">
+    <value>Intensidade</value>
+  </data>
+  <data name="DdsFileType.Name">
+    <value>DirectDraw Surface (DDS)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.RangeFit.Text">
+    <value>Ajuste por faixa (Rápido/Baixa qualidade)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.ClusterFit.Text">
+    <value>Ajuste por cluster (Lento/Alta qualidade)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.IterativeFit.Text">
+    <value>Ajuste iterativo (Mais lento/Alta qualidade)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.Uniform.Text">
+    <value>Uniforme</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.Perceptual.Text">
+    <value>Perceptivo</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.GenerateMipMaps.Text">
+    <value>Gerar imagens MIP</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.WeightColourByAlpha">
+    <value>Avaliar cores pelo valor Alpha</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT1">
+    <value>DXT1 (Opaco/1-bit Alpha)</value></data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT3">
+    <value>DXT3 ( Alpha explícito)</value></data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT5">
+    <value>DXT5 (Alpha interpolado)</value></data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A8R8G8B8">
+    <value>A8R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.X8R8G8B8">
+    <value>X8R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A8B8G8R8">
+    <value>A8B8G8R8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.X8B8G8R8">
+    <value>X8B8G8R8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A1R5G5B5">
+    <value>A1R5G5B5</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A4R4G4B4">
+    <value>A4R4G4B4</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.R8G8B8">
+    <value>R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.R5G6B5">
+    <value>R5G6B5</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.CompressorTypeLabel.Text">
+    <value>Tipo de compressor</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.ErrorMetricLabel.Text">
+    <value>Métrica de erro</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.AdditionalOptions.Text">
+    <value>Opções adicionais</value>
   </data>
 </root>

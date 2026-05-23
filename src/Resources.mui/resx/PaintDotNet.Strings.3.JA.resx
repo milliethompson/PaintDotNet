@@ -817,8 +817,14 @@
   <data name="PenConfigWidget.Error.TooSmall" xml:space="preserve">
     <value>1 より小さいサイズです。</value>
   </data>
+  <data name="PenConfigWidget.Error.TooSmall.Format" xml:space="preserve">
+    <value>{0} より小さいサイズです。</value>
+  </data>
   <data name="PenConfigWidget.Error.TooLarge" xml:space="preserve">
-    <value>サイズが 100 を超えています。</value>
+    <value>サイズが 500 を超えています。</value>
+  </data>
+  <data name="PenConfigWidget.Error.TooLarge.Format" xml:space="preserve">
+    <value>{0} より大きいサイズです。</value>
   </data>
   <data name="ProgressDialog.PercentText.Text.Format" xml:space="preserve">
     <value>{0}%</value>
@@ -1213,6 +1219,9 @@
 現在のバージョン: Paint.NET v{1}</value>
     <comment>{0} and {1} are version numbers</comment>
   </data>
+  <data name="FileDialog.PathTooLongException.Message">
+    <value>ファイル名が長すぎます。短い名前を指定してください。</value>
+  </data>
   <data name="FileDialog.Types.AllImages" xml:space="preserve">
     <value>すべてのイメージの種類</value>
   </data>
@@ -1566,6 +1575,9 @@
   </data>
   <data name="Menu.Help.PdnWebsite.Text" xml:space="preserve">
     <value>Paint.NET Web サイト(&amp;P)</value>
+  </data>
+  <data name="Menu.Help.PdnSearch.Text">
+    <value>Paint.NET 検索(&amp;S)...</value>
   </data>
   <data name="Menu.Help.Donate.Text" xml:space="preserve">
     <value>寄付(&amp;D)...</value>
@@ -2244,6 +2256,9 @@ Paint.NET Web サイトから新しいバージョンをダウンロードする
   </data>
   <data name="GifSaveConfigWidget.ThresholdInfoLabel.Text">
     <value>しきい値より小さいアルファ値のピクセルは完全に透明になります。</value>
+  </data>
+  <data name="SetupWizard.MustCloseAppFirst.Text">
+    <value>Paint.NET が閉じていることを確認してから、再試行をクリックしてください。または、キャンセルをクリックしてセットアップ ウィザードを終了してください。</value>
   </data>
   <data name="SetupWizard.HelpText" xml:space="preserve">
     <value>Paint.NET インストーラのヘルプ
@@ -2930,5 +2945,92 @@ www.getpaint.net</value>
     <value>{0} は既に存在します。
 置き換えますか?</value>
     <comment>{0} is a relative filename. e.g. "Untitled.png"</comment>
+  </data>
+  <data name="InkSketchEffect.Name">
+    <value>インク スケッチ</value>
+  </data>
+  <data name="InkSketchEffect.ConfigDialog.InkOutlineLabel">
+    <value>インク アウトライン</value>
+  </data>
+  <data name="InkSketchEffect.ConfigDialog.ColoringLabel">
+    <value>色分け</value>
+  </data>
+  <data name="SoftenPortraitEffect.Name">
+    <value>ポートレイトのぼかし</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.SoftnessLabel">
+    <value>ぼかし</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.LightingLabel">
+    <value>光源</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.WarmthLabel">
+    <value>あたたかみ</value>
+  </data>
+  <data name="DdsFileType.Name">
+    <value>DirectDraw サーフェイス (DDS)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.RangeFit.Text">
+    <value>範囲フィット (高速/低品質)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.ClusterFit.Text">
+    <value>クラスタ フィット(低速/高画質)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.IterativeFit.Text">
+    <value>反復フィット (低速/高品質)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.Uniform.Text">
+    <value>外周</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.Perceptual.Text">
+    <value>知覚的</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.GenerateMipMaps.Text">
+    <value>ミップ マップの生成</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.WeightColourByAlpha">
+    <value>アルファによる色の重み</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT1">
+    <value>DXT1 (塗りつぶし/1 ビット アルファ)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT3">
+    <value>DXT3 (明示的アルファ)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT5">
+    <value>DXT5 (補間アルファ)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A8R8G8B8">
+    <value>A8R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.X8R8G8B8">
+    <value>X8R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A8B8G8R8">
+    <value>A8B8G8R8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.X8B8G8R8">
+    <value>X8B8G8R8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A1R5G5B5">
+    <value>A1R5G5B5</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A4R4G4B4">
+    <value>A4R4G4B4</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.R8G8B8">
+    <value>R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.R5G6B5">
+    <value>R5G6B5</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.CompressorTypeLabel.Text">
+    <value>圧縮の種類</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.ErrorMetricLabel.Text">
+    <value>エラー メトリック</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.AdditionalOptions.Text">
+    <value>追加オプション</value>
   </data>
 </root>

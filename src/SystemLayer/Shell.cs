@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -9,6 +9,7 @@
 
 using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -118,7 +119,7 @@ namespace PaintDotNet.SystemLayer
 
                         try
                         {
-                            Shell.Execute(form, "PdnRepair.exe", "/noPause", false, ExecuteWaitType.WaitForExit);
+                            Shell.Execute(form, "PdnRepair.exe", "/noPause", ExecutePrivilege.AsInvokerOrAsManifest, ExecuteWaitType.WaitForExit);
                         }
 
                         catch (Exception ex)
@@ -212,33 +213,12 @@ namespace PaintDotNet.SystemLayer
             string args,
             bool requireAdmin)
         {
-            Execute(parent, exePath, args, requireAdmin, ExecuteWaitType.ReturnImmediately);
-        }
-
-        public enum ExecuteWaitType
-        {
-            /// <summary>
-            /// Returns immediately after executing without waiting for the task to finish.
-            /// </summary>
-            ReturnImmediately,
-
-            /// <summary>
-            /// Waits until the task exits before returning control to the calling method.
-            /// </summary>
-            WaitForExit,
-
-            /// <summary>
-            /// Returns immediately after executing without waiting for the task to finish.
-            /// However, another task will be spawned that will wait for the requested task
-            /// to finish, and it will then relaunch Paint.NET if the task was successful.
-            /// This is only intended to be used by the Paint.NET updater so that it can
-            /// relaunch Paint.NET with the same user and privilege-level that initiated
-            /// the update.
-            /// </summary>
-            RelaunchPdnOnExit
+            Execute(parent, exePath, args, requireAdmin ? ExecutePrivilege.RequireAdmin : ExecutePrivilege.AsInvokerOrAsManifest, ExecuteWaitType.ReturnImmediately);
         }
 
         private const string updateExeFileName = "UpdateMonitor.exe";
+
+        private delegate int ExecuteHandOff(IWin32Window parent, string exePath, string args, out IntPtr hProcess);
 
         /// <summary>
         /// Uses the shell to execute the command. This method must only be used by Paint.NET
@@ -255,25 +235,25 @@ namespace PaintDotNet.SystemLayer
         /// <param name="args">
         /// The command-line arguments for the executable.
         /// </param>
-        /// <param name="requireAdmin">
-        /// Whether or not administrator privilege is required to launch this. However,
-        /// if the executable is already marked as requiring administrator privilege
+        /// <param name="execPrivilege">
+        /// The privileges to execute the new process with.
+        /// If the executable is already marked as requiring administrator privilege
         /// (e.g. via a "requiresAdministrator" UAC manifest), this parameter should be 
-        /// set to false.
+        /// set to AsInvokerOrAsManifest.
         /// </param>
         /// <remarks>
         /// If administrator privilege is required, a consent UI may be displayed asking the
         /// user to approve the action. A parent window must be provided in this case so that
         /// the consent UI will know where to position itself. Administrator privilege is
-        /// required if requireAdmin is set to true, or if the executable being launched
+        /// required if execPrivilege is set to RequireAdmin, or if the executable being launched
         /// has a manifest declaring that it requires this privilege and if the operating
         /// system recognizes the manifest.
         /// </remarks>
         /// <exception cref="ArgumentException">
-        /// requireAdmin was true, but parent was null.
+        /// execPrivilege was RequireAdmin, but parent was null.
         /// </exception>
         /// <exception cref="SecurityException">
-        /// requireAdmin was true, but the user does not have this privilege, nor do they 
+        /// execPrivilege was RequireAdmin, but the user does not have this privilege, nor do they 
         /// have the ability to acquire or elevate to obtain this privilege.
         /// </exception>
         /// <exception cref="Win32Exception">
@@ -282,18 +262,16 @@ namespace PaintDotNet.SystemLayer
         public static void Execute(
             IWin32Window parent, 
             string exePath, 
-            string args, 
-            bool requireAdmin, 
-            ExecuteWaitType executeWaitType)
+            string args,
+            ExecutePrivilege execPrivilege, 
+            ExecuteWaitType execWaitType)
         {
-            const string runAs = "runas";
-
             if (exePath == null)
             {
                 throw new ArgumentNullException("exePath");
             }
 
-            if (requireAdmin && parent == null)
+            if (execPrivilege == ExecutePrivilege.RequireAdmin && parent == null)
             {
                 throw new ArgumentException("If requireAdmin is true, a parent window must be provided");
             }
@@ -301,91 +279,88 @@ namespace PaintDotNet.SystemLayer
             // If this action requires admin privilege, but the user does not have this
             // privilege and is not capable of acquiring this privilege, then we will
             // throw an exception.
-            if (requireAdmin && !Security.IsAdministrator && !Security.CanElevateToAdministrator)
+            if (execPrivilege == ExecutePrivilege.RequireAdmin && 
+                !Security.IsAdministrator && 
+                !Security.CanElevateToAdministrator)
             {
                 throw new SecurityException("Executable requires administrator privilege, but user is not an administrator and cannot elevate");
             }
 
-            NativeStructs.SHELLEXECUTEINFO sei = new NativeStructs.SHELLEXECUTEINFO();
-            sei.cbSize = (uint)Marshal.SizeOf(typeof(NativeStructs.SHELLEXECUTEINFO));
-
-            sei.fMask =
-                NativeConstants.SEE_MASK_NOCLOSEPROCESS |
-                NativeConstants.SEE_MASK_NO_CONSOLE |
-                NativeConstants.SEE_MASK_FLAG_DDEWAIT;
-
-            if (requireAdmin && !Security.IsAdministrator)
+            ExecuteHandOff executeHandOff = null;
+            switch (execPrivilege)
             {
-                sei.lpVerb = runAs;
-            }
+                case ExecutePrivilege.AsInvokerOrAsManifest:
+                    executeHandOff = new ExecuteHandOff(ExecAsInvokerOrAsManifest);
+                    break;
 
-            string dir;
+                case ExecutePrivilege.RequireAdmin:
+                    executeHandOff = new ExecuteHandOff(ExecRequireAdmin);
+                    break;
 
-            try
-            {
-                dir = Path.GetDirectoryName(exePath);
-            }
+                case ExecutePrivilege.RequireNonAdminIfPossible:
+                    if (Security.CanLaunchNonAdminProcess)
+                    {
+                        executeHandOff = new ExecuteHandOff(ExecRequireNonAdmin);
+                    }
+                    else
+                    {
+                        executeHandOff = new ExecuteHandOff(ExecAsInvokerOrAsManifest);
+                    }
+                    break;
 
-            catch (Exception)
-            {
-                dir = null;
-            }
-
-            sei.lpDirectory = dir;
-
-            sei.lpFile = exePath;
-            sei.lpParameters = args;
-            sei.nShow = NativeConstants.SW_SHOWNORMAL;
-
-            if (parent != null)
-            {
-                sei.hwnd = parent.Handle;
+                default:
+                    throw new InvalidEnumArgumentException("ExecutePrivilege");
             }
 
             string updateMonitorExePath = null;
-            if (executeWaitType == ExecuteWaitType.RelaunchPdnOnExit)
+            if (execWaitType == ExecuteWaitType.RelaunchPdnOnExit)
             {
                 RelaunchPdnHelperPart1(out updateMonitorExePath);
             }
 
-            bool bResult = NativeMethods.ShellExecuteExW(ref sei);
+            IntPtr hProcess = IntPtr.Zero;
+            int nResult = executeHandOff(parent, exePath, args, out hProcess);
 
-            if (bResult)
+            if (nResult == NativeConstants.ERROR_SUCCESS)
             {
-                if (executeWaitType == ExecuteWaitType.WaitForExit)
+                if (execWaitType == ExecuteWaitType.WaitForExit)
                 {
-                    SafeNativeMethods.WaitForSingleObject(sei.hProcess, NativeConstants.INFINITE);
+                    SafeNativeMethods.WaitForSingleObject(hProcess, NativeConstants.INFINITE);
                 }
-                else if (executeWaitType == ExecuteWaitType.RelaunchPdnOnExit)
+                else if (execWaitType == ExecuteWaitType.RelaunchPdnOnExit)
                 {
                     bool bResult2 = SafeNativeMethods.SetHandleInformation(
-                        sei.hProcess, 
+                        hProcess, 
                         NativeConstants.HANDLE_FLAG_INHERIT, 
                         NativeConstants.HANDLE_FLAG_INHERIT);
 
-                    RelaunchPdnHelperPart2(updateMonitorExePath, sei.hProcess);
+                    RelaunchPdnHelperPart2(updateMonitorExePath, hProcess);
 
                     // Ensure that we don't close the process handle right away in the next few lines of code.
-                    // It must be inherited by the child process.
-                    sei.hProcess = IntPtr.Zero; 
+                    // It must be inherited by the child process. Yes, this is technically a leak but we are
+                    // planning to terminate in just a moment anyway.
+                    hProcess = IntPtr.Zero; 
                 }
-                else if (executeWaitType == ExecuteWaitType.ReturnImmediately)
+                else if (execWaitType == ExecuteWaitType.ReturnImmediately)
                 {
                 }
 
-                if (sei.hProcess != IntPtr.Zero)
+                if (hProcess != IntPtr.Zero)
                 {
-                    SafeNativeMethods.CloseHandle(sei.hProcess);
-                    sei.hProcess = IntPtr.Zero;
+                    SafeNativeMethods.CloseHandle(hProcess);
+                    hProcess = IntPtr.Zero;
                 }
             }
             else
             {
-                int dwError = Marshal.GetLastWin32Error();
-
-                if (dwError != NativeConstants.ERROR_CANCELLED)
+                if (nResult == NativeConstants.ERROR_CANCELLED ||
+                    nResult == NativeConstants.ERROR_TIMEOUT)
                 {
-                    NativeMethods.ThrowOnWin32Error("ShellExecuteW returned FALSE");
+                    // no problem
+                }
+                else
+                {
+                    NativeMethods.ThrowOnWin32Error("ExecuteHandoff failed", nResult);
                 }
 
                 if (updateMonitorExePath != null)
@@ -404,6 +379,235 @@ namespace PaintDotNet.SystemLayer
             }
 
             GC.KeepAlive(parent);
+        }
+
+        private static int ExecAsInvokerOrAsManifest(IWin32Window parent, string exePath, string args, out IntPtr hProcess)
+        {
+            return ExecShellExecuteEx(parent, exePath, args, null, out hProcess);
+        }
+
+        private static int ExecRequireAdmin(IWin32Window parent, string exePath, string args, out IntPtr hProcess)
+        {
+            const string runAs = "runas";
+            string verb;
+
+            if (Security.IsAdministrator)
+            {
+                verb = null;
+            }
+            else
+            {
+                verb = runAs;
+            }
+
+            return ExecShellExecuteEx(parent, exePath, args, verb, out hProcess);
+        }
+
+        private static int ExecRequireNonAdmin(IWin32Window parent, string exePath, string args, out IntPtr hProcess)
+        {
+            int nError = NativeConstants.ERROR_SUCCESS;
+            string commandLine = "\"" + exePath + "\"" + (args == null ? "" : (" " + args));
+
+            string dir;
+
+            try
+            {
+                dir = Path.GetDirectoryName(exePath);
+            }
+
+            catch (Exception)
+            {
+                dir = null;
+            }
+
+            IntPtr hWndShell = IntPtr.Zero;
+            IntPtr hShellProcess = IntPtr.Zero;
+            IntPtr hShellProcessToken = IntPtr.Zero;
+            IntPtr hTokenCopy = IntPtr.Zero;
+            IntPtr bstrExePath = IntPtr.Zero;
+            IntPtr bstrCommandLine = IntPtr.Zero;
+            IntPtr bstrDir = IntPtr.Zero;
+            NativeStructs.PROCESS_INFORMATION procInfo = new NativeStructs.PROCESS_INFORMATION();
+
+            try
+            {
+                hWndShell = SafeNativeMethods.FindWindowW("Progman", null);
+                if (hWndShell == IntPtr.Zero)
+                {
+                    NativeMethods.ThrowOnWin32Error("FindWindowW() returned NULL");
+                }
+
+                uint dwPID;
+                uint dwThreadId = SafeNativeMethods.GetWindowThreadProcessId(hWndShell, out dwPID);
+                if (0 == dwPID)
+                {
+                    NativeMethods.ThrowOnWin32Error("GetWindowThreadProcessId returned 0", NativeErrors.ERROR_FILE_NOT_FOUND);
+                }
+
+                hShellProcess = NativeMethods.OpenProcess(NativeConstants.PROCESS_QUERY_INFORMATION, false, dwPID);
+                if (IntPtr.Zero == hShellProcess)
+                {
+                    NativeMethods.ThrowOnWin32Error("OpenProcess() returned NULL");
+                }
+
+                bool optResult = NativeMethods.OpenProcessToken(
+                    hShellProcess,
+                    NativeConstants.TOKEN_ASSIGN_PRIMARY | NativeConstants.TOKEN_DUPLICATE | NativeConstants.TOKEN_QUERY,
+                    out hShellProcessToken);
+
+                if (!optResult)
+                {
+                    NativeMethods.ThrowOnWin32Error("OpenProcessToken() returned FALSE");
+                }
+
+                bool dteResult = NativeMethods.DuplicateTokenEx(
+                    hShellProcessToken,
+                    NativeConstants.MAXIMUM_ALLOWED,
+                    IntPtr.Zero,
+                    NativeConstants.SECURITY_IMPERSONATION_LEVEL.SecurityImpersonation,
+                    NativeConstants.TOKEN_TYPE.TokenPrimary,
+                    out hTokenCopy);
+
+                if (!dteResult)
+                {
+                    NativeMethods.ThrowOnWin32Error("DuplicateTokenEx() returned FALSE");
+                }
+
+                bstrExePath = Marshal.StringToBSTR(exePath);
+                bstrCommandLine = Marshal.StringToBSTR(commandLine);
+                bstrDir = Marshal.StringToBSTR(dir);
+
+                bool cpwtResult = NativeMethods.CreateProcessWithTokenW(
+                    hTokenCopy,
+                    0,
+                    bstrExePath,
+                    bstrCommandLine,
+                    0,
+                    IntPtr.Zero,
+                    bstrDir,
+                    IntPtr.Zero,
+                    out procInfo);
+
+                if (cpwtResult)
+                {
+                    hProcess = procInfo.hProcess;
+                    procInfo.hProcess = IntPtr.Zero;
+                    nError = NativeConstants.ERROR_SUCCESS;
+                }
+                else
+                {
+                    hProcess = IntPtr.Zero;
+                    nError = Marshal.GetLastWin32Error();
+                }
+            }
+
+            catch (Win32Exception ex)
+            {
+                Tracing.Ping(ex.ToString());
+                nError = ex.ErrorCode;
+                hProcess = IntPtr.Zero;
+            }
+
+            finally
+            {
+                if (bstrExePath != IntPtr.Zero)
+                {
+                    Marshal.FreeBSTR(bstrExePath);
+                    bstrExePath = IntPtr.Zero;
+                }
+
+                if (bstrCommandLine != IntPtr.Zero)
+                {
+                    Marshal.FreeBSTR(bstrCommandLine);
+                    bstrCommandLine = IntPtr.Zero;
+                }
+
+                if (bstrDir != IntPtr.Zero)
+                {
+                    Marshal.FreeBSTR(bstrDir);
+                    bstrDir = IntPtr.Zero;
+                }
+
+                if (hShellProcess != IntPtr.Zero)
+                {
+                    SafeNativeMethods.CloseHandle(hShellProcess);
+                    hShellProcess = IntPtr.Zero;
+                }
+                
+                if (hShellProcessToken != IntPtr.Zero)
+                {
+                    SafeNativeMethods.CloseHandle(hShellProcessToken);
+                    hShellProcessToken = IntPtr.Zero;
+                }
+
+                if (hTokenCopy != IntPtr.Zero)
+                {
+                    SafeNativeMethods.CloseHandle(hTokenCopy);
+                    hTokenCopy = IntPtr.Zero;
+                }
+
+                if (procInfo.hThread != IntPtr.Zero)
+                {
+                    SafeNativeMethods.CloseHandle(procInfo.hThread);
+                    procInfo.hThread = IntPtr.Zero;
+                }
+
+                if (procInfo.hProcess != IntPtr.Zero)
+                {
+                    SafeNativeMethods.CloseHandle(procInfo.hProcess);
+                    procInfo.hProcess = IntPtr.Zero;
+                }
+            }
+
+            return nError;
+        }
+
+        private static int ExecShellExecuteEx(IWin32Window parent, string exePath, string args, string verb, out IntPtr hProcess)
+        {
+            string dir;
+
+            try
+            {
+                dir = Path.GetDirectoryName(exePath);
+            }
+
+            catch (Exception)
+            {
+                dir = null;
+            }
+
+            NativeStructs.SHELLEXECUTEINFO sei = new NativeStructs.SHELLEXECUTEINFO();
+            sei.cbSize = (uint)Marshal.SizeOf(typeof(NativeStructs.SHELLEXECUTEINFO));
+
+            sei.fMask =
+                NativeConstants.SEE_MASK_NOCLOSEPROCESS |
+                NativeConstants.SEE_MASK_NO_CONSOLE |
+                NativeConstants.SEE_MASK_FLAG_DDEWAIT;
+
+            sei.lpVerb = verb;
+            sei.lpDirectory = dir;
+            sei.lpFile = exePath;
+            sei.lpParameters = args;
+
+            sei.nShow = NativeConstants.SW_SHOWNORMAL;
+
+            if (parent != null)
+            {
+                sei.hwnd = parent.Handle;
+            }
+
+            bool bResult = NativeMethods.ShellExecuteExW(ref sei);
+            hProcess = sei.hProcess;
+            sei.hProcess = IntPtr.Zero;
+
+            int nResult = NativeConstants.ERROR_SUCCESS;
+
+            if (!bResult)
+            {
+                nResult = Marshal.GetLastWin32Error();    
+            }
+
+            return nResult;
         }
 
         private static void RelaunchPdnHelperPart1(out string updateMonitorExePath)
@@ -465,6 +669,7 @@ namespace PaintDotNet.SystemLayer
         /// <summary>
         /// Launches the default browser and opens the given URL.
         /// </summary>
+        /// <param name="url">The URL to show. The maximum length is 512 characters.</param>
         /// <remarks>
         /// This method will not present an error dialog if the URL could not be launched.
         /// Note: This method must only be used by Paint.NET, and not any plugins. It may
@@ -472,18 +677,62 @@ namespace PaintDotNet.SystemLayer
         /// </remarks>
         public static bool LaunchUrl(IWin32Window owner, string url)
         {
-            try
+            if (url.Length > 512)
             {
-                Execute(owner, "\"" + url + "\"", null, false, ExecuteWaitType.ReturnImmediately);
+                throw new ArgumentOutOfRangeException("url.Length must be <= 512");
             }
 
-            catch (Exception ex)
+            bool success = false;
+            string quotedUrl = "\"" + url + "\"";
+            ExecutePrivilege executePrivilege;
+
+            if (!Security.IsAdministrator)
             {
-                Tracing.Ping("Exception while launching url, '" + url + "':" + ex.ToString());
-                return false;
+                executePrivilege = ExecutePrivilege.AsInvokerOrAsManifest;
+            }
+            else
+            {
+                executePrivilege = ExecutePrivilege.RequireNonAdminIfPossible;
             }
 
-            return true;
+            // Method 1. Just launch the url, and hope that the shell figures out the association correctly. 
+            // This method will not work with ExecutePrivilege.RequireNonAdmin though.
+            if (!success && executePrivilege != ExecutePrivilege.RequireNonAdminIfPossible)
+            {
+                try
+                {
+                    Execute(owner, quotedUrl, null, executePrivilege, ExecuteWaitType.ReturnImmediately);
+                    success = true;
+                }
+
+                catch (Exception ex)
+                {
+                    Tracing.Ping("Exception while using method 1 to launch url, " + quotedUrl + ", :" + ex.ToString());
+                    success = false;
+                }
+            }
+
+            // Method 2. Launch the url through explorer
+            if (!success)
+            {
+                const string shellFileLoc = @"%WINDIR%\explorer.exe";
+                string shellExePath = "(n/a)";
+
+                try
+                {
+                    shellExePath = Environment.ExpandEnvironmentVariables(shellFileLoc);
+                    Execute(owner, shellExePath, quotedUrl, executePrivilege, ExecuteWaitType.ReturnImmediately);
+                    success = true;
+                }
+
+                catch (Exception ex)
+                {
+                    MessageBox.Show(owner, "Exception while using method 2 to launch url through '" + shellExePath + "', " + quotedUrl + ", : " + ex.ToString());
+                    success = false;
+                }
+            }
+
+            return success;
         }
 
         [Obsolete("Use PdnInfo.OpenUrl() instead. Shell.LaunchUrl() must only be used by Paint.NET code, not by plugins.", true)]

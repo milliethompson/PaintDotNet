@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -26,6 +26,7 @@ namespace PaintDotNet.Menus
         private PdnMenuItem menuHelpHelpTopics;
         private ToolStripSeparator menuHelpSeparator1;
         private PdnMenuItem menuHelpPdnWebsite;
+        private PdnMenuItem menuHelpPdnSearch;
         private PdnMenuItem menuHelpDonate;
         private PdnMenuItem menuHelpForum;
         private PdnMenuItem menuHelpTutorials;
@@ -59,6 +60,7 @@ namespace PaintDotNet.Menus
             this.menuHelpHelpTopics = new PdnMenuItem();
             this.menuHelpSeparator1 = new ToolStripSeparator();
             this.menuHelpPdnWebsite = new PdnMenuItem();
+            this.menuHelpPdnSearch = new PdnMenuItem();
             this.menuHelpDonate = new PdnMenuItem();
             this.menuHelpForum = new PdnMenuItem();
             this.menuHelpTutorials = new PdnMenuItem();
@@ -79,6 +81,7 @@ namespace PaintDotNet.Menus
                     this.menuHelpHelpTopics,
                     this.menuHelpSeparator1,
                     this.menuHelpPdnWebsite,
+                    this.menuHelpPdnSearch,
                     this.menuHelpDonate,
                     this.menuHelpForum,
                     this.menuHelpTutorials,
@@ -103,6 +106,12 @@ namespace PaintDotNet.Menus
             //
             this.menuHelpPdnWebsite.Name = "PdnWebsite";
             this.menuHelpPdnWebsite.Click += new EventHandler(MenuHelpPdnWebsite_Click);
+            //
+            // menuHelpPdnSearch
+            //
+            this.menuHelpPdnSearch.Name = "PdnSearch";
+            this.menuHelpPdnSearch.Click += new EventHandler(MenuHelpPdnSearchEngine_Click);
+            this.menuHelpPdnSearch.ShortcutKeys = Keys.Control | Keys.E;
             //
             // menuHelpDonate
             //
@@ -153,6 +162,11 @@ namespace PaintDotNet.Menus
             // 
             this.menuHelpAbout.Name = "About";
             this.menuHelpAbout.Click += new System.EventHandler(this.MenuHelpAbout_Click);
+        }
+
+        private void MenuHelpPdnSearchEngine_Click(object sender, EventArgs e)
+        {
+            PdnInfo.LaunchWebSite(AppWorkspace, InvariantStrings.SearchEngineHelpMenu);
         }
 
         private void MenuHelpDonate_Click(object sender, EventArgs e)

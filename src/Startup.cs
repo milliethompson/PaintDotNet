@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -72,7 +72,12 @@ namespace PaintDotNet
                 allArgs = null;
             }
 
-            Shell.Execute(parent, Application.ExecutablePath, allArgs, requireAdmin, Shell.ExecuteWaitType.ReturnImmediately);
+            Shell.Execute(
+                parent, 
+                Application.ExecutablePath, 
+                allArgs, 
+                requireAdmin ? ExecutePrivilege.RequireAdmin : ExecutePrivilege.AsInvokerOrAsManifest, 
+                ExecuteWaitType.ReturnImmediately);
         }
 
         public static void StartNewInstance(IWin32Window parent, string fileName)
@@ -148,6 +153,7 @@ namespace PaintDotNet
             string[] requiredFiles =
                 new string[]
                 {
+                    "FileTypes\\DdsFileType.dll",
                     "ICSharpCode.SharpZipLib.dll",
                     "Interop.WIA.dll",
                     "PaintDotNet.Base.dll",
@@ -168,6 +174,9 @@ namespace PaintDotNet
                     "SetupNgen.exe",
                     "ShellExtension_x64.dll",
                     "ShellExtension_x86.dll",
+                    "Squish_x64.dll",
+                    "Squish_x86.dll",
+                    "Squish_x86_SSE2.dll",
                     "UpdateMonitor.exe",
                     "WiaProxy32.exe"
                 };
@@ -300,7 +309,7 @@ namespace PaintDotNet
             }
             else
             {
-                SingleInstanceManager singleInstanceManager = new SingleInstanceManager("PaintDotNet");
+                SingleInstanceManager singleInstanceManager = new SingleInstanceManager(InvariantStrings.SingleInstanceMonikerName);
 
                 // If this is not the first instance of PDN.exe, then forward the command-line
                 // parameters over to the first instance.
@@ -397,231 +406,306 @@ namespace PaintDotNet
             using (StreamWriter stream = new System.IO.StreamWriter(fullName, true))
             {
                 stream.AutoFlush = true;
+                WriteCrashLog(ex, stream);
+            }
 
-                string headerFormat;
+            string errorFormat;
+            string errorText;
+
+            try
+            {
+                errorFormat = PdnResources.GetString("Startup.UnhandledError.Format");
+            }
+
+            catch (Exception)
+            {
+                errorFormat = InvariantStrings.StartupUnhandledErrorFormatFallback;
+            }
+
+            errorText = string.Format(errorFormat, fileName);
+            Utility.ErrorBox(null, errorText);
+        }
+
+        public static string GetCrashLogHeader()
+        {
+            StringBuilder headerSB = new StringBuilder();
+            StringWriter headerSW = new StringWriter(headerSB);
+            WriteCrashLog(null, headerSW);
+            return headerSB.ToString();
+        }
+
+        private static void WriteCrashLog(Exception ex, TextWriter stream)
+        {
+            string headerFormat;
+
+            try
+            {
+                headerFormat = PdnResources.GetString("CrashLog.HeaderText.Format");
+            }
+
+            catch (Exception ex13)
+            {
+                headerFormat = 
+                    InvariantStrings.CrashLogHeaderTextFormatFallback + 
+                    ", --- Exception while calling PdnResources.GetString(\"CrashLog.HeaderText.Format\"): " + 
+                    ex13.ToString() + 
+                    Environment.NewLine;
+            }
+
+            string header;
+
+            try
+            {
+                header = string.Format(headerFormat, InvariantStrings.CrashlogEmail);
+            }
+
+            catch
+            {
+                header = string.Empty;
+            }
+
+            stream.WriteLine(header);
+
+            const string noInfoString = "err";
+
+            string fullAppName = noInfoString;
+            string timeOfCrash = noInfoString;
+            string appUptime = noInfoString;
+            string osVersion = noInfoString;
+            string osRevision = noInfoString;
+            string osType = noInfoString;
+            string processorNativeArchitecture = noInfoString;
+            string fxVersion = noInfoString;
+            string processorArchitecture = noInfoString;
+            string cpuName = noInfoString;
+            string cpuCount = noInfoString;
+            string cpuSpeed = noInfoString;
+            string cpuFeatures = noInfoString;
+            string totalPhysicalBytes = noInfoString;
+            string localeName = noInfoString;
+            string inkInfo = noInfoString;
+
+            try
+            {
+                try
+                {
+                    fullAppName = PdnInfo.GetFullAppName();
+                }
+
+                catch (Exception ex1)
+                {
+                    fullAppName = Application.ProductVersion + ", --- Exception while calling PdnInfo.GetFullAppName(): " + ex1.ToString() + Environment.NewLine;
+                }
 
                 try
                 {
-                    headerFormat = PdnResources.GetString("CrashLog.HeaderText.Format");
+                    timeOfCrash = DateTime.Now.ToString();
+                }
+
+                catch (Exception ex2)
+                {
+                    timeOfCrash = "--- Exception while populating timeOfCrash: " + ex2.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    appUptime = (DateTime.Now - startupTime).ToString();
                 }
 
                 catch (Exception ex13)
                 {
-                    headerFormat = 
-                        InvariantStrings.CrashLogHeaderTextFormatFallback + 
-                        ", --- Exception while calling PdnResources.GetString(\"CrashLog.HeaderText.Format\"): " + 
-                        ex13.ToString() + 
-                        Environment.NewLine;
+                    appUptime = "--- Exception while populating appUptime: " + ex13.ToString() + Environment.NewLine;
                 }
-
-                string header;
 
                 try
                 {
-                    header = string.Format(headerFormat, InvariantStrings.CrashlogEmail);
+                    osVersion = System.Environment.OSVersion.Version.ToString();
                 }
 
-                catch
+                catch (Exception ex3)
                 {
-                    header = string.Empty;
+                    osVersion = "--- Exception while populating osVersion: " + ex3.ToString() + Environment.NewLine;
                 }
-
-                stream.WriteLine(header);
-
-                const string noInfoString = "err";
-
-                string fullAppName = noInfoString;
-                string timeOfCrash = noInfoString;
-                string appUptime = noInfoString;
-                string osVersion = noInfoString;
-                string osRevision = noInfoString;
-                string osType = noInfoString;
-                string processorNativeArchitecture = noInfoString;
-                string fxVersion = noInfoString;
-                string processorArchitecture = noInfoString;
-                string cpuName = noInfoString;
-                string cpuCount = noInfoString;
-                string cpuSpeed = noInfoString;
-                string totalPhysicalBytes = noInfoString;
-                string localeName = noInfoString;
-                string inkInfo = noInfoString;
 
                 try
                 {
-                    try
-                    {
-                        fullAppName = PdnInfo.GetFullAppName();
-                    }
-
-                    catch (Exception ex1)
-                    {
-                        fullAppName = Application.ProductVersion + ", --- Exception while calling PdnInfo.GetFullAppName(): " + ex1.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        timeOfCrash = DateTime.Now.ToString();
-                    }
-
-                    catch (Exception ex2)
-                    {
-                        timeOfCrash = "--- Exception while populating timeOfCrash: " + ex2.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        appUptime = (DateTime.Now - startupTime).ToString();
-                    }
-
-                    catch (Exception ex13)
-                    {
-                        appUptime = "--- Exception while populating appUptime: " + ex13.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        osVersion = System.Environment.OSVersion.Version.ToString();
-                    }
-
-                    catch (Exception ex3)
-                    {
-                        osVersion = "--- Exception while populating osVersion: " + ex3.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        osRevision = OS.Revision;
-                    }
-
-                    catch (Exception ex4)
-                    {
-                        osRevision = "--- Exception while populating osRevision: " + ex4.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        osType = OS.Type.ToString();
-                    }
-
-                    catch (Exception ex5)
-                    {
-                        osType = "--- Exception while populating osType: " + ex5.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        processorNativeArchitecture = Processor.NativeArchitecture.ToString().ToLower();
-                    }
-
-                    catch (Exception ex6)
-                    {
-                        processorNativeArchitecture = "--- Exception while populating processorNativeArchitecture: " + ex6.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        fxVersion = System.Environment.Version.ToString();
-                    }
-
-                    catch (Exception ex7)
-                    {
-                        fxVersion = "--- Exception while populating fxVersion: " + ex7.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        processorArchitecture = Processor.Architecture.ToString().ToLower();
-                    }
-
-                    catch (Exception ex8)
-                    {
-                        processorArchitecture = "--- Exception while populating processorArchitecture: " + ex8.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        cpuName = SystemLayer.Processor.CpuName;
-                    }
-
-                    catch (Exception ex9)
-                    {
-                        cpuName = "--- Exception while populating cpuName: " + ex9.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        cpuCount = SystemLayer.Processor.LogicalCpuCount.ToString() + "x";
-                    }
-
-                    catch (Exception ex10)
-                    {
-                        cpuCount = "--- Exception while populating cpuCount: " + ex10.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        cpuSpeed = "@ ~" + SystemLayer.Processor.ApproximateSpeedMhz.ToString() + "MHz";
-                    }
-
-                    catch (Exception ex16)
-                    {
-                        cpuSpeed = "--- Exception while populating cpuSpeed: " + ex16.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        totalPhysicalBytes = ((SystemLayer.Memory.TotalPhysicalBytes / 1024) / 1024) + " MB";
-                    }
-
-                    catch (Exception ex11)
-                    {
-                        totalPhysicalBytes = "--- Exception while populating totalPhysicalBytes: " + ex11.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        localeName = 
-                            "pdnr.c: " + PdnResources.Culture.Name +
-                            ", hklm: " + Settings.SystemWide.GetString(SettingNames.LanguageName, "n/a") +
-                            ", hkcu: " + Settings.CurrentUser.GetString(SettingNames.LanguageName, "n/a") + 
-                            ", cc: " + CultureInfo.CurrentCulture.Name + 
-                            ", cuic: " + CultureInfo.CurrentUICulture.Name;
-                    }
-
-                    catch (Exception ex14)
-                    {
-                        localeName = "--- Exception while populating localeName: " + ex14.ToString() + Environment.NewLine;
-                    }
-
-                    try
-                    {
-                        inkInfo = Ink.IsAvailable() ? "yes" : "no";
-                    }
-
-                    catch (Exception ex15)
-                    {
-                        inkInfo = "--- Exception while populating inkInfo: " + ex15.ToString() + Environment.NewLine;
-                    }
+                    osRevision = OS.Revision;
                 }
 
-                catch (Exception ex12)
+                catch (Exception ex4)
                 {
-                    stream.WriteLine("Exception while gathering app and system info: " + ex12.ToString());
+                    osRevision = "--- Exception while populating osRevision: " + ex4.ToString() + Environment.NewLine;
                 }
 
-                stream.WriteLine("Application version: " + fullAppName);
-                stream.WriteLine("Time of crash: " + timeOfCrash);
-                stream.WriteLine("Application uptime: " + appUptime);
+                try
+                {
+                    osType = OS.Type.ToString();
+                }
 
-                stream.WriteLine("OS Version: " + osVersion + (string.IsNullOrEmpty(osRevision) ? "" : (" " + osRevision)) + " " + osType + " " + processorNativeArchitecture);
-                stream.WriteLine(".NET Framework version: " + fxVersion + " " + processorArchitecture);
-                stream.WriteLine("Processor: " + cpuCount + " \"" + cpuName + "\" " + cpuSpeed);
-                stream.WriteLine("Physical memory: " + totalPhysicalBytes);
-                stream.WriteLine("Tablet PC: " + inkInfo);
-                stream.WriteLine("Locale: " + localeName);
-                stream.WriteLine();
+                catch (Exception ex5)
+                {
+                    osType = "--- Exception while populating osType: " + ex5.ToString() + Environment.NewLine;
+                }
 
-                stream.WriteLine("Exception details:");
+                try
+                {
+                    processorNativeArchitecture = Processor.NativeArchitecture.ToString().ToLower();
+                }
+
+                catch (Exception ex6)
+                {
+                    processorNativeArchitecture = "--- Exception while populating processorNativeArchitecture: " + ex6.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    fxVersion = System.Environment.Version.ToString();
+                }
+
+                catch (Exception ex7)
+                {
+                    fxVersion = "--- Exception while populating fxVersion: " + ex7.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    processorArchitecture = Processor.Architecture.ToString().ToLower();
+                }
+
+                catch (Exception ex8)
+                {
+                    processorArchitecture = "--- Exception while populating processorArchitecture: " + ex8.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    cpuName = SystemLayer.Processor.CpuName;
+                }
+
+                catch (Exception ex9)
+                {
+                    cpuName = "--- Exception while populating cpuName: " + ex9.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    cpuCount = SystemLayer.Processor.LogicalCpuCount.ToString() + "x";
+                }
+
+                catch (Exception ex10)
+                {
+                    cpuCount = "--- Exception while populating cpuCount: " + ex10.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    cpuSpeed = "@ ~" + SystemLayer.Processor.ApproximateSpeedMhz.ToString() + "MHz";
+                }
+
+                catch (Exception ex16)
+                {
+                    cpuSpeed = "--- Exception while populating cpuSpeed: " + ex16.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    cpuFeatures = string.Empty;
+                    string[] featureNames = Enum.GetNames(typeof(ProcessorFeature));
+                    bool firstFeature = true;
+
+                    for (int i = 0; i < featureNames.Length; ++i)
+                    {
+                        string featureName = featureNames[i];
+                        ProcessorFeature feature = (ProcessorFeature)Enum.Parse(typeof(ProcessorFeature), featureName);
+
+                        if (Processor.IsFeaturePresent(feature))
+                        {
+                            if (firstFeature)
+                            {
+                                cpuFeatures = "(";
+                                firstFeature = false;
+                            }
+                            else
+                            {
+                                cpuFeatures += ", ";
+                            }
+
+                            cpuFeatures += featureName;
+                        }
+                    }
+
+                    if (cpuFeatures.Length > 0)
+                    {
+                        cpuFeatures += ")";
+                    }
+                }
+
+                catch (Exception ex17)
+                {
+                    cpuFeatures = "--- Exception while populating cpuFeatures: " + ex17.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    totalPhysicalBytes = ((SystemLayer.Memory.TotalPhysicalBytes / 1024) / 1024) + " MB";
+                }
+
+                catch (Exception ex11)
+                {
+                    totalPhysicalBytes = "--- Exception while populating totalPhysicalBytes: " + ex11.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    localeName = 
+                        "pdnr.c: " + PdnResources.Culture.Name +
+                        ", hklm: " + Settings.SystemWide.GetString(SettingNames.LanguageName, "n/a") +
+                        ", hkcu: " + Settings.CurrentUser.GetString(SettingNames.LanguageName, "n/a") + 
+                        ", cc: " + CultureInfo.CurrentCulture.Name + 
+                        ", cuic: " + CultureInfo.CurrentUICulture.Name;
+                }
+
+                catch (Exception ex14)
+                {
+                    localeName = "--- Exception while populating localeName: " + ex14.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    inkInfo = Ink.IsAvailable() ? "yes" : "no";
+                }
+
+                catch (Exception ex15)
+                {
+                    inkInfo = "--- Exception while populating inkInfo: " + ex15.ToString() + Environment.NewLine;
+                }
+            }
+
+            catch (Exception ex12)
+            {
+                stream.WriteLine("Exception while gathering app and system info: " + ex12.ToString());
+            }
+
+            stream.WriteLine("Application version: " + fullAppName);
+            stream.WriteLine("Time of crash: " + timeOfCrash);
+            stream.WriteLine("Application uptime: " + appUptime);
+
+            stream.WriteLine("OS Version: " + osVersion + (string.IsNullOrEmpty(osRevision) ? "" : (" " + osRevision)) + " " + osType + " " + processorNativeArchitecture);
+            stream.WriteLine(".NET Framework version: " + fxVersion + " " + processorArchitecture);
+            stream.WriteLine("Processor: " + cpuCount + " \"" + cpuName + "\" " + cpuSpeed + " " + cpuFeatures);
+            stream.WriteLine("Physical memory: " + totalPhysicalBytes);
+            stream.WriteLine("Tablet PC: " + inkInfo);
+            stream.WriteLine("Locale: " + localeName);
+            stream.WriteLine();
+
+            stream.WriteLine("Exception details:");
+
+            if (ex == null)
+            {
+                stream.WriteLine("(null)");
+            }
+            else
+            {
                 stream.WriteLine(ex.ToString());
 
                 // Determine if there is any 'secondary' exception to report
@@ -649,25 +733,10 @@ namespace PaintDotNet
                         }
                     }
                 }
-
-                stream.WriteLine("------------------------------------------------------------------------------");
             }
 
-            string errorFormat;
-            string errorText;
-
-            try
-            {
-                errorFormat = PdnResources.GetString("Startup.UnhandledError.Format");
-            }
-
-            catch (Exception)
-            {
-                errorFormat = InvariantStrings.StartupUnhandledErrorFormatFallback;
-            }
-
-            errorText = string.Format(errorFormat, fileName);
-            Utility.ErrorBox(null, errorText);
+            stream.WriteLine("------------------------------------------------------------------------------");
+            stream.Flush();
         }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -379,7 +379,7 @@ namespace PaintDotNet.Effects
         {
             amount1UpDown.Select();
             amount1UpDown.Select(0, amount1UpDown.Text.Length);
-            base.OnLoad (e);
+            base.OnLoad(e);
         }
 
         protected virtual void OnOkButtonClicked(object sender, System.EventArgs e)

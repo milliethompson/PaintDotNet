@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -294,8 +294,16 @@ namespace PaintDotNet.Tools
                         break;
 
                     case (char)27: // Escape
-                        e.Handled = true;
-                        HistoryStack.StepBackward();
+                        // Only recognize if the user is not pressing Ctrl.
+                        // Reason for this is that Ctrl+[ ends up being sent
+                        // to us as (char)27 as well, but the user probably
+                        // wants to use that for the decrease brush size
+                        // shortcut, not cancel :)
+                        if ((ModifierKeys & Keys.Control) == 0)
+                        {
+                            e.Handled = true;
+                            HistoryStack.StepBackward();
+                        }
                         break;
                 }
             }

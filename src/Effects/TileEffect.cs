@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -42,7 +42,7 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return PdnResources.GetString("DistortSubmenu.Name");
+                return SubmenuNames.Distort;
             }
         }
 
@@ -56,14 +56,17 @@ namespace PaintDotNet.Effects
             ThreeAmountsConfigDialog tacd = new ThreeAmountsConfigDialog();
 
             tacd.Text = StaticName;
+
             tacd.Amount1Label = PdnResources.GetString("TileEffect.Rotation.Text");
             tacd.Amount1Default = 30;
             tacd.Amount1Minimum = -45;
             tacd.Amount1Maximum = 45;
+
             tacd.Amount2Label = PdnResources.GetString("TileEffect.SquareSize.Text");
             tacd.Amount2Default = 40;
             tacd.Amount2Maximum = 200;
             tacd.Amount2Minimum = 2;
+
             tacd.Amount3Label = PdnResources.GetString("TileEffect.Intensity.Text");
             tacd.Amount3Default = 8;
             tacd.Amount3Maximum = 20;

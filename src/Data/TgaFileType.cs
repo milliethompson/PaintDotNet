@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -317,6 +317,10 @@ namespace PaintDotNet.Data
                     palette = CreateGrayPalette();
                 }
 
+                // Bits 0 - 3 of the image descriptor byte describe number of bits used for alpha channel
+                // For loading, we won't worry about this. Not all TGA implementations are correct (such
+                // as older Paint.NET TGA implementations!) and we don't want to lose all their alpha bits.
+
                 // Bits 4 & 5 of the image descriptor byte control the ordering of the pixels
                 bool xReversed = ((header.imageDesc & 16) == 16);
                 bool yReversed = ((header.imageDesc & 32) == 32);            
@@ -619,7 +623,12 @@ namespace PaintDotNet.Data
             header.imageWidth = (ushort)input.Width;
             header.imageHeight = (ushort)input.Height;
             header.pixelDepth = (byte)tgaToken.BitDepth;
+
             header.imageDesc = 0;
+            if (tgaToken.BitDepth == 32)
+            {
+                header.imageDesc |= 8;
+            }
 
             header.Write(output);
 

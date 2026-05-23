@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -15,7 +15,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class SaveConfigWidget : System.Windows.Forms.UserControl
+    public class SaveConfigWidget 
+        : UserControl
     {
         /// <summary> 
         /// Required designer variable.
@@ -94,7 +95,8 @@ namespace PaintDotNet
         }
 
         protected void InitWidgetFromToken()
-        {   // If we don't check for null, we get awful errors in the designer.
+        {   
+            // If we don't check for null, we get awful errors in the designer.
             // Good idea to check for that anyway, yeah?
             if (token != null)
             {
@@ -121,7 +123,7 @@ namespace PaintDotNet
         /// </remarks>
         protected override void OnLoad(EventArgs e)
         {
-            base.OnLoad (e);
+            base.OnLoad(e);
             InitWidgetFromToken();
             UpdateToken();
         }
@@ -150,9 +152,11 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
+            SuspendLayout();
             components = new System.ComponentModel.Container();
             this.AutoScaleDimensions = new SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            ResumeLayout(false);
         }
         #endregion
     }

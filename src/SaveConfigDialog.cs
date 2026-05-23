@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -22,6 +22,8 @@ namespace PaintDotNet
     public class SaveConfigDialog 
         : PdnBaseDialog
     {
+        private static readonly Size unscaledMinSize = new Size(600, 350);
+
         private static class SettingNames
         {
             // We store the bounds of the window relative to its owner.
@@ -35,111 +37,112 @@ namespace PaintDotNet
 
         private void LoadPositions()
         {
-            FormWindowState newFws;
-            int newLeft;
-            int newTop;
-            int newWidth;
-            int newHeight;
+            Size minSize = UI.ScaleSize(unscaledMinSize);
 
-            Size minSize = UI.ScaleSize(new Size(700, 500));
-            Rectangle defaultRelativeBounds; 
-
-            // Load the relative bounds for the dialog
             Form owner = Owner;
 
+            Rectangle ownerWindowBounds;
             if (owner != null)
             {
-                // Default is centered to parent.
-                defaultRelativeBounds = new Rectangle(
-                    (owner.ClientSize.Width - minSize.Width) / 2,
-                    (owner.ClientSize.Height - minSize.Height) / 2,
-                    minSize.Width, minSize.Height);
+                ownerWindowBounds = owner.Bounds;
             }
             else
             {
-                defaultRelativeBounds = new Rectangle(0, 0, minSize.Width, minSize.Height);
+                ownerWindowBounds = Screen.PrimaryScreen.WorkingArea;
             }
+
+            // Determine what our default relative bounds should be
+            // These are client bounds that are relative to our owner's window bounds.
+            // Or if we have no window, then this is for the primary monitor.
+            Rectangle defaultRelativeClientBounds = new Rectangle(
+                (ownerWindowBounds.Width - minSize.Width) / 2,
+                (ownerWindowBounds.Height - minSize.Height) / 2,
+                minSize.Width,
+                minSize.Height);
+
+            // Load the relative client bounds for the dialog. This is a client bounds that is
+            // relative to the owner's window bounds.
+            Rectangle relativeClientBounds;
+            FormWindowState newFws;
 
             try
             {
                 string newFwsString = Settings.CurrentUser.GetString(SettingNames.WindowState, FormWindowState.Normal.ToString());
                 newFws = (FormWindowState)Enum.Parse(typeof(FormWindowState), newFwsString);
 
-                newLeft = Settings.CurrentUser.GetInt32(SettingNames.Left, defaultRelativeBounds.Left);
-                newTop = Settings.CurrentUser.GetInt32(SettingNames.Top, defaultRelativeBounds.Top);
-                newWidth = Math.Max(minSize.Width, Settings.CurrentUser.GetInt32(SettingNames.Width, defaultRelativeBounds.Width));
-                newHeight = Math.Max(minSize.Height, Settings.CurrentUser.GetInt32(SettingNames.Height, defaultRelativeBounds.Height));
+                int newLeft = Settings.CurrentUser.GetInt32(SettingNames.Left, defaultRelativeClientBounds.Left);
+                int newTop = Settings.CurrentUser.GetInt32(SettingNames.Top, defaultRelativeClientBounds.Top);
+                int newWidth = Math.Max(minSize.Width, Settings.CurrentUser.GetInt32(SettingNames.Width, defaultRelativeClientBounds.Width));
+                int newHeight = Math.Max(minSize.Height, Settings.CurrentUser.GetInt32(SettingNames.Height, defaultRelativeClientBounds.Height));
+
+                relativeClientBounds = new Rectangle(newLeft, newTop, newWidth, newHeight);
             }
 
             catch (Exception)
             {
-                newLeft = defaultRelativeBounds.X;
-                newTop = defaultRelativeBounds.Y;
-                newWidth = defaultRelativeBounds.Width;
-                newHeight = defaultRelativeBounds.Height;
+                relativeClientBounds = defaultRelativeClientBounds;
                 newFws = FormWindowState.Normal;
             }
 
-            // Apply the values. Bounds are converted from owner-client-rect space to screen space
+            // Convert to client bounds from from client bounds that are relative to the owner's window bounds.
+            // This will be our proposed client bounds.
+            Rectangle proposedClientBounds = new Rectangle(
+                relativeClientBounds.Left + ownerWindowBounds.Left,
+                relativeClientBounds.Top + owner.Top,
+                relativeClientBounds.Width,
+                relativeClientBounds.Height);
 
-            WindowState = newFws;
+            // Keep the default client bounds around as well
+            Rectangle defaultClientBounds = new Rectangle(
+                defaultRelativeClientBounds.Left + ownerWindowBounds.Left,
+                defaultRelativeClientBounds.Top + ownerWindowBounds.Top,
+                defaultRelativeClientBounds.Width,
+                defaultRelativeClientBounds.Height);
 
-            Point origin;
+            // Start applying the values.
+            SuspendLayout();
 
-            if (owner != null)
+            try
             {
-                origin = owner.RectangleToScreen(owner.ClientRectangle).Location;
-            }
-            else
-            {
-                origin = new Point(0, 0);
-            }
-
-            Rectangle defaultBounds = new Rectangle(
-                origin.X + defaultRelativeBounds.X,
-                origin.Y + defaultRelativeBounds.Y,
-                defaultRelativeBounds.Width,
-                defaultRelativeBounds.Height);
-
-            Rectangle newBounds;
-
-            if (newFws != FormWindowState.Maximized)
-            {
-                Rectangle newBounds1 = new Rectangle(origin.X + newLeft, origin.Y + newTop, newWidth, newHeight);
-                Rectangle newBounds2 = ValidateAndAdjustNewBounds(owner, newBounds1, defaultBounds);
-
-                newBounds = newBounds2;
-            }
-            else
-            {
-                newBounds = defaultBounds;
+                Rectangle newClientBounds = ValidateAndAdjustNewBounds(owner, proposedClientBounds, defaultClientBounds);
+                Rectangle newWindowBounds = ClientBoundsToWindowBounds(newClientBounds);
+                Bounds = newWindowBounds;
+                WindowState = newFws;
             }
 
-            Bounds = newBounds;
+            finally
+            {
+                ResumeLayout(true);
+            }
         }
 
-        private Rectangle ValidateAndAdjustNewBounds(Form owner, Rectangle newBounds, Rectangle defaultBounds)
+        private Rectangle ValidateAndAdjustNewBounds(Form owner, Rectangle newClientBounds, Rectangle defaultClientBounds)
         {
             Rectangle returnBounds;
 
-            // Ensure that the bounds they want are in bounds *somewhere*
+            // Ensure that the bounds they want are in bounds on any of the user's monitors
+            // Although first convert from client bounds to window bounds
+            Rectangle newWindowBounds = ClientBoundsToWindowBounds(newClientBounds);
             bool intersects = false;
+
             foreach (Screen screen in Screen.AllScreens)
             {
-                intersects |= screen.Bounds.IntersectsWith(newBounds);
+                intersects |= screen.Bounds.IntersectsWith(newWindowBounds);
             }
 
-            Rectangle newBounds2;
+            // If the newClientBounds aren't visible anywhere, go with the defaultClientBounds
+            Rectangle newClientBounds2;
 
             if (intersects)
             {
-                newBounds2 = newBounds;
+                newClientBounds2 = newClientBounds;
             }
             else
             {
-                newBounds2 = defaultBounds;
+                newClientBounds2 = defaultClientBounds;
             }
 
+            // Now make sure that the bounds are forced to be on the same screen as the owner window
             Screen ourScreen;
             if (owner != null)
             {
@@ -150,10 +153,11 @@ namespace PaintDotNet
                 ourScreen = Screen.PrimaryScreen;
             }
 
-            // Now make sure that the bounds are forced to be on the same screen as the owner window
-            Rectangle onScreenBounds = EnsureRectIsOnScreen(ourScreen, newBounds2);
+            Rectangle newWindowBounds2 = ClientBoundsToWindowBounds(newClientBounds2);
+            Rectangle onScreenWindowBounds = EnsureRectIsOnScreen(ourScreen, newWindowBounds2);
+            Rectangle finalNewClientBounds = WindowBoundsToClientBounds(onScreenWindowBounds);
 
-            returnBounds = onScreenBounds;
+            returnBounds = finalNewClientBounds;
 
             return returnBounds;
         }
@@ -162,30 +166,65 @@ namespace PaintDotNet
         {
             if (WindowState != FormWindowState.Minimized)
             {
-                Form owner = Owner;
-                Point origin;
-
-                if (owner != null)
+                if (WindowState != FormWindowState.Maximized)
                 {
-                    Rectangle ownerClientBounds = owner.RectangleToScreen(owner.ClientRectangle);
-                    origin = owner.Location;
-                }
-                else
-                {
-                    origin = new Point(0, 0);
+                    Form owner = Owner;
+                    Point origin;
+
+                    if (owner != null)
+                    {
+                        Rectangle ownerWindowBounds = owner.Bounds;
+                        origin = ownerWindowBounds.Location;
+                    }
+                    else
+                    {
+                        origin = new Point(0, 0);
+                    }
+
+                    // Save our client rectangle relative to our parent window's bounds (including non-client)
+
+                    Rectangle ourClientBounds = WindowBoundsToClientBounds(this.Bounds);
+
+                    int relativeLeft = ourClientBounds.Left - origin.X;
+                    int relativeTop = ourClientBounds.Top - origin.Y;
+
+                    Settings.CurrentUser.SetInt32(SettingNames.Left, relativeLeft);
+                    Settings.CurrentUser.SetInt32(SettingNames.Top, relativeTop);
+                    Settings.CurrentUser.SetInt32(SettingNames.Width, ourClientBounds.Width);
+                    Settings.CurrentUser.SetInt32(SettingNames.Height, ourClientBounds.Height);
                 }
 
-                Settings.CurrentUser.SetInt32(SettingNames.Left, Left - origin.X);
-                Settings.CurrentUser.SetInt32(SettingNames.Top, Top - origin.Y);
-                Settings.CurrentUser.SetInt32(SettingNames.Width, Width);
-                Settings.CurrentUser.SetInt32(SettingNames.Height, Height);
                 Settings.CurrentUser.SetString(SettingNames.WindowState, WindowState.ToString());
             }
         }
 
+        protected override void OnSizeChanged(EventArgs e)
+        {
+            if (IsShown)
+            {
+                SavePositions();
+            }
+
+            base.OnSizeChanged(e);
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            if (IsShown)
+            {
+                SavePositions();
+            }
+
+            base.OnResize(e);
+        }
+
         protected override void OnClosing(CancelEventArgs e)
         {
-            SavePositions();
+            if (IsShown)
+            {
+                SavePositions();
+            }
+
             base.OnClosing(e);
         }
 
@@ -207,7 +246,6 @@ namespace PaintDotNet
         private System.Windows.Forms.Panel saveConfigPanel;
 
         private PictureBox donateImage;
-        //private LinkLabel donateLink;
 
         private PaintDotNet.HeaderLabel settingsHeader;
 
@@ -314,11 +352,11 @@ namespace PaintDotNet
 
             set
             {
-                saveConfigWidget.Token = value;
+                this.saveConfigWidget.Token = value;
             }
         }
 
-        protected override void OnShown(EventArgs e)
+        protected override void OnLoad(EventArgs e)
         {
             if (this.scratchSurface == null)
             {
@@ -327,7 +365,7 @@ namespace PaintDotNet
 
             LoadPositions();
 
-            base.OnShown(e);
+            base.OnLoad(e);
         }
 
         public SaveConfigDialog()
@@ -345,7 +383,6 @@ namespace PaintDotNet
             this.settingsHeader.Text = PdnResources.GetString("SaveConfigDialog.SettingsHeader.Text");
             this.defaultsButton.Text = PdnResources.GetString("SaveConfigDialog.DefaultsButton.Text");
             this.previewHeader.Text = PdnResources.GetString("SaveConfigDialog.PreviewHeader.Text");
-            //this.donateLink.Text = "Hello!"; //PdnResources.GetString("
 
             this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileSaveIcon.png"));
 
@@ -353,7 +390,7 @@ namespace PaintDotNet
 
             this.documentView.Cursor = handIcon;
 
-            this.MinimumSize = this.Size;
+            //this.MinimumSize = this.Size;
         }
 
         private bool ShouldShowDonate()
@@ -388,25 +425,22 @@ namespace PaintDotNet
             {
                 this.donateImage.Size = UI.ScaleSize(this.donateImage.Image.Size);
                 this.donateImage.Visible = true & ShouldShowDonate();
-                //this.donateLink.Visible = true & ShouldShowDonate();
             }
             else
             {
                 this.donateImage.Size = new Size(1, 1);
                 this.donateImage.Visible = false;
-                //this.donateLink.Visible = false;
             }
 
             int donateBottomMargin = UI.ScaleHeight(8);
             int donateLeftMargin = UI.ScaleWidth(8);
             int donateHorizSpacing = UI.ScaleWidth(8);
 
-            this.donateImage.Location = new Point(donateLeftMargin, ClientSize.Height - this.donateImage.Height - donateBottomMargin);
+            this.donateImage.Location = new Point(
+                donateLeftMargin, 
+                ClientSize.Height - this.donateImage.Height - donateBottomMargin);
 
-            //this.donateLink.PerformLayout();
-            //this.donateLink.Location = new Point(this.donateImage.Right + donateHorizSpacing, this.donateImage.Top + (this.donateImage.Height - this.donateLink.Height) / 2);
-
-            // Other stuff
+            // Bottom-right Buttons
             int buttonsBottomMargin = UI.ScaleHeight(8);
             int buttonsRightMargin = UI.ScaleWidth(8);
             int buttonsHMargin = UI.ScaleWidth(8);
@@ -421,34 +455,55 @@ namespace PaintDotNet
 
             int previewBottomMargin = UI.ScaleHeight(8);
 
-            Point dvLocation = UI.ScalePoint(new System.Drawing.Point(200, 29));
+            // Set up layout properties
+            int topMargin = UI.ScaleHeight(6);
+            int leftMargin = UI.ScaleWidth(8);
+            int leftColumWidth = UI.ScaleWidth(200);
+            int columHMargin = UI.ScaleWidth(8);
+            int rightMargin = UI.ScaleWidth(8);
+            int vMargin = UI.ScaleHeight(4);
+            int rightColumnX = leftMargin + leftColumWidth + columHMargin;
+            int rightColumnWidth = ClientSize.Width - rightColumnX - rightMargin;
+            int defaultsButtonTopMargin = UI.ScaleHeight(12);
+            int headerXAdjustment = -3;
 
-            Size dvSize = new Size(
-                this.baseCancelButton.Right - dvLocation.X,
-                this.baseCancelButton.Top - dvLocation.Y - previewBottomMargin);
+            // Left column
+            this.settingsHeader.Location = new Point(leftMargin + headerXAdjustment, topMargin);
+            this.settingsHeader.Width = leftColumWidth - headerXAdjustment;
+            this.settingsHeader.PerformLayout();
 
-            this.documentView.Bounds = new Rectangle(dvLocation, dvSize);
+            this.saveConfigPanel.Location = new Point(leftMargin, this.settingsHeader.Bottom + vMargin);
+            this.saveConfigPanel.Width = leftColumWidth;
+            this.saveConfigPanel.PerformLayout();
+
+            //this.saveConfigWidget.Location = new Point(0, 0);
+            this.saveConfigWidget.Width = this.saveConfigPanel.Width - SystemInformation.VerticalScrollBarWidth;
+
+            // Right column
+            this.previewHeader.Location = new Point(rightColumnX + headerXAdjustment, topMargin);
+            this.previewHeader.Width = rightColumnWidth - headerXAdjustment;
+            this.previewHeader.PerformLayout();
+
+            this.documentView.Location = new Point(rightColumnX, this.previewHeader.Bottom + vMargin);
+            this.documentView.Size = new Size(
+                rightColumnWidth, 
+                this.baseCancelButton.Top - previewBottomMargin - this.documentView.Top);
+
+            // Finish up setting the height on the left side
+            this.saveConfigPanel.Height = this.documentView.Bottom - this.saveConfigPanel.Top -
+                this.defaultsButton.Height - defaultsButtonTopMargin;
+
+            this.saveConfigWidget.PerformLayout();
+
+            int saveConfigHeight = Math.Min(this.saveConfigPanel.Height, this.saveConfigWidget.Height);
 
             this.defaultsButton.PerformLayout();
-            int defaultsButtonTopMargin = UI.ScaleHeight(8);
-
-            this.saveConfigPanel.Location = UI.ScalePoint(new System.Drawing.Point(9, 29));
-
-            this.saveConfigPanel.Size = new Size(
-                UI.ScaleWidth(180), 
-                this.documentView.Bottom - this.saveConfigPanel.Top - this.defaultsButton.Height - defaultsButtonTopMargin);
-
-            int h2 = Math.Min(this.saveConfigWidget.Height, this.saveConfigPanel.Height);
 
             this.defaultsButton.Location = new Point(
-                this.saveConfigPanel.Right - this.defaultsButton.Width,
-                this.saveConfigPanel.Top + h2 + defaultsButtonTopMargin);
+                leftMargin + (leftColumWidth - this.defaultsButton.Width) / 2,
+                this.saveConfigPanel.Top + saveConfigHeight + defaultsButtonTopMargin);
 
-            this.previewHeader.Location = UI.ScalePoint(new System.Drawing.Point(198, 8));
-            this.previewHeader.Size = new Size(this.documentView.Right - this.previewHeader.Left, this.previewHeader.Height);
-
-            this.settingsHeader.Location = UI.ScalePoint(new System.Drawing.Point(6, 8));
-            this.settingsHeader.Size = UI.ScaleSize(new System.Drawing.Size(192, 14));
+            MinimumSize = UI.ScaleSize(unscaledMinSize);
 
             base.OnLayout(levent);
         }
@@ -505,7 +560,6 @@ namespace PaintDotNet
             this.documentView = new PaintDotNet.DocumentView();
             this.settingsHeader = new PaintDotNet.HeaderLabel();
             this.donateImage = new PictureBox();
-            //this.donateLink = new LinkLabel();
             this.SuspendLayout();
             // 
             // baseOkButton
@@ -529,7 +583,7 @@ namespace PaintDotNet
             this.saveConfigPanel.AutoScroll = true;
             this.saveConfigPanel.Name = "saveConfigPanel";
             this.saveConfigPanel.TabIndex = 0;
-            this.saveConfigPanel.TabStop = true;
+            this.saveConfigPanel.TabStop = false;
             // 
             // defaultsButton
             // 
@@ -540,7 +594,6 @@ namespace PaintDotNet
             // 
             // saveConfigWidget
             // 
-            this.saveConfigWidget.Dock = System.Windows.Forms.DockStyle.Fill;
             this.saveConfigWidget.Name = "saveConfigWidget";
             this.saveConfigWidget.TabIndex = 9;
             this.saveConfigWidget.Token = null;
@@ -561,6 +614,7 @@ namespace PaintDotNet
             this.documentView.PanelAutoScroll = true;
             this.documentView.RulersEnabled = false;
             this.documentView.TabIndex = 12;
+            this.documentView.TabStop = false;
             this.documentView.DocumentMouseMove += new System.Windows.Forms.MouseEventHandler(this.DocumentView_DocumentMouseMove);
             this.documentView.DocumentMouseDown += new System.Windows.Forms.MouseEventHandler(this.DocumentView_DocumentMouseDown);
             this.documentView.DocumentMouseUp += new System.Windows.Forms.MouseEventHandler(this.DocumentView_DocumentMouseUp);
@@ -579,31 +633,23 @@ namespace PaintDotNet
             this.donateImage.SizeMode = PictureBoxSizeMode.StretchImage;
             this.donateImage.Cursor = Cursors.Hand;
             this.donateImage.Click += new EventHandler(DonateImage_Click);
-            //
-            // donateLink
-            //
-            //this.donateLink.Name = "donateLink";
-            //this.donateLink.AutoSize = true;
-            //this.donateLink.LinkClicked += new LinkLabelLinkClickedEventHandler(DonateLink_LinkClicked);
             // 
             // SaveConfigDialog
             // 
             this.AutoScaleDimensions = new SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(592, 351);
             this.Controls.Add(this.defaultsButton);
             this.Controls.Add(this.settingsHeader);
             this.Controls.Add(this.previewHeader);
             this.Controls.Add(this.documentView);
             this.Controls.Add(this.saveConfigPanel);
             this.Controls.Add(this.donateImage);
-            //this.Controls.Add(this.donateLink);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
             this.MinimizeBox = false;
             this.MaximizeBox = true;
             this.Name = "SaveConfigDialog";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.StartPosition = FormStartPosition.Manual;
             this.Controls.SetChildIndex(this.saveConfigPanel, 0);
             this.Controls.SetChildIndex(this.documentView, 0);
             this.Controls.SetChildIndex(this.baseOkButton, 0);
@@ -612,17 +658,9 @@ namespace PaintDotNet
             this.Controls.SetChildIndex(this.settingsHeader, 0);
             this.Controls.SetChildIndex(this.defaultsButton, 0);
             this.Controls.SetChildIndex(this.donateImage, 0);
-            //this.Controls.SetChildIndex(this.donateLink, 0);
             this.ResumeLayout(false);
         }
         #endregion
-
-        /*
-        private void DonateLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            DonateClicked();
-        }
-         * */
 
         private void DonateImage_Click(object sender, EventArgs e)
         {
@@ -790,7 +828,7 @@ namespace PaintDotNet
                 }
             }
 
-            catch
+            catch (Exception)
             {
                 // Handle rare race condition where this method just fails because the form is gone
             }

@@ -193,7 +193,7 @@
 ; Las líneas que empiezan con un punto y coma son comentarios
 ; Los colores están escritos en código hexadecimal de 8 números: aarrggbb
 ; Por ejemplo, éste indica verde: FF00FF00
-; El valor alfa (&apos;aa&apos;) muestra la transparencia de un color. FF indica que es totalmente opaco, 00 indica que es totalmente transparente.
+; El valor del canal alfa (&apos;aa&apos;) muestra la transparencia de un color. FF indica que es totalmente opaco, 00 indica que es totalmente transparente.
 ; Una paleta tiene que contener noventa y seis (96) colores. Si hay menos, las casillas restantes de color
 ; se pondrán en blanco (FFFFFFFF). Si hay más, los colores adicionales se ignorarán.</value>
     <comment>Sí, se tiene que traducir. Este texto se escribe al principio de los archivos de paletas, que se guardan en archivos de texto (*.txt). El usuario tiene que entenderlos.</comment>
@@ -246,7 +246,7 @@
     <value>MSV (HSV)</value>
   </data>
   <data name="ColorsForm.AlphaHeader.Text" xml:space="preserve">
-    <value>Transparencia - Alfa</value>
+    <value>Transparencia - canal alfa</value>
   </data>
   <data name="ColorsForm.MoreLessButton.Text.Less" xml:space="preserve">
     <value>Menos</value>
@@ -817,8 +817,14 @@ Tecla de método abreviado: X</value>
   <data name="PenConfigWidget.Error.TooSmall" xml:space="preserve">
     <value>El tamaño es menor que 1</value>
   </data>
+  <data name="PenConfigWidget.Error.TooSmall.Format" xml:space="preserve">
+    <value>El tamaño es menor que {0}</value>
+  </data>
   <data name="PenConfigWidget.Error.TooLarge" xml:space="preserve">
-    <value>El tamaño es mayor que 100</value>
+    <value>El tamaño es mayor que 500</value>
+  </data>
+  <data name="PenConfigWidget.Error.TooLarge.Format" xml:space="preserve">
+    <value>El tamaño es mayor que {0}</value>
   </data>
   <data name="ProgressDialog.PercentText.Text.Format" xml:space="preserve">
     <value>{0}%</value>
@@ -1213,6 +1219,9 @@ Guardado con: Paint.NET v{0}
 Versión actual: Paint.NET v{1}</value>
     <comment>{0} y {1} son números de versión</comment>
   </data>
+  <data name="FileDialog.PathTooLongException.Message">
+    <value>El nombre de archivo es demasiado largo. Introduzca un nombre más corto.</value>
+  </data>
   <data name="FileDialog.Types.AllImages" xml:space="preserve">
     <value>Todos los tipos de imagen</value>
   </data>
@@ -1523,7 +1532,7 @@ Versión actual: Paint.NET v{1}</value>
     <value>&amp;Suavizado</value>
   </data>
   <data name="Menu.Tools.AlphaBlending.Text" xml:space="preserve">
-    <value>Fusión alfa</value>
+    <value>&amp;Fusión del canal alfa</value>
   </data>
   <data name="Menu.Window.Text" xml:space="preserve">
     <value>&amp;Ventana</value>
@@ -1566,6 +1575,9 @@ Versión actual: Paint.NET v{1}</value>
   </data>
   <data name="Menu.Help.PdnWebsite.Text" xml:space="preserve">
     <value>Sitio web de &amp;Paint.NET</value>
+  </data>
+  <data name="Menu.Help.PdnSearch.Text">
+    <value>&amp;Búsqueda en Paint.NET</value>
   </data>
   <data name="Menu.Help.Donate.Text" xml:space="preserve">
     <value>&amp;Donar...</value>
@@ -2241,7 +2253,10 @@ Haga clic en Aceptar para visitar el sitio web de Paint.NET desde donde podrá d
     <value>Multiplicar por el canal alfa</value>
   </data>
   <data name="GifSaveConfigWidget.ThresholdInfoLabel.Text">
-    <value>Los píxeles que tengan un valor alfa menor que el umbral serán totalmente transparentes.</value>
+    <value>Los píxeles que tengan un valor del canal alfa menor que el umbral serán totalmente transparentes.</value>
+  </data>
+  <data name="SetupWizard.MustCloseAppFirst.Text">
+    <value>Asegúrese de que Paint.NET está cerrado y, a continuación, haga clic en Reintentar. O presione Cancelar para salir del asistente para la instalación.</value>
   </data>
   <data name="SetupWizard.HelpText" xml:space="preserve">
     <value>Ayuda del Asistente para la instalación de Paint.NET
@@ -2927,5 +2942,89 @@ Tecla de método abreviado: /</value>
     <value>La imaen {0} ya existe.
 ¿Desea reemplazarla?</value>
     <comment>{0} es un nombre de imagen, por ejemplo &quot;Sin título.png&quot;</comment>
+  </data>
+  <data name="InkSketchEffect.Name">
+    <value>Boceto en tinta</value>
+  </data>
+  <data name="InkSketchEffect.ConfigDialog.InkOutlineLabel">
+    <value>Graduación de contorno</value>
+  </data>
+  <data name="InkSketchEffect.ConfigDialog.ColoringLabel">
+    <value>Color</value>
+  </data>  
+  <data name="SoftenPortraitEffect.Name">
+    <value>Suavizado de retrato</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.SoftnessLabel">
+    <value>Suavizado</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.LightingLabel">
+    <value>Luminosidad</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.WarmthLabel">
+    <value>Temperatura</value>
+  </data>
+  <data name="DdsFileType.Name">
+    <value>DirectDraw Surface (DDS)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.RangeFit.Text">
+    <value>Ajuste de rango (rápido, baja calidad)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.ClusterFit.Text">
+    <value>Ajuste de grupo (lento / alta calidad)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.IterativeFit.Text">
+    <value>Ajuste interactivo (más lento / máxima calidad)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.Uniform.Text">
+    <value>Uniforme</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.Perceptual.Text">
+    <value>Perceptiva</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.GenerateMipMaps.Text">
+    <value>Crear mapas MIP</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.WeightColourByAlpha">
+    <value>Administración del color por el canal alfa</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT1">
+    <value>DXT1 (opaco / canal alfa de 1 bit)</value></data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT3">
+    <value>DXT3 (Canal alfa explícito)</value></data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT5">
+    <value>DXT5 (Canal alfa interpolado)</value></data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A8R8G8B8">
+    <value>A8R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.X8R8G8B8">
+    <value>X8R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A8B8G8R8">
+    <value>A8B8G8R8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.X8B8G8R8">
+    <value>X8B8G8R8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A1R5G5B5">
+    <value>A1R5G5B5</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A4R4G4B4">
+    <value>A4R4G4B4</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.R8G8B8">
+    <value>R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.R5G6B5">
+    <value>R5G6B5</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.CompressorTypeLabel.Text">
+    <value>Tipo de compresor</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.ErrorMetricLabel.Text">
+    <value>Métrica de errores</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.AdditionalOptions.Text">
+    <value>Opciones adicionales</value>
   </data>
 </root>

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -199,8 +199,26 @@ namespace PaintDotNet
         }
 
         private const double defaultDpi = 96.0;
+
+        public static double DefaultDpi
+        {
+            get
+            {
+                return defaultDpi;
+            }
+        }
+
         public const double CmPerInch = 2.54;
         private const double defaultDpcm = defaultDpi / CmPerInch;
+
+        public static double DefaultDpcm
+        {
+            get
+            {
+                return defaultDpcm;
+            }
+        }
+
         public const double MinimumDpu = 0.01;
         public const double MaximumDpu = 32767.0;
 

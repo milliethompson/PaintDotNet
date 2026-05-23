@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -127,6 +127,11 @@ namespace PaintDotNet
 
         private bool ProcessMessage(string message)
         {
+            if (IsDisposed)
+            {
+                return false;
+            }
+
             ArgumentAction action;
             string actionParm;
             bool result;
@@ -185,6 +190,11 @@ namespace PaintDotNet
 
         private void ProcessQueuedInstanceMessages()
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             if (this.splashForm != null)
             {
                 this.splashForm.Close();
@@ -225,8 +235,8 @@ namespace PaintDotNet
 
         private void Application_Idle(object sender, EventArgs e)
         {
-            if (this.queuedInstanceMessages.Count > 0 ||
-                (this.singleInstanceManager != null && this.singleInstanceManager.AreMessagesPending))
+            if (!this.IsDisposed && 
+                (this.queuedInstanceMessages.Count > 0 || (this.singleInstanceManager != null && this.singleInstanceManager.AreMessagesPending)))
             {
                 ProcessQueuedInstanceMessages();
             }
@@ -234,6 +244,8 @@ namespace PaintDotNet
 
         public MainForm(string[] args)
         {
+            bool canSetCurrentDir = true;
+
             this.StartPosition = FormStartPosition.WindowsDefaultLocation;
 
             bool splash = false; 
@@ -270,8 +282,32 @@ namespace PaintDotNet
                 }
                 else if (argument.Length > 0 && argument[0] != '/')
                 {
-                    fileNames.Add(argument);
+                    try
+                    {
+                        string fullPath = Path.GetFullPath(argument);
+                        fileNames.Add(fullPath);
+                    }
+
+                    catch (Exception)
+                    {
+                        fileNames.Add(argument);
+                        canSetCurrentDir = false;
+                    }
+
                     splash = true;
+                }
+            }
+
+            if (canSetCurrentDir)
+            {
+                try
+                {
+                    Environment.CurrentDirectory = PdnInfo.GetApplicationDir();
+                }
+
+                catch (Exception ex)
+                {
+                    Tracing.Ping("Exception while trying to set Environment.CurrentDirectory: " + ex.ToString());
                 }
             }
 
@@ -441,10 +477,11 @@ namespace PaintDotNet
 
                 try
                 {
-                    Settings.CurrentUser.Delete(new string[] 
-                                                { 
-                                                    SettingNames.TranslucentWindows
-                                                });
+                    Settings.CurrentUser.Delete(
+                        new string[] 
+                        { 
+                            SettingNames.TranslucentWindows
+                        });
                 }
 
                 catch
@@ -1167,6 +1204,14 @@ namespace PaintDotNet
 
             // TODO
             this.appWorkspace.ToolBar.MainMenu.PopulateEffects();
+        }
+
+        protected override void OnHelpRequested(HelpEventArgs hevent)
+        {
+            // F1 is already handled by the Menu->Help menu item. No need to process it twice.
+            hevent.Handled = true;
+
+            base.OnHelpRequested(hevent);
         }
 
         private void DefaultButton_Click(object sender, EventArgs e)

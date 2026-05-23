@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -109,7 +109,7 @@ namespace PaintDotNet.Tools
                    ImageResource.Get("Icons.ColorPickerToolIcon.png"),
                    PdnResources.GetString("ColorPickerTool.Name"),
                    PdnResources.GetString("ColorPickerTool.HelpText"),
-                   'p',
+                   'k',
                    true,
                    ToolBarConfigItems.ColorPickerBehavior)
         {

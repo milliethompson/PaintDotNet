@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -89,6 +89,21 @@ namespace PaintDotNet
             parentModalForms.Pop();
         }
 
+        protected override void OnShown(EventArgs e)
+        {
+            isShown = true;
+            base.OnShown(e);
+        }
+
+        public bool IsShown
+        {
+            get
+            {
+                return this.isShown;
+            }
+        }
+
+        private bool isShown = false;
         private bool enableOpacity = true;
         private double ourOpacity = 1.0; // store opacity setting so that when we go from disabled->enabled opacity we can set the correct value
         private SnapManager snapManager = null;
@@ -938,6 +953,33 @@ namespace PaintDotNet
             }
         }
 
+        public Rectangle ClientBoundsToWindowBounds(Rectangle clientBounds)
+        {
+            Rectangle currentBounds = this.Bounds;
+            Rectangle currentClientBounds = this.RectangleToScreen(ClientRectangle);
+
+            Rectangle newWindowBounds = new Rectangle(
+                clientBounds.Left - (currentClientBounds.Left - currentBounds.Left),
+                clientBounds.Top - (currentClientBounds.Top - currentBounds.Top),
+                clientBounds.Width + (currentBounds.Width - currentClientBounds.Width),
+                clientBounds.Height + (currentBounds.Height - currentClientBounds.Height));
+
+            return newWindowBounds;
+        }
+
+        public Rectangle WindowBoundsToClientBounds(Rectangle windowBounds)
+        {
+            Rectangle currentBounds = this.Bounds;
+            Rectangle currentClientBounds = this.RectangleToScreen(ClientRectangle);
+
+            Rectangle newClientBounds = new Rectangle(
+                windowBounds.Left + (currentClientBounds.Left - currentBounds.Left),
+                windowBounds.Top + (currentClientBounds.Top - currentBounds.Top),
+                windowBounds.Width - (currentBounds.Width - currentClientBounds.Width),
+                windowBounds.Height - (currentBounds.Height - currentClientBounds.Height));
+
+            return newClientBounds;
+        }
 
         public void EnsureFormIsOnScreen()
         {

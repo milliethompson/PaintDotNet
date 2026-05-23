@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -37,7 +37,8 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private Random random = new Random();
+        [ThreadStatic]
+        private static Random threadRand;
 
         public FrostedGlassEffect() 
             : base(StaticName, 
@@ -71,14 +72,40 @@ namespace PaintDotNet.Effects
             int width = src.Width;
             int height = src.Height;
             int r = realToken.Amount;
-            Random localRandom = this.random;
 
-            int* intensityCount = stackalloc int[256];
-            uint* avgRed = stackalloc uint[256];
-            uint* avgGreen = stackalloc uint[256];
-            uint* avgBlue = stackalloc uint[256];
-            uint* avgAlpha = stackalloc uint[256];
-            byte* intensityChoices = stackalloc byte[(1 + (r * 2)) * (1 + (r * 2))];
+            if (threadRand == null)
+            {
+                threadRand = new Random(unchecked(System.Threading.Thread.CurrentThread.GetHashCode() ^ 
+                    unchecked((int)DateTime.Now.Ticks)));
+            }
+
+            Random localRandom = threadRand;
+
+            int intensityChoicesLen = (1 + (r * 2)) * (1 + (r * 2));
+
+            int localStoreSize = (5 * 256 * sizeof(int)) + (intensityChoicesLen * sizeof(byte));
+
+            byte* localStore = stackalloc byte[localStoreSize];
+
+            byte* p = localStore;
+
+            int* intensityCount = (int*)p;
+            p += 256 * sizeof(int);
+
+            uint* avgRed = (uint*)p;
+            p += 256 * sizeof(uint);
+
+            uint* avgGreen = (uint*)p;
+            p += 256 * sizeof(uint);
+
+            uint* avgBlue = (uint*)p;
+            p += 256 * sizeof(uint);
+
+            uint* avgAlpha = (uint*)p;
+            p += 256 * sizeof(uint);
+
+            byte* intensityChoices = p;
+            p += intensityChoicesLen;
 
             for (int ri = startIndex; ri < startIndex + length; ++ri)
             {
@@ -91,7 +118,7 @@ namespace PaintDotNet.Effects
 
                 for (int y = rectTop; y < rectBottom; ++y)
                 {
-                    ColorBgra *dstPtr = dst.GetPointAddress(rect.Left, y);
+                    ColorBgra *dstPtr = dst.GetPointAddressUnchecked(rect.Left, y);
                     int top = y - r;
                     int bottom = y + r + 1;
 
@@ -109,14 +136,7 @@ namespace PaintDotNet.Effects
                     {
                         int intensityChoicesIndex = 0;
 
-                        for (int i = 0; i < 256; ++i)
-                        {
-                            intensityCount[i] = 0;
-                            avgRed[i] = 0;
-                            avgGreen[i] = 0;
-                            avgBlue[i] = 0;
-                            avgAlpha[i] = 0;
-                        }
+                        SystemLayer.Memory.SetToZero(localStore, (ulong)localStoreSize);
 
                         int left = x - r;
                         int right = x + r + 1;
@@ -158,12 +178,7 @@ namespace PaintDotNet.Effects
                             }
                         }
 
-                        int randNum;
-
-                        lock (localRandom)
-                        {
-                            randNum = localRandom.Next(intensityChoicesIndex);
-                        }
+                        int randNum = localRandom.Next(intensityChoicesIndex);
 
                         byte chosenIntensity = intensityChoices[randNum];
 
@@ -174,12 +189,6 @@ namespace PaintDotNet.Effects
 
                         *dstPtr = ColorBgra.FromBgra(B, G, R, A);
                         ++dstPtr;
-
-                        // prepare the array for the next loop iteration
-                        for (int i = 0; i < intensityChoicesIndex; ++i)
-                        {
-                            intensityChoices[i] = 0;
-                        }
                     }
                 }
             }

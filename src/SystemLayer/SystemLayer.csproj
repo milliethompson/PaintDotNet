@@ -85,12 +85,14 @@
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
+    <Reference Include="System.Data" />
     <Reference Include="System.Drawing">
       <Name>System.Drawing</Name>
     </Reference>
     <Reference Include="System.Windows.Forms">
       <Name>System.Windows.Forms</Name>
     </Reference>
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs">
@@ -101,6 +103,8 @@
     <Compile Include="ClassicFileSaveDialog.cs" />
     <Compile Include="Clipboard.cs" />
     <Compile Include="CommonDialogs.cs" />
+    <Compile Include="ExecutePrivilege.cs" />
+    <Compile Include="ExecuteWaitType.cs" />
     <Compile Include="FileOverwriteAction.cs" />
     <Compile Include="IFileDialog.cs">
       <SubType>Code</SubType>
@@ -120,7 +124,9 @@
     <Compile Include="IFileSaveDialog.cs" />
     <Compile Include="IFileTransferProgressEvents.cs" />
     <Compile Include="IWiaInterface.cs" />
+    <Compile Include="NativeErrors.cs" />
     <Compile Include="NativeInterfaces.cs" />
+    <Compile Include="ProcessorFeature.cs" />
     <Compile Include="SingleInstaceManager.cs" />
     <Compile Include="IInkHooks.cs">
       <SubType>Code</SubType>

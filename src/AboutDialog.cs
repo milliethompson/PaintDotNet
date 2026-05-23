@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -100,7 +100,7 @@ namespace PaintDotNet
             this.richCreditsBox.Size = new System.Drawing.Size(476, 187);
             this.richCreditsBox.TabIndex = 6;
             this.richCreditsBox.Text = "";
-            this.richCreditsBox.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.richCreditsBox_LinkClicked);
+            this.richCreditsBox.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.RichCreditsBox_LinkClicked);
             // 
             // copyrightLabel
             // 
@@ -162,7 +162,7 @@ namespace PaintDotNet
         }
         #endregion
 
-        private void richCreditsBox_LinkClicked(object sender, System.Windows.Forms.LinkClickedEventArgs e)
+        private void RichCreditsBox_LinkClicked(object sender, System.Windows.Forms.LinkClickedEventArgs e)
         {
             if (null != e.LinkText && e.LinkText.StartsWith("http://"))
             {

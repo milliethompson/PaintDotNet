@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -56,8 +56,8 @@ namespace PaintDotNet.Effects
 
                 for (int y = roi.Top; y < roi.Bottom; ++y)
                 {
-                    ColorBgra* srcPtr = srcArgs.Surface.GetPointAddress(roi.X, roi.Y);
-                    ColorBgra* dstPtr = dstArgs.Surface.GetPointAddress(roi.X, roi.Y);
+                    ColorBgra* srcPtr = srcArgs.Surface.GetPointAddressUnchecked(roi.X, roi.Y);
+                    ColorBgra* dstPtr = dstArgs.Surface.GetPointAddressUnchecked(roi.X, roi.Y);
 
                     for (int x = roi.Left; x < roi.Right; ++x)
                     {
@@ -91,7 +91,7 @@ namespace PaintDotNet.Effects
         }
 
         public PencilSketchEffect()
-            : base(StaticName, StaticIcon.Reference, true)
+            : base(StaticName, StaticIcon.Reference, null, EffectDirectives.None, true)
         {
 
         }

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -15,6 +15,53 @@ namespace PaintDotNet.SystemLayer
 {
     internal static class NativeMethods
     {
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern uint WaitForInputIdle(
+            IntPtr hProcess,
+            uint dwMilliseconds);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool EnumWindows(
+            [MarshalAs(UnmanagedType.FunctionPtr)] NativeDelegates.EnumWindowsProc lpEnumFunc,
+            IntPtr lParam);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr OpenProcess(
+            uint dwDesiredAccess,
+            [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle,
+            uint dwProcessId);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool OpenProcessToken(
+            IntPtr ProcessHandle,
+            uint DesiredAccess,
+            out IntPtr TokenHandle);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool DuplicateTokenEx(
+            IntPtr hExistingToken,
+            uint dwDesiredAccess,
+            IntPtr lpTokenAttributes,
+            NativeConstants.SECURITY_IMPERSONATION_LEVEL ImpersonationLevel,
+            NativeConstants.TOKEN_TYPE TokenType,
+            out IntPtr phNewToken);
+
+        [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CreateProcessWithTokenW(
+            IntPtr hToken,
+            uint dwLogonFlags,
+            IntPtr lpApplicationName,
+            IntPtr lpCommandLine,
+            uint dwCreationFlags,
+            IntPtr lpEnvironment,
+            IntPtr lpCurrentDirectory,
+            IntPtr lpStartupInfo,
+            out NativeStructs.PROCESS_INFORMATION lpProcessInfo);
+
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool OpenClipboard(IntPtr hWndNewOwner);
@@ -116,10 +163,22 @@ namespace PaintDotNet.SystemLayer
         internal static void ThrowOnWin32Error(string message)
         {
             int lastWin32Error = Marshal.GetLastWin32Error();
-            
+            ThrowOnWin32Error(message, lastWin32Error);
+        }
+
+        internal static void ThrowOnWin32Error(string message, NativeErrors lastWin32Error)
+        {
+            ThrowOnWin32Error(message, (int)lastWin32Error);
+        }
+
+        internal static void ThrowOnWin32Error(string message, int lastWin32Error)
+        {
             if (lastWin32Error != NativeConstants.ERROR_SUCCESS)
             {
-                throw new Win32Exception(lastWin32Error, message + " (" + lastWin32Error.ToString() + ")");
+                string exMessageFormat = "{0} ({1}, {2})";
+                string exMessage = string.Format(exMessageFormat, message, lastWin32Error, ((NativeErrors)lastWin32Error).ToString());
+
+                throw new Win32Exception(lastWin32Error, exMessage);
             }
         }
     }

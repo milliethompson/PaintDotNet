@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -64,6 +64,21 @@ namespace PaintDotNet.SystemLayer
         {
             get
             {
+                if (OS.IsVistaOrLater && !Security.IsAdministrator)
+                {
+                    return IsUacEnabled;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        private static bool IsUacEnabled
+        {
+            get
+            {
                 bool returnVal = false;
                 const string keyName = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System";
                 const string valueName = "EnableLUA";
@@ -94,7 +109,36 @@ namespace PaintDotNet.SystemLayer
                     returnVal = false;
                 }
 
-                return returnVal;
+                return returnVal;            }
+        }
+
+        /// <summary>
+        /// If IsAdministrator is true, this returns true if we can launch a process with limited privilege.
+        /// </summary>
+        /// <remarks>
+        /// Here's the truth table for this:
+        /// Windows XP + Admin User -> false
+        /// Windows XP + Standard User -> true
+        /// Windows Vista + Admin User + UAC Enabled -> true
+        /// Windows Vista + Admin User + UAC Disabled -> false
+        /// Windows Vista + Standard User -> true
+        /// </remarks>
+        public static bool CanLaunchNonAdminProcess
+        {
+            get
+            {
+                if (!Security.IsAdministrator)
+                {
+                    return true;
+                }
+                else if (OS.IsVistaOrLater)
+                {
+                    return Security.IsUacEnabled;
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
 

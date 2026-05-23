@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -20,7 +20,7 @@ namespace PaintDotNet.Effects
         public MotionBlurEffect()
             : base(PdnResources.GetString("MotionBlurEffect.Name"),
                    PdnResources.GetImage("Icons.MotionBlurEffect.png"),
-                   PdnResources.GetString("Effects.Blurring.Submenu.Name"),
+                   SubmenuNames.Blurs,
                    EffectDirectives.None,
                    true)
         {
@@ -139,7 +139,7 @@ namespace PaintDotNet.Effects
 
                 for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
-                    ColorBgra *dstPtr = dst.GetPointAddress(rect.Left, y);
+                    ColorBgra *dstPtr = dst.GetPointAddressUnchecked(rect.Left, y);
 
                     for (int x = rect.Left; x < rect.Right; ++x)
                     {

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -18,6 +18,10 @@ namespace PaintDotNet.SystemLayer
     [SuppressUnmanagedCodeSecurity]
     internal static class SafeNativeMethods
     {
+        [DllImport("kernel32.dll", SetLastError = false)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool IsProcessorFeaturePresent(uint ProcessorFeature);
+
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool DrawMenuBar(IntPtr hWnd);
@@ -186,6 +190,16 @@ namespace PaintDotNet.SystemLayer
             IntPtr hWnd, 
             IntPtr hRgn, 
             [MarshalAs(UnmanagedType.Bool)] bool bErase);
+
+        [DllImport("user32.dll", SetLastError = false)]
+        internal static extern uint GetWindowThreadProcessId(
+            IntPtr hWnd,
+            out uint lpdwProcessId);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        internal static extern IntPtr FindWindowW(
+            [MarshalAs(UnmanagedType.LPWStr)] string lpClassName,
+            [MarshalAs(UnmanagedType.LPWStr)] string lpWindowName);
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         internal static extern IntPtr FindWindowExW(

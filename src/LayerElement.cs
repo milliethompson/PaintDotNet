@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -93,13 +93,14 @@ namespace PaintDotNet
                     this.layerDescription.BackColor = SystemColors.Highlight;
                     this.layerDescription.ForeColor = SystemColors.HighlightText;
                     this.layerVisible.BackColor = this.layerDescription.BackColor;
+                    this.icon.BackColor = SystemColors.Highlight;
                 }
                 else // !selected
                 {               
                     this.layerDescription.ForeColor = SystemColors.WindowText;
                     this.layerDescription.BackColor = SystemColors.Window;
                     this.layerVisible.BackColor = this.layerDescription.BackColor;
-                    this.icon.BackColor = Color.White;
+                    this.icon.BackColor = SystemColors.Window;
                 }
 
                 Update();
@@ -210,9 +211,9 @@ namespace PaintDotNet
 
         private void InitializeComponent2()
         {
-            this.Size = new System.Drawing.Size(200, 2 + SystemLayer.UI.ScaleWidth(LayerElement.ThumbSizePreScaling));
-            this.layerDescription.Location = new System.Drawing.Point(this.Height, 0);
-            this.icon.Size = new System.Drawing.Size(this.Height, this.Height);
+            this.Size = new System.Drawing.Size(200, SystemLayer.UI.ScaleWidth(LayerElement.ThumbSizePreScaling));
+            this.icon.Size = new System.Drawing.Size(6 + this.Height, this.Height);
+            this.layerDescription.Location = new System.Drawing.Point(this.icon.Right, 0);
             this.layerVisible.Size = new System.Drawing.Size(16, this.Height);
         }
 
@@ -242,11 +243,9 @@ namespace PaintDotNet
             // icon
             // 
             this.icon.BackColor = System.Drawing.SystemColors.Control;
-            this.icon.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.icon.Dock = System.Windows.Forms.DockStyle.Left;
             this.icon.Location = new System.Drawing.Point(0, 0);
             this.icon.Name = "icon";
-            this.icon.TabIndex = 8;
             this.icon.TabStop = false;
             this.icon.Click += new System.EventHandler(this.Control_Click);
             this.icon.DoubleClick += new System.EventHandler(this.Control_DoubleClick);
@@ -257,7 +256,7 @@ namespace PaintDotNet
             this.layerVisible.Checked = true;
             this.layerVisible.CheckState = System.Windows.Forms.CheckState.Checked;
             this.layerVisible.Dock = System.Windows.Forms.DockStyle.Right;
-            this.layerVisible.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.layerVisible.FlatStyle = System.Windows.Forms.FlatStyle.Standard;
             this.layerVisible.Location = new System.Drawing.Point(184, 0);
             this.layerVisible.Name = "layerVisible";
             this.layerVisible.TabIndex = 7;
@@ -325,34 +324,6 @@ namespace PaintDotNet
 
         public void RefreshPreview()
         {
-            /*
-            if (!allowRefreshPreview)
-            {
-                if (this.Image == null)
-                {
-                    Size thumbSize = Utility.ComputeThumbnailSize(this.layer.Size, this.thumbnailManager.ThumbSideLength);
-                    Bitmap thumb = new Bitmap(this.thumbnailManager.ThumbSideLength, this.thumbnailManager.ThumbSideLength, PixelFormat.Format24bppRgb);
-
-                    using (Graphics g = Graphics.FromImage(thumb))
-                    {
-                        g.Clear(this.BackColor);
-
-                        Rectangle thumbRect = new Rectangle(
-                            (thumb.Width - thumbSize.Width) / 2,
-                            (thumb.Height - thumbSize.Height) / 2,
-                            thumbSize.Width,
-                            thumbSize.Height);
-
-                        g.FillRectangle(Brushes.White, thumbRect);
-                    }
-
-                    this.Image = thumb;
-                }
-
-                return;
-            }
-             * */
-
             if (this.suspendPreviewUpdates > 0)
             {
                 return;
@@ -371,12 +342,12 @@ namespace PaintDotNet
             if (!IsDisposed)
             {
                 Bitmap thumbBitmap = e.Data.Second.CreateAliasedBitmap();
-                Bitmap bitmap = new Bitmap(this.thumbnailSize, this.thumbnailSize, thumbBitmap.PixelFormat);
+                Bitmap bitmap = new Bitmap(this.icon.Width, this.icon.Height, PixelFormat.Format32bppArgb);
 
                 using (Graphics g = Graphics.FromImage(bitmap))
                 {
                     g.CompositingMode = CompositingMode.SourceCopy;
-                    g.Clear(this.BackColor);
+                    g.Clear(Color.Transparent);
 
                     Rectangle thumbRect = new Rectangle(
                         (bitmap.Width - thumbBitmap.Width) / 2,
@@ -389,6 +360,21 @@ namespace PaintDotNet
                         thumbRect,
                         new Rectangle(new Point(0, 0), thumbBitmap.Size),
                         GraphicsUnit.Pixel);
+
+                    Rectangle outlineRect = thumbRect;
+                    --outlineRect.X;
+                    --outlineRect.Y;
+                    ++outlineRect.Width;
+                    ++outlineRect.Height;
+                    g.DrawRectangle(Pens.Black, outlineRect);
+
+                    g.CompositingMode = CompositingMode.SourceOver;
+
+                    Rectangle dropShadowRect = outlineRect;
+                    dropShadowRect.Inflate(1, 1);
+                    ++dropShadowRect.Width;
+                    ++dropShadowRect.Height;
+                    Utility.DrawDropShadow1px(g, dropShadowRect);
                 }
 
                 thumbBitmap.Dispose();

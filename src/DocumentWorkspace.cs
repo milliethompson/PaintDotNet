@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -1796,6 +1796,23 @@ namespace PaintDotNet
                 }
 
                 return returnVal;
+            }
+
+            public bool ShowError(IWin32Window owner, string filePath, Exception ex)
+            {
+                if (ex is PathTooLongException)
+                {
+                    string title = PdnInfo.GetBareProductName();
+                    string message = PdnResources.GetString("FileDialog.PathTooLongException.Message");
+
+                    MessageBox.Show(owner, message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
             public IFileTransferProgressEvents CreateFileTransferProgressEvents()

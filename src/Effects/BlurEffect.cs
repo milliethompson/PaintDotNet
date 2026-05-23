@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -28,7 +28,7 @@ namespace PaintDotNet.Effects
         public BlurEffect()
             : base(StaticName,
                    PdnResources.GetImage("Icons.BlurEffect.png"),
-                   PdnResources.GetString("Effects.Blurring.Submenu.Name"),
+                   SubmenuNames.Blurs,
                    EffectDirectives.None,
                    true)
         {
@@ -63,6 +63,7 @@ namespace PaintDotNet.Effects
             return weights;
         }
 
+        [Obsolete("Do not use this method. It will be removed in a future release.")]
         public static int[][] CreateGaussianBlurMatrix(int amount)
         {
             int size = 1 + (amount * 2);
@@ -113,12 +114,28 @@ namespace PaintDotNet.Effects
             int[] w = CreateGaussianBlurRow(bect.Amount);
             int wlen = w.Length;
 
-            long* waSums = stackalloc long[wlen];
-            long* wcSums = stackalloc long[wlen];
-            long* aSums = stackalloc long[wlen];
-            long* bSums = stackalloc long[wlen];
-            long* gSums = stackalloc long[wlen];
-            long* rSums = stackalloc long[wlen];
+            int localStoreSize = wlen * 6 * sizeof(long);
+            byte* localStore = stackalloc byte[localStoreSize];
+            byte* p = localStore;
+
+            long* waSums = (long *)p;
+            p += wlen * sizeof(long);
+
+            long* wcSums = (long*)p;
+            p += wlen * sizeof(long);
+
+            long* aSums = (long*)p;
+            p += wlen * sizeof(long);
+
+            long* bSums = (long*)p;
+            p += wlen * sizeof(long);
+
+            long* gSums = (long*)p;
+            p += wlen * sizeof(long);
+
+            long* rSums = (long*)p;
+            p += wlen * sizeof(long);
+
             ulong arraysLength = (ulong)(sizeof(long) * wlen);
 
             for (int ri = startIndex; ri < startIndex + length; ++ri)
@@ -129,12 +146,7 @@ namespace PaintDotNet.Effects
                 {
                     for (int y = rect.Top; y < rect.Bottom; ++y)
                     {
-                        Memory.SetToZero(waSums, arraysLength);
-                        Memory.SetToZero(wcSums, arraysLength);
-                        Memory.SetToZero(aSums, arraysLength);
-                        Memory.SetToZero(bSums, arraysLength);
-                        Memory.SetToZero(gSums, arraysLength);
-                        Memory.SetToZero(rSums, arraysLength);
+                        Memory.SetToZero(localStore, (ulong)localStoreSize);
 
                         long waSum = 0;
                         long wcSum = 0;
@@ -142,6 +154,7 @@ namespace PaintDotNet.Effects
                         long bSum = 0;
                         long gSum = 0;
                         long rSum = 0;
+
                         ColorBgra *dstPtr = dst.GetPointAddressUnchecked(rect.Left, y);
 
                         for (int wx = 0; wx < wlen; ++wx)

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -227,12 +227,6 @@ namespace PaintDotNet
         }
         
         public static readonly Color TransparentKey = Color.FromArgb(192, 192, 192);
-
-        [Obsolete("Use SystemLayer.OS.IsDotNetVersionInstalled() instead")]
-        public static bool IsDotNetVersionInstalled(int major, int minor, int build)
-        {
-            return SystemLayer.OS.IsDotNetVersionInstalled(major, minor, build);
-        }
 
         public static string WebExceptionToErrorMessage(WebException wex)
         {
@@ -555,34 +549,42 @@ namespace PaintDotNet
 
         public static string SizeStringFromBytes(long bytes)
         {
-            string returnMe;
             double bytesDouble = (double)bytes;
+            string toStringFormat;
+            string formatString;
 
             if (bytesDouble > (1024 * 1024 * 1024))
             {
                 // Gigs
                 bytesDouble /= 1024 * 1024 * 1024;
-                returnMe = bytesDouble.ToString("F1") + " GB";
+                toStringFormat = "F1";
+                formatString = PdnResources.GetString("Utility.SizeStringFromBytes.GBFormat");
             }
             else if (bytesDouble > (1024 * 1024))
             {
                 // Megs
                 bytesDouble /= 1024 * 1024;
-                returnMe = bytesDouble.ToString("F1") + " MB";
+                toStringFormat = "F1";
+                formatString = PdnResources.GetString("Utility.SizeStringFromBytes.MBFormat");
             }
             else if (bytesDouble > (1024))
             {
                 // K
                 bytesDouble /= 1024;
-                returnMe = bytesDouble.ToString("F1") + " KB";
+                toStringFormat = "F1";
+                formatString = PdnResources.GetString("Utility.SizeStringFromBytes.KBFormat");
             }
             else
             {
                 // Bytes
-                returnMe = bytesDouble.ToString("F0") + " Bytes";
+                toStringFormat = "F0";
+                formatString = PdnResources.GetString("Utility.SizeStringFromBytes.BytesFormat");
             }
 
-            return returnMe;
+            string bytesString = bytesDouble.ToString(toStringFormat);
+            string sizeString = string.Format(formatString, bytesString);
+
+            return sizeString;
         }
 
         public static void ShowWiaError(IWin32Window owner)
@@ -2901,7 +2903,7 @@ namespace PaintDotNet
             }
         }
 
-        public static int FastScaleByteByByte(byte a, byte b)
+        public static byte FastScaleByteByByte(byte a, byte b)
         {
             int r1 = a * b + 0x80;
             int r2 = ((r1 >> 8) + r1) >> 8;

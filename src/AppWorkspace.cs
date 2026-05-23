@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -587,10 +587,7 @@ namespace PaintDotNet
 
                     if (value != null)
                     {
-                        //if (focused)
-                        {
-                            value.Focus();
-                        }
+                        value.Focus();
                     }
                 }
             }
@@ -1605,8 +1602,16 @@ namespace PaintDotNet
                 if (ActiveDocumentWorkspace != null &&
                     ActiveDocumentWorkspace.ActiveLayerIndex > 0)
                 {
+                    // TODO: keep this in sync with LayersMenu. not appropriate to refactor into an Action for a 'dot' release
+                    int newLayerIndex = Utility.Clamp(
+                        ActiveDocumentWorkspace.ActiveLayerIndex - 1,
+                        0,
+                        ActiveDocumentWorkspace.Document.Layers.Count - 1);
+
                     ActiveDocumentWorkspace.ExecuteFunction(
                         new MergeLayerDownFunction(ActiveDocumentWorkspace.ActiveLayerIndex));
+
+                    ActiveDocumentWorkspace.ActiveLayerIndex = newLayerIndex;
                 }
             }
         }
@@ -1806,12 +1811,18 @@ namespace PaintDotNet
 
         private void ViewConfigStrip_ZoomIn(object sender, EventArgs e)
         {
-            this.ActiveDocumentWorkspace.ZoomIn();
+            if (this.ActiveDocumentWorkspace != null)
+            {
+                this.ActiveDocumentWorkspace.ZoomIn();
+            }
         }
 
         private void ViewConfigStrip_ZoomOut(object sender, EventArgs e)
         {
-            this.ActiveDocumentWorkspace.ZoomOut();
+            if (this.ActiveDocumentWorkspace != null)
+            {
+                this.ActiveDocumentWorkspace.ZoomOut();
+            }
         }
 
         private void ViewConfigStrip_UnitsChanged(object sender, EventArgs e)
@@ -1983,6 +1994,11 @@ namespace PaintDotNet
 
         public bool OpenFilesInNewWorkspace(string[] fileNames)
         {
+            if (IsDisposed)
+            {
+                return false;
+            }
+
             bool result = true;
 
             foreach (string fileName in fileNames)

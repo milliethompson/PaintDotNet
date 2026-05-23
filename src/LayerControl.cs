@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -202,7 +202,7 @@ namespace PaintDotNet
 
         public LayerControl()
         {
-            this.elementHeight = 2 + SystemLayer.UI.ScaleWidth(LayerElement.ThumbSizePreScaling);
+            this.elementHeight = 6 + SystemLayer.UI.ScaleWidth(LayerElement.ThumbSizePreScaling);
 
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
@@ -223,7 +223,7 @@ namespace PaintDotNet
 
         private void SetupNewDocument(Document newDocument)
         {
-            this.thumbnailManager.ClearQueue();
+            //this.thumbnailManager.ClearQueue();
 
             // Subscribe to the eevents
             this.document = newDocument;
@@ -260,7 +260,9 @@ namespace PaintDotNet
 
         private void TearDownOldDocument()
         {
-            foreach (LayerElement lec in layerControls)
+            SuspendLayout();
+
+            foreach (LayerElement lec in this.layerControls)
             {
                 lec.Click -= elementClickDelegate;
                 lec.DoubleClick -= elementDoubleClickDelegate;
@@ -270,10 +272,11 @@ namespace PaintDotNet
                 lec.Dispose();
             }
 
-            layerControls.Clear();
-            layerControls.TrimExcess();
+            ResumeLayout(true);
 
-            this.thumbnailManager.ClearQueue();
+            this.layerControls.Clear();
+
+            //this.thumbnailManager.ClearQueue();
 
             // Unsubscribe to the Events
             if (this.document != null)
@@ -359,6 +362,8 @@ namespace PaintDotNet
             this.ResumeLayout(false);
             this.layerControlPanel.PerformLayout();
             PerformLayout();
+
+            Refresh();
         }
 
         public void RefreshPreviews()

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -14,6 +14,67 @@ namespace PaintDotNet.SystemLayer
 {
     internal static class NativeConstants
     {
+        public enum SECURITY_IMPERSONATION_LEVEL
+        {
+            SecurityAnonymous = 0,
+            SecurityIdentification = 1,
+            SecurityImpersonation = 2,
+            SecurityDelegation = 3
+        }
+
+        public enum TOKEN_TYPE
+        {
+            TokenPrimary = 1,
+            TokenImpersonation = 2
+        }
+
+        public const uint TOKEN_ASSIGN_PRIMARY = 0x0001;
+        public const uint TOKEN_DUPLICATE = 0x0002;
+        public const uint TOKEN_IMPERSONATE = 0x0004;
+        public const uint TOKEN_QUERY = 0x0008;
+        public const uint TOKEN_QUERY_SOURCE = 0x0010;
+        public const uint TOKEN_ADJUST_PRIVILEGES = 0x0020;
+        public const uint TOKEN_ADJUST_GROUPS = 0x0040;
+        public const uint TOKEN_ADJUST_DEFAULT = 0x0080;
+        public const uint TOKEN_ADJUST_SESSIONID = 0x0100;
+        public const uint TOKEN_ALL_ACCESS_P = 
+            STANDARD_RIGHTS_REQUIRED | 
+            TOKEN_ASSIGN_PRIMARY | 
+            TOKEN_DUPLICATE | 
+            TOKEN_IMPERSONATE | 
+            TOKEN_QUERY | 
+            TOKEN_QUERY_SOURCE | 
+            TOKEN_ADJUST_PRIVILEGES | 
+            TOKEN_ADJUST_GROUPS | 
+            TOKEN_ADJUST_DEFAULT;
+
+        public const uint TOKEN_ALL_ACCESS = TOKEN_ALL_ACCESS_P | TOKEN_ADJUST_SESSIONID;
+        public const uint TOKEN_READ = STANDARD_RIGHTS_READ | TOKEN_QUERY;
+        public const uint TOKEN_WRITE = STANDARD_RIGHTS_WRITE | TOKEN_ADJUST_PRIVILEGES | TOKEN_ADJUST_GROUPS | TOKEN_ADJUST_DEFAULT;
+        public const uint TOKEN_EXECUTE = STANDARD_RIGHTS_EXECUTE;
+
+        public const uint MAXIMUM_ALLOWED = 0x02000000;
+        
+        public const uint PROCESS_TERMINATE = 0x0001; 
+        public const uint PROCESS_CREATE_THREAD = 0x0002; 
+        public const uint PROCESS_SET_SESSIONID = 0x0004; 
+        public const uint PROCESS_VM_OPERATION = 0x0008; 
+        public const uint PROCESS_VM_READ = 0x0010; 
+        public const uint PROCESS_VM_WRITE = 0x0020; 
+        public const uint PROCESS_DUP_HANDLE = 0x0040; 
+        public const uint PROCESS_CREATE_PROCESS = 0x0080; 
+        public const uint PROCESS_SET_QUOTA = 0x0100; 
+        public const uint PROCESS_SET_INFORMATION = 0x0200; 
+        public const uint PROCESS_QUERY_INFORMATION = 0x0400; 
+        public const uint PROCESS_SUSPEND_RESUME = 0x0800; 
+        public const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000; 
+        public const uint PROCESS_ALL_ACCESS = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFFF;
+
+        public const uint PF_NX_ENABLED = 12;
+        public const uint PF_XMMI_INSTRUCTIONS_AVAILABLE = 6;
+        public const uint PF_XMMI64_INSTRUCTIONS_AVAILABLE = 10;
+        public const uint PF_SSE3_INSTRUCTIONS_AVAILABLE = 13;
+
         public const uint CF_ENHMETAFILE = 14; 
 
         public static Guid BHID_Stream
@@ -378,6 +439,7 @@ namespace PaintDotNet.SystemLayer
         public const int ERROR_CANCELLED = 1223;
         public const int ERROR_IO_PENDING = 0x3e5;
         public const int ERROR_NO_MORE_ITEMS = 259;
+        public const int ERROR_TIMEOUT = 1460;
 
         public const uint DIGCF_PRESENT = 2;
 

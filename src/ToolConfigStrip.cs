@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -36,9 +36,6 @@ namespace PaintDotNet
           IResamplingConfig
     {
         private ToolBarConfigItems toolBarConfigItems = ToolBarConfigItems.None;
-
-        private const float minPenSize = 1.0f;
-        private const float maxPenSize = 100.0f;
 
         private EnumLocalizer hatchStyleNames = EnumLocalizer.Create(typeof(HatchStyle));
         private string solidBrushText;
@@ -111,9 +108,19 @@ namespace PaintDotNet
                 DashStyle.Dot
             };
 
-        private const int minBrushSize = 1;
-        private const int maxBrushSize = 100;
-        private int[] brushSizes = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 };
+        private const float minPenSize = 1.0f;
+        private const float maxPenSize = 500.0f;
+        private int[] brushSizes = 
+            new int[] 
+            { 
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 
+                11, 12, 13, 14, 15, 20, 25, 30, 
+                35, 40, 45, 50, 55, 60, 65, 70, 
+                75, 80, 85, 90, 95, 100, 125,
+                150, 175, 200, 225, 250, 275, 300,
+                325, 350, 375, 400, 425, 450, 475, 
+                500
+            };
         private ShapeDrawType shapeDrawType;
 
         private EnumLocalizer gradientTypeNames = EnumLocalizer.Create(typeof(GradientType));
@@ -166,7 +173,9 @@ namespace PaintDotNet
         private int[] defaultFontSizes =
             new int[] 
             { 
-                8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 
+                8, 9, 10, 11, 12, 14, 16, 18, 20, 
+                22, 24, 26, 28, 36, 48, 72, 84, 96, 
+                108, 144, 192, 216, 288
             };
 
         public void LoadFromAppEnvironment(AppEnvironment appEnvironment)
@@ -767,7 +776,14 @@ namespace PaintDotNet
             this.penSizeDecButton.Click +=
                 delegate(object sender, EventArgs e)
                 {
-                    AddToPenSize(-1.0f);
+                    float amount = -1.0f;
+
+                    if ((Control.ModifierKeys & Keys.Control) != 0)
+                    {
+                        amount *= 5.0f;
+                    }
+
+                    AddToPenSize(amount);
                 };
             //
             // penSizeComboBox
@@ -784,7 +800,14 @@ namespace PaintDotNet
             this.penSizeIncButton.Click +=
                 delegate(object sender, EventArgs e)
                 {
-                    AddToPenSize(1.0f);
+                    float amount = 1.0f;
+
+                    if ((Control.ModifierKeys & Keys.Control) != 0)
+                    {
+                        amount *= 5.0f;
+                    }
+
+                    AddToPenSize(amount);
                 };
             //
             // penStartCapLabel
@@ -1308,10 +1331,10 @@ namespace PaintDotNet
         {
             if ((this.toolBarConfigItems & ToolBarConfigItems.Pen) == ToolBarConfigItems.Pen)
             {
-                float newWidth = Utility.Clamp(PenInfo.Width + delta, minBrushSize, maxBrushSize);
+                float newWidth = Utility.Clamp(PenInfo.Width + delta, minPenSize, maxPenSize);
                 PenInfo newPenInfo = PenInfo.Clone();
                 newPenInfo.Width += delta;
-                newPenInfo.Width = (float)Utility.Clamp(newPenInfo.Width, 1, 100);
+                newPenInfo.Width = (float)Utility.Clamp(newPenInfo.Width, minPenSize, maxPenSize);
                 PenInfo = newPenInfo;
             }
         }
@@ -1400,13 +1423,17 @@ namespace PaintDotNet
                 {
                     // Set the error if the size is too small.
                     this.penSizeComboBox.BackColor = Color.Red;
-                    this.penSizeComboBox.ToolTipText = PdnResources.GetString("PenConfigWidget.Error.TooSmall");
+                    string tooSmallFormat = PdnResources.GetString("PenConfigWidget.Error.TooSmall.Format");
+                    string tooSmall = string.Format(tooSmallFormat, minPenSize);
+                    this.penSizeComboBox.ToolTipText = tooSmall;                        
                 }
                 else if (penSize > maxPenSize)
                 {
                     // Set the error if the size is too large.
                     this.penSizeComboBox.BackColor = Color.Red;
-                    this.penSizeComboBox.ToolTipText = PdnResources.GetString("PenConfigWidget.Error.TooLarge");
+                    string tooLargeFormat = PdnResources.GetString("PenConfigWidget.Error.TooLarge.Format");
+                    string tooLarge = string.Format(tooLargeFormat, maxPenSize);
+                    this.penSizeComboBox.ToolTipText = tooLarge;
                 }
                 else
                 {

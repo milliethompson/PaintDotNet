@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -47,8 +47,8 @@ namespace PaintDotNet.Effects
 
                 for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
-                    ColorBgra *srcRowPtr = srcArgs.Surface.GetPointAddress(rect.Left, y);
-                    ColorBgra *dstRowPtr = dstArgs.Surface.GetPointAddress(rect.Left, y);
+                    ColorBgra* srcRowPtr = srcArgs.Surface.GetPointAddressUnchecked(rect.Left, y);
+                    ColorBgra* dstRowPtr = dstArgs.Surface.GetPointAddressUnchecked(rect.Left, y);
                     ColorBgra *dstRowEndPtr = dstRowPtr + rect.Width;
 
                     if (divide == 0)

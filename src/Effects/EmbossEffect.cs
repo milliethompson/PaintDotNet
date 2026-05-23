@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -62,14 +62,22 @@ namespace PaintDotNet.Effects
                     if (y == src.Bounds.Bottom - 1) fyEnd = 2;
 
                     // loop through each point in the line 
-                    ColorBgra *dstPtr = dst.GetPointAddress(rect.Left, y);
+                    ColorBgra *dstPtr = dst.GetPointAddressUnchecked(rect.Left, y);
+
                     for (int x = rect.Left; x < rect.Right; ++x)
                     {
                         int fxStart = 0;
                         int fxEnd = 3;
 
-                        if (x == src.Bounds.Left) fxStart = 1;
-                        if (x == src.Bounds.Right - 1) fxEnd = 2;
+                        if (x == src.Bounds.Left)
+                        {
+                            fxStart = 1;
+                        }
+
+                        if (x == src.Bounds.Right - 1)
+                        {
+                            fxEnd = 2;
+                        }
 
                         // loop through each weight
                         double sum = 0.0;
@@ -85,10 +93,17 @@ namespace PaintDotNet.Effects
                             }
                         }
 
-                        int iSum = (int)sum;
-                        iSum += 128;
-                        if (iSum > 255) iSum = 255;
-                        if (iSum < 0) iSum = 0;
+                        int iSum = (int)sum + 128;
+
+                        if (iSum > 255)
+                        {
+                            iSum = 255;
+                        }
+                        else if (iSum < 0)
+                        {
+                            iSum = 0;
+                        }
+
                         *dstPtr = ColorBgra.FromBgra((byte)iSum, (byte)iSum, (byte)iSum, 255);
 
                         ++dstPtr;

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -46,7 +46,7 @@ namespace PaintDotNet.Effects
                     if (y == src.Bounds.Bottom - 1) fyEnd = 2;
 
                     // loop through each point in the line 
-                    ColorBgra *dstPtr = dst.GetPointAddress(rect.Left, y);
+                    ColorBgra* dstPtr = dst.GetPointAddressUnchecked(rect.Left, y);
 
                     for (int x = rect.Left; x < rect.Right; ++x)
                     {

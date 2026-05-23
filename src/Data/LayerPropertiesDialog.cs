@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -23,9 +23,6 @@ namespace PaintDotNet
         protected System.Windows.Forms.TextBox nameBox;
         protected System.Windows.Forms.Button cancelButton;
         protected System.Windows.Forms.Button okButton;
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.Container components = null;
         private object originalProperties = null;
         private PaintDotNet.HeaderLabel generalHeader;        
@@ -42,16 +39,16 @@ namespace PaintDotNet
 
             set
             {
-                layer = value;
-                originalProperties = layer.SaveProperties();
+                this.layer = value;
+                this.originalProperties = this.layer.SaveProperties();
                 InitDialogFromLayer();
             }
         }
 
         protected virtual void InitLayerFromDialog()
         {
-            layer.Name = this.nameBox.Text;
-            layer.Visible = this.visibleCheckBox.Checked;
+            this.layer.Name = this.nameBox.Text;
+            this.layer.Visible = this.visibleCheckBox.Checked;
             
             if (this.Owner != null)
             {
@@ -61,8 +58,8 @@ namespace PaintDotNet
 
         protected virtual void InitDialogFromLayer()
         {
-            this.nameBox.Text = layer.Name;
-            this.visibleCheckBox.Checked = layer.Visible;
+            this.nameBox.Text = this.layer.Name;
+            this.visibleCheckBox.Checked = this.layer.Visible;
         }
 
         public LayerPropertiesDialog()
@@ -179,6 +176,7 @@ namespace PaintDotNet
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(274, 96);
+            this.ControlBox = true;
             this.Controls.Add(this.generalHeader);
             this.Controls.Add(this.okButton);
             this.Controls.Add(this.cancelButton);
@@ -204,7 +202,7 @@ namespace PaintDotNet
 
         private void NameBox_Enter(object sender, System.EventArgs e)
         {
-            nameBox.Select(0, nameBox.Text.Length);
+            this.nameBox.Select(0, nameBox.Text.Length);
         }
 
         private void OkButton_Click(object sender, System.EventArgs e)
@@ -213,15 +211,15 @@ namespace PaintDotNet
 
             using (new WaitCursorChanger(this))
             {
-                layer.PushSuppressPropertyChanged();
+                this.layer.PushSuppressPropertyChanged();
                 InitLayerFromDialog();
-                object currentProperties = layer.SaveProperties();
-                layer.LoadProperties(this.originalProperties);
-                layer.PopSuppressPropertyChanged();
+                object currentProperties = this.layer.SaveProperties();
+                this.layer.LoadProperties(this.originalProperties);
+                this.layer.PopSuppressPropertyChanged();
 
-                layer.LoadProperties(currentProperties);
-                originalProperties = layer.SaveProperties();
-                layer.Invalidate();
+                this.layer.LoadProperties(currentProperties);
+                this.originalProperties = layer.SaveProperties();
+                //layer.Invalidate(); // no need to call Invalidate() -- it will be called by OnClosed()
             }
             
             Close();
@@ -230,16 +228,20 @@ namespace PaintDotNet
         private void CancelButton_Click(object sender, System.EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
+            Close();
+        }
 
+        protected override void OnClosed(EventArgs e)
+        {
             using (new WaitCursorChanger(this))
             {
-                layer.PushSuppressPropertyChanged();
-                layer.LoadProperties(originalProperties);
-                layer.PopSuppressPropertyChanged();
-                layer.Invalidate();
-            }
-
-            Close();
+                this.layer.PushSuppressPropertyChanged();
+                this.layer.LoadProperties(this.originalProperties);
+                this.layer.PopSuppressPropertyChanged();
+                this.layer.Invalidate();
+            } 
+            
+            base.OnClosed(e);
         }
 
         private void VisibleCheckBox_CheckedChanged(object sender, System.EventArgs e)

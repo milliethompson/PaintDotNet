@@ -817,8 +817,14 @@ Tastenkombination: X</value>
   <data name="PenConfigWidget.Error.TooSmall" xml:space="preserve">
     <value>Die minimale Stärke beträgt 1</value>
   </data>
+  <data name="PenConfigWidget.Error.TooSmall.Format" xml:space="preserve">
+    <value>Die minimale Stärke beträgt {0}</value>
+  </data>
   <data name="PenConfigWidget.Error.TooLarge" xml:space="preserve">
-    <value>Die maximale Stärke beträgt 100</value>
+    <value>Die maximale Stärke beträgt 500</value>
+  </data>
+  <data name="PenConfigWidget.Error.TooLarge.Format" xml:space="preserve">
+    <value>Die maximale Stärke beträgt {0}</value>
   </data>
   <data name="ProgressDialog.PercentText.Text.Format" xml:space="preserve">
     <value>{0}%</value>
@@ -1213,6 +1219,9 @@ Ursprünglich abgespeichert mit: Paint.NET {0}
 Aktuelle Programmversion: Paint.NET {1}</value>
     <comment>{0} and {1} are version numbers</comment>
   </data>
+  <data name="FileDialog.PathTooLongException.Message">
+    <value>Der Dateiname ist zu lang. Geben Sie einen kürzeren Namen an.</value>
+  </data>
   <data name="FileDialog.Types.AllImages" xml:space="preserve">
     <value>Alle Bildtypen</value>
   </data>
@@ -1566,6 +1575,9 @@ Möchten sie das aktuelle Bild automatisch erweitern?</value>
   </data>
   <data name="Menu.Help.PdnWebsite.Text" xml:space="preserve">
     <value>&amp;Paint.NET-Website</value>
+  </data>
+  <data name="Menu.Help.PdnSearch.Text">
+    <value>Paint.NET &amp;Suchen...</value>
   </data>
   <data name="Menu.Help.Donate.Text" xml:space="preserve">
     <value>&amp;Spenden...</value>
@@ -2244,6 +2256,9 @@ Klicken sie zum Besuchen der Paint.NET Homepage auf OK um von dort eine neuere V
   </data>
   <data name="GifSaveConfigWidget.ThresholdInfoLabel.Text">
     <value>Pixel mit einem Alphawert weniger als dem Schwellenwert werden völlig transparent sein.</value>
+  </data>
+  <data name="SetupWizard.MustCloseAppFirst.Text">
+    <value>Stellen Sie sicher, dass Paint.NET geschlossen ist, dann auf Wiederholen klicken, oder auf Abbrechen klicken, um diesen Assistenten zu beenden.</value>
   </data>
   <data name="SetupWizard.HelpText" xml:space="preserve">
     <value>Paint.NET Installationshilfe
@@ -2931,5 +2946,92 @@ Tastenkombination: /</value>
     <value>{0} ist bereits vorhanden.
 Möchten Sie es ersetzen?</value>
     <comment>{0} is a relative filename. e.g. "Untitled.png"</comment>
+  </data>
+  <data name="InkSketchEffect.Name">
+    <value>Skizze nachzeichnen</value>
+  </data>
+  <data name="InkSketchEffect.ConfigDialog.InkOutlineLabel">
+    <value>Kontur nachzeichnen</value>
+  </data>
+  <data name="InkSketchEffect.ConfigDialog.ColoringLabel">
+    <value>Färbung</value>
+  </data>
+  <data name="SoftenPortraitEffect.Name">
+    <value>Porträt weicher machen</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.SoftnessLabel">
+    <value>Weichheit</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.LightingLabel">
+    <value>Beleuchtung</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.WarmthLabel">
+    <value>Wärme</value>
+  </data>
+  <data name="DdsFileType.Name">
+    <value>DirectDraw-Oberfläche (DDS)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.RangeFit.Text">
+    <value>Range-Anpassung (Schnell/NQ)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.ClusterFit.Text">
+    <value>Cluster-Anpassung (Langsam/HQ)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.IterativeFit.Text">
+    <value>Iterative Anpassung(Langsam/HQ)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.Uniform.Text">
+    <value>Einheitlich</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.Perceptual.Text">
+    <value>Perzeptiv</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.GenerateMipMaps.Text">
+    <value>Mip Maps generieren</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.WeightColourByAlpha">
+    <value>Gewichtungsfarbe durch Alpha</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT1">
+    <value>DXT1 (Undurchsichtig/1-Bit Alpha)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT3">
+    <value>DXT3 (Explizites Alpha)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT5">
+    <value>DXT5 (Interpoliertes Alpha)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A8R8G8B8">
+    <value>A8R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.X8R8G8B8">
+    <value>X8R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A8B8G8R8">
+    <value>A8B8G8R8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.X8B8G8R8">
+    <value>X8B8G8R8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A1R5G5B5">
+    <value>A1R5G5B5</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A4R4G4B4">
+    <value>A4R4G4B4</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.R8G8B8">
+    <value>R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.R5G6B5">
+    <value>R5G6B5</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.CompressorTypeLabel.Text">
+    <value>Kompressortyp</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.ErrorMetricLabel.Text">
+    <value>Fehlermetrik</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.AdditionalOptions.Text">
+    <value>Weitere Optionen</value>
   </data>
 </root>

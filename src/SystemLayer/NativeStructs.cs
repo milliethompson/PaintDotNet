@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -14,6 +14,15 @@ namespace PaintDotNet.SystemLayer
 {
     internal static class NativeStructs
     {
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct PROCESS_INFORMATION
+        {
+            public IntPtr hProcess;
+            public IntPtr hThread;
+            public uint dwProcessId;
+            public uint dwThreadId;
+        }
+
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         internal struct STATSTG 
         {  

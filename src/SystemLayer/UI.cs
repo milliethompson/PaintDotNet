@@ -1,12 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Base;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -516,6 +517,44 @@ namespace PaintDotNet.SystemLayer
             }
 
             GC.KeepAlive(window);
+        }
+
+        internal static void InvokeThroughModalTrampoline(IWin32Window owner, Procedure<IWin32Window> invokeMe)
+        {
+            using (Form modalityFix = new Form())
+            {
+                modalityFix.ShowInTaskbar = false;
+                modalityFix.TransparencyKey = modalityFix.BackColor;
+                UI.SetFormOpacity(modalityFix, 0);
+                modalityFix.ControlBox = false;
+                modalityFix.FormBorderStyle = FormBorderStyle.None;
+
+                Control ownerAsControl = owner as Control;
+                if (ownerAsControl != null)
+                {
+                    Form ownerForm = ownerAsControl.FindForm();
+
+                    if (ownerForm != null)
+                    {
+                        Rectangle clientRect = ownerForm.RectangleToScreen(ownerForm.ClientRectangle);
+
+                        modalityFix.Icon = ownerForm.Icon;
+                        modalityFix.Location = clientRect.Location;
+                        modalityFix.Size = clientRect.Size;
+                        modalityFix.StartPosition = FormStartPosition.Manual;
+                    }
+                }
+
+                modalityFix.Shown +=
+                    delegate(object sender, EventArgs e)
+                    {
+                        invokeMe(modalityFix);
+                        modalityFix.Close();
+                    };
+
+                modalityFix.ShowDialog(owner);
+                GC.KeepAlive(modalityFix);
+            }
         }
     }
 }

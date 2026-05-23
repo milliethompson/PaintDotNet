@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -18,7 +18,7 @@ namespace PaintDotNet
         : FileType
     {
         public PdnFileType()
-            : base(PdnInfo.GetProductName(),
+            : base(PdnInfo.GetBareProductName(),
                    FileTypeFlags.SavesWithProgress | 
                        FileTypeFlags.SupportsCustomHeaders |
                        FileTypeFlags.SupportsLayers |

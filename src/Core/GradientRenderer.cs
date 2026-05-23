@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -225,7 +225,7 @@ namespace PaintDotNet
                                 float lerpBounded = BoundLerp(lerpUnbounded);
                                 byte lerpByte = (byte)(lerpBounded * 255.0f);
                                 byte lerpAlpha = this.lerpAlphas[lerpByte];
-                                byte resultAlpha = (byte)Utility.FastScaleByteByByte(pixelPtr->A, lerpAlpha);
+                                byte resultAlpha = Utility.FastScaleByteByByte(pixelPtr->A, lerpAlpha);
                                 pixelPtr->A = resultAlpha;
                                 ++pixelPtr;
                             }

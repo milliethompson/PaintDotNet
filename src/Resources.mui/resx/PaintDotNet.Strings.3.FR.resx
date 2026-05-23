@@ -817,8 +817,14 @@ Touche de raccourci : X</value>
   <data name="PenConfigWidget.Error.TooSmall" xml:space="preserve">
     <value>La taille est plus petite que 1</value>
   </data>
+  <data name="PenConfigWidget.Error.TooSmall.Format" xml:space="preserve">
+    <value>La taille est plus petite que {0}</value>
+  </data>
   <data name="PenConfigWidget.Error.TooLarge" xml:space="preserve">
-    <value>La taille est plus grande que 100</value>
+    <value>La taille est plus grande que 500</value>
+  </data>
+  <data name="PenConfigWidget.Error.TooLarge.Format" xml:space="preserve">
+    <value>La taille est plus grande que {0}</value>
   </data>
   <data name="ProgressDialog.PercentText.Text.Format" xml:space="preserve">
     <value>{0}%</value>
@@ -1213,6 +1219,9 @@ Enregistrée avec : Paint.NET v{0}
 Version actuelle : Paint.NET v{1}</value>
     <comment>{0} and {1} are version numbers</comment>
   </data>
+  <data name="FileDialog.PathTooLongException.Message">
+    <value>Le nom de fichier est trop long. Essayez un nom plus court.</value>
+  </data>
   <data name="FileDialog.Types.AllImages" xml:space="preserve">
     <value>Tous les types d'images</value>
   </data>
@@ -1567,8 +1576,11 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
   <data name="Menu.Help.PdnWebsite.Text" xml:space="preserve">
     <value>Site &amp;web de Paint.NET</value>
   </data>
+  <data name="Menu.Help.PdnSearch.Text">
+    <value>Aide Paint.NET (&amp;rechercher)...</value>
+  </data>
   <data name="Menu.Help.Donate.Text" xml:space="preserve">
-    <value>Faire un &amp;don...</value>
+    <value>Faire un do&amp;n...</value>
   </data>
   <data name="Menu.Help.Forum.Text" xml:space="preserve">
     <value>&amp;Forum</value>
@@ -1580,13 +1592,13 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
     <value>&amp;Plug-ins</value>
   </data>
   <data name="Menu.Help.About.Text" xml:space="preserve">
-    <value>À pr&amp;opos de</value>
+    <value>A pr&amp;opos de</value>
   </data>
   <data name="Menu.Help.Updates.Text" xml:space="preserve">
     <value>&amp;Mises à jour</value>
   </data>
   <data name="Menu.Help.CheckForUpdates.Text">
-    <value>&amp;Rechercher les mises à jour...</value>
+    <value>Rechercher les &amp;mises à jour...</value>
   </data>
   <data name="Menu.Help.SendFeedback.Text" xml:space="preserve">
     <value>Envoyer des commentaires ou un rapport de bogue...</value>
@@ -2244,6 +2256,9 @@ Cliquez sur OK pour visiter le site web de Paint.NET d'où vous pourrez peut-êt
   </data>
   <data name="GifSaveConfigWidget.ThresholdInfoLabel.Text">
     <value>Les pixels avec une valeur alpha inférieure au seuil seront complètement transparents.</value>
+  </data>
+  <data name="SetupWizard.MustCloseAppFirst.Text">
+    <value>Veuillez vous assurer que Paint.NET est fermé, et cliquez sur "Réessayer". Ou cliquez sur Annuler pour quitter l'Assistant.</value>
   </data>
   <data name="SetupWizard.HelpText" xml:space="preserve">
     <value>Aide du programme d'installation de Paint.NET
@@ -2905,7 +2920,7 @@ Touche de raccourci : /</value>
     <comment>{0} is an error message, which will be populated by the operation system in the language that it is configured for.</comment>
   </data>
   <data name="DocumentWorkspace.ShowFileDialog.RetryTB.ActionText">
-    <value>&amp;Recommencer</value>
+    <value>&amp;Réessayer</value>
   </data>
   <data name="DocumentWorkspace.ShowFileDialog.RetryTB.ExplanationText">
     <value>Réessaye de transférer l'image.</value>
@@ -2929,5 +2944,68 @@ Touche de raccourci : /</value>
     <value>{0} existe déjà.
 Voulez-vous le remplacer ?</value>
     <comment>{0} is a relative filename. e.g. "Untitled.png"</comment>
+  </data>
+  <data name="InkSketchEffect.Name">
+    <value>Croquis à l'encre</value>
+  </data>
+  <data name="InkSketchEffect.ConfigDialog.InkOutlineLabel">
+    <value>Contour à l'encre</value>
+  </data>
+  <data name="InkSketchEffect.ConfigDialog.ColoringLabel">
+    <value>Coloriage</value>
+  </data>
+  <data name="SoftenPortraitEffect.Name">
+    <value>Adoucir portrait</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.SoftnessLabel">
+    <value>Douceur</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.LightingLabel">
+    <value>Eclairage</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.WarmthLabel">
+    <value>Ton</value>
+  </data>
+  <data name="DdsFileType.Name">
+    <value>DirectDraw Surface (DDS)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.RangeFit.Text">
+    <value>Par intervalles (rapide/QF)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.ClusterFit.Text">
+    <value>Par groupes (lent/QH)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.IterativeFit.Text">
+    <value>Itératif (le plus lent/QH)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.Uniform.Text">
+    <value>Uniforme</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.Perceptual.Text">
+    <value>Perceptuelle</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.GenerateMipMaps.Text">
+    <value>Générer les images MIP</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.WeightColourByAlpha">
+    <value>Evaluer les couleurs par valeur alpha</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT1">
+    <value>DXT1 (Opaque/Alpha 1 bit)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT3">
+    <value>DXT3 (Alpha explicite)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT5">
+    <value>DXT5 (Alpha interpolé)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.CompressorTypeLabel.Text">
+    <value>Type de compression</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.ErrorMetricLabel.Text">
+    <value>Mesure d'erreur</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.AdditionalOptions.Text">
+    <value>Options supplémentaires</value>
   </data>
 </root>

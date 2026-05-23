@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -248,17 +249,6 @@ namespace PaintDotNet.SystemLayer
             }
 
             this.uiCallbacks = uiCallbacks;
-            
-            IntPtr parent;
-
-            if (owner == null)
-            {
-                parent = IntPtr.Zero;
-            }
-            else
-            {
-                parent = owner.Handle;
-            }
 
             try
             {
@@ -278,7 +268,16 @@ namespace PaintDotNet.SystemLayer
 
             OnBeforeShow();
 
-            int hr = this.fileDialog.Show(parent);
+            int hr = 0;
+
+            UI.InvokeThroughModalTrampoline(
+                owner,
+                delegate(IWin32Window modalOwner)
+                {
+                    hr = this.fileDialog.Show(modalOwner.Handle);
+                    GC.KeepAlive(modalOwner);
+                });
+
             DialogResult result;
 
             if (hr >= 0)

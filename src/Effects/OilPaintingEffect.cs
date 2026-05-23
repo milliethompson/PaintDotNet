@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -70,11 +70,26 @@ namespace PaintDotNet.Effects
             int height = src.Height;
 
             int arrayLens = 1 + smoothness;
-            int* intensityCount = stackalloc int[arrayLens];
-            uint* avgRed = stackalloc uint[arrayLens];
-            uint* avgGreen = stackalloc uint[arrayLens];
-            uint* avgBlue = stackalloc uint[arrayLens];
-            uint* avgAlpha = stackalloc uint[arrayLens];
+
+            int localStoreSize = arrayLens * 5 * sizeof(int);
+
+            byte* localStore = stackalloc byte[localStoreSize];
+            byte* p = localStore;
+
+            int* intensityCount = (int*)p;
+            p += arrayLens * sizeof(int);
+
+            uint* avgRed = (uint*)p;
+            p += arrayLens * sizeof(uint);
+
+            uint* avgGreen = (uint*)p;
+            p += arrayLens * sizeof(uint);
+
+            uint* avgBlue = (uint*)p;
+            p += arrayLens * sizeof(uint);
+
+            uint* avgAlpha = (uint*)p;
+            p += arrayLens * sizeof(uint);
 
             byte maxIntensity = smoothness;
 
@@ -89,7 +104,7 @@ namespace PaintDotNet.Effects
 
                 for (int y = rectTop; y < rectBottom; ++y)
                 {
-                    ColorBgra *dstPtr = dst.GetPointAddress(rect.Left, y);
+                    ColorBgra *dstPtr = dst.GetPointAddressUnchecked(rect.Left, y);
 
                     int top = y - brushSize;
                     int bottom = y + brushSize + 1;
@@ -106,6 +121,8 @@ namespace PaintDotNet.Effects
 
                     for (int x = rectLeft; x < rectRight; ++x)
                     {
+                        SystemLayer.Memory.SetToZero(localStore, (ulong)localStoreSize);
+
                         int left = x - brushSize;
                         int right = x + brushSize + 1;
 
@@ -119,24 +136,16 @@ namespace PaintDotNet.Effects
                             right = width;
                         }
 
-                        for (int i = 0; i < arrayLens; ++i)
-                        {
-                            intensityCount[i] = 0;
-                            avgRed[i] = 0;
-                            avgGreen[i] = 0;
-                            avgBlue[i] = 0;
-                            avgAlpha[i] = 0;
-                        }
-
                         int numInt = 0;
 
                         for (int j = top; j < bottom; ++j)
                         {
-                            ColorBgra *srcPtr = src.GetPointAddress(left, j);
+                            ColorBgra *srcPtr = src.GetPointAddressUnchecked(left, j);
 
                             for (int i = left; i < right; ++i)
                             {
-                                byte intensity = (byte)((srcPtr->GetIntensityByte() * maxIntensity) / 255);
+                                byte intensity = Utility.FastScaleByteByByte(srcPtr->GetIntensityByte(), maxIntensity);
+
                                 ++intensityCount[intensity];
                                 ++numInt;
 

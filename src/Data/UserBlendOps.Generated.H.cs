@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
-// See src/Setup/License.txt for full licensing and attribution details.       //
-// 2                                                                           //
-// 1                                                                           //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 #include "GeneratedCodeWarning.h"

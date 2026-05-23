@@ -426,6 +426,21 @@
     <EmbeddedResource Include="Images\DashStyleButton.Dot.png" />
     <EmbeddedResource Include="Images\DashStyleButton.Solid.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\InkSketchEffectIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\SoftenPortraitEffectIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Images\ImageStrip.CloseButton.Disabled.png" />
+    <EmbeddedResource Include="Images\ImageStrip.CloseButton.Hot.png" />
+    <EmbeddedResource Include="Images\ImageStrip.CloseButton.Normal.png" />
+    <EmbeddedResource Include="Images\ImageStrip.CloseButton.Pressed.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\MenuHelpPdnSearchIcon.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -220,29 +220,55 @@ namespace PaintDotNet.SystemLayer
 
             try
             {
-                if (!OverwritePrompt)
-                {
-                    hr = NativeConstants.S_OK;
-                }
-                else if (File.Exists(pathNameResolved))
-                {
-                    IntPtr hWnd = IntPtr.Zero;
-                    oleWindow.GetWindow(out hWnd);
-                    Win32Window win32Window = new Win32Window(hWnd, oleWindow);
-                    FileOverwriteAction action = FileDialogUICallbacks.ShowOverwritePrompt(win32Window, pathNameResolved);
+                IntPtr hWnd = IntPtr.Zero;
+                oleWindow.GetWindow(out hWnd);
+                Win32Window win32Window = new Win32Window(hWnd, oleWindow);
 
-                    switch (action)
+                // File name/path validation
+                if (hr >= 0)
+                {
+                    try
                     {
-                        case FileOverwriteAction.Cancel:
-                            hr = NativeConstants.S_FALSE;
-                            break;
+                        // Verify that these can be parsed correctly
+                        string fileName = Path.GetFileName(pathNameResolved);
+                        string dirName = Path.GetDirectoryName(pathNameResolved);
+                    }
 
-                        case FileOverwriteAction.Overwrite:
-                            hr = NativeConstants.S_OK;
-                            break;
+                    catch (Exception ex)
+                    {
+                        if (!FileDialogUICallbacks.ShowError(win32Window, pathNameResolved, ex))
+                        {
+                            throw;
+                        }
 
-                        default:
-                            throw new InvalidEnumArgumentException();
+                        hr = NativeConstants.S_FALSE;
+                    }
+                }
+
+                if (hr >= 0)
+                {
+                    // Overwrite existing file
+                    if (!OverwritePrompt)
+                    {
+                        hr = NativeConstants.S_OK;
+                    }
+                    else if (File.Exists(pathNameResolved))
+                    {
+                        FileOverwriteAction action = FileDialogUICallbacks.ShowOverwritePrompt(win32Window, pathNameResolved);
+
+                        switch (action)
+                        {
+                            case FileOverwriteAction.Cancel:
+                                hr = NativeConstants.S_FALSE;
+                                break;
+
+                            case FileOverwriteAction.Overwrite:
+                                hr = NativeConstants.S_OK;
+                                break;
+
+                            default:
+                                throw new InvalidEnumArgumentException();
+                        }
                     }
                 }
             }

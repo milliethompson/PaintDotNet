@@ -18,7 +18,7 @@
     <DefaultTargetSchema>IE50</DefaultTargetSchema>
     <DelaySign>false</DelaySign>
     <OutputType>Library</OutputType>
-    <RootNamespace>PaintDotNet.Core</RootNamespace>
+    <RootNamespace>PaintDotNet</RootNamespace>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <StartupObject>
     </StartupObject>
@@ -113,6 +113,8 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="LayoutUtility.cs" />
+    <Compile Include="AutoSizeStrategy.cs" />
     <Compile Include="BinaryPixelOp.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -153,6 +155,7 @@
     <Compile Include="CurveControlRgb.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="EdgeSnapOptions.cs" />
     <Compile Include="EnumLocalizer.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -22,14 +22,17 @@ namespace PaintDotNet.HistoryFunctions
             string newLayerNameFormat = PdnResources.GetString("AddNewBlankLayer.LayerName.Format");
             newLayer.Name = string.Format(newLayerNameFormat, (1 + historyWorkspace.Document.Layers.Count).ToString());
 
+            int newLayerIndex = historyWorkspace.ActiveLayerIndex + 1;
+
             NewLayerHistoryMemento ha = new NewLayerHistoryMemento(
                 PdnResources.GetString("AddNewBlankLayer.HistoryMementoName"),
                 ImageResource.Get("Icons.MenuLayersAddNewLayerIcon.png"),
                 historyWorkspace,
-                historyWorkspace.Document.Layers.Count);
+                newLayerIndex);
 
             EnterCriticalRegion();
-            historyWorkspace.Document.Layers.Add(newLayer);
+
+            historyWorkspace.Document.Layers.Insert(newLayerIndex, newLayer);
 
             return ha;
         }

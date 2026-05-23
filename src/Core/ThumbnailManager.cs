@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -23,10 +23,21 @@ namespace PaintDotNet
     using ThumbnailStackItem = Triple<IThumbnailProvider, EventHandler<Pair<IThumbnailProvider, Surface>>, int>;
     using ThumbnailReadyEventDetails = Triple<EventHandler<Pair<IThumbnailProvider, Surface>>, object, EventArgs<Pair<IThumbnailProvider, Surface>>>;
 
+    // TODO: Add calls to VerifyNotDispose() for the next release where we can get enough testing for it
+
     public sealed class ThumbnailManager
         : IDisposable
     {
-        private int updateLatency = 100;
+        private bool disposed = false;
+        private int updateLatency = 67;
+
+        public bool IsDisposed
+        {
+            get
+            {
+                return this.disposed;
+            }
+        }
 
         public int UpdateLatency
         {
@@ -46,6 +57,16 @@ namespace PaintDotNet
         private Thread renderThread;
         private volatile bool quitRenderThread;
         private object updateLock;
+
+        /*
+        private void VerifyNotDisposed()
+        {
+            if (IsDisposed)
+            {
+                throw new ObjectDisposedException("ThumbnailManager");
+            }
+        }
+         * */
 
         // This event is non-signaled during the period of time between when the rendering thread has popped
         // an item from the renderQueue, and when it finishes holding a reference to it (i.e. either it
@@ -83,8 +104,12 @@ namespace PaintDotNet
 
             try
             {
-                //this.syncContext.BeginInvoke(callback, new object[] { this, e });
                 this.syncContext.BeginInvoke(new Procedure(DrainThumbnailReadyInvokeList), null);
+            }
+
+            catch (ObjectDisposedException)
+            {
+                // Ignore this error
             }
 
             catch (InvalidOperationException)
@@ -117,6 +142,8 @@ namespace PaintDotNet
 
         private void Dispose(bool disposing)
         {
+            this.disposed = true;
+
             if (disposing)
             {
                 this.quitRenderThread = true;

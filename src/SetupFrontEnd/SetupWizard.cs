@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -750,16 +750,17 @@ namespace PaintDotNet.Setup
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main(string[] args) 
+        static int Main(string[] args) 
         {
             try
             {
-                MainImpl(args);
+                return MainImpl(args);
             }
 
             catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString());
+                return 3;
             }
         }
 
@@ -787,7 +788,7 @@ namespace PaintDotNet.Setup
             }
         }
 
-        static void MainImpl(string[] args)
+        static int MainImpl(string[] args)
         {
             Application.SetCompatibleTextRenderingDefault(false);
             Application.EnableVisualStyles();
@@ -822,7 +823,7 @@ namespace PaintDotNet.Setup
 
             if (!PdnInfo.HandleExpiration(null))
             {
-                return;
+                return 1;
             }
 
             bool doInstall = true;
@@ -887,9 +888,17 @@ namespace PaintDotNet.Setup
 
             setupWizard.SetMsiProperty(PropertyNames.PdnUpdating, "0");
 
+            // Make sure Paint.NET is closed, and then grab its mutex
+            SingleInstanceManager sim = GetAppSingleInstanceManager();
+
+            if (sim == null)
+            {
+                return 2;
+            }
+
             // Only allow 1 instance of setup wizard running at a time...
             bool createdNew;
-            Mutex mutex = new Mutex(false, mutexName, out createdNew);
+            Mutex setupMutex = new Mutex(false, mutexName, out createdNew);
 
             doInstall &= createdNew;
 
@@ -897,6 +906,8 @@ namespace PaintDotNet.Setup
             {
                 if (CheckRequirements())
                 {
+                    sim.SetWindow(setupWizard);
+
                     if (doMsiDump)
                     {
                         setupWizard.ClearPageStack();
@@ -936,9 +947,68 @@ namespace PaintDotNet.Setup
                 }
 
                 setupWizard.Dispose();
+                setupWizard = null;
             }
 
-            mutex.Close();
+            setupMutex.Close();
+            setupMutex = null;
+
+            sim.Dispose();
+            sim = null;
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Ensures that Paint.NET is closed, and returns the SIM that helps to enforce this.
+        /// </summary>
+        private static SingleInstanceManager GetAppSingleInstanceManager()
+        {
+            TimeSpan freeWait = new TimeSpan(0, 0, 0, 4); // wait for a short while before bothering to notify the user
+            DateTime start = DateTime.Now;
+
+            // First, give a few seconds to try and get the SIM before notifying the user
+            while (true)
+            {
+                SingleInstanceManager sim = new SingleInstanceManager(InvariantStrings.SingleInstanceMonikerName);
+
+                if (sim.IsFirstInstance)
+                {
+                    return sim;
+                }
+
+                sim.Dispose();
+                Thread.Sleep(100);
+
+                if (DateTime.Now - start > freeWait)
+                {
+                    break;
+                }
+            }
+
+            // Now, let's be obnoxious :(
+            while (true)
+            {
+                SingleInstanceManager sim = new SingleInstanceManager(InvariantStrings.SingleInstanceMonikerName);
+
+                if (sim.IsFirstInstance)
+                {
+                    return sim;
+                }
+
+                sim.Dispose();
+
+                string title = PdnInfo.GetBareProductName();
+                string message = PdnResources.GetString("SetupWizard.MustCloseAppFirst.Text");
+                DialogResult result = MessageBox.Show(null, message, title, MessageBoxButtons.RetryCancel, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button1);
+
+                if (result == DialogResult.Cancel)
+                {
+                    break;
+                }
+            }
+
+            return null;
         }
 
         private void nextButton_Click(object sender, System.EventArgs e)

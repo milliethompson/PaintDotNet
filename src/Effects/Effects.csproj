@@ -224,6 +224,7 @@
     <Compile Include="HueAndSaturationAdjustment.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="InkSketchEffect.cs" />
     <Compile Include="InvertColorsEffect.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -291,6 +292,8 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="PencilSketchEffect.cs" />
+    <Compile Include="SoftenPortraitEffect.cs" />
+    <Compile Include="SubmenuNames.cs" />
     <Compile Include="ThreeAmountsConfigDialog.cs">
       <SubType>Form</SubType>
     </Compile>

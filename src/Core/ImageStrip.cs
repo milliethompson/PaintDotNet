@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -820,70 +820,19 @@ namespace PaintDotNet
         {
             if (item.Checked && item.Selected)
             {
-                Color xInnerColor;
-                Color xOuterColor;
-                Color outlineColor;
+                const string resourceNamePrefix = "Images.ImageStrip.CloseButton.";
+                const string resourceNameSuffix = ".png";
+                string resourceNameInfix = item.CloseRenderState.ToString();
 
-                switch (item.CloseRenderState)
-                {
-                    case UI.ButtonState.Disabled:
-                        xInnerColor = Color.LightGray;
-                        xOuterColor = Color.LightGray;
-                        outlineColor = Color.Transparent;
-                        break;
+                string resourceName = resourceNamePrefix + resourceNameInfix + resourceNameSuffix;
 
-                    case UI.ButtonState.Hot:
-                        xInnerColor = Color.Red;
-                        xOuterColor = Color.White;
-                        outlineColor = Color.Gray;
-                        break;
+                ImageResource imageResource = ImageResource.Get(resourceName);
+                Image image = imageResource.Reference;
 
-                    case UI.ButtonState.Normal:
-                        xInnerColor = Color.Black;
-                        xOuterColor = Color.White;
-                        outlineColor = Color.Transparent;
-                        break;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
 
-                    case UI.ButtonState.Pressed:
-                        xInnerColor = Color.DarkRed;
-                        xOuterColor = Color.White;
-                        outlineColor = Color.Gray;
-                        break;
-
-                    default:
-                        throw new InvalidEnumArgumentException();
-                }
-
-                const int xInset = 2;
-                int scaledXInset = UI.ScaleWidth(xInset);
-
-                const float outerPenWidth = 4.0f;
-                const float innerPenWidth = 2.0f;
-
-                float scaledOuterPenWidth = UI.ScaleWidth(outerPenWidth);
-                float scaledInnerPenWidth = UI.ScaleWidth(innerPenWidth);
-
-                using (Pen xPen = new Pen(xOuterColor, scaledOuterPenWidth))
-                {
-                    SmoothingMode oldSM = g.SmoothingMode;
-                    g.SmoothingMode = SmoothingMode.AntiAlias;
-
-                    int left = closeButtonRect.Left + scaledXInset;
-                    int top = closeButtonRect.Top + scaledXInset;
-                    int right = closeButtonRect.Right - (scaledXInset * 2) + 1;
-                    int bottom = closeButtonRect.Bottom - (scaledXInset * 2) + 1;
-
-                    g.DrawLine(xPen, left, top, right, bottom);
-                    g.DrawLine(xPen, left, bottom, right, top);
-
-                    xPen.Width = scaledInnerPenWidth;
-                    xPen.Color = xInnerColor;
-
-                    g.DrawLine(xPen, left, top, right, bottom);
-                    g.DrawLine(xPen, left, bottom, right, top);
-
-                    g.SmoothingMode = oldSM;
-                }
+                g.DrawImage(image, closeButtonRect, new Rectangle(0, 0, image.Width, image.Width), GraphicsUnit.Pixel);
             }
         }
 

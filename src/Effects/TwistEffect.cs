@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -42,7 +42,7 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return PdnResources.GetString("DistortSubmenu.Name");
+                return SubmenuNames.Distort;
             }
         }
 
@@ -57,10 +57,12 @@ namespace PaintDotNet.Effects
 
             tacd.Text = StaticName;
             tacd.Amount1Default = 45;
+
             tacd.Amount1Label = PdnResources.GetString("TwistEffect.TwistAmount.Text");
             tacd.Amount1Maximum = 100;
             tacd.Amount1Minimum = -100;
             tacd.Amount2Default = 2;
+
             tacd.Amount2Label = PdnResources.GetString("TwistEffect.Antialias.Text");
             tacd.Amount2Maximum = 5;
             tacd.Amount2Minimum = 0;

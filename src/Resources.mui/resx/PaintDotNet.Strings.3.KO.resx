@@ -817,8 +817,14 @@
   <data name="PenConfigWidget.Error.TooSmall" xml:space="preserve">
     <value>크기가 1보다 작음</value>
   </data>
+  <data name="PenConfigWidget.Error.TooSmall.Format" xml:space="preserve">
+    <value>크기가 {0}보다 작습니다.</value>
+  </data>
   <data name="PenConfigWidget.Error.TooLarge" xml:space="preserve">
-    <value>크기가 100보다 큼</value>
+    <value>크기가 500보다 큼</value>
+  </data>
+  <data name="PenConfigWidget.Error.TooLarge.Format" xml:space="preserve">
+    <value>크기가 {0}보다 큽니다.</value>
   </data>
   <data name="ProgressDialog.PercentText.Text.Format" xml:space="preserve">
     <value>{0}%</value>
@@ -1213,6 +1219,9 @@
 현재 버전: Paint.NET v{1}</value>
     <comment>{0} and {1} are version numbers</comment>
   </data>
+  <data name="FileDialog.PathTooLongException.Message">
+    <value>파일 이름이 너무 깁니다. 더 짧은 이름을 사용하십시오.</value>
+  </data>
   <data name="FileDialog.Types.AllImages" xml:space="preserve">
     <value>모든 이미지 형식</value>
   </data>
@@ -1566,6 +1575,9 @@
   </data>
   <data name="Menu.Help.PdnWebsite.Text" xml:space="preserve">
     <value>Paint.NET 웹사이트(&amp;P)</value>
+  </data>
+  <data name="Menu.Help.PdnSearch.Text">
+    <value>Paint.NET 검색(&amp;S)...</value>
   </data>
   <data name="Menu.Help.Donate.Text" xml:space="preserve">
     <value>기부(&amp;D)...</value>
@@ -2244,6 +2256,9 @@ Paint.NET 웹 사이트에서 새로운 버전을 다운로드 하려면 "확인
   </data>
   <data name="GifSaveConfigWidget.ThresholdInfoLabel.Text">
     <value>임계값보다 작은 알파 값을 가진 픽셀은 완전히 투명하게 됩니다.</value>
+  </data>
+  <data name="SetupWizard.MustCloseAppFirst.Text">
+    <value>Paint.NET이 닫힌 것을 확인한 후, [다시 시도]를 클릭하십시오. 아니면 [취소]를 눌러 설치 마법사를 종료하십시오.</value>
   </data>
   <data name="SetupWizard.HelpText" xml:space="preserve">
     <value>Paint.NET 설치 도움말 
@@ -2930,5 +2945,92 @@ www.getpaint.net</value>
     <value>{0}이(가) 이미 있습니다.
 다른 것으로 바꾸시겠습니까?</value>
     <comment>{0} is a relative filename. e.g. "Untitled.png"</comment>
+  </data>
+  <data name="InkSketchEffect.Name">
+    <value>잉크 스케치</value>
+  </data>
+  <data name="InkSketchEffect.ConfigDialog.InkOutlineLabel">
+    <value>잉크 윤곽선</value>
+  </data>
+  <data name="InkSketchEffect.ConfigDialog.ColoringLabel">
+    <value>색 지정</value>
+  </data>
+  <data name="SoftenPortraitEffect.Name">
+    <value>부드러워진 초상화</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.SoftnessLabel">
+    <value>부드러움</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.LightingLabel">
+    <value>조명</value>
+  </data>
+  <data name="SoftenPortraitEffect.ConfigDialog.WarmthLabel">
+    <value>따뜻함</value>
+  </data>
+  <data name="DdsFileType.Name">
+    <value>DirectDraw 표면 (DDS)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.RangeFit.Text">
+    <value>범위 맞춤 (빠르게/LQ)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.ClusterFit.Text">
+    <value>클러스터 맞춤 (천천히/HQ)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.IterativeFit.Text">
+    <value>반복 맞춤 (매우 천천히/HQ)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.Uniform.Text">
+    <value>균일</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.Perceptual.Text">
+    <value>지각</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.GenerateMipMaps.Text">
+    <value>Mip 지도 생성</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.WeightColourByAlpha">
+    <value>알파에 의한 색상 가중치</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT1">
+    <value>DXT1 (불투명/1-비트 알파)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT3">
+    <value>DXT3 (명시적 알파)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.DXT5">
+    <value>DXT5 (삽입한 알파)</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A8R8G8B8">
+    <value>A8R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.X8R8G8B8">
+    <value>X8R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A8B8G8R8">
+    <value>A8B8G8R8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.X8B8G8R8">
+    <value>X8B8G8R8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A1R5G5B5">
+    <value>A1R5G5B5</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.A4R4G4B4">
+    <value>A4R4G4B4</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.R8G8B8">
+    <value>R8G8B8</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.FileFormatList.R5G6B5">
+    <value>R5G6B5</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.CompressorTypeLabel.Text">
+    <value>압축기 유형</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.ErrorMetricLabel.Text">
+    <value>오류 메트릭</value>
+  </data>
+  <data name="DdsFileType.SaveConfigWidget.AdditionalOptions.Text">
+    <value>추가 옵션</value>
   </data>
 </root>

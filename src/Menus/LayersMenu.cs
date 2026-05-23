@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 // Paint.NET                                                                   //
-// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
 // Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
 // See src/Resources/Files/License.txt for full licensing and attribution      //
 // details.                                                                    //
@@ -183,8 +183,16 @@ namespace PaintDotNet.Menus
             if (AppWorkspace.ActiveDocumentWorkspace != null &&
                 AppWorkspace.ActiveDocumentWorkspace.ActiveLayerIndex > 0)
             {
+                // TODO: keep this in sync with AppWorkspace. not appropriate to refactor into an Action for a 'dot' release
+                int newLayerIndex = Utility.Clamp(
+                    AppWorkspace.ActiveDocumentWorkspace.ActiveLayerIndex - 1,
+                    0,
+                    AppWorkspace.ActiveDocumentWorkspace.Document.Layers.Count - 1);
+
                 AppWorkspace.ActiveDocumentWorkspace.ExecuteFunction(
                     new MergeLayerDownFunction(AppWorkspace.ActiveDocumentWorkspace.ActiveLayerIndex));
+
+                AppWorkspace.ActiveDocumentWorkspace.ActiveLayerIndex = newLayerIndex;
             }
         }
 
