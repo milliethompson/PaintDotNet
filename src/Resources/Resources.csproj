@@ -480,6 +480,29 @@
   <ItemGroup>
     <EmbeddedResource Include="Icons\ResetIcon.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\PosterizeEffectIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\ToolConfigStrip.SelectionCombineMode.Intersect.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Cursors\RectangleSelectToolCursorMinus.cur" />
+    <EmbeddedResource Include="Cursors\RectangleSelectToolCursorPlus.cur" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Cursors\EllipseSelectToolCursorMinus.cur" />
+    <EmbeddedResource Include="Cursors\EllipseSelectToolCursorPlus.cur" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Cursors\LassoSelectToolCursorMinus.cur" />
+    <EmbeddedResource Include="Cursors\LassoSelectToolCursorMouseDown.cur" />
+    <EmbeddedResource Include="Cursors\LassoSelectToolCursorPlus.cur" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Cursors\MagicWandToolCursorMinus.cur" />
+    <EmbeddedResource Include="Cursors\MagicWandToolCursorPlus.cur" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>

@@ -411,7 +411,16 @@ namespace PaintDotNet
         {
             get
             {
-                return (int)Utility.Clamp(Math.Round(constrainer.NewPixelWidth), (double)int.MinValue, (double)int.MaxValue);
+                double doubleVal;
+
+                if (!Utility.GetUpDownValueFromText(this.pixelWidthUpDown, out doubleVal))
+                {
+                    doubleVal = Math.Round(constrainer.NewPixelWidth);
+                }
+
+                int intVal = (int)Utility.Clamp(doubleVal, (double)int.MinValue, (double)int.MaxValue);
+
+                return intVal;
             }
 
             set
@@ -427,7 +436,16 @@ namespace PaintDotNet
         {
             get
             {
-                return (int)Utility.Clamp(Math.Round(constrainer.NewPixelHeight), (double)int.MinValue, (double)int.MaxValue);
+                double doubleVal;
+
+                if (!Utility.GetUpDownValueFromText(this.pixelHeightUpDown, out doubleVal))
+                {
+                    doubleVal = Math.Round(constrainer.NewPixelHeight);
+                }
+
+                int intVal = (int)Utility.Clamp(doubleVal, (double)int.MinValue, (double)int.MaxValue);
+
+                return intVal;
             }
 
             set

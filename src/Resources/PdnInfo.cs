@@ -49,7 +49,7 @@ namespace PaintDotNet
         {
             get
             {
-                string myDocsPath = SystemLayer.Shell.GetVirtualPath(PaintDotNet.SystemLayer.VirtualFolderName.UserDocuments);
+                string myDocsPath = SystemLayer.Shell.GetVirtualPath(PaintDotNet.SystemLayer.VirtualFolderName.UserDocuments, true);
                 string userDataDirName = PdnResources.GetString("SystemLayer.UserDataDirName");
                 string userDataPath = Path.Combine(myDocsPath, userDataDirName);
                 return userDataPath;

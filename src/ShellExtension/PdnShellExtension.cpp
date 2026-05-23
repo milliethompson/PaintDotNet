@@ -266,7 +266,12 @@ static SIZE ComputeThumbnailSize(int originalWidth, int originalHeight, int maxE
     SIZE thumbSize;
     ZeroMemory(&thumbSize, sizeof(thumbSize));
 
-    if (originalWidth > originalHeight)
+    if (originalWidth <= 0 || originalHeight <= 0)
+    {
+        thumbSize.cx = 1;
+        thumbSize.cy = 1;
+    }
+    else if (originalWidth > originalHeight)
     {
         int longSide = min(originalWidth, maxEdgeLength);
         thumbSize.cx = longSide;

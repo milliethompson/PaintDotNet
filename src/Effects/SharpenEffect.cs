@@ -36,7 +36,7 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            Amount
+            Amount = 0
         }
 
         public SharpenEffect()

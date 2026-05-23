@@ -21,21 +21,6 @@ namespace PaintDotNet.Tools
     internal class RectangleSelectTool
         : SelectionTool
     {
-        private Cursor cursorMouseUp;
-        private Cursor cursorMouseDown;
-
-        protected override void OnMouseDown(System.Windows.Forms.MouseEventArgs e)
-        {
-            Cursor = cursorMouseDown;
-            base.OnMouseDown (e);
-        }
-
-        protected override void OnMouseUp(System.Windows.Forms.MouseEventArgs e)
-        {
-            Cursor = cursorMouseUp;
-            base.OnMouseUp (e);
-        }
-
         protected override List<Point> TrimShapePath(System.Collections.Generic.List<Point> tracePoints)
         {
             List<Point> array = new List<Point>();
@@ -135,26 +120,17 @@ namespace PaintDotNet.Tools
 
         protected override void OnActivate()
         {
-            this.cursorMouseUp = new Cursor(PdnResources.GetResourceStream("Cursors.RectangleSelectToolCursor.cur"));
-            this.cursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.RectangleSelectToolCursorMouseDown.cur"));
-            this.Cursor = cursorMouseUp;
+            SetCursors(
+                "Cursors.RectangleSelectToolCursor.cur",
+                "Cursors.RectangleSelectToolCursorMinus.cur",
+                "Cursors.RectangleSelectToolCursorPlus.cur",
+                "Cursors.RectangleSelectToolCursorMouseDown.cur");
+
             base.OnActivate();
         }
 
         protected override void OnDeactivate()
         {
-            if (cursorMouseUp != null)
-            {
-                cursorMouseUp.Dispose();
-                cursorMouseUp = null;
-            }
-
-            if (cursorMouseDown != null)
-            {
-                cursorMouseDown.Dispose();
-                cursorMouseDown = null;
-            }
-            
             base.OnDeactivate();
         }
 

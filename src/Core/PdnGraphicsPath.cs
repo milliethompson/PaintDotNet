@@ -11,6 +11,7 @@ using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -487,6 +488,68 @@ namespace PaintDotNet
 
             return ret;
         }
+
+        public static PdnGraphicsPath Combine(PdnGraphicsPath subjectPath, CombineMode combineMode, PdnGraphicsPath clipPath)
+        {
+            switch (combineMode)
+            {
+                case CombineMode.Complement:
+                    return Combine(clipPath, CombineMode.Exclude, subjectPath);
+
+                case CombineMode.Replace:
+                    return clipPath.Clone();
+
+                case CombineMode.Xor:
+                case CombineMode.Intersect:
+                case CombineMode.Union:
+                case CombineMode.Exclude:
+                    if (subjectPath.IsEmpty && clipPath.IsEmpty)
+                    {
+                        return new PdnGraphicsPath(); // empty path
+                    }
+                    else if (subjectPath.IsEmpty)
+                    {
+                        switch (combineMode)
+                        {
+                            case CombineMode.Xor:
+                            case CombineMode.Union:
+                                return clipPath.Clone();
+
+                            case CombineMode.Intersect:
+                            case CombineMode.Exclude:
+                                return new PdnGraphicsPath();
+
+                            default:
+                                throw new InvalidEnumArgumentException();
+                        }
+                    }
+                    else if (clipPath.IsEmpty)
+                    {
+                        switch (combineMode)
+                        {
+                            case CombineMode.Exclude:
+                            case CombineMode.Xor:
+                            case CombineMode.Union:
+                                return subjectPath.Clone();
+
+                            case CombineMode.Intersect:
+                                return new PdnGraphicsPath();
+
+                            default:
+                                throw new InvalidEnumArgumentException();
+                        }
+                    }
+                    else
+                    {
+                        GraphicsPath resultPath = PdnGraphics.ClipPath(subjectPath, combineMode, clipPath);
+                        return new PdnGraphicsPath(resultPath);
+                    }
+
+                default:
+                    throw new InvalidEnumArgumentException();
+            }
+        }
+
 
         ~PdnGraphicsPath()
         {

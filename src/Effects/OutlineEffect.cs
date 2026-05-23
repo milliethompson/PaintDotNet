@@ -36,8 +36,8 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            Thickness,
-            Intensity
+            Thickness = 0,
+            Intensity = 1
         }
 
         private int thickness;

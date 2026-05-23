@@ -107,6 +107,12 @@
     <Compile Include="ExecutePrivilege.cs" />
     <Compile Include="ExecuteWaitType.cs" />
     <Compile Include="FileOverwriteAction.cs" />
+    <Compile Include="GpcWrapper\NativeConstants.cs" />
+    <Compile Include="GpcWrapper\NativeMethods.cs" />
+    <Compile Include="GpcWrapper\NativeStructs.cs" />
+    <Compile Include="GpcWrapper\Polygon.cs" />
+    <Compile Include="GpcWrapper\Vertex.cs" />
+    <Compile Include="GpcWrapper\VertexList.cs" />
     <Compile Include="IFileDialog.cs">
       <SubType>Code</SubType>
     </Compile>

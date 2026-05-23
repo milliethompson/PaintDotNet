@@ -532,6 +532,11 @@ namespace PaintDotNet.SystemLayer
 
         private static VisualStyleClass DetermineVisualStyleClass()
         {
+            return Do.TryCatch(DetermineVisualStyleClassImpl, ex => VisualStyleClass.Other);
+        }
+
+        private static VisualStyleClass DetermineVisualStyleClassImpl()
+        {
             VisualStyleClass vsClass;
 
             if (!VisualStyleInformation.IsSupportedByOS)

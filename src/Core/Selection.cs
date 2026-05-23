@@ -7,7 +7,9 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -129,6 +131,9 @@ namespace PaintDotNet
         private int alreadyChanging; // we don't want to nest Changing events -- consolidate them with this
         private Rectangle clipRectangle;
 
+        //private PdnGraphicsPath cachedPathTrue;
+        //private PdnGraphicsPath cachedPathFalse;
+
         public Selection()
         {
             this.data = new Data();
@@ -160,6 +165,7 @@ namespace PaintDotNet
         public bool IsVisible(Point pt)
         {
             using (PdnGraphicsPath path = CreatePath())
+            //PdnGraphicsPath path = GetPathReadOnly();
             {
                 return path.IsVisible(pt);
             }
@@ -187,6 +193,7 @@ namespace PaintDotNet
         public PdnGraphicsPath CreatePixelatedPath()
         {
             using (PdnGraphicsPath path = CreatePath())
+            //PdnGraphicsPath path = GetPathReadOnly();
             {
                 using (PdnRegion region = new PdnRegion(path))
                 {
@@ -195,6 +202,40 @@ namespace PaintDotNet
                 }
             }
         }
+
+        /*
+        public PdnGraphicsPath GetPathReadOnly()
+        {
+            return GetPathReadOnly(true);
+        }
+         * */
+
+        /*
+        public PdnGraphicsPath GetPathReadOnly(bool applyInterimTransform)
+        {
+            lock (this.syncRoot)
+            {
+                if (applyInterimTransform)
+                {
+                    if (this.cachedPathTrue == null)
+                    {
+                        this.cachedPathTrue = CreatePath(true);
+                    }
+
+                    return this.cachedPathTrue;
+                }
+                else
+                {
+                    if (this.cachedPathFalse == null)
+                    {
+                        this.cachedPathFalse = CreatePath(false);
+                    }
+
+                    return this.cachedPathFalse;
+                }
+            }
+        }
+         * */
 
         public PdnGraphicsPath CreatePath()
         {
@@ -205,63 +246,7 @@ namespace PaintDotNet
         {
             lock (this.syncRoot)
             {
-                PdnGraphicsPath returnPath;
-
-                switch (this.data.continuationCombineMode)
-                {
-                    case CombineMode.Complement:
-                    case CombineMode.Intersect:
-                        throw new NotSupportedException("Complement and Intersect are not supported");
-
-                    case CombineMode.Replace:
-                        returnPath = this.data.continuation.Clone();
-                        break;
-
-                    case CombineMode.Xor:
-                        returnPath = this.data.basePath.Clone();
-                        returnPath.CloseAllFigures();
-                        returnPath.AddPath(this.data.continuation, false);
-                        break;
-
-                    case CombineMode.Union:
-                        if (this.data.basePath.IsEmpty)
-                        {
-                            goto case CombineMode.Replace;
-                        }
-                        else
-                        {
-                            using (PdnRegion baseRegion = new PdnRegion(this.data.basePath))
-                            {
-                                using (PdnRegion continuationRegion = new PdnRegion(this.data.continuation))
-                                {
-                                    returnPath = PdnGraphicsPath.FromRegions(baseRegion, CombineMode.Union, continuationRegion);
-                                }
-                            }
-                        }
-
-                        break;
-
-                    case CombineMode.Exclude:
-                        if (this.data.basePath.IsEmpty)
-                        {
-                            returnPath = new PdnGraphicsPath();
-                        }
-                        else
-                        {
-                            using (PdnRegion baseRegion = new PdnRegion(this.data.basePath))
-                            {
-                                using (PdnRegion continuationRegion = new PdnRegion(this.data.continuation))
-                                {
-                                    returnPath = PdnGraphicsPath.FromRegions(baseRegion, CombineMode.Exclude, continuationRegion);
-                                }
-                            }
-                        }
-
-                        break;
-
-                    default:
-                        throw new InvalidEnumArgumentException();
-                }
+                PdnGraphicsPath returnPath = PdnGraphicsPath.Combine(this.data.basePath, this.data.continuationCombineMode, this.data.continuation);
 
                 if (applyInterimTransform)
                 {
@@ -317,6 +302,7 @@ namespace PaintDotNet
         public RectangleF GetBoundsF(bool applyInterimTransformation)
         {
             using (PdnGraphicsPath path = this.CreatePath(applyInterimTransformation))
+            //PdnGraphicsPath path = GetPathReadOnly(applyInterimTransformation);
             {
                 RectangleF bounds2 = path.GetBounds2();
                 return bounds2;
@@ -543,6 +529,7 @@ namespace PaintDotNet
         public PdnRegion CreateRegionRaw()
         {
             using (PdnGraphicsPath path = CreatePath())
+            //PdnGraphicsPath path = GetPathReadOnly();
             {
                 return new PdnRegion(path);
             }
@@ -568,12 +555,18 @@ namespace PaintDotNet
         public event EventHandler Changing;
         private void OnChanging()
         {
-            if (this.alreadyChanging == 0)
+            lock (this.syncRoot)
             {
-                if (Changing != null)
+                if (this.alreadyChanging == 0)
                 {
-                    Changing(this, EventArgs.Empty);
+                    if (Changing != null)
+                    {
+                        Changing(this, EventArgs.Empty);
+                    }
                 }
+
+                //this.cachedPathFalse = null;
+                //this.cachedPathTrue = null;
             }
 
             ++this.alreadyChanging;
@@ -587,12 +580,18 @@ namespace PaintDotNet
         public event EventHandler Changed;
         private void OnChanged()
         {
-            if (this.alreadyChanging <= 0)
+            lock (this.SyncRoot)
             {
-                throw new InvalidOperationException("Changed event was raised without corresponding Changing event beforehand");
-            }
+                if (this.alreadyChanging <= 0)
+                {
+                    throw new InvalidOperationException("Changed event was raised without corresponding Changing event beforehand");
+                }
 
-            --this.alreadyChanging;
+                --this.alreadyChanging;
+
+                //this.cachedPathFalse = null;
+                //this.cachedPathTrue = null;
+            }
 
             if (this.alreadyChanging == 0)
             {

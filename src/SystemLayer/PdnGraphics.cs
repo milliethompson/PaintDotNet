@@ -25,6 +25,24 @@ namespace PaintDotNet.SystemLayer
     /// </summary>
     public static class PdnGraphics
     {
+        public static GraphicsPath ClipPath(GraphicsPath subjectPath, CombineMode combineMode, GraphicsPath clipPath)
+        {
+            GpcWrapper.Polygon.Validate(combineMode);
+
+            GpcWrapper.Polygon basePoly = new GpcWrapper.Polygon(subjectPath);
+
+            GraphicsPath clipClone = (GraphicsPath)clipPath.Clone();
+            clipClone.CloseAllFigures();
+            GpcWrapper.Polygon clipPoly = new GpcWrapper.Polygon(clipClone);
+            clipClone.Dispose();
+
+            GpcWrapper.Polygon clippedPoly = GpcWrapper.Polygon.Clip(combineMode, basePoly, clipPoly);
+
+            GraphicsPath returnPath = clippedPoly.ToGraphicsPath();
+            returnPath.CloseAllFigures();
+            return returnPath;
+        }
+
         public static void SetPropertyItems(Image image, PropertyItem[] items)
         {
             PropertyItem[] pis = image.PropertyItems;

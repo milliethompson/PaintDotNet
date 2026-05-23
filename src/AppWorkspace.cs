@@ -2196,6 +2196,11 @@ namespace PaintDotNet
 
         public bool OpenFileInNewWorkspace(string fileName)
         {
+            return OpenFileInNewWorkspace(fileName, true);
+        }
+
+        public bool OpenFileInNewWorkspace(string fileName, bool addToMruList)
+        {
             if (fileName == null)
             {
                 throw new ArgumentNullException("fileName");
@@ -2269,7 +2274,11 @@ namespace PaintDotNet
                 }
 
                 // add to MRU list
-                ActiveDocumentWorkspace.AddToMruList();
+                if (addToMruList)
+                {
+                    ActiveDocumentWorkspace.AddToMruList();
+                }
+
                 this.toolBar.DocumentStrip.SyncThumbnails();
 
                 WarnAboutSavedWithVersion(document.SavedWithVersion);

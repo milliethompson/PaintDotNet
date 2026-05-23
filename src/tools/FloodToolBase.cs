@@ -11,6 +11,7 @@ using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -308,6 +309,9 @@ namespace PaintDotNet.Tools
                 case FloodMode.Global:
                     this.contiguous = false;
                     break;
+
+                default:
+                    throw new InvalidEnumArgumentException();
             }
 
             if ((ModifierKeys & Keys.Shift) != 0)

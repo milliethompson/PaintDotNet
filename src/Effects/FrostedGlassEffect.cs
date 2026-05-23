@@ -52,11 +52,11 @@ namespace PaintDotNet.Effects
         {
         }
 
-        private enum PropertyNames
+        public enum PropertyNames
         {
-            MaxScatterRadius,
-            MinScatterRadius,
-            NumSamples
+            MaxScatterRadius = 0,
+            MinScatterRadius = 1,
+            NumSamples = 2
         }
 
         protected override PropertyCollection OnCreatePropertyCollection()

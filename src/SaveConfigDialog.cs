@@ -781,7 +781,12 @@ namespace PaintDotNet
 
         private void FileSizeTimerCallbackImpl(object state)
         {
-            callbackBusy = true;
+            if (this.fileSizeTimer == null)
+            {
+                return;
+            }
+
+            this.callbackBusy = true;
 
 #if !DEBUG
             try
@@ -816,8 +821,8 @@ namespace PaintDotNet
             finally
             {
 #endif
-                callbackDoneEvent.Set();
-                callbackBusy = false;
+                this.callbackDoneEvent.Set();
+                this.callbackBusy = false;
 #if !DEBUG
             }
 #endif
@@ -827,7 +832,7 @@ namespace PaintDotNet
         {
             if (this.fileSizeTimer != null)
             {
-                this.fileSizeTimer.Dispose();
+                Do.TryBool(() => this.fileSizeTimer.Dispose()); // get crash reports here sometimes, go figure
                 this.fileSizeTimer = null;
             }
         }

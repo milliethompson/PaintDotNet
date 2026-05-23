@@ -463,7 +463,7 @@ namespace PaintDotNet.SystemLayer
         static FileSystem()
         {
             // Determine root path of where we store our persisted data
-            string localSettingsDir = Shell.GetVirtualPath(VirtualFolderName.UserLocalAppData);
+            string localSettingsDir = Shell.GetVirtualPath(VirtualFolderName.UserLocalAppData, true);
             string tempDirRoot = Path.Combine(localSettingsDir, "Paint.NET");
 
             DirectoryInfo tempDirRootInfo = new DirectoryInfo(tempDirRoot);

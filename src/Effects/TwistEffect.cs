@@ -46,10 +46,10 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            Amount,
-            Size,
-            Offset,
-            Quality,
+            Amount = 0,
+            Size = 1,
+            Offset = 2,
+            Quality = 3
         }
 
         public TwistEffect()

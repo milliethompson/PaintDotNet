@@ -238,6 +238,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="PolarInversionEffect.cs" />
+    <Compile Include="PosterizeAdjustment.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="PropertyBasedEffect.cs" />
     <Compile Include="PropertyBasedEffectConfigDialog.cs">
       <SubType>Form</SubType>

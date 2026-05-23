@@ -46,18 +46,30 @@ namespace PaintDotNet.HistoryFunctions
                     StaticImage,
                     historyWorkspace);
 
-                PdnRegion selectedRegion = historyWorkspace.Selection.CreateRegion();
-                selectedRegion.Xor(historyWorkspace.Document.Bounds);
+                //PdnGraphicsPath selectedPath = historyWorkspace.Selection.GetPathReadOnly();
+                PdnGraphicsPath selectedPath = historyWorkspace.Selection.CreatePath();
 
-                PdnGraphicsPath invertedSelection = PdnGraphicsPath.FromRegion(selectedRegion);
-                selectedRegion.Dispose();
+                PdnGraphicsPath boundsOutline = new PdnGraphicsPath();
+                boundsOutline.AddRectangle(historyWorkspace.Document.Bounds);
+
+                PdnGraphicsPath clippedPath = PdnGraphicsPath.Combine(selectedPath, CombineMode.Intersect, boundsOutline);
+                PdnGraphicsPath invertedPath = PdnGraphicsPath.Combine(clippedPath, CombineMode.Xor, boundsOutline);
+
+                selectedPath.Dispose();
+                selectedPath = null;
+
+                clippedPath.Dispose();
+                clippedPath = null;
 
                 EnterCriticalRegion();
                 historyWorkspace.Selection.PerformChanging();
                 historyWorkspace.Selection.Reset();
-                historyWorkspace.Selection.SetContinuation(invertedSelection, CombineMode.Xor, true);
+                historyWorkspace.Selection.SetContinuation(invertedPath, CombineMode.Replace, true);
                 historyWorkspace.Selection.CommitContinuation();
                 historyWorkspace.Selection.PerformChanged();
+
+                boundsOutline.Dispose();
+                boundsOutline = null;
 
                 return sha;
             }

@@ -63,15 +63,15 @@ namespace PaintDotNet.Data
     {
         public enum PropertyNames
         {
-            BitDepth,
-            RleCompress
+            BitDepth = 0,
+            RleCompress = 1
         }
 
         public enum TgaBitDepthUIChoices
         {
-            AutoDetect,
-            Bpp32,
-            Bpp24
+            AutoDetect = 0,
+            Bpp32 = 1,
+            Bpp24 = 2
         }
 
         protected override bool IsReflexive(PropertyBasedSaveConfigToken token)
@@ -404,6 +404,7 @@ namespace PaintDotNet.Data
                 // Bits 0 - 3 of the image descriptor byte describe number of bits used for alpha channel
                 // For loading, we won't worry about this. Not all TGA implementations are correct (such
                 // as older Paint.NET TGA implementations!) and we don't want to lose all their alpha bits.
+                //int alphaBits = header.imageDesc & 0xf;
 
                 // Bits 4 & 5 of the image descriptor byte control the ordering of the pixels
                 bool xReversed = ((header.imageDesc & 16) == 16);

@@ -50,10 +50,10 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            Amount,
-            Offset,
-            EdgeBehavior,
-            Quality,
+            Amount = 0,
+            Offset = 1,
+            EdgeBehavior = 2,
+            Quality = 3
         }
 
         private double amount;

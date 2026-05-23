@@ -45,8 +45,8 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            Amount,
-            Offset,
+            Amount = 0,
+            Offset = 1
         }
 
         protected override PropertyCollection OnCreatePropertyCollection()

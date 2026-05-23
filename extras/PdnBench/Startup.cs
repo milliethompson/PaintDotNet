@@ -209,7 +209,7 @@ namespace PdnBench
                 }
             }
 
-            for (int i = 2; i <= 50; i += i)
+            for (int i = 2; i <= 200; i += i)
             {
                 GaussianBlurEffect e = new GaussianBlurEffect();
                 PropertyCollection props = e.CreatePropertyCollection();

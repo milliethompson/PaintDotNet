@@ -758,7 +758,7 @@ namespace PaintDotNet
 
                 Rectangle visibleDocBoundsEnd = this.VisibleDocumentBounds;
 
-                if (e.Delta < 0 && visibleDocBoundsEnd != visibleDocBoundsStart)
+                if (visibleDocBoundsEnd != visibleDocBoundsStart)
                 {
                     // Make sure the screen updates, otherwise it can get a little funky looking
                     this.Update();
@@ -2410,7 +2410,19 @@ namespace PaintDotNet
 
         private static string GetDefaultSavePath()
         {
-            string myPics = Shell.GetVirtualPath(VirtualFolderName.UserPictures);
+            string myPics;
+
+            try
+            {
+                myPics = Shell.GetVirtualPath(VirtualFolderName.UserPictures, false);
+                DirectoryInfo dirInfo = new DirectoryInfo(myPics); // validate
+            }
+
+            catch (Exception)
+            {
+                myPics = "";
+            }
+
             string dir = Settings.CurrentUser.GetString(SettingNames.LastFileDialogDirectory, null);
 
             if (dir == null)

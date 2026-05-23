@@ -49,6 +49,7 @@ void TraceOut(const char *szFormat, ...)
 }
 #endif
 
+// Only used when calling TraceOut
 const WCHAR *GuidToString(GUID guid)
 {
     static WCHAR szGuid[128];
@@ -116,6 +117,8 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
             hr = E_INVALIDARG;
         }
     }
+
+    // TODO: Why aren't we checking riid at all?
 
     if (SUCCEEDED(hr))
     {

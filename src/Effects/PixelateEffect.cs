@@ -37,7 +37,7 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            CellSize
+            CellSize = 0
         }
 
         protected override PropertyCollection OnCreatePropertyCollection()

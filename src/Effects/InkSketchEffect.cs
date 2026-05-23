@@ -49,8 +49,8 @@ namespace PaintDotNet.Effects
     {
         public enum PropertyNames
         {
-            InkOutline,
-            Coloring
+            InkOutline = 0,
+            Coloring = 1
         }
 
         public static string StaticName

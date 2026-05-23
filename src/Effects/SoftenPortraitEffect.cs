@@ -49,9 +49,9 @@ namespace PaintDotNet.Effects
     {
         public enum PropertyNames
         {
-            Softness,
-            Lighting,
-            Warmth
+            Softness = 0,
+            Lighting = 1,
+            Warmth = 2
         }
 
         public static string StaticName

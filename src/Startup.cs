@@ -337,7 +337,17 @@ namespace PaintDotNet
                 // 3 2 1 go
                 Application.Run(this.mainForm);
 
-                this.mainForm.Dispose();
+                try
+                {
+                    this.mainForm.Dispose();
+                }
+
+                catch (RankException)
+                {
+                    // System.Windows.Forms.PropertyStore
+                    // Discard error - bug #2746
+                }
+
                 this.mainForm = null;
             }
         }
@@ -399,7 +409,7 @@ namespace PaintDotNet
 
         private static void UnhandledException(Exception ex)
         {
-            string dir = Shell.GetVirtualPath(VirtualFolderName.UserDesktop);
+            string dir = Shell.GetVirtualPath(VirtualFolderName.UserDesktop, true);
             const string fileName = "pdncrash.log";
             string fullName = Path.Combine(dir, fileName);
 

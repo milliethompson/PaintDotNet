@@ -97,6 +97,7 @@ namespace PaintDotNet
         private enum ArgumentAction
         {
             Open,
+            OpenUntitled,
             Print,
             NoOp
         }
@@ -116,6 +117,15 @@ namespace PaintDotNet
             {
                 action = ArgumentAction.Print;
                 actionParm = message.Substring(printPrefix.Length);
+                return true;
+            }
+
+            const string untitledPrefix = "untitled:";
+
+            if (message.IndexOf(untitledPrefix) == 0)
+            {
+                action = ArgumentAction.OpenUntitled;
+                actionParm = message.Substring(untitledPrefix.Length);
                 return true;
             }
 
@@ -155,12 +165,29 @@ namespace PaintDotNet
                     {
                         result = this.appWorkspace.OpenFileInNewWorkspace(actionParm);
                     }
+
+                    break;
+
+                case ArgumentAction.OpenUntitled:
+                    Activate();
+
+                    if (!string.IsNullOrEmpty(actionParm) && IsCurrentModalForm && Enabled)
+                    {
+                        result = this.appWorkspace.OpenFileInNewWorkspace(actionParm, false);
+
+                        if (result)
+                        {
+                            this.appWorkspace.ActiveDocumentWorkspace.SetDocumentSaveOptions(null, null, null);
+                            this.appWorkspace.ActiveDocumentWorkspace.Document.Dirty = true;
+                        }
+                    }
+
                     break;
 
                 case ArgumentAction.Print:
                     Activate();
 
-                    if (IsCurrentModalForm && Enabled)
+                    if (!string.IsNullOrEmpty(actionParm) && IsCurrentModalForm && Enabled)
                     {
                         result = this.appWorkspace.OpenFileInNewWorkspace(actionParm);
 

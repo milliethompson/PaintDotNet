@@ -41,8 +41,8 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            BrushSize,
-            Coarseness
+            BrushSize = 0,
+            Coarseness = 1
         }
 
         private int brushSize;

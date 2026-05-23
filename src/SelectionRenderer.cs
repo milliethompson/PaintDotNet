@@ -150,7 +150,7 @@ namespace PaintDotNet
         private void OnSelectionChanged(object sender, EventArgs e)
         {
             this.render = true;
-            PdnGraphicsPath path = this.selection.CreatePath();
+            PdnGraphicsPath path = this.selection.CreatePath(); //this.selection.GetPathReadOnly();
 
             if (this.selectedPath == null)
             {
@@ -158,7 +158,7 @@ namespace PaintDotNet
             }
             else
             {
-                this.selectedPath.Dispose();
+                this.selectedPath.Dispose(); //
                 this.selectedPath = null;
             }
 

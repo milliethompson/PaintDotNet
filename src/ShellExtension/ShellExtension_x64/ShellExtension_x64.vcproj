@@ -198,6 +198,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\gpc.c"
+				>
+			</File>
+			<File
 				RelativePath="..\MemoryStream.cpp"
 				>
 			</File>
@@ -221,6 +225,10 @@
 			>
 			<File
 				RelativePath="..\ClassFactory.h"
+				>
+			</File>
+			<File
+				RelativePath="..\gpc.h"
 				>
 			</File>
 			<File

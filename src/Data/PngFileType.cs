@@ -39,17 +39,17 @@ namespace PaintDotNet
 
         public enum PropertyNames
         {
-            BitDepth,
-            DitherLevel,
-            Threshold
+            BitDepth = 0,
+            DitherLevel = 1,
+            Threshold = 2
         }
 
         public enum PngBitDepthUIChoices
         {
-            AutoDetect,
-            Bpp32,
-            Bpp24,
-            Bpp8,
+            AutoDetect = 0,
+            Bpp32 = 1,
+            Bpp24 = 2,
+            Bpp8 = 3
         }
 
         public override ControlInfo OnCreateSaveConfigUI(PropertyCollection props)

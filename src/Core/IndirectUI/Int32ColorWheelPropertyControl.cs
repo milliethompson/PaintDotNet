@@ -681,6 +681,20 @@ namespace PaintDotNet.IndirectUI
                 {
                     this.saturationSlider.Value = (hsv.Saturation * 255) / 100;
                 }
+
+                HsvColor hsvValMin = hsv;
+                hsvValMin.Value = 0;
+                HsvColor hsvValMax = hsv;
+                hsvValMax.Value = 100;
+                this.valueSlider.MinColor = hsvValMin.ToColor();
+                this.valueSlider.MaxColor = hsvValMax.ToColor();
+
+                HsvColor hsvSatMin = hsv;
+                hsvSatMin.Saturation = 0;
+                HsvColor hsvSatMax = hsv;
+                hsvSatMax.Saturation = 100;
+                this.saturationSlider.MinColor = hsvSatMin.ToColor();
+                this.saturationSlider.MaxColor = hsvSatMax.ToColor();
             }
 
             finally

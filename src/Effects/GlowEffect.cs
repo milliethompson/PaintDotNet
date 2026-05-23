@@ -41,9 +41,9 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            Radius,
-            Brightness,
-            Contrast
+            Radius = 0,
+            Brightness = 1,
+            Contrast = 2
         }
 
         private GaussianBlurEffect blurEffect = new GaussianBlurEffect();

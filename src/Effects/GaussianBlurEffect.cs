@@ -22,7 +22,7 @@ namespace PaintDotNet.Effects
     {
         public enum PropertyNames
         {
-            Radius
+            Radius = 0
         }
 
         public static string StaticName

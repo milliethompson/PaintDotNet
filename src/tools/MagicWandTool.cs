@@ -22,36 +22,84 @@ namespace PaintDotNet.Tools
         : FloodToolBase
     {
         private Cursor cursorMouseUp;
+        private Cursor cursorMouseUpMinus;
+        private Cursor cursorMouseUpPlus;
         private CombineMode combineMode;
 
-        // nothing = replace (or rather, whatever is set in the toolbar)
-        // Ctrl = union
-        // RMB = exclude
-        // Ctrl+RMB = xor
+        private Cursor GetCursor(bool ctrlDown, bool altDown)
+        {
+            Cursor cursor;
+
+            if (ctrlDown)
+            {
+                cursor = this.cursorMouseUpPlus;
+            }
+            else if (altDown)
+            {
+                cursor = this.cursorMouseUpMinus;
+            }
+            else
+            {
+                cursor = this.cursorMouseUp;
+            }
+
+            return cursor;
+        }
+
+        private Cursor GetCursor()
+        {
+            return GetCursor((ModifierKeys & Keys.Control) != 0, (ModifierKeys & Keys.Alt) != 0);
+        }
 
         protected override void OnActivate()
         {
             DocumentWorkspace.EnableSelectionTinting = true;
             this.cursorMouseUp = new Cursor(PdnResources.GetResourceStream("Cursors.MagicWandToolCursor.cur"));
-            this.Cursor = cursorMouseUp;
+            this.cursorMouseUpMinus = new Cursor(PdnResources.GetResourceStream("Cursors.MagicWandToolCursorMinus.cur"));
+            this.cursorMouseUpPlus = new Cursor(PdnResources.GetResourceStream("Cursors.MagicWandToolCursorPlus.cur"));
+            this.Cursor = GetCursor();
             base.OnActivate();
         }
 
         protected override void OnDeactivate()
         {
-            if (cursorMouseUp != null)
+            if (this.cursorMouseUp != null)
             {
-                cursorMouseUp.Dispose();
-                cursorMouseUp = null;
+                this.cursorMouseUp.Dispose();
+                this.cursorMouseUp = null;
+            }
+
+            if (this.cursorMouseUpMinus != null)
+            {
+                this.cursorMouseUpMinus.Dispose();
+                this.cursorMouseUpMinus = null;
+            }
+
+            if (this.cursorMouseUpPlus != null)
+            {
+                this.cursorMouseUpPlus.Dispose();
+                this.cursorMouseUpPlus = null;
             }
 
             DocumentWorkspace.EnableSelectionTinting = false;
             base.OnDeactivate();
         }
 
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            Cursor = GetCursor();
+            base.OnKeyDown(e);
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            Cursor = GetCursor();
+            base.OnKeyUp(e);
+        }
+
         protected override void OnMouseUp(MouseEventArgs e)
         {
-            Cursor = cursorMouseUp;
+            Cursor = GetCursor();
             base.OnMouseUp(e);
         }
 
@@ -63,13 +111,17 @@ namespace PaintDotNet.Tools
             {
                 this.combineMode = CombineMode.Union;
             }
+            else if ((ModifierKeys & Keys.Alt) != 0 && e.Button == MouseButtons.Left)
+            {
+                this.combineMode = CombineMode.Exclude;
+            }
             else if ((ModifierKeys & Keys.Control) != 0 && e.Button == MouseButtons.Right)
             {
                 this.combineMode = CombineMode.Xor;
             }
-            else if (e.Button == MouseButtons.Right)
+            else if ((ModifierKeys & Keys.Alt) != 0 && e.Button == MouseButtons.Right)
             {
-                this.combineMode = CombineMode.Exclude;
+                this.combineMode = CombineMode.Intersect;
             }
             else
             {

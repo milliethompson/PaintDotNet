@@ -30,9 +30,9 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            Angle,
-            Distance,
-            Centered,
+            Angle = 0,
+            Distance = 1,
+            Centered = 2
         }
 
         protected override PropertyCollection OnCreatePropertyCollection()

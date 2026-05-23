@@ -20,20 +20,6 @@ namespace PaintDotNet.Tools
     internal class EllipseSelectTool
         : SelectionTool
     {
-        private Cursor cursorMouseUp, cursorMouseDown;
-
-        protected override void OnMouseDown(System.Windows.Forms.MouseEventArgs e)
-        {
-            Cursor = cursorMouseDown;
-            base.OnMouseDown (e);
-        }
-
-        protected override void OnMouseUp(System.Windows.Forms.MouseEventArgs e)
-        {
-            Cursor = cursorMouseUp;
-            base.OnMouseUp (e);
-        }
-
         protected override List<Point> TrimShapePath(List<Point> tracePoints)
         {
             List<Point> array = new List<Point>();
@@ -93,26 +79,17 @@ namespace PaintDotNet.Tools
 
         protected override void OnActivate()
         {
-            this.cursorMouseUp = new Cursor(PdnResources.GetResourceStream("Cursors.EllipseSelectToolCursor.cur"));
-            this.cursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.EllipseSelectToolCursorMouseDown.cur"));
-            this.Cursor = cursorMouseUp;
+            SetCursors(
+                "Cursors.EllipseSelectToolCursor.cur",
+                "Cursors.EllipseSelectToolCursorMinus.cur",
+                "Cursors.EllipseSelectToolCursorPlus.cur",
+                "Cursors.EllipseSelectToolCursorMouseDown.cur");
+
             base.OnActivate();
         }
 
         protected override void OnDeactivate()
         {
-            if (cursorMouseUp != null)
-            {
-                cursorMouseUp.Dispose();
-                cursorMouseUp = null;
-            }
-
-            if (cursorMouseDown != null)
-            {
-                cursorMouseDown.Dispose();
-                cursorMouseDown = null;
-            }
-            
             base.OnDeactivate();
         }
 

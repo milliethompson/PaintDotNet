@@ -8,7 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -18,23 +18,33 @@ namespace PaintDotNet.Tools
     internal class LassoSelectTool
         : SelectionTool
     {
-        private Cursor lassoToolCursor;
+        protected override List<PointF> CreateShape(List<Point> inputTracePoints)
+        {
+            List<PointF> inputTracePointsF = base.CreateShape(inputTracePoints);
+
+            if (this.SelectionMode != CombineMode.Replace &&
+                inputTracePointsF.Count > 2 &&
+                inputTracePointsF[0] != inputTracePointsF[inputTracePointsF.Count - 1])
+            {
+                inputTracePointsF.Add(inputTracePointsF[0]);
+            }
+
+            return inputTracePointsF;
+        }
 
         protected override void OnActivate()
         {
-            this.lassoToolCursor = new Cursor(PdnResources.GetResourceStream("Cursors.LassoSelectToolCursor.cur"));
-            this.Cursor = this.lassoToolCursor;
+            SetCursors(
+                "Cursors.LassoSelectToolCursor.cur",
+                "Cursors.LassoSelectToolCursorMinus.cur",
+                "Cursors.LassoSelectToolCursorPlus.cur",
+                "Cursors.LassoSelectToolCursorMouseDown.cur");
+
             base.OnActivate();
         }
 
         protected override void OnDeactivate()
         {
-            if (this.lassoToolCursor != null)
-            {
-                this.lassoToolCursor.Dispose();
-                this.lassoToolCursor = null;
-            }
-
             base.OnDeactivate();
         }
 

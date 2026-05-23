@@ -563,7 +563,7 @@ Shortcut key: X</value>
     <value>Ellipse Select</value>
   </data>
   <data name="EllipseSelectTool.HelpText" xml:space="preserve">
-    <value>Left button: Replace. Ctrl+Left: Add. Right: Subtract. Ctrl+Right: Invert. Hold shift: Constrain to circle.</value>
+    <value>Click and drag to draw an elliptical selection. Hold shift to constrain to a circle.</value>
   </data>
   <data name="EllipseTool.Name" xml:space="preserve">
     <value>Ellipse</value>
@@ -627,7 +627,7 @@ Shortcut key: X</value>
     <value>Lasso Select</value>
   </data>
   <data name="LassoSelectTool.HelpText" xml:space="preserve">
-    <value>Left button: Replace. Ctrl+Left: Add. Right: Subtract. Ctrl+Right: Invert.</value>
+    <value>Click and drag to draw the outline for a selection area.</value>
   </data>
   <data name="GradientTool.Name">
     <value>Gradient</value>
@@ -660,7 +660,7 @@ Shortcut key: X</value>
     <value>Magic Wand</value>
   </data>
   <data name="MagicWandTool.HelpText" xml:space="preserve">
-    <value>Click to select an area of similar color. Use Ctrl+Left Click to add, Right click to subtract, Ctrl+Shift+Left Click to invert (xor).</value>
+    <value>Click to select an area of similar color.</value>
   </data>
   <data name="MoveTool.Name" xml:space="preserve">
     <value>Move Selected Pixels</value>
@@ -790,7 +790,7 @@ Shortcut key: X</value>
     <value>Rectangle Select</value>
   </data>
   <data name="RectangleSelectTool.HelpText" xml:space="preserve">
-    <value>Left button: Replace. Ctrl+Left: Add. Right: Subtract. Ctrl+Right: Invert. Hold shift: Constrain to square.</value>
+    <value>Click and drag to draw a rectangular selection. Hold shift to constrain to a square.</value>
   </data>
   <data name="RectangleTool.Name" xml:space="preserve">
     <value>Rectangle</value>
@@ -3245,12 +3245,17 @@ Do you want to replace it?</value>
   </data>
   <data name="ToolConfigStrip.SelectionCombineModeSplitButton.Union.Text">
     <value>Add (union)</value>
+    <comment>This is the name for a 'boolean OR' combination of two selections. More information is available at: http://en.wikipedia.org/wiki/Union_%28set_theory%29</comment>
   </data>
   <data name="ToolConfigStrip.SelectionCombineModeSplitButton.Exclude.Text">
     <value>Subtract</value>
   </data>
   <data name="ToolConfigStrip.SelectionCombineModeSplitButton.Xor.Text">
     <value>Invert (&quot;xor&quot;)</value>
+  </data>
+  <data name="ToolConfigStrip.SelectionCombineModeSplitButton.Intersect.Text">
+    <value>Intersect</value>
+    <comment>This is the name for a 'boolean AND' combination of two selections. More information is available at: http://en.wikipedia.org/wiki/Intersection_%28set_theory%29</comment>
   </data>
   <data name="ToolConfigStrip.FloodModeLabel.Text">
     <value>Flood Mode:</value>

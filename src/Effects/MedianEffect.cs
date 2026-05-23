@@ -48,8 +48,8 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            Radius,
-            Percentile
+            Radius = 0,
+            Percentile = 1
         }
 
         protected override PropertyCollection OnCreatePropertyCollection()

@@ -131,7 +131,8 @@ namespace PaintDotNet.IndirectUI
 
             foreach (ControlInfo ci in cloneMe.childControls)
             {
-                this.childControls.Add((ControlInfo)ci.Clone());
+                ControlInfo ciClone = ci.Clone();
+                this.childControls.Add(ciClone);
             }
         }
 

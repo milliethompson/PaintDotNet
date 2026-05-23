@@ -23,8 +23,8 @@ namespace PaintDotNet.Effects
     {
         public enum PropertyNames
         {
-            Brightness,
-            Contrast
+            Brightness = 0,
+            Contrast = 1
         }
 
         public static string StaticName

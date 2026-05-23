@@ -21,6 +21,7 @@ namespace PaintDotNet.PropertySystem
           IEnumerable<Property>,
           ICloneable<PropertyCollection>
     {
+        private bool eventAddAllowed = true;
         private Dictionary<string, Property> properties = new Dictionary<string, Property>();
         private List<PropertyCollectionRule> rules = new List<PropertyCollectionRule>();
 
@@ -92,6 +93,36 @@ namespace PaintDotNet.PropertySystem
             IEnumerable<PropertyCollectionRule> rules)
         {
             Initialize(properties, rules);
+        }
+
+        public IDisposable __Internal_BeginEventAddMoratorium()
+        {
+            if (!this.eventAddAllowed)
+            {
+                throw new InvalidOperationException("An event add moratorium is already in effect");
+            }
+
+            List<IDisposable> propUndoFns = new List<IDisposable>(this.properties.Count);
+
+            foreach (Property property in this.properties.Values)
+            {
+                IDisposable propUndoFn = property.BeginEventAddMoratorium();
+                propUndoFns.Add(propUndoFn);
+            }
+
+            IDisposable undoFn = new CallbackOnDispose(() =>
+                {
+                    this.eventAddAllowed = true;
+
+                    foreach (IDisposable propUndoFn in propUndoFns)
+                    {
+                        propUndoFn.Dispose();
+                    }
+                });
+
+            this.eventAddAllowed = false;
+
+            return undoFn;
         }
 
         private void Initialize(

@@ -13,6 +13,7 @@ using PaintDotNet.HistoryFunctions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -33,9 +34,116 @@ namespace PaintDotNet.Tools
         private bool append = false;
         private bool wasNotEmpty = false;
 
+        private Selection newSelection;
+        private SelectionRenderer newSelectionRenderer;
+
+        private Cursor cursorMouseUp;
+        private Cursor cursorMouseUpMinus;
+        private Cursor cursorMouseUpPlus;
+        private Cursor cursorMouseDown;
+
+        protected CombineMode SelectionMode
+        {
+            get
+            {
+                return this.combineMode;
+            }
+        }
+
+        protected void SetCursors(
+            string cursorMouseUpResName,
+            string cursorMouseUpMinusResName,
+            string cursorMouseUpPlusResName,
+            string cursorMouseDownResName)
+        {
+            if (this.cursorMouseUp != null)
+            {
+                this.cursorMouseUp.Dispose();
+                this.cursorMouseUp = null;
+            }
+
+            if (cursorMouseUpResName != null)
+            {
+                this.cursorMouseUp = new Cursor(PdnResources.GetResourceStream(cursorMouseUpResName));
+            }
+
+            if (this.cursorMouseUpMinus != null)
+            {
+                this.cursorMouseUpMinus.Dispose();
+                this.cursorMouseUpMinus = null;
+            }
+
+            if (cursorMouseUpMinusResName != null)
+            {
+                this.cursorMouseUpMinus = new Cursor(PdnResources.GetResourceStream(cursorMouseUpMinusResName));
+            }
+
+            if (this.cursorMouseUpPlus != null)
+            {
+                this.cursorMouseUpPlus.Dispose();
+                this.cursorMouseUpPlus = null;
+            }
+
+            if (cursorMouseUpPlusResName != null)
+            {
+                this.cursorMouseUpPlus = new Cursor(PdnResources.GetResourceStream(cursorMouseUpPlusResName));
+            }
+
+            if (this.cursorMouseDown != null)
+            {
+                this.cursorMouseDown.Dispose();
+                this.cursorMouseDown = null;
+            }
+
+            if (cursorMouseDownResName != null)
+            {
+                this.cursorMouseDown = new Cursor(PdnResources.GetResourceStream(cursorMouseDownResName));
+            }
+        }
+
+        private Cursor GetCursor(bool mouseDown, bool ctrlDown, bool altDown)
+        {
+            Cursor cursor;
+
+            if (mouseDown)
+            {
+                cursor = this.cursorMouseDown;
+            }
+            else if (ctrlDown)
+            {
+                cursor = this.cursorMouseUpPlus;
+            }
+            else if (altDown)
+            {
+                cursor = this.cursorMouseUpMinus;
+            }
+            else
+            {
+                cursor = this.cursorMouseUp;
+            }
+
+            return cursor;
+        }
+
+        private Cursor GetCursor()
+        {
+            return GetCursor(IsMouseDown, (ModifierKeys & Keys.Control) != 0, (ModifierKeys & Keys.Alt) != 0);
+        }
+
         protected override void OnActivate()
         {
+            // Assume that SetCursors() has been called by now
+
+            this.Cursor = GetCursor();
             DocumentWorkspace.EnableSelectionTinting = true;
+
+            this.newSelection = new Selection();
+            this.newSelectionRenderer = new SelectionRenderer(this.RendererList, this.newSelection, this.DocumentWorkspace);
+            this.newSelectionRenderer.EnableSelectionTinting = false;
+            this.newSelectionRenderer.EnableOutlineAnimation = false;
+            this.newSelectionRenderer.Visible = false;
+            this.RendererList.Add(this.newSelectionRenderer, true);
+
             base.OnActivate();
         }
 
@@ -49,11 +157,20 @@ namespace PaintDotNet.Tools
             }
 
             base.OnDeactivate();
+
+            SetCursors(null, null, null, null); // dispose 'em
+
+            this.RendererList.Remove(this.newSelectionRenderer);
+            this.newSelectionRenderer.Dispose();
+            this.newSelectionRenderer = null;
+            this.newSelection = null;
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+
+            this.Cursor = GetCursor();
 
             if (tracking)
             {
@@ -77,27 +194,36 @@ namespace PaintDotNet.Tools
 
                 // Determine this.combineMode
 
-                // if the user is holding down the control key then we don't want to reset the path, merely append to it
-                if ((ModifierKeys & Keys.Control) == Keys.Control)
+                if ((ModifierKeys & Keys.Control) != 0 && e.Button == MouseButtons.Left)
                 {
-                    if ((e.Button & MouseButtons.Right) == MouseButtons.Right)
-                    {
-                        this.combineMode = CombineMode.Xor;
-                    }
-                    else
-                    {
-                        this.combineMode = CombineMode.Union;
-                    }
+                    this.combineMode = CombineMode.Union;
                 }
-                else if ((e.Button & MouseButtons.Right) == MouseButtons.Right)
+                else if ((ModifierKeys & Keys.Alt) != 0 && e.Button == MouseButtons.Left)
                 {
                     this.combineMode = CombineMode.Exclude;
+                }
+                else if ((ModifierKeys & Keys.Control) != 0 && e.Button == MouseButtons.Right)
+                {
+                    this.combineMode = CombineMode.Xor;
+                }
+                else if ((ModifierKeys & Keys.Alt) != 0 && e.Button == MouseButtons.Right)
+                {
+                    this.combineMode = CombineMode.Intersect;
                 }
                 else
                 {
                     this.combineMode = AppEnvironment.SelectionCombineMode;
-                    //this.combineMode = CombineMode.Replace;
                 }
+
+
+                DocumentWorkspace.EnableSelectionOutline = false;
+
+                this.newSelection.Reset();
+                PdnGraphicsPath basePath = Selection.CreatePath();
+                this.newSelection.SetContinuation(basePath, CombineMode.Replace, true);
+                this.newSelection.CommitContinuation();
+
+                bool newSelectionRendererVisible = true;
 
                 // Act on this.combineMode
                 switch (this.combineMode)
@@ -121,7 +247,17 @@ namespace PaintDotNet.Tools
                         append = false;
                         Selection.Reset();
                         break;
+
+                    case CombineMode.Intersect:
+                        append = true;
+                        Selection.ResetContinuation();
+                        break;
+
+                    default:
+                        throw new InvalidEnumArgumentException();
                 }
+
+                this.newSelectionRenderer.Visible = newSelectionRendererVisible;
             }
         }
 
@@ -132,7 +268,8 @@ namespace PaintDotNet.Tools
 
         protected virtual List<PointF> CreateShape(List<Point> inputTracePoints)
         {
-            return Utility.PointListToPointFList(inputTracePoints);
+            List<PointF> points = Utility.PointListToPointFList(inputTracePoints);
+            return points;
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
@@ -202,7 +339,23 @@ namespace PaintDotNet.Tools
                 if (polygon.Length > 2)
                 {
                     DocumentWorkspace.ResetOutlineWhiteOpacity();
+                    this.newSelectionRenderer.ResetOutlineWhiteOpacity();
+
                     Selection.SetContinuation(polygon, this.combineMode);
+
+                    CombineMode cm;
+
+                    if (SelectionMode == CombineMode.Replace)
+                    {
+                        cm = CombineMode.Replace;
+                    }
+                    else
+                    {
+                        cm = CombineMode.Xor;
+                    }
+
+                    this.newSelection.SetContinuation(polygon, cm);
+
                     Update();
                 }
             }
@@ -213,6 +366,7 @@ namespace PaintDotNet.Tools
             if (this.tracking)
             {
                 DocumentWorkspace.ResetOutlineWhiteOpacity();
+                this.newSelectionRenderer.ResetOutlineWhiteOpacity();
             }
 
             base.OnPulse();
@@ -320,7 +474,13 @@ namespace PaintDotNet.Tools
                 }
 
                 DocumentWorkspace.ResetOutlineWhiteOpacity();
+                this.newSelectionRenderer.ResetOutlineWhiteOpacity();
+                this.newSelection.Reset();
+                this.newSelectionRenderer.Visible = false;
+
                 this.tracking = false;
+
+                DocumentWorkspace.EnableSelectionOutline = true;
                 DocumentWorkspace.InvalidateSurface(Utility.RoundRectangle(DocumentWorkspace.VisibleDocumentRectangleF));
             }
         }
@@ -337,6 +497,10 @@ namespace PaintDotNet.Tools
             {
                 Done();
             }
+
+            base.OnMouseUp(e);
+
+            Cursor = GetCursor();
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -347,6 +511,8 @@ namespace PaintDotNet.Tools
             {
                 Render();
             }
+
+            Cursor = GetCursor();
         }
 
         protected override void OnKeyUp(KeyEventArgs e)
@@ -357,6 +523,8 @@ namespace PaintDotNet.Tools
             {
                 Render();
             }
+
+            Cursor = GetCursor();
         }
 
         protected override void OnClick()

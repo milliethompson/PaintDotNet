@@ -42,9 +42,9 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            Fragments,
-            Rotation,
-            Distance,
+            Fragments = 0,
+            Rotation = 1,
+            Distance = 2
         }
 
         protected override PropertyCollection OnCreatePropertyCollection()

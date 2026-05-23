@@ -611,6 +611,10 @@ copy "$(SolutionDir)\DdsFileType\Squish\Squish_x64\$(ConfigurationName)\Squish_x
 rem copy "$(SolutionDir)\SystemLayer.Native\SystemLayer.Native.x64\$(ConfigurationName)\PaintDotNet.SystemLayer.Native.x64.dll" "$(TargetDir)"
 rem copy "$(SolutionDir)\SystemLayer.Native\SystemLayer.Native.x86\$(ConfigurationName)\PaintDotNet.SystemLayer.Native.x86.dll" "$(TargetDir)"
 
+@rem copy ShellExtension_*.dll over
+copy "$(SolutionDir)\ShellExtension\ShellExtension_x64\$(ConfigurationName)\ShellExtension_x64.dll" "$(TargetDir)"
+copy "$(SolutionDir)\ShellExtension\ShellExtension_x86\$(ConfigurationName)\ShellExtension_x86.dll" "$(TargetDir)"
+
 @rem copy WiaProxy32.exe over
 copy "$(SolutionDir)\WiaProxy32\bin\$(ConfigurationName)\WiaProxy32.exe" "$(TargetDir)"
 

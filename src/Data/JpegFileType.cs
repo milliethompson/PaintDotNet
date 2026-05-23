@@ -28,7 +28,7 @@ namespace PaintDotNet
 
         public enum PropertyNames
         {
-            Quality
+            Quality = 0
         }
 
         public override PropertyCollection OnCreateSavePropertyCollection()
@@ -47,7 +47,7 @@ namespace PaintDotNet
             configUI.SetPropertyControlValue(
                 PropertyNames.Quality,
                 ControlInfoPropertyNames.DisplayName,
-                PdnResources.GetString("JpegFileType.ConfigUI.Quality.DisplayName"));
+                PdnResources.GetString("JpegFileType.ConfigUI.Quality.DisplayName") ?? "??");
 
             return configUI;
         }

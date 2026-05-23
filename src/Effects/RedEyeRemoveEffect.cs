@@ -21,8 +21,8 @@ namespace PaintDotNet.Effects
     {
         public enum PropertyNames
         {
-            Tolerance,
-            Saturation
+            Tolerance = 0,
+            Saturation = 1
         }
 
         private int tolerance;

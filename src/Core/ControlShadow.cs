@@ -20,17 +20,13 @@ namespace PaintDotNet
     public sealed class ControlShadow 
         : Control
     {
-        private static readonly Color gradientTop = Color.FromArgb(0xe0, 0xe0, 0xe0);
-        private static readonly Color gradientBottom = Color.FromArgb(0xa0, 0xa0, 0xa0);
-
         private Image roundedEdgeUL = null;
         private Image roundedEdgeUR = null;
         private Image roundedEdgeLL = null;
         private Image roundedEdgeLR = null;
 
         private System.ComponentModel.Container components = null;
-        private LinearGradientBrush gradientBrush = null;
-        private int gradientHeight = -1;
+
         private Control occludingControl;
 
         private static bool betaTagDone = false;
@@ -44,12 +40,12 @@ namespace PaintDotNet
         {
             get 
             { 
-                return occludingControl; 
+                return this.occludingControl; 
             }
 
             set 
-            { 
-                occludingControl = value;
+            {
+                this.occludingControl = value;
                 Invalidate();
             }
         }
@@ -59,7 +55,6 @@ namespace PaintDotNet
             this.SetStyle(ControlStyles.Opaque, true);
             this.SetStyle(ControlStyles.UserPaint, true);
             this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
-            this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
 
             this.Dock = DockStyle.Fill;
             this.DoubleBuffered = true;
@@ -67,7 +62,11 @@ namespace PaintDotNet
 
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
-            BackColor = Color.Transparent;
+
+            BackColor = ColorBgra.Blend(
+                    ColorBgra.FromColor(SystemColors.Control),
+                    ColorBgra.FromColor(SystemColors.ControlDark),
+                    128).ToColor();
 
             this.roundedEdgeUL = PdnResources.GetImageResource("Images.RoundedEdgeUL.png").Reference;
             this.roundedEdgeUR = PdnResources.GetImageResource("Images.RoundedEdgeUR.png").Reference;
@@ -161,10 +160,10 @@ namespace PaintDotNet
 
         private void DrawShadow(Graphics g, Rectangle clipRect)
         {
-            if (occludingControl != null)
+            if (this.occludingControl != null)
             {
                 // Draw the outline rectangle
-                Rectangle outlineRect = new Rectangle(new Point(0, 0), occludingControl.Size);
+                Rectangle outlineRect = new Rectangle(new Point(0, 0), this.occludingControl.Size);
 
                 outlineRect = occludingControl.RectangleToScreen(outlineRect);
                 outlineRect = RectangleToClient(outlineRect);
@@ -192,24 +191,11 @@ namespace PaintDotNet
                     backRegion.Exclude(occludingRect);
                     backRegion.Exclude(outlineRect);
 
-                    if (ClientSize.Height != this.gradientHeight)
+                    using (Brush backBrush = new SolidBrush(this.BackColor))
                     {
-                        if (this.gradientBrush != null)
-                        {
-                            this.gradientBrush.Dispose();
-                            this.gradientBrush = null;
-                        }
-
-                        this.gradientBrush = new LinearGradientBrush(
-                            new Point(0, 0),
-                            new Point(0, ClientSize.Height),
-                            gradientTop,
-                            gradientBottom);
+                        g.FillRegion(backBrush, backRegion.GetRegionReadOnly());
                     }
-
-                    g.FillRegion(this.gradientBrush, backRegion.GetRegionReadOnly());
                 }
-
                 
                 Rectangle edgeRect = new Rectangle(0, 0, this.roundedEdgeUL.Width, this.roundedEdgeUR.Height);
 

@@ -43,10 +43,10 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private enum PropertyNames
+        public enum PropertyNames
         {
-            Radius,
-            Strength,
+            Radius = 0,
+            Strength = 1
         }
 
         protected override PropertyCollection OnCreatePropertyCollection()

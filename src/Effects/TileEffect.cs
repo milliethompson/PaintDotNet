@@ -46,10 +46,10 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            Rotation,
-            SquareSize,
-            Curvature,
-            Quality
+            Rotation = 0,
+            SquareSize = 1,
+            Curvature = 2,
+            Quality = 3
         }
 
         public TileEffect()

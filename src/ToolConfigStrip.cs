@@ -2826,6 +2826,7 @@ namespace PaintDotNet
                     CombineMode.Replace, 
                     CombineMode.Union, 
                     CombineMode.Exclude, 
+                    CombineMode.Intersect,
                     CombineMode.Xor 
                 })
             {
@@ -2850,16 +2851,19 @@ namespace PaintDotNet
         {
             CombineMode newMode;
 
-            // Replace -> Union -> Exclude -> Xor -> Replace
+            // Replace -> Union -> Exclude -> Intersect -> Xor -> Replace
 
             switch (mode)
             {
                 default:
-                case CombineMode.Intersect:
                 case CombineMode.Complement:
                     throw new InvalidEnumArgumentException();
 
                 case CombineMode.Exclude:
+                    newMode = CombineMode.Intersect;
+                    break;
+
+                case CombineMode.Intersect:
                     newMode = CombineMode.Xor;
                     break;
 

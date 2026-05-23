@@ -20,8 +20,8 @@ namespace PaintDotNet.Effects
     {
         public enum PropertyNames
         {
-            PencilTipSize,
-            ColorRange
+            PencilTipSize = 0,
+            ColorRange = 1
         }
 
         private static string StaticName

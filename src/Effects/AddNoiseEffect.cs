@@ -49,9 +49,9 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            Intensity,
-            Saturation,
-            Coverage
+            Intensity = 0,
+            Saturation = 1,
+            Coverage = 2
         }
 
         protected override PropertyCollection OnCreatePropertyCollection()

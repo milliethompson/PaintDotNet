@@ -46,10 +46,10 @@ namespace PaintDotNet.Effects
 
         public enum PropertyNames
         {
-            Scale,
-            Power,
-            BlendOp,
-            Seed
+            Scale = 0,
+            Power = 1,
+            BlendOp = 2,
+            Seed = 3
         }
 
         protected override PropertyCollection OnCreatePropertyCollection()

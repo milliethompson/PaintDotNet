@@ -292,7 +292,7 @@ namespace PaintDotNet
                 returnFont = new Font(name, size, style);
             }
 
-            catch
+            catch (Exception)
             {
                 returnFont = new Font(FontFamily.GenericSansSerif, size);
             }
@@ -309,7 +309,7 @@ namespace PaintDotNet
                 returnFont = new Font(name, size, style);
             }
 
-            catch
+            catch (Exception)
             {
                 returnFont = CreateFont(backupName, backupSize, style);
             }

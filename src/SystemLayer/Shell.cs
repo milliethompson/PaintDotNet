@@ -785,12 +785,12 @@ namespace PaintDotNet.SystemLayer
             throw new KeyNotFoundException();
         }
 
-        private static string GetCSIDLPath(int csidl)
+        private static string GetCSIDLPath(int csidl, bool tryCreateIfAbsent)
         {
             // First, try calling SHGetFolderPathW with the "CSIDL_FLAG_CREATE" flag. However, if it 
             // returns an error then ignore it. We've had some crash logs with "access denied" coming
             // from this function.
-            int csidlWithFlags = csidl | NativeConstants.CSIDL_FLAG_CREATE;
+            int csidlWithFlags = csidl | (tryCreateIfAbsent ? NativeConstants.CSIDL_FLAG_CREATE : 0);
             StringBuilder sbWithFlags = new StringBuilder(NativeConstants.MAX_PATH);
             Do.TryBool(() => NativeMethods.SHGetFolderPathW(IntPtr.Zero, csidlWithFlags, IntPtr.Zero, NativeConstants.SHGFP_TYPE_CURRENT, sbWithFlags));
 
@@ -819,12 +819,12 @@ namespace PaintDotNet.SystemLayer
                 Pair.Create(VirtualFolderName.UserRoamingAppData, NativeConstants.CSIDL_APPDATA) 
             };
 
-        public static string GetVirtualPath(VirtualFolderName folderName)
+        public static string GetVirtualPath(VirtualFolderName folderName, bool tryCreateIfAbsent)
         {
             try
             {
                 int csidl = Map(folderName, pathMappings);
-                string path = GetCSIDLPath(csidl);
+                string path = GetCSIDLPath(csidl, tryCreateIfAbsent);
                 return path;
             }
 

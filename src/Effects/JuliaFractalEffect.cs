@@ -20,12 +20,12 @@ namespace PaintDotNet.Effects
     public sealed class JuliaFractalEffect
         : InternalPropertyBasedEffect
     {
-        private enum PropertyNames
+        public enum PropertyNames
         {
-            Factor,
-            Zoom,
-            Angle,
-            Quality,
+            Factor = 0,
+            Zoom = 1,
+            Angle = 2,
+            Quality = 3
         }
 
         public static string StaticName

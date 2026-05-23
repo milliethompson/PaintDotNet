@@ -448,6 +448,11 @@ namespace PaintDotNet
 
         public virtual void ZoomIn(double factor)
         {
+            Do.TryBool(() => ZoomInImpl(factor));
+        }
+
+        private void ZoomInImpl(double factor)
+        {
             PointF centerPt = this.DocumentCenterPointF;
 
             ScaleFactor oldSF = this.ScaleFactor;
@@ -476,6 +481,11 @@ namespace PaintDotNet
 
         public virtual void ZoomIn()
         {
+            Do.TryBool(ZoomInImpl);
+        }
+
+        private void ZoomInImpl()
+        {
             PointF centerPt = this.DocumentCenterPointF;
 
             ScaleFactor oldSF = this.ScaleFactor;
@@ -496,6 +506,11 @@ namespace PaintDotNet
         }
 
         public virtual void ZoomOut(double factor)
+        {
+            Do.TryBool(() => ZoomOutImpl(factor));
+        }
+
+        private void ZoomOutImpl(double factor)
         {
             PointF centerPt = this.DocumentCenterPointF;
 
@@ -525,6 +540,11 @@ namespace PaintDotNet
         }
 
         public virtual void ZoomOut()
+        {
+            Do.TryBool(ZoomOutImpl);
+        }
+
+        private void ZoomOutImpl()
         {
             PointF centerPt = this.DocumentCenterPointF;
 

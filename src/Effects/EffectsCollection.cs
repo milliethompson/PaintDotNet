@@ -171,10 +171,16 @@ namespace PaintDotNet.Effects
                     // Fragment, which is now built-in
                     Quadruple.Create("EdHarvey.Edfects.Effects", "FragmentEffect", new Version(3, 20, int.MaxValue, int.MaxValue), BuiltInMessage),
 
+                    // Posterize, which is now built-in
+                    Quadruple.Create("EdHarvey.Edfects.Effects", "PosterizeEffect", new Version(3, 31, int.MaxValue, int.MaxValue), BuiltInMessage),
+
                     // Some of pyrochild's effects were using some code in PaintDotNet.exe that is now marked internal. 
                     // For some reason it is not caught by the plugin crash dialog in non-Debug builds.
                     Quadruple.Create("pyrochild.effects.splatter", "Splatter", new Version(1, 0, int.MaxValue, int.MaxValue), UnstableMessage),
                     Quadruple.Create("zachwalker.CurvesPlus", "CurvesPlus", new Version(2, 4, int.MaxValue, int.MaxValue), UnstableMessage),
+
+                    // Older versions of these were accessing code in paintdotnet.exe, or were using the EventHandler<T> that was moved
+                    Quadruple.Create("pyrochild.effects.gradientmapping", "GradientMapping", new Version(2, 1, int.MaxValue, int.MaxValue), UnstableMessage),
 
                     // GREYCstoration, has known stability issues, and is also superceded by the built-in "Reduce Noise" anyway
                     Quadruple.Create("GREYCstoration", "BaseEffect", new Version(0, 9, int.MaxValue, int.MaxValue), UnstableMessage),

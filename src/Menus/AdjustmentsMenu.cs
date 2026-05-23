@@ -54,7 +54,7 @@ namespace PaintDotNet.Menus
             }
             else if (effect is AutoLevelEffect)
             {
-                keys = Keys.Control | Keys.Alt | Keys.L;
+                keys = Keys.Control | Keys.Shift | Keys.L;
             }
             else if (effect is InvertColorsEffect)
             {
@@ -66,7 +66,7 @@ namespace PaintDotNet.Menus
             }
             else if (effect is SepiaEffect)
             {
-                keys = Keys.Control | Keys.Shift | Keys.P;
+                keys = Keys.Control | Keys.Shift | Keys.E;
             }
             else if (effect is BrightnessAndContrastAdjustment)
             {
@@ -79,6 +79,10 @@ namespace PaintDotNet.Menus
             else if (effect is CurvesEffect)
             {
                 keys = Keys.Control | Keys.Shift | Keys.M;
+            }
+            else if (effect is PosterizeAdjustment)
+            {
+                keys = Keys.Control | Keys.Shift | Keys.P;
             }
             else
             {

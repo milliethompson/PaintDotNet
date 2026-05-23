@@ -23,8 +23,8 @@ namespace PaintDotNet
     {
         public enum PropertyNames
         {
-            Threshold,
-            DitherLevel
+            Threshold = 0,
+            DitherLevel = 1
         }
 
         public GifFileType()

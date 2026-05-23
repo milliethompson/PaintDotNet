@@ -36,13 +36,13 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private enum PropertyNames
+        public enum PropertyNames
         {
-            Factor,
-            Quality,
-            Zoom,
-            Angle,
-            InvertColors
+            Factor = 0,
+            Quality = 1,
+            Zoom = 2,
+            Angle = 3,
+            InvertColors = 4
         }
 
         public MandelbrotFractalEffect()

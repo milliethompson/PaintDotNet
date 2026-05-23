@@ -63,6 +63,14 @@ namespace PaintDotNet.Effects
 
         protected override void InitDialogFromToken(PropertyBasedEffectConfigToken effectTokenCopy)
         {
+            // We run this twice so that rules don't execute on stale values
+            // See bug #2719
+            InitDialogFromTokenImpl(effectTokenCopy);
+            InitDialogFromTokenImpl(effectTokenCopy);
+        }
+
+        private void InitDialogFromTokenImpl(PropertyBasedEffectConfigToken effectTokenCopy)
+        {
             foreach (string propertyName in effectTokenCopy.PropertyNames)
             {
                 Property srcProperty = effectTokenCopy.GetProperty<Property>(propertyName);
@@ -258,7 +266,6 @@ namespace PaintDotNet.Effects
                     break;
                 }
             }
-
 
             this.configUIPanel.ResumeLayout(false);
             this.configUIPanel.PerformLayout();

@@ -33,7 +33,14 @@ namespace PaintDotNet.Effects
 
         public ControlInfo CreateConfigUI(PropertyCollection props)
         {
-            return OnCreateConfigUI(props);
+            PropertyCollection props2 = props.Clone();
+
+            using (props2.__Internal_BeginEventAddMoratorium())
+            {
+                ControlInfo configUI1 = OnCreateConfigUI(props2);
+                ControlInfo configUI2 = configUI1.Clone();
+                return configUI2;
+            }
         }
 
         public static ControlInfo CreateDefaultConfigUI(IEnumerable<Property> props)
@@ -80,14 +87,15 @@ namespace PaintDotNet.Effects
             PropertyCollection props2 = props1.Clone();
             PropertyCollection props3 = props1.Clone();
 
-            ControlInfo configUI = CreateConfigUI(props2);
+            ControlInfo configUI1 = CreateConfigUI(props2);
+            ControlInfo configUI2 = configUI1.Clone();
 
             PropertyCollection windowProps = PropertyBasedEffectConfigDialog.CreateWindowProperties();
             windowProps[ControlInfoPropertyNames.WindowTitle].Value = this.Name;
             OnCustomizeConfigUIWindowProperties(windowProps);
             PropertyCollection windowProps2 = windowProps.Clone();
 
-            PropertyBasedEffectConfigDialog pbecd = new PropertyBasedEffectConfigDialog(props3, configUI, windowProps2);
+            PropertyBasedEffectConfigDialog pbecd = new PropertyBasedEffectConfigDialog(props3, configUI2, windowProps2);
 
             pbecd.Icon = GetConfigDialogIcon();
 

@@ -28,15 +28,15 @@ namespace PaintDotNet
 
         public enum PropertyNames
         {
-            BitDepth,
-            DitherLevel,
+            BitDepth = 0,
+            DitherLevel = 1
         }
 
         public enum BmpBitDepthUIChoices
         {
-            AutoDetect,
-            Bpp24,
-            Bpp8,
+            AutoDetect = 0,
+            Bpp24 = 1,
+            Bpp8 = 2
         }
         
         public override PropertyCollection OnCreateSavePropertyCollection()

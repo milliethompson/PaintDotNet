@@ -102,7 +102,7 @@ namespace PaintDotNet.Actions
                 try
                 {
                     Utility.GCFullCollect();
-                    image = (Image)clipData.GetData(DataFormats.Bitmap, true);
+                    image = clipData.GetData(DataFormats.Bitmap, true) as Image;
 
                     if (image == null)
                     {

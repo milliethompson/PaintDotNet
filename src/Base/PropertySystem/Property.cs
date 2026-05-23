@@ -81,12 +81,30 @@ namespace PaintDotNet.PropertySystem
         private ValueValidationFailureResult vvfResult;
         private EventHandler readOnlyChanged;
         private EventHandler valueChanged;
+        private bool eventAddAllowed = true;
+
+        internal IDisposable BeginEventAddMoratorium()
+        {
+            if (!this.eventAddAllowed)
+            {
+                throw new InvalidOperationException("An event add moratorium is already in effect");
+            }
+
+            IDisposable undoFn = new CallbackOnDispose(() => this.eventAddAllowed = true);
+
+            this.eventAddAllowed = false;
+
+            return undoFn;
+        }
 
         public event EventHandler ReadOnlyChanged
         {
             add
             {
-                this.readOnlyChanged += value;
+                if (this.eventAddAllowed)
+                {
+                    this.readOnlyChanged += value;
+                }
             }
 
             remove
@@ -107,7 +125,10 @@ namespace PaintDotNet.PropertySystem
         {
             add
             {
-                this.valueChanged += value;
+                if (this.eventAddAllowed)
+                {
+                    this.valueChanged += value;
+                }
             }
 
             remove
