@@ -12,7 +12,7 @@ using System.Drawing;
 
 namespace PaintDotNet.HistoryMementos
 {
-    public class SwapLayerHistoryMemento
+    internal class SwapLayerHistoryMemento
         : HistoryMemento
     {
         private int layerIndex1;

@@ -19,9 +19,8 @@ using System.Windows.Forms;
 namespace PaintDotNet.Effects
 {
     [EffectCategory(EffectCategory.Adjustment)]
-    [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public sealed class HueAndSaturationAdjustment
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public static string StaticName
         {

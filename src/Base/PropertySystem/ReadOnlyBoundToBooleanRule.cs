@@ -18,8 +18,8 @@ namespace PaintDotNet.PropertySystem
     public sealed class ReadOnlyBoundToBooleanRule
         : PropertyCollectionRule
     {
-        private object targetPropertyName;
-        private object sourceBooleanPropertyName;
+        private string targetPropertyName;
+        private string sourceBooleanPropertyName;
         private bool inverse;
 
         public ReadOnlyBoundToBooleanRule(Property targetProperty, BooleanProperty sourceProperty, bool inverse)
@@ -29,8 +29,8 @@ namespace PaintDotNet.PropertySystem
 
         public ReadOnlyBoundToBooleanRule(object targetPropertyName, object sourceBooleanPropertyName, bool inverse)
         {
-            this.targetPropertyName = targetPropertyName;
-            this.sourceBooleanPropertyName = sourceBooleanPropertyName;
+            this.targetPropertyName = targetPropertyName.ToString();
+            this.sourceBooleanPropertyName = sourceBooleanPropertyName.ToString();
             this.inverse = inverse;
         }
 
@@ -39,7 +39,7 @@ namespace PaintDotNet.PropertySystem
             Property targetProperty = Owner[this.targetPropertyName];
             BooleanProperty sourceProperty = (BooleanProperty)Owner[this.sourceBooleanPropertyName];
 
-            if (targetProperty.Name == sourceProperty.Name)
+            if (0 == string.Compare(targetProperty.Name, sourceProperty.Name, StringComparison.InvariantCulture))
             {
                 throw new ArgumentException("source and target properties must be different");
             }
@@ -59,14 +59,9 @@ namespace PaintDotNet.PropertySystem
             Property targetProperty = Owner[this.targetPropertyName];
             BooleanProperty sourceProperty = (BooleanProperty)Owner[this.sourceBooleanPropertyName];
 
-            if (this.inverse)
-            {
-                targetProperty.ReadOnly = !sourceProperty.Value;
-            }
-            else
-            {
-                targetProperty.ReadOnly = sourceProperty.Value;
-            }
+            bool readOnly = sourceProperty.Value;
+
+            targetProperty.ReadOnly = readOnly ^ this.inverse;
         }
 
         public override PropertyCollectionRule Clone()

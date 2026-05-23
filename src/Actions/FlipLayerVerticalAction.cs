@@ -12,7 +12,7 @@ using System;
 
 namespace PaintDotNet.Actions
 {
-    public class FlipLayerVerticalFunction
+    internal class FlipLayerVerticalFunction
         : FlipLayerFunction
     {
         public static string StaticName

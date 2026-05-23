@@ -16,7 +16,7 @@ namespace PaintDotNet
     /// Symbolic constants for our settings. Settings are stored in CurrentUser unless
     /// otherwise specified.
     /// </summary>
-    public sealed class SettingNames
+    internal sealed class SettingNames
     {
         /// <summary>
         /// The width of the main window (MainForm).

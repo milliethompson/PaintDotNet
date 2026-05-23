@@ -32,7 +32,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class AppWorkspace
+    internal class AppWorkspace
         : UserControl,
           ISnapObstacleHost
     {
@@ -77,8 +77,10 @@ namespace PaintDotNet
             this.toolBar.MainMenu.CheckForUpdates();
         }
 
-        public void SuspendThumbnailUpdates()
+        public IDisposable SuspendThumbnailUpdates()
         {
+            CallbackOnDispose resumeFn = new CallbackOnDispose(ResumeThumbnailUpdates);
+
             ++this.suspendThumbnailUpdates;
 
             if (this.suspendThumbnailUpdates == 1)
@@ -86,9 +88,11 @@ namespace PaintDotNet
                 Widgets.DocumentStrip.SuspendThumbnailUpdates();
                 Widgets.LayerControl.SuspendLayerPreviewUpdates();
             }
+
+            return resumeFn;
         }
 
-        public void ResumeThumbnailUpdates()
+        private void ResumeThumbnailUpdates()
         {
             --this.suspendThumbnailUpdates;
 
@@ -409,26 +413,41 @@ namespace PaintDotNet
             }
         }
 
-        private Set<Triple<Assembly, string, Exception>> effectLoadErrors = new Set<Triple<Assembly, string, Exception>>();
+        private Set<Triple<Assembly, Type, Exception>> effectLoadErrors = new Set<Triple<Assembly, Type, Exception>>();
 
-        public void ReportEffectLoadError(Triple<Assembly, string, Exception> error)
+        public void ReportEffectLoadError(Triple<Assembly, Type, Exception> error)
         {
-            string internedError = string.Intern(error.Second);
-            Triple<Assembly, string, Exception> error2 = Triple.Create(error.First, internedError, error.Third);
-
             lock (this.effectLoadErrors)
             {
-                if (!this.effectLoadErrors.Contains(error2))
+                if (!this.effectLoadErrors.Contains(error))
                 {
-                    this.effectLoadErrors.Add(error2);
+                    this.effectLoadErrors.Add(error);
                 }
             }
         }
 
         public static string GetLocalizedEffectErrorMessage(Assembly assembly, Type type, Exception exception)
         {
-            IPluginSupportInfo supportInfo = PluginSupportInfo.GetPluginSupportInfo(type);
-            string typeName = string.Format("{0}.{1}", type.Namespace, type.Name);
+            IPluginSupportInfo supportInfo;
+            string typeName;
+
+            if (type != null)
+            {
+                typeName = type.FullName;
+                supportInfo = PluginSupportInfo.GetPluginSupportInfo(type);
+            }
+            else if (exception is TypeLoadException)
+            {
+                TypeLoadException asTlex = exception as TypeLoadException;
+                typeName = asTlex.TypeName;
+                supportInfo = PluginSupportInfo.GetPluginSupportInfo(assembly);
+            }
+            else
+            {
+                supportInfo = PluginSupportInfo.GetPluginSupportInfo(assembly);
+                typeName = null;
+            }
+
             return GetLocalizedEffectErrorMessage(assembly, typeName, supportInfo, exception);
         }
 
@@ -438,7 +457,7 @@ namespace PaintDotNet
             return GetLocalizedEffectErrorMessage(assembly, typeName, supportInfo, exception);
         }
 
-        public static string GetLocalizedEffectErrorMessage(Assembly assembly, string typeName, IPluginSupportInfo supportInfo, Exception exception)
+        private static string GetLocalizedEffectErrorMessage(Assembly assembly, string typeName, IPluginSupportInfo supportInfo, Exception exception)
         {
             string fileName = assembly.Location;
             string shortErrorFormat = PdnResources.GetString("EffectErrorMessage.ShortFormat");
@@ -460,7 +479,7 @@ namespace PaintDotNet
                 errorText = string.Format(
                     fullErrorFormat,
                     fileName ?? notSuppliedText,
-                    supportInfo.DisplayName ?? notSuppliedText,
+                    typeName ?? supportInfo.DisplayName ?? notSuppliedText,
                     (supportInfo.Version ?? new Version()).ToString(),
                     supportInfo.Author ?? notSuppliedText,
                     supportInfo.Copyright ?? notSuppliedText,
@@ -471,7 +490,7 @@ namespace PaintDotNet
             return errorText;
         }
 
-        public IList<Triple<Assembly, string, Exception>> GetEffectLoadErrors()
+        public IList<Triple<Assembly, Type, Exception>> GetEffectLoadErrors()
         {
             return this.effectLoadErrors.ToArray();
         }
@@ -1701,6 +1720,7 @@ namespace PaintDotNet
             {
                 this.widgets.ToolsControl.SelectTool(ActiveDocumentWorkspace.GetToolType(), false);
                 this.toolBar.ToolChooserStrip.SelectTool(ActiveDocumentWorkspace.GetToolType(), false);
+                this.toolBar.ToolConfigStrip.Visible = true; // HACK: see bug #2702
                 this.toolBar.ToolConfigStrip.ToolBarConfigItems = ActiveDocumentWorkspace.Tool.ToolBarConfigItems;
                 this.globalToolTypeChoice = ActiveDocumentWorkspace.GetToolType();
             }

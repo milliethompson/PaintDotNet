@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class TransferProgressDialog 
+    internal class TransferProgressDialog 
         : PdnBaseForm
     {
         private HeaderLabel separator1;

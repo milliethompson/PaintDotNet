@@ -463,7 +463,7 @@ namespace PaintDotNet.SystemLayer
         static FileSystem()
         {
             // Determine root path of where we store our persisted data
-            string localSettingsDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string localSettingsDir = Shell.GetVirtualPath(VirtualFolderName.UserLocalAppData);
             string tempDirRoot = Path.Combine(localSettingsDir, "Paint.NET");
 
             DirectoryInfo tempDirRootInfo = new DirectoryInfo(tempDirRoot);
@@ -541,6 +541,16 @@ namespace PaintDotNet.SystemLayer
         public static bool TryDeleteFile(string filePath)
         {
             return NativeMethods.DeleteFileW(filePath);
+        }
+
+        public static bool TryDeleteFile(string dirPath, string fileName)
+        {
+            return Do.TryBool(() =>
+                Do.GenerateTest(() =>
+                    Path.Combine(dirPath, fileName),
+                    s => File.Exists(s),
+                    s => TryDeleteFile(s),
+                    s => { }));
         }
 
         public static bool TryDeleteDirectory(string dirPath)

@@ -17,8 +17,8 @@ using System.Drawing;
 
 namespace PaintDotNet.Effects
 {
-    public sealed class TwistEffect 
-        : PropertyBasedEffect
+    public sealed class TwistEffect
+        : InternalPropertyBasedEffect
     {
         public static Image StaticImage
         {

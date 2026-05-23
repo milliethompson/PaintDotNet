@@ -83,11 +83,18 @@ namespace PaintDotNet.PropertySystem
         }
 
         public PropertyCollection(IEnumerable<Property> properties)
-            : this(properties, new PropertyCollectionRule[0])
         {
+            Initialize(properties, new PropertyCollectionRule[0]);
         }
 
         public PropertyCollection(
+            IEnumerable<Property> properties, 
+            IEnumerable<PropertyCollectionRule> rules)
+        {
+            Initialize(properties, rules);
+        }
+
+        private void Initialize(
             IEnumerable<Property> properties, 
             IEnumerable<PropertyCollectionRule> rules)
         {
@@ -135,13 +142,27 @@ namespace PaintDotNet.PropertySystem
 
         public void CopyCompatibleValuesFrom(PropertyCollection srcProps)
         {
+            CopyCompatibleValuesFrom(srcProps, false);
+        }
+
+        public void CopyCompatibleValuesFrom(PropertyCollection srcProps, bool ignoreReadOnlyFlags)
+        {
             foreach (Property srcProp in srcProps)
             {
                 Property dstProp = this[srcProp.Name];
 
                 if (dstProp != null && dstProp.ValueType == srcProp.ValueType)
                 {
-                    dstProp.Value = srcProp.Value;
+                    if (dstProp.ReadOnly && ignoreReadOnlyFlags)
+                    {
+                        dstProp.ReadOnly = false;
+                        dstProp.Value = srcProp.Value;
+                        dstProp.ReadOnly = true;
+                    }
+                    else
+                    {
+                        dstProp.Value = srcProp.Value;
+                    }
                 }
             }
         }

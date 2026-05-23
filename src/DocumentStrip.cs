@@ -19,7 +19,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class DocumentStrip
+    internal class DocumentStrip
         : ImageStrip,
           IDocumentList
     {
@@ -378,7 +378,7 @@ namespace PaintDotNet
             base.OnItemClicked(item, itemPart, mouseButtons);
         }
 
-        public event EventHandler<Pair<DocumentWorkspace, DocumentClickAction>> DocumentClicked;
+        public event EventHandler<EventArgs<Pair<DocumentWorkspace, DocumentClickAction>>> DocumentClicked;
         protected virtual void OnDocumentClicked(DocumentWorkspace dw, DocumentClickAction action)
         {
             if (DocumentClicked != null)

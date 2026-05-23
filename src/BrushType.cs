@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public enum BrushType
+    internal enum BrushType
     {
         Solid,
         Hatch,

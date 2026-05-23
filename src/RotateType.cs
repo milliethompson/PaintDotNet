@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public enum RotateType
+    internal enum RotateType
     {
         Clockwise90,
         CounterClockwise90,

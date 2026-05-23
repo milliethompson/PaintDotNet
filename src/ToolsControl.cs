@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class ToolsControl 
+    internal class ToolsControl 
         : UserControl, 
           IToolChooser
     {

@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class ClearMruListAction
+    internal sealed class ClearMruListAction
         : AppWorkspaceAction
     {
         public override void PerformAction(AppWorkspace appWorkspace)

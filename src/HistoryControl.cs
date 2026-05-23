@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public sealed class HistoryControl 
+    internal sealed class HistoryControl 
         : Control
     {
         private enum ItemType
@@ -87,7 +87,7 @@ namespace PaintDotNet
         public event EventHandler ScrollOffsetChanged;
         private void OnScrollOffsetChanged()
         {
-            this.vScrollBar.Value = this.scrollOffset;
+            this.vScrollBar.Value = Utility.Clamp(this.scrollOffset, this.vScrollBar.Minimum, this.vScrollBar.Maximum);
 
             if (ScrollOffsetChanged != null)
             {

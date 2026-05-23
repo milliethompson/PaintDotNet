@@ -17,9 +17,8 @@ using System.Drawing;
 
 namespace PaintDotNet.Effects
 {
-    [EffectTypeHint(EffectTypeHint.Fast)]
     public sealed class EmbossEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public static string StaticName
         {

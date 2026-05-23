@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class ColorRectangleControl 
+    internal class ColorRectangleControl 
         : UserControl
     {
         private Color rectangleColor;

@@ -12,7 +12,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Menus
 {
-    public sealed class ToolsMenu
+#if false
+    internal sealed class ToolsMenu
         : PdnMenuItem
     {
         private bool toolsListInit = false;
@@ -133,4 +134,5 @@ namespace PaintDotNet.Menus
             AppWorkspace.AppEnvironment.AlphaBlending = !AppWorkspace.AppEnvironment.AlphaBlending;
         }
     }
+#endif
 }

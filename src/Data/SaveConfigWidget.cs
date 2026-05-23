@@ -63,6 +63,12 @@ namespace PaintDotNet
             }
         }
 
+        internal SaveConfigWidget(FileType fileType)
+        {
+            InitializeComponent();
+            this.fileType = fileType;
+        }
+
         public SaveConfigWidget()
         {
             InitializeComponent();

@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public interface IToleranceConfig
+    internal interface IToleranceConfig
     {
         void PerformToleranceChanged();
 

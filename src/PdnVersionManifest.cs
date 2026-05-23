@@ -12,7 +12,7 @@ using System.Collections;
 
 namespace PaintDotNet
 {
-    public class PdnVersionManifest
+    internal class PdnVersionManifest
     {
         private string downloadPageUrl;
         private PdnVersionInfo[] versionInfos;

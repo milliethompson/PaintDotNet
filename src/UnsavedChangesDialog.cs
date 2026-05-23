@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class UnsavedChangesDialog 
+    internal class UnsavedChangesDialog 
         : PdnBaseForm
     {
         /// <summary>
@@ -281,7 +281,7 @@ namespace PaintDotNet
             this.PerformLayout();
         }
 
-        public event EventHandler<DocumentWorkspace> DocumentClicked;
+        public event EventHandler<EventArgs<DocumentWorkspace>> DocumentClicked;
         protected virtual void OnDocumentClicked(DocumentWorkspace dw)
         {
             if (DocumentClicked != null)

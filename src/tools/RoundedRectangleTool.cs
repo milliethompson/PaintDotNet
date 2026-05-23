@@ -19,7 +19,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class RoundedRectangleTool
+    internal class RoundedRectangleTool
         : ShapeTool 
     {
         private ImageResource roundedRectangleToolIcon;

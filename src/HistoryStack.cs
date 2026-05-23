@@ -20,7 +20,7 @@ namespace PaintDotNet
     /// Serves as the undo and redo stacks.  
     /// </summary>
     [Serializable]
-    public class HistoryStack
+    internal class HistoryStack
     {
         private List<HistoryMemento> undoStack;
         private List<HistoryMemento> redoStack;

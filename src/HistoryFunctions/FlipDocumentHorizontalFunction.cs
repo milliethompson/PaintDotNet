@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public sealed class FlipDocumentHorizontalFunction
+    internal sealed class FlipDocumentHorizontalFunction
         : FlipDocumentFunction
     {
         public static string StaticName

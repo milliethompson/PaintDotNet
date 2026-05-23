@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Menus
 {
-    public sealed class LayersMenu
+    internal sealed class LayersMenu
         : PdnMenuItem
     {
         private PdnMenuItem menuLayersAddNewLayer;

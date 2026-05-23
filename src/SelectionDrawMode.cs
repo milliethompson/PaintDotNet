@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public enum SelectionDrawMode
+    internal enum SelectionDrawMode
     {
         Normal = 0,
         FixedRatio,

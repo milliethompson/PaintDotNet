@@ -13,7 +13,7 @@ using PaintDotNet.HistoryMementos;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public sealed class MergeLayerDownFunction
+    internal sealed class MergeLayerDownFunction
         : HistoryFunction
     {
         public static string StaticName

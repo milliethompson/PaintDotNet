@@ -597,6 +597,11 @@ namespace PaintDotNet
 
         public ColorBgra GetBilinearSampleWrapped(float x, float y)
         {
+            if (!Utility.IsNumber(x) || !Utility.IsNumber(y))
+            {
+                return ColorBgra.Transparent;
+            }
+
             float u = x;
             float v = y;
 
@@ -678,6 +683,11 @@ namespace PaintDotNet
 
         public unsafe ColorBgra GetBilinearSample(float x, float y)
         {
+            if (!Utility.IsNumber(x) || !Utility.IsNumber(y))
+            {
+                return ColorBgra.Transparent;
+            }
+
             float u = x;
             float v = y;
 
@@ -744,9 +754,14 @@ namespace PaintDotNet
         {
             return GetBilinearSampleClamped(x, y);
         }
-        
+
         public unsafe ColorBgra GetBilinearSampleClamped(float x, float y)
         {
+            if (!Utility.IsNumber(x) || !Utility.IsNumber(y))
+            {
+                return ColorBgra.Transparent;
+            }
+
             float u = x;
             float v = y;
 

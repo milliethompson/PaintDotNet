@@ -14,7 +14,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Menus
 {
-    public sealed class ImageMenu
+    internal sealed class ImageMenu
         : PdnMenuItem
     {
         private PdnMenuItem menuImageCrop;

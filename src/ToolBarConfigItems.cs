@@ -14,7 +14,7 @@ using System.Text;
 namespace PaintDotNet
 {
     [Flags]
-    public enum ToolBarConfigItems
+    internal enum ToolBarConfigItems
         : uint
     {
         None = 0,

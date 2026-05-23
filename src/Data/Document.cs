@@ -160,7 +160,7 @@ namespace PaintDotNet
                         }
                     }
 
-                    catch
+                    catch (Exception)
                     {
                         this.Metadata.RemoveExifValues(ExifTagID.ResolutionUnit);
                         return this.DpuUnit; // recursive call
@@ -191,11 +191,13 @@ namespace PaintDotNet
             }
         }
 
+#if false
         [Obsolete("Use DefaultDpuUnit property instead.")]
         public static MeasurementUnit GetDefaultDpuUnit()
         {
             return DefaultDpuUnit;
         }
+#endif
 
         private const double defaultDpi = 96.0;
 
@@ -776,6 +778,9 @@ namespace PaintDotNet
         /// this stuff...
         ///    public DocumentVersion2Data DocV2Data { get { return (DocumentVersion2Data)tag; } }
         /// </summary>
+        // In practice, this has never been used, and .NET 2.0+ has better facilities for adding
+        // new data to a serialization schema. Therefore, marking as obsolete.
+        [Obsolete]
         private object tag = null;
 
         /// <summary>

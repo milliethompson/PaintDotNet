@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class CloseAllWorkspacesAction
+    internal sealed class CloseAllWorkspacesAction
         : AppWorkspaceAction
     {
         private bool cancelled;

@@ -14,7 +14,7 @@ namespace PaintDotNet
     /// <summary>
     /// An enumeration to allow selection between Primary and Secondary
     /// </summary>
-    public enum WhichUserColor
+    internal enum WhichUserColor
     {
         Primary,
         Secondary

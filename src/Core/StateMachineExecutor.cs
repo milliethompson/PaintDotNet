@@ -46,7 +46,7 @@ namespace PaintDotNet
             }
         }
 
-        public event EventHandler<State> StateBegin;
+        public event EventHandler<EventArgs<State>> StateBegin;
         private void OnStateBegin(State state)
         {
             if (this.syncContext != null && this.syncContext.InvokeRequired)
@@ -78,7 +78,7 @@ namespace PaintDotNet
             }
         }
 
-        public event EventHandler<State> StateWaitingForInput;
+        public event EventHandler<EventArgs<State>> StateWaitingForInput;
         private void OnStateWaitingForInput(State state)
         {
             if (this.syncContext != null && this.syncContext.InvokeRequired)
@@ -193,7 +193,7 @@ namespace PaintDotNet
         {
             this.threadException = null;
 
-            EventHandler<State> newStateHandler =
+            EventHandler<EventArgs<State>> newStateHandler =
                 delegate(object sender, EventArgs<State> e)
                 {
                     this.stateMachineInitialized.Set();

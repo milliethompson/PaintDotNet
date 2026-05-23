@@ -7,8 +7,11 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using PaintDotNet.Data.Quantize;
+using PaintDotNet.PropertySystem;
+using PaintDotNet.IndirectUI;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -16,70 +19,108 @@ using System.IO;
 namespace PaintDotNet
 {
     public sealed class GifFileType
-        : GdiPlusFileType
+        : InternalFileType
     {
+        public enum PropertyNames
+        {
+            Threshold,
+            DitherLevel
+        }
+
         public GifFileType()
-            : base("GIF", ImageFormat.Gif, false, new string[] { ".gif" }, true)
+            : base("GIF", FileTypeFlags.SupportsLoading | FileTypeFlags.SupportsSaving | FileTypeFlags.SavesWithProgress, new string[] { ".gif" })
         {
         }
 
-        protected override SaveConfigToken OnCreateDefaultSaveConfigToken()
+        public override PropertyCollection OnCreateSavePropertyCollection()
         {
-            return new GifSaveConfigToken(128, true, 7);
+            List<Property> props = new List<Property>();
+
+            props.Add(new Int32Property(PropertyNames.DitherLevel, 7, 0, 8));
+            props.Add(new Int32Property(PropertyNames.Threshold, 128, 0, 255));
+
+            return new PropertyCollection(props);
         }
 
-        public override SaveConfigWidget CreateSaveConfigWidget()
+        protected override int GetThresholdFromToken(PropertyBasedSaveConfigToken token)
         {
-            return new GifSaveConfigWidget();
+            int threshold = token.GetProperty<Int32Property>(PropertyNames.Threshold).Value;
+            return threshold;
         }
 
-        protected override void OnSave(Document input, Stream output, SaveConfigToken token, Surface scratchSurface, ProgressEventHandler progressCallback)
+        protected override int GetDitherLevelFromToken(PropertyBasedSaveConfigToken token)
         {
-            GifSaveConfigToken gsct = (GifSaveConfigToken)token;
+            int ditherLevel = token.GetProperty<Int32Property>(PropertyNames.DitherLevel).Value;
+            return ditherLevel;
+        }
 
-            // Flatten and pre-process the image
-            scratchSurface.Clear(ColorBgra.Transparent);
+        protected override Set<SavableBitDepths> CreateAllowedBitDepthListFromToken(PropertyBasedSaveConfigToken token)
+        {
+            var bitDepths = new Set<SavableBitDepths>();
 
-            using (RenderArgs ra = new RenderArgs(scratchSurface))
+            bitDepths.Add(SavableBitDepths.Rgb8);
+            bitDepths.Add(SavableBitDepths.Rgba8);
+
+            return bitDepths;
+        }
+
+        public override ControlInfo OnCreateSaveConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultSaveConfigUI(props);
+
+            configUI.SetPropertyControlValue(
+                PropertyNames.DitherLevel,
+                ControlInfoPropertyNames.DisplayName,
+                PdnResources.GetString("GifFileType.ConfigUI.DitherLevel.DisplayName"));
+
+            configUI.SetPropertyControlValue(
+                PropertyNames.Threshold,
+                ControlInfoPropertyNames.DisplayName,
+                PdnResources.GetString("GifFileType.ConfigUI.Threshold.DisplayName"));
+
+            configUI.SetPropertyControlValue(
+                PropertyNames.Threshold,
+                ControlInfoPropertyNames.Description,
+                PdnResources.GetString("GifFileType.ConfigUI.Threshold.Description"));
+
+            return configUI;
+        }
+
+        protected override Document OnLoad(Stream input)
+        {
+            using (Image image = PdnResources.LoadImage(input))
             {
-                input.Render(ra, false);
+                Document document = Document.FromImage(image);
+                return document;
+            }
+        }
+
+        protected override void FinalSave(
+            Document input, 
+            Stream output, 
+            Surface scratchSurface, 
+            int ditherLevel, 
+            SavableBitDepths bitDepth,
+            PropertyBasedSaveConfigToken token,
+            ProgressEventHandler progressCallback)
+        {
+            bool enableAlpha;
+
+            switch (bitDepth)
+            {
+                case SavableBitDepths.Rgb8:
+                    enableAlpha = false;
+                    break;
+
+                case SavableBitDepths.Rgba8:
+                    enableAlpha = true;
+                    break;
+
+                default:
+                    throw new InvalidEnumArgumentException("bitDepth", (int)bitDepth, typeof(SavableBitDepths));
             }
 
-            for (int y = 0; y < scratchSurface.Height; ++y)
-            {
-                unsafe
-                {
-                    ColorBgra* ptr = scratchSurface.GetRowAddressUnchecked(y);
-
-                    for (int x = 0; x < scratchSurface.Width; ++x)
-                    {
-                        if (ptr->A < gsct.Threshold)
-                        {
-                            ptr->Bgra = 0;
-                        }
-                        else
-                        {
-                            if (gsct.PreMultiplyAlpha)
-                            {
-                                int r = ((ptr->R * ptr->A) + (255 * (255 - ptr->A))) / 255;
-                                int g = ((ptr->G * ptr->A) + (255 * (255 - ptr->A))) / 255;
-                                int b = ((ptr->B * ptr->A) + (255 * (255 - ptr->A))) / 255;
-                                int a = 255;
-
-                                *ptr = ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
-                            }
-                            else
-                            {
-                                ptr->Bgra |= 0xff000000;
-                            }
-                        }
-
-                        ++ptr;
-                    }
-                }
-            }
-
-            using (Bitmap quantized = Quantize(scratchSurface, gsct.DitherLevel, 255, progressCallback))
+            using (Bitmap quantized = Quantize(scratchSurface, ditherLevel, 256, enableAlpha, progressCallback))
             {
                 quantized.Save(output, ImageFormat.Gif);
             }

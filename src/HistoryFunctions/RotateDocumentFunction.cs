@@ -15,7 +15,7 @@ using System.Drawing;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public sealed class RotateDocumentFunction
+    internal sealed class RotateDocumentFunction
         : HistoryFunction
     {
         public static string StaticName

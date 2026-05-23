@@ -20,7 +20,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class LineTool
+    internal class LineTool
         : ShapeTool 
     {
         private const int controlPointCount = 4;

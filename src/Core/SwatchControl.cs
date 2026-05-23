@@ -89,7 +89,7 @@ namespace PaintDotNet
             }
         }
 
-        public event EventHandler<Pair<int, MouseButtons>> ColorClicked;
+        public event EventHandler<EventArgs<Pair<int, MouseButtons>>> ColorClicked;
         private void OnColorClicked(int index, MouseButtons buttons)
         {
             if (ColorClicked != null)

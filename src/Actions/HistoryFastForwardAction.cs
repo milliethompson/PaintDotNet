@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class HistoryFastForwardAction
+    internal sealed class HistoryFastForwardAction
         : DocumentWorkspaceAction
     {
         public override HistoryMemento PerformAction(DocumentWorkspace documentWorkspace)

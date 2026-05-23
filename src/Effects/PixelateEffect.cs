@@ -16,9 +16,8 @@ using System.Drawing.Drawing2D;
 
 namespace PaintDotNet.Effects
 {
-    [EffectTypeHint(EffectTypeHint.Fast)]
-    public sealed class PixelateEffect 
-        : PropertyBasedEffect
+    public sealed class PixelateEffect
+        : InternalPropertyBasedEffect
     {
         public static string StaticName
         {

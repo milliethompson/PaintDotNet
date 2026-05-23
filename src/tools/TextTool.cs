@@ -22,7 +22,7 @@ using System.ComponentModel;
 
 namespace PaintDotNet.Tools
 {
-    public class TextTool
+    internal class TextTool
         : Tool
     {
         private enum EditingMode
@@ -1609,6 +1609,8 @@ namespace PaintDotNet.Tools
 
                 handled = true;
                 --this.ignoreRedraw;
+
+                this.moveNub.Visible = true;
 
                 this.RedrawText(false);
             }

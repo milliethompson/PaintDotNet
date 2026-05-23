@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public partial class SavePaletteDialog 
+    internal class SavePaletteDialog 
         : PdnBaseForm
     {
         private Label typeANameLabel;

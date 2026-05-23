@@ -24,7 +24,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Menus
 {
-    public sealed class FileMenu
+    internal sealed class FileMenu
         : PdnMenuItem
     {
         private PdnMenuItem menuFileNew;
@@ -77,24 +77,7 @@ namespace PaintDotNet.Menus
             //
             // FileMenu
             //
-            this.DropDownItems.AddRange(
-                new ToolStripItem[] 
-                {
-                    this.menuFileNew,
-                    this.menuFileOpen,
-                    this.menuFileOpenRecent,
-                    this.menuFileAcquire,
-                    this.menuFileClose,
-                    this.menuFileSeparator1,
-                    this.menuFileSave,
-                    this.menuFileSaveAs,
-                    this.menuFileSeparator2,
-                    this.menuFilePrint,
-                    this.menuFileSeparator3,
-                    this.menuFileViewPluginLoadErrors,
-                    this.menuFileSeparator4,
-                    this.menuFileExit
-                }); 
+            this.DropDownItems.AddRange(GetMenuItemsToAdd(true));
             this.Name = "Menu.File";
             this.Text = PdnResources.GetString("Menu.File.Text");
             // 
@@ -174,15 +157,44 @@ namespace PaintDotNet.Menus
             this.menuFileExit.Click += new System.EventHandler(this.MenuFileExit_Click);
         }
 
-        private List<Triple<Assembly, string, Exception>> RemoveDuplicates(IList<Triple<Assembly, string, Exception>> allErrors)
+        private ToolStripItem[] GetMenuItemsToAdd(bool includeLoadErrors)
         {
-            Set<Triple<Assembly, string, string>> internedList = new Set<Triple<Assembly, string, string>>();
-            List<Triple<Assembly, string, Exception>> noDupesList = new List<Triple<Assembly, string, Exception>>();
+            List<ToolStripItem> items = new List<ToolStripItem>();
+
+            items.Add(this.menuFileNew);
+            items.Add(this.menuFileOpen);
+            items.Add(this.menuFileOpenRecent);
+            items.Add(this.menuFileAcquire);
+            items.Add(this.menuFileClose);
+            items.Add(this.menuFileSeparator1);
+            items.Add(this.menuFileSave);
+            items.Add(this.menuFileSaveAs);
+            items.Add(this.menuFileSeparator2);
+            items.Add(this.menuFilePrint);
+            items.Add(this.menuFileSeparator3);
+
+            if (includeLoadErrors)
+            {
+                items.Add(this.menuFileViewPluginLoadErrors);
+                items.Add(this.menuFileSeparator4);
+            }
+
+            items.Add(this.menuFileExit);
+
+            return items.ToArray();
+        }
+
+        private List<Triple<Assembly, Type, Exception>> RemoveDuplicates(IList<Triple<Assembly, Type, Exception>> allErrors)
+        {
+            // Exception has reference identity, but we want to collate based on the message contents
+
+            Set<Triple<Assembly, Type, string>> internedList = new Set<Triple<Assembly, Type, string>>();
+            List<Triple<Assembly, Type, Exception>> noDupesList = new List<Triple<Assembly, Type, Exception>>();
 
             for (int i = 0; i < allErrors.Count; ++i)
             {
-                Triple<Assembly, string, string> interned = Triple.Create(
-                    allErrors[i].First, string.Intern(allErrors[i].Second), string.Intern(allErrors[i].Third.ToString()));
+                Triple<Assembly, Type, string> interned = Triple.Create(
+                    allErrors[i].First, allErrors[i].Second, string.Intern(allErrors[i].Third.ToString()));
 
                 if (!internedList.Contains(interned))
                 {
@@ -196,8 +208,8 @@ namespace PaintDotNet.Menus
 
         private void MenuFileViewPluginLoadErrors_Click(object sender, EventArgs e)
         {
-            IList<Triple<Assembly, string, Exception>> allErrors = AppWorkspace.GetEffectLoadErrors();
-            IList<Triple<Assembly, string, Exception>> errors = RemoveDuplicates(allErrors);
+            IList<Triple<Assembly, Type, Exception>> allErrors = AppWorkspace.GetEffectLoadErrors();
+            IList<Triple<Assembly, Type, Exception>> errors = RemoveDuplicates(allErrors);
 
             using (Form errorsDialog = new Form())
             {
@@ -220,11 +232,11 @@ namespace PaintDotNet.Menus
                 for (int i = 0; i < errors.Count; ++i)
                 {
                     Assembly assembly = errors[i].First;
-                    string typeName = errors[i].Second;
+                    Type type = errors[i].Second;
                     Exception exception = errors[i].Third;
 
                     string headerText = string.Format(headerTextFormat, i + 1, errors.Count);
-                    string errorText = AppWorkspace.GetLocalizedEffectErrorMessage(assembly, typeName, exception);
+                    string errorText = AppWorkspace.GetLocalizedEffectErrorMessage(assembly, type, exception);
 
                     allErrorsText.Append(headerText);
                     allErrorsText.Append(Environment.NewLine);
@@ -268,6 +280,12 @@ namespace PaintDotNet.Menus
 
         protected override void OnDropDownOpening(EventArgs e)
         {
+            this.DropDownItems.Clear();
+
+            IList<Triple<Assembly, Type, Exception>> pluginLoadErrors = AppWorkspace.GetEffectLoadErrors();
+
+            this.DropDownItems.AddRange(GetMenuItemsToAdd(pluginLoadErrors.Count > 0));
+
             this.menuFileNew.Enabled = true;
             this.menuFileOpen.Enabled = true;
             this.menuFileOpenRecent.Enabled = true;
@@ -289,18 +307,6 @@ namespace PaintDotNet.Menus
                 this.menuFileSaveAs.Enabled = false;
                 this.menuFileClose.Enabled = false;
                 this.menuFilePrint.Enabled = false;
-            }
-
-            IList<Triple<Assembly, string, Exception>> pluginLoadErrors = AppWorkspace.GetEffectLoadErrors();
-            if (pluginLoadErrors.Count == 0)
-            {
-                this.menuFileViewPluginLoadErrors.Visible = false;
-                this.menuFileSeparator4.Visible = false;
-            }
-            else
-            {
-                this.menuFileViewPluginLoadErrors.Visible = true;
-                this.menuFileSeparator4.Visible = true;
             }
 
             base.OnDropDownOpening(e);

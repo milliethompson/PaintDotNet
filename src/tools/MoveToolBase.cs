@@ -21,7 +21,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public abstract class MoveToolBase
+    internal abstract class MoveToolBase
         : Tool
     {
         protected Cursor moveToolCursor;

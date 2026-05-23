@@ -14,7 +14,7 @@ using System.Drawing;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public sealed class FillSelectionFunction
+    internal sealed class FillSelectionFunction
         : HistoryFunction
     {
         public static string StaticName

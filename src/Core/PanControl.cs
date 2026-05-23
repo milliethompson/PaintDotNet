@@ -363,10 +363,11 @@ namespace PaintDotNet.Core
                     using (Graphics gcu = Graphics.FromImage(this.cachedUnderlay))
                     {
                         gcu.CompositingMode = CompositingMode.SourceOver;
-                        gcu.InterpolationMode = InterpolationMode.Bilinear;
-
                         gcu.DrawImage(checkersBmp, gcuRect, new Rectangle(0, 0, checkersBmp.Width, checkersBmp.Height), GraphicsUnit.Pixel);
-                        gcu.DrawImage(image, gcuRect, srcRect, GraphicsUnit.Pixel);
+
+                        gcu.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                        RectangleF gcuRect2 = RectangleF.Inflate(gcuRect, 0.5f, 0.5f);
+                        gcu.DrawImage(image, gcuRect2, srcRect, GraphicsUnit.Pixel);
                     }
 
                     checkersBmp.Dispose();

@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public enum GradientType
+    internal enum GradientType
     {
         LinearClamped,
         LinearReflected,

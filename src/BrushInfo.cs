@@ -18,7 +18,7 @@ namespace PaintDotNet
     /// Does not carry color information.
     /// </summary>
     [Serializable]
-    public class BrushInfo
+    internal class BrushInfo
         : ICloneable
     {
         private BrushType brushType;

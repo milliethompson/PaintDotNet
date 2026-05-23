@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public abstract class CanvasControl
+    internal abstract class CanvasControl
         : SurfaceBoxGraphicsRenderer
     {
         private PointF location;

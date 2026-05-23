@@ -69,6 +69,11 @@ namespace PaintDotNet.Effects
             return icon;
         }
 
+        protected virtual void OnCustomizeConfigUIWindowProperties(PropertyCollection props)
+        {
+            return;
+        }
+
         public override sealed EffectConfigDialog CreateConfigDialog()
         {
             PropertyCollection props1 = CreatePropertyCollection();
@@ -77,15 +82,19 @@ namespace PaintDotNet.Effects
 
             ControlInfo configUI = CreateConfigUI(props2);
 
-            PropertyBasedEffectConfigDialog pbecd = new PropertyBasedEffectConfigDialog(props3, configUI);
+            PropertyCollection windowProps = PropertyBasedEffectConfigDialog.CreateWindowProperties();
+            windowProps[ControlInfoPropertyNames.WindowTitle].Value = this.Name;
+            OnCustomizeConfigUIWindowProperties(windowProps);
+            PropertyCollection windowProps2 = windowProps.Clone();
 
-            pbecd.Text = GetConfigDialogTitle();
+            PropertyBasedEffectConfigDialog pbecd = new PropertyBasedEffectConfigDialog(props3, configUI, windowProps2);
+
             pbecd.Icon = GetConfigDialogIcon();
 
             return pbecd;
         }
 
-        public PropertyBasedEffect(string name, Image image, string subMenuName, EffectFlags flags)
+        protected PropertyBasedEffect(string name, Image image, string subMenuName, EffectFlags flags)
             : base(name, image, subMenuName, flags)
         {
         }

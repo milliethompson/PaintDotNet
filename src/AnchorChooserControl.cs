@@ -17,7 +17,7 @@ using System.Windows.Forms.VisualStyles;
 
 namespace PaintDotNet
 {
-    public class AnchorChooserControl 
+    internal class AnchorChooserControl 
         : System.Windows.Forms.UserControl
     {
         /// <summary> 

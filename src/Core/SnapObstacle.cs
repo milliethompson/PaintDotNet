@@ -135,7 +135,7 @@ namespace PaintDotNet
         /// <remarks>
         /// The Data property of the event args is the value that Bounds is being set to.
         /// </remarks>
-        public event EventHandler<Rectangle> BoundsChanging;
+        public event EventHandler<EventArgs<Rectangle>> BoundsChanging;
         protected virtual void OnBoundsChanging()
         {
             if (BoundsChanging != null)
@@ -150,7 +150,7 @@ namespace PaintDotNet
         /// <remarks>
         /// The Data property of the event args is the value that Bounds was just changed from.
         /// </remarks>
-        public event EventHandler<Rectangle> BoundsChanged;
+        public event EventHandler<EventArgs<Rectangle>> BoundsChanged;
         protected virtual void OnBoundsChanged()
         {
             if (BoundsChanged != null)

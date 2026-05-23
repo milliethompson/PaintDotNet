@@ -20,7 +20,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    public class CheckingState
+    internal class CheckingState
         : UpdatesState
     {
         // versions.txt schema:

@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class ClearHistoryAction
+    internal sealed class ClearHistoryAction
         : DocumentWorkspaceAction
     {
         public override HistoryMemento PerformAction(DocumentWorkspace documentWorkspace)

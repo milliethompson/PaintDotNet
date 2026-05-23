@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class CanvasSizeDialog 
+    internal class CanvasSizeDialog 
         : ResizeDialog
     {
         private EnumLocalizer anchorEdgeNames = EnumLocalizer.Create(typeof(AnchorEdge));

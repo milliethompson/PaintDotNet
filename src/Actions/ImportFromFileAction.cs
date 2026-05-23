@@ -20,7 +20,7 @@ using System.Windows.Forms;
 namespace PaintDotNet.Actions
 {
     // TODO: split into Action and Function(s)
-    public sealed class ImportFromFileAction
+    internal sealed class ImportFromFileAction
         : DocumentWorkspaceAction
     {
         public static string StaticName

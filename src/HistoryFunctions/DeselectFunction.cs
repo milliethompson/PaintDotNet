@@ -14,7 +14,7 @@ using System.Drawing;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public sealed class DeselectFunction
+    internal sealed class DeselectFunction
         : HistoryFunction
     {
         public static string StaticName

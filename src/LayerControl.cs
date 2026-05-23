@@ -17,7 +17,7 @@ using System.Diagnostics;
 
 namespace PaintDotNet
 {
-    public class LayerControl 
+    internal class LayerControl 
         : UserControl
     {
         private class PanelWithLayout
@@ -85,7 +85,7 @@ namespace PaintDotNet
         private EventHandler elementClickDelegate;
         private EventHandler elementDoubleClickDelegate;
         private EventHandler documentChangedDelegate;
-        private EventHandler<Document> documentChangingDelegate;
+        private EventHandler<EventArgs<Document>> documentChangingDelegate;
         private EventHandler layerChangedDelegate;
         private KeyEventHandler keyUpDelegate;
         private IndexEventHandler layerInsertedDelegate;
@@ -392,7 +392,7 @@ namespace PaintDotNet
         /// This event is raised whenever the user clicks on a layer within the
         /// LayerControl to activate it.
         /// </summary>
-        public event EventHandler<Layer> ClickedOnLayer;
+        public event EventHandler<EventArgs<Layer>> ClickedOnLayer;
         private void OnClickedOnLayer(Layer layer)
         {
             if (ClickedOnLayer != null)
@@ -406,7 +406,7 @@ namespace PaintDotNet
         /// this can occur without user intervention, which distinguishes this event
         /// from ClickedOnLayer.
         /// </summary>
-        public event EventHandler<Layer> ActiveLayerChanged;
+        public event EventHandler<EventArgs<Layer>> ActiveLayerChanged;
         private void OnActiveLayerChanged(Layer layer)
         {
             if (ActiveLayerChanged != null)
@@ -415,7 +415,7 @@ namespace PaintDotNet
             }
         }
 
-        public event EventHandler<Layer> DoubleClickedOnLayer;
+        public event EventHandler<EventArgs<Layer>> DoubleClickedOnLayer;
         private void OnDoubleClickedOnLayer(Layer layer)
         {
             if (DoubleClickedOnLayer != null)

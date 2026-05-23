@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class NewImageAction
+    internal sealed class NewImageAction
         : AppWorkspaceAction
     {
         public override void PerformAction(AppWorkspace appWorkspace)

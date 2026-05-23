@@ -27,6 +27,102 @@ namespace PaintDotNet
     {
         private Dictionary<T, object> dictionary;
 
+        public static Set<T> Intersect(Set<T> set1, Set<T> set2)
+        {
+            Set<T> intersection = new Set<T>();
+
+            foreach (T item in set1)
+            {
+                if (set2.Contains(item))
+                {
+                    intersection.Add(item);
+                }
+            }
+
+            return intersection;
+        }
+
+        public static Set<T> Union(Set<T> set1, Set<T> set2)
+        {
+            Set<T> union = new Set<T>(set1);
+
+            foreach (T item in set2)
+            {
+                if (!union.Contains(item))
+                {
+                    union.Add(item);
+                }
+            }
+
+            return union;
+        }
+
+        public static Set<T> Without(Set<T> withUs, Set<T> withoutUs)
+        {
+            Set<T> result = new Set<T>();
+
+            foreach (T item in withUs)
+            {
+                if (!withoutUs.Contains(item))
+                {
+                    result.Add(item);
+                }
+            }
+
+            return result;
+        }
+
+        public static bool AreEqual(Set<T> set1, Set<T> set2)
+        {
+            if (set1.Count != set2.Count)
+            {
+                // Can't be equal if sizes are different
+                return false;
+            }
+
+            if (set1.Count == 0)
+            {
+                // Empty sets are equal to each other. 
+                // We know that set1.Count=set2.Count, so no need to check set2.Count for 0 as well.
+                return true;
+            }
+
+            // At this point we know that either everything in set1 is in set2, or
+            // that there is something in set1 which is not in set2.
+            foreach (T item in set1)
+            {
+                if (!set2.Contains(item))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public bool IsEqualTo(Set<T> set2)
+        {
+            return AreEqual(this, set2);
+        }
+
+        public bool IsSubsetOf(Set<T> set2)
+        {
+            foreach (T item in this)
+            {
+                if (!set2.Contains(item))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public Set<T> Without(Set<T> withoutUs)
+        {
+            return Set<T>.Without(this, withoutUs);
+        }
+
         /// <summary>
         /// Adds an element to the set.
         /// </summary>
@@ -49,6 +145,19 @@ namespace PaintDotNet
             {
                 throw e2;
             }
+        }
+
+        public void AddRange(IEnumerable<T> items)
+        {
+            foreach (T item in items)
+            {
+                Add(item);
+            }
+        }
+
+        public void AddRange(params T[] items)
+        {
+            AddRange((IEnumerable<T>)items);
         }
 
         /// <summary>
@@ -109,6 +218,11 @@ namespace PaintDotNet
             {
                 Add(theObject);
             }
+        }
+
+        public Set(params T[] items)
+            : this((IEnumerable<T>)items)
+        {
         }
 
         /// <summary>

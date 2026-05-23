@@ -9,7 +9,7 @@
 
 namespace PaintDotNet 
 {
-    public enum ZoomBasis 
+    internal enum ZoomBasis 
     {
         FitToWindow,
         ScaleFactor 

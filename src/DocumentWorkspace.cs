@@ -33,7 +33,7 @@ namespace PaintDotNet
     /// <summary>
     /// Builds on DocumentView by adding application-specific elements.
     /// </summary>
-    public class DocumentWorkspace
+    internal class DocumentWorkspace
         : DocumentView,
           IHistoryWorkspace,
           IThumbnailProvider
@@ -454,7 +454,7 @@ namespace PaintDotNet
                                     }
                                 };
 
-                            EventHandler<HistoryMemento> finishedCallback =
+                            EventHandler<EventArgs<HistoryMemento>> finishedCallback =
                                 delegate(object sender, EventArgs<HistoryMemento> e)
                                 {
                                     hm = e.Data;
@@ -1115,6 +1115,7 @@ namespace PaintDotNet
             }
             else
             {
+                Tracing.LogFeature("SetTool(" + copyMe.GetType().FullName + ")");
                 this.activeTool = CreateTool(copyMe.GetType());
                 this.activeTool.PerformActivate();
                 this.activeTool.CursorChanged += ToolCursorChangedHandler;
@@ -2209,7 +2210,7 @@ namespace PaintDotNet
                         }
                     };
 
-                    if (currentFileType.SavesWithProgress)
+                    //if (currentFileType.SavesWithProgress)
                     {
                         scd.Progress += peh;
                     }
@@ -2229,7 +2230,7 @@ namespace PaintDotNet
                     // show configuration/preview dialog
                     DialogResult dr = scd.ShowDialog(this);
 
-                    if (currentFileType.SavesWithProgress)
+                    //if (currentFileType.SavesWithProgress)
                     {
                         scd.Progress -= peh;
                         AppWorkspace.Widgets.StatusBarProgress.ResetProgressStatusBar();
@@ -2409,7 +2410,7 @@ namespace PaintDotNet
 
         private static string GetDefaultSavePath()
         {
-            string myPics = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+            string myPics = Shell.GetVirtualPath(VirtualFolderName.UserPictures);
             string dir = Settings.CurrentUser.GetString(SettingNames.LastFileDialogDirectory, null);
 
             if (dir == null)
@@ -2580,13 +2581,14 @@ namespace PaintDotNet
 
                         Document thumbDoc = new Document(thumb.Width, thumb.Height);
                         BitmapLayer thumbLayer = new BitmapLayer(thumb);
-                        BitmapLayer whiteLayer = new BitmapLayer(thumb.Width, thumb.Height);
-                        whiteLayer.Surface.Clear(ColorBgra.White);
+                        BitmapLayer backLayer = new BitmapLayer(thumb.Width, thumb.Height);
+                        backLayer.Surface.Clear(ColorBgra.Transparent);
                         thumb.Dispose();
-                        thumbDoc.Layers.Add(whiteLayer);
+                        thumbDoc.Layers.Add(backLayer);
                         thumbDoc.Layers.Add(thumbLayer);
                         MemoryStream thumbPng = new MemoryStream();
-                        PdnFileTypes.Png.Save(thumbDoc, thumbPng, null, null, null, false);
+                        PropertyBasedSaveConfigToken pngToken = PdnFileTypes.Png.CreateDefaultSaveConfigToken();
+                        PdnFileTypes.Png.Save(thumbDoc, thumbPng, pngToken, null, null, false);
                         byte[] thumbBytes = thumbPng.ToArray();
 
                         string thumbString = Convert.ToBase64String(thumbBytes, Base64FormattingOptions.None);

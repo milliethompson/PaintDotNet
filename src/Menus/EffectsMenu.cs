@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace PaintDotNet.Menus
 {
-    public sealed class EffectsMenu
+    internal sealed class EffectsMenu
         : EffectMenuBase
     {
         public EffectsMenu()

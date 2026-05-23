@@ -19,7 +19,7 @@ namespace PaintDotNet
     /// If null is given for localizedErrorText, a generic message may be provided to
     /// the user instead.
     /// </summary>
-    public class HistoryFunctionNonFatalException
+    internal class HistoryFunctionNonFatalException
         : Exception
     {
         private string localizedErrorText;

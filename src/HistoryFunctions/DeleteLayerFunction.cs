@@ -12,7 +12,7 @@ using System;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public sealed class DeleteLayerFunction
+    internal sealed class DeleteLayerFunction
         : HistoryFunction
     {
         public static string StaticName

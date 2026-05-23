@@ -98,7 +98,7 @@ namespace PaintDotNet.SystemLayer
 
 #if DEBUG
                 infoLabel.Text += Environment.NewLine + Environment.NewLine + 
-                    "Since this is a DEBUG build, you should probably add /skipRepairAttempt to the command-line.";
+                    "*** Since this is a DEBUG build, you should probably add /skipRepairAttempt to the command-line.";
 #endif
 
                 infoLabel.Location = new Point(hMargin, vMargin);
@@ -206,6 +206,7 @@ namespace PaintDotNet.SystemLayer
             GC.KeepAlive(parent);
         }
 
+#if false
         [Obsolete("Do not use this method.", true)]
         public static void Execute(
             IWin32Window parent,
@@ -215,6 +216,7 @@ namespace PaintDotNet.SystemLayer
         {
             Execute(parent, exePath, args, requireAdmin ? ExecutePrivilege.RequireAdmin : ExecutePrivilege.AsInvokerOrAsManifest, ExecuteWaitType.ReturnImmediately);
         }
+#endif
 
         private const string updateExeFileName = "UpdateMonitor.exe";
 
@@ -766,6 +768,69 @@ namespace PaintDotNet.SystemLayer
                     Marshal.FreeBSTR(bstrFileName);
                     bstrFileName = IntPtr.Zero;
                 }
+            }
+        }
+
+        // TODO: convert to extension method in the 4.0 codebase, which can use .NET 3.5
+        private static T2 Map<T1, T2>(T1 mapFrom, Pair<T1, T2>[] mappings)
+        {
+            foreach (Pair<T1, T2> mapping in mappings)
+            {
+                if (mapping.First.Equals(mapFrom))
+                {
+                    return mapping.Second;
+                }
+            }
+
+            throw new KeyNotFoundException();
+        }
+
+        private static string GetCSIDLPath(int csidl)
+        {
+            // First, try calling SHGetFolderPathW with the "CSIDL_FLAG_CREATE" flag. However, if it 
+            // returns an error then ignore it. We've had some crash logs with "access denied" coming
+            // from this function.
+            int csidlWithFlags = csidl | NativeConstants.CSIDL_FLAG_CREATE;
+            StringBuilder sbWithFlags = new StringBuilder(NativeConstants.MAX_PATH);
+            Do.TryBool(() => NativeMethods.SHGetFolderPathW(IntPtr.Zero, csidlWithFlags, IntPtr.Zero, NativeConstants.SHGFP_TYPE_CURRENT, sbWithFlags));
+
+            StringBuilder sb = new StringBuilder(NativeConstants.MAX_PATH);
+            NativeMethods.SHGetFolderPathW(IntPtr.Zero, csidl, IntPtr.Zero, NativeConstants.SHGFP_TYPE_CURRENT, sb);
+
+            // If we get back something like 'Z:' then we need to put a backslash on it.
+            // Otherwise other path-related functions will freak out.
+            if (sb.Length == 2 && sb[1] == ':')
+            {
+                sb.Append(Path.DirectorySeparatorChar);
+            }
+
+            string path = sb.ToString();
+
+            return path;
+        }
+
+        private static readonly Pair<VirtualFolderName, int>[] pathMappings = new Pair<VirtualFolderName, int>[]
+            {
+                Pair.Create(VirtualFolderName.SystemProgramFiles, NativeConstants.CSIDL_PROGRAM_FILES),
+                Pair.Create(VirtualFolderName.UserDesktop, NativeConstants.CSIDL_DESKTOP_DIRECTORY),
+                Pair.Create(VirtualFolderName.UserDocuments, NativeConstants.CSIDL_PERSONAL),
+                Pair.Create(VirtualFolderName.UserLocalAppData, NativeConstants.CSIDL_LOCAL_APPDATA),
+                Pair.Create(VirtualFolderName.UserPictures, NativeConstants.CSIDL_MYPICTURES),
+                Pair.Create(VirtualFolderName.UserRoamingAppData, NativeConstants.CSIDL_APPDATA) 
+            };
+
+        public static string GetVirtualPath(VirtualFolderName folderName)
+        {
+            try
+            {
+                int csidl = Map(folderName, pathMappings);
+                string path = GetCSIDLPath(csidl);
+                return path;
+            }
+
+            catch (KeyNotFoundException)
+            {
+                throw new InvalidEnumArgumentException("folderName", (int)folderName, typeof(VirtualFolderName));
             }
         }
     }

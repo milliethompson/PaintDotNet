@@ -26,6 +26,22 @@ namespace PaintDotNet.IndirectUI
         private Button resetButton;
         private Label descriptionText;
 
+        [PropertyControlProperty(DefaultValue = (object)true)]
+        public bool ShowResetButton
+        {
+            get
+            {
+                return this.resetButton.Visible;
+            }
+
+            set
+            {
+                this.resetButton.Visible = value;
+                this.resetButton.AutoSize = value;
+                PerformLayout();
+            }
+        }
+
         protected int DecimalPlaces
         {
             get
@@ -40,7 +56,8 @@ namespace PaintDotNet.IndirectUI
             }
         }
 
-        protected bool SliderShowTickMarks
+        [PropertyControlProperty(DefaultValue = (object)false)]
+        public bool SliderShowTickMarks
         {
             get
             {
@@ -105,26 +122,32 @@ namespace PaintDotNet.IndirectUI
 
             this.header.Location = new Point(0, 0);
             this.header.Width = ClientSize.Width;
-            this.header.Height = this.header.GetPreferredSize(new Size(this.header.Width, 0)).Height;
+            this.header.Height = string.IsNullOrEmpty(DisplayName) ? 0 :
+                this.header.GetPreferredSize(new Size(this.header.Width, 0)).Height;
 
-            this.resetButton.PerformLayout();
+            this.resetButton.Width = UI.ScaleWidth(20);
+            this.resetButton.Location = new Point(
+                ClientSize.Width - this.resetButton.Width,
+                this.header.Bottom + vMargin);
 
-            int baseNudWidth = UI.ScaleWidth(80);
-            int nudWidth = Math.Max(baseNudWidth, this.resetButton.Width);
+            int nudWidth = UI.ScaleWidth(70);
 
             this.numericUpDown.PerformLayout();
             this.numericUpDown.Width = nudWidth;
-            this.numericUpDown.Location = new Point(ClientSize.Width - this.numericUpDown.Width, this.header.Bottom + vMargin);
+            this.numericUpDown.Location = new Point(
+                (this.resetButton.Visible ? (this.resetButton.Left - hMargin) : ClientSize.Width) - this.numericUpDown.Width,
+                this.header.Bottom + vMargin);
+
+            this.resetButton.Height = this.numericUpDown.Height;
 
             this.slider.Location = new Point(0, this.header.Bottom + vMargin);
-            this.slider.Width = this.numericUpDown.Left - hMargin;
-            this.slider.PerformLayout();
+            this.slider.Size = new Size(
+                this.numericUpDown.Left - hMargin,
+                PropertyControlUtil.GetGoodSliderHeight(this.slider));
 
-            this.resetButton.Location = new Point(ClientSize.Width - this.resetButton.Width, this.numericUpDown.Bottom + vMargin);
-            this.resetButton.Width = Math.Max(this.resetButton.Width, this.numericUpDown.Width);
-
-            this.descriptionText.Location = new Point(0, 
-                (string.IsNullOrEmpty(this.Description) ? 0 : vMargin) + Math.Max(this.resetButton.Bottom, this.slider.Bottom));
+            this.descriptionText.Location = new Point(
+                0,
+                (string.IsNullOrEmpty(this.Description) ? 0 : vMargin) + Utility.Max(this.resetButton.Bottom, this.slider.Bottom, this.numericUpDown.Bottom));
 
             this.descriptionText.Width = ClientSize.Width;
             this.descriptionText.Height = string.IsNullOrEmpty(this.descriptionText.Text) ? 0 : 
@@ -208,16 +231,20 @@ namespace PaintDotNet.IndirectUI
             this.numericUpDown.TabIndex = 1;
 
             this.slider.Name = "slider";
+            this.slider.AutoSize = false;
             this.slider.ValueChanged += new EventHandler(Slider_ValueChanged);
             this.slider.Orientation = Orientation.Horizontal;
             this.slider.TabIndex = 0;
+            this.SliderShowTickMarks = (bool)propInfo.ControlProperties[ControlInfoPropertyNames.SliderShowTickMarks].Value;
 
-            this.resetButton.AutoSize = true;
+            this.resetButton.AutoSize = false;
             this.resetButton.Name = "resetButton";
-            this.resetButton.FlatStyle = FlatStyle.System;
+            this.resetButton.FlatStyle = FlatStyle.Standard;
             this.resetButton.Click += new EventHandler(ResetButton_Click);
-            this.resetButton.Text = PdnResources.GetString("Form.ResetButton.Text");
+            this.resetButton.Image = PdnResources.GetImageResource("Icons.ResetIcon.png").Reference;
             this.resetButton.TabIndex = 2;
+            this.resetButton.Visible = (bool)propInfo.ControlProperties[ControlInfoPropertyNames.ShowResetButton].Value;
+            this.ToolTip.SetToolTip(this.resetButton, PdnResources.GetString("Form.ResetButton.Text").Replace("&", ""));
 
             this.descriptionText.Name = "descriptionText";
             this.descriptionText.AutoSize = false;
@@ -268,6 +295,7 @@ namespace PaintDotNet.IndirectUI
             this.numericUpDown.Enabled = !Property.ReadOnly;
             this.slider.Enabled = !Property.ReadOnly;
             this.resetButton.Enabled = !Property.ReadOnly;
+            this.descriptionText.Enabled = !Property.ReadOnly;
         }
 
         private void Slider_ValueChanged(object sender, EventArgs e)

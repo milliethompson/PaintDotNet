@@ -20,7 +20,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public sealed class GradientTool
+    internal sealed class GradientTool
         : Tool
     {
         public static string StaticName

@@ -20,7 +20,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class PaintBucketTool
+    internal class PaintBucketTool
         : FloodToolBase
     {
         private Cursor cursorMouseUp;

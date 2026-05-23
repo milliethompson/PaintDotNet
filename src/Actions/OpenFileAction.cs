@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class OpenFileAction
+    internal sealed class OpenFileAction
         : AppWorkspaceAction
     {
         public override void PerformAction(AppWorkspace appWorkspace)

@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public interface IColorPickerConfig
+    internal interface IColorPickerConfig
     {
         event EventHandler ColorPickerClickBehaviorChanged;
 

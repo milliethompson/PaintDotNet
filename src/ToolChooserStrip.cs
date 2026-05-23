@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class ToolChooserStrip
+    internal class ToolChooserStrip
         : ToolStripEx,
           IToolChooser
     {
@@ -120,6 +120,7 @@ namespace PaintDotNet
             this.chooseToolButton.Click +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolChooserStrip(chooseToolButton.Click)");
                     this.chooseToolButton.ShowDropDown();
                 };
             //
@@ -141,6 +142,7 @@ namespace PaintDotNet
 
             if (ti != null)
             {
+                Tracing.LogFeature("ToolChooserStrip(itemClicked(" + ti.ToolType.GetType().FullName + "))");
                 OnToolClicked(ti.ToolType);
             }
         }

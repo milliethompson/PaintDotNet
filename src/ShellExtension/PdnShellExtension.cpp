@@ -288,6 +288,57 @@ static SIZE ComputeThumbnailSize(int originalWidth, int originalHeight, int maxE
     return thumbSize;
 }
 
+static HRESULT VerifyWindowsVersion(DWORD dwMajor, DWORD dwMinor, BOOL *pbResult)
+{
+	if (NULL == pbResult)
+	{
+		return E_INVALIDARG;
+	}
+
+	HRESULT hr = S_OK;
+	BOOL bResult = TRUE;
+	DWORD dwError = ERROR_SUCCESS;
+
+	OSVERSIONINFOEX osviex;
+	ZeroMemory(&osviex, sizeof(osviex));
+
+	osviex.dwOSVersionInfoSize = sizeof(osviex);
+	osviex.dwMajorVersion = dwMajor;
+	osviex.dwMinorVersion = dwMinor;
+
+	DWORDLONG dwlConditionMask = 0;
+
+	int vop = VER_GREATER_EQUAL;
+
+	VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, vop);
+	VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, vop);
+
+	if (SUCCEEDED(hr))
+	{
+		bResult = VerifyVersionInfo(&osviex, VER_MAJORVERSION | VER_MINORVERSION, dwlConditionMask);
+
+		if (bResult)
+		{
+			*pbResult = TRUE;
+		}
+		else
+		{
+			dwError = GetLastError();
+
+			if (ERROR_OLD_WIN_VERSION == dwError)
+			{
+				*pbResult = FALSE;
+			}
+			else
+			{
+				hr = HRESULT_FROM_WIN32(dwError);
+			}
+		}
+	}
+
+	return hr;
+}
+
 STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
 {
     HRESULT hr = S_OK;
@@ -609,11 +660,28 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
 
                 if (SUCCEEDED(hr))
                 {
+					// In Windows Vista, we can have a transparent background and it works great.
+					// In XP, our alpha channel gets stomped to black.
+					BOOL bIsVista = FALSE;
+					HRESULT hrx = VerifyWindowsVersion(6, 0, &bIsVista);
+
+					pG->SetCompositingMode(CompositingModeSourceCopy);
+
+					if (SUCCEEDED(hrx) && bIsVista)
+					{
+						pG->Clear(Color::Transparent);
+					}
+					else
+					{
+						pG->Clear(Color::White);
+					}
+
+					pG->SetCompositingMode(CompositingModeSourceOver);
+
+					// Fit the thumbnail to the output bitmap
                     pG->SetInterpolationMode(InterpolationModeBicubic);
 
                     pG->SetPixelOffsetMode(PixelOffsetModeHalf);
-
-                    pG->Clear(Color::Transparent);
 
                     pG->DrawImage(
                         pBitmap, 

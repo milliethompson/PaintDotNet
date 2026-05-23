@@ -10,13 +10,14 @@
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 
 namespace PaintDotNet.SystemLayer
 {
     /// <summary>
-    /// Methods for manual profiling and tracing. Only enabled in Debug builds.
+    /// Methods for manual profiling and tracing.
     /// </summary>
     /// <remarks>
     /// This class does not rely on any system-specific functionality, but is placed
@@ -25,6 +26,39 @@ namespace PaintDotNet.SystemLayer
     /// </remarks>
     public static class Tracing
     {
+        private static void WriteLine(string msg)
+        {
+            Console.WriteLine(msg);
+        }
+
+        private static Set<string> features = new Set<string>();
+
+        public static void LogFeature(string featureName)
+        {
+            if (string.IsNullOrEmpty(featureName))
+            {
+                return;
+            }
+
+            Ping("Logging feature: " + featureName);
+
+            lock (features)
+            {
+                if (!features.Contains(featureName))
+                {
+                    features.Add(featureName);
+                }
+            }
+        }
+
+        public static IEnumerable<string> GetLoggedFeatures()
+        {
+            lock (features)
+            {
+                return features.ToArray();
+            }
+        }
+
 #if DEBUG
         private static Timing timing = new Timing();
         private static Stack tracePoints = new Stack();
@@ -67,7 +101,7 @@ namespace PaintDotNet.SystemLayer
             MethodBase parentMethod = parentFrame.GetMethod();
             ulong now = timing.GetTickCount();
             string msg = new string(' ', 4 * tracePoints.Count) + parentMethod.DeclaringType.Name + "." + parentMethod.Name;
-            Debug.WriteLine((now - timing.BirthTick).ToString() + ": " + msg);
+            WriteLine((now - timing.BirthTick).ToString() + ": " + msg);
             TracePoint tracePoint = new TracePoint(msg, now);
             tracePoints.Push(tracePoint);
 #endif
@@ -83,7 +117,7 @@ namespace PaintDotNet.SystemLayer
             ulong now = timing.GetTickCount();
             string msg = new string(' ', 4 * tracePoints.Count) + parentMethod.DeclaringType.Name + "." + 
                 parentMethod.Name + ": " + message;
-            Debug.WriteLine((now - timing.BirthTick).ToString() + ": " + msg);
+            WriteLine((now - timing.BirthTick).ToString() + ": " + msg);
             TracePoint tracePoint = new TracePoint(msg, now);
             tracePoints.Push(tracePoint);
 #endif
@@ -95,7 +129,7 @@ namespace PaintDotNet.SystemLayer
 #if DEBUG
             TracePoint tracePoint = (TracePoint)tracePoints.Pop();
             ulong now = timing.GetTickCount();
-            Debug.WriteLine((now - timing.BirthTick).ToString() + ": " + tracePoint.Message + " (" + 
+            WriteLine((now - timing.BirthTick).ToString() + ": " + tracePoint.Message + " (" + 
                 (now - tracePoint.Timestamp).ToString() + "ms)");
 #endif
         }
@@ -117,7 +151,7 @@ namespace PaintDotNet.SystemLayer
                 }
             }
             ulong now = timing.GetTickCount();
-            Debug.WriteLine((now - timing.BirthTick).ToString() + ": " + new string(' ', 4 * tracePoints.Count) +
+            WriteLine((now - timing.BirthTick).ToString() + ": " + new string(' ', 4 * tracePoints.Count) +
                 callerString + (message != null ? (": " + message) : ""));
 #endif
         }
@@ -130,7 +164,7 @@ namespace PaintDotNet.SystemLayer
             StackFrame parentFrame = trace.GetFrame(1);
             MethodBase parentMethod = parentFrame.GetMethod();
             ulong now = timing.GetTickCount();
-            Debug.WriteLine((now - timing.BirthTick).ToString() + ": " + new string(' ', 4 * tracePoints.Count) + 
+            WriteLine((now - timing.BirthTick).ToString() + ": " + new string(' ', 4 * tracePoints.Count) + 
                 parentMethod.DeclaringType.Name + "." + parentMethod.Name + (message != null ? (": " + message) : ""));
 #endif
         }
@@ -143,7 +177,7 @@ namespace PaintDotNet.SystemLayer
             StackFrame parentFrame = trace.GetFrame(1);
             MethodBase parentMethod = parentFrame.GetMethod();
             ulong now = timing.GetTickCount();
-            Debug.WriteLine((now - timing.BirthTick).ToString() + ": " + new string(' ', 4 * tracePoints.Count) + 
+            WriteLine((now - timing.BirthTick).ToString() + ": " + new string(' ', 4 * tracePoints.Count) + 
                 parentMethod.DeclaringType.Name + "." + parentMethod.Name);
 #endif
         }

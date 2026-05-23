@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet.Updates
 {
-    public enum UpdatesAction
+    internal enum UpdatesAction
     {
         Continue,
         Cancel

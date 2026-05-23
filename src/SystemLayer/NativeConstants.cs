@@ -14,6 +14,22 @@ namespace PaintDotNet.SystemLayer
 {
     internal static class NativeConstants
     {
+        public const int MAX_PATH = 260;
+
+        public const int CSIDL_DESKTOP_DIRECTORY = 0x0010;        // C:\Users\[user]\Desktop\
+        public const int CSIDL_MYPICTURES = 0x0027;
+        public const int CSIDL_PERSONAL = 0x0005;
+
+        public const int CSIDL_PROGRAM_FILES = 0x0026;            // C:\Program Files\
+        public const int CSIDL_APPDATA = 0x001a;                  // C:\Users\[user]\AppData\Roaming\
+        public const int CSIDL_LOCAL_APPDATA = 0x001c;            // C:\Users\[user]\AppData\Local\
+        public const int CSIDL_COMMON_DESKTOPDIRECTORY = 0x0019;  // C:\Users\All Users\Desktop
+
+        public const int CSIDL_FLAG_CREATE = 0x8000;    // new for Win2K, or this in to force creation of folder
+
+        public const uint SHGFP_TYPE_CURRENT = 0;
+        public const uint SHGFP_TYPE_DEFAULT = 1;
+
         public const int BP_COMMANDLINK = 6;
 
         public const int CMDLS_NORMAL = 1;

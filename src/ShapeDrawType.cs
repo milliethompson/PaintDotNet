@@ -13,7 +13,7 @@ using System.ComponentModel;
 namespace PaintDotNet
 {
     [Flags]
-    public enum ShapeDrawType
+    internal enum ShapeDrawType
     {
         Interior = 1,
         Outline = 2,

@@ -15,7 +15,7 @@ namespace PaintDotNet
     /// <summary>
     /// Encapsulates a filename and a thumbnail.
     /// </summary>
-    public class MostRecentFile
+    internal class MostRecentFile
     {
         private string fileName;
         private Image thumb;

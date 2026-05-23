@@ -158,7 +158,7 @@ namespace PaintDotNet
             }
         }
 
-        public event EventHandler<Point> CoordinatesChanged;
+        public event EventHandler<EventArgs<Point>> CoordinatesChanged;
         protected virtual void OnCoordinatesChanged()
         {
             if (CoordinatesChanged != null)

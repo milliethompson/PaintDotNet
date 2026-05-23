@@ -13,8 +13,8 @@ namespace PaintDotNet
 {
     public enum AutoSizeStrategy
     {
-        None,
-        AutoHeightAndExpandWidthToContent,
-        ExpandHeightToContentAndKeepWidth
+        None = 0,
+        AutoHeightAndExpandWidthToContent = 1,
+        ExpandHeightToContentAndKeepWidth = 2
     }
 }

@@ -26,6 +26,10 @@
 #ifndef SQUISH_H
 #define SQUISH_H
 
+#ifdef _MSC_VER
+#pragma strict_gs_check(on)
+#endif
+
 //! All squish API functions live in this namespace.
 namespace squish {
 

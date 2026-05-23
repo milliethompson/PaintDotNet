@@ -14,7 +14,7 @@ using System.Drawing.Drawing2D;
 
 namespace PaintDotNet
 {
-    public class RotateNubRenderer
+    internal class RotateNubRenderer
         : SurfaceBoxGraphicsRenderer
     {
         private const int size = 6;

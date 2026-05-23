@@ -24,7 +24,7 @@ namespace PaintDotNet
     /// Does not carry text alignment information.
     /// </summary>
     [Serializable]
-    public class FontInfo
+    internal class FontInfo
         : IDisposable,
           ISerializable,
           ICloneable

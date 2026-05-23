@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class ToolsForm 
+    internal class ToolsForm 
         : FloatingToolForm
     {
         private ToolsControl toolsControl = null;

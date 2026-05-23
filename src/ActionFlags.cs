@@ -12,7 +12,7 @@ using System;
 namespace PaintDotNet
 {
     [Flags]
-    public enum ActionFlags
+    internal enum ActionFlags
     {
         None = 0,
         KeepToolActive = 1,

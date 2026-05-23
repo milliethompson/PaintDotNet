@@ -11,12 +11,13 @@ using System;
 
 namespace PaintDotNet
 {
-    public abstract class AppWorkspaceAction
+    internal abstract class AppWorkspaceAction
     {
         public abstract void PerformAction(AppWorkspace appWorkspace);
 
         public AppWorkspaceAction()
         {
+            SystemLayer.Tracing.LogFeature("AWAction(" + GetType().Name + ")");
         }
     }
 }

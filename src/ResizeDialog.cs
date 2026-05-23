@@ -19,7 +19,7 @@ using System.Diagnostics;
 
 namespace PaintDotNet
 {
-    public class ResizeDialog 
+    internal class ResizeDialog 
         : PdnBaseForm
     {
         private sealed class ResizeConstrainer

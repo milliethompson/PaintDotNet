@@ -17,7 +17,7 @@ using System.Threading;
 
 namespace PaintDotNet.HistoryMementos
 {
-    public class BitmapHistoryMemento
+    internal class BitmapHistoryMemento
         : HistoryMemento
     {
         private IHistoryWorkspace historyWorkspace;

@@ -15,7 +15,7 @@ using System.Runtime.Serialization;
 namespace PaintDotNet
 {
     [Serializable]
-    public sealed class SelectionDrawModeInfo
+    internal sealed class SelectionDrawModeInfo
         : ICloneable<SelectionDrawModeInfo>,
           IDeserializationCallback
     {

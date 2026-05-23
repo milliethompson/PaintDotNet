@@ -25,7 +25,7 @@ namespace PaintDotNet.Tools
     /// Allows the user to draw a shape that can be defined using two points on the canvas.
     /// The user clicks and drags between two points to define the area that bounds the shape.
     /// </summary>
-    public abstract class ShapeTool
+    internal abstract class ShapeTool
         : Tool
     {
         private const char defaultShortcut = 'o';

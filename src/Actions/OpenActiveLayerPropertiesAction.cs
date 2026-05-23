@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class OpenActiveLayerPropertiesAction
+    internal sealed class OpenActiveLayerPropertiesAction
         : DocumentWorkspaceAction
     {
         public override HistoryMemento PerformAction(DocumentWorkspace documentWorkspace)

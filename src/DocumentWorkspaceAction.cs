@@ -21,7 +21,7 @@ namespace PaintDotNet
     /// DocumentActions should ONLY mutate the DocumentWorkspace and any contained
     /// objects.
     /// </summary>
-    public abstract class DocumentWorkspaceAction
+    internal abstract class DocumentWorkspaceAction
     {
         private ActionFlags actionFlags;
         public ActionFlags ActionFlags
@@ -48,6 +48,7 @@ namespace PaintDotNet
         public DocumentWorkspaceAction(ActionFlags actionFlags)
         {
             this.actionFlags = actionFlags;
+            SystemLayer.Tracing.LogFeature("DWAction(" + GetType().Name + ")");
         }
     }
 }

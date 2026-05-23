@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public interface IAlphaBlendingConfig
+    internal interface IAlphaBlendingConfig
     {
         event EventHandler AlphaBlendingChanged;
         

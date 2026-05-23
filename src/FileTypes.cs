@@ -24,7 +24,7 @@ namespace PaintDotNet
     /// responsible for loading and saving Document instances. Loads FileType plugins
     /// too.
     /// </summary>
-    public sealed class FileTypes
+    internal sealed class FileTypes
     {
         private FileTypes()
         {

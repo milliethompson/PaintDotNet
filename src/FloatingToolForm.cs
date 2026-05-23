@@ -17,9 +17,9 @@ using System.Windows.Forms;
 namespace PaintDotNet
 {
     // TODO: move
-    public delegate bool CmdKeysEventHandler(object sender, ref Message msg, Keys keyData);
+    internal delegate bool CmdKeysEventHandler(object sender, ref Message msg, Keys keyData);
 
-    public class FloatingToolForm 
+    internal class FloatingToolForm 
         : PdnBaseForm,
           ISnapObstacleHost
     {

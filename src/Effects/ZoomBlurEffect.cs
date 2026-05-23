@@ -17,7 +17,7 @@ using System.Windows.Forms;
 namespace PaintDotNet.Effects
 {
     public sealed class ZoomBlurEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public static string StaticName
         {

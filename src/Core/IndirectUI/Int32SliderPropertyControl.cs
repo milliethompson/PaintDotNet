@@ -20,9 +20,57 @@ namespace PaintDotNet.IndirectUI
         private const int maxMax = 100000000;
         private const int minMin = -100000000;
 
+
+        [PropertyControlProperty(DefaultValue = (object)1)]
+        public new int SliderSmallChange
+        {
+            get
+            {
+                return base.SliderSmallChange;
+            }
+
+            set
+            {
+                base.SliderSmallChange = value;
+            }
+        }
+
+        [PropertyControlProperty(DefaultValue = (object)5)]
+        public new int SliderLargeChange
+        {
+            get
+            {
+                return base.SliderLargeChange;
+            }
+
+            set
+            {
+                base.SliderLargeChange = value;
+            }
+        }
+
+        [PropertyControlProperty(DefaultValue = (object)1)]
+        public new int UpDownIncrement
+        {
+            get
+            {
+                return base.UpDownIncrement;
+            }
+
+            set
+            {
+                base.UpDownIncrement = value;
+            }
+        }
+
         public Int32SliderPropertyControl(PropertyControlInfo propInfo)
             : base(propInfo)
         {
+            SuspendLayout();
+            SliderSmallChange = (int)propInfo.ControlProperties[ControlInfoPropertyNames.SliderSmallChange].Value;
+            SliderLargeChange = (int)propInfo.ControlProperties[ControlInfoPropertyNames.SliderLargeChange].Value;
+            UpDownIncrement = (int)propInfo.ControlProperties[ControlInfoPropertyNames.UpDownIncrement].Value;
+            ResumeLayout(false);
         }
 
         protected override int ToSliderValue(int propertyValue)

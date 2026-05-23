@@ -18,7 +18,7 @@ namespace PaintDotNet.HistoryMementos
     /// be "undone".
     /// NullHistoryMemento instances are also not undoable.
     /// </summary>
-    public class NullHistoryMemento
+    internal class NullHistoryMemento
         : HistoryMemento
     {
         protected override HistoryMemento OnUndo()

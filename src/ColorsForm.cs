@@ -21,7 +21,7 @@ namespace PaintDotNet
 {
     // TODO: rewrite this ... the code is out of control here as it has grown organically,
     //       and it's impossible to maintain. post-3.0
-    public class ColorsForm 
+    internal class ColorsForm 
         : FloatingToolForm
     {
         // We want some buttons that don't have a gradient background or fancy border

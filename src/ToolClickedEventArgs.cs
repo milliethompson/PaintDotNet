@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public class ToolClickedEventArgs
+    internal class ToolClickedEventArgs
         : System.EventArgs
     {
         private Type toolType;

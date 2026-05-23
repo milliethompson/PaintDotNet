@@ -22,12 +22,26 @@ namespace PaintDotNet.IndirectUI
         private Property property;
         private string displayName;
         private string description;
+        private ToolTip toolTip;
 
         public Property Property
         {
             get
             {
                 return this.property;
+            }
+        }
+
+        protected ToolTip ToolTip
+        {
+            get
+            {
+                if (this.toolTip == null)
+                {
+                    this.toolTip = new ToolTip();
+                }
+
+                return this.toolTip;
             }
         }
 
@@ -74,13 +88,27 @@ namespace PaintDotNet.IndirectUI
             }
         }
 
-        internal PropertyControl(PropertyControlInfo propInfo)
+        protected internal PropertyControl(PropertyControlInfo propInfo)
         {
             this.property = propInfo.Property;
             this.property.ValueChanged += new EventHandler(Property_ValueChanged);
             this.property.ReadOnlyChanged += new EventHandler(Property_ReadOnlyChanged);
             this.displayName = (string)propInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value;
             this.description = (string)propInfo.ControlProperties[ControlInfoPropertyNames.Description].Value;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (this.toolTip != null)
+                {
+                    this.toolTip.Dispose();
+                    this.toolTip = null;
+                }
+            }
+
+            base.Dispose(disposing);
         }
 
         protected override void OnLoad(EventArgs e)

@@ -19,7 +19,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class RectangleTool
+    internal class RectangleTool
         : ShapeTool 
     {
         private ImageResource rectangleToolIcon;

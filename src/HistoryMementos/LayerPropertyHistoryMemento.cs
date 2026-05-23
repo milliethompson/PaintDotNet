@@ -13,7 +13,7 @@ using System.Collections.Specialized;
 
 namespace PaintDotNet.HistoryMementos
 {
-    public class LayerPropertyHistoryMemento
+    internal class LayerPropertyHistoryMemento
         : HistoryMemento
     {
         private object properties;

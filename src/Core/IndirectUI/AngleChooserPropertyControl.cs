@@ -23,19 +23,33 @@ namespace PaintDotNet.IndirectUI
     internal sealed class AngleChooserPropertyControl
         : PropertyControl<double, DoubleProperty>
     {
-        private HeaderLabel displayNameHeader;
+        private HeaderLabel header;
         private AngleChooserControl angleChooser;
-        private NumericUpDown numericUpDown;
-        private Label degreeLabel;
+        private NumericUpDown valueNud;
         private Button resetButton;
-        private Label descriptionText;
+        private Label description;
+
+        [PropertyControlProperty(DefaultValue = (object)true)]
+        public bool ShowResetButton
+        {
+            get
+            {
+                return this.resetButton.Visible;
+            }
+
+            set
+            {
+                this.resetButton.Visible = value;
+                PerformLayout();
+            }
+        }
 
         protected override void OnPropertyReadOnlyChanged()
         {
             this.angleChooser.Enabled = !Property.ReadOnly;
-            this.numericUpDown.Enabled = !Property.ReadOnly;
-            this.degreeLabel.Enabled = !Property.ReadOnly;
+            this.valueNud.Enabled = !Property.ReadOnly;
             this.resetButton.Enabled = !Property.ReadOnly;
+            this.description.Enabled = !Property.ReadOnly;
         }
 
         private double FromAngleChooserValue(double angleChooserValue)
@@ -87,9 +101,9 @@ namespace PaintDotNet.IndirectUI
                 this.angleChooser.ValueDouble = ToAngleChooserValue(Property.Value);
             }
 
-            if (this.numericUpDown.Value != (decimal)Property.Value)
+            if (this.valueNud.Value != (decimal)Property.Value)
             {
-                this.numericUpDown.Value = (decimal)Property.Value;
+                this.valueNud.Value = (decimal)Property.Value;
             }
         }
 
@@ -98,49 +112,51 @@ namespace PaintDotNet.IndirectUI
             int vMargin = UI.ScaleHeight(4);
             int hMargin = UI.ScaleWidth(4);
 
-            this.displayNameHeader.Location = new Point(0, 0);
-            this.displayNameHeader.Size = this.displayNameHeader.GetPreferredSize(new Size(ClientSize.Width, 1));
+            this.header.Location = new Point(0, 0);
+            this.header.Size = string.IsNullOrEmpty(DisplayName) ? new Size(ClientSize.Width, 0) :
+                this.header.GetPreferredSize(new Size(ClientSize.Width, 1));
+            this.header.Visible = !string.IsNullOrEmpty(DisplayName);
 
-            this.degreeLabel.Size = this.degreeLabel.GetPreferredSize(new Size(0, 0));
-            this.degreeLabel.Location = new Point(ClientSize.Width - this.degreeLabel.Width, this.displayNameHeader.Bottom + vMargin);
-
-            int baseNudWidth = UI.ScaleWidth(80) - this.degreeLabel.Width - hMargin;
-            this.numericUpDown.PerformLayout();
-            this.numericUpDown.Width = baseNudWidth;
-            this.numericUpDown.Location = new Point(this.degreeLabel.Left - hMargin - this.numericUpDown.Width, this.displayNameHeader.Bottom + vMargin);
-
-            this.resetButton.PerformLayout();
-            this.resetButton.Width = Math.Max(this.resetButton.Width, ClientSize.Width - this.numericUpDown.Left);
+            this.resetButton.Width = UI.ScaleWidth(20);
             this.resetButton.Location = new Point(
-                ClientSize.Width - this.resetButton.Width,
-                vMargin + Math.Max(this.numericUpDown.Bottom, this.degreeLabel.Bottom));
+                ClientSize.Width - this.resetButton.Width, 
+                this.header.Bottom + vMargin);
 
+            int baseNudWidth = UI.ScaleWidth(70);
+            this.valueNud.PerformLayout();
+            this.valueNud.Width = baseNudWidth;
+            this.valueNud.Location = new Point(
+                this.resetButton.Left - hMargin - this.valueNud.Width, 
+                this.header.Bottom + vMargin);
+
+            this.resetButton.Height = this.valueNud.Height;
+            
             this.angleChooser.Size = UI.ScaleSize(new Size(60, 60));
             int angleChooserMinLeft = hMargin;
-            int angleChooserMaxRight = Math.Min(this.resetButton.Left, this.numericUpDown.Left) - hMargin;
+            int angleChooserMaxRight = this.valueNud.Left - hMargin;
             double angleChooserCenter = (double)(angleChooserMinLeft + angleChooserMaxRight) / 2.0;
             int angleChooserLeft = (int)(angleChooserCenter - ((double)this.angleChooser.Width / 2.0));
-            this.angleChooser.Location = new Point(angleChooserLeft, this.displayNameHeader.Bottom + vMargin);
+            this.angleChooser.Location = new Point(angleChooserLeft, this.header.Bottom + vMargin);
 
-            this.descriptionText.Location = new Point(0, Math.Max(this.resetButton.Bottom, this.angleChooser.Bottom));
-            this.descriptionText.Width = ClientSize.Width;
-            this.descriptionText.Height = string.IsNullOrEmpty(this.descriptionText.Text) ? 0 :
-                this.descriptionText.GetPreferredSize(new Size(this.descriptionText.Width, 1)).Height;
+            this.description.Location = new Point(0, Math.Max(this.valueNud.Bottom, Math.Max(this.resetButton.Bottom, this.angleChooser.Bottom)));
+            this.description.Width = ClientSize.Width;
+            this.description.Height = string.IsNullOrEmpty(this.description.Text) ? 0 :
+                this.description.GetPreferredSize(new Size(this.description.Width, 1)).Height;
 
-            ClientSize = new Size(ClientSize.Width, descriptionText.Bottom);
+            ClientSize = new Size(ClientSize.Width, description.Bottom);
 
             base.OnLayout(levent);
         }
 
         protected override void OnDisplayNameChanged()
         {
-            this.displayNameHeader.Text = this.DisplayName;
+            this.header.Text = this.DisplayName;
             base.OnDisplayNameChanged();
         }
 
         protected override void OnDescriptionChanged()
         {
-            this.descriptionText.Text = this.Description;
+            this.description.Text = this.Description;
             base.OnDescriptionChanged();
         }
 
@@ -154,51 +170,46 @@ namespace PaintDotNet.IndirectUI
                 throw new ArgumentException("Only two min/max ranges are allowed for the AngleChooser control type: [-180, +180] and [0, 360]");
             }
 
-            this.displayNameHeader = new HeaderLabel();
-            this.displayNameHeader.Name = "header";
-            this.displayNameHeader.RightMargin = 0;
-            this.displayNameHeader.Text = this.DisplayName;
+            this.header = new HeaderLabel();
+            this.header.Name = "header";
+            this.header.RightMargin = 0;
+            this.header.Text = this.DisplayName;
 
             this.angleChooser = new AngleChooserControl();
             this.angleChooser.Name = "angleChooser";
             this.angleChooser.ValueChanged += new EventHandler(AngleChooser_ValueChanged);
 
-            this.numericUpDown = new NumericUpDown();
-            this.numericUpDown.Name = "numericUpDown";
-            this.numericUpDown.Minimum = (decimal)Property.MinValue;
-            this.numericUpDown.Maximum = (decimal)Property.MaxValue;
-            this.numericUpDown.DecimalPlaces = 2;
-            this.numericUpDown.ValueChanged += new EventHandler(NumericUpDown_ValueChanged);
-            this.numericUpDown.TextAlign = HorizontalAlignment.Right;
-
-            this.degreeLabel = new Label();
-            this.degreeLabel.Name = "degreeLabel";
-            this.degreeLabel.AutoSize = false;
-            this.degreeLabel.Text = PdnResources.GetString("AngleChooserConfigDialog.DegreeLabel.Text"); // TODO: put into own string, then deprecate AngleChooserControl
+            this.valueNud = new NumericUpDown();
+            this.valueNud.Name = "numericUpDown";
+            this.valueNud.Minimum = (decimal)Property.MinValue;
+            this.valueNud.Maximum = (decimal)Property.MaxValue;
+            this.valueNud.DecimalPlaces = 2;
+            this.valueNud.ValueChanged += new EventHandler(ValueNud_ValueChanged);
+            this.valueNud.TextAlign = HorizontalAlignment.Right;
 
             this.resetButton = new Button();
             this.resetButton.Name = "resetButton";
-            this.resetButton.AutoSize = true;
-            this.resetButton.FlatStyle = FlatStyle.System;
+            this.resetButton.FlatStyle = FlatStyle.Standard;
             this.resetButton.Click += new EventHandler(ResetButton_Click);
-            this.resetButton.Text = PdnResources.GetString("Form.ResetButton.Text");
+            this.resetButton.Image = PdnResources.GetImageResource("Icons.ResetIcon.png").Reference;
+            this.resetButton.Visible = (bool)propInfo.ControlProperties[ControlInfoPropertyNames.ShowResetButton].Value; 
+            this.ToolTip.SetToolTip(this.resetButton, PdnResources.GetString("Form.ResetButton.Text").Replace("&", ""));
 
-            this.descriptionText = new Label();
-            this.descriptionText.Name = "descriptionText";
-            this.descriptionText.AutoSize = false;
-            this.descriptionText.Text = this.Description;
+            this.description = new Label();
+            this.description.Name = "descriptionText";
+            this.description.AutoSize = false;
+            this.description.Text = this.Description;
 
             SuspendLayout();
 
             this.Controls.AddRange(
                 new Control[]
                 {
-                    this.displayNameHeader,
+                    this.header,
                     this.angleChooser,
-                    this.numericUpDown,
-                    this.degreeLabel,
+                    this.valueNud,
                     this.resetButton,
-                    this.descriptionText
+                    this.description
                 });
 
             ResumeLayout(false);
@@ -213,11 +224,11 @@ namespace PaintDotNet.IndirectUI
             }
         }
 
-        private void NumericUpDown_ValueChanged(object sender, EventArgs e)
+        private void ValueNud_ValueChanged(object sender, EventArgs e)
         {
-            if (Property.Value != (double)this.numericUpDown.Value)
+            if (Property.Value != (double)this.valueNud.Value)
             {
-                Property.Value = (double)this.numericUpDown.Value;
+                Property.Value = (double)this.valueNud.Value;
             }
         }
 
@@ -228,7 +239,7 @@ namespace PaintDotNet.IndirectUI
 
         protected override bool OnFirstSelect()
         {
-            this.numericUpDown.Select();
+            this.valueNud.Select();
             return true;
         }
     }

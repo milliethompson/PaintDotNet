@@ -22,8 +22,8 @@ namespace PaintDotNet.PropertySystem
           where TProperty : ScalarProperty<TValue>
           where TValue : struct, IComparable<TValue>
     {
-        private object minPropertyName;
-        private object maxPropertyName;
+        private string minPropertyName;
+        private string maxPropertyName;
 
         public SoftMutuallyBoundMinMaxRule(Property minProperty, Property maxProperty)
             : this(minProperty.Name, maxProperty.Name)
@@ -32,8 +32,8 @@ namespace PaintDotNet.PropertySystem
 
         public SoftMutuallyBoundMinMaxRule(object minPropertyName, object maxPropertyName)
         {
-            this.minPropertyName = minPropertyName;
-            this.maxPropertyName = maxPropertyName;
+            this.minPropertyName = minPropertyName.ToString();
+            this.maxPropertyName = maxPropertyName.ToString();
         }
 
         protected override void OnInitialized()

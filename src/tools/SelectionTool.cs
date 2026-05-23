@@ -19,7 +19,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class SelectionTool
+    internal class SelectionTool
         : Tool
     {
         private bool tracking = false;

@@ -12,7 +12,7 @@ using System.Drawing;
 
 namespace PaintDotNet
 {
-    public class ToolInfo
+    internal class ToolInfo
     {
         private string name;
         private string helpText;

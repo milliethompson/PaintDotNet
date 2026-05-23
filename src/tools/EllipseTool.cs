@@ -19,7 +19,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class EllipseTool
+    internal class EllipseTool
         : ShapeTool 
     {
         private ImageResource ellipseToolIcon;

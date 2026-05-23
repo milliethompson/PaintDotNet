@@ -14,7 +14,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Menus
 {
-    public sealed class ViewMenu
+    internal sealed class ViewMenu
         : PdnMenuItem
     {
         private PdnMenuItem menuViewZoomIn;

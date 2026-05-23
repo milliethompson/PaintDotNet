@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    public class InstallingState
+    internal class InstallingState
         : UpdatesState
     {
         private Exception exception;

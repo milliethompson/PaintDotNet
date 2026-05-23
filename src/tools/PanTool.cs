@@ -14,7 +14,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class PanTool
+    internal class PanTool
         : Tool
     {
         private bool tracking = false;

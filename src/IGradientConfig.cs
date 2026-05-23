@@ -13,7 +13,7 @@ using System.Text;
 
 namespace PaintDotNet
 {
-    public interface IGradientConfig
+    internal interface IGradientConfig
     {
         event EventHandler GradientInfoChanged;
 

@@ -17,7 +17,7 @@ namespace PaintDotNet.HistoryFunctions
     /// <summary>
     /// Crops the image to the currently selected region.
     /// </summary>
-    public sealed class CropToSelectionFunction
+    internal sealed class CropToSelectionFunction
         : HistoryFunction
     {
         public static string StaticName

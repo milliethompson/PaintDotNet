@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    public class AbortedState
+    internal class AbortedState
         : UpdatesState
     {
         public override void OnEnteredState()

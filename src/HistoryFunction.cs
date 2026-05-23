@@ -13,7 +13,7 @@ using System.Threading;
 
 namespace PaintDotNet
 {
-    public abstract class HistoryFunction
+    internal abstract class HistoryFunction
     {
         private int criticalRegionCount = 0;
         private bool executed = false;
@@ -86,6 +86,8 @@ namespace PaintDotNet
         /// </remarks>
         public HistoryMemento Execute(IHistoryWorkspace historyWorkspace)
         {
+            SystemLayer.Tracing.LogFeature("HF(" + GetType().Name + ")");
+
             HistoryMemento returnVal = null;
             Exception exception = null;
 
@@ -162,7 +164,7 @@ namespace PaintDotNet
         /// successfully or not.
         /// </remarks>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1500:VariableNamesShouldNotMatchFieldNames", MessageId = "eventSink")]
-        public void BeginExecute(ISynchronizeInvoke eventSink, IHistoryWorkspace historyWorkspace, EventHandler<HistoryMemento> finishedCallback)
+        public void BeginExecute(ISynchronizeInvoke eventSink, IHistoryWorkspace historyWorkspace, EventHandler<EventArgs<HistoryMemento>> finishedCallback)
         {
             if (finishedCallback == null)
             {
@@ -182,7 +184,7 @@ namespace PaintDotNet
         /// <summary>
         /// This event is raised when the function has finished execution, whether it finished successfully or not.
         /// </summary>
-        public event EventHandler<HistoryMemento> Finished;
+        public event EventHandler<EventArgs<HistoryMemento>> Finished;
 
         private void OnFinished(HistoryMemento memento, Exception exception)
         {

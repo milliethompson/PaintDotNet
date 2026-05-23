@@ -16,9 +16,8 @@ using System.Drawing;
 
 namespace PaintDotNet.Effects
 {
-    [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public sealed class RedEyeRemoveEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public enum PropertyNames
         {

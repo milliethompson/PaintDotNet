@@ -16,7 +16,7 @@ namespace PaintDotNet
     /// for a HistoryMemento.
     /// </summary>
     [Serializable]
-    public abstract class HistoryMementoData
+    internal abstract class HistoryMementoData
         : IDisposable
     {
         ~HistoryMementoData()

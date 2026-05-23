@@ -21,7 +21,7 @@ namespace PaintDotNet.Tools
     /// <summary>
     /// Ctrl left-click to select an origin, left click to place it
     /// </summary>
-    public class CloneStampTool
+    internal class CloneStampTool
         : Tool
     {
         private class StaticData

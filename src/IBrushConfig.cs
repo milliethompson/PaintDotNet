@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public interface IBrushConfig
+    internal interface IBrushConfig
     {
         event EventHandler BrushInfoChanged;
 

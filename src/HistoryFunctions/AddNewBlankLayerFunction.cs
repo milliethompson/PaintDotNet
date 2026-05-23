@@ -12,7 +12,7 @@ using System;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public sealed class AddNewBlankLayerFunction
+    internal sealed class AddNewBlankLayerFunction
         : HistoryFunction
     {
         public override HistoryMemento OnExecute(IHistoryWorkspace historyWorkspace)

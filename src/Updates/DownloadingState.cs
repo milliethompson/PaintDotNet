@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    public class DownloadingState
+    internal class DownloadingState
         : UpdatesState,
           INewVersionInfo
     {

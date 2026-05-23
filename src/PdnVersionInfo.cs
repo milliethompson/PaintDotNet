@@ -14,7 +14,7 @@ namespace PaintDotNet
     /// <summary>
     /// Contains information pertaining to a release of Paint.NET
     /// </summary>
-    public class PdnVersionInfo
+    internal class PdnVersionInfo
     {
         private Version version;
         private string friendlyName;

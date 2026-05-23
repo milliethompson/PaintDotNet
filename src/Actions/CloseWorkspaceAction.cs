@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class CloseWorkspaceAction
+    internal sealed class CloseWorkspaceAction
         : AppWorkspaceAction
     {
         private DocumentWorkspace closeMe;

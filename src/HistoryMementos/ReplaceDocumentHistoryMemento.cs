@@ -17,7 +17,7 @@ namespace PaintDotNet.HistoryMementos
     /// Create this HistoryMemento, then use SetDocument(), then push this on to the
     /// History using PushNewAction.
     /// </summary>
-    public class ReplaceDocumentHistoryMemento
+    internal class ReplaceDocumentHistoryMemento
         : HistoryMemento
     {
         private IHistoryWorkspace historyWorkspace;

@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    public class UpdatesDialog 
+    internal class UpdatesDialog 
         : PdnBaseForm
     {
         private Button closeButton;

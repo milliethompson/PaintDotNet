@@ -10,7 +10,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Text;
 
 namespace PaintDotNet.PropertySystem
 {
@@ -71,10 +70,7 @@ namespace PaintDotNet.PropertySystem
                     false);
             }
 
-            throw new ArgumentException(string.Format(
-                "Not a valid type: {0}.{1}",
-                valueType.Namespace,
-                valueType.Name));
+            throw new ArgumentException(string.Format("Not a valid type: {0}", valueType.FullName));
         }
 
         private string name;
@@ -174,15 +170,22 @@ namespace PaintDotNet.PropertySystem
             }
         }
 
+        protected virtual object OnCoerceValue(object newValue)
+        {
+            return newValue;
+        }
+
         private void SetValueCore(object value)
         {
             VerifyNotReadOnly();
 
-            if (!value.Equals(this.ourValue))
+            object value2 = OnCoerceValue(value);
+
+            if (!value2.Equals(this.ourValue))
             {
-                if (ValidateNewValue(value))
+                if (ValidateNewValue(value2))
                 {
-                    this.ourValue = value;
+                    this.ourValue = value2;
                     OnValueChanged();
                 }
                 else
@@ -190,15 +193,15 @@ namespace PaintDotNet.PropertySystem
                     switch (this.vvfResult)
                     {
                         case ValueValidationFailureResult.ThrowException:
-                            throw new ArgumentOutOfRangeException(string.Format("{0} is not a valid value for {1}", value.ToString(), this.name));
+                            throw new ArgumentOutOfRangeException(string.Format("{0} is not a valid value for {1}", value2.ToString(), this.name));
 
                         case ValueValidationFailureResult.Ignore:
-                            System.Diagnostics.Debug.WriteLine(string.Format("{0} is not a valid value for {1}", value.ToString(), this.name));
+                            System.Diagnostics.Debug.WriteLine(string.Format("{0} is not a valid value for {1}", value2.ToString(), this.name));
                             OnValueChanged();
                             break;
 
                         case ValueValidationFailureResult.Clamp:
-                            object clampedValue = ClampNewValue(value);
+                            object clampedValue = ClampNewValue(value2);
                             Value = clampedValue;
                             break;
                     }

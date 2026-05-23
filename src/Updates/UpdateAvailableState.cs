@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    public class UpdateAvailableState
+    internal class UpdateAvailableState
         : UpdatesState,
           INewVersionInfo
     {

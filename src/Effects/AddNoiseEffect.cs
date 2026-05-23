@@ -18,9 +18,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public sealed class AddNoiseEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public static string StaticName
         {

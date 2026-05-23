@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Menus
 {
-    public sealed class WindowMenu
+    internal sealed class WindowMenu
         : PdnMenuItem
     {
         private PdnMenuItem menuWindowResetWindowLocations;

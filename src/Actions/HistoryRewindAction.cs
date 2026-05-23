@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class HistoryRewindAction
+    internal sealed class HistoryRewindAction
         : DocumentWorkspaceAction
     {
         public override HistoryMemento PerformAction(DocumentWorkspace documentWorkspace)

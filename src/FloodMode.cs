@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public enum FloodMode
+    internal enum FloodMode
     {
         Local = 0,
         Global

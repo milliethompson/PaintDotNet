@@ -24,7 +24,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public sealed class Startup
+    internal sealed class Startup
     {
         private static Startup instance;
         private static DateTime startupTime;
@@ -164,6 +164,7 @@ namespace PaintDotNet
                     "PaintDotNet.Strings.3.DE.resources",
                     "PaintDotNet.Strings.3.ES.resources",
                     "PaintDotNet.Strings.3.FR.resources",
+                    "PaintDotNet.Strings.3.IT.resources",
                     "PaintDotNet.Strings.3.JA.resources",
                     "PaintDotNet.Strings.3.KO.resources",
                     "PaintDotNet.Strings.3.PT-BR.resources",
@@ -398,7 +399,7 @@ namespace PaintDotNet
 
         private static void UnhandledException(Exception ex)
         {
-            string dir = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+            string dir = Shell.GetVirtualPath(VirtualFolderName.UserDesktop);
             const string fileName = "pdncrash.log";
             string fullName = Path.Combine(dir, fileName);
 
@@ -481,10 +482,12 @@ namespace PaintDotNet
             string cpuSpeed = noInfoString;
             string cpuFeatures = noInfoString;
             string totalPhysicalBytes = noInfoString;
+            string dpiInfo = noInfoString;
             string localeName = noInfoString;
             string inkInfo = noInfoString;
-            string assembliesInfo = noInfoString;
             string updaterInfo = noInfoString;
+            string featuresInfo = noInfoString;
+            string assembliesInfo = noInfoString;
 
             try
             {
@@ -658,6 +661,32 @@ namespace PaintDotNet
 
                 try
                 {
+                    float xScale;
+
+                    try
+                    {
+                        xScale = UI.GetXScaleFactor();
+                    }
+
+                    catch (Exception)
+                    {
+                        using (Control c = new Control())
+                        {
+                            UI.InitScaling(c);
+                            xScale = UI.GetXScaleFactor();
+                        }
+                    }
+
+                    dpiInfo = string.Format("{0} dpi ({1}x scale)", (96.0f * xScale).ToString("F2"), xScale.ToString("F2"));
+                }
+
+                catch (Exception ex19)
+                {
+                    dpiInfo = "--- Exception while populating dpiInfo: " + ex19.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
                     localeName = 
                         "pdnr.c: " + PdnResources.Culture.Name +
                         ", hklm: " + Settings.SystemWide.GetString(SettingNames.LanguageName, "n/a") +
@@ -679,25 +708,6 @@ namespace PaintDotNet
                 catch (Exception ex15)
                 {
                     inkInfo = "--- Exception while populating inkInfo: " + ex15.ToString() + Environment.NewLine;
-                }
-
-                try
-                {
-                    StringBuilder assembliesInfoSB = new StringBuilder();
-
-                    Assembly[] loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-                    foreach (Assembly assembly in loadedAssemblies)
-                    {
-                        assembliesInfoSB.AppendFormat("{0}    {1} @ {2}", Environment.NewLine, assembly.FullName, assembly.Location);
-                    }
-
-                    assembliesInfo = assembliesInfoSB.ToString();
-                }
-
-                catch (Exception ex16)
-                {
-                    assembliesInfo = "--- Exception while populating assembliesInfo: " + ex16.ToString() + Environment.NewLine;
                 }
 
                 try
@@ -729,6 +739,52 @@ namespace PaintDotNet
                 {
                     updaterInfo = "--- Exception while populating updaterInfo: " + ex17.ToString() + Environment.NewLine;
                 }
+
+                try
+                {
+                    StringBuilder featureSB = new StringBuilder();
+
+                    IEnumerable<string> featureList = SystemLayer.Tracing.GetLoggedFeatures();
+
+                    bool first = true;
+                    foreach (string feature in featureList)
+                    {
+                        if (!first)
+                        {
+                            featureSB.Append(", ");
+                        }
+
+                        featureSB.Append(feature);
+
+                        first = false;
+                    }
+
+                    featuresInfo = featureSB.ToString();
+                }
+
+                catch (Exception ex18)
+                {
+                    featuresInfo = "--- Exception while populating featuresInfo: " + ex18.ToString() + Environment.NewLine;
+                }
+
+                try
+                {
+                    StringBuilder assembliesInfoSB = new StringBuilder();
+
+                    Assembly[] loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+                    foreach (Assembly assembly in loadedAssemblies)
+                    {
+                        assembliesInfoSB.AppendFormat("{0}    {1} @ {2}", Environment.NewLine, assembly.FullName, assembly.Location);
+                    }
+
+                    assembliesInfo = assembliesInfoSB.ToString();
+                }
+
+                catch (Exception ex16)
+                {
+                    assembliesInfo = "--- Exception while populating assembliesInfo: " + ex16.ToString() + Environment.NewLine;
+                }
             }
 
             catch (Exception ex12)
@@ -744,9 +800,11 @@ namespace PaintDotNet
             stream.WriteLine(".NET Framework version: " + fxVersion + " " + processorArchitecture);
             stream.WriteLine("Processor: " + cpuCount + " \"" + cpuName + "\" " + cpuSpeed + " " + cpuFeatures);
             stream.WriteLine("Physical memory: " + totalPhysicalBytes);
+            stream.WriteLine("UI DPI: " + dpiInfo);
             stream.WriteLine("Tablet PC: " + inkInfo);
             stream.WriteLine("Updates: " + updaterInfo);
             stream.WriteLine("Locale: " + localeName);
+            stream.WriteLine("Features log: " + featuresInfo);
             stream.WriteLine("Loaded assemblies: " + assembliesInfo);
             stream.WriteLine();
 

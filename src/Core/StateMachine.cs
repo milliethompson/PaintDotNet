@@ -23,7 +23,7 @@ namespace PaintDotNet
         private bool processingInput = false;
         private Queue inputQueue = new Queue();
 
-        public event EventHandler<State> NewState;
+        public event EventHandler<EventArgs<State>> NewState;
         private void OnNewState(State newState)
         {
             if (NewState != null)

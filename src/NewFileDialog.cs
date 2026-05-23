@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class NewFileDialog 
+    internal class NewFileDialog 
         : ResizeDialog
     {
         /// <summary>

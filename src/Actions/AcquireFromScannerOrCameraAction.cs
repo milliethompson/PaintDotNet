@@ -15,7 +15,7 @@ using System.IO;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class AcquireFromScannerOrCameraAction
+    internal sealed class AcquireFromScannerOrCameraAction
         : AppWorkspaceAction
     {
         public override void PerformAction(AppWorkspace appWorkspace)

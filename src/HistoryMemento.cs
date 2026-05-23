@@ -40,7 +40,7 @@ namespace PaintDotNet
     ///    to one do not show up in the other one. Put another way, history actions should
     ///    store large objects and their locations "by value," and not "by reference."
     /// </summary>
-    public abstract class HistoryMemento
+    internal abstract class HistoryMemento
     {
         private string name;
         public string Name
@@ -171,6 +171,8 @@ namespace PaintDotNet
 
         public HistoryMemento(string name, ImageResource image)
         {
+            SystemLayer.Tracing.LogFeature("HM(" + GetType().Name + ")");
+
             this.name = name;
             this.image = image;
             this.id = Interlocked.Increment(ref nextId);

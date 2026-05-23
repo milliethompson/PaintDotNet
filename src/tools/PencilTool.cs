@@ -20,7 +20,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class PencilTool
+    internal class PencilTool
         : Tool 
     {
         private bool mouseDown = false;

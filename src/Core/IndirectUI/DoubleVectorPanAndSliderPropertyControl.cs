@@ -26,6 +26,20 @@ namespace PaintDotNet.IndirectUI
         private DoubleVectorSliderPropertyControl sliders;
         private Label textDescription;
 
+        [PropertyControlProperty(DefaultValue = (object)true)]
+        public bool ShowResetButton
+        {
+            get
+            {
+                return this.sliders.ShowResetButton;
+            }
+
+            set
+            {
+                this.sliders.ShowResetButton = value;
+            }
+        }
+
         [PropertyControlProperty(DefaultValue = (object)2)]
         public int DecimalPlaces
         {
@@ -139,6 +153,34 @@ namespace PaintDotNet.IndirectUI
             }
         }
 
+        [PropertyControlProperty(DefaultValue = (object)false)]
+        public bool SliderShowTickMarksX
+        {
+            get
+            {
+                return this.sliders.SliderShowTickMarksX;
+            }
+
+            set
+            {
+                this.sliders.SliderShowTickMarksX = value;
+            }
+        }
+
+        [PropertyControlProperty(DefaultValue = (object)false)]
+        public bool SliderShowTickMarksY
+        {
+            get
+            {
+                return this.sliders.SliderShowTickMarksY;
+            }
+
+            set
+            {
+                this.sliders.SliderShowTickMarksY = value;
+            }
+        }
+
         [PropertyControlProperty(DefaultValue = null)]
         public ImageResource StaticImageUnderlay
         {
@@ -165,6 +207,7 @@ namespace PaintDotNet.IndirectUI
         protected override void OnPropertyReadOnlyChanged()
         {
             this.panControl.Enabled = !this.Property.ReadOnly;
+            this.textDescription.Enabled = !this.Property.ReadOnly;
         }
 
         protected override void OnPropertyValueChanged()
@@ -206,8 +249,10 @@ namespace PaintDotNet.IndirectUI
             int hMargin = UI.ScaleWidth(4);
 
             this.header.Location = new Point(0, 0);
-            this.header.Width = ClientSize.Width;
-            this.header.Height = this.header.GetPreferredSize(new Size(this.header.Width, 0)).Height;
+            this.header.Size = 
+                string.IsNullOrEmpty(DisplayName) ? 
+                    new Size(ClientSize.Width, 0) : 
+                    this.header.GetPreferredSize(new Size(ClientSize.Width, 0));
 
             int panControlLength = Math.Min(this.panControl.Width, this.panControl.Height);
             int tries = 2;
@@ -220,13 +265,17 @@ namespace PaintDotNet.IndirectUI
                 this.panControl.Size = new Size(panControlLength, panControlLength);
                 this.panControl.PerformLayout();
 
-                this.sliders.Location = new Point(this.panControl.Right + hMargin);
+                this.sliders.Location = new Point(this.panControl.Right + hMargin, this.header.Bottom + vMargin);
                 this.sliders.Width = ClientSize.Width - this.sliders.Left;
                 this.sliders.PerformLayout();
 
+                // put some padding to ensure the thumbnail is a little larger
+                int sliderBottomPlusReserve = this.sliders.Bottom + UI.ScaleHeight(20 + (SliderShowTickMarksX ? 0 : 4) + (SliderShowTickMarksY ? 0 : 4));
+
                 this.textDescription.Location = new Point(
-                    0, 
-                    (string.IsNullOrEmpty(this.Description) ? 0 : vMargin) + Math.Max(this.panControl.Bottom, this.sliders.Bottom));
+                    0,
+                    (string.IsNullOrEmpty(this.Description) ? 0 : vMargin) + 
+                        Math.Max(this.panControl.Bottom, /*this.sliders.Bottom*/ sliderBottomPlusReserve));
 
                 this.textDescription.Width = ClientSize.Width;
                 this.textDescription.Height = string.IsNullOrEmpty(this.Description) ? 0 :
@@ -234,7 +283,7 @@ namespace PaintDotNet.IndirectUI
 
                 ClientSize = new Size(ClientSize.Width, this.textDescription.Bottom);
 
-                panControlLength = this.textDescription.Top - this.panControl.Top - vMargin;
+                panControlLength = (this.textDescription.Top - this.panControl.Top - vMargin);
                 panControlLength |= 1;
             }
 

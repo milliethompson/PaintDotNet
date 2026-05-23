@@ -75,7 +75,6 @@ namespace PaintDotNet.Effects
             this.autoButton.Text = PdnResources.GetString("LevelsEffectConfigDialog.AutoButton.Text");
             this.tooltipProvider.SetToolTip(this.autoButton, PdnResources.GetString("LevelsEffectConfigDialog.AutoButton.ToolTipText"));
             this.resetButton.Text = PdnResources.GetString("LevelsEffectConfigDialog.ResetButton.Text");
-
         }
 
         private void InitializeComponent()
@@ -294,6 +293,7 @@ namespace PaintDotNet.Effects
             this.swatchInLow.Name = "swatchInLow";
             this.swatchInLow.Size = new System.Drawing.Size(44, 20);
             this.swatchInLow.TabStop = false;
+            this.swatchInLow.DoubleClick += swatch_DoubleClick;
             // 
             // inputHiUpDown
             // 
@@ -324,6 +324,7 @@ namespace PaintDotNet.Effects
             this.swatchInHigh.Name = "swatchInHigh";
             this.swatchInHigh.Size = new System.Drawing.Size(44, 20);
             this.swatchInHigh.TabStop = false;
+            this.swatchInHigh.DoubleClick += swatch_DoubleClick;
             // 
             // inputLoUpDown
             // 
@@ -349,6 +350,7 @@ namespace PaintDotNet.Effects
             this.swatchOutLow.Name = "swatchOutLow";
             this.swatchOutLow.Size = new System.Drawing.Size(44, 20);
             this.swatchOutLow.TabStop = false;
+            this.swatchOutLow.DoubleClick += swatch_DoubleClick;
             // 
             // outputGammaUpDown
             // 
@@ -378,6 +380,7 @@ namespace PaintDotNet.Effects
             0,
             0,
             0});
+            this.outputGammaUpDown.ValueChanged += new EventHandler(outputGammaUpDown_ValueChanged);
             this.outputGammaUpDown.Validating += new System.ComponentModel.CancelEventHandler(this.outputGammaUpDown_Validating);
             // 
             // swatchOutHigh
@@ -388,7 +391,8 @@ namespace PaintDotNet.Effects
             this.swatchOutHigh.Location = new System.Drawing.Point(269, 49);
             this.swatchOutHigh.Name = "swatchOutHigh";
             this.swatchOutHigh.Size = new System.Drawing.Size(44, 20);
-            this.swatchOutLow.TabStop = false;
+            this.swatchOutHigh.TabStop = false;
+            this.swatchOutHigh.DoubleClick += swatch_DoubleClick;
             // 
             // outputHiUpDown
             // 
@@ -408,6 +412,7 @@ namespace PaintDotNet.Effects
             0,
             0});
             this.outputHiUpDown.Validating += new System.ComponentModel.CancelEventHandler(this.outputHiUpDown_Validating);
+            this.outputHiUpDown.ValueChanged += new EventHandler(outputHiUpDown_ValueChanged);
             // 
             // gradientInput
             // 
@@ -421,7 +426,7 @@ namespace PaintDotNet.Effects
             this.gradientInput.MaxColor = System.Drawing.Color.White;
             this.gradientInput.Value = 0;
             this.gradientInput.ValueChanged += new PaintDotNet.IndexEventHandler(this.gradientInput_ValueChanged);
-            this.swatchOutLow.TabStop = false;
+            this.gradientInput.TabStop = false;
             // 
             // swatchOutMid
             // 
@@ -932,6 +937,8 @@ namespace PaintDotNet.Effects
 
         private void swatch_DoubleClick(object sender, System.EventArgs e)
         {
+            SystemLayer.Tracing.Ping((sender as Control).Name);
+
             UnaryPixelOps.Level levels = ((LevelsEffectConfigToken)theEffectToken).Levels;
 
             using (ColorDialog cd = new ColorDialog())
@@ -959,16 +966,19 @@ namespace PaintDotNet.Effects
                         }
                         else if (sender == swatchOutMid)
                         {
-                            ColorBgra lo = levels.ColorInLow, md = ((HistogramRgb)histogramInput.Histogram).GetMeanColor(), hi = levels.ColorInHigh;
-                            ColorBgra out_lo = levels.ColorOutLow, out_hi = levels.ColorOutHigh;
+                            ColorBgra lo = levels.ColorInLow;
+                            ColorBgra md = ((HistogramRgb)histogramInput.Histogram).GetMeanColor();
+                            ColorBgra hi = levels.ColorInHigh;
+                            ColorBgra out_lo = levels.ColorOutLow;
+                            ColorBgra out_hi = levels.ColorOutHigh;
 
                             for (int i = 0; i < 3; i++) 
                             {
-                                levels.SetGamma(i, 
-                                    (float)Utility.Clamp(Math.Log((float)(col[i] - out_lo[i]) / (out_hi[i] - out_lo[i]),
-                                    (float)(md[i] - lo[i]) / (float)(hi[i] - lo[i])),
-                                    0.1,
-                                    10.0));
+                                double logA = (col[i] - out_lo[i]) / (out_hi[i] - out_lo[i]);
+                                double logBase = (md[i] - lo[i]) / (hi[i] - lo[i]);
+                                double logVal = (logBase == 1.0) ? 0.0 : Math.Log(logA, logBase);
+
+                                levels.SetGamma(i, (float)Utility.Clamp(logVal, 0.1, 10.0));
                             }
                         }
                         else if (sender == swatchOutHigh) 

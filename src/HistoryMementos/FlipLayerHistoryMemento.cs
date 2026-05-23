@@ -12,7 +12,7 @@ using System.Drawing;
 
 namespace PaintDotNet.HistoryMementos
 {
-    public class FlipLayerHistoryMemento
+    internal class FlipLayerHistoryMemento
         : HistoryMemento
     {
         private IHistoryWorkspace historyWorkspace;

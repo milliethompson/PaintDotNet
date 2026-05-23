@@ -338,7 +338,8 @@ namespace PaintDotNet.SystemLayer
             void SetFileNameLabel([In, MarshalAs(UnmanagedType.LPWStr)] string pszLabel);
 
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-            void GetResult([MarshalAs(UnmanagedType.Interface)] out IShellItem ppsi);
+            [PreserveSig]
+            int GetResult([MarshalAs(UnmanagedType.Interface)] out IShellItem ppsi);
 
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
             void AddPlace([In, MarshalAs(UnmanagedType.Interface)] IShellItem psi, NativeConstants.FDAP fdap);
@@ -423,7 +424,8 @@ namespace PaintDotNet.SystemLayer
             new void SetFileNameLabel([In, MarshalAs(UnmanagedType.LPWStr)] string pszLabel);
 
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-            new void GetResult([MarshalAs(UnmanagedType.Interface)] out IShellItem ppsi);
+            [PreserveSig]
+            new int GetResult([MarshalAs(UnmanagedType.Interface)] out IShellItem ppsi);
 
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
             new void AddPlace([In, MarshalAs(UnmanagedType.Interface)] IShellItem psi, NativeConstants.FDAP fdap);
@@ -515,7 +517,8 @@ namespace PaintDotNet.SystemLayer
             new void SetFileNameLabel([In, MarshalAs(UnmanagedType.LPWStr)] string pszLabel);
 
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-            new void GetResult([MarshalAs(UnmanagedType.Interface)] out IShellItem ppsi);
+            [PreserveSig]
+            new int GetResult([MarshalAs(UnmanagedType.Interface)] out IShellItem ppsi);
 
             [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
             new void AddPlace([In, MarshalAs(UnmanagedType.Interface)] IShellItem psi, NativeConstants.FDAP fdap);

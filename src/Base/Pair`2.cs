@@ -35,7 +35,28 @@ namespace PaintDotNet
 
         public override int GetHashCode()
         {
-            return this.first.GetHashCode() ^ this.second.GetHashCode();
+            int firstHash;
+            int secondHash;
+
+            if (object.ReferenceEquals(this.first, null))
+            {
+                firstHash = 0;
+            }
+            else
+            {
+                firstHash = this.first.GetHashCode();
+            }
+
+            if (object.ReferenceEquals(this.second, null))
+            {
+                secondHash = 0;
+            }
+            else
+            {
+                secondHash = this.second.GetHashCode();
+            }
+
+            return firstHash ^ secondHash;
         }
 
         public override bool Equals(object obj)
@@ -45,7 +66,36 @@ namespace PaintDotNet
 
         public static bool operator ==(Pair<T, U> lhs, Pair<T, U> rhs)
         {
-            return (lhs.First.Equals(rhs.First) && lhs.Second.Equals(rhs.Second));
+            bool firstEqual;
+            bool secondEqual;
+
+            if (object.ReferenceEquals(lhs.First, null) && object.ReferenceEquals(rhs.First, null))
+            {
+                firstEqual = true;
+            }
+            else if (object.ReferenceEquals(lhs.First, null) || object.ReferenceEquals(rhs.First, null))
+            {
+                firstEqual = false;
+            }
+            else
+            {
+                firstEqual = lhs.First.Equals(rhs.First);
+            }
+
+            if (object.ReferenceEquals(lhs.Second, null) && object.ReferenceEquals(rhs.Second, null))
+            {
+                secondEqual = true;
+            }
+            else if (object.ReferenceEquals(lhs.Second, null) || object.ReferenceEquals(rhs.Second, null))
+            {
+                secondEqual = false;
+            }
+            else
+            {
+                secondEqual = lhs.Second.Equals(rhs.Second);
+            }
+
+            return firstEqual && secondEqual;
         }
 
         public static bool operator !=(Pair<T, U> lhs, Pair<T, U> rhs)

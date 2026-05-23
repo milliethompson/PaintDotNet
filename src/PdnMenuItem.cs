@@ -18,10 +18,11 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class PdnMenuItem
+    internal class PdnMenuItem
         : ToolStripMenuItem,
           IFormAssociate
     {
+        private string textResourceName = null;
         private const char noMnemonicChar = (char)0;
         private const char mnemonicPrefix = '&';
         private bool iconsLoaded = false;
@@ -230,6 +231,7 @@ namespace PaintDotNet
                 PdnMenuItem pmi = item as PdnMenuItem;
                 if (pmi != null)
                 {
+                    pmi.textResourceName = itemNameText;
                     pmi.LoadNames(itemNameBase);
                 }
             }
@@ -295,6 +297,10 @@ namespace PaintDotNet
             {
                 Form.ActiveForm.BeginInvoke(new Procedure(PdnBaseForm.UpdateAllForms));
             }
+
+            string featureName = this.Name ?? this.Text;
+
+            Tracing.LogFeature(featureName);
 
             base.OnClick(e);
         }

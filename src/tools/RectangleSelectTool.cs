@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class RectangleSelectTool
+    internal class RectangleSelectTool
         : SelectionTool
     {
         private Cursor cursorMouseUp;

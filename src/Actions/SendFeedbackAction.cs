@@ -12,7 +12,7 @@ using System.Diagnostics;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class SendFeedbackAction
+    internal sealed class SendFeedbackAction
         : AppWorkspaceAction
     {
         private string GetEmailLaunchString(string email, string subject, string body)

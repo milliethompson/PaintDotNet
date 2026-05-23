@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public enum AnchorEdge
+    internal enum AnchorEdge
     {
         TopLeft,
         Top,

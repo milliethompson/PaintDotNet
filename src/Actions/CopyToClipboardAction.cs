@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class CopyToClipboardAction
+    internal sealed class CopyToClipboardAction
     {
         private DocumentWorkspace documentWorkspace;
 
@@ -130,6 +130,7 @@ namespace PaintDotNet.Actions
 
         public CopyToClipboardAction(DocumentWorkspace documentWorkspace)
         {
+            SystemLayer.Tracing.LogFeature("CopyToClipboardAction");
             this.documentWorkspace = documentWorkspace;
         }
     }

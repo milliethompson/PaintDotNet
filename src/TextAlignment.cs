@@ -12,7 +12,7 @@ using System.ComponentModel;
 
 namespace PaintDotNet
 {
-    public enum TextAlignment
+    internal enum TextAlignment
     {
         Left,
         Center,

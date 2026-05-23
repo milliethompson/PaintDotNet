@@ -16,7 +16,7 @@ namespace PaintDotNet.HistoryMementos
     /// A Tool may implement this class in order to provide history actions that do
     /// not deactivate the tool while being undone or redone.
     /// </summary>
-    public abstract class ToolHistoryMemento
+    internal abstract class ToolHistoryMemento
         : HistoryMemento
     {
         private DocumentWorkspace documentWorkspace;

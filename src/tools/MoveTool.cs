@@ -25,7 +25,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class MoveTool
+    internal class MoveTool
         : MoveToolBase
     {
         public static string StaticName

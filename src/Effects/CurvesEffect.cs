@@ -14,10 +14,6 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Curves Adjustment
-    /// </summary>
-    [EffectTypeHint(EffectTypeHint.Fast)]
     [EffectCategory(EffectCategory.Adjustment)]
     public sealed class CurvesEffect
         : Effect

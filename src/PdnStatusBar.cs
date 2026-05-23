@@ -14,7 +14,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public sealed class PdnStatusBar
+    internal sealed class PdnStatusBar
         : StatusStrip, 
           IStatusBarProgress
     {

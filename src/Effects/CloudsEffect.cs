@@ -18,7 +18,7 @@ using System.Windows.Forms;
 namespace PaintDotNet.Effects
 {
     public sealed class CloudsEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {        
         // This is so that repetition of the effect with CTRL+F actually shows up differently.
         private byte instanceSeed = unchecked((byte)DateTime.Now.Ticks); 
@@ -44,7 +44,7 @@ namespace PaintDotNet.Effects
         {
         }
 
-        private enum PropertyNames
+        public enum PropertyNames
         {
             Scale,
             Power,
@@ -183,7 +183,7 @@ namespace PaintDotNet.Effects
         {
             int h = hash & 15;
             double u = h < 8 ? x : y;
-            double v = h < 4 ? y : x;
+            double v = h < 4 ? y : h == 12 || h == 14 ? x : 0;
 
             return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
         }

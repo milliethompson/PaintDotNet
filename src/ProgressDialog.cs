@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class ProgressDialog 
+    internal class ProgressDialog 
         : PdnBaseForm
     {
         private System.Windows.Forms.ProgressBar progressBar;

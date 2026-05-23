@@ -47,19 +47,36 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 
 namespace PaintDotNet.Data
 {
     public sealed class TgaFileType
-        : FileType
+        : InternalFileType
     {
-        public override bool IsReflexive(SaveConfigToken token)
+        public enum PropertyNames
         {
-            if (((TgaSaveConfigToken)token).BitDepth == 32)
+            BitDepth,
+            RleCompress
+        }
+
+        public enum TgaBitDepthUIChoices
+        {
+            AutoDetect,
+            Bpp32,
+            Bpp24
+        }
+
+        protected override bool IsReflexive(PropertyBasedSaveConfigToken token)
+        {
+            if ((TgaBitDepthUIChoices)token.GetProperty<StaticListChoiceProperty>(PropertyNames.BitDepth).Value == TgaBitDepthUIChoices.Bpp32)
             {
                 return true;
             }
@@ -243,14 +260,81 @@ namespace PaintDotNet.Data
             }
         }
 
-        protected override SaveConfigToken OnCreateDefaultSaveConfigToken()
+        protected override Set<SavableBitDepths> CreateAllowedBitDepthListFromToken(PropertyBasedSaveConfigToken token)
         {
-            return new TgaSaveConfigToken(32, true);
+            TgaBitDepthUIChoices bitDepth = (TgaBitDepthUIChoices)token.GetProperty<StaticListChoiceProperty>(PropertyNames.BitDepth).Value;
+
+            Set<SavableBitDepths> bitDepths = new Set<SavableBitDepths>();
+
+            switch (bitDepth)
+            {
+                case TgaBitDepthUIChoices.AutoDetect:
+                    bitDepths.Add(SavableBitDepths.Rgb24);
+                    bitDepths.Add(SavableBitDepths.Rgba32);
+                    break;
+
+                case TgaBitDepthUIChoices.Bpp24:
+                    bitDepths.Add(SavableBitDepths.Rgb24);
+                    break;
+
+                case TgaBitDepthUIChoices.Bpp32:
+                    bitDepths.Add(SavableBitDepths.Rgba32);
+                    break;
+
+                default:
+                    throw new InvalidEnumArgumentException("bitDepth", (int)bitDepth, typeof(TgaBitDepthUIChoices));
+            }
+
+            return bitDepths;
         }
 
-        public override SaveConfigWidget CreateSaveConfigWidget()
+        protected override int GetDitherLevelFromToken(PropertyBasedSaveConfigToken token)
         {
-            return new TgaSaveConfigWidget();
+            return 0;
+        }
+
+        protected override int GetThresholdFromToken(PropertyBasedSaveConfigToken token)
+        {
+            return 0;
+        }
+
+        public override PropertyCollection OnCreateSavePropertyCollection()
+        {
+            List<Property> props = new List<Property>();
+
+            props.Add(StaticListChoiceProperty.CreateForEnum<TgaBitDepthUIChoices>(PropertyNames.BitDepth, TgaBitDepthUIChoices.AutoDetect, false));
+            props.Add(new BooleanProperty(PropertyNames.RleCompress, true));
+
+            return new PropertyCollection(props);
+        }
+
+        public override ControlInfo OnCreateSaveConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultSaveConfigUI(props);
+
+            configUI.SetPropertyControlValue(
+                PropertyNames.BitDepth,
+                ControlInfoPropertyNames.DisplayName,
+                PdnResources.GetString("TgaFileType.ConfigUI.BitDepth.DisplayName"));
+
+            configUI.SetPropertyControlType(PropertyNames.BitDepth, PropertyControlType.RadioButton);
+
+            PropertyControlInfo bitDepthPCI = configUI.FindControlForPropertyName(PropertyNames.BitDepth);
+            bitDepthPCI.SetValueDisplayName(TgaBitDepthUIChoices.AutoDetect, PdnResources.GetString("TgaFileType.ConfigUI.BitDepth.AutoDetect.DisplayName"));
+            bitDepthPCI.SetValueDisplayName(TgaBitDepthUIChoices.Bpp24, PdnResources.GetString("TgaFileType.ConfigUI.BitDepth.Bpp24.DisplayName"));
+            bitDepthPCI.SetValueDisplayName(TgaBitDepthUIChoices.Bpp32, PdnResources.GetString("TgaFileType.ConfigUI.BitDepth.Bpp32.DisplayName"));
+
+            configUI.SetPropertyControlValue(
+                PropertyNames.RleCompress,
+                ControlInfoPropertyNames.DisplayName,
+                string.Empty);
+
+            configUI.SetPropertyControlValue(
+                PropertyNames.RleCompress,
+                ControlInfoPropertyNames.Description,
+                PdnResources.GetString("TgaFileType.ConfigUI.RleCompress.Description"));
+
+            return configUI;
         }
 
         protected override Document OnLoad(System.IO.Stream input)
@@ -594,27 +678,26 @@ namespace PaintDotNet.Data
             return color;
         }
 
-        protected override void OnSave(Document input, Stream output, SaveConfigToken token, Surface scratchSurface, ProgressEventHandler callback)
+        protected override void FinalSave(
+            Document input, 
+            Stream output, 
+            Surface scratchSurface, 
+            int ditherLevel, 
+            SavableBitDepths bitDepth, 
+            PropertyBasedSaveConfigToken token, 
+            ProgressEventHandler progressCallback)
         {
-            scratchSurface.Clear(ColorBgra.FromBgra(255, 255, 255, 0));
-
-            using (RenderArgs ra = new RenderArgs(scratchSurface))
-            {
-                input.Render(ra, true);
-            }
-
-            SaveTga(scratchSurface, output, token, callback);
+            bool rleCompress = token.GetProperty<BooleanProperty>(PropertyNames.RleCompress).Value;
+            SaveTga(scratchSurface, output, bitDepth, rleCompress, progressCallback);
         }
 
-        private void SaveTga(Surface input, Stream output, SaveConfigToken token, ProgressEventHandler progressCallback)
+        private void SaveTga(Surface input, Stream output, SavableBitDepths bitDepth, bool rleCompress, ProgressEventHandler progressCallback)
         {
-            TgaSaveConfigToken tgaToken = (TgaSaveConfigToken)token;
-
             TgaHeader header = new TgaHeader();
 
             header.idLength = 0;
             header.cmapType = 0;
-            header.imageType = tgaToken.RleCompress ? TgaType.RleRgb : TgaType.Rgb;
+            header.imageType = rleCompress ? TgaType.RleRgb : TgaType.Rgb;
             header.cmapIndex = 0;
             header.cmapLength = 0;
             header.cmapEntrySize = 0; // if bpp=8, set this to 24
@@ -622,12 +705,22 @@ namespace PaintDotNet.Data
             header.yOrigin = 0;
             header.imageWidth = (ushort)input.Width;
             header.imageHeight = (ushort)input.Height;
-            header.pixelDepth = (byte)tgaToken.BitDepth;
 
             header.imageDesc = 0;
-            if (tgaToken.BitDepth == 32)
+
+            switch (bitDepth)
             {
-                header.imageDesc |= 8;
+                case SavableBitDepths.Rgba32:
+                    header.pixelDepth = 32;
+                    header.imageDesc |= 8;
+                    break;
+
+                case SavableBitDepths.Rgb24:
+                    header.pixelDepth = 24;
+                    break;
+
+                default:
+                    throw new InvalidEnumArgumentException("bitDepth", (int)bitDepth, typeof(SavableBitDepths));
             }
 
             header.Write(output);
@@ -638,7 +731,7 @@ namespace PaintDotNet.Data
             for (int y = input.Height - 1; y >= 0; --y)
             {
                 // non-rle output
-                if (tgaToken.RleCompress)
+                if (rleCompress)
                 {
                     SaveTgaRowRle(output, input, ref header, y);
                 }

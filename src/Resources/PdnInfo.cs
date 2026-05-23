@@ -49,7 +49,7 @@ namespace PaintDotNet
         {
             get
             {
-                string myDocsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string myDocsPath = SystemLayer.Shell.GetVirtualPath(PaintDotNet.SystemLayer.VirtualFolderName.UserDocuments);
                 string userDataDirName = PdnResources.GetString("SystemLayer.UserDataDirName");
                 string userDataPath = Path.Combine(myDocsPath, userDataDirName);
                 return userDataPath;
@@ -133,7 +133,7 @@ namespace PaintDotNet
         }
 
         // Pre-release builds expire after this many days. (debug+"final" also equals expiration)
-        public const int BetaExpireTimeDays = 30;
+        public const int BetaExpireTimeDays = 60;
 
         public static DateTime ExpirationDate
         {

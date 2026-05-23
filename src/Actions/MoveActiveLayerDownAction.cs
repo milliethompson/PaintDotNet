@@ -12,7 +12,7 @@ using System;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class MoveActiveLayerDownAction
+    internal sealed class MoveActiveLayerDownAction
         : DocumentWorkspaceAction
     {
         public static string StaticName

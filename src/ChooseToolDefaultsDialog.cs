@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class ChooseToolDefaultsDialog
+    internal class ChooseToolDefaultsDialog
         : PdnBaseForm
     {
         private Button cancelButton;

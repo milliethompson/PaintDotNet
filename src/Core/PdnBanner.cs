@@ -212,6 +212,12 @@ namespace PaintDotNet
 
                 Rectangle pdnLogoBounds = new Rectangle(new Point(0, 0), pdnLogo.Size);
                 g.DrawImage(pdnLogo, pdnLogoBounds, pdnLogoBounds, GraphicsUnit.Pixel);
+
+                ia1.Dispose();
+                ia1 = null;
+
+                ia2.Dispose();
+                ia2 = null;
             }
 
             Bitmap useThis;

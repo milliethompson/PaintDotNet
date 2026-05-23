@@ -89,7 +89,7 @@ namespace PaintDotNet
             }
         }
 
-        public event EventHandler<Item> ItemClicked;
+        public event EventHandler<EventArgs<Item>> ItemClicked;
         private void OnItemClicked(Item item)
         {
             if (ItemClicked != null)

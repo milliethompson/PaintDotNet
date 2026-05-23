@@ -7,7 +7,10 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.IndirectUI;
+using PaintDotNet.PropertySystem;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -16,30 +19,46 @@ using System.Windows.Forms;
 namespace PaintDotNet
 {
     public sealed class JpegFileType
-        : GdiPlusFileType
+        : PropertyBasedFileType
     {
         public JpegFileType()
-            : base("JPEG", ImageFormat.Jpeg, false, new string[] { ".jpg", ".jpeg", ".jpe", ".jfif" })
+            : base("JPEG", FileTypeFlags.SupportsLoading | FileTypeFlags.SupportsSaving, new string[] { ".jpg", ".jpeg", ".jpe", ".jfif" })
         {
         }
 
-        protected override SaveConfigToken OnCreateDefaultSaveConfigToken()
+        public enum PropertyNames
         {
-            return new JpegSaveConfigToken(95);
+            Quality
         }
 
-        public override SaveConfigWidget CreateSaveConfigWidget()
+        public override PropertyCollection OnCreateSavePropertyCollection()
         {
-            return new JpegSaveConfigWidget();
+            List<Property> props = new List<Property>();
+
+            props.Add(new Int32Property(PropertyNames.Quality, 95, 0, 100));
+
+            return new PropertyCollection(props);
         }
 
-        protected override void OnSave(Document input, Stream output, SaveConfigToken token, Surface scratchSurface, ProgressEventHandler callback)
+        public override ControlInfo OnCreateSaveConfigUI(PropertyCollection props)
         {
-            JpegSaveConfigToken jsct = (JpegSaveConfigToken)token;
+            ControlInfo configUI = CreateDefaultSaveConfigUI(props);
+
+            configUI.SetPropertyControlValue(
+                PropertyNames.Quality,
+                ControlInfoPropertyNames.DisplayName,
+                PdnResources.GetString("JpegFileType.ConfigUI.Quality.DisplayName"));
+
+            return configUI;
+        }
+
+        protected override void OnSaveT(Document input, Stream output, PropertyBasedSaveConfigToken token, Surface scratchSurface, ProgressEventHandler progressCallback)
+        {
+            int quality = token.GetProperty<Int32Property>(PropertyNames.Quality).Value;
 
             ImageCodecInfo icf = GdiPlusFileType.GetImageCodecInfo(ImageFormat.Jpeg);
             EncoderParameters parms = new EncoderParameters(1);
-            EncoderParameter parm = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, jsct.Quality); // force '95% quality'
+            EncoderParameter parm = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, quality);
             parms.Param[0] = parm;
 
             scratchSurface.Clear(ColorBgra.White);
@@ -48,11 +67,20 @@ namespace PaintDotNet
             {
                 input.Render(ra, false);
             }
-            
+
             using (Bitmap bitmap = scratchSurface.CreateAliasedBitmap())
             {
                 GdiPlusFileType.LoadProperties(bitmap, input);
                 bitmap.Save(output, icf, parms);
+            }
+        }
+
+        protected override Document OnLoad(Stream input)
+        {
+            using (Image image = PdnResources.LoadImage(input))
+            {
+                Document document = Document.FromImage(image);
+                return document;
             }
         }
     }

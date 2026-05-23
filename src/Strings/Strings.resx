@@ -1,64 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- 
-    Microsoft ResX Schema 
-    
-    Version 2.0
-    
-    The primary goals of this format is to allow a simple XML format 
-    that is mostly human readable. The generation and parsing of the 
-    various data types are done through the TypeConverter classes 
-    associated with the data types.
-    
-    Example:
-    
-    ... ado.net/XML headers & schema ...
-    <resheader name="resmimetype">text/microsoft-resx</resheader>
-    <resheader name="version">2.0</resheader>
-    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
-    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
-    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
-    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
-    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
-        <value>[base64 mime encoded serialized .NET Framework object]</value>
-    </data>
-    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
-        <comment>This is a comment</comment>
-    </data>
-                
-    There are any number of "resheader" rows that contain simple 
-    name/value pairs.
-    
-    Each data row contains a name, and value. The row also contains a 
-    type or mimetype. Type corresponds to a .NET class that support 
-    text/value conversion through the TypeConverter architecture. 
-    Classes that don't support this are serialized and stored with the 
-    mimetype set.
-    
-    The mimetype is used for serialized objects, and tells the 
-    ResXResourceReader how to depersist the object. This is currently not 
-    extensible. For a given mimetype the value must be set accordingly:
-    
-    Note - application/x-microsoft.net.object.binary.base64 is the format 
-    that the ResXResourceWriter will generate, however the reader can 
-    read any of the formats listed below.
-    
-    mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with 
-            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
-            : and then encoded with base64 encoding.
-    
-    mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with 
-            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
-            : and then encoded with base64 encoding.
-
-    mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array 
-            : using a System.ComponentModel.TypeConverter
-            : and then encoded with base64 encoding.
-    -->
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
     <xsd:element name="root" msdata:IsDataSet="true">
@@ -1668,8 +1609,8 @@ Expand canvas to fit pasted image?</value>
   <data name="FileTypeCollection.AllImageTypes" xml:space="preserve">
     <value>All image types</value>
   </data>
-  <data name="JpegSaveConfigWidget.QualityLabel.Text" xml:space="preserve">
-    <value>Quality:</value>
+  <data name="JpegFileType.ConfigUI.Quality.DisplayName" xml:space="preserve">
+    <value>Quality</value>
   </data>
   <data name="Layer.Properties.IsBackground.Name" xml:space="preserve">
     <value>Background Status</value>
@@ -1794,6 +1735,64 @@ Expand canvas to fit pasted image?</value>
   <data name="UnfocusEffect.ConfigDialog.UnitsLabel">
     <value>pixels</value>
   </data>
+  <data name="FragmentEffect.Name">
+    <value>Fragment</value>
+  </data>
+  <data name="FragmentEffect.ConfigDialog.Fragments.DisplayName">
+    <value>Fragment Count</value>
+  </data>
+  <data name="FragmentEffect.ConfigDialog.Rotation.DisplayName">
+    <value>Rotation</value>
+  </data>
+  <data name="FragmentEffect.ConfigDialog.Distance.DisplayName">
+    <value>Distance</value>
+  </data>
+  <data name="SurfaceBlurEffect.Name">
+    <value>Surface Blur</value>
+  </data>
+  <data name="SurfaceBlurEffect.ConfigDialog.RadiusLabel">
+    <value>Radius</value>
+  </data>
+  <data name="SurfaceBlurEffect.ConfigDialog.ThresholdLabel">
+    <value>Threshold</value>
+  </data>
+  <data name="DentsEffect.Name">
+    <value>Dents</value>
+    <comment>Note to translators: The term 'dents' is a bit ambiguous here, so I'll defer to Ed Harvey's description: "Think of reflections off a shiny metal surface with a series of shallow indentations on it; similar hammer-worked copper like a polished version of this surface: http://www.getpaint.net/misc/HammeredCopper.jpg. Synonyms: (plural of) Dint, Indentation, Dimple, Pit."</comment>
+  </data>
+  <data name="DentsEffect.ConfigDialog.ScaleLabel">
+    <value>Scale</value>
+  </data>
+  <data name="DentsEffect.ConfigDialog.RefractionLabel">
+    <value>Refraction</value>
+  </data>
+  <data name="DentsEffect.ConfigDialog.RoughnessLabel">
+    <value>Roughness</value>
+  </data>
+  <data name="DentsEffect.ConfigDialog.TensionLabel">
+    <value>Tension</value>
+  </data>
+  <data name="DentsEffect.ConfigDialog.QualityLabel">
+    <value>Quality</value>
+  </data>
+  <data name="DentsEffect.ConfigDialog.SeedLabel">
+    <value>Random Noise</value>
+  </data>
+  <data name="DentsEffect.ConfigDialog.SeedButtonText">
+    <value>Reseed</value>
+  </data>
+  <data name="VignetteEffect.Name">
+    <value>Vignette</value>
+  </data>
+  <data name="VignetteEffect.ConfigDialog.CenterLabel">
+    <value>Center</value>
+  </data>
+  <data name="VignetteEffect.ConfigDialog.RadiusLabel">
+    <value>Radius</value>
+  </data>
+  <data name="VignetteEffect.ConfigDialog.DensityLabel">
+    <value>Density</value>
+  </data>
   <data name="ZoomBlurEffect.Name">
     <value>Zoom Blur</value>
   </data>
@@ -1860,14 +1859,44 @@ Expand canvas to fit pasted image?</value>
   <data name="TwistEffect.TwistAmount.Text" xml:space="preserve">
     <value>Amount / Direction</value>
   </data>
-  <data name="PolarInversionEffect.Name" xml:space="preserve">
+  <data name="PolarInversion.Name" xml:space="preserve">
     <value>Polar Inversion</value>
   </data>
-  <data name="PolarInversionEffect.PolarInversionAmount.Text" xml:space="preserve">
+  <data name="PolarInversion.ConfigUI.Amount.DisplayName" xml:space="preserve">
     <value>Amount</value>
   </data>
-  <data name="PolarInversionEffect.Quality.Text" xml:space="preserve">
+  <data name="PolarInversion.ConfigUI.Offset.DisplayName" xml:space="preserve">
+    <value>Offset</value>
+  </data>
+  <data name="PolarInversion.ConfigUI.EdgeBehavior.DisplayName" xml:space="preserve">
+    <value>Edge Behavior</value>
+  </data>
+  <data name="PolarInversion.ConfigUI.EdgeBehavior.Clamp.DisplayName" xml:space="preserve">
+    <value>Clamp</value>
+  </data>
+  <data name="PolarInversion.ConfigUI.EdgeBehavior.Reflect.DisplayName" xml:space="preserve">
+    <value>Reflect</value>
+  </data>
+  <data name="PolarInversion.ConfigUI.EdgeBehavior.Wrap.DisplayName" xml:space="preserve">
+    <value>Wrap</value>
+  </data>
+  <data name="PolarInversion.ConfigUI.Quality.DisplayName" xml:space="preserve">
     <value>Quality</value>
+  </data>
+  <data name="PosterizeAdjustment.Name">
+    <value>Posterize</value>
+  </data>
+  <data name="PosterizeAdjustment.ConfigDialog.RedLevels.DisplayName">
+    <value>Red</value>
+  </data>
+  <data name="PosterizeAdjustment.ConfigDialog.GreenLevels.DisplayName">
+    <value>Green</value>
+  </data>
+  <data name="PosterizeAdjustment.ConfigDialog.BlueLevels.DisplayName">
+    <value>Blue</value>
+  </data>
+  <data name="PosterizeAdjustment.ConfigDialog.LinkLevels.Description">
+    <value>Linked</value>
   </data>
   <data name="BrightnessAndContrastAdjustment.Name" xml:space="preserve">
     <value>Brightness / Contrast</value>
@@ -2307,18 +2336,61 @@ Click OK to go to the Paint.NET website where you may download a newer version.<
   <data name="NonAdminErrorBox.Message" xml:space="preserve">
     <value>You must be a system administrator to perform this action.</value>
   </data>
-  <data name="GifSaveConfigWidget.ThresholdLabel.Text" xml:space="preserve">
-    <value>Transparency threshold:</value>
+  <data name="BmpFileType.ConfigUI.BitDepth.DisplayName">
+    <value>Bit Depth</value>
   </data>
-  <data name="GifSaveConfigWidget.DitherLabel.Text" xml:space="preserve">
-    <value>Dithering level:</value>
+  <data name="BmpFileType.ConfigUI.BitDepth.AutoDetect.DisplayName">
+    <value>Auto-detect</value>
+  </data>
+  <data name="BmpFileType.ConfigUI.BitDepth.Bpp24.DisplayName">
+    <value>24-bit</value>
+  </data>
+  <data name="BmpFileType.ConfigUI.BitDepth.Bpp8.DisplayName">
+    <value>8-bit</value>
+  </data>
+  <data name="BmpFileType.ConfigUI.DitherLevel.DisplayName">
+    <value>Dithering level</value>
+  </data>
+  <data name="PngFileType.ConfigUI.BitDepth.DisplayName">
+    <value>Bit Depth</value>
+  </data>
+  <data name="PngFileType.ConfigUI.BitDepth.AutoDetect.DisplayName">
+    <value>Auto-detect</value>
+  </data>
+  <data name="PngFileType.ConfigUI.BitDepth.Bpp32.DisplayName">
+    <value>32-bit</value>
+  </data>
+  <data name="PngFileType.ConfigUI.BitDepth.Bpp24.DisplayName">
+    <value>24-bit</value>
+  </data>
+  <data name="PngFileType.ConfigUI.BitDepth.Bpp8.DisplayName">
+    <value>8-bit</value>
+  </data>
+  <data name="PngFileType.ConfigUI.DitherLevel.DisplayName">
+    <value>Dithering level</value>
+  </data>
+  <data name="PngFileType.ConfigUI.Threshold.DisplayName">
+    <value>Transparency threshold</value>
+  </data>
+  <data name="PngFileType.ConfigUI.Threshold.Description">
+    <value>Pixels with an alpha value less than the threshold will be fully transparent.</value>
+  </data>
+  
+  <data name="GifFileType.ConfigUI.Threshold.DisplayName" xml:space="preserve">
+    <value>Transparency threshold</value>
+  </data>
+  <data name="GifFileType.ConfigUI.DitherLevel.DisplayName" xml:space="preserve">
+    <value>Dithering level</value>
   </data>
   <data name="GifSaveConfigWidget.PreMultiplyAlphaCheckBox.Text" xml:space="preserve">
     <value>Multiply by alpha channel</value>
   </data>
-  <data name="GifSaveConfigWidget.ThresholdInfoLabel.Text">
+  <data name="GifFileType.ConfigUI.Threshold.Description">
     <value>Pixels with an alpha value less than the threshold will be fully transparent.</value>
   </data>
+  
+  
+  
   <data name="SetupWizard.MustCloseAppFirst.Text">
     <value>Please ensure that Paint.NET is closed, and then click Retry. Or, press Cancel to exit the setup wizard.</value>
   </data>
@@ -2330,6 +2402,7 @@ Command-line options:
 /skipConfig  -  Skips configuration of options and install directory. Uses MSI properties in the following order of precedence: 1. supplied on command-line, 2. read from HKLM\Software\Paint.NET, 3. default values. NOTE: Use of this option infers acceptance of the License Agreement.
 /auto  -  Automatic install. Infers /skipConfig. Does not show the final wizard page that details the result of installation.
 /createMsi  -  Creates MSI packages that may be used for deployment (AD/GPO) purposes. All properties specified on the command-line are merged into the MSI packages, so no further transforms are necessary.
+/verbose  -  Enables verbose Windows Installer MSI logging
 PROPERTY=VALUE  -  Sets an MSI property. See help file after installing for more information. You do not need to specify /saveMsi to specify properties.
 
 Return code is 0 on success, or non-zero on failure.</value>
@@ -2556,17 +2629,20 @@ Click "Next" to start the installation.</value>
   <data name="RotateZoomEffectConfigDialog.ZoomLabel.Text.Format" xml:space="preserve">
     <value>{0}x</value>
   </data>
-  <data name="TgaSaveConfigWidget.BppLabel.Text" xml:space="preserve">
-    <value>Color bit-depth:</value>
+  <data name="TgaFileType.ConfigUI.BitDepth.DisplayName" xml:space="preserve">
+    <value>Bit Depth</value>
   </data>
-  <data name="TgaSaveConfigWidget.RleCompressCheckBox.Text" xml:space="preserve">
+  <data name="TgaFileType.ConfigUI.RleCompress.Description" xml:space="preserve">
     <value>Compress (RLE)</value>
   </data>
-  <data name="TgaSaveConfigWidget.Bpp24Radio.Text" xml:space="preserve">
+  <data name="TgaFileType.ConfigUI.BitDepth.Bpp24.DisplayName" xml:space="preserve">
     <value>24-bit</value>
   </data>
-  <data name="TgaSaveConfigWidget.Bpp32Radio.Text" xml:space="preserve">
+  <data name="TgaFileType.ConfigUI.BitDepth.Bpp32.DisplayName" xml:space="preserve">
     <value>32-bit</value>
+  </data>
+  <data name="TgaFileType.ConfigUI.BitDepth.AutoDetect.DisplayName" xml:space="preserve">
+    <value>Auto-detect</value>
   </data>
   <data name="LaunchLink.Error" xml:space="preserve">
     <value>There was an error launching the link.</value>
@@ -3230,6 +3306,6 @@ Because of the unpredictable nature of these types of errors, it is strongly rec
     <value>This plugin is known to cause stability problems, and has been blocked from loading.</value>
   </data>
   <data name="BlockedPluginException.PluginIsNowBuiltIn">
-    <value>This plugin is now built-in to Paint.NET, so the old plugin DLL has been blocked from loading.</value>
+    <value>This plugin is now built-in to Paint.NET.</value>
   </data>
 </root>

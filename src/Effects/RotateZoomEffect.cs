@@ -19,7 +19,6 @@ using System.Windows.Forms;
 namespace PaintDotNet.Effects
 {
     [EffectCategory(EffectCategory.DoNotDisplay)] // we have a menu item that manually places this in the Layers menu
-    [EffectTypeHint(EffectTypeHint.Fast)]
     public sealed class RotateZoomEffect
         : Effect
     {

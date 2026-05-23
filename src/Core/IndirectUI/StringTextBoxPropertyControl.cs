@@ -47,8 +47,9 @@ namespace PaintDotNet.IndirectUI
             int hMargin = UI.ScaleWidth(4);
 
             this.header.Location = new Point(0, 0);
-            this.header.Width = ClientSize.Width;
-            this.header.Height = this.header.GetPreferredSize(new Size(this.header.Width, 0)).Height;
+            this.header.Size = string.IsNullOrEmpty(DisplayName) ?
+                new Size(ClientSize.Width, 0) :
+                this.header.GetPreferredSize(new Size(ClientSize.Width, 1));
 
             this.textBox.Location = new Point(0, this.header.Bottom + hMargin);
             this.textBox.Width = ClientSize.Width;
@@ -134,6 +135,7 @@ namespace PaintDotNet.IndirectUI
         {
             this.textBox.Enabled = !Property.ReadOnly;
             this.textBox.ReadOnly = Property.ReadOnly;
+            this.description.Enabled = !Property.ReadOnly;
         }
 
         protected override void OnPropertyValueChanged()

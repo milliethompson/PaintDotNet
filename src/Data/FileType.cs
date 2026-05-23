@@ -16,7 +16,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime;
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Soap;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 
 namespace PaintDotNet
@@ -184,24 +184,12 @@ namespace PaintDotNet
 
             return false;
         }
-
-        /// <summary>
-        /// Takes a Surface and quantizes it down to an 8-bit bitmap.
-        /// </summary>
-        /// <param name="quantizeMe">The Surface to quantize.</param>
-        /// <param name="ditherAmount">How strong should dithering be applied. 0 for no dithering, 8 for full dithering.</param>
-        /// <param name="maxColors">The maximum number of colors to use. This may range from 2 to 255.</param>
-        /// <param name="progressCallback">The progress callback delegate.</param>
-        /// <returns>An 8-bit Bitmap that is the same size as quantizeMe.</returns>
+        
+        [Obsolete("This method is retained for compatibility with older plugins. Please use the other overload of Quantize().")]
         protected Bitmap Quantize(Surface quantizeMe, int ditherAmount, int maxColors, ProgressEventHandler progressCallback)
         {
-            if (ditherAmount < 0 || ditherAmount > 8)
-            {
-                throw new ArgumentOutOfRangeException(
-                    "ditherAmount",
-                    ditherAmount,
-                    "Out of bounds. Must be in the range [0, 8]");
-            }
+            // This is the old version of the function took maxColors=255 to mean 255 colors + 1 slot for transparency.
+            // The new version expects maxColors=256 and enableTransparency=true for this.
 
             if (maxColors < 2 || maxColors > 255)
             {
@@ -211,9 +199,41 @@ namespace PaintDotNet
                     "Out of bounds. Must be in the range [2, 255]");
             }
 
+            return Quantize(quantizeMe, ditherAmount, maxColors + 1, true, progressCallback);
+        }
+
+        /// <summary>
+        /// Takes a Surface and quantizes it down to an 8-bit bitmap.
+        /// </summary>
+        /// <param name="quantizeMe">The Surface to quantize.</param>
+        /// <param name="ditherAmount">How strong should dithering be applied. 0 for no dithering, 8 for full dithering. 7 is generally a good default to use.</param>
+        /// <param name="maxColors">The maximum number of colors to use. This may range from 2 to 256.</param>
+        /// <param name="enableTransparency">If true, then one color slot will be reserved for transparency. Any color with an alpha value less than 255 will be transparent in the output.</param>
+        /// <param name="progressCallback">The progress callback delegate.</param>
+        /// <returns>An 8-bit Bitmap that is the same size as quantizeMe.</returns>
+        protected Bitmap Quantize(Surface quantizeMe, int ditherAmount, int maxColors, bool enableTransparency, ProgressEventHandler progressCallback)
+        {
+            if (ditherAmount < 0 || ditherAmount > 8)
+            {
+                throw new ArgumentOutOfRangeException(
+                    "ditherAmount",
+                    ditherAmount,
+                    "Out of bounds. Must be in the range [0, 8]");
+            }
+
+            if (maxColors < 2 || maxColors > 256)
+            {
+                throw new ArgumentOutOfRangeException(
+                    "maxColors",
+                    maxColors,
+                    "Out of bounds. Must be in the range [2, 256]");
+            }
+
+            // TODO: detect if transparency is needed? or take another argument
+
             using (Bitmap bitmap = quantizeMe.CreateAliasedBitmap(quantizeMe.Bounds, true))
             {
-                OctreeQuantizer quantizer = new OctreeQuantizer(maxColors, 8);
+                OctreeQuantizer quantizer = new OctreeQuantizer(maxColors, enableTransparency);
                 quantizer.DitherLevel = ditherAmount;
                 Bitmap quantized = quantizer.Quantize(bitmap, progressCallback);
                 return quantized;
@@ -237,6 +257,8 @@ namespace PaintDotNet
             ProgressEventHandler callback, 
             bool rememberToken)
         {
+            Tracing.LogFeature("Save(" + GetType().FullName + ")");
+
             if (!this.SupportsSaving)
             {
                 throw new NotImplementedException("Saving is not supported by this FileType");
@@ -258,38 +280,34 @@ namespace PaintDotNet
                 if (rememberToken)
                 {
                     Type ourType = this.GetType();
-                    string savedTokenName = ourType.Namespace + "." + ourType.Name;
-                    SoapFormatter soap = new SoapFormatter();
+                    string savedTokenName = "SaveConfigToken." + ourType.Namespace + "." + ourType.Name + ".BinaryFormatter";
+
                     MemoryStream ms = new MemoryStream();
-                    soap.Serialize(ms, token);
+
+                    BinaryFormatter formatter = new BinaryFormatter();
+                    DeferredFormatter deferredFormatter = new DeferredFormatter(false, null);
+                    StreamingContext streamingContext = new StreamingContext(formatter.Context.State, deferredFormatter);
+                    formatter.Context = streamingContext;
+
+                    object tokenSubset = GetSerializablePortionOfSaveConfigToken(token);
+
+                    formatter.Serialize(ms, tokenSubset);
+                    deferredFormatter.FinishSerialization(ms);
+
                     byte[] bytes = ms.GetBuffer();
-                    string utf8 = Encoding.UTF8.GetString(bytes);
-                    Settings.CurrentUser.SetString(savedTokenName, utf8);
+                    string base64Bytes = Convert.ToBase64String(bytes);
+
+                    Settings.CurrentUser.SetString(savedTokenName, base64Bytes);
                 }
 
-                if (!this.SavesWithProgress)
+                try
                 {
-                    try
-                    {
-                        OnSave(input, output, token, scratchSurface, null);
-                    }
-
-                    catch (OnSaveNotImplementedException)
-                    {
-                        OldOnSaveTrampoline(input, output, token, null);
-                    }
+                    OnSave(input, output, token, scratchSurface, callback);
                 }
-                else
-                {
-                    try
-                    {
-                        OnSave(input, output, token, scratchSurface, callback);
-                    }
 
-                    catch (OnSaveNotImplementedException)
-                    {
-                        OldOnSaveTrampoline(input, output, token, callback);
-                    }
+                catch (OnSaveNotImplementedException)
+                {
+                    OldOnSaveTrampoline(input, output, token, callback);
                 }
 
                 if (disposeMe != null)
@@ -298,6 +316,16 @@ namespace PaintDotNet
                     disposeMe = null;
                 }
             }
+        }
+
+        protected virtual SaveConfigToken GetSaveConfigTokenFromSerializablePortion(object portion)
+        {
+            return (SaveConfigToken)portion;
+        }
+
+        protected virtual object GetSerializablePortionOfSaveConfigToken(SaveConfigToken token)
+        {
+            return token;
         }
 
         private sealed class OnSaveNotImplementedException
@@ -399,7 +427,7 @@ namespace PaintDotNet
         public SaveConfigToken GetLastSaveConfigToken()
         {
             Type ourType = this.GetType();
-            string savedTokenName = ourType.Namespace + "." + ourType.Name;
+            string savedTokenName = "SaveConfigToken." + ourType.Namespace + "." + ourType.Name + ".BinaryFormatter";
             string savedToken = Settings.CurrentUser.GetString(savedTokenName, null);
             SaveConfigToken saveConfigToken = null;
 
@@ -407,20 +435,32 @@ namespace PaintDotNet
             {
                 try
                 {
-                    SoapFormatter soap = new SoapFormatter();
-                    byte[] bytes = Encoding.UTF8.GetBytes(savedToken);
-                    MemoryStream ms = new MemoryStream(bytes);                
+                    byte[] bytes = Convert.FromBase64String(savedToken);
+
+                    MemoryStream ms = new MemoryStream(bytes);
+
+                    BinaryFormatter formatter = new BinaryFormatter();
+                    DeferredFormatter deferred = new DeferredFormatter();
+                    StreamingContext streamingContext = new StreamingContext(formatter.Context.State, deferred);
+                    formatter.Context = streamingContext;
+
                     SerializationFallbackBinder sfb = new SerializationFallbackBinder();
                     sfb.AddAssembly(this.GetType().Assembly);
                     sfb.AddAssembly(typeof(FileType).Assembly);
-                    soap.Binder = sfb;
-                    object obj = soap.Deserialize(ms);
+                    formatter.Binder = sfb;
+
+                    object obj = formatter.Deserialize(ms);
+                    deferred.FinishDeserialization(ms);
+
                     ms.Close();
-                    SaveConfigToken sct = new SaveConfigToken();
-                    saveConfigToken = (SaveConfigToken)obj;
+                    ms = null;
+
+                    //SaveConfigToken sct = new SaveConfigToken();
+                    //saveConfigToken = (SaveConfigToken)obj;
+                    saveConfigToken = GetSaveConfigTokenFromSerializablePortion(obj);
                 }
 
-                catch
+                catch (Exception)
                 {
                     // Ignore erros and revert to default
                     saveConfigToken = null;
@@ -450,6 +490,8 @@ namespace PaintDotNet
 
         public Document Load(Stream input)
         {
+            Tracing.LogFeature("Load(" + GetType().FullName + ")");
+
             if (!this.SupportsLoading)
             {
                 throw new NotSupportedException("Loading not supported for this FileType");

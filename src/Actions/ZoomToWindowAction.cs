@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class ZoomToWindowAction
+    internal sealed class ZoomToWindowAction
         : DocumentWorkspaceAction
     {
         public override HistoryMemento PerformAction(DocumentWorkspace documentWorkspace)

@@ -12,7 +12,7 @@ using System;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class HistoryUndoAction
+    internal sealed class HistoryUndoAction
         : DocumentWorkspaceAction
     {
         public override HistoryMemento PerformAction(DocumentWorkspace documentWorkspace)

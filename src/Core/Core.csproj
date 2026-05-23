@@ -64,7 +64,7 @@
     <DocumentationFile>
     </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
-    <FileAlignment>4096</FileAlignment>
+    <FileAlignment>512</FileAlignment>
     <NoStdLib>false</NoStdLib>
     <NoWarn>
     </NoWarn>
@@ -121,6 +121,12 @@
     <Compile Include="EtchedLine.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="IndirectUI\Int32ColorWheelPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IndirectUI\StaticListRadioButtonPropertyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="IPluginSupportInfo.cs" />
     <Compile Include="PanControl.cs">
       <SubType>UserControl</SubType>
@@ -176,12 +182,6 @@
     </Compile>
     <Compile Include="EdgeSnapOptions.cs" />
     <Compile Include="EnumLocalizer.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="EventArgs`1.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="EventHandler`1.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="GradientRenderer.cs" />

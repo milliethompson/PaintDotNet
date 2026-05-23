@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public enum LineCap2
+    internal enum LineCap2
     {
         Flat = 0,
         Arrow = 1,

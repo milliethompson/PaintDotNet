@@ -35,7 +35,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public sealed class MainForm 
+    internal sealed class MainForm 
         : PdnBaseForm
     {
         private AppWorkspace appWorkspace;
@@ -1264,8 +1264,10 @@ namespace PaintDotNet
 
         private static void PrintFocus()
         {
+            /*
             Control c = Utility.FindFocus();
             Tracing.Ping("Focused: " + GetControlName(c));
+             * */
         }
 
         private static void FocusPrintThread()

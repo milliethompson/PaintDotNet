@@ -12,13 +12,16 @@ using System;
 namespace PaintDotNet.IndirectUI
 {
     public enum PropertyControlType
+        : int
     {
-        AngleChooser,
-        CheckBox,
-        PanAndSlider,
-        Slider,
-        IncrementButton,
-        DropDown,
-        TextBox
+        AngleChooser = 0,
+        CheckBox = 1,
+        PanAndSlider = 2,
+        Slider = 3,
+        IncrementButton = 4,
+        DropDown = 5,
+        TextBox = 6,
+        RadioButton = 7,
+        ColorWheel = 8
     }
 }

@@ -15,7 +15,7 @@ namespace PaintDotNet.HistoryMementos
     /// <summary>
     /// Saves the state of the Document's metadata.
     /// </summary>
-    public class MetaDataHistoryMemento
+    internal class MetaDataHistoryMemento
         : HistoryMemento
     {
         private IHistoryWorkspace historyWorkspace;

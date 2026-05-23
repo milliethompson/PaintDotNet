@@ -11,5 +11,5 @@ using System;
 
 namespace PaintDotNet
 {
-    public delegate void ExecutingHistoryMementoEventHandler(object sender, ExecutingHistoryMementoEventArgs e);
+    internal delegate void ExecutingHistoryMementoEventHandler(object sender, ExecutingHistoryMementoEventArgs e);
 }

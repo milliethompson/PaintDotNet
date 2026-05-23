@@ -90,7 +90,7 @@ namespace PaintDotNet.SystemLayer
             }
         }
 
-        public event System.EventHandler<ProcessCmdKeyEventArgs> ProcessCmdKeyRelay;
+        public event EventHandler<ProcessCmdKeyEventArgs> ProcessCmdKeyRelay;
 
         public bool RelayProcessCmdKey(Keys keyData)
         {

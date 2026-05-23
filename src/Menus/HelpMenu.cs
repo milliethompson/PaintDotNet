@@ -7,6 +7,8 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+//#define CRASH
+
 using PaintDotNet.Actions;
 using PaintDotNet.SystemLayer;
 using PaintDotNet.Updates;
@@ -20,7 +22,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Menus
 {
-    public sealed class HelpMenu
+    internal sealed class HelpMenu
         : PdnMenuItem
     {
         private PdnMenuItem menuHelpHelpTopics;
@@ -37,6 +39,9 @@ namespace PaintDotNet.Menus
         private PdnMenuItem menuHelpLanguageSentinel;
         private CheckForUpdatesMenuItem menuHelpCheckForUpdates;
         private ToolStripSeparator menuHelpSeparator3;
+#if CRASH
+        private PdnMenuItem menuHelpCrash;
+#endif
         private PdnMenuItem menuHelpAbout;
 
         public void CheckForUpdates()
@@ -46,6 +51,13 @@ namespace PaintDotNet.Menus
 
         public HelpMenu()
         {
+#if CRASH
+            if (PdnInfo.IsFinalBuild)
+            {
+                throw new Exception("Do not leave CRASH defined for an actual release build!");
+            }
+#endif
+
             InitializeComponent();
         }
 
@@ -71,6 +83,9 @@ namespace PaintDotNet.Menus
             this.menuHelpLanguageSentinel = new PdnMenuItem();
             this.menuHelpCheckForUpdates = new CheckForUpdatesMenuItem();
             this.menuHelpSeparator3 = new ToolStripSeparator();
+#if CRASH
+            this.menuHelpCrash = new PdnMenuItem();
+#endif
             this.menuHelpAbout = new PdnMenuItem();
             //
             // HelpMenu
@@ -91,6 +106,9 @@ namespace PaintDotNet.Menus
                     this.menuHelpLanguage,
                     this.menuHelpCheckForUpdates,
                     this.menuHelpSeparator3,
+#if CRASH
+                    this.menuHelpCrash,
+#endif
                     this.menuHelpAbout
                 });
             this.Name = "Menu.Help";
@@ -156,6 +174,15 @@ namespace PaintDotNet.Menus
             // menuHelpCheckForUpdates
             //
             // (left blank on purpose)
+
+#if CRASH
+            //
+            // menuHelpCrash
+            this.menuHelpCrash.Name = "Crash";
+            this.menuHelpCrash.Text = "Crash!";
+            this.menuHelpCrash.ShortcutKeys = Keys.Control | Keys.Alt | Keys.X;
+            this.menuHelpCrash.Click += delegate { ((Control)null).Dispose(); };
+#endif
 
             // 
             // menuHelpAbout

@@ -15,7 +15,7 @@ using System.Text;
 namespace PaintDotNet
 {
     [Serializable]
-    public sealed class GradientInfo
+    internal sealed class GradientInfo
         : ICloneable
     {
         private GradientType gradientType;

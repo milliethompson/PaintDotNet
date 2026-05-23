@@ -45,7 +45,7 @@ using System.Drawing;
 namespace PaintDotNet.Effects
 {
     public sealed class SoftenPortraitEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public enum PropertyNames
         {

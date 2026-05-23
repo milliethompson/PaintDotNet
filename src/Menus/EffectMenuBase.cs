@@ -23,12 +23,12 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Menus
 {
-    public abstract class EffectMenuBase
+    internal abstract class EffectMenuBase
         : PdnMenuItem
     {
-        private const int tilesPerCpu = 50;
+        private const int tilesPerCpu = 75;
         private int renderingThreadCount = Math.Max(2, SystemLayer.Processor.LogicalCpuCount);
-        private const int effectRefreshInterval = 25;
+        private const int effectRefreshInterval = 15;
         private PdnRegion[] progressRegions;
         private int progressRegionsStartIndex;
 
@@ -122,8 +122,10 @@ namespace PaintDotNet.Menus
                 EventHandler auxButtonClickHandler =
                     delegate(object sender, EventArgs e)
                     {
-                        using (Form textBoxForm = new Form())
+                        using (PdnBaseForm textBoxForm = new PdnBaseForm())
                         {
+                            textBoxForm.Name = "EffectCrash";
+
                             TextBox exceptionBox = new TextBox();
 
                             textBoxForm.Icon = Utility.ImageToIcon(PdnResources.GetImageResource("Icons.WarningIcon.png").Reference);
@@ -275,6 +277,7 @@ namespace PaintDotNet.Menus
                 string repeatFormat = PdnResources.GetString("Effects.RepeatMenuItem.Format");
                 string menuName = string.Format(repeatFormat, lastEffect.Name);
                 PdnMenuItem pmi = new PdnMenuItem(menuName, this.lastEffect.Image, RepeatEffectMenuItem_Click);
+                pmi.Name = "RepeatEffect(" + this.lastEffect.GetType().FullName + ")";
                 pmi.ShortcutKeys = Keys.Control | Keys.F; 
                 this.DropDownItems.Add(pmi);
 
@@ -284,7 +287,7 @@ namespace PaintDotNet.Menus
 
             AddEffectsToMenu();
 
-            Triple<Assembly, string, Exception>[] errors = this.Effects.GetLoaderExceptions();
+            Triple<Assembly, Type, Exception>[] errors = this.Effects.GetLoaderExceptions();
 
             for (int i = 0; i < errors.Length; ++i)
             {
@@ -324,6 +327,7 @@ namespace PaintDotNet.Menus
             }
 
             mi.Tag = (object)effect.GetType();
+            mi.Name = "Effect(" + effect.GetType().FullName + ")";
 
             PdnMenuItem addEffectHere = this;
 
@@ -383,7 +387,7 @@ namespace PaintDotNet.Menus
                 {
                     // We don't want a DLL that can't be figured out to cause the app to crash
                     //continue;
-                    AppWorkspace.ReportEffectLoadError(Triple.Create(type.Assembly, type.Namespace + "." + type.Name, ex));
+                    AppWorkspace.ReportEffectLoadError(Triple.Create(type.Assembly, type, ex));
                 }
             }
 
@@ -633,7 +637,7 @@ namespace PaintDotNet.Menus
                             effect.EnvironmentParameters = eep;
 
                             //
-                            AppWorkspace.SuspendThumbnailUpdates();
+                            IDisposable resumeTUFn = AppWorkspace.SuspendThumbnailUpdates();
                             //
 
                             using (EffectConfigDialog configDialog = effect.CreateConfigDialog())
@@ -741,7 +745,8 @@ namespace PaintDotNet.Menus
                                 }
 
                                 //
-                                AppWorkspace.ResumeThumbnailUpdates();
+                                resumeTUFn.Dispose();
+                                resumeTUFn = null;
                                 //
 
                                 if (dr == DialogResult.OK)

@@ -12,7 +12,7 @@ using System.Drawing.Drawing2D;
 
 namespace PaintDotNet
 {
-    public interface ISelectionCombineModeConfig
+    internal interface ISelectionCombineModeConfig
     {
         event EventHandler SelectionCombineModeChanged;
 

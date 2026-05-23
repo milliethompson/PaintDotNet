@@ -19,7 +19,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class PasteAction
+    internal sealed class PasteAction
     {
         private DocumentWorkspace documentWorkspace;
 
@@ -424,6 +424,7 @@ namespace PaintDotNet.Actions
 
         public PasteAction(DocumentWorkspace documentWorkspace)
         {
+            SystemLayer.Tracing.LogFeature("PasteAction");
             this.documentWorkspace = documentWorkspace;
         }
     }

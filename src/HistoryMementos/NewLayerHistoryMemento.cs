@@ -12,7 +12,7 @@ using System.Drawing;
 
 namespace PaintDotNet.HistoryMementos
 {
-    public class NewLayerHistoryMemento
+    internal class NewLayerHistoryMemento
         : HistoryMemento
     {
         private int layerIndex;

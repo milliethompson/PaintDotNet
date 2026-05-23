@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class LassoSelectTool
+    internal class LassoSelectTool
         : SelectionTool
     {
         private Cursor lassoToolCursor;

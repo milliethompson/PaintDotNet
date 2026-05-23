@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class SaveProgressDialog
+    internal class SaveProgressDialog
         : CallbackWithProgressDialog
     {
         private FileType fileType;
@@ -50,12 +50,15 @@ namespace PaintDotNet
             this.stream = dstStream;
             this.saveConfigToken = parameters;
             this.scratchSurface = saveScratchSurface;
-            DialogResult dr = this.ShowDialog(false, !dstFileType.SavesWithProgress, new ThreadStart(SaveCallback));
+            DialogResult dr = this.ShowDialog(false, !dstFileType.SavesWithProgress , new ThreadStart(SaveCallback));
         }
 
         private void ProgressHandler(object sender, ProgressEventArgs e)
         {
-            Progress = (int)e.Percent;
+            if (!MarqueeMode)
+            {
+                Progress = (int)e.Percent;
+            }
         }
     }
 }

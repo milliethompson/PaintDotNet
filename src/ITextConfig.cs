@@ -13,7 +13,7 @@ using System.Drawing;
 
 namespace PaintDotNet
 {
-    public interface ITextConfig
+    internal interface ITextConfig
     {
         event EventHandler FontInfoChanged;
         event EventHandler FontSmoothingChanged;

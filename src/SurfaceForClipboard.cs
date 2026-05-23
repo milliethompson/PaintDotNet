@@ -18,7 +18,7 @@ namespace PaintDotNet
     /// Encapsulates a surface that can be copied to the clipboard.
     /// </summary>
     [Serializable]
-    public class SurfaceForClipboard
+    internal class SurfaceForClipboard
     {
         public MaskedSurface MaskedSurface;
         public Rectangle Bounds;

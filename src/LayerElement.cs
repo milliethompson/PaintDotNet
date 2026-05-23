@@ -19,7 +19,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class LayerElement 
+    internal class LayerElement 
         : UserControl
     {
         public static int ThumbSizePreScaling = 40;

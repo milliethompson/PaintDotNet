@@ -24,7 +24,7 @@ namespace PaintDotNet
         public static readonly FileType Jpeg = new JpegFileType();
         public static readonly FileType Gif = new GifFileType();
         public static readonly FileType Tiff = new GdiPlusFileType("TIFF", ImageFormat.Tiff, false, new string[] { ".tif", ".tiff" });
-        public static readonly FileType Png = new PngFileType();
+        public static readonly PngFileType Png = new PngFileType();
         public static readonly FileType Pdn = new PdnFileType();
         public static readonly FileType Tga = new TgaFileType();
 

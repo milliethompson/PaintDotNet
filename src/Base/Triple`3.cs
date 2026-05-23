@@ -8,6 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Collections.Generic;
 
 namespace PaintDotNet
 {
@@ -44,7 +45,38 @@ namespace PaintDotNet
 
         public override int GetHashCode()
         {
-            return this.first.GetHashCode() ^ this.second.GetHashCode() ^ this.third.GetHashCode();
+            int firstHash;
+            int secondHash;
+            int thirdHash;
+
+            if (object.ReferenceEquals(this.first, null))
+            {
+                firstHash = 0;
+            }
+            else
+            {
+                firstHash = this.first.GetHashCode();
+            }
+
+            if (object.ReferenceEquals(this.second, null))
+            {
+                secondHash = 0;
+            }
+            else
+            {
+                secondHash = this.second.GetHashCode();
+            }
+
+            if (object.ReferenceEquals(this.third, null))
+            {
+                thirdHash = 0;
+            }
+            else
+            {
+                thirdHash = this.third.GetHashCode();
+            }
+
+            return firstHash ^ secondHash ^ thirdHash;
         }
 
         public override bool Equals(object obj)
@@ -54,7 +86,50 @@ namespace PaintDotNet
 
         public static bool operator ==(Triple<T, U, V> lhs, Triple<T, U, V> rhs)
         {
-            return (lhs.First.Equals(rhs.First) && lhs.Second.Equals(rhs.Second) && lhs.Third.Equals(rhs.Third));
+            bool firstEqual;
+            bool secondEqual;
+            bool thirdEqual;
+
+            if (object.ReferenceEquals(lhs.First, null) && object.ReferenceEquals(rhs.First, null))
+            {
+                firstEqual = true;
+            }
+            else if (object.ReferenceEquals(lhs.First, null) || object.ReferenceEquals(rhs.First, null))
+            {
+                firstEqual = false;
+            }
+            else
+            {
+                firstEqual = lhs.First.Equals(rhs.First);
+            }
+
+            if (object.ReferenceEquals(lhs.Second, null) && object.ReferenceEquals(rhs.Second, null))
+            {
+                secondEqual = true;
+            }
+            else if (object.ReferenceEquals(lhs.Second, null) || object.ReferenceEquals(rhs.Second, null))
+            {
+                secondEqual = false;
+            }
+            else
+            {
+                secondEqual = lhs.Second.Equals(rhs.Second);
+            }
+
+            if (object.ReferenceEquals(lhs.Third, null) && object.ReferenceEquals(rhs.Third, null))
+            {
+                thirdEqual = true;
+            }
+            else if (object.ReferenceEquals(lhs.Third, null) || object.ReferenceEquals(rhs.Third, null))
+            {
+                thirdEqual = false;
+            }
+            else
+            {
+                thirdEqual = lhs.Third.Equals(rhs.Third);
+            }
+
+            return firstEqual && secondEqual && thirdEqual;
         }
 
         public static bool operator !=(Triple<T, U, V> lhs, Triple<T, U, V> rhs)
@@ -67,6 +142,42 @@ namespace PaintDotNet
             this.first = first;
             this.second = second;
             this.third = third;
+        }
+
+        private sealed class TripleComparer
+            : IEqualityComparer<Triple<T, U, V>>
+        {
+            private IEqualityComparer<T> tComparer;
+            private IEqualityComparer<U> uComparer;
+            private IEqualityComparer<V> vComparer;
+
+            public TripleComparer(IEqualityComparer<T> tComparer, IEqualityComparer<U> uComparer, IEqualityComparer<V> vComparer)
+            {
+                this.tComparer = tComparer;
+                this.uComparer = uComparer;
+                this.vComparer = vComparer;
+            }
+
+            public bool Equals(Triple<T, U, V> x, Triple<T, U, V> y)
+            {
+                return this.tComparer.Equals(x.First, y.First) && this.uComparer.Equals(x.Second, y.Second) && this.vComparer.Equals(x.Third, y.Third);
+            }
+
+            public int GetHashCode(Triple<T, U, V> obj)
+            {
+                return this.tComparer.GetHashCode(obj.First) ^ this.uComparer.GetHashCode(obj.Second) ^ this.vComparer.GetHashCode(obj.Third);
+            }
+        }
+
+        public static IEqualityComparer<Triple<T, U, V>> CreateComparer(
+            IEqualityComparer<T> tComparer, 
+            IEqualityComparer<U> uComparer, 
+            IEqualityComparer<V> vComparer)
+        {
+            return new TripleComparer(
+                tComparer ?? EqualityComparer<T>.Default,
+                uComparer ?? EqualityComparer<U>.Default,
+                vComparer ?? EqualityComparer<V>.Default);
         }
     }
 }

@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public interface IStatusBarProgress
+    internal interface IStatusBarProgress
     {
         void EraseProgressStatusBar();
         void EraseProgressStatusBarAsync();

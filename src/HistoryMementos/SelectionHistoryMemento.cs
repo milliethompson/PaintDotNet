@@ -13,7 +13,7 @@ using System.Drawing.Drawing2D;
 
 namespace PaintDotNet.HistoryMementos
 {
-    public class SelectionHistoryMemento
+    internal class SelectionHistoryMemento
         : HistoryMemento
     {
         private object savedSelectionData;

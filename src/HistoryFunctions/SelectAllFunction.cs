@@ -14,7 +14,7 @@ using System.Drawing.Drawing2D;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public sealed class SelectAllFunction
+    internal sealed class SelectAllFunction
         : HistoryFunction
     {
         public static string StaticName

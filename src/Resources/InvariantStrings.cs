@@ -43,7 +43,7 @@ namespace PaintDotNet
         public const string SearchEngineHelpMenu = "/redirect/search_hm.html";
 
         public const string DonateUrlSetup =
-            "" <-- You must specify a destination URL for the donate button in the setup wizard.;        
+            You must specify a destination URL for the donate button in the setup wizard.;        
 
         public const string ExpiredPage = "redirect/pdnexpired.html";
 

@@ -21,7 +21,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class EraserTool 
+    internal class EraserTool 
         : Tool
     {
         private bool mouseDown;

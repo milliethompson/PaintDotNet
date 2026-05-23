@@ -18,9 +18,9 @@ using System.Text;
 namespace PaintDotNet
 {
     using ThumbnailReadyArgs = EventArgs<Pair<IThumbnailProvider, Surface>>;
-    using ThumbnailReadyHandler = EventHandler<Pair<IThumbnailProvider, Surface>>;
-    using ThumbnailStackItem = Triple<IThumbnailProvider, EventHandler<Pair<IThumbnailProvider, Surface>>, int>;
-    using ThumbnailReadyEventDetails = Triple<EventHandler<Pair<IThumbnailProvider, Surface>>, object, EventArgs<Pair<IThumbnailProvider, Surface>>>;
+    using ThumbnailReadyHandler = EventHandler<EventArgs<Pair<IThumbnailProvider, Surface>>>;
+    using ThumbnailStackItem = Triple<IThumbnailProvider, EventHandler<EventArgs<Pair<IThumbnailProvider, Surface>>>, int>;
+    using ThumbnailReadyEventDetails = Triple<EventHandler<EventArgs<Pair<IThumbnailProvider, Surface>>>, object, EventArgs<Pair<IThumbnailProvider, Surface>>>;
 
     // TODO: Add calls to VerifyNotDispose() for the next release where we can get enough testing for it
 

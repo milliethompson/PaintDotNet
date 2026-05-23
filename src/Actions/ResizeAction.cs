@@ -23,7 +23,7 @@ using System.Windows.Forms;
 namespace PaintDotNet.Actions
 {
     // TODO: split in to Action and Function
-    public sealed class ResizeAction 
+    internal sealed class ResizeAction 
         : DocumentWorkspaceAction
     {
         public static string StaticName

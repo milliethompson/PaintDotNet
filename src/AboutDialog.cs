@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class AboutDialog 
+    internal class AboutDialog 
         : PdnBaseForm
     {
         private System.Windows.Forms.Button okButton;

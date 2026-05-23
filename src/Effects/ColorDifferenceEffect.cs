@@ -26,7 +26,7 @@ namespace PaintDotNet.Effects
     /// (Chris Crosetto)
     /// </summary>
     public abstract class ColorDifferenceEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {            
         public unsafe void RenderColorDifferenceEffect(
             double[][] weights, 

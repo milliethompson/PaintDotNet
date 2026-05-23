@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public enum DocumentClickAction
+    internal enum DocumentClickAction
     {
         Select,
         Close

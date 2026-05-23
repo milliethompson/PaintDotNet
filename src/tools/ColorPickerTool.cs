@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class ColorPickerTool : Tool
+    internal class ColorPickerTool : Tool
     {
         private bool mouseDown;
         private Cursor colorPickerToolCursor;

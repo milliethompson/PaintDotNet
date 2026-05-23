@@ -14,14 +14,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    public enum MarqueeStyle
-    {
-        None,
-        Smooth,
-        Marquee
-    }
-
-    public abstract class UpdatesState
+    internal abstract class UpdatesState
         : State
     {
         private bool continueButtonVisible;
@@ -76,6 +69,7 @@ namespace PaintDotNet.Updates
         {
             this.continueButtonVisible = continueButtonVisible;
             this.marqueeStyle = marqueeStyle;
+            SystemLayer.Tracing.LogFeature("UpdatesState(" + GetType().Name + ")");
         }
     }
 }

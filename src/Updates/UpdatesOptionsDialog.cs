@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    public partial class UpdatesOptionsDialog 
+    internal class UpdatesOptionsDialog 
         : PdnBaseForm
     {
         public const string CommandLineParameter = "/updateOptions";

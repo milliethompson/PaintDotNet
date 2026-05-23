@@ -11,9 +11,7 @@ using System;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Tags an effect with a specific EffectTypeHint.
-    /// </summary>
+    [Obsolete]
     public sealed class EffectTypeHintAttribute
         : Attribute
     {

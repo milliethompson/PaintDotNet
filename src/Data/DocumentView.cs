@@ -730,7 +730,7 @@ namespace PaintDotNet
             }
         }
 
-        public event EventHandler<Document> DocumentChanging;
+        public event EventHandler<EventArgs<Document>> DocumentChanging;
         protected virtual void OnDocumentChanging(Document newDocument)
         {
             if (DocumentChanging != null)

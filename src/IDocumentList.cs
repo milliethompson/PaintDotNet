@@ -11,12 +11,12 @@ using System;
 
 namespace PaintDotNet
 {
-    public interface IDocumentList
+    internal interface IDocumentList
     {
         /// <summary>
         /// This event is raised when the user clicks on a Document in the list.
         /// </summary>
-        event EventHandler<Pair<DocumentWorkspace, DocumentClickAction>> DocumentClicked;
+        event EventHandler<EventArgs<Pair<DocumentWorkspace, DocumentClickAction>>> DocumentClicked;
 
         event EventHandler DocumentListChanged;
 

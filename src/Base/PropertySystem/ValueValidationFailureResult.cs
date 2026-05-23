@@ -37,6 +37,6 @@ namespace PaintDotNet.PropertySystem
         /// If an invalid value is set through a property's Value property, then an exception will
         /// be raised.
         /// </summary>
-        ThrowException,
+        ThrowException
     }
 }

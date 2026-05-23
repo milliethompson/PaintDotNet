@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class LayerForm
+    internal class LayerForm
         : FloatingToolForm
     {
         private PaintDotNet.LayerControl layerControl;

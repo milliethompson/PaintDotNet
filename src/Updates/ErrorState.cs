@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    public class ErrorState
+    internal class ErrorState
         : UpdatesState
     {
         public override string InfoText

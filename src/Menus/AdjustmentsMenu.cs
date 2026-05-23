@@ -14,7 +14,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Menus
 {
-    public sealed class AdjustmentsMenu
+    internal sealed class AdjustmentsMenu
         : EffectMenuBase
     {
         public AdjustmentsMenu()

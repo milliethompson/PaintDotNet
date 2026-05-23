@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Menus
 {
-    public sealed class CheckForUpdatesMenuItem
+    internal sealed class CheckForUpdatesMenuItem
         : PdnMenuItem
     {
         private StateMachineExecutor stateMachineExecutor;

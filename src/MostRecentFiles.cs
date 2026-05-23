@@ -17,7 +17,7 @@ namespace PaintDotNet
     /// <summary>
     /// Data structure to manage the Most Recently Used list of files.
     /// </summary>
-    public class MostRecentFiles
+    internal class MostRecentFiles
     {
         private Queue files; // contains MostRecentFile instances
         private int maxCount;

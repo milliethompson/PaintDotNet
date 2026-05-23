@@ -66,19 +66,19 @@ namespace PaintDotNet.Data.Quantize
             // And construct a rectangle from these dimensions
             Rectangle bounds = new Rectangle(0, 0, width, height);
 
-            // First off take a 32bpp copy of the image
-            Bitmap copy;
+            // First off take a 32bpp version of the image
+            Bitmap img32bpp;
             
             if (source is Bitmap && source.PixelFormat == PixelFormat.Format32bppArgb)
             {
-                copy = (Bitmap)source;
+                img32bpp = (Bitmap)source;
             }
             else
             {
-                copy = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+                img32bpp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
 
                 // Now lock the bitmap into memory
-                using (Graphics g = Graphics.FromImage(copy))
+                using (Graphics g = Graphics.FromImage(img32bpp))
                 {
                     g.PageUnit = GraphicsUnit.Pixel;
 
@@ -97,7 +97,7 @@ namespace PaintDotNet.Data.Quantize
             try
             {
                 // Get the source image bits and lock into memory
-                sourceData = copy.LockBits(bounds, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                sourceData = img32bpp.LockBits(bounds, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
 
                 // Call the FirstPass function if not a single pass algorithm.
                 // For something like an octree quantizer, this will run through
@@ -118,13 +118,13 @@ namespace PaintDotNet.Data.Quantize
             finally
             {
                 // Ensure that the bits are unlocked
-                copy.UnlockBits(sourceData);
+                img32bpp.UnlockBits(sourceData);
             }
 
-            if (copy != source)
+            if (img32bpp != source)
             {
-                copy.Dispose();
-                copy = null;
+                img32bpp.Dispose();
+                img32bpp = null;
             }
 
             // Last but not least, return the output bitmap
@@ -284,6 +284,7 @@ namespace PaintDotNet.Data.Quantize
                         errorNextRowG[width - (col + 1)] += errorGd;
                         errorNextRowB[width - (col + 1)] += errorBd;
 
+                        // unchecked is necessary because otherwise it throws a fit if ptrInc is negative.
                         unchecked
                         {
                             pSourcePixel += ptrInc;

@@ -70,7 +70,9 @@ namespace PaintDotNet.IndirectUI
             int vSpacing = UI.ScaleHeight(4);
 
             this.header.Location = new Point(0, 0);
-            this.header.Size = this.header.GetPreferredSize(new Size(ClientSize.Width, 1));
+            this.header.Size = string.IsNullOrEmpty(DisplayName) ?
+                new Size(ClientSize.Width, 0) :
+                this.header.GetPreferredSize(new Size(ClientSize.Width, 1));
 
             this.comboBox.Location = new Point(0, this.header.Bottom + vSpacing);
             this.comboBox.Width = ClientSize.Width;

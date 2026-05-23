@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.50727</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{05C4C721-F8E3-42E1-B817-9D165DA1A9FB}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -50,6 +50,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="CallbackOnDispose.cs" />
+    <Compile Include="Do.cs" />
+    <Compile Include="EventArgs`1.cs" />
     <Compile Include="ImageResource.cs" />
     <Compile Include="BoxedConstants.cs" />
     <Compile Include="DeferredFormatter.cs" />
@@ -74,7 +77,9 @@
     </Compile>
     <Compile Include="PropertySystem\ImageProperty.cs" />
     <Compile Include="PropertySystem\IPropertyRef.cs" />
+    <Compile Include="PropertySystem\LinkValuesBasedOnBooleanRule`2.cs" />
     <Compile Include="PropertySystem\ReadOnlyBoundToBooleanRule.cs" />
+    <Compile Include="PropertySystem\ReadOnlyBoundToValueRule`2.cs" />
     <Compile Include="PropertySystem\StaticListChoiceProperty.cs" />
     <Compile Include="PropertySystem\Int32Property.cs" />
     <Compile Include="PropertySystem\Property.cs">
@@ -83,7 +88,7 @@
     <Compile Include="PropertySystem\PropertyCollection.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="PropertySystem\PropertyCollectionRule`1.cs" />
+    <Compile Include="PropertySystem\PropertyCollectionRule.cs" />
     <Compile Include="PropertySystem\Property`1.cs">
       <SubType>Code</SubType>
     </Compile>

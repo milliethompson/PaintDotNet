@@ -142,13 +142,13 @@ namespace PaintDotNet.IndirectUI
 
         public object CreateConcreteControl(Type uiContainerType)
         {
-            if (typeof(Control).IsAssignableFrom(uiContainerType))
+            if (typeof(System.Windows.Forms.Control).IsAssignableFrom(uiContainerType))
             {
                 return CreateWinFormsControl();
             }
             else
             {
-                throw new ArgumentException("uiContainer is not from a supported UI technology");
+                throw new ArgumentException("uiContainerType is not from a supported UI technology");
             }
         }
 
@@ -158,7 +158,7 @@ namespace PaintDotNet.IndirectUI
 
         object ICloneable.Clone()
         {
-            throw new Exception("The method or operation is not implemented.");
+            return Clone();
         }
     }
 }

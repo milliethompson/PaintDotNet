@@ -13,7 +13,7 @@ using System;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class CutAction
+    internal sealed class CutAction
     {
         public static string StaticName
         {
@@ -73,6 +73,7 @@ namespace PaintDotNet.Actions
 
         public CutAction()
         {
+            SystemLayer.Tracing.LogFeature("CutAction");
         }
     }
 }

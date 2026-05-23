@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public interface IPenConfig
+    internal interface IPenConfig
     {
         event EventHandler PenInfoChanged;
 

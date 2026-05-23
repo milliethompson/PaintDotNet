@@ -46,6 +46,20 @@ namespace PaintDotNet.PropertySystem
         {
         }
 
+        protected override int OnCoerceValueT(object newValue)
+        {
+            if (newValue is double)
+            {
+                return (int)(double)newValue;
+            }
+            else if (newValue is float)
+            {
+                return (int)(float)newValue;
+            }
+
+            return base.OnCoerceValueT(newValue);
+        }
+
         public override Property Clone()
         {
             return new Int32Property(this, this);

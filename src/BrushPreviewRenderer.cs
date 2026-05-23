@@ -16,7 +16,7 @@ namespace PaintDotNet
     /// <summary>
     /// Renders a preview of the brush
     /// </summary>
-    public class BrushPreviewRenderer
+    internal class BrushPreviewRenderer
         : SurfaceBoxRenderer
     {
         private float brushSize;

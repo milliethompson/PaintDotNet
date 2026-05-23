@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public interface IResamplingConfig
+    internal interface IResamplingConfig
     {
         event EventHandler ResamplingAlgorithmChanged;
 

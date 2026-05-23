@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    public class UpdatesStateMachine
+    internal class UpdatesStateMachine
         : StateMachine
     {
         private Control uiContext;

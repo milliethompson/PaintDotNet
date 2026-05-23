@@ -163,7 +163,15 @@ namespace PaintDotNet
         private static string percentageFormat = PdnResources.GetString("ScaleFactor.Percentage.Format");
         public override string ToString()
         {
-            return string.Format(percentageFormat, unchecked(Math.Round(unchecked(100 * Ratio))));
+            try
+            {
+                return string.Format(percentageFormat, unchecked(Math.Round(unchecked(100 * Ratio))));
+            }
+
+            catch (ArithmeticException)
+            {
+                return "--";
+            }
         }
 
         public int ScaleScalar(int x)

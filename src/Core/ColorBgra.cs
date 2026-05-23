@@ -303,6 +303,34 @@ namespace PaintDotNet
         }
 
         /// <summary>
+        /// Constructs a new ColorBgra instance given a 32-bit signed integer that represents an R,G,B triple.
+        /// Alpha will be initialized to 255.
+        /// </summary>
+        public static ColorBgra FromOpaqueInt32(Int32 bgr)
+        {
+            if (bgr < 0 || bgr > 0xffffff)
+            {
+                throw new ArgumentOutOfRangeException("bgr", "must be in the range [0, 0xffffff]");
+            }
+
+            ColorBgra color = new ColorBgra();
+            color.Bgra = (uint)bgr;
+            color.A = 255;
+
+            return color;
+        }
+
+        public static int ToOpaqueInt32(ColorBgra color)
+        {
+            if (color.A != 255)
+            {
+                throw new InvalidOperationException("Alpha value must be 255 for this to work");
+            }
+
+            return (int)(color.Bgra & 0xffffff);
+        }
+
+        /// <summary>
         /// Constructs a new ColorBgra instance from the values in the given Color instance.
         /// </summary>
         public static ColorBgra FromColor(Color c)

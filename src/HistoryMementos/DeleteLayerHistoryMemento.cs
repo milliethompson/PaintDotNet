@@ -15,7 +15,7 @@ namespace PaintDotNet.HistoryMementos
     /// <summary>
     /// Provides the ability to undo deleting a layer.
     /// </summary>
-    public class DeleteLayerHistoryMemento
+    internal class DeleteLayerHistoryMemento
         : HistoryMemento
     {
         private int index;

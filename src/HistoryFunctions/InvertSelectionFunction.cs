@@ -14,7 +14,7 @@ using System.Drawing.Drawing2D;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public sealed class InvertSelectionFunction
+    internal sealed class InvertSelectionFunction
         : HistoryFunction
     {
         public static string StaticName

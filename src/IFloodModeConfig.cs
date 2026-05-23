@@ -12,7 +12,7 @@ using System.Drawing.Drawing2D;
 
 namespace PaintDotNet
 {
-    public interface IFloodModeConfig
+    internal interface IFloodModeConfig
     {
         event EventHandler FloodModeChanged;
 

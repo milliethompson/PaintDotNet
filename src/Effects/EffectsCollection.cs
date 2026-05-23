@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -20,10 +21,10 @@ namespace PaintDotNet.Effects
         private List<Type> effects;
 
         // Assembly, TypeName, Exception[]
-        private List<Triple<Assembly, string, Exception>> loaderExceptions =
-            new List<Triple<Assembly, string, Exception>>();
+        private List<Triple<Assembly, Type, Exception>> loaderExceptions =
+            new List<Triple<Assembly, Type, Exception>>();
 
-        private void AddLoaderException(Triple<Assembly, string, Exception> loaderException)
+        private void AddLoaderException(Triple<Assembly, Type, Exception> loaderException)
         {
             lock (this)
             {
@@ -31,7 +32,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        public Triple<Assembly, string, Exception>[] GetLoaderExceptions()
+        public Triple<Assembly, Type, Exception>[] GetLoaderExceptions()
         {
             lock (this)
             {
@@ -59,7 +60,7 @@ namespace PaintDotNet.Effects
                 {
                     if (this.effects == null)
                     {
-                        List<Triple<Assembly, string, Exception>> errors = new List<Triple<Assembly, string, Exception>>();
+                        List<Triple<Assembly, Type, Exception>> errors = new List<Triple<Assembly, Type, Exception>>();
                         this.effects = GetEffectsFromAssemblies(this.assemblies, errors);
 
                         for (int i = 0; i < errors.Count; ++i)
@@ -152,7 +153,7 @@ namespace PaintDotNet.Effects
         private static readonly Quadruple<string, string, Version, string>[] blockedEffects =
             new Quadruple<string, string, Version, string>[]
                 {
-                    // pyrochild's Film effect, v1.0.0.0
+                    // pyrochild's Film effect, v1.0.0.0, does some seriously weird stuff that hard crashes us no matter what
                     Quadruple.Create("FilmEffect", "FilmEffect", new Version(1, 0, int.MaxValue, int.MaxValue), UnstableMessage),
 
                     // Ed Harvey's Threshold effect, v1.0, uses a timer in its config dialog that NullRef's on us
@@ -165,8 +166,22 @@ namespace PaintDotNet.Effects
                     Quadruple.Create("PortraitEffect", "EffectPlugin", new Version(1, 0, int.MaxValue, int.MaxValue), BuiltInMessage),
 
                     // Reduce Noice, which is now built-in to Paint.NET
-                    Quadruple.Create("HistogramEffects", "ReduceNoiseEffect", new Version (1, 1, 0, 0), BuiltInMessage)
+                    Quadruple.Create("HistogramEffects", "ReduceNoiseEffect", new Version (1, 1, 0, 0), BuiltInMessage),
+
+                    // Fragment, which is now built-in
+                    Quadruple.Create("EdHarvey.Edfects.Effects", "FragmentEffect", new Version(3, 20, int.MaxValue, int.MaxValue), BuiltInMessage),
+
+                    // Some of pyrochild's effects were using some code in PaintDotNet.exe that is now marked internal. 
+                    // For some reason it is not caught by the plugin crash dialog in non-Debug builds.
+                    Quadruple.Create("pyrochild.effects.splatter", "Splatter", new Version(1, 0, int.MaxValue, int.MaxValue), UnstableMessage),
+                    Quadruple.Create("zachwalker.CurvesPlus", "CurvesPlus", new Version(2, 4, int.MaxValue, int.MaxValue), UnstableMessage),
+
+                    // GREYCstoration, has known stability issues, and is also superceded by the built-in "Reduce Noise" anyway
+                    Quadruple.Create("GREYCstoration", "BaseEffect", new Version(0, 9, int.MaxValue, int.MaxValue), UnstableMessage),
+                    Quadruple.Create("GREYCstoration", "RestoreEffect", new Version(0, 9, int.MaxValue, int.MaxValue), UnstableMessage)
                 };
+
+        private static Dictionary<string, List<Triple<string, Version, string>>> indexedBlockedEffects;
 
         private static Exception IsBannedEffect(Type effectType)
         {
@@ -176,18 +191,61 @@ namespace PaintDotNet.Effects
                 return null;
             }
 
+            // Make an index of that big Quadruple[] up there. Otherwise we may never scale well because
+            // we'll end up with the performance proportional to installed plugins * blocked plugins.
+            if (indexedBlockedEffects == null)
+            {
+                lock (blockedEffects)
+                {
+                    indexedBlockedEffects = new Dictionary<string, List<Triple<string, Version, string>>>(StringComparer.InvariantCultureIgnoreCase);
+
+                    foreach (var blockedEffect in blockedEffects)
+                    {
+                        string blockedEffectNamespace = blockedEffect.First;
+                        var blockedEffectDetails = blockedEffect.GetTriple234();
+
+                        List<Triple<string, Version, string>> blockedEffectDetailsSet;
+                        if (!indexedBlockedEffects.TryGetValue(blockedEffectNamespace, out blockedEffectDetailsSet))
+                        {
+                            blockedEffectDetailsSet = new List<Triple<string, Version, string>>();
+                            indexedBlockedEffects.Add(blockedEffectNamespace, blockedEffectDetailsSet);
+                        }
+
+                        blockedEffectDetailsSet.Add(blockedEffectDetails);
+                    }
+                }
+            }
+
+            // Gather the effect's details.
             Version assemblyVersion = GetAssemblyVersionFromType(effectType);
             string effectNamespace = effectType.Namespace;
             string effectName = effectType.Name;
 
+#if DEBUG
+            /*
+            // Makes it easy to copy+paste into the big Quadruple[] up there
+            SystemLayer.Tracing.Ping(string.Format(
+                "IsBannedEffect -- Quadruple.Create(\"{0}\", \"{1}\", new Version({2}, {3}, {4}, {5}), ...)",
+                effectNamespace,
+                effectName,
+                assemblyVersion.Major,
+                assemblyVersion.Minor,
+                assemblyVersion.Build,
+                assemblyVersion.Revision));
+             * */
+#endif
+
             // Block list #1
-            for (int i = 0; i < blockedEffects.Length; ++i)
+            List<Triple<string, Version, string>> blockedEffectDetailsList2;
+            if (indexedBlockedEffects.TryGetValue(effectNamespace, out blockedEffectDetailsList2))
             {
-                if (0 == string.Compare(effectNamespace, blockedEffects[i].First, StringComparison.InvariantCultureIgnoreCase) &&
-                    0 == string.Compare(effectName, blockedEffects[i].Second, StringComparison.InvariantCultureIgnoreCase) &&
-                    assemblyVersion <= blockedEffects[i].Third)
+                foreach (var blockedEffectDetails2 in blockedEffectDetailsList2)
                 {
-                    return new BlockedPluginException(blockedEffects[i].Fourth);
+                    if (0 == string.Compare(effectName, blockedEffectDetails2.First, StringComparison.InvariantCultureIgnoreCase) &&
+                        assemblyVersion <= blockedEffectDetails2.Second)
+                    {
+                        return new BlockedPluginException(blockedEffectDetails2.Third);
+                    }
                 }
             }
 
@@ -202,7 +260,7 @@ namespace PaintDotNet.Effects
             return null;
         }
 
-        private static List<Type> GetEffectsFromAssemblies(Assembly[] assemblies, IList<Triple<Assembly, string, Exception>> errorsResult)
+        private static List<Type> GetEffectsFromAssemblies(Assembly[] assemblies, IList<Triple<Assembly, Type, Exception>> errorsResult)
         {
             List<Type> effects = new List<Type>();
 
@@ -220,8 +278,7 @@ namespace PaintDotNet.Effects
                 if (bannedEx != null)
                 {
                     removeUs.Add(effectType);
-
-                    errorsResult.Add(Triple.Create(effectType.Assembly, effectType.ToString(), bannedEx));
+                    errorsResult.Add(Triple.Create(effectType.Assembly, effectType, bannedEx));
                 }
             }
 
@@ -233,7 +290,7 @@ namespace PaintDotNet.Effects
             return effects;
         }
 
-        private static void GetEffectsFromAssembly(Assembly assembly, IList<Type> effectsResult, IList<Triple<Assembly, string, Exception>> errorsResult)
+        private static void GetEffectsFromAssembly(Assembly assembly, IList<Type> effectsResult, IList<Triple<Assembly, Type, Exception>> errorsResult)
         {
             try
             {
@@ -253,7 +310,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private static Type[] GetTypesFromAssembly(Assembly assembly, IList<Triple<Assembly, string, Exception>> errorsResult)
+        private static Type[] GetTypesFromAssembly(Assembly assembly, IList<Triple<Assembly, Type, Exception>> errorsResult)
         {
             Type[] types;
 
@@ -277,15 +334,9 @@ namespace PaintDotNet.Effects
 
                 foreach (Exception loadEx in rex.LoaderExceptions)
                 {
-                    TypeLoadException asTlex = loadEx as TypeLoadException;
-                    string typeName = string.Empty;
-
-                    if (asTlex != null)
-                    {
-                        typeName = asTlex.TypeName;
-                    }
-
-                    errorsResult.Add(Triple.Create(assembly, typeName, loadEx));
+                    // Set Type to null, and the error dialog will look at the exception, see it is a TypeLoadException,
+                    // and use the TypeName property from there.
+                    errorsResult.Add(Triple.Create<Assembly, Type, Exception>(assembly, null, loadEx));
                 }
 
                 types = typesList.ToArray();

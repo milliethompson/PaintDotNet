@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public interface IToolChooser
+    internal interface IToolChooser
     {
         void SelectTool(Type toolType);
         void SelectTool(Type toolType, bool raiseEvent);

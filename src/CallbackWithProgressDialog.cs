@@ -14,7 +14,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public abstract class CallbackWithProgressDialog
+    internal abstract class CallbackWithProgressDialog
     {
         private ProgressDialog dialog;
         private string dialogTitle;

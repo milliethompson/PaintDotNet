@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class SaveConfigDialog 
+    internal class SaveConfigDialog 
         : PdnBaseDialog
     {
         private static readonly Size unscaledMinSize = new Size(600, 350);
@@ -313,6 +313,18 @@ namespace PaintDotNet
                 if (token == null)
                 {
                     token = this.fileType.GetLastSaveConfigToken();
+                }
+
+                // Make sure the token is of the expected type by checking it against the 'default' token from this file type
+                SaveConfigToken defaultToken = this.fileType.CreateDefaultSaveConfigToken();
+                if (token.GetType() != defaultToken.GetType())
+                {
+                    token = null;
+                }
+
+                if (token == null)
+                {
+                    token = this.fileType.CreateDefaultSaveConfigToken();
                 }
 
                 SaveConfigWidget newWidget = this.fileType.CreateSaveConfigWidget();
@@ -723,7 +735,10 @@ namespace PaintDotNet
 
         private void FileSizeProgressEventHandler(object state, ProgressEventArgs e)
         {
-            this.BeginInvoke(new Procedure<int>(SetFileSizeProgress), new object[] { (int)e.Percent });
+            if (IsHandleCreated)
+            {
+                this.BeginInvoke(new Procedure<int>(SetFileSizeProgress), new object[] { (int)e.Percent });
+            }
         }
 
         private void FileSizeTimerCallback(object state)

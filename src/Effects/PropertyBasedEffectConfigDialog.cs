@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
@@ -23,6 +24,9 @@ namespace PaintDotNet.Effects
     internal sealed class PropertyBasedEffectConfigDialog
         : EffectConfigDialog<PropertyBasedEffect, PropertyBasedEffectConfigToken>
     {
+        private const int defaultClientWidth96Dpi = 345;
+        private const int defaultClientHeight96Dpi = 125;
+
         private Button okButton;
         private Button cancelButton;
         private EtchedLine etchedLine;
@@ -30,6 +34,26 @@ namespace PaintDotNet.Effects
         private Panel configUIPanel;
         private Control configUIControl;
         private PropertyCollection properties;
+        private PropertyCollection windowProperties;
+
+        internal static PropertyCollection CreateWindowProperties()
+        {
+            List<Property> props = new List<Property>();
+
+            // Title
+            props.Add(new StringProperty(
+                ControlInfoPropertyNames.WindowTitle, 
+                string.Empty, 
+                Math.Min(1024, StringProperty.MaxMaxLength)));
+
+            // Sizability -- defaults to false
+            props.Add(new BooleanProperty(ControlInfoPropertyNames.WindowIsSizable, false));
+            
+            // Window width, as a scale of the default width (1.0 is obviously the default)
+            props.Add(new DoubleProperty(ControlInfoPropertyNames.WindowWidthScale, 1.0, 1.0, 2.0));
+
+            return new PropertyCollection(props);
+        }
 
         protected override PropertyBasedEffectConfigToken CreateInitialToken()
         {
@@ -116,13 +140,22 @@ namespace PaintDotNet.Effects
                 OnLayoutImpl();
             }
 
+            Size newMinimumSize = new Size(idealWindowSize.Width, Math.Min(workingArea.Height, Math.Min(idealWindowSize.Height, UI.ScaleHeight(500))));
+
+            Size minimumClientSize = WindowSizeToClientSize(newMinimumSize);
+
+            MinimumSize = newMinimumSize;
+
+            ClientSize = new Size(
+                (int)(ClientSize.Width * (double)this.windowProperties[ControlInfoPropertyNames.WindowWidthScale].Value),
+                Math.Min(ClientSize.Height, (workingArea.Height * 9) / 10)); // max height should ever be 90% of working screen area height
+
             base.OnLoad(e);
         }
 
         protected override void OnLayout(LayoutEventArgs levent)
         {
             Size idealClientSize = OnLayoutImpl();
-
             base.OnLayout(levent);
         }
 
@@ -159,8 +192,14 @@ namespace PaintDotNet.Effects
                 Math.Min(this.okButton.Top, this.cancelButton.Top) - vMargin - this.etchedLine.Height);
 
             // Commenting out this line of code, along with the others marked //2 and //3, fixes the
-            // problem whereby the trackbar was always drawing a focus rectangle.
-            //UI.SuspendControlPainting(this.configUIPanel); //1
+            // problem whereby the trackbar was always drawing a focus rectangle. However, if we enable
+            // a resizable dialog, commenting out these lines results in some fidgety looking drawing.
+            bool paintingSuspended = false;
+            if (IsHandleCreated)
+            {
+                UI.SuspendControlPainting(this.configUIPanel); //1
+                paintingSuspended = true;
+            }
 
             this.configUIPanel.SuspendLayout();
 
@@ -171,6 +210,7 @@ namespace PaintDotNet.Effects
                 insetWidth,
                 ClientSize.Height - topMargin - (ClientSize.Height - this.etchedLine.Top) - vMargin);
 
+            Point autoScrollPos = this.configUIPanel.AutoScrollPosition;
             this.configUIPanel.AutoScroll = false;
 
             int propertyWidth1 = configUIWidth;
@@ -219,11 +259,34 @@ namespace PaintDotNet.Effects
                 }
             }
 
+
             this.configUIPanel.ResumeLayout(false);
             this.configUIPanel.PerformLayout();
 
-            //UI.ResumeControlPainting(this.configUIPanel); //2
-            //Invalidate(true); //3
+            SendOrPostCallback finishPainting = new SendOrPostCallback((s) =>
+                {
+                    try
+                    {
+                        if (IsHandleCreated && !IsDisposed)
+                        {
+                            this.configUIControl.Location = new Point(0, 0);
+                            this.configUIPanel.AutoScrollPosition = new Point(-autoScrollPos.X, -autoScrollPos.Y);
+
+                            if (paintingSuspended)
+                            {
+                                UI.ResumeControlPainting(this.configUIPanel); //2
+                            }
+
+                            Refresh();
+                        }
+                    }
+
+                    catch (Exception)
+                    {
+                    }
+                });
+
+            SynchronizationContext.Current.Post(finishPainting, null);
 
             Size idealClientSize = new Size(
                 ClientSize.Width, 
@@ -237,21 +300,20 @@ namespace PaintDotNet.Effects
             this.properties = ((PropertyCollection)context).Clone();
         }
 
-        public PropertyBasedEffectConfigDialog(PropertyCollection propertyCollection, ControlInfo configUI)
+        public PropertyBasedEffectConfigDialog(PropertyCollection propertyCollection, ControlInfo configUI, PropertyCollection windowProperties)
             : base(propertyCollection)
         {
+            this.windowProperties = windowProperties.Clone();
             this.configUI = (ControlInfo)configUI.Clone();
 
+            // Make sure that the properties in props and configUI are not the same objects
             foreach (Property property in propertyCollection)
             {
                 PropertyControlInfo pci = this.configUI.FindControlForPropertyName(property.Name);
 
-                if (pci != null)
+                if (pci != null && object.ReferenceEquals(property, pci.Property))
                 {
-                    if (object.ReferenceEquals(property, pci.Property))
-                    {
-                        throw new ArgumentException("Property references in propertyCollection must not be the same as those in configUI");
-                    }
+                    throw new ArgumentException("Property references in propertyCollection must not be the same as those in configUI");
                 }
             }
 
@@ -262,6 +324,7 @@ namespace PaintDotNet.Effects
             this.cancelButton.Name = "cancelButton";
             this.configUIPanel = new Panel();
             this.configUIControl = (Control)this.configUI.CreateConcreteControl(this);
+            this.configUIControl.Location = new Point(0, 0);
 
             this.configUIPanel.SuspendLayout();
             this.configUIControl.SuspendLayout();
@@ -300,6 +363,7 @@ namespace PaintDotNet.Effects
             this.configUIControl.TabIndex = tabIndex;
             ++tabIndex;
 
+            // Set up data binding
             foreach (Property property in this.properties)
             {
                 PropertyControlInfo pci = this.configUI.FindControlForPropertyName(property.Name);
@@ -314,7 +378,6 @@ namespace PaintDotNet.Effects
 
                     // ASSUMPTION: We assume that the concrete WinForms Control holds a reference to
                     //             the same Property instance as the ControlInfo it was created from.
-                    //             This is enforced via the exception we throw above if pci==null.
 
                     controlsProperty.ValueChanged += ControlsProperty_ValueChanged;
                 }
@@ -328,9 +391,13 @@ namespace PaintDotNet.Effects
 
             AcceptButton = this.okButton;
             CancelButton = this.cancelButton;
-            FormBorderStyle = FormBorderStyle.FixedDialog;
 
-            ClientSize = new Size(UI.ScaleWidth(345), UI.ScaleHeight(125));
+            bool isSizable =  (bool)this.windowProperties[ControlInfoPropertyNames.WindowIsSizable].Value;
+            FormBorderStyle = isSizable ? FormBorderStyle.Sizable : FormBorderStyle.FixedDialog;
+
+            Text = (string)this.windowProperties[ControlInfoPropertyNames.WindowTitle].Value;
+
+            ClientSize = new Size(UI.ScaleWidth(defaultClientWidth96Dpi), UI.ScaleHeight(defaultClientHeight96Dpi));
 
             this.configUIControl.ResumeLayout(false);
             this.configUIPanel.ResumeLayout(false);
@@ -356,19 +423,6 @@ namespace PaintDotNet.Effects
                 {
                     property.Value = controlsProperty.Value;
                 }
-            }
-
-            FinishTokenUpdate();
-        }
-
-        private void Property_ValueChanged(object sender, EventArgs e)
-        {
-            Property property = (Property)sender;
-            PropertyControlInfo pci = this.configUI.FindControlForPropertyName(property.Name);
-
-            if (pci != null && !pci.Property.Value.Equals(property.Value))
-            {
-                pci.Property.Value = property.Value;
             }
 
             FinishTokenUpdate();

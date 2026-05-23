@@ -48,6 +48,16 @@ namespace PaintDotNet.PropertySystem
             // sentinelNotUsed is just there so that this constructor can be unambiguous from Property<T>(object)
         }
 
+        protected virtual T OnCoerceValueT(object newValue)
+        {
+            return (T)newValue;
+        }
+
+        protected override sealed object OnCoerceValue(object newValue)
+        {
+            return OnCoerceValueT(newValue);
+        }
+
         protected override sealed object OnClampNewValue(object newValue)
         {
             return OnClampNewValueT((T)newValue);
@@ -62,7 +72,8 @@ namespace PaintDotNet.PropertySystem
 
         protected override sealed bool ValidateNewValue(object newValue)
         {
-            return ValidateNewValueT((T)newValue);
+            T newValueT = (T)newValue;
+            return ValidateNewValueT(newValueT);
         }
 
         protected virtual string PropertyValueToStringT(T value)

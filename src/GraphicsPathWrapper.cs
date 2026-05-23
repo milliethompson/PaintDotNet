@@ -20,7 +20,7 @@ namespace PaintDotNet
     /// for that matter)
     /// </summary>
     [Serializable]
-    public class GraphicsPathWrapper
+    internal class GraphicsPathWrapper
     {
         private PointF[] points;
         private byte[] types;

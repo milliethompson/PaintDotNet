@@ -18,7 +18,7 @@ using System.Windows.Forms;
 namespace PaintDotNet.Effects
 {
     public sealed class GaussianBlurEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public enum PropertyNames
         {

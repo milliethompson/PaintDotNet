@@ -7,7 +7,11 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.PropertySystem;
+using PaintDotNet.IndirectUI;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -15,19 +19,64 @@ using System.IO;
 namespace PaintDotNet
 {
     public sealed class BmpFileType
-        : GdiPlusFileType
+        : InternalFileType
     {
         public BmpFileType()
-            : base(PdnResources.GetString("BmpFileType.Name"),
-                   ImageFormat.Bmp, 
-                   false, 
-                   new string[] { ".bmp" })
+            : base("BMP", FileTypeFlags.SupportsLoading | FileTypeFlags.SupportsSaving, new string[] { ".bmp" })
         {
         }
 
-        public override bool IsReflexive(SaveConfigToken token)
+        public enum PropertyNames
         {
-            return false;
+            BitDepth,
+            DitherLevel,
+        }
+
+        public enum BmpBitDepthUIChoices
+        {
+            AutoDetect,
+            Bpp24,
+            Bpp8,
+        }
+        
+        public override PropertyCollection OnCreateSavePropertyCollection()
+        {
+            List<Property> props = new List<Property>();
+
+            props.Add(StaticListChoiceProperty.CreateForEnum<BmpBitDepthUIChoices>(PropertyNames.BitDepth, BmpBitDepthUIChoices.AutoDetect, false));
+            props.Add(new Int32Property(PropertyNames.DitherLevel, 7, 0, 8));
+
+            List<PropertyCollectionRule> rules = new List<PropertyCollectionRule>();
+
+            rules.Add(new ReadOnlyBoundToValueRule<object, StaticListChoiceProperty>(PropertyNames.DitherLevel, PropertyNames.BitDepth, BmpBitDepthUIChoices.Bpp8, true));
+
+            PropertyCollection pc = new PropertyCollection(props, rules);
+
+            return pc;
+        }
+
+        public override ControlInfo OnCreateSaveConfigUI(PropertyCollection props)
+        {
+            ControlInfo configUI = CreateDefaultSaveConfigUI(props);
+
+            configUI.SetPropertyControlValue(
+                PropertyNames.BitDepth,
+                ControlInfoPropertyNames.DisplayName,
+                PdnResources.GetString("BmpFileType.ConfigUI.BitDepth.DisplayName"));
+
+            PropertyControlInfo bitDepthPCI = configUI.FindControlForPropertyName(PropertyNames.BitDepth);
+            bitDepthPCI.SetValueDisplayName(BmpBitDepthUIChoices.AutoDetect, PdnResources.GetString("BmpFileType.ConfigUI.BitDepth.AutoDetect.DisplayName"));
+            bitDepthPCI.SetValueDisplayName(BmpBitDepthUIChoices.Bpp24, PdnResources.GetString("BmpFileType.ConfigUI.BitDepth.Bpp24.DisplayName"));
+            bitDepthPCI.SetValueDisplayName(BmpBitDepthUIChoices.Bpp8, PdnResources.GetString("BmpFileType.ConfigUI.BitDepth.Bpp8.DisplayName"));
+
+            configUI.SetPropertyControlType(PropertyNames.BitDepth, PropertyControlType.RadioButton);
+
+            configUI.SetPropertyControlValue(
+                PropertyNames.DitherLevel,
+                ControlInfoPropertyNames.DisplayName,
+                PdnResources.GetString("BmpFileType.ConfigUI.DitherLevel.DisplayName"));
+
+            return configUI;
         }
 
         protected override Document OnLoad(Stream input)
@@ -37,72 +86,104 @@ namespace PaintDotNet
             if (input.Length == 0)
             {
                 Document newDoc = new Document(800, 600);
+
                 Layer layer = Layer.CreateBackgroundLayer(newDoc.Width, newDoc.Height);
+
                 newDoc.Layers.Add(layer);
                 return newDoc;
             }
             else
             {
-                return base.OnLoad(input);
-            }
-        }
-
-        private unsafe void SquishSurfaceTo24Bpp(Surface surface)
-        {
-            byte *dst = (byte *)surface.GetRowAddress(0);
-            int byteWidth = surface.Width * 3;
-            int stride24bpp = ((byteWidth + 3) / 4) * 4; // round up to multiple of 4
-            int delta = stride24bpp - byteWidth;
-
-            for (int y = 0; y < surface.Height; ++y)
-            {
-                ColorBgra *src = surface.GetRowAddress(y);
-                ColorBgra *srcEnd = src + surface.Width;
-
-                while (src < srcEnd)
+                using (Image image = PdnResources.LoadImage(input))
                 {
-                    dst[0] = src->B;
-                    dst[1] = src->G;
-                    dst[2] = src->R;
-                    ++src;
-                    dst += 3;
+                    Document document = Document.FromImage(image);
+                    return document;
                 }
-
-                dst += delta;
             }
-
-            return;
         }
 
-        private unsafe Bitmap CreateAliased24BppBitmap(Surface surface)
+        protected override int GetDitherLevelFromToken(PropertyBasedSaveConfigToken token)
         {
-            int stride = surface.Width * 3;
-            int realStride = ((stride + 3) / 4) * 4; // round up to multiple of 4
-            return new Bitmap(surface.Width, surface.Height, realStride, PixelFormat.Format24bppRgb, new IntPtr(surface.Scan0.VoidStar));
+            int ditherLevel = token.GetProperty<Int32Property>(PropertyNames.DitherLevel).Value;
+            return ditherLevel;
         }
 
-        protected override void OnSave(Document input, Stream output, SaveConfigToken token, Surface scratchSurface, ProgressEventHandler callback)
+        protected override int GetThresholdFromToken(PropertyBasedSaveConfigToken token)
         {
-            ImageCodecInfo icf = GdiPlusFileType.GetImageCodecInfo(ImageFormat.Bmp);
-            EncoderParameters parms = new EncoderParameters(1);
-            EncoderParameter parm = new EncoderParameter(System.Drawing.Imaging.Encoder.ColorDepth, 24); // BMP's should always save as 24-bit
-            parms.Param[0] = parm;
+            return 0;
+        }
 
-            scratchSurface.Clear(ColorBgra.White);
+        protected override Set<SavableBitDepths> CreateAllowedBitDepthListFromToken(PropertyBasedSaveConfigToken token)
+        {
+            BmpBitDepthUIChoices bitDepth = (BmpBitDepthUIChoices)token.GetProperty<StaticListChoiceProperty>(PropertyNames.BitDepth).Value;
 
-            using (RenderArgs ra = new RenderArgs(scratchSurface))
+            Set<SavableBitDepths> bitDepths = new Set<SavableBitDepths>();
+
+            switch (bitDepth)
             {
-                input.Render(ra, true);
+                case BmpBitDepthUIChoices.AutoDetect:
+                    bitDepths.Add(SavableBitDepths.Rgb24);
+                    bitDepths.Add(SavableBitDepths.Rgb8);
+                    break;
+
+                case BmpBitDepthUIChoices.Bpp24:
+                    bitDepths.Add(SavableBitDepths.Rgb24);
+                    break;
+
+                case BmpBitDepthUIChoices.Bpp8:
+                    bitDepths.Add(SavableBitDepths.Rgb8);
+                    break;
+
+                default:
+                    throw new InvalidEnumArgumentException("bitDepth", (int)bitDepth, typeof(BmpBitDepthUIChoices));
             }
 
-            // In order to save memory, we 'squish' the 32-bit bitmap down to 24-bit in-place
-            // instead of allocating a new bitmap and copying it over.
-            SquishSurfaceTo24Bpp(scratchSurface);
+            return bitDepths;
+        }
 
-            using (Bitmap bitmap = CreateAliased24BppBitmap(scratchSurface))
+        protected override void  FinalSave(
+            Document input, 
+            Stream output, 
+            Surface scratchSurface, 
+            int ditherLevel, 
+            SavableBitDepths bitDepth,
+            PropertyBasedSaveConfigToken token,
+            ProgressEventHandler progressCallback)
+        {
+            // finally, do the save.
+            if (bitDepth == SavableBitDepths.Rgb24)
             {
-                GdiPlusFileType.LoadProperties(bitmap, input);
-                bitmap.Save(output, icf, parms);
+                // In order to save memory, we 'squish' the 32-bit bitmap down to 24-bit in-place
+                // instead of allocating a new bitmap and copying it over.
+                SquishSurfaceTo24Bpp(scratchSurface);
+
+                ImageCodecInfo icf = GdiPlusFileType.GetImageCodecInfo(ImageFormat.Bmp);
+                EncoderParameters parms = new EncoderParameters(1);
+                EncoderParameter parm = new EncoderParameter(Encoder.ColorDepth, 24);
+                parms.Param[0] = parm;
+
+                using (Bitmap bitmap = CreateAliased24BppBitmap(scratchSurface))
+                {
+                    GdiPlusFileType.LoadProperties(bitmap, input);
+                    bitmap.Save(output, icf, parms);
+                }
+            }
+            else if (bitDepth == SavableBitDepths.Rgb8)
+            {
+                using (Bitmap quantized = Quantize(scratchSurface, ditherLevel, 256, false, progressCallback))
+                {
+                    ImageCodecInfo icf = GdiPlusFileType.GetImageCodecInfo(ImageFormat.Bmp);
+                    EncoderParameters parms = new EncoderParameters(1);
+                    EncoderParameter parm = new EncoderParameter(Encoder.ColorDepth, 8);
+                    parms.Param[0] = parm;
+
+                    GdiPlusFileType.LoadProperties(quantized, input);
+                    quantized.Save(output, icf, parms);
+                }
+            }
+            else
+            {
+                throw new InvalidEnumArgumentException("bitDepth", (int)bitDepth, typeof(SavableBitDepths));
             }
         }
     }

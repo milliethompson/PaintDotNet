@@ -38,12 +38,6 @@ namespace PaintDotNet.SystemLayer
             GC.KeepAlive(form);
         }
 
-        [Obsolete]
-        public static void EnableDpiAware()
-        {
-            return;
-        }
-
         /// <summary>
         /// In some circumstances, the window manager will draw the window larger than it reports
         /// its size to be. You can use this function to retrieve the size of this extra border
@@ -299,15 +293,6 @@ namespace PaintDotNet.SystemLayer
             }
         }
        
-        /// <summary>
-        /// This method is obsolete. Use SuspendControlPainting() and ResumeControlPainting() instead.
-        /// </remarks>
-        [Obsolete("Use SuspendControlPainting() and ResumeControlPainting() instead")]
-        public static void SetControlRedraw(Control control, bool enabled)
-        {
-            SetControlRedrawImpl(control, enabled);
-        }
-
         /// <summary>
         /// Sets the control's redraw state.
         /// </summary>

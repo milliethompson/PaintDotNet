@@ -14,7 +14,7 @@ namespace PaintDotNet
     /// <summary>
     /// Represents common UI actions.
     /// </summary>
-    public enum CommonAction
+    internal enum CommonAction
     {
         New,
         Open,

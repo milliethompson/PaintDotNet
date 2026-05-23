@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class CommonActionsStrip 
+    internal class CommonActionsStrip 
         : ToolStripEx
     {
         private ToolStripSeparator separator0;
@@ -113,7 +113,7 @@ namespace PaintDotNet
             this.ResumeLayout(false);
         }
 
-        public event EventHandler<CommonAction> ButtonClick;
+        public event EventHandler<EventArgs<CommonAction>> ButtonClick;
         protected void OnButtonClick(CommonAction action)
         {
             if (ButtonClick != null)
@@ -127,6 +127,7 @@ namespace PaintDotNet
             if (e.ClickedItem is ToolStripButton)
             {
                 CommonAction action = (CommonAction)e.ClickedItem.Tag;
+                Tracing.LogFeature("CommonActionsStrip(" + action.ToString() + ")");
                 OnButtonClick(action);
             }
 

@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class MagicWandTool
+    internal class MagicWandTool
         : FloodToolBase
     {
         private Cursor cursorMouseUp;

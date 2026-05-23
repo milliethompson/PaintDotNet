@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    public class StartupState
+    internal class StartupState
         : UpdatesState
     {
         // Beta and alpha builds should check every day

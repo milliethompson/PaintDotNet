@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class IconBox : 
+    internal class IconBox : 
         System.Windows.Forms.UserControl
     {
         private Bitmap renderSurface = null;

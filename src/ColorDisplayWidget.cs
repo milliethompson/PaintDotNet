@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class ColorDisplayWidget 
+    internal class ColorDisplayWidget 
         : System.Windows.Forms.UserControl
     {
         private System.ComponentModel.IContainer components;

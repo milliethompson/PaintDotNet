@@ -12,7 +12,7 @@ using System;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public sealed class SwapLayerFunction
+    internal sealed class SwapLayerFunction
         : HistoryFunction
     {
         private int layer1Index;

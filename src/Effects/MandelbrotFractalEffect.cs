@@ -18,7 +18,7 @@ using System.Text;
 namespace PaintDotNet.Effects
 {
     public sealed class MandelbrotFractalEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public static string StaticName
         {

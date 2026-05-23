@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class PasteInToNewLayerAction
+    internal sealed class PasteInToNewLayerAction
     {
         private DocumentWorkspace documentWorkspace;
 

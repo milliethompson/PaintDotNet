@@ -21,7 +21,7 @@ namespace PaintDotNet.Actions
     /// 2. Through the ResizeCanvas static method
     /// </summary>
     // TODO: split in to Action and Function
-    public sealed class CanvasSizeAction
+    internal sealed class CanvasSizeAction
         : DocumentWorkspaceAction
     {
         public static string StaticName

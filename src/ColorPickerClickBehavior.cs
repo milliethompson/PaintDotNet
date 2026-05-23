@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public enum ColorPickerClickBehavior
+    internal enum ColorPickerClickBehavior
     {
         NoToolSwitch,
         SwitchToLastTool,

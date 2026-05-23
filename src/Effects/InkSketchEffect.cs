@@ -45,7 +45,7 @@ using System.Drawing;
 namespace PaintDotNet.Effects
 {
     public sealed class InkSketchEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public enum PropertyNames
         {

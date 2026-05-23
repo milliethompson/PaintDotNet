@@ -89,7 +89,10 @@ namespace PaintDotNet.IndirectUI
 
         private void CheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            Property.Value = this.checkBox.Checked;
+            if (Property.Value != this.checkBox.Checked)
+            {
+                Property.Value = this.checkBox.Checked;
+            }
         }
 
         protected override void OnPropertyValueChanged()

@@ -92,6 +92,7 @@ namespace PaintDotNet
         protected override void OnShown(EventArgs e)
         {
             isShown = true;
+            Tracing.LogFeature("ShowDialog(" + GetType().FullName + ")");
             base.OnShown(e);
         }
 

@@ -37,7 +37,7 @@ namespace PaintDotNet
     ///   documentation says otherwise. The base implementation gives the Tool a chance to provide
     ///   default, overridable behavior for an event.
     /// </remarks>
-    public class Tool
+    internal class Tool
         : IDisposable,
           IHotKeyTarget
     {

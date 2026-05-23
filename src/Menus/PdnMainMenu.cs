@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Menus
 {
-    public sealed class PdnMainMenu
+    internal sealed class PdnMainMenu
         : MenuStripEx
     {
         private FileMenu fileMenu;

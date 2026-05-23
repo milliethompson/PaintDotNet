@@ -13,7 +13,7 @@ using System.Text;
 
 namespace PaintDotNet
 {
-    public enum MoveNubShape
+    internal enum MoveNubShape
     {
         Square,
         Compass,

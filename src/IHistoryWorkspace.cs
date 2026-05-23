@@ -13,7 +13,7 @@ using System.Text;
 
 namespace PaintDotNet
 {
-    public interface IHistoryWorkspace
+    internal interface IHistoryWorkspace
     {
         Document Document
         {

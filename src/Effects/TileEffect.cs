@@ -17,8 +17,8 @@ using System.Runtime.InteropServices;
 
 namespace PaintDotNet.Effects
 {
-    public sealed class TileEffect 
-        : PropertyBasedEffect
+    public sealed class TileEffect
+        : InternalPropertyBasedEffect
     {
         public static Image StaticImage
         {

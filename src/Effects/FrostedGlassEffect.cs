@@ -23,7 +23,7 @@ using System.Windows.Forms;
 namespace PaintDotNet.Effects
 {
     public sealed class FrostedGlassEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public static string StaticName
         {

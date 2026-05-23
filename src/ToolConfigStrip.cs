@@ -22,7 +22,7 @@ namespace PaintDotNet
 {
     // TODO: for 4.0, refactor into smaller ToolConfigStrip "Sections"
     //       better yet, use IndirectUI
-    public class ToolConfigStrip
+    internal class ToolConfigStrip
         : ToolStripEx,
           IBrushConfig,
           IShapeTypeConfig, 
@@ -408,7 +408,9 @@ namespace PaintDotNet
 
         private void ShapeMI_Click(object sender, EventArgs e)
         {
-            this.ShapeDrawType = (ShapeDrawType)((ToolStripMenuItem)sender).Tag;
+            ShapeDrawType sdt = (ShapeDrawType)((ToolStripMenuItem)sender).Tag;
+            Tracing.LogFeature("ToolConfigStrip(" + sdt.ToString() + ")");
+            this.ShapeDrawType = sdt;
         }
 
         public ToolConfigStrip()
@@ -766,6 +768,8 @@ namespace PaintDotNet
             this.shapeButton.ButtonClick +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(shapeButton)");
+
                     switch (ShapeDrawType)
                     {
                         case ShapeDrawType.Outline:
@@ -835,6 +839,7 @@ namespace PaintDotNet
             this.gradientChannelsSplitButton.ButtonClick +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(gradientChannelsSplitButton)");
                     GradientInfo = new GradientInfo(GradientInfo.GradientType, !GradientInfo.AlphaOnly);
                 };
             //
@@ -852,6 +857,8 @@ namespace PaintDotNet
             this.penSizeDecButton.Click +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(penSizeDecButton)");
+
                     float amount = -1.0f;
 
                     if ((Control.ModifierKeys & Keys.Control) != 0)
@@ -876,6 +883,8 @@ namespace PaintDotNet
             this.penSizeIncButton.Click +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(penSizeIncButton)");
+
                     float amount = 1.0f;
 
                     if ((Control.ModifierKeys & Keys.Control) != 0)
@@ -902,6 +911,7 @@ namespace PaintDotNet
             this.penStartCapSplitButton.ButtonClick +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(penStartCapSplitButton)");
                     CyclePenStartCap();
                 };
             //
@@ -918,6 +928,7 @@ namespace PaintDotNet
             this.penDashStyleSplitButton.ButtonClick +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(penDashStyleSplitButton)");
                     CyclePenDashStyle();
                 };
             //
@@ -933,6 +944,7 @@ namespace PaintDotNet
             this.penEndCapSplitButton.ButtonClick +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(penEndCapSplitButton)");
                     CyclePenEndCap();
                 };
             //
@@ -949,6 +961,7 @@ namespace PaintDotNet
             this.antiAliasingSplitButton.ButtonClick +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(antiAliasingSplitButton)");
                     AntiAliasing = !AntiAliasing;
                 };
             //
@@ -965,6 +978,7 @@ namespace PaintDotNet
             this.alphaBlendingSplitButton.ButtonClick +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(alphaBlendingSplitButton)");
                     AlphaBlending = !AlphaBlending;
                 };
             //
@@ -1104,6 +1118,7 @@ namespace PaintDotNet
             this.selectionCombineModeSplitButton.ButtonClick +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(selectionCombineModeSplitButton)");
                     this.SelectionCombineMode = CycleSelectionCombineMode(this.SelectionCombineMode);
                 };
             //
@@ -1128,6 +1143,7 @@ namespace PaintDotNet
             this.floodModeSplitButton.ButtonClick +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(floodModeSplitButton)");
                     this.FloodMode = CycleFloodMode(this.FloodMode);
                 };
             //
@@ -1152,6 +1168,7 @@ namespace PaintDotNet
             this.selectionDrawModeSplitButton.ButtonClick +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(selectionDrawModeSplitButton)");
                     SelectionDrawMode newSDM = CycleSelectionDrawMode(this.SelectionDrawModeInfo.DrawMode);
                     this.SelectionDrawModeInfo = this.SelectionDrawModeInfo.CloneWithNewDrawMode(newSDM);
                 };
@@ -1173,6 +1190,8 @@ namespace PaintDotNet
             this.selectionDrawModeWidthTextBox.Leave +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(selectionDrawModeWidthTextBox.Leave)");
+
                     double newWidth;
                     if (double.TryParse(this.selectionDrawModeWidthTextBox.Text, out newWidth))
                     {
@@ -1190,6 +1209,8 @@ namespace PaintDotNet
             this.selectionDrawModeSwapButton.Click +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(selectionDrawModeSwapButton)");
+
                     SelectionDrawModeInfo oldSDMI = this.SelectionDrawModeInfo;
                     SelectionDrawModeInfo newSDMI = new SelectionDrawModeInfo(oldSDMI.DrawMode, oldSDMI.Height, oldSDMI.Width, oldSDMI.Units);
                     this.SelectionDrawModeInfo = newSDMI;
@@ -1212,6 +1233,8 @@ namespace PaintDotNet
             this.selectionDrawModeHeightTextBox.Leave +=
                 delegate(object sender, EventArgs e)
                 {
+                    Tracing.LogFeature("ToolConfigStrip(selectionDrawModeHeightTextBox.Leave)");
+
                     double newHeight;
                     if (double.TryParse(this.selectionDrawModeHeightTextBox.Text, out newHeight))
                     {
@@ -1352,6 +1375,8 @@ namespace PaintDotNet
 
         private void GradientTypeButtonClicked(object sender, EventArgs e)
         {
+            Tracing.LogFeature("ToolConfigStrip(GradientTypeButtonClicked)");
+
             GradientType newType = (GradientType)((ToolStripButton)sender).Tag;
             GradientInfo = new GradientInfo(newType, GradientInfo.AlphaOnly);
         }
@@ -1525,32 +1550,41 @@ namespace PaintDotNet
         {
             if (e.ClickedItem == fontBoldButton)
             {
+                Tracing.LogFeature("ToolConfigStrip(fontBoldButton)");
+
                 this.fontStyle ^= FontStyle.Bold;
                 SetFontStyleButtons(this.fontStyle);
                 this.OnFontInfoChanged();
             }
             else if (e.ClickedItem == fontItalicsButton)
             {
+                Tracing.LogFeature("ToolConfigStrip(fontItalicsButton)");
+
                 this.fontStyle ^= FontStyle.Italic;
                 SetFontStyleButtons(this.fontStyle);
                 this.OnFontInfoChanged();
             }
             else if (e.ClickedItem == fontUnderlineButton)
             {
+                Tracing.LogFeature("ToolConfigStrip(fontUnderlineButton)");
+
                 this.fontStyle ^= FontStyle.Underline;
                 SetFontStyleButtons(this.fontStyle);
                 this.OnFontInfoChanged();
             }
             else if (e.ClickedItem == fontAlignLeftButton)
             {
+                Tracing.LogFeature("ToolConfigStrip(fontAlignLeftButton)");
                 this.FontAlignment = TextAlignment.Left;
             }
             else if (e.ClickedItem == fontAlignCenterButton)
             {
+                Tracing.LogFeature("ToolConfigStrip(fontAlignCenterButton)");
                 this.FontAlignment = TextAlignment.Center;
             }
             else if (e.ClickedItem == fontAlignRightButton)
             {
+                Tracing.LogFeature("ToolConfigStrip(fontAlignRightButton)");
                 this.FontAlignment = TextAlignment.Right;
             }
 
@@ -2035,6 +2069,7 @@ namespace PaintDotNet
             }
 
             staticFontNames = fontNames;
+            Tracing.LogFeature("PopulateFonts()");
         }
 
         public event EventHandler FontInfoChanged;

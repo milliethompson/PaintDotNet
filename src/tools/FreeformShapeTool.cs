@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class FreeformShapeTool
+    internal class FreeformShapeTool
         : ShapeTool 
     {
         private Cursor freeformShapeToolCursor;

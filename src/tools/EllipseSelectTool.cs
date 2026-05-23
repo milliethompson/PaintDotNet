@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class EllipseSelectTool
+    internal class EllipseSelectTool
         : SelectionTool
     {
         private Cursor cursorMouseUp, cursorMouseDown;

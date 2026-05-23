@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public enum FlipType
+    internal enum FlipType
     {
         Horizontal,
         Vertical

@@ -13,7 +13,7 @@ using System.Text;
 
 namespace PaintDotNet
 {
-    public sealed class PushNullToolMode
+    internal sealed class PushNullToolMode
         : IDisposable
     {
         private DocumentWorkspace documentWorkspace;

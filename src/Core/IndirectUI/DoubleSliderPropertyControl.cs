@@ -47,7 +47,7 @@ namespace PaintDotNet.IndirectUI
             set
             {
                 this.useExponentialScale = value;
-                base.SliderShowTickMarks = !value;
+                base.SliderShowTickMarks &= value;
                 ResetUIRanges();
             }
         }

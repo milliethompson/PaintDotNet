@@ -18,21 +18,12 @@ using System.Drawing.Imaging;
 
 namespace PaintDotNet.Data.Quantize
 {
-    /// <summary>
-    /// Quantize using an Octree
-    /// </summary>
     internal unsafe class OctreeQuantizer 
         : Quantizer
     {
-        /// <summary>
-        /// Stores the tree
-        /// </summary>
-        private Octree _octree;
-
-        /// <summary>
-        /// Maximum allowed color depth
-        /// </summary>
-        private int _maxColors;
+        private bool enableTransparency;
+        private Octree octree;
+        private int maxColors;
 
         /// <summary>
         /// Construct the octree quantizer
@@ -43,12 +34,15 @@ namespace PaintDotNet.Data.Quantize
         /// </remarks>
         /// <param name="maxColors">The maximum number of colors to return</param>
         /// <param name="maxColorBits">The number of significant bits</param>
-        public OctreeQuantizer(int maxColors, int maxColorBits) 
+        /// <param name="enableTransparency">If true, then one color slot in the palette will be reserved for transparency. 
+        /// Any color passed through QuantizePixel which does not have an alpha of 255 will use this color slot.
+        /// If false, then all colors should have an alpha of 255. Otherwise the results may be unpredictable.</param>
+        public OctreeQuantizer(int maxColors, bool enableTransparency) 
             : base(false)
         {
-            if (maxColors > 255)
+            if (maxColors > 256)
             {
-                throw new ArgumentOutOfRangeException("maxColors", maxColors, "The number of colors should be less than 256");
+                throw new ArgumentOutOfRangeException("maxColors", maxColors, "The number of colors should be 256 or less");
             }
 
             if (maxColors < 2)
@@ -56,13 +50,9 @@ namespace PaintDotNet.Data.Quantize
                 throw new ArgumentOutOfRangeException("maxColors", maxColors, "The number of colors must be 2 or more");
             }
 
-            if ((maxColorBits < 1) |(maxColorBits > 8))
-            {
-                throw new ArgumentOutOfRangeException("maxColorBits", maxColorBits, "This should be between 1 and 8");
-            }
-
-            _octree = new Octree(maxColorBits);
-            _maxColors = maxColors;
+            this.octree = new Octree(8); // 8-bits per color
+            this.enableTransparency = enableTransparency;
+            this.maxColors = maxColors - (this.enableTransparency ? 1 : 0); // subtract 1 if enableTransparency is true
         }
 
         /// <summary>
@@ -75,7 +65,7 @@ namespace PaintDotNet.Data.Quantize
         /// </remarks>
         protected override void InitialQuantizePixel(ColorBgra *pixel)
         {
-            _octree.AddColor(pixel);
+            this.octree.AddColor(pixel);
         }
 
         /// <summary>
@@ -85,12 +75,15 @@ namespace PaintDotNet.Data.Quantize
         /// <returns>The quantized value</returns>
         protected override byte QuantizePixel(ColorBgra *pixel)
         {
-            byte paletteIndex = (byte)_maxColors;    // The color at [_maxColors] is set to transparent
+            byte paletteIndex = 0;
 
-            // Get the palette index if this non-transparent
-            if (pixel->A > 0)
+            if (!this.enableTransparency || pixel->A == 255)
             {
-                paletteIndex = (byte)_octree.GetPaletteIndex(pixel);
+                paletteIndex = (byte)this.octree.GetPaletteIndex(pixel);
+            }
+            else
+            {
+                paletteIndex = (byte)this.maxColors; // maxColors will have a maximum value of 255 is enableTransparency is true
             }
 
             return paletteIndex;
@@ -99,12 +92,12 @@ namespace PaintDotNet.Data.Quantize
         /// <summary>
         /// Retrieve the palette for the quantized image
         /// </summary>
-        /// <param name="original">Any old palette, this is overrwritten</param>
+        /// <param name="original">Any old palette, this is overwritten</param>
         /// <returns>The new color palette</returns>
         protected override ColorPalette GetPalette(ColorPalette original)
         {
             // First off convert the octree to _maxColors colors
-            List<Color> palette = _octree.Palletize(_maxColors - 1);
+            List<Color> palette = this.octree.Palletize(maxColors);
 
             // Then convert the palette based on those colors
             for (int index = 0; index < palette.Count; index++)
@@ -112,13 +105,17 @@ namespace PaintDotNet.Data.Quantize
                 original.Entries[index] = palette[index];
             }
 
+            // Fill the rest of the palette with transparent
             for (int i = palette.Count; i < original.Entries.Length; ++i)
             {
                 original.Entries[i] = Color.FromArgb(255, 0, 0, 0);
             }
 
             // Add the transparent color
-            original.Entries[_maxColors] = Color.FromArgb(0, 0, 0, 0);
+            if (this.enableTransparency)
+            {
+                original.Entries[this.maxColors] = Color.FromArgb(0, 0, 0, 0);
+            }
 
             return original;
         }
@@ -179,7 +176,9 @@ namespace PaintDotNet.Data.Quantize
                 int index;
 
                 // Find the deepest level containing at least one reducible node
-                for (index = _maxColorBits - 1; (index > 0) && (null == _reducibleNodes[index]); index--)
+                for (index = _maxColorBits - 1; 
+                     (index > 0) && (null == _reducibleNodes[index]); 
+                     index--)
                 {
                     // intentionally blank
                 }

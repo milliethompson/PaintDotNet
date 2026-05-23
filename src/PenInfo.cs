@@ -20,7 +20,7 @@ namespace PaintDotNet
     /// Does not carry color information.
     /// </summary>
     [Serializable]
-    public sealed class PenInfo
+    internal sealed class PenInfo
         : ICloneable,
           ISerializable
     {

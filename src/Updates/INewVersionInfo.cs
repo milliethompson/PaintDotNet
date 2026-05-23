@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet.Updates
 {
-    public interface INewVersionInfo
+    internal interface INewVersionInfo
     {
         PdnVersionInfo NewVersionInfo
         {

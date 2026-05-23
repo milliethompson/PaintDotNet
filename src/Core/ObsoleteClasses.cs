@@ -13,6 +13,8 @@ using System.Text;
 
 namespace PaintDotNet
 {
+    // TODO: Remove
+#if false
     [Obsolete("Use Function<bool, object> instead.", true)]
     public delegate bool BoolObjectDelegate(object o);
 
@@ -58,5 +60,5 @@ namespace PaintDotNet
 
     [Obsolete("Use Function`3 instead", true)]
     public delegate R BinaryFunctionDelegate<R, T, U>(T first, U second);
+#endif
 }
-

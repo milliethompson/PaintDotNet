@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class ColorWheel 
+    internal class ColorWheel 
         : UserControl
     {
         /// <summary> 
@@ -106,7 +106,6 @@ namespace PaintDotNet
             InitRendering();
             base.OnLoad(e);
         }
-
 
         protected override void OnPaint(PaintEventArgs e)
         {

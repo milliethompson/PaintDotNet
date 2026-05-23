@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class HistoryForm
+    internal class HistoryForm
         : FloatingToolForm
     {
         private PaintDotNet.HistoryControl historyControl;

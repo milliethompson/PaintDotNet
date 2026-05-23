@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public interface IShapeTypeConfig
+    internal interface IShapeTypeConfig
     {
         void PerformShapeDrawTypeChanged();
 

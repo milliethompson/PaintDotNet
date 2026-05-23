@@ -145,12 +145,6 @@ namespace PaintDotNet
             this.array = replacement;
         }
 
-        [Obsolete("Use ToArray() instead", true)]
-        public T[] GetArray()
-        {
-            return ToArray();
-        }
-
         public T[] ToArray()
         {
             T[] ret = new T[this.count];

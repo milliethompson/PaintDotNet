@@ -21,7 +21,7 @@ namespace PaintDotNet.HistoryMementos
     /// the constructor via the actions array.
     /// You can use 'null' for a HistoryMemento and it will be ignored.
     /// </summary>
-    public class CompoundHistoryMemento
+    internal class CompoundHistoryMemento
         : HistoryMemento
     {
         private List<HistoryMemento> actions;

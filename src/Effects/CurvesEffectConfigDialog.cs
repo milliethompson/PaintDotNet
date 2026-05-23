@@ -28,7 +28,7 @@ namespace PaintDotNet.Effects
         private System.Windows.Forms.Button resetButton;
         private System.Windows.Forms.ComboBox modeComboBox;
         private System.EventHandler curveControlValueChangedDelegate;
-        private EventHandler<Point> curveControlCoordinatesChangedDelegate;
+        private EventHandler<EventArgs<Point>> curveControlCoordinatesChangedDelegate;
         private TableLayoutPanel tableLayoutMain;
         private TableLayoutPanel tableLayoutPanelMask;
         private EnumLocalizer colorTransferNames;

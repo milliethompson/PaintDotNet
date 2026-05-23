@@ -14,7 +14,7 @@ using System.Drawing;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public sealed class EraseSelectionFunction
+    internal sealed class EraseSelectionFunction
         : HistoryFunction
     {
         public static string StaticName

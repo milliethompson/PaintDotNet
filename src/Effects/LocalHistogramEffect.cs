@@ -16,8 +16,8 @@ using System.Text;
 
 namespace PaintDotNet.Effects
 {
-    public abstract class LocalHistogramEffect 
-        : PropertyBasedEffect
+    public abstract class LocalHistogramEffect
+        : InternalPropertyBasedEffect
     {
         protected internal LocalHistogramEffect(string name, Image image, string subMenuName, EffectFlags flags)
             : base(name, image, subMenuName, flags)
@@ -158,7 +158,6 @@ namespace PaintDotNet.Effects
                 Memory.SetToZero(ha, hSize);
 
                 int area = 0;
-                int maxArea = GetMaxAreaForRadius(rad);
 
                 ColorBgra* ps = src.GetPointAddressUnchecked(rect.Left, y);
                 ColorBgra* pd = dst.GetPointAddressUnchecked(rect.Left, y);

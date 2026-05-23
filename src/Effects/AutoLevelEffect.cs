@@ -17,9 +17,8 @@ using System.Windows.Forms;
 namespace PaintDotNet.Effects
 {
     [EffectCategory(EffectCategory.Adjustment)]
-    [EffectTypeHint(EffectTypeHint.Fast)]
     public sealed class AutoLevelEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         private UnaryPixelOps.Level levels = null;
 

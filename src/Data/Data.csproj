@@ -1,7 +1,7 @@
 ﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
-    <ProductVersion>8.0.50727</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{66681BB0-955D-451D-A466-94C045B1CF4A}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -63,7 +63,7 @@
     <DocumentationFile>
     </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
-    <FileAlignment>4096</FileAlignment>
+    <FileAlignment>512</FileAlignment>
     <NoStdLib>false</NoStdLib>
     <NoWarn>
     </NoWarn>
@@ -149,29 +149,19 @@
     <Compile Include="FileTypeCollection.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FileType`2.cs" />
     <Compile Include="GdiPlusFileType.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="GifFileType.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="GifSaveConfigToken.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="GifSaveConfigWidget.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
     <Compile Include="IFileTypeFactory.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="InternalFileType.cs" />
     <Compile Include="JpegFileType.cs">
       <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="JpegSaveConfigToken.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="JpegSaveConfigWidget.cs">
-      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Layer.cs">
       <SubType>Code</SubType>
@@ -196,10 +186,12 @@
     </Compile>
     <Compile Include="PngFileType.cs">
     </Compile>
-    <Compile Include="Quantize\OctreeQuantizer.cs">
-      <SubType>Code</SubType>
+    <Compile Include="PropertyBasedFileType.cs" />
+    <Compile Include="PropertyBasedSaveConfigToken.cs" />
+    <Compile Include="PropertyBasedSaveConfigWidget.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Quantize\PaletteQuantizer.cs">
+    <Compile Include="Quantize\OctreeQuantizer.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Quantize\PaletteTable.cs">
@@ -214,11 +206,10 @@
     <Compile Include="SaveConfigWidget.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="TgaFileType.cs" />
-    <Compile Include="TgaSaveConfigToken.cs" />
-    <Compile Include="TgaSaveConfigWidget.cs">
+    <Compile Include="SaveConfigWidget`2.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="TgaFileType.cs" />
     <Compile Include="UserBlendOp.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -19,7 +19,7 @@ namespace PaintDotNet
     /// allowing these items to move around, and without breaking OO best 
     /// practices.
     /// </summary>
-    public class WorkspaceWidgets
+    internal class WorkspaceWidgets
     {
         private AppWorkspace workspace;
 

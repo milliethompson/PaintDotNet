@@ -11,6 +11,7 @@ using System;
 
 namespace PaintDotNet.Effects
 {
+    [Obsolete]
     [Flags]
     public enum EffectTypeHint
         : int

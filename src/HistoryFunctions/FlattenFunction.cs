@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public sealed class FlattenFunction
+    internal sealed class FlattenFunction
         : HistoryFunction
     {
         public static string StaticName

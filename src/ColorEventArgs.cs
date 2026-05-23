@@ -13,7 +13,7 @@ using System.Drawing;
 namespace PaintDotNet
 {
     [Serializable]
-    public class ColorEventArgs
+    internal class ColorEventArgs
         : System.EventArgs
     {
         private ColorBgra color;

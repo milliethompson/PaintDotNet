@@ -65,7 +65,7 @@
     <DocumentationFile>
     </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
-    <FileAlignment>4096</FileAlignment>
+    <FileAlignment>512</FileAlignment>
     <NoStdLib>false</NoStdLib>
     <NoWarn>
     </NoWarn>
@@ -140,7 +140,7 @@
     <Compile Include="Actions\CloseWorkspaceAction.cs" />
     <Compile Include="Actions\CopyToClipboardAction.cs" />
     <Compile Include="Actions\CutAction.cs" />
-    <Compile Include="Actions\DuplicateActiveLayerAction.cs" />
+    <Compile Include="HistoryFunctions\DuplicateLayerFunction.cs" />
     <Compile Include="Actions\FlipLayerHorizontalAction.cs" />
     <Compile Include="Actions\FlipLayerVerticalAction.cs" />
     <Compile Include="Actions\HistoryFastForwardAction.cs" />
@@ -311,9 +311,6 @@
     <Compile Include="Menus\PdnMainMenu.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Menus\ToolsMenu.cs">
-      <SubType>Component</SubType>
-    </Compile>
     <Compile Include="Menus\ViewMenu.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -368,6 +365,7 @@
     <Compile Include="Updates\ExtractingState.cs" />
     <Compile Include="Updates\INewVersionInfo.cs" />
     <Compile Include="Updates\InstallingState.cs" />
+    <Compile Include="Updates\MarqueeStyle.cs" />
     <Compile Include="Updates\PrivateInput.cs" />
     <Compile Include="Updates\ReadyToCheckState.cs" />
     <Compile Include="Updates\ReadyToInstallState.cs" />
@@ -618,9 +616,6 @@ copy "$(SolutionDir)\WiaProxy32\bin\$(ConfigurationName)\WiaProxy32.exe" "$(Targ
 
 @rem copy English strings over
 copy "$(SolutionDir)\Strings\$(ConfigurationName)\PaintDotNet.Strings.3.resources" "$(TargetDir)"
-
-@rem copy non-English strings (we won't copy the other file/image resource overrides)
-rem copy "$(SolutionDir)\Resources.mui\*.resources" "$(TargetDir)"
 
 :done
 rem call "$(ProjectDir)prejit.bat" "$(TargetPath)"</PostBuildEvent>

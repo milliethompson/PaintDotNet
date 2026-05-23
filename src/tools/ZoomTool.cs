@@ -18,7 +18,7 @@ namespace PaintDotNet.Tools
     /// <summary>
     /// Allows the user to click on the image to zoom to that location
     /// </summary>
-    public class ZoomTool
+    internal class ZoomTool
         : Tool
     {
         private bool moveOffsetMode = false;

@@ -13,7 +13,7 @@ using System;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class MoveActiveLayerUpAction
+    internal sealed class MoveActiveLayerUpAction
         : DocumentWorkspaceAction
     {
         public static string StaticName

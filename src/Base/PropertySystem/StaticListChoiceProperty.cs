@@ -9,7 +9,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Runtime.Serialization;
 
 namespace PaintDotNet.PropertySystem
 {
@@ -44,6 +44,11 @@ namespace PaintDotNet.PropertySystem
         public StaticListChoiceProperty(object name, object[] valueChoices, int defaultChoiceIndex, bool readOnly, ValueValidationFailureResult vvfResult)
             : base(name, valueChoices[defaultChoiceIndex], readOnly, vvfResult)
         {
+            if (defaultChoiceIndex < 0 || defaultChoiceIndex >= valueChoices.Length)
+            {
+                throw new ArgumentOutOfRangeException("defaultChoiceIndex", "must be in the range [0, valueChoices.Length) (actual value: " + defaultChoiceIndex.ToString() + ")");
+            }
+
             this.valueChoices = (object[])valueChoices.Clone();
         }
 
@@ -86,10 +91,9 @@ namespace PaintDotNet.PropertySystem
             if (defaultChoiceIndex == -1)
             {
                 throw new ArgumentOutOfRangeException(string.Format(
-                    "defaultValue ({0}) is not a valid enum value for {1}.{2}",
+                    "defaultValue ({0}) is not a valid enum value for {1}",
                     defaultValue.ToString(),
-                    enumType.Namespace,
-                    enumType.Name));
+                    enumType.FullName));
             }
 
             object[] enumChoicesObj = new object[enumChoices.Length];

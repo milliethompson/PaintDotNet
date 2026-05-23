@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public sealed class ViewConfigStrip
+    internal sealed class ViewConfigStrip
         : ToolStripEx
     {
         private string windowText;
@@ -465,21 +465,26 @@ namespace PaintDotNet
 
         protected override void OnItemClicked(ToolStripItemClickedEventArgs e)
         {
+
             if (e.ClickedItem == this.zoomInButton)
             {
+                Tracing.LogFeature("ViewConfigStrip(ZoomIn)");
                 OnZoomIn();
             }
             else if (e.ClickedItem == this.zoomOutButton)
             {
+                Tracing.LogFeature("ViewConfigStrip(ZoomOut)");
                 OnZoomOut();
             }
             else if (e.ClickedItem == this.rulersButton)
             {
+                Tracing.LogFeature("ViewConfigStrip(Rulers)");
                 this.rulersButton.Checked = !this.rulersButton.Checked;
                 OnRulersEnabledChanged();
             }
             else if (e.ClickedItem == this.gridButton)
             {
+                Tracing.LogFeature("ViewConfigStrip(Grid)");
                 this.gridButton.Checked = !this.gridButton.Checked;
                 this.OnDrawGridChanged();
             }

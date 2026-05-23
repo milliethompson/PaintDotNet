@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public enum HistoryFunctionResult
+    internal enum HistoryFunctionResult
     {
         /// <summary>
         /// The HistoryFunction completed successfully, and a new item has been placed in to the HistoryStack.

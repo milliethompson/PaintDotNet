@@ -17,7 +17,6 @@ using System.Drawing;
 
 namespace PaintDotNet.Effects
 {
-    [EffectTypeHint(EffectTypeHint.Fast)]
     public sealed class EdgeDetectEffect
         : ColorDifferenceEffect
     {

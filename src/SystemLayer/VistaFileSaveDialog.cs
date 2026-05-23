@@ -55,8 +55,16 @@ namespace PaintDotNet.SystemLayer
 
                 try
                 {
-                    this.FileSaveDialog.GetResult(out shellItem);
-                    shellItem.GetDisplayName(NativeConstants.SIGDN.SIGDN_FILESYSPATH, out path);
+                    int hr = this.FileSaveDialog.GetResult(out shellItem);
+
+                    if (NativeMethods.SUCCEEDED(hr))
+                    {
+                        shellItem.GetDisplayName(NativeConstants.SIGDN.SIGDN_FILESYSPATH, out path);
+                    }
+                    else
+                    {
+                        this.FileSaveDialog.GetFileName(out path);
+                    }
                 }
 
                 catch (Exception)
@@ -189,8 +197,19 @@ namespace PaintDotNet.SystemLayer
         int NativeInterfaces.IFileDialogEvents.OnFileOk(NativeInterfaces.IFileDialog pfd)
         {
             int hr = NativeConstants.S_OK;
+
             NativeInterfaces.IShellItem shellItem = null;
-            FileSaveDialog.GetResult(out shellItem);
+
+            if (NativeMethods.SUCCEEDED(hr))
+            {
+                hr = FileSaveDialog.GetResult(out shellItem);
+            }
+
+            if (!NativeMethods.SUCCEEDED(hr))
+            {
+                throw Marshal.GetExceptionForHR(hr);
+            }
+
             string pathName = null;
 
             try

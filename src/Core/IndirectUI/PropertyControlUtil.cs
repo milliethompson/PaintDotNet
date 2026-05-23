@@ -8,8 +8,10 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.PropertySystem;
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 using System.Windows.Forms;
 
@@ -17,6 +19,30 @@ namespace PaintDotNet.IndirectUI
 {
     internal static class PropertyControlUtil
     {
+        public static int GetGoodSliderHeight(TrackBar slider)
+        {
+            if (slider.AutoSize)
+            {
+                return slider.Height;
+            }
+            else if (slider.TickStyle == TickStyle.BottomRight || slider.TickStyle == TickStyle.TopLeft)
+            {
+                return UI.ScaleHeight(35); // determined experimentally
+            }
+            else if (slider.TickStyle == TickStyle.None)
+            {
+                return UI.ScaleHeight(25); // determined experimentally
+            }
+            else if (slider.TickStyle == TickStyle.Both)
+            {
+                return UI.ScaleHeight(45); // pulled from default Height value when AutoSize=true
+            }
+            else
+            {
+                throw new InvalidEnumArgumentException();
+            }
+        }
+
         public static int GetGoodSliderTickFrequency(TrackBar slider)
         {
             int delta = Math.Abs(slider.Maximum - slider.Minimum);
@@ -26,10 +52,12 @@ namespace PaintDotNet.IndirectUI
 
         public static int ToSliderValueExpCore(double propertyValue, double minValue, double maxValue, int scaleLog10)
         {
-            int toIntScale = (int)Math.Pow(10, scaleLog10);
-            double toDoubleScale = Math.Pow(10, -scaleLog10);
+            int scaleLog10Plus1 = 1 + scaleLog10;
 
-            double lerp = (propertyValue - minValue) / (maxValue - minValue);
+            int toIntScale = (int)Math.Pow(10, scaleLog10Plus1);
+            double toDoubleScale = Math.Pow(10, -scaleLog10Plus1);
+
+            double lerp = Math.Abs((propertyValue - minValue) / (maxValue - minValue));
             double lerp2 = Math.Sqrt(lerp);
             double newPropertyValue = minValue + (lerp2 * (maxValue - minValue));
             double clampedNewPropertyValue = Utility.Clamp(newPropertyValue, minValue, maxValue);
@@ -73,8 +101,10 @@ namespace PaintDotNet.IndirectUI
 
         public static double FromSliderValueExpCore(int sliderValue, double minValue, double maxValue, int scaleLog10)
         {
-            int toIntScale = (int)Math.Pow(10, scaleLog10);
-            double toDoubleScale = Math.Pow(10, -scaleLog10);
+            int scaleLog10Plus1 = 1 + scaleLog10;
+
+            int toIntScale = (int)Math.Pow(10, scaleLog10Plus1);
+            double toDoubleScale = Math.Pow(10, -scaleLog10Plus1);
 
             double newPropertyValue = (double)sliderValue * toDoubleScale;
             double lerp2 = (newPropertyValue - minValue) / (maxValue - minValue);

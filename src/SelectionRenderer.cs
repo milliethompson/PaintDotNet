@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class SelectionRenderer
+    internal class SelectionRenderer
         : SurfaceBoxGraphicsRenderer
     {
         private const int dancingAntsInterval = 60;

@@ -15,7 +15,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Menus
 {
-    public sealed class EditMenu
+    internal sealed class EditMenu
         : PdnMenuItem
     {
         private PdnMenuItem menuEditUndo;

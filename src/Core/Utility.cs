@@ -41,6 +41,46 @@ namespace PaintDotNet
         {
         }
 
+        internal static bool IsNumber(float x)
+        {
+            return x >= float.MinValue && x <= float.MaxValue;
+        }
+
+        internal static bool IsNumber(double x)
+        {
+            return x >= double.MinValue && x <= double.MaxValue;
+        }
+
+        internal static int Min(int val0, params int[] vals)
+        {
+            int min = val0;
+
+            for (int i = 0; i < vals.Length; ++i)
+            {
+                if (vals[i] < min)
+                {
+                    min = vals[i];
+                }
+            }
+
+            return min;
+        }
+
+        internal static int Max(int val0, params int[] vals)
+        {
+            int max = val0;
+
+            for (int i = 0; i < vals.Length; ++i)
+            {
+                if (vals[i] > max)
+                {
+                    max = vals[i];
+                }
+            }
+
+            return max;
+        }
+
         public static PointF[] GetRgssOffsets(int quality)
         {
             unsafe
@@ -1229,25 +1269,6 @@ namespace PaintDotNet
             return rect.Contains(x, y);
         }
 
-        /// <summary>
-        /// Disposes an object for you. This function is here just to keep code a little
-        /// cleaner so you don't have to test an object for null every time you want to
-        /// dispose it.
-        /// </summary>
-        /// <param name="obj">A reference to the object to dispose.</param>
-        /// <returns>true is the object was disposed, false if it wasn't (if obj was null)</returns>
-        [Obsolete]
-        public static bool Dispose(IDisposable obj)
-        {
-            if (obj != null)
-            {
-                obj.Dispose();
-                return true;
-            }
-
-            return false;
-        }
-
         public static Bitmap FullCloneBitmap(Bitmap cloneMe)
         {
             Bitmap bitmap = new Bitmap(cloneMe.Width, cloneMe.Height, cloneMe.PixelFormat);
@@ -1966,11 +1987,13 @@ namespace PaintDotNet
         /// <summary>
         /// Returns the Magnitude (distance to origin) of a point
         /// </summary>
+        // TODO: In v4.0 codebase, turn this into an extension method
         public static float Magnitude(PointF p)
         {
             return (float)Math.Sqrt(p.X * p.X + p.Y * p.Y);
         }
 
+        // TODO: In v4.0 codebase, turn this into an extension method
         public static double Clamp(double x, double min, double max) 
         {
             if (x < min)
@@ -1987,6 +2010,7 @@ namespace PaintDotNet
             }
         }
 
+        // TODO: In v4.0 codebase, turn this into an extension method
         public static float Clamp(float x, float min, float max) 
         {
             if (x < min)
@@ -2003,6 +2027,7 @@ namespace PaintDotNet
             }
         }
 
+        // TODO: In v4.0 codebase, turn this into an extension method
         public static int Clamp(int x, int min, int max)
         {
             if (x < min)

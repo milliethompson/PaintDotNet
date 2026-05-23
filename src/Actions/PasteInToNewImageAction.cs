@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Actions
 {
-    public sealed class PasteInToNewImageAction
+    internal sealed class PasteInToNewImageAction
         : AppWorkspaceAction
     {
         public override void PerformAction(AppWorkspace appWorkspace)

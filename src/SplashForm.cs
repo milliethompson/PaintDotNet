@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class SplashForm 
+    internal class SplashForm 
         : PdnBaseForm
     {
         private System.Windows.Forms.Label copyrightLabel;

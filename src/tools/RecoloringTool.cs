@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public class RecolorTool 
+    internal class RecolorTool 
         : Tool
     {
         private bool mouseDown;

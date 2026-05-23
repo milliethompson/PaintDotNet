@@ -15,7 +15,7 @@ using System.Drawing.Drawing2D;
 
 namespace PaintDotNet
 {
-    public class MoveNubRenderer
+    internal class MoveNubRenderer
         : CanvasControl
     {
         private Matrix transform;

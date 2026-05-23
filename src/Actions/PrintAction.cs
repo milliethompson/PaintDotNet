@@ -17,7 +17,7 @@ using System.Text;
 
 namespace PaintDotNet.Actions
 {
-    public class PrintAction
+    internal sealed class PrintAction
         : DocumentWorkspaceAction
     {
         public override HistoryMemento PerformAction(DocumentWorkspace documentWorkspace)

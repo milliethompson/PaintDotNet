@@ -64,7 +64,7 @@
     <DocumentationFile>
     </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
-    <FileAlignment>4096</FileAlignment>
+    <FileAlignment>512</FileAlignment>
     <NoStdLib>false</NoStdLib>
     <NoWarn>
     </NoWarn>
@@ -123,12 +123,6 @@
     <Compile Include="AmountEffectConfigToken.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="AngleChooserConfigDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="AngleChooserConfigToken.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -144,12 +138,6 @@
     <Compile Include="BrightnessAndContrastAdjustment.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="BrightnessAndContrastAdjustmentConfigDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="BrightnessAndContrastAdjustmentConfigToken.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="BulgeEffect.cs" />
     <Compile Include="CloudsEffect.cs">
       <SubType>Code</SubType>
@@ -157,25 +145,16 @@
     <Compile Include="ColorDifferenceEffect.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ColorFillEffect.cs" />
     <Compile Include="ConvolutionFilterEffect.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="CloudsEffectConfigDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="CloudsEffectConfigToken.cs" />
     <Compile Include="CurvesEffect.cs" />
     <Compile Include="CurvesEffectConfigDialog.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="CurvesEffectConfigToken.cs" />
     <Compile Include="DesaturateEffect.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="EdgeDetectConfigDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="EdgeDetectConfigToken.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="EdgeDetectEffect.cs">
@@ -217,12 +196,7 @@
     <Compile Include="EmbossEffect.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="EmbossEffectConfigDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="EmbossEffectConfigToken.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="FragmentEffect.cs" />
     <Compile Include="FrostedGlassEffect.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -232,6 +206,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="InkSketchEffect.cs" />
+    <Compile Include="InternalPropertyBasedEffect.cs" />
     <Compile Include="InvertColorsEffect.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -251,12 +226,6 @@
     <Compile Include="MotionBlurEffect.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MotionBlurEffectConfigDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MotionBlurEffectConfigToken.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="OilPaintingEffect.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -264,6 +233,7 @@
     <Compile Include="PanControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="PerlinNoise2D.cs" />
     <Compile Include="PixelateEffect.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -280,17 +250,8 @@
     <Compile Include="RedEyeRemoveEffect.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="RedEyeRemoveEffectDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="ReduceNoiseEffect.cs" />
     <Compile Include="ReliefEffect.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="ReliefEffectConfigDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ReliefEffectConfigToken.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="RollControl.cs">
@@ -325,6 +286,8 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="UnfocusEffect.cs" />
+    <Compile Include="WarpEdgeBehavior.cs" />
+    <Compile Include="WarpEffectBase.cs" />
     <Compile Include="ZoomBlurEffect.cs" />
   </ItemGroup>
   <ItemGroup>

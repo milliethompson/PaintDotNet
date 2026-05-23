@@ -18,7 +18,7 @@ using System.Windows.Forms;
 namespace PaintDotNet.Effects
 {
     public sealed class MotionBlurEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public MotionBlurEffect()
             : base(PdnResources.GetString("MotionBlurEffect.Name"),

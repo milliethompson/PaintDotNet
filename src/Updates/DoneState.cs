@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Updates
 {
-    public class DoneState
+    internal class DoneState
         : UpdatesState
     {
         public override void OnEnteredState()

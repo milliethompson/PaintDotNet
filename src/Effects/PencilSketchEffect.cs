@@ -16,7 +16,7 @@ using System.Drawing;
 namespace PaintDotNet.Effects
 {
     public sealed class PencilSketchEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public enum PropertyNames
         {

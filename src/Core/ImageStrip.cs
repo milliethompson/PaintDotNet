@@ -451,7 +451,7 @@ namespace PaintDotNet
             PerformLayout();
         }
 
-        public event EventHandler<ArrowDirection> ScrollArrowClicked;
+        public event EventHandler<EventArgs<ArrowDirection>> ScrollArrowClicked;
         protected virtual void OnScrollArrowClicked(ArrowDirection arrowDirection)
         {
             if (ScrollArrowClicked != null)
@@ -563,7 +563,7 @@ namespace PaintDotNet
         /// e.Data.Second is the ItemPart.
         /// e.Data.Third is the MouseButtons that was used to click on the ItemPart.
         /// </remarks>
-        public event EventHandler<Triple<Item, ItemPart, MouseButtons>> ItemClicked;
+        public event EventHandler<EventArgs<Triple<Item, ItemPart, MouseButtons>>> ItemClicked;
         protected virtual void OnItemClicked(Item item, ItemPart itemPart, MouseButtons mouseButtons)
         {
             if (ItemClicked != null)

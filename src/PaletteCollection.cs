@@ -16,7 +16,7 @@ using System.Text;
 
 namespace PaintDotNet
 {
-    public sealed class PaletteCollection
+    internal sealed class PaletteCollection
     {
         /// <summary>
         /// The required number of colors for a palette.

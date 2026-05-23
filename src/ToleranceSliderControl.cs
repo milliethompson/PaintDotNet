@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class ToleranceSliderControl 
+    internal class ToleranceSliderControl 
         : Control
     {
         private bool tracking = false;

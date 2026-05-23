@@ -12,7 +12,7 @@ using System.Drawing.Drawing2D;
 
 namespace PaintDotNet
 {
-    public interface ISelectionDrawModeConfig
+    internal interface ISelectionDrawModeConfig
     {
         event EventHandler SelectionDrawModeInfoChanged;
 

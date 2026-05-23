@@ -21,7 +21,7 @@ using System.Windows.Forms;
 namespace PaintDotNet.Effects
 {
     public sealed class OilPaintingEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         public static string StaticName
         {

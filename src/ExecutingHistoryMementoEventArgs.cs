@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public class ExecutingHistoryMementoEventArgs
+    internal class ExecutingHistoryMementoEventArgs
         : EventArgs
     {
         private HistoryMemento historyMemento;

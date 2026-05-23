@@ -12,7 +12,6 @@ using System.IO;
 
 namespace PaintDotNet
 {
-    [Serializable]
     public sealed class PdnFileType
         : FileType
     {
@@ -59,6 +58,7 @@ namespace PaintDotNet
             public void IOEventHandler(object sender, IOEventArgs e)
             {
                 double percent;
+
                 lock (this)
                 {
                     totalBytes += (long)e.Count;

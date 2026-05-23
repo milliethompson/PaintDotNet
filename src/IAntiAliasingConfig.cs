@@ -11,7 +11,7 @@ using System;
 
 namespace PaintDotNet
 {
-    public interface IAntiAliasingConfig
+    internal interface IAntiAliasingConfig
     {
         event EventHandler AntiAliasingChanged;
 

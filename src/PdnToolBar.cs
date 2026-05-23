@@ -19,7 +19,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class PdnToolBar 
+    internal class PdnToolBar 
         : Control,
           IPaintBackground
     {

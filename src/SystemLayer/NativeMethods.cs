@@ -10,11 +10,25 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace PaintDotNet.SystemLayer
 {
     internal static class NativeMethods
     {
+        internal static bool SUCCEEDED(int hr)
+        {
+            return hr >= 0;
+        }
+
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
+        internal static extern void SHGetFolderPathW(
+            IntPtr hwndOwner,
+            int nFolder,
+            IntPtr hToken,
+            uint dwFlags,
+            StringBuilder lpszPath);
+
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool DeleteFileW(

@@ -26,7 +26,7 @@ namespace PaintDotNet
     /// notification events for every item that can change.
     /// </summary>
     [Serializable]
-    public sealed class AppEnvironment
+    internal sealed class AppEnvironment
         : IDisposable,
           ICloneable,
           IDeserializationCallback

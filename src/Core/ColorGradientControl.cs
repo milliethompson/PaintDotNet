@@ -20,10 +20,7 @@ namespace PaintDotNet
     public sealed class ColorGradientControl 
         : UserControl
     {
-        /// <summary> 
-        /// Required designer variable.
-        /// </summary>
-        private System.ComponentModel.Container components = null;
+        private Point lastTrackingMouseXY = new Point(-1, -1);
 
         private int tracking = -1;
         private int highlight = -1;
@@ -530,11 +527,6 @@ namespace PaintDotNet
         {
             if (disposing)
             {
-                if (components != null)
-                {
-                    components.Dispose();
-                    components = null;
-                }
             }
 
             base.Dispose(disposing);
@@ -617,7 +609,7 @@ namespace PaintDotNet
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
-            base.OnMouseDown (e);
+            base.OnMouseDown(e);
 
             if (e.Button == MouseButtons.Left)
             {
@@ -672,22 +664,26 @@ namespace PaintDotNet
 
             int pos = GetOrientedValue(e);
 
-            if (tracking >= 0)
+            Point newMouseXY = new Point(e.X, e.Y);
+
+            if (tracking >= 0 && newMouseXY != this.lastTrackingMouseXY)
             {
                 int val = PositionToValue(pos);
                 this.SetValue(tracking, val);
+                this.lastTrackingMouseXY = newMouseXY;
             }
-            else 
+            else
             {
                 int oldHighlight = highlight;
                 highlight = WhichTriangle(pos);
 
-                if (highlight != oldHighlight) 
+                if (highlight != oldHighlight)
                 {
                     this.InvalidateTriangle(oldHighlight);
                     this.InvalidateTriangle(highlight);
                 }
             }
+
         }
 
         protected override void OnMouseLeave(EventArgs e)
@@ -731,7 +727,6 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
         }
         #endregion
     }

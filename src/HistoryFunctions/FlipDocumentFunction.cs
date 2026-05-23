@@ -14,7 +14,7 @@ using System.Drawing;
 
 namespace PaintDotNet.HistoryFunctions
 {
-    public abstract class FlipDocumentFunction
+    internal abstract class FlipDocumentFunction
         : HistoryFunction
     {
         private string historyName;

@@ -18,7 +18,7 @@ using System.Text;
 namespace PaintDotNet.Effects
 {
     public sealed class JuliaFractalEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         private enum PropertyNames
         {

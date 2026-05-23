@@ -15,9 +15,8 @@ using System.Windows.Forms;
 namespace PaintDotNet.Effects
 {
     [EffectCategory(EffectCategory.Adjustment)]
-    [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public sealed class SepiaEffect
-        : PropertyBasedEffect
+        : InternalPropertyBasedEffect
     {
         private UnaryPixelOp levels;
         private UnaryPixelOp desaturate;

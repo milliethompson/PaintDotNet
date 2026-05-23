@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Tools
 {
-    public abstract class FloodToolBase
+    internal abstract class FloodToolBase
         : Tool
     {
         private bool contiguous;
