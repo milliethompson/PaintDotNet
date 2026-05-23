@@ -294,7 +294,7 @@ namespace PaintDotNet.Actions
             double newDpu;
             MeasurementUnit newDpuUnit;
 
-            string resamplingAlgorithm = Settings.CurrentUser.GetString(PdnSettings.LastResamplingMethod, 
+            string resamplingAlgorithm = Settings.CurrentUser.GetString(SettingNames.LastResamplingMethod, 
                 ResamplingAlgorithm.SuperSampling.ToString());
 
             ResamplingAlgorithm alg;
@@ -309,7 +309,7 @@ namespace PaintDotNet.Actions
                 alg = ResamplingAlgorithm.SuperSampling;
             }
 
-            bool maintainAspect = Settings.CurrentUser.GetBoolean(PdnSettings.LastMaintainAspectRatio, true);
+            bool maintainAspect = Settings.CurrentUser.GetBoolean(SettingNames.LastMaintainAspectRatio, true);
 
             using (ResizeDialog rd = new ResizeDialog())
             {
@@ -322,7 +322,7 @@ namespace PaintDotNet.Actions
                 rd.LayerCount = documentWorkspace.Document.Layers.Count;
                 rd.Units = rd.OriginalDpuUnit;
                 rd.Resolution = documentWorkspace.Document.DpuX;
-                rd.Units = PdnSettings.GetLastNonPixelUnits();
+                rd.Units = SettingNames.GetLastNonPixelUnits();
                 rd.ConstrainToAspect = maintainAspect;
             
                 DialogResult result = rd.ShowDialog(documentWorkspace);
@@ -332,8 +332,8 @@ namespace PaintDotNet.Actions
                     return null;
                 }
 
-                Settings.CurrentUser.SetString(PdnSettings.LastResamplingMethod, rd.ResamplingAlgorithm.ToString());
-                Settings.CurrentUser.SetBoolean(PdnSettings.LastMaintainAspectRatio, rd.ConstrainToAspect);
+                Settings.CurrentUser.SetString(SettingNames.LastResamplingMethod, rd.ResamplingAlgorithm.ToString());
+                Settings.CurrentUser.SetBoolean(SettingNames.LastMaintainAspectRatio, rd.ConstrainToAspect);
                 newDpuUnit = rd.Units;
                 newWidth = rd.ImageWidth;
                 newHeight = rd.ImageHeight;
@@ -342,7 +342,7 @@ namespace PaintDotNet.Actions
 
                 if (newDpuUnit != MeasurementUnit.Pixel)
                 {
-                    Settings.CurrentUser.SetString(PdnSettings.LastNonPixelUnits, newDpuUnit.ToString());
+                    Settings.CurrentUser.SetString(SettingNames.LastNonPixelUnits, newDpuUnit.ToString());
 
                     if (documentWorkspace.AppWorkspace.Units != MeasurementUnit.Pixel)
                     {

@@ -9,8 +9,26 @@
 
 using System;
 
-namespace PaintDotNet
+namespace PaintDotNet.SystemLayer
 {
-    // TODO: switch to EventHandler<string>
-    public delegate void NameEventHandler(object sender, NameEventArgs e);
+    public interface IFileOpenDialog
+        : IFileDialog
+    {
+        bool CheckFileExists
+        {
+            get;
+            set;
+        }
+
+        bool Multiselect
+        {
+            get;
+            set;
+        }
+
+        string[] FileNames
+        {
+            get;
+        }
+    }
 }

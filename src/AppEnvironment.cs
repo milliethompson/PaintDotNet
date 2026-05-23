@@ -51,7 +51,7 @@ namespace PaintDotNet
 
             try
             {
-                string defaultAppEnvBase64 = Settings.CurrentUser.GetString(PdnSettings.DefaultAppEnvironment, null);
+                string defaultAppEnvBase64 = Settings.CurrentUser.GetString(SettingNames.DefaultAppEnvironment, null);
 
                 if (defaultAppEnvBase64 == null)
                 {
@@ -91,7 +91,7 @@ namespace PaintDotNet
             formatter.Serialize(stream, this);
             byte[] bytes = stream.GetBuffer();
             string base64 = Convert.ToBase64String(bytes);
-            Settings.CurrentUser.SetString(PdnSettings.DefaultAppEnvironment, base64);
+            Settings.CurrentUser.SetString(SettingNames.DefaultAppEnvironment, base64);
         }
 
         public void LoadFrom(AppEnvironment appEnvironment)

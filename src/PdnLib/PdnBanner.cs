@@ -92,7 +92,7 @@ namespace PaintDotNet
                 int newBannerIndex = ticks / bannerPeriod;
                 float newBannerAlpha = (float)a;
 
-                if (banners.Length < 2 || SystemLayer.UserSessions.IsRemote())
+                if (banners.Length < 2 || SystemLayer.UserSessions.IsRemote)
                 {
                     newBannerAlpha = 1.0f;
                 }

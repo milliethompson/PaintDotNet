@@ -21,18 +21,13 @@ namespace PaintDotNet.Menus
         private PdnMenuItem menuImageResize;
         private PdnMenuItem menuImageCanvasSize;
         private ToolStripSeparator menuImageSeparator1;
-        private PdnMenuItem menuImageFlip;
         private PdnMenuItem menuImageFlipHorizontal;
         private PdnMenuItem menuImageFlipVertical;
-        private PdnMenuItem menuImageRotate;
-        private PdnMenuItem menuImageRotate90CW;
-        private PdnMenuItem menuImageRotate180CW;
-        private PdnMenuItem menuImageRotate270CW;
-        private ToolStripSeparator menuImageRotateSeparator;
-        private PdnMenuItem menuImageRotate90CCW;
-        private PdnMenuItem menuImageRotate180CCW;
-        private PdnMenuItem menuImageRotate270CCW;
         private ToolStripSeparator menuImageSeparator2;
+        private PdnMenuItem menuImageRotate90CW;
+        private PdnMenuItem menuImageRotate90CCW;
+        private PdnMenuItem menuImageRotate180;
+        private ToolStripSeparator menuImageSeparator3;
         private PdnMenuItem menuImageFlatten;
 
         public ImageMenu()
@@ -46,18 +41,13 @@ namespace PaintDotNet.Menus
             this.menuImageResize = new PdnMenuItem();
             this.menuImageCanvasSize = new PdnMenuItem();
             this.menuImageSeparator1 = new ToolStripSeparator();
-            this.menuImageFlip = new PdnMenuItem();
             this.menuImageFlipHorizontal = new PdnMenuItem();
             this.menuImageFlipVertical = new PdnMenuItem();
-            this.menuImageRotate = new PdnMenuItem();
-            this.menuImageRotate90CW = new PdnMenuItem();
-            this.menuImageRotate180CW = new PdnMenuItem();
-            this.menuImageRotate270CW = new PdnMenuItem();
-            this.menuImageRotateSeparator = new ToolStripSeparator();
-            this.menuImageRotate90CCW = new PdnMenuItem();
-            this.menuImageRotate180CCW = new PdnMenuItem();
-            this.menuImageRotate270CCW = new PdnMenuItem();
             this.menuImageSeparator2 = new ToolStripSeparator();
+            this.menuImageRotate90CW = new PdnMenuItem();
+            this.menuImageRotate90CCW = new PdnMenuItem();
+            this.menuImageRotate180 = new PdnMenuItem();
+            this.menuImageSeparator3 = new ToolStripSeparator();
             this.menuImageFlatten = new PdnMenuItem();
             //
             // ImageMenu
@@ -69,9 +59,13 @@ namespace PaintDotNet.Menus
                     this.menuImageResize,
                     this.menuImageCanvasSize,
                     this.menuImageSeparator1,
-                    this.menuImageFlip,
-                    this.menuImageRotate,
+                    this.menuImageFlipHorizontal,
+                    this.menuImageFlipVertical,
                     this.menuImageSeparator2,
+                    this.menuImageRotate90CW,
+                    this.menuImageRotate90CCW,
+                    this.menuImageRotate180,
+                    this.menuImageSeparator3,
                     this.menuImageFlatten 
                 });
             this.Name = "Menu.Image";
@@ -95,66 +89,33 @@ namespace PaintDotNet.Menus
             this.menuImageCanvasSize.ShortcutKeys = Keys.Control | Keys.Shift | Keys.R;
             this.menuImageCanvasSize.Click += new System.EventHandler(this.MenuImageCanvasSize_Click);
             // 
-            // menuImageFlip
-            // 
-            this.menuImageFlip.Name = "Flip";
-            this.menuImageFlip.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                                                                                          this.menuImageFlipHorizontal,
-                                                                                          this.menuImageFlipVertical});
-            // 
             // menuImageFlipHorizontal
             // 
-            this.menuImageFlipHorizontal.Name = "Horizontal";
+            this.menuImageFlipHorizontal.Name = "FlipHorizontal";
             this.menuImageFlipHorizontal.Click += new System.EventHandler(this.MenuImageFlipHorizontal_Click);
             // 
             // menuImageFlipVertical
             // 
-            this.menuImageFlipVertical.Name = "Vertical";
+            this.menuImageFlipVertical.Name = "FlipVertical";
             this.menuImageFlipVertical.Click += new System.EventHandler(this.MenuImageFlipVertical_Click);
-            // 
-            // menuImageRotate
-            // 
-            this.menuImageRotate.Name = "Rotate";
-            this.menuImageRotate.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                                                                                            this.menuImageRotate90CW,
-                                                                                            this.menuImageRotate180CW,
-                                                                                            this.menuImageRotate270CW,
-                                                                                            this.menuImageRotateSeparator,
-                                                                                            this.menuImageRotate90CCW,
-                                                                                            this.menuImageRotate180CCW,
-                                                                                            this.menuImageRotate270CCW});
             // 
             // menuImageRotate90CW
             // 
-            this.menuImageRotate90CW.Name = "90CW";
+            this.menuImageRotate90CW.Name = "Rotate90CW";
             this.menuImageRotate90CW.ShortcutKeys = Keys.Control | Keys.H;
             this.menuImageRotate90CW.Click += new System.EventHandler(this.MenuImageRotate90CW_Click);
             // 
-            // menuImageRotate180CW
-            // 
-            this.menuImageRotate180CW.Name = "180CW";
-            this.menuImageRotate180CW.Click += new System.EventHandler(this.MenuImageRotate180CW_Click);
-            // 
-            // menuImageRotate270CW
-            // 
-            this.menuImageRotate270CW.Name = "270CW";
-            this.menuImageRotate270CW.Click += new System.EventHandler(this.MenuImageRotate270CW_Click);
-            // 
             // menuImageRotate90CCW
             // 
-            this.menuImageRotate90CCW.Name = "90CCW";
+            this.menuImageRotate90CCW.Name = "Rotate90CCW";
             this.menuImageRotate90CCW.ShortcutKeys = Keys.Control | Keys.G;
             this.menuImageRotate90CCW.Click += new System.EventHandler(this.MenuImageRotate90CCW_Click);
             // 
-            // menuImageRotate180CCW
+            // menuImageRotate180
             // 
-            this.menuImageRotate180CCW.Name = "180CCW";
-            this.menuImageRotate180CCW.Click += new System.EventHandler(this.MenuImageRotate180CCW_Click);
-            // 
-            // menuImageRotate270CCW
-            // 
-            this.menuImageRotate270CCW.Name = "270CCW";
-            this.menuImageRotate270CCW.Click += new System.EventHandler(this.MenuImageRotate270CCW_Click);
+            this.menuImageRotate180.Name = "Rotate180";
+            this.menuImageRotate180.Click += new System.EventHandler(this.MenuImageRotate180_Click);
+            this.menuImageRotate180.ShortcutKeys = Keys.Control | Keys.J;
             // 
             // menuImageFlatten
             // 
@@ -173,11 +134,8 @@ namespace PaintDotNet.Menus
                 this.menuImageFlipHorizontal.Enabled = false;
                 this.menuImageFlipVertical.Enabled = false;
                 this.menuImageRotate90CW.Enabled = false;
-                this.menuImageRotate180CW.Enabled = false;
-                this.menuImageRotate270CW.Enabled = false;
                 this.menuImageRotate90CCW.Enabled = false;
-                this.menuImageRotate180CCW.Enabled = false;
-                this.menuImageRotate270CCW.Enabled = false;
+                this.menuImageRotate180.Enabled = false;
                 this.menuImageFlatten.Enabled = false;
             }
             else
@@ -188,11 +146,8 @@ namespace PaintDotNet.Menus
                 this.menuImageFlipHorizontal.Enabled = true;
                 this.menuImageFlipVertical.Enabled = true;
                 this.menuImageRotate90CW.Enabled = true;
-                this.menuImageRotate180CW.Enabled = true;
-                this.menuImageRotate270CW.Enabled = true;
                 this.menuImageRotate90CCW.Enabled = true;
-                this.menuImageRotate180CCW.Enabled = true;
-                this.menuImageRotate270CCW.Enabled = true;
+                this.menuImageRotate180.Enabled = true;
                 this.menuImageFlatten.Enabled = (AppWorkspace.ActiveDocumentWorkspace.Document.Layers.Count > 1);
             }
 
@@ -251,24 +206,6 @@ namespace PaintDotNet.Menus
             }
         }
 
-        private void MenuImageRotate180CW_Click(object sender, System.EventArgs e)
-        {
-            if (AppWorkspace.ActiveDocumentWorkspace != null)
-            {
-                HistoryFunction da = new RotateDocumentFunction(RotateType.Clockwise180);
-                AppWorkspace.ActiveDocumentWorkspace.ExecuteFunction(da);
-            }
-        }
-
-        private void MenuImageRotate270CW_Click(object sender, System.EventArgs e)
-        {
-            if (AppWorkspace.ActiveDocumentWorkspace != null)
-            {
-                HistoryFunction da = new RotateDocumentFunction(RotateType.Clockwise270);
-                AppWorkspace.ActiveDocumentWorkspace.ExecuteFunction(da);
-            }
-        }
-
         private void MenuImageRotate90CCW_Click(object sender, System.EventArgs e)
         {
             if (AppWorkspace.ActiveDocumentWorkspace != null)
@@ -278,20 +215,11 @@ namespace PaintDotNet.Menus
             }
         }
 
-        private void MenuImageRotate180CCW_Click(object sender, System.EventArgs e)
+        private void MenuImageRotate180_Click(object sender, System.EventArgs e)
         {
             if (AppWorkspace.ActiveDocumentWorkspace != null)
             {
-                HistoryFunction da = new RotateDocumentFunction(RotateType.CounterClockwise180);
-                AppWorkspace.ActiveDocumentWorkspace.ExecuteFunction(da);
-            }
-        }
-
-        private void MenuImageRotate270CCW_Click(object sender, System.EventArgs e)
-        {
-            if (AppWorkspace.ActiveDocumentWorkspace != null)
-            {
-                HistoryFunction da = new RotateDocumentFunction(RotateType.CounterClockwise270);
+                HistoryFunction da = new RotateDocumentFunction(RotateType.Rotate180);
                 AppWorkspace.ActiveDocumentWorkspace.ExecuteFunction(da);
             }
         }

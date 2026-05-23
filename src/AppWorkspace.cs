@@ -109,7 +109,7 @@ namespace PaintDotNet
             set
             {
                 this.defaultToolTypeChoice = value;
-                Settings.CurrentUser.SetString(PdnSettings.DefaultToolTypeName, value.Name);
+                Settings.CurrentUser.SetString(SettingNames.DefaultToolTypeName, value.Name);
             }
         }
 
@@ -200,7 +200,7 @@ namespace PaintDotNet
                     this.activeDocumentWorkspace.DrawGrid = value;
                 }
 
-                Settings.CurrentUser.SetBoolean(PdnSettings.DrawGrid, this.DrawGrid);
+                Settings.CurrentUser.SetBoolean(SettingNames.DrawGrid, this.DrawGrid);
             }
         }
 
@@ -377,11 +377,36 @@ namespace PaintDotNet
 
         public void ResetFloatingForms()
         {
+            ResetFloatingForm(Widgets.ToolsForm);
+            ResetFloatingForm(Widgets.HistoryForm);
+            ResetFloatingForm(Widgets.LayerForm);
+            ResetFloatingForm(Widgets.ColorsForm);
+        }
+
+        public void ResetFloatingForm(FloatingToolForm ftf)
+        {
             SnapManager sm = SnapManager.FindMySnapManager(this);
-            sm.ParkObstacle(Widgets.ToolsForm, this, HorizontalSnapEdge.Top, VerticalSnapEdge.Left);
-            sm.ParkObstacle(Widgets.HistoryForm, this, HorizontalSnapEdge.Top, VerticalSnapEdge.Right);
-            sm.ParkObstacle(Widgets.LayerForm, this, HorizontalSnapEdge.Bottom, VerticalSnapEdge.Right);
-            sm.ParkObstacle(Widgets.ColorsForm, this, HorizontalSnapEdge.Bottom, VerticalSnapEdge.Left);
+
+            if (ftf == Widgets.ToolsForm)
+            {
+                sm.ParkObstacle(Widgets.ToolsForm, this, HorizontalSnapEdge.Top, VerticalSnapEdge.Left);
+            }
+            else if (ftf == Widgets.HistoryForm)
+            {
+                sm.ParkObstacle(Widgets.HistoryForm, this, HorizontalSnapEdge.Top, VerticalSnapEdge.Right);
+            }
+            else if (ftf == Widgets.LayerForm)
+            {
+                sm.ParkObstacle(Widgets.LayerForm, this, HorizontalSnapEdge.Bottom, VerticalSnapEdge.Right);
+            }
+            else if (ftf == Widgets.ColorsForm)
+            {
+                sm.ParkObstacle(Widgets.ColorsForm, this, HorizontalSnapEdge.Bottom, VerticalSnapEdge.Left);
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
         }
 
         public void RunEffect(Type effectType)
@@ -1008,15 +1033,15 @@ namespace PaintDotNet
 
         public void SaveSettings()
         {
-            Settings.CurrentUser.SetBoolean(PdnSettings.Rulers, this.globalRulersChoice);
-            Settings.CurrentUser.SetBoolean(PdnSettings.DrawGrid, this.DrawGrid);
-            Settings.CurrentUser.SetString(PdnSettings.DefaultToolTypeName, this.defaultToolTypeChoice.Name);
+            Settings.CurrentUser.SetBoolean(SettingNames.Rulers, this.globalRulersChoice);
+            Settings.CurrentUser.SetBoolean(SettingNames.DrawGrid, this.DrawGrid);
+            Settings.CurrentUser.SetString(SettingNames.DefaultToolTypeName, this.defaultToolTypeChoice.Name);
             this.MostRecentFiles.SaveMruList();
         }
 
         private void LoadDefaultToolType()
         {
-            string defaultToolTypeName = Settings.CurrentUser.GetString(PdnSettings.DefaultToolTypeName, Tool.DefaultToolType.Name);
+            string defaultToolTypeName = Settings.CurrentUser.GetString(SettingNames.DefaultToolTypeName, Tool.DefaultToolType.Name);
 
             ToolInfo[] tis = DocumentWorkspace.ToolInfos;
             ToolInfo ti = Array.Find(
@@ -1050,13 +1075,13 @@ namespace PaintDotNet
                 LoadDefaultToolType();
 
                 this.globalToolTypeChoice = this.defaultToolTypeChoice;
-                this.globalRulersChoice = Settings.CurrentUser.GetBoolean(PdnSettings.Rulers, false);
-                this.DrawGrid = Settings.CurrentUser.GetBoolean(PdnSettings.DrawGrid, false);
+                this.globalRulersChoice = Settings.CurrentUser.GetBoolean(SettingNames.Rulers, false);
+                this.DrawGrid = Settings.CurrentUser.GetBoolean(SettingNames.DrawGrid, false);
 
                 this.appEnvironment = AppEnvironment.GetDefaultAppEnvironment();
 
                 this.widgets.ViewConfigStrip.Units = (MeasurementUnit)Enum.Parse(typeof(MeasurementUnit),
-                    Settings.CurrentUser.GetString(PdnSettings.Units, MeasurementUnit.Pixel.ToString()), true);
+                    Settings.CurrentUser.GetString(SettingNames.Units, MeasurementUnit.Pixel.ToString()), true);
             }
 
             catch (Exception)
@@ -1069,11 +1094,11 @@ namespace PaintDotNet
                     Settings.CurrentUser.Delete(
                         new string[] 
                         {    
-                            PdnSettings.Rulers, 
-                            PdnSettings.DrawGrid, 
-                            PdnSettings.Units,
-                            PdnSettings.DefaultAppEnvironment,
-                            PdnSettings.DefaultToolTypeName,
+                            SettingNames.Rulers, 
+                            SettingNames.DrawGrid, 
+                            SettingNames.Units,
+                            SettingNames.DefaultAppEnvironment,
+                            SettingNames.DefaultToolTypeName,
                         });
                 }
 
@@ -1443,7 +1468,6 @@ namespace PaintDotNet
             
             // HistoryForm
             historyForm = new HistoryForm();
-            historyForm.ClearHistoryButtonClicked += HistoryForm_ClearHistoryButtonClicked;
             historyForm.RewindButtonClicked += HistoryForm_RewindButtonClicked;
             historyForm.UndoButtonClicked += HistoryForm_UndoButtonClicked;
             historyForm.RedoButtonClicked += HistoryForm_RedoButtonClicked;
@@ -1617,14 +1641,6 @@ namespace PaintDotNet
             }
         }
 
-        private void HistoryForm_ClearHistoryButtonClicked(object sender, System.EventArgs e)
-        {
-            if (ActiveDocumentWorkspace != null)
-            {
-                ActiveDocumentWorkspace.PerformAction(new ClearHistoryAction());
-            }
-        }
-
         private void HistoryForm_UndoButtonClicked(object sender, System.EventArgs e)
         {
             if (ActiveDocumentWorkspace != null)
@@ -1778,7 +1794,7 @@ namespace PaintDotNet
             PerformLayout();
             ActiveDocumentWorkspace.UpdateRulerSelectionTinting();
 
-            Settings.CurrentUser.SetBoolean(PdnSettings.Rulers, this.activeDocumentWorkspace.RulersEnabled);
+            Settings.CurrentUser.SetBoolean(SettingNames.Rulers, this.activeDocumentWorkspace.RulersEnabled);
         }
 
         private void Environment_AntiAliasingChanged(object sender, EventArgs e)
@@ -1800,7 +1816,7 @@ namespace PaintDotNet
         {
             if (this.toolBar.ViewConfigStrip.Units != MeasurementUnit.Pixel)
             {
-                Settings.CurrentUser.SetString(PdnSettings.LastNonPixelUnits, this.toolBar.ViewConfigStrip.Units.ToString());
+                Settings.CurrentUser.SetString(SettingNames.LastNonPixelUnits, this.toolBar.ViewConfigStrip.Units.ToString());
             }
 
             if (this.activeDocumentWorkspace != null)
@@ -1808,7 +1824,7 @@ namespace PaintDotNet
                 this.activeDocumentWorkspace.Units = this.Units;
             }
 
-            Settings.CurrentUser.SetString(PdnSettings.Units, this.toolBar.ViewConfigStrip.Units.ToString());
+            Settings.CurrentUser.SetString(SettingNames.Units, this.toolBar.ViewConfigStrip.Units.ToString());
 
             UpdateDocInfoInStatusBar();
             this.statusBar.CursorInfoText = string.Empty;

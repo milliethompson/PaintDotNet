@@ -92,8 +92,8 @@
     <Reference Include="System.Xml">
       <Name>System.XML</Name>
     </Reference>
-    <ProjectReference Include="..\PdnLib\PdnLib.csproj">
-      <Name>PdnLib</Name>
+    <ProjectReference Include="..\PdnLib\Core.csproj">
+      <Name>Core</Name>
       <Project>{1EADE568-A866-4DD4-9898-0A151E3F0E26}</Project>
       <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
     </ProjectReference>

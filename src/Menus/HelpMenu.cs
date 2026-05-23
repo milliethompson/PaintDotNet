@@ -260,9 +260,80 @@ namespace PaintDotNet.Menus
 
         private void LanguageMenuItem_Click(object sender, EventArgs e)
         {
+            // Save off the old locale name in case they decide to cancel
+            string oldLocaleName = PdnResources.Culture.Name;
+
+            // Now, apply the chosen language so that the confirmation buttons show up in the right language
             ToolStripMenuItem miwt = (ToolStripMenuItem)sender;
             string newLocaleName = (string)miwt.Tag;
-            PdnResources.SetNewCulture(AppWorkspace, newLocaleName);
+            PdnResources.SetNewCulture(newLocaleName);
+
+            // Load the text and buttons in the new language
+            Icon formIcon = Utility.ImageToIcon(ImageResource.Get("Icons.MenuHelpLanguageIcon.png").Reference);
+            string title = PdnResources.GetString("ConfirmLanguageDialog.Title");
+            Image taskImage = null;
+            string introText = PdnResources.GetString("ConfirmLanguageDialog.IntroText");
+
+            Image restartImage = ImageResource.Get("Icons.RightArrowBlue.png").Reference;
+            string explanationTextFormat = PdnResources.GetString("ConfirmLanguageDialog.RestartTB.ExplanationText.Format");
+            CultureInfo newCI = new CultureInfo(newLocaleName);
+
+            // We prefer to show "English (United States)" as just "English"
+            CultureInfo en_US = new CultureInfo("en-US");
+
+            if (newCI.Equals(en_US))
+            {
+                newCI = newCI.Parent;
+            }
+
+            string languageName = newCI.NativeName;
+            string explanationText = string.Format(explanationTextFormat, languageName);
+
+            TaskButton restartTB = new TaskButton(
+                restartImage,
+                PdnResources.GetString("ConfirmLanguageDialog.RestartTB.ActionText"),
+                explanationText);
+
+            Image cancelImage = ImageResource.Get("Icons.CancelIcon.png").Reference;
+            TaskButton cancelTB = new TaskButton(
+                cancelImage,
+                PdnResources.GetString("ConfirmLanguageDialog.CancelTB.ActionText"),
+                PdnResources.GetString("ConfirmLanguageDialog.CancelTB.ExplanationText"));
+
+            int width96dpi = (TaskDialog.DefaultPixelWidth96Dpi * 5) / 4;
+
+            TaskButton clickedTB = TaskDialog.Show(
+                AppWorkspace,
+                formIcon,
+                title,
+                taskImage,
+                true,
+                introText,
+                new TaskButton[] { restartTB, cancelTB },
+                restartTB,
+                cancelTB,
+                width96dpi);
+
+            if (clickedTB == restartTB)
+            {
+                // Next, apply restart logic
+                CloseAllWorkspacesAction cawa = new CloseAllWorkspacesAction();
+                cawa.PerformAction(AppWorkspace);
+
+                if (!cawa.Cancelled)
+                {
+                    SystemLayer.Shell.RestartApplication();
+                    Startup.CloseApplication();
+                }
+            }
+            else
+            {
+                // Revert to the old language
+                PdnResources.SetNewCulture(oldLocaleName);
+            }
+
+            //string message = PdnResources.GetString("SetLanguage.PleaseRestartApplication");
+            //MessageBox.Show(owner, message, PdnInfo.GetBareProductName(), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void MenuHelpSendFeedback_Click(object sender, EventArgs e)

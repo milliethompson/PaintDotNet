@@ -87,9 +87,9 @@
       <Name>System.Windows.Forms</Name>
     </Reference>
     <Reference Include="System.Xml" />
-    <ProjectReference Include="..\PdnLib\PdnLib.csproj">
+    <ProjectReference Include="..\PdnLib\Core.csproj">
       <Project>{1EADE568-A866-4DD4-9898-0A151E3F0E26}</Project>
-      <Name>PdnLib</Name>
+      <Name>Core</Name>
     </ProjectReference>
     <ProjectReference Include="..\Resources\Resources.csproj">
       <Name>Resources</Name>
@@ -154,6 +154,10 @@ call "$(SolutionDir)Manifests\embedManifest.bat" "$(ProjectDir)obj\$(Configurati
 
 @rem copy English strings over
 copy "$(SolutionDir)\Strings\$(ConfigurationName)\PaintDotNet.Strings.3.resources" "$(TargetDir)"
+
+@rem copy SystemLayer.Native.*.dll over
+rem copy "$(SolutionDir)\SystemLayer.Native\SystemLayer.Native.x64\$(ConfigurationName)\PaintDotNet.SystemLayer.Native.x64.dll" "$(TargetDir)"
+rem copy "$(SolutionDir)\SystemLayer.Native\SystemLayer.Native.x86\$(ConfigurationName)\PaintDotNet.SystemLayer.Native.x86.dll" "$(TargetDir)"
 
 @rem Sign
 rem call "$(SolutionDir)signfile.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)"

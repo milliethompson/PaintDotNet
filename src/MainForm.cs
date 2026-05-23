@@ -241,7 +241,11 @@ namespace PaintDotNet
             // Parse command line arguments
             foreach (string argument in args)
             {
-                if (0 == string.Compare(argument, "/splash", true))
+                if (0 == string.Compare(argument, "/dontForceGC"))
+                {
+                    Utility.AllowGCFullCollect = false;
+                }
+                else if (0 == string.Compare(argument, "/splash", true))
                 {
                     splash = true;
                 }
@@ -373,7 +377,7 @@ namespace PaintDotNet
             try
             {
                 FormWindowState fws = (FormWindowState)Enum.Parse(typeof(FormWindowState), 
-                    Settings.CurrentUser.GetString(PdnSettings.WindowState, WindowState.ToString()), true);
+                    Settings.CurrentUser.GetString(SettingNames.WindowState, WindowState.ToString()), true);
 
                 // if the state was saved as 'minimized' then just ignore whatever was saved
 
@@ -387,11 +391,11 @@ namespace PaintDotNet
                         // can update the settings all at once, instead of one
                         // at a time. This will make loading the size an all or
                         // none operation, with no rollback necessary
-                        newBounds.Width = Settings.CurrentUser.GetInt32(PdnSettings.Width, this.Width);
-                        newBounds.Height = Settings.CurrentUser.GetInt32(PdnSettings.Height, this.Height);
+                        newBounds.Width = Settings.CurrentUser.GetInt32(SettingNames.Width, this.Width);
+                        newBounds.Height = Settings.CurrentUser.GetInt32(SettingNames.Height, this.Height);
 
-                        int left = Settings.CurrentUser.GetInt32(PdnSettings.Left, this.Left);
-                        int top = Settings.CurrentUser.GetInt32(PdnSettings.Top, this.Top);
+                        int left = Settings.CurrentUser.GetInt32(SettingNames.Left, this.Left);
+                        int top = Settings.CurrentUser.GetInt32(SettingNames.Top, this.Top);
                         newBounds.Location = new Point(left, top);
 
                         this.Bounds = newBounds;
@@ -408,11 +412,11 @@ namespace PaintDotNet
                     Settings.CurrentUser.Delete(
                         new string[] 
                         { 
-                            PdnSettings.Width,
-                            PdnSettings.Height,
-                            PdnSettings.WindowState,
-                            PdnSettings.Top,
-                            PdnSettings.Left 
+                            SettingNames.Width,
+                            SettingNames.Height,
+                            SettingNames.WindowState,
+                            SettingNames.Top,
+                            SettingNames.Left 
                         });
                 }
 
@@ -427,7 +431,7 @@ namespace PaintDotNet
         {
             try
             {
-                PdnBaseForm.EnableOpacity = Settings.CurrentUser.GetBoolean(PdnSettings.TranslucentWindows, true);
+                PdnBaseForm.EnableOpacity = Settings.CurrentUser.GetBoolean(SettingNames.TranslucentWindows, true);
             }
 
             catch (Exception ex)
@@ -438,7 +442,7 @@ namespace PaintDotNet
                 {
                     Settings.CurrentUser.Delete(new string[] 
                                                 { 
-                                                    PdnSettings.TranslucentWindows
+                                                    SettingNames.TranslucentWindows
                                                 });
                 }
 
@@ -450,20 +454,20 @@ namespace PaintDotNet
 
         private void SaveSettings()
         {
-            Settings.CurrentUser.SetInt32(PdnSettings.Width, this.Width);
-            Settings.CurrentUser.SetInt32(PdnSettings.Height, this.Height);
-            Settings.CurrentUser.SetInt32(PdnSettings.Top, this.Top);
-            Settings.CurrentUser.SetInt32(PdnSettings.Left, this.Left);
-            Settings.CurrentUser.SetString(PdnSettings.WindowState, this.WindowState.ToString());
+            Settings.CurrentUser.SetInt32(SettingNames.Width, this.Width);
+            Settings.CurrentUser.SetInt32(SettingNames.Height, this.Height);
+            Settings.CurrentUser.SetInt32(SettingNames.Top, this.Top);
+            Settings.CurrentUser.SetInt32(SettingNames.Left, this.Left);
+            Settings.CurrentUser.SetString(SettingNames.WindowState, this.WindowState.ToString());
 
-            Settings.CurrentUser.SetBoolean(PdnSettings.TranslucentWindows, PdnBaseForm.EnableOpacity);
+            Settings.CurrentUser.SetBoolean(SettingNames.TranslucentWindows, PdnBaseForm.EnableOpacity);
 
             if (this.WindowState != FormWindowState.Minimized)
             {
-                Settings.CurrentUser.SetBoolean(PdnSettings.ToolsFormVisible, this.appWorkspace.Widgets.ToolsForm.Visible);
-                Settings.CurrentUser.SetBoolean(PdnSettings.ColorsFormVisible, this.appWorkspace.Widgets.ColorsForm.Visible);
-                Settings.CurrentUser.SetBoolean(PdnSettings.HistoryFormVisible, this.appWorkspace.Widgets.HistoryForm.Visible);
-                Settings.CurrentUser.SetBoolean(PdnSettings.LayersFormVisible, this.appWorkspace.Widgets.LayerForm.Visible);
+                Settings.CurrentUser.SetBoolean(SettingNames.ToolsFormVisible, this.appWorkspace.Widgets.ToolsForm.Visible);
+                Settings.CurrentUser.SetBoolean(SettingNames.ColorsFormVisible, this.appWorkspace.Widgets.ColorsForm.Visible);
+                Settings.CurrentUser.SetBoolean(SettingNames.HistoryFormVisible, this.appWorkspace.Widgets.HistoryForm.Visible);
+                Settings.CurrentUser.SetBoolean(SettingNames.LayersFormVisible, this.appWorkspace.Widgets.LayerForm.Visible);
             }
 
             SnapManager.Save(Settings.CurrentUser);
@@ -755,24 +759,69 @@ namespace PaintDotNet
                 this.AddOwnedForm(ftf);
             }
 
-            if (Settings.CurrentUser.GetBoolean(PdnSettings.ToolsFormVisible, true))
+            if (Settings.CurrentUser.GetBoolean(SettingNames.ToolsFormVisible, true))
             {
                 this.appWorkspace.Widgets.ToolsForm.Show();
             }
 
-            if (Settings.CurrentUser.GetBoolean(PdnSettings.ColorsFormVisible, true))
+            if (Settings.CurrentUser.GetBoolean(SettingNames.ColorsFormVisible, true))
             {
                 this.appWorkspace.Widgets.ColorsForm.Show();
             }
 
-            if (Settings.CurrentUser.GetBoolean(PdnSettings.HistoryFormVisible, true))
+            if (Settings.CurrentUser.GetBoolean(SettingNames.HistoryFormVisible, true))
             {
                 this.appWorkspace.Widgets.HistoryForm.Show();
             }
 
-            if (Settings.CurrentUser.GetBoolean(PdnSettings.LayersFormVisible, true))
+            if (Settings.CurrentUser.GetBoolean(SettingNames.LayersFormVisible, true))
             {
                 this.appWorkspace.Widgets.LayerForm.Show();
+            }
+
+            // If the floating form is off screen somehow, reset it
+            // We've been getting a lot of reports where people say their Colors window has disappeared
+            Screen[] allScreens = Screen.AllScreens;
+
+            foreach (FloatingToolForm ftf in this.floaters)
+            {
+                if (!ftf.Visible)
+                {
+                    continue;
+                }
+
+                bool reset = false;
+
+                try
+                {
+                    bool foundAScreen = false;
+
+                    foreach (Screen screen in allScreens)
+                    {
+                        Rectangle intersect = Rectangle.Intersect(screen.Bounds, ftf.Bounds);
+
+                        if (intersect.Width > 0 && intersect.Height > 0)
+                        {
+                            foundAScreen = true;
+                            break;
+                        }
+                    }
+
+                    if (!foundAScreen)
+                    {
+                        reset = true;
+                    }
+                }
+
+                catch (Exception)
+                {
+                    reset = true;
+                }
+
+                if (reset)
+                {
+                    this.appWorkspace.ResetFloatingForm(ftf);
+                }
             }
 
             this.floaterOpacityTimer.Enabled = true;
@@ -1014,6 +1063,10 @@ namespace PaintDotNet
                 }
                 else
                 {
+                    Icon formIcon = Utility.ImageToIcon(ImageResource.Get("Icons.DragDrop.OpenOrImport.FormIcon.png").Reference);
+                    string title = PdnResources.GetString("DragDrop.OpenOrImport.Title");
+                    string infoText = PdnResources.GetString("DragDrop.OpenOrImport.InfoText");
+
                     TaskButton openTB = new TaskButton(
                         ImageResource.Get("Icons.MenuFileOpenIcon.png").Reference,
                         PdnResources.GetString("DragDrop.OpenOrImport.OpenButton.ActionText"),
@@ -1036,11 +1089,11 @@ namespace PaintDotNet
 
                     TaskButton clickedTB = TaskDialog.Show(
                         this,
-                        new Icon(PdnResources.GetResourceStream("Icons.Question.ico")),
-                        PdnInfo.GetBareProductName(),
+                        formIcon,
+                        title,
                         null,
                         false,
-                        PdnResources.GetString("DragDrop.OpenOrImport.InfoText"),
+                        infoText,
                         new TaskButton[] { openTB, importLayersTB, TaskButton.Cancel },
                         null,
                         TaskButton.Cancel);

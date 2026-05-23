@@ -14,6 +14,100 @@ namespace PaintDotNet.SystemLayer
 {
     internal static class NativeConstants
     {
+        internal enum CDCONTROLSTATE
+        {
+            CDCS_INACTIVE = 0x00000000,
+            CDCS_ENABLED = 0x00000001,
+            CDCS_VISIBLE = 0x00000002
+        }
+
+        internal enum FFFP_MODE
+        {
+            FFFP_EXACTMATCH,
+            FFFP_NEARESTPARENTMATCH
+        }
+
+        internal enum SIATTRIBFLAGS
+        {
+            SIATTRIBFLAGS_AND = 0x00000001, // if multiple items and the attirbutes together.
+            SIATTRIBFLAGS_OR = 0x00000002, // if multiple items or the attributes together.
+            SIATTRIBFLAGS_APPCOMPAT = 0x00000003, // Call GetAttributes directly on the ShellFolder for multiple attributes
+        }
+
+        internal enum SIGDN : uint
+        {
+            SIGDN_NORMALDISPLAY = 0x00000000,                 // SHGDN_NORMAL
+            SIGDN_PARENTRELATIVEPARSING = 0x80018001,         // SHGDN_INFOLDER | SHGDN_FORPARSING
+            SIGDN_DESKTOPABSOLUTEPARSING = 0x80028000,        // SHGDN_FORPARSING
+            SIGDN_PARENTRELATIVEEDITING = 0x80031001,         // SHGDN_INFOLDER | SHGDN_FOREDITING
+            SIGDN_DESKTOPABSOLUTEEDITING = 0x8004c000,        // SHGDN_FORPARSING | SHGDN_FORADDRESSBAR
+            SIGDN_FILESYSPATH = 0x80058000,                   // SHGDN_FORPARSING
+            SIGDN_URL = 0x80068000,                           // SHGDN_FORPARSING
+            SIGDN_PARENTRELATIVEFORADDRESSBAR = 0x8007c001,   // SHGDN_INFOLDER | SHGDN_FORPARSING | SHGDN_FORADDRESSBAR
+            SIGDN_PARENTRELATIVE = 0x80080001                 // SHGDN_INFOLDER
+        }
+
+        internal enum FDE_OVERWRITE_RESPONSE
+        {
+            FDEOR_DEFAULT = 0x00000000,
+            FDEOR_ACCEPT = 0x00000001,
+            FDEOR_REFUSE = 0x00000002
+        }
+
+        internal enum FDE_SHAREVIOLATION_RESPONSE
+        {
+            FDESVR_DEFAULT = 0x00000000,
+            FDESVR_ACCEPT = 0x00000001,
+            FDESVR_REFUSE = 0x00000002
+        }
+
+        internal enum FDAP
+        {
+            FDAP_BOTTOM = 0x00000000,
+            FDAP_TOP = 0x00000001,
+        }
+
+        [Flags]
+        internal enum FOS : uint
+        {
+            FOS_OVERWRITEPROMPT = 0x00000002,
+            FOS_STRICTFILETYPES = 0x00000004,
+            FOS_NOCHANGEDIR = 0x00000008,
+            FOS_PICKFOLDERS = 0x00000020,
+            FOS_FORCEFILESYSTEM = 0x00000040, // Ensure that items returned are filesystem items.
+            FOS_ALLNONSTORAGEITEMS = 0x00000080, // Allow choosing items that have no storage.
+            FOS_NOVALIDATE = 0x00000100,
+            FOS_ALLOWMULTISELECT = 0x00000200,
+            FOS_PATHMUSTEXIST = 0x00000800,
+            FOS_FILEMUSTEXIST = 0x00001000,
+            FOS_CREATEPROMPT = 0x00002000,
+            FOS_SHAREAWARE = 0x00004000,
+            FOS_NOREADONLYRETURN = 0x00008000,
+            FOS_NOTESTFILECREATE = 0x00010000,
+            FOS_HIDEMRUPLACES = 0x00020000,
+            FOS_HIDEPINNEDPLACES = 0x00040000,
+            FOS_NODEREFERENCELINKS = 0x00100000,
+            FOS_DONTADDTORECENT = 0x02000000,
+            FOS_FORCESHOWHIDDEN = 0x10000000,
+            FOS_DEFAULTNOMINIMODE = 0x20000000
+        }
+
+        internal enum KF_CATEGORY
+        {
+            KF_CATEGORY_VIRTUAL = 0x00000001,
+            KF_CATEGORY_FIXED = 0x00000002,
+            KF_CATEGORY_COMMON = 0x00000003,
+            KF_CATEGORY_PERUSER = 0x00000004
+        }
+
+        [Flags]
+        internal enum KF_DEFINITION_FLAGS
+        {
+            KFDF_PERSONALIZE = 0x00000001,
+            KFDF_LOCAL_REDIRECT_ONLY = 0x00000002,
+            KFDF_ROAMABLE = 0x00000004,
+        }
+
         public const uint DWMWA_NCRENDERING_ENABLED = 1;           // [get] Is non-client rendering enabled/disabled
         public const uint DWMWA_NCRENDERING_POLICY = 2;            // [set] Non-client rendering policy
         public const uint DWMWA_TRANSITIONS_FORCEDISABLED = 3;     // [set] Potentially enable/forcibly disable transitions

@@ -780,7 +780,7 @@ namespace PaintDotNet
         /// </summary>
         private void DecideOpacitySetting()
         {
-            if (UserSessions.IsRemote() || !PdnBaseForm.globalEnableOpacity || !this.EnableInstanceOpacity)
+            if (UserSessions.IsRemote || !PdnBaseForm.globalEnableOpacity || !this.EnableInstanceOpacity)
             {
                 if (this.enableOpacity)
                 {

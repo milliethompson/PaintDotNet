@@ -7,26 +7,42 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
-using System;
+//#define NOVISTA
 
-namespace PaintDotNet
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace PaintDotNet.SystemLayer
 {
-    // TODO: use EventHandler<T> instead
-    public sealed class EnumValueEventArgs
-        : System.EventArgs
+    public static class CommonDialogs
     {
-        private System.Enum enumValue;
-        public System.Enum EnumValue
+        public static IFileOpenDialog CreateFileOpenDialog()
         {
-            get
+#if !NOVISTA
+            if (OS.IsVistaOrLater)
             {
-                return enumValue;
+                return new VistaFileOpenDialog();
+            }
+            else
+#endif
+            {
+                return new ClassicFileOpenDialog();
             }
         }
 
-        public EnumValueEventArgs(System.Enum enumValue)
+        public static IFileSaveDialog CreateFileSaveDialog()
         {
-            this.enumValue = enumValue;
+#if !NOVISTA
+            if (OS.IsVistaOrLater)
+            {
+                return new VistaFileSaveDialog();
+            }
+            else
+#endif
+            {
+                return new ClassicFileSaveDialog();
+            }
         }
     }
 }

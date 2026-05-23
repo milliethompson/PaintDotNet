@@ -169,7 +169,7 @@ namespace PaintDotNet.Actions
                 
                 if (loadAndSaveMaintainAspect)
                 {
-                    maintainAspect = Settings.CurrentUser.GetBoolean(PdnSettings.LastMaintainAspectRatioCS, false);
+                    maintainAspect = Settings.CurrentUser.GetBoolean(SettingNames.LastMaintainAspectRatioCS, false);
                 }
                 else
                 {
@@ -185,7 +185,7 @@ namespace PaintDotNet.Actions
                 csd.AnchorEdge = initialAnchor;
                 csd.Units = csd.OriginalDpuUnit;
                 csd.Resolution = document.DpuX;
-                csd.Units = PdnSettings.GetLastNonPixelUnits();
+                csd.Units = SettingNames.GetLastNonPixelUnits();
                 csd.ConstrainToAspect = maintainAspect;
 
                 DialogResult result = csd.ShowDialog(parent);
@@ -202,12 +202,12 @@ namespace PaintDotNet.Actions
                 // If they clicked OK, then we save the aspect checkbox, and maybe the anchor
                 if (loadAndSaveMaintainAspect)
                 {
-                    Settings.CurrentUser.SetBoolean(PdnSettings.LastMaintainAspectRatioCS, csd.ConstrainToAspect);
+                    Settings.CurrentUser.SetBoolean(SettingNames.LastMaintainAspectRatioCS, csd.ConstrainToAspect);
                 }
 
                 if (saveAnchor)
                 {
-                    Settings.CurrentUser.SetString(PdnSettings.LastCanvasSizeAnchorEdge, csd.AnchorEdge.ToString());
+                    Settings.CurrentUser.SetString(SettingNames.LastCanvasSizeAnchorEdge, csd.AnchorEdge.ToString());
                 }
 
                 if (newSize == document.Size && newDpuUnit == document.DpuUnit && newDpu == document.DpuX)
@@ -240,7 +240,7 @@ namespace PaintDotNet.Actions
 
         public override HistoryMemento PerformAction(DocumentWorkspace documentWorkspace)
         {
-            AnchorEdge initialEdge = PdnSettings.GetLastCanvasSizeAnchorEdge();
+            AnchorEdge initialEdge = SettingNames.GetLastCanvasSizeAnchorEdge();
 
             Document newDoc = ResizeDocument(
                 documentWorkspace.FindForm(),
@@ -257,7 +257,7 @@ namespace PaintDotNet.Actions
                 {
                     if (newDoc.DpuUnit != MeasurementUnit.Pixel)
                     {
-                        Settings.CurrentUser.SetString(PdnSettings.LastNonPixelUnits, newDoc.DpuUnit.ToString());
+                        Settings.CurrentUser.SetString(SettingNames.LastNonPixelUnits, newDoc.DpuUnit.ToString());
 
                         if (documentWorkspace.AppWorkspace.Units != MeasurementUnit.Pixel)
                         {

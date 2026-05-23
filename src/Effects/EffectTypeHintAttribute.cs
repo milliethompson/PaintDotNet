@@ -14,7 +14,7 @@ namespace PaintDotNet.Effects
     /// <summary>
     /// Tags an effect with a specific EffectTypeHint.
     /// </summary>
-    public class EffectTypeHintAttribute
+    public sealed class EffectTypeHintAttribute
         : Attribute
     {
         private EffectTypeHint effectTypeHint;

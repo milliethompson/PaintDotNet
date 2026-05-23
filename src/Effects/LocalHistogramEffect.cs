@@ -8,6 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.Effects;
+using PaintDotNet.SystemLayer;
 using System;
 using System.Drawing;
 using System.Collections.Generic;
@@ -119,12 +120,20 @@ namespace PaintDotNet.Effects
                 }
             }
 
+            const int hLength = 256;
+            int* hb = stackalloc int[hLength];
+            int* hg = stackalloc int[hLength];
+            int* hr = stackalloc int[hLength];
+            int* ha = stackalloc int[hLength];
+            uint hSize = (uint)(sizeof(int) * hLength);
+
             for (int y = rect.Top; y < rect.Bottom; y++)
             {
-                int* hb = stackalloc int[256];
-                int* hg = stackalloc int[256];
-                int* hr = stackalloc int[256];
-                int* ha = stackalloc int[256];
+                Memory.SetToZero(hb, hSize);
+                Memory.SetToZero(hg, hSize);
+                Memory.SetToZero(hr, hSize);
+                Memory.SetToZero(ha, hSize);
+
                 int area = 0;
 
                 ColorBgra* ps = src.GetPointAddressUnchecked(rect.Left, y);

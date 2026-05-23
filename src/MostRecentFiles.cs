@@ -202,7 +202,7 @@ namespace PaintDotNet
         {
             if (Loaded)
             {
-                Settings.CurrentUser.SetInt32(PdnSettings.MruMax, MaxCount);
+                Settings.CurrentUser.SetInt32(SettingNames.MruMax, MaxCount);
                 MostRecentFile[] mrfArray = GetFileList();
 
                 for (int i = 0; i < MaxCount; ++i)

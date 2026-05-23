@@ -9,7 +9,27 @@
 
 using System;
 
-namespace PaintDotNet
+namespace PaintDotNet.SystemLayer
 {
-    public delegate void LayerEventHandler(object sender, LayerEventArgs ce);
+    public interface IFileSaveDialog
+        : IFileDialog
+    {
+        bool AddExtension
+        {
+            get;
+            set;
+        }
+
+        bool OverwritePrompt
+        {
+            get;
+            set;
+        }
+
+        string FileName
+        {
+            get;
+            set;
+        }
+    }
 }

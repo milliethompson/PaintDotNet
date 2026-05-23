@@ -226,9 +226,6 @@ namespace PaintDotNet
         
         public static readonly Color TransparentKey = Color.FromArgb(192, 192, 192);
 
-        private static DateTime startTime = DateTime.Now;
-        private static DateTime lastTime = DateTime.Now;
-
         [Obsolete("Use SystemLayer.OS.IsDotNetVersionInstalled() instead")]
         public static bool IsDotNetVersionInstalled(int major, int minor, int build)
         {
@@ -256,12 +253,29 @@ namespace PaintDotNet
             return errorMessage;
         }
 
+        private static bool allowGCFullCollect = true;
+        public static bool AllowGCFullCollect
+        {
+            get
+            {
+                return allowGCFullCollect;
+            }
+
+            set
+            {
+                allowGCFullCollect = value;
+            }
+        }
+
         public static void GCFullCollect()
         {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            if (AllowGCFullCollect)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
         }
 
         private static int defaultSimplificationFactor = 50;

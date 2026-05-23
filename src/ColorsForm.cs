@@ -574,7 +574,7 @@ namespace PaintDotNet
 
             try
             {
-                currentPaletteString = Settings.CurrentUser.GetString(PdnSettings.CurrentPalette, null);
+                currentPaletteString = Settings.CurrentUser.GetString(SettingNames.CurrentPalette, null);
             }
 
             catch (Exception)
@@ -1981,7 +1981,7 @@ namespace PaintDotNet
         private void SwatchControl_ColorsChanged(object sender, EventArgs e)
         {
             string paletteString = PaletteCollection.GetPaletteSaveString(this.swatchControl.Colors);
-            Settings.CurrentUser.SetString(PdnSettings.CurrentPalette, paletteString);
+            Settings.CurrentUser.SetString(SettingNames.CurrentPalette, paletteString);
         }
 
         private void OnOpenPalettesFolderClickedHandler(object sender, EventArgs e)

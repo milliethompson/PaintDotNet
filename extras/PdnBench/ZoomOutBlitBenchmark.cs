@@ -52,15 +52,7 @@ namespace PdnBench
                 for (int j = 0; j < this.blitRects.Length; ++j)
                 {
                     object jObj = BoxedConstants.GetInt32(j);
-
-                    if (j != this.blitRects.Length - 1)
-                    {
-                        this.threadPool.QueueUserWorkItem(renderDelegate, jObj);
-                    }
-                    else
-                    {
-                        Render(jObj);
-                    }
+                    this.threadPool.QueueUserWorkItem(renderDelegate, jObj);
                 }
 
                 this.threadPool.Drain();

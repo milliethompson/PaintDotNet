@@ -82,7 +82,7 @@ namespace PaintDotNet.Updates
                 if (verified && !cawa.Cancelled)
                 {
                     // we're in the clear, launch the update!
-                    Settings.CurrentUser.SetString(PdnSettings.UpdateMsiFileName, this.installerPath);
+                    Settings.CurrentUser.SetString(SettingNames.UpdateMsiFileName, this.installerPath);
 
                     if (0 == string.Compare(Path.GetExtension(this.installerPath), ".exe", true))
                     {

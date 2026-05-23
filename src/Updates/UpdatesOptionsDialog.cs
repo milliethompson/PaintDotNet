@@ -88,11 +88,11 @@ namespace PaintDotNet.Updates
 
         private void LoadSettings()
         {
-            string autoCheckString = Settings.SystemWide.GetString(PdnSettings.AutoCheckForUpdates, "0");
+            string autoCheckString = Settings.SystemWide.GetString(SettingNames.AutoCheckForUpdates, "0");
             bool autoCheck = (autoCheckString == "1");
             this.autoCheckBox.Checked = autoCheck;
 
-            string betaCheckString = Settings.SystemWide.GetString(PdnSettings.AlsoCheckForBetas, "0");
+            string betaCheckString = Settings.SystemWide.GetString(SettingNames.AlsoCheckForBetas, "0");
             bool betaCheck = (betaCheckString == "1");
             this.betaCheckBox.Checked = betaCheck;
             this.betaCheckBox.Enabled = this.autoCheckBox.Checked;
@@ -101,10 +101,10 @@ namespace PaintDotNet.Updates
         private void SaveSettings()
         {
             string autoCheckString = autoCheckBox.Checked ? "1" : "0";
-            Settings.SystemWide.SetString(PdnSettings.AutoCheckForUpdates, autoCheckString);
+            Settings.SystemWide.SetString(SettingNames.AutoCheckForUpdates, autoCheckString);
 
             string betaCheckString = betaCheckBox.Checked ? "1" : "0";
-            Settings.SystemWide.SetString(PdnSettings.AlsoCheckForBetas, betaCheckString);
+            Settings.SystemWide.SetString(SettingNames.AlsoCheckForBetas, betaCheckString);
         }
 
         /// <summary>

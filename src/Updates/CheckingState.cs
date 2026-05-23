@@ -416,7 +416,7 @@ namespace PaintDotNet.Updates
                 int betaIndex = manifest.GetLatestBetaVersionIndex();
 
                 // Check for betas as well?
-                bool checkForBetas = ("1" == Settings.SystemWide.GetString(PdnSettings.AlsoCheckForBetas, "0"));
+                bool checkForBetas = ("1" == Settings.SystemWide.GetString(SettingNames.AlsoCheckForBetas, "0"));
 
                 // Figure out which version we want to compare against the current version
                 int latestIndex = stableIndex;

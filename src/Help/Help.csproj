@@ -116,7 +116,6 @@
     <Content Include="en\Images\HistoryWindow.png" />
     <Content Include="en\Images\ImageMenu.png" />
     <Content Include="en\Images\LayerProperties.png" />
-    <Content Include="en\Images\LayersFlipMenu.png" />
     <Content Include="en\Images\LayersMenu.png" />
     <Content Include="en\Images\LayersWindow.png" />
     <Content Include="en\Images\Levels1.png" />
@@ -129,6 +128,7 @@
     <Content Include="en\Images\PaintBucket_AfterFill.png" />
     <Content Include="en\Images\PaintBucket_BeforeFill.png" />
     <Content Include="en\Images\PaletteMenu.png" />
+    <Content Include="en\Images\PasteQuestion.png" />
     <Content Include="en\Images\PencilTool_After.png" />
     <Content Include="en\Images\PencilTool_Before.png" />
     <Content Include="en\Images\PixelTools.png" />
@@ -237,6 +237,7 @@
     <Content Include="images\Camaro_OilPainting.jpg" />
     <Content Include="images\Camaro_original.jpg" />
     <Content Include="images\Camaro_Outline.jpg" />
+    <Content Include="images\Camaro_PencilSketch.jpg" />
     <Content Include="images\Camaro_Pixelate.jpg" />
     <Content Include="images\Camaro_PolarInversion.jpg" />
     <Content Include="images\Camaro_RadialBlur.jpg" />

@@ -31,6 +31,8 @@ namespace PaintDotNet.Actions
 
         public override void PerformAction(AppWorkspace appWorkspace)
         {
+            DocumentWorkspace originalDW = appWorkspace.ActiveDocumentWorkspace;
+
             int oldLatency = appWorkspace.Widgets.DocumentStrip.ThumbnailUpdateLatency;
             appWorkspace.Widgets.DocumentStrip.ThumbnailUpdateLatency = 0;
 
@@ -117,7 +119,15 @@ namespace PaintDotNet.Actions
                 appWorkspace.Widgets.DocumentStrip.ThumbnailUpdateLatency = oldLatency;
             }
 
-            if (!this.cancelled)
+            if (this.cancelled)
+            {
+                if (appWorkspace.ActiveDocumentWorkspace != originalDW &&
+                    !originalDW.IsDisposed)
+                {
+                    appWorkspace.ActiveDocumentWorkspace = originalDW;
+                }
+            }
+            else
             {
                 UI.SuspendControlPainting(appWorkspace);
                 

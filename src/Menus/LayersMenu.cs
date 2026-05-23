@@ -25,7 +25,6 @@ namespace PaintDotNet.Menus
         private PdnMenuItem menuLayersMergeLayerDown;
         private PdnMenuItem menuLayersImportFromFile;
         private ToolStripSeparator menuLayersSeparator1;
-        private PdnMenuItem menuLayersFlip;
         private PdnMenuItem menuLayersFlipHorizontal;
         private PdnMenuItem menuLayersFlipVertical;
         private PdnMenuItem menuLayersRotateZoom;
@@ -56,7 +55,6 @@ namespace PaintDotNet.Menus
             this.menuLayersMergeLayerDown = new PdnMenuItem();
             this.menuLayersImportFromFile = new PdnMenuItem();
             this.menuLayersSeparator1 = new ToolStripSeparator();
-            this.menuLayersFlip = new PdnMenuItem();
             this.menuLayersFlipHorizontal = new PdnMenuItem();
             this.menuLayersFlipVertical = new PdnMenuItem();
             this.menuLayersRotateZoom = new PdnMenuItem();
@@ -74,7 +72,8 @@ namespace PaintDotNet.Menus
                     this.menuLayersMergeLayerDown,
                     this.menuLayersImportFromFile,
                     this.menuLayersSeparator1,
-                    this.menuLayersFlip,
+                    this.menuLayersFlipHorizontal,
+                    this.menuLayersFlipVertical,
                     this.menuLayersRotateZoom,
                     this.menuLayersSeparator2,
                     this.menuLayersLayerProperties
@@ -111,21 +110,14 @@ namespace PaintDotNet.Menus
             this.menuLayersImportFromFile.Name = "ImportFromFile";
             this.menuLayersImportFromFile.Click += new System.EventHandler(this.MenuLayersImportFromFile_Click);
             // 
-            // menuLayersFlip
-            // 
-            this.menuLayersFlip.Name = "Flip";
-            this.menuLayersFlip.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                                                                                           this.menuLayersFlipHorizontal,
-                                                                                           this.menuLayersFlipVertical});
-            // 
             // menuLayersFlipHorizontal
             // 
-            this.menuLayersFlipHorizontal.Name = "Horizontal";
+            this.menuLayersFlipHorizontal.Name = "FlipHorizontal";
             this.menuLayersFlipHorizontal.Click += new System.EventHandler(this.MenuLayersFlipHorizontal_Click);
             // 
             // menuLayersFlipVertical
             // 
-            this.menuLayersFlipVertical.Name = "Vertical";
+            this.menuLayersFlipVertical.Name = "FlipVertical";
             this.menuLayersFlipVertical.Click += new System.EventHandler(this.MenuLayersFlipVertical_Click);
             //
             // menuLayersRotateZoom

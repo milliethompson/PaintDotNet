@@ -223,14 +223,6 @@ namespace PdnBench
                         surface));
             }
 
-            benchmarks.Add(
-                new EffectBenchmark(
-                    "Auto-Levels",
-                    50,
-                    new AutoLevelEffect(),
-                    null,
-                    surface));
-
             for (int i = 81; i >= 5; i /= 3)
             {
                 benchmarks.Add(

@@ -14,6 +14,50 @@ namespace PaintDotNet.SystemLayer
 {
     internal static class NativeStructs
     {
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 4)]
+        internal struct KNOWNFOLDER_DEFINITION
+        {
+            public NativeConstants.KF_CATEGORY category;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszName;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszCreator;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszDescription;
+            public Guid fidParent;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszRelativePath;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszParsingName;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszToolTip;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszLocalizedName;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszIcon;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszSecurity;
+            public uint dwAttributes;
+            public NativeConstants.KF_DEFINITION_FLAGS kfdFlags;
+            public Guid ftidType;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        internal struct PROPERTYKEY
+        {
+            public Guid fmtid;
+            public uint pid;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 4)]
+        internal struct COMDLG_FILTERSPEC
+        {
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszName;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszSpec;
+        }
+
         [StructLayout(LayoutKind.Sequential)]
         internal struct SYSTEM_INFO
         {

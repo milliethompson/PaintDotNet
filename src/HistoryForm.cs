@@ -25,7 +25,6 @@ namespace PaintDotNet
         private ToolStripButton undoButton;
         private ToolStripButton redoButton;
         private ToolStripButton fastForwardButton;
-        private ToolStripButton clearHistoryButton;
         private System.ComponentModel.IContainer components;
 
         public HistoryControl HistoryControl
@@ -46,13 +45,11 @@ namespace PaintDotNet
             this.imageList.TransparentColor = Utility.TransparentKey;
             this.toolStrip.ImageList = this.imageList;
 
-            int clearHistoryIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersDeleteLayerIcon.png"), imageList.TransparentColor);
             int rewindIndex = imageList.Images.Add(PdnResources.GetImage("Icons.HistoryRewindIcon.png"), imageList.TransparentColor);
             int undoIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuEditUndoIcon.png"), imageList.TransparentColor);
             int redoIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuEditRedoIcon.png"), imageList.TransparentColor);
             int fastForwardIndex = imageList.Images.Add(PdnResources.GetImage("Icons.HistoryFastForwardIcon.png"), imageList.TransparentColor);
 
-            clearHistoryButton.ImageIndex = clearHistoryIndex;
             rewindButton.ImageIndex = rewindIndex;
             undoButton.ImageIndex = undoIndex;
             redoButton.ImageIndex = redoIndex;
@@ -64,7 +61,6 @@ namespace PaintDotNet
             this.undoButton.ToolTipText = PdnResources.GetString("HistoryForm.UndoButton.ToolTipText");
             this.redoButton.ToolTipText = PdnResources.GetString("HistoryForm.RedoButton.ToolTipText");
             this.fastForwardButton.ToolTipText = PdnResources.GetString("HistoryForm.FastForwardButton.ToolTipText");
-            this.clearHistoryButton.ToolTipText = PdnResources.GetString("HistoryForm.ClearHistoryButton.ToolTipText");
 
             this.MinimumSize = this.Size;
         }
@@ -114,7 +110,6 @@ namespace PaintDotNet
             this.undoButton = new System.Windows.Forms.ToolStripButton();
             this.redoButton = new System.Windows.Forms.ToolStripButton();
             this.fastForwardButton = new System.Windows.Forms.ToolStripButton();
-            this.clearHistoryButton = new System.Windows.Forms.ToolStripButton();
             this.toolStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -143,8 +138,7 @@ namespace PaintDotNet
             this.rewindButton,
             this.undoButton,
             this.redoButton,
-            this.fastForwardButton,
-            this.clearHistoryButton});
+            this.fastForwardButton});
             this.toolStrip.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.Flow;
             this.toolStrip.Location = new System.Drawing.Point(0, 139);
             this.toolStrip.Name = "toolStrip";
@@ -185,14 +179,6 @@ namespace PaintDotNet
             this.fastForwardButton.Size = new System.Drawing.Size(23, 4);
             this.fastForwardButton.Click += new System.EventHandler(this.OnToolStripButtonClick);
             // 
-            // clearHistoryButton
-            // 
-            this.clearHistoryButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.clearHistoryButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.clearHistoryButton.Name = "clearHistoryButton";
-            this.clearHistoryButton.Size = new System.Drawing.Size(23, 4);
-            this.clearHistoryButton.Click += new System.EventHandler(this.OnToolStripButtonClick);
-            // 
             // HistoryForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
@@ -220,20 +206,6 @@ namespace PaintDotNet
         private void ToolStrip_RelinquishFocus(object sender, EventArgs e)
         {
             OnRelinquishFocus();
-        }
-
-        public event EventHandler ClearHistoryButtonClicked;
-        protected virtual void OnClearHistoryButtonClicked()
-        {
-            if (ClearHistoryButtonClicked != null)
-            {
-                ClearHistoryButtonClicked(this, EventArgs.Empty);
-            }
-        }
-
-        public void PerformClearHistoryClick()
-        {
-            OnClearHistoryButtonClicked();
         }
 
         public event EventHandler UndoButtonClicked;
@@ -305,7 +277,6 @@ namespace PaintDotNet
                 undoButton.Enabled = false;
                 fastForwardButton.Enabled = false;
                 redoButton.Enabled = false;
-                clearHistoryButton.Enabled = false;
             }
             else
             {
@@ -332,17 +303,6 @@ namespace PaintDotNet
                     fastForwardButton.Enabled = true;
                     redoButton.Enabled = true;
                 }
-
-                // Find reasons to disable the "clear history" button
-                if (historyControl.HistoryStack.UndoStack.Count == 1 &&
-                    historyControl.HistoryStack.RedoStack.Count == 0)
-                {
-                    this.clearHistoryButton.Enabled = false;
-                }
-                else
-                {
-                    this.clearHistoryButton.Enabled = true;
-                }
             }
         }
 
@@ -354,11 +314,7 @@ namespace PaintDotNet
 
         private void OnToolStripButtonClick(object sender, EventArgs e)
         {
-            if (sender == clearHistoryButton)
-            {
-                OnClearHistoryButtonClicked();
-            }
-            else if (sender == undoButton)
+            if (sender == undoButton)
             {
                 OnUndoButtonClicked();
             }

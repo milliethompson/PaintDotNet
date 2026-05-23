@@ -95,6 +95,13 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Branding.cs" />
+    <Compile Include="ClassicFileDialog.cs" />
+    <Compile Include="ClassicFileOpenDialog.cs" />
+    <Compile Include="ClassicFileSaveDialog.cs" />
+    <Compile Include="CommonDialogs.cs" />
+    <Compile Include="IFileDialog.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="FileSystem.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -105,6 +112,9 @@
     <Compile Include="FormEx.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="IFileOpenDialog.cs" />
+    <Compile Include="IFileSaveDialog.cs" />
+    <Compile Include="NativeInterfaces.cs" />
     <Compile Include="SingleInstaceManager.cs" />
     <Compile Include="ISimpleCollection.cs" />
     <Compile Include="IInkHooks.cs">
@@ -191,6 +201,9 @@
     <Compile Include="UserSessions.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="VistaFileDialog.cs" />
+    <Compile Include="VistaFileOpenDialog.cs" />
+    <Compile Include="VistaFileSaveDialog.cs" />
     <Compile Include="WaitHandleArray.cs">
       <SubType>Code</SubType>
     </Compile>

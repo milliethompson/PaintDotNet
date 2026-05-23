@@ -55,11 +55,11 @@ namespace PaintDotNet.Actions
                 }
 
                 nfd.OriginalSize = new Size(newDocSize.Width, newDocSize.Height);
-                nfd.OriginalDpuUnit = PdnSettings.GetLastNonPixelUnits();
+                nfd.OriginalDpuUnit = SettingNames.GetLastNonPixelUnits();
                 nfd.OriginalDpu = Document.GetDefaultDpu(nfd.OriginalDpuUnit);
                 nfd.Units = nfd.OriginalDpuUnit;
                 nfd.Resolution = nfd.OriginalDpu;
-                nfd.ConstrainToAspect = Settings.CurrentUser.GetBoolean(PdnSettings.LastMaintainAspectRatioNF, false);
+                nfd.ConstrainToAspect = Settings.CurrentUser.GetBoolean(SettingNames.LastMaintainAspectRatioNF, false);
 
                 DialogResult dr = nfd.ShowDialog(appWorkspace);
 
@@ -70,11 +70,11 @@ namespace PaintDotNet.Actions
                     if (success)
                     {
                         appWorkspace.ActiveDocumentWorkspace.ZoomBasis = ZoomBasis.FitToWindow;
-                        Settings.CurrentUser.SetBoolean(PdnSettings.LastMaintainAspectRatioNF, nfd.ConstrainToAspect);
+                        Settings.CurrentUser.SetBoolean(SettingNames.LastMaintainAspectRatioNF, nfd.ConstrainToAspect);
 
                         if (nfd.Units != MeasurementUnit.Pixel)
                         {
-                            Settings.CurrentUser.SetString(PdnSettings.LastNonPixelUnits, nfd.Units.ToString());
+                            Settings.CurrentUser.SetString(SettingNames.LastNonPixelUnits, nfd.Units.ToString());
                         }
 
                         if (appWorkspace.Units != MeasurementUnit.Pixel)

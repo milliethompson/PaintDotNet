@@ -106,8 +106,8 @@
       <Project>{2E4E8805-00F7-4B18-A967-C23994BBCE75}</Project>
       <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
     </ProjectReference>
-    <ProjectReference Include="PdnLib\PdnLib.csproj">
-      <Name>PdnLib</Name>
+    <ProjectReference Include="PdnLib\Core.csproj">
+      <Name>Core</Name>
       <Project>{1EADE568-A866-4DD4-9898-0A151E3F0E26}</Project>
       <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
     </ProjectReference>
@@ -310,7 +310,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="PaletteCollection.cs" />
-    <Compile Include="PdnSettings.cs" />
+    <Compile Include="SettingNames.cs" />
     <Compile Include="PushNullToolMode.cs" />
     <Compile Include="SavePaletteDialog.cs">
       <SubType>Form</SubType>
@@ -428,9 +428,6 @@
     </Compile>
     <Compile Include="LayerForm.cs">
       <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="LoadProgressDialog.cs">
-      <SubType>Code</SubType>
     </Compile>
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -586,6 +583,10 @@ rem call "$(SolutionDir)signfile.bat" "$(TargetPath)"
 
 @rem copy Interop.WIA.dll over
 copy "$(SolutionDir)\Interop.WIA\Interop.WIA.dll" "$(TargetDir)"
+
+@rem copy SystemLayer.Native.*.dll over
+rem copy "$(SolutionDir)\SystemLayer.Native\SystemLayer.Native.x64\$(ConfigurationName)\PaintDotNet.SystemLayer.Native.x64.dll" "$(TargetDir)"
+rem copy "$(SolutionDir)\SystemLayer.Native\SystemLayer.Native.x86\$(ConfigurationName)\PaintDotNet.SystemLayer.Native.x86.dll" "$(TargetDir)"
 
 @rem copy WiaProxy32.exe over
 copy "$(SolutionDir)\WiaProxy32\bin\$(ConfigurationName)\WiaProxy32.exe" "$(TargetDir)"

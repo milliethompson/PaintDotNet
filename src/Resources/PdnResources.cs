@@ -77,7 +77,7 @@ namespace PaintDotNet
             Initialize();
         }
 
-        public static void SetNewCulture(IWin32Window owner, string newLocaleName)
+        public static void SetNewCulture(string newLocaleName)
         {
             // TODO, HACK: post-3.0 we must refactor and have an actual user data manager that can handle all this renaming
             string oldUserDataPath = PdnInfo.UserDataPath;
@@ -121,9 +121,6 @@ namespace PaintDotNet
                 }
             }
             // END HACK
-
-            string message = PdnResources.GetString("SetLanguage.PleaseRestartApplication");
-            MessageBox.Show(owner, message, PdnInfo.GetBareProductName(), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         
         public static string[] GetInstalledLocales()

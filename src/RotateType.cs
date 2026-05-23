@@ -14,10 +14,7 @@ namespace PaintDotNet
     public enum RotateType
     {
         Clockwise90,
-        Clockwise180,
-        Clockwise270,
         CounterClockwise90,
-        CounterClockwise180,
-        CounterClockwise270,
+        Rotate180,
     }
 }

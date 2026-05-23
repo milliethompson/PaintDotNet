@@ -52,20 +52,14 @@ namespace PdnBench
 
         protected override void OnExecute()
         {
+            WaitCallback wc = new WaitCallback(RenderThreadProc);
+
             for (int n = 0; n < this.iterations; ++n)
             {
                 for (int i = 0; i < this.rois.Length; ++i)
                 {
                     object iObj = BoxedConstants.GetInt32(i);
-
-                    if (n == this.iterations - 1 && i == this.rois.Length - 1)
-                    {
-                        RenderThreadProc(iObj);
-                    }
-                    else
-                    {
-                        this.threadPool.QueueUserWorkItem(new WaitCallback(RenderThreadProc), iObj);
-                    }
+                    this.threadPool.QueueUserWorkItem(wc, iObj);
                 }
             }
 

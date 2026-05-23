@@ -93,8 +93,8 @@
       <Project>{66681BB0-955D-451D-A466-94C045B1CF4A}</Project>
       <Name>Data</Name>
     </ProjectReference>
-    <ProjectReference Include="..\PdnLib\PdnLib.csproj">
-      <Name>PdnLib</Name>
+    <ProjectReference Include="..\PdnLib\Core.csproj">
+      <Name>Core</Name>
       <Project>{1EADE568-A866-4DD4-9898-0A151E3F0E26}</Project>
       <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
     </ProjectReference>
@@ -220,9 +220,6 @@
     <Compile Include="HueAndSaturationAdjustment.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="IConfigurableEffect.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="InvertColorsEffect.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -289,6 +286,7 @@
     <Compile Include="SharpenEffect.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="PencilSketchEffect.cs" />
     <Compile Include="ThreeAmountsConfigDialog.cs">
       <SubType>Form</SubType>
     </Compile>

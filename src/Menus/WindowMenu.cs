@@ -146,7 +146,7 @@ namespace PaintDotNet.Menus
             this.menuWindowLayers.Checked = AppWorkspace.Widgets.LayerForm.Visible;
             this.menuWindowColors.Checked = AppWorkspace.Widgets.ColorsForm.Visible;
 
-            if (UserSessions.IsRemote())
+            if (UserSessions.IsRemote)
             {
                 this.menuWindowTranslucent.Enabled = false;
                 this.menuWindowTranslucent.Checked = false;

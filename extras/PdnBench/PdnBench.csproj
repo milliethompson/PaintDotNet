@@ -124,6 +124,10 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="PaintDotNet.Core, Version=3.5.2624.38882, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Paint.NET\PaintDotNet.Core.dll</HintPath>
+    </Reference>
     <Reference Include="PaintDotNet.Data">
       <Name>PaintDotNet.Data</Name>
       <HintPath>..\..\src\bin\Release\PaintDotNet.Data.dll</HintPath>
@@ -140,10 +144,6 @@
     <Reference Include="PaintDotNet.SystemLayer">
       <Name>PaintDotNet.SystemLayer</Name>
       <HintPath>..\..\src\bin\Release\PaintDotNet.SystemLayer.dll</HintPath>
-    </Reference>
-    <Reference Include="PdnLib">
-      <Name>PdnLib</Name>
-      <HintPath>..\..\src\bin\Release\PdnLib.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>

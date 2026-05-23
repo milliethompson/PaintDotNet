@@ -16,7 +16,7 @@ namespace PaintDotNet.Effects
     /// within Paint.NET.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public class EffectCategoryAttribute :
+    public sealed class EffectCategoryAttribute :
         Attribute
     {
         private EffectCategory category;

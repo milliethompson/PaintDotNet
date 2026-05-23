@@ -20,7 +20,9 @@ namespace PaintDotNet.SystemLayer
     {
         [DllImport("user32.dll", SetLastError = false)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool FlashWindow(IntPtr hWnd, bool bInvert);
+        internal static extern bool FlashWindow(
+            IntPtr hWnd, 
+            [MarshalAs(UnmanagedType.Bool)] bool bInvert);
 
         [DllImport("dwmapi.dll")]
         internal unsafe static extern int DwmGetWindowAttribute(

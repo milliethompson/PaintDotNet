@@ -8,25 +8,50 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Windows.Forms;
 
-namespace PaintDotNet
+namespace PaintDotNet.SystemLayer
 {
-    // TODO: switch to EventArgs<string>
-    public sealed class NameEventArgs
-        : System.EventArgs
+    public interface IFileDialog
+        : IDisposable
     {
-        private string name;
-        public string Name
+        bool CheckPathExists
         {
-            get
-            {
-                return name;
-            }
+            get;
+            set;
         }
 
-        public NameEventArgs(string name)
-        {
-            this.name = name;
+        bool DereferenceLinks 
+        { 
+            get; 
+            set; 
         }
+
+        string Filter 
+        { 
+            get; 
+            set; 
+        }
+
+        int FilterIndex 
+        { 
+            get; 
+            set; 
+        }
+
+        string InitialDirectory
+        {
+            get;
+            set;
+        }
+
+        string Title 
+        { 
+            set; 
+        }
+
+        DialogResult ShowDialog(Control owner);
     }
 }

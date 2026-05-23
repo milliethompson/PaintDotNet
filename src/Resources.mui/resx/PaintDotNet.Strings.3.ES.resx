@@ -167,9 +167,6 @@
   <data name="HistoryForm.FastForwardButton.ToolTipText" xml:space="preserve">
     <value>Rehacer todos los pasos</value>
   </data>
-  <data name="HistoryForm.ClearHistoryButton.ToolTipText" xml:space="preserve">
-    <value>Borrar historial</value>
-  </data>
   <data name="HistoryForm.RedoButton.ToolTipText" xml:space="preserve">
     <value>Rehacer paso adelante</value>
   </data>
@@ -199,7 +196,7 @@
 ; El valor alfa (&apos;aa&apos;) muestra la transparencia de un color. FF indica que es totalmente opaco, 00 indica que es totalmente transparente.
 ; Una paleta tiene que contener noventa y seis (96) colores. Si hay menos, las casillas restantes de color
 ; se pondrán en blanco (FFFFFFFF). Si hay más, los colores adicionales se ignorarán.</value>
-    <comment>Este texto se escribe al principio de los archivos de paletas, que se guardan en archivos de texto (*.txt)</comment>
+    <comment>Sí, se tiene que traducir. Este texto se escribe al principio de los archivos de paletas, que se guardan en archivos de texto (*.txt). El usuario tiene que entenderlos.</comment>
   </data>
   <data name="SystemLayer.UserDataDirName">
     <value>Archivos de usuario de Paint.NET</value>
@@ -243,7 +240,7 @@
     <value>V:</value>
   </data>
   <data name="ColorsForm.RgbHeader.Text" xml:space="preserve">
-    <value>RVA (RGB)</value>
+    <value>RGB</value>
   </data>
   <data name="ColorsForm.HsvHeader.Text" xml:space="preserve">
     <value>MSV (HSV)</value>
@@ -565,7 +562,7 @@ Tecla de método abreviado: X</value>
     <value>Acercar</value>
   </data>
   <data name="CommonAction.ZoomOut" xml:space="preserve">
-    <value>Alear</value>
+    <value>Alejar</value>
   </data>
   <data name="CropAction.Name" xml:space="preserve">
     <value>Recortar según la selección</value>
@@ -625,7 +622,7 @@ Tecla de método abreviado: X</value>
     <value>Seleccionar una elipse</value>
   </data>
   <data name="EllipseSelectTool.HelpText" xml:space="preserve">
-    <value>Botón primario: Reemplazar. CRL+Izda: Agregar. Primario: Restar. CRL+Derecha: Invertir. Mantener presionada la tecla Mayús: Restringir al círculo.</value>
+    <value>Botón primario: Reemplazar. CRL+Izquierda: Agregar. Primario: Restar. CRL+Derecha: Invertir. Mantener presionada la tecla Mayús: Restringir al círculo.</value>
   </data>
   <data name="EllipseTool.Name" xml:space="preserve">
     <value>Elipse</value>
@@ -671,10 +668,6 @@ Tecla de método abreviado: X</value>
   </data>
   <data name="ImportFromFileAction.Name" xml:space="preserve">
     <value>Importar desde archivo</value>
-  </data>
-  <data name="ImportFromFileAction.AskForCanvasResize.Confirmation" xml:space="preserve">
-    <value>La imagen que está importando es más grande que el lienzo de imágenes.
-¿Desea ajustar el lienzo al tamaño de la imagen importada?</value>
   </data>
   <data name="ImportFromFileAction.AskForCanvasResize.OutOfMemory" xml:space="preserve">
     <value>Se agotó la memoria al cambiar el tamaño de la imagen.</value>
@@ -736,9 +729,6 @@ Tecla de método abreviado: X</value>
   </data>
   <data name="LineTool.CurvingHelpText" xml:space="preserve">
     <value>Presione Entrar para finalizar la curva o dibuje en otra zona para comenzar una línea nueva. Presione CRL para activar o desactivar los puntos de anclaje.</value>
-  </data>
-  <data name="LoadProgressDialog.Description" xml:space="preserve">
-    <value>Cargando:</value>
   </data>
   <data name="MagicWandTool.Name" xml:space="preserve">
     <value>Varita mágica</value>
@@ -958,20 +948,11 @@ Tecla de método abreviado: X</value>
   <data name="ResizeDialog.AsteriskTextLabel.Bicubic" xml:space="preserve">
     <value>* Se utilizará bicúbico</value>
   </data>
-  <data name="RotateAction.180CW" xml:space="preserve">
-    <value>180° a la derecha</value>
-  </data>
-  <data name="RotateAction.270CW" xml:space="preserve">
-    <value>270° a la derecha</value>
+  <data name="RotateAction.180" xml:space="preserve">
+    <value>180°</value>
   </data>
   <data name="RotateAction.90CW" xml:space="preserve">
     <value>90° a la derecha</value>
-  </data>
-  <data name="RotateAction.180CCW" xml:space="preserve">
-    <value>180° a la izquierda</value>
-  </data>
-  <data name="RotateAction.270CCW" xml:space="preserve">
-    <value>270° a la izquierda</value>
   </data>
   <data name="RotateAction.90CCW" xml:space="preserve">
     <value>90° a la izquierda</value>
@@ -1256,13 +1237,6 @@ Versión actual: Paint.NET v{1}</value>
   <data name="SaveAsDialog.Title" xml:space="preserve">
     <value>Guardar como</value>
   </data>
-  <data name="WarnAboutFlattening.Text" xml:space="preserve">
-    <value>Si graba en este formato de archivo se perderán las capas de la imagen, la información de las capas y las capas ocultas.
-¿Desea continuar?</value>
-  </data>
-  <data name="WarnAboutFlattening.Title" xml:space="preserve">
-    <value>Pregunta</value>
-  </data>
   <data name="SaveImage.Error.UnauthorizedAccessException" xml:space="preserve">
     <value>Acceso denegado. Utilice Archivo-&gt;Guardar como... para guardar en una ubicación diferente o con otro nombre.</value>
   </data>
@@ -1280,6 +1254,24 @@ Versión actual: Paint.NET v{1}</value>
   </data>
   <data name="SaveImage.Error.Exception" xml:space="preserve">
     <value>Error no especificado al guardar el archivo.</value>
+  </data>
+  <data name="WarnAboutFlattening.Title">
+    <value>Guardar</value>
+  </data>
+  <data name="WarnAboutFlattening.IntroText">
+    <value>Para guardar en este formato de archivo primero tiene que acoplar la imagen, lo que la reducirá a una única capa.</value>
+  </data>
+  <data name="WarnAboutFlattening.FlattenTB.ActionText">
+    <value>&amp;Acoplar</value>
+  </data>
+  <data name="WarnAboutFlattening.FlattenTB.ExplanationText">
+    <value>Se acoplará la imagen y, a continuación, se guardará. No prodrá deshacer la operación de acoplamiento una vez se ha finalizado la acoplación.</value>
+  </data>
+  <data name="WarnAboutFlattening.CancelTB.ActionText">
+    <value>Cancelar</value>
+  </data>
+  <data name="WarnAboutFlattening.CancelTB.ExplanationText">
+    <value>Cancelar la acción de guardado.</value>
   </data>
   <data name="CopyAction.Error.TransferToClipboard" xml:space="preserve">
     <value>Error al copiar la imagen al portapapeles.</value>
@@ -1343,6 +1335,9 @@ Versión actual: Paint.NET v{1}</value>
   </data>
   <data name="WIA.Error.UnableToLoad" xml:space="preserve">
     <value>No está disponible la librería Adquisición de imágenes de Windows: &quot;wiaaut.dll&quot;. Para solucionar el problema, lea el archivo de ayuda (Menú Ayuda-&gt;Temas de ayuda), en el tema Preguntas más frecuentes.</value>
+  </data>
+  <data name="DragDrop.OpenOrImport.Title">
+    <value>Arrastrar y soltar</value>
   </data>
   <data name="DragDrop.OpenOrImport.InfoText">
     <value>¿Qué desea hacer con cada uno de los archivos?</value>
@@ -1473,9 +1468,6 @@ Versión actual: Paint.NET v{1}</value>
   <data name="Menu.View.Grid.Text" xml:space="preserve">
     <value>&amp;Cuadrícula</value>
   </data>
-  <data name="Menu.View.Units.Text" xml:space="preserve">
-    <value>&amp;Unidades</value>
-  </data>
   <data name="Menu.Image.Text" xml:space="preserve">
     <value>&amp;Imagen</value>
   </data>
@@ -1488,35 +1480,23 @@ Versión actual: Paint.NET v{1}</value>
   <data name="Menu.Image.CanvasSize.Text" xml:space="preserve">
     <value>&amp;Tamaño del lienzo...</value>
   </data>
-  <data name="Menu.Image.Flip.Text" xml:space="preserve">
-    <value>&amp;Voltear</value>
+  <data name="Menu.Image.FlipHorizontal.Text" xml:space="preserve">
+    <value>Voltear &amp;horizontalmente</value>
   </data>
-  <data name="Menu.Image.Flip.Horizontal.Text" xml:space="preserve">
-    <value>&amp;Horizontalmente</value>
-  </data>
-  <data name="Menu.Image.Flip.Vertical.Text" xml:space="preserve">
-    <value>&amp;Verticalmente</value>
+  <data name="Menu.Image.FlipVertical.Text" xml:space="preserve">
+    <value>Voltear &amp;verticalmente</value>
   </data>
   <data name="Menu.Image.Rotate.Text" xml:space="preserve">
     <value>&amp;Girar</value>
   </data>
-  <data name="Menu.Image.Rotate.90CW.Text" xml:space="preserve">
-    <value>&amp;90° a la derecha</value>
+  <data name="Menu.Image.Rotate90CW.Text" xml:space="preserve">
+    <value>Girar &amp;90° a la derecha</value>
   </data>
-  <data name="Menu.Image.Rotate.180CW.Text" xml:space="preserve">
-    <value>&amp;180° a la derecha</value>
+  <data name="Menu.Image.Rotate90CCW.Text" xml:space="preserve">
+    <value>Girar 90° a la izquierda</value>
   </data>
-  <data name="Menu.Image.Rotate.270CW.Text" xml:space="preserve">
-    <value>&amp;270° a la derecha</value>
-  </data>
-  <data name="Menu.Image.Rotate.90CCW.Text" xml:space="preserve">
-    <value>90° a la izquierda</value>
-  </data>
-  <data name="Menu.Image.Rotate.180CCW.Text" xml:space="preserve">
-    <value>180° a la izquierda</value>
-  </data>
-  <data name="Menu.Image.Rotate.270CCW.Text" xml:space="preserve">
-    <value>270° a la izquierda</value>
+  <data name="Menu.Image.Rotate180.Text" xml:space="preserve">
+    <value>Girar &amp;180°</value>
   </data>
   <data name="Menu.Image.Flatten.Text" xml:space="preserve">
     <value>&amp;Acoplar</value>
@@ -1542,14 +1522,11 @@ Versión actual: Paint.NET v{1}</value>
   <data name="Menu.Layers.Adjustments.Text" xml:space="preserve">
     <value>Aj&amp;ustes</value>
   </data>
-  <data name="Menu.Layers.Flip.Text" xml:space="preserve">
-    <value>&amp;Voltear</value>
+  <data name="Menu.Layers.FlipHorizontal.Text" xml:space="preserve">
+    <value>Voltear &amp;horizontalmente</value>
   </data>
-  <data name="Menu.Layers.Flip.Horizontal.Text" xml:space="preserve">
-    <value>&amp;Horizontalmente</value>
-  </data>
-  <data name="Menu.Layers.Flip.Vertical.Text" xml:space="preserve">
-    <value>&amp;Verticalmente</value>
+  <data name="Menu.Layers.FlipVertical.Text" xml:space="preserve">
+    <value>Voltear &amp;verticalmente</value>
   </data>
   <data name="Menu.Layers.LayerProperties.Text" xml:space="preserve">
     <value>&amp;Propiedades de la capa...</value>
@@ -1558,7 +1535,7 @@ Versión actual: Paint.NET v{1}</value>
     <value>Efect&amp;os</value>
   </data>
   <data name="Menu.Tools.Text" xml:space="preserve">
-    <value>&amp;Herramientas</value>
+    <value>H&amp;erramientas</value>
   </data>
   <data name="Menu.Tools.AntiAliasing.Text" xml:space="preserve">
     <value>&amp;Suavizado</value>
@@ -1573,7 +1550,7 @@ Versión actual: Paint.NET v{1}</value>
     <value>&amp;Restablecer ubicaciones de las ventanas</value>
   </data>
   <data name="Menu.Window.Translucent.Text" xml:space="preserve">
-    <value>Translúcido</value>
+    <value>Translúcida</value>
   </data>
   <data name="Menu.Window.Tools.Text" xml:space="preserve">
     <value>H&amp;erramientas</value>
@@ -1606,22 +1583,22 @@ Versión actual: Paint.NET v{1}</value>
     <value>&amp;Temas de ayuda</value>
   </data>
   <data name="Menu.Help.PdnWebsite.Text" xml:space="preserve">
-    <value>Sitio web de &amp;Paint.NET...</value>
+    <value>Sitio web de &amp;Paint.NET</value>
   </data>
   <data name="Menu.Help.Donate.Text" xml:space="preserve">
     <value>&amp;Donar...</value>
   </data>
   <data name="Menu.Help.Forum.Text" xml:space="preserve">
-    <value>&amp;Foro...</value>
+    <value>&amp;Foro</value>
   </data>
   <data name="Menu.Help.Tutorials.Text" xml:space="preserve">
-    <value>T&amp;utoriales...</value>
+    <value>T&amp;utoriales</value>
   </data>
   <data name="Menu.Help.Plugins.Text" xml:space="preserve">
-    <value>&amp;Complementos...</value>
+    <value>&amp;Complementos</value>
   </data>
   <data name="Menu.Help.About.Text" xml:space="preserve">
-    <value>&amp;Acerca de...</value>
+    <value>&amp;Acerca de</value>
   </data>
   <data name="Menu.Help.Updates.Text" xml:space="preserve">
     <value>&amp;Actualizaciones</value>
@@ -1752,6 +1729,15 @@ Versión actual: Paint.NET v{1}</value>
   </data>
   <data name="Effects.Blurring.Submenu.Name" xml:space="preserve">
     <value>Desenfoques</value>
+  </data>
+  <data name="PencilSketchEffect.Name">
+    <value>Boceto a lápiz</value>
+  </data>
+  <data name="PencilSketchEffect.ConfigDialog.PencilTipSizeLabel">
+    <value>Tamaño de la punta del lápiz</value>
+  </data>
+  <data name="PencilSketchEffect.ConfigDialog.RangeLabel">
+    <value>Intervalo</value>
   </data>
   <data name="OutlineEffect.Name">
     <value>Contorno</value>
@@ -2003,7 +1989,7 @@ Versión actual: Paint.NET v{1}</value>
     <value>Relieve</value>
   </data>
   <data name="SharpenEffect.Name" xml:space="preserve">
-    <value>Enfocar</value>
+    <value>Enfoque</value>
   </data>
   <data name="SharpenEffect.ConfigDialog.SliderLabel" xml:space="preserve">
     <value>Cantidad</value>
@@ -2033,7 +2019,7 @@ Versión actual: Paint.NET v{1}</value>
     <value>Centímetro</value>
   </data>
   <data name="MeasurementUnit.Pixel.Plural" xml:space="preserve">
-    <value>píxeles</value>
+    <value>Píxeles</value>
   </data>
   <data name="MeasurementUnit.Inch.Plural" xml:space="preserve">
     <value>Pulgadas</value>
@@ -2226,8 +2212,24 @@ Haga clic en Aceptar para visitar el sitio web de Paint.NET desde donde podrá d
   <data name="DownloadAndUnzipUpdateDialog.Error.Generic" xml:space="preserve">
     <value>Error al descargar e instalar la nueva versión. Inténtelo de nuevo más tarde mediante el comando de menú &quot;Archivo-&gt; Buscar actualizaciones...&quot;</value>
   </data>
-  <data name="SetLanguage.PleaseRestartApplication" xml:space="preserve">
-    <value>Tiene que cerrar Paint.NET para que este cambio tenga efecto.</value>
+  <data name="ConfirmLanguageDialog.Title">
+    <value>Confirmación de la selección del idioma</value>
+  </data>
+  <data name="ConfirmLanguageDialog.IntroText">
+    <value>Cambiar el idioma requiere cerrar Paint.NET.</value>
+  </data>
+  <data name="ConfirmLanguageDialog.RestartTB.ActionText">
+    <value>&amp;Cerrar Paint.NET</value>
+  </data>
+  <data name="ConfirmLanguageDialog.RestartTB.ExplanationText.Format">
+    <value>Cierra Paint.NET y lo inicia en {0}. Si es necesario, se le preguntará si quiere guardar los cambios.</value>
+    <comment>{0} es el nombre del nuevo idioma que se ha elegido (por ejemplo, &quot;inglés&quot;).</comment>
+  </data>
+  <data name="ConfirmLanguageDialog.CancelTB.ActionText">
+    <value>Cancelar</value>
+  </data>
+  <data name="ConfirmLanguageDialog.CancelTB.ExplanationText">
+    <value>No se cerrará Paint.NET. Se cancelará la selección del idioma.</value>
   </data>
   <data name="AddNoiseEffect.Amount1Label" xml:space="preserve">
     <value>Intensidad</value>
@@ -2300,6 +2302,7 @@ Código de retorno es 0 con éxito o fallo cero.</value>
   </data>
   <data name="SetupWizard.IntroPage.IntroText.Text.Format" xml:space="preserve">
     <value>El Asistente para la instalación le ayudará a instalar {0}.
+
 Elija un método de instalación y, a continuación, haga clic en Siguiente.</value>
     <comment>{0} es un nombre de producto.</comment>
   </data>
@@ -2338,13 +2341,13 @@ Elija un método de instalación y, a continuación, haga clic en Siguiente.</va
     <value>Utilice estas opciones para configurar cómo se iniciará Paint.NET.</value>
   </data>
   <data name="SetupWizard.OptionsPage.JpgPngBmpCheckBox.Text" xml:space="preserve">
-    <value>Utilizar como el editor predeterminado de imágenes de tipo JPEG, PNG y BMP</value>
+    <value>Utilizar como el editor predeterminado de imágenes JPEG, PNG y BMP</value>
   </data>
   <data name="SetupWizard.OptionsPage.TgaCheckBox.Text" xml:space="preserve">
-    <value>Utilizar como el editor predeterminado de imágenes de tipo TGA</value>
+    <value>Utilizar como el editor predeterminado de imágenes TGA</value>
   </data>
   <data name="SetupWizard.OptionsPage.DesktopShortcutCheckBox.Text" xml:space="preserve">
-    <value>Crear un acceso directo en el escritorio</value>
+    <value>Crear acceso directo en el escritorio</value>
   </data>
   <data name="SetupWizard.OptionsPage.UpdatesText.Text" xml:space="preserve">
     <value>Paint.NET puede buscar de manera periódica y notificarle si existe una versión nueva disponible. Durante este proceso no se transmite ninguna información desde su ordenador. Nota: Sólo se le notificará de versiones nuevas mientras Paint.NET se esté ejecutando.</value>
@@ -2505,63 +2508,64 @@ Haga clic en &quot;Siguiente&quot; para empezar la instalación.</value>
   </data>
   <data name="WebExceptionStatus.ConnectFailure" xml:space="preserve">
     <value>No se pudo contactar con el punto de servicio remoto al nivel de transporte.</value>
+    <comment>Todas las cadenas de WebExceptionStatus.* se copian de la documentación de MSDN (excepto cuando se indica explícitamente), http://msdn.microsoft.com/library/spa/default.asp?url=/library/spa/cpref/html/frlrfsystemnetwebexceptionstatusclasstopic.asp</comment>
   </data>
   <data name="WebExceptionStatus.ConnectionClosed" xml:space="preserve">
-    <value>Se cerró la conexión prematuramente.</value>
+    <value>La conexión se ha cerrado prematuramente.</value>
   </data>
   <data name="WebExceptionStatus.KeepAliveFailure" xml:space="preserve">
-    <value>La conexión de una petición que especifica el encabezado &quot;mantener vivo&quot; se cerró inesperadamente.</value>
+    <value>La conexión de una solicitud que especificaba el encabezado Keep-alive se cerró inesperadamente.</value>
   </data>
   <data name="WebExceptionStatus.MessageLengthLimitExceeded" xml:space="preserve">
-    <value>Se recibió un mensaje que excedió el límite especificado al enviar una petición o recibir una respuesta del servidor.</value>
+    <value>Se recibió un mensaje que superaba el límite especificado al enviar una solicitud o recibir una respuesta del servidor.</value>
   </data>
   <data name="WebExceptionStatus.NameResolutionFailure" xml:space="preserve">
-    <value>El servicio de resolución de nombres no pudo resolver el nombre del host.</value>
+    <value>El servicio de resolución de nombres no ha podido resolver el nombre de host.</value>
   </data>
   <data name="WebExceptionStatus.Pending" xml:space="preserve">
-    <value>Se encuentra pendiente una petición interna asíncrona.</value>
+    <value>Está pendiente una solicitud asincrónica interna.</value>
   </data>
   <data name="WebExceptionStatus.PipelineFailure" xml:space="preserve">
     <value>Error interno de .NET (WebExceptionStatus.PipelineFailure).</value>
     <comment>Este texto es distinto al que se encuentra en la documentación de MSDN.</comment>
   </data>
   <data name="WebExceptionStatus.ProtocolError" xml:space="preserve">
-    <value>La respuesta recibida del servidor fue completa pero indica un error a nivel de protocolo. Por ejemplo, un error de protocolo HTTP, como 401 Acceso denegado, utilizaría este estado.</value>
+    <value>La respuesta recibida del servidor se completó, pero indicó la existencia de un error en el nivel de protocolo. Por ejemplo, un error de protocolo HTTP tal como &quot;401 Access Denied&quot; (Acceso denegado) utilizaría este estado.</value>
   </data>
   <data name="WebExceptionStatus.ProtocolError.Format" xml:space="preserve">
     <value>El servidor devolvió el siguiente código de error: HTTP {1} ({0})</value>
     <comment>{0} es un nombre de cadena de la enumeración de System.Net.HttpStatusCode. {1} es un número entero, como 404</comment>
   </data>
   <data name="WebExceptionStatus.ProxyNameResolutionFailure" xml:space="preserve">
-    <value>El servicio de resolución de nombres no pudo resolver el nombre del proxy del host.</value>
+    <value>El servicio de resolución de nombres no pudo resolver el nombre de host del proxy.</value>
   </data>
   <data name="WebExceptionStatus.ReceiveFailure" xml:space="preserve">
-    <value>No se recibió una respuesta completa del servidor remoto.</value>
+    <value>No se ha recibido una respuesta completa del servidor remoto.</value>
   </data>
   <data name="WebExceptionStatus.RequestCanceled" xml:space="preserve">
     <value>Error interno (WebExceptionStatus.RequestCanceled)</value>
     <comment>Este texto es distinto al que se encuentra en la documentación de MSDN.</comment>
   </data>
   <data name="WebExceptionStatus.SecureChannelFailure" xml:space="preserve">
-    <value>Error en un vínculo de seguridad de canales.</value>
+    <value>Error que se produce al establecer una conexión utilizando SSL.</value>
   </data>
   <data name="WebExceptionStatus.SendFailure" xml:space="preserve">
-    <value>Error en un vínculo de seguridad de canales.</value>
+    <value>No se ha podido enviar una solicitud completa al servidor remoto.</value>
   </data>
   <data name="WebExceptionStatus.ServerProtocolViolation" xml:space="preserve">
-    <value>La respuesta del servidor no fue una respuesta válida HTTP.</value>
+    <value>La respuesta del servidor no fue una respuesta HTTP válida.</value>
   </data>
   <data name="WebExceptionStatus.Success" xml:space="preserve">
-    <value>No se encontró ningún error.</value>
+    <value>No se ha encontrado ningún error.</value>
   </data>
   <data name="WebExceptionStatus.Timeout" xml:space="preserve">
-    <value>No se recibió ninguna respuesta durante el período de espera para una petición.</value>
+    <value>No se recibió ninguna respuesta durante el período de tiempo de espera de una solicitud.</value>
   </data>
   <data name="WebExceptionStatus.TrustFailure" xml:space="preserve">
-    <value>No se pudo validar un certificado de servidor.</value>
+    <value>No se ha podido validar un certificado del servidor.</value>
   </data>
   <data name="WebExceptionStatus.UnknownError" xml:space="preserve">
-    <value>Excepción de tipo desconocido.</value>
+    <value>Se ha producido una excepción de tipo desconocido.</value>
   </data>
   <data name="CurvesEffect.Name" xml:space="preserve">
     <value>Curvas</value>
@@ -2624,7 +2628,7 @@ Por favor, envíe este archivo a {0} para que podamos diagnosticar y resolver el
     <value>Ninguno</value>
   </data>
   <data name="FontSmoothing.Sharp">
-    <value>Enfocar</value>
+    <value>Enfoque</value>
   </data>
   <data name="FontSmoothing.Smooth">
     <value>Suave</value>
@@ -2648,7 +2652,7 @@ Por favor, envíe este archivo a {0} para que podamos diagnosticar y resolver el
     <value>Cambios no guardados</value>
   </data>
   <data name="UnsavedChangesDialog.InfoLabel.Text">
-    <value>Las siguientes imágenes abiertas contienen cambios que no se han guardado. Haga clic en una miniatura para mostrar la imagen en la venta principal.</value>
+    <value>Las siguientes imágenes abiertas contienen cambios que no se han guardado. Haga clic en una vista en miniatura para mostrar la imagen en la venta principal.</value>
   </data>
   <data name="UnsavedChangesDialog.DocumentListHeader.Text">
     <value>Imágenes</value>
@@ -2680,7 +2684,7 @@ Por favor, envíe este archivo a {0} para que podamos diagnosticar y resolver el
   <data name="ControlShadow.BetaTag.Text.Format">
       <value>Ésta es una versión preliminar, y se recomienda utilizarla únicamente para pruebas. Caduca el {1}. Habrá una versión disponible antes de esa fecha.
 www.getpaint.net</value>
-      <comment>{0} es el nombre completo de la aplicación, por ejemplo: &quot;Paint.NET v3.0 (Versión beta 1, compilación 3.0.2460.34921). {1} es una cadena de tipo fecha.</comment>
+      <comment>{0} es el nombre completo de la aplicación, por ejemplo: &quot;Paint.NET v3.0 (Beta 1, compilación 3.0.2460.34921). {1} es una cadena de tipo fecha.</comment>
   </data>
   <data name="ToolChooserStrip.ChooseToolDefaults.Text">
     <value>Elegir &amp;configuración predeterminada...</value>
@@ -2814,5 +2818,29 @@ Tecla de método abreviado: ] (mantenga presionada la tecla CRL para disminuir e
   </data>
   <data name="CloudsEffect.ConfigDialog.ReseedButton.Text">
     <value>&amp;Regenerar</value>
+  </data>
+  <data name="ExpandCanvasQuestion.Title">
+    <value>Pegar</value>
+  </data>
+  <data name="ExpandCanvasQuestion.IntroText">
+    <value>La imagen que está pegando es más grande que el tamaño del lienzo. ¿Qué desea hacer?</value>
+  </data>
+  <data name="ExpandCanvasQuestion.YesTB.ActionText">
+    <value>&amp;Ajustar el tamaño del lienzo</value>
+  </data>
+  <data name="ExpandCanvasQuestion.YesTB.ExplanationText">
+    <value>Expande automáticamente el lienzo para que la imagen quepa.</value>
+  </data>
+  <data name="ExpandCanvasQuestion.NoTB.ActionText">
+    <value>&amp;Mantener el tamaño del lienzo</value>
+  </data>
+  <data name="ExpandCanvasQuestion.NoTB.ExplanationText">
+    <value>No expande el lienzo. Tendrá que mover la imagen para asegurarse que la parte que desea se encuentra en los límites del lienzo.</value>
+  </data>
+  <data name="ExpandCanvasQuestion.CancelTB.ActionText">
+    <value>Cancelar</value>
+  </data>
+  <data name="ExpandCanvasQuestion.CancelTB.ExplanationText">
+    <value>Cancela la acción de pegado.</value>
   </data>
 </root>

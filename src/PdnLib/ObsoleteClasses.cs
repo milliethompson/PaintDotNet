@@ -50,16 +50,16 @@ namespace PaintDotNet
     [Obsolete("Use Procedure instead", true)]
     public delegate void ProcedureDelegate();
 
-    [Obsolete("Use Procedure instead", true)]
+    [Obsolete("Use Procedure`1 instead", true)]
     public delegate void UnaryProcedureDelegate<T>(T parameter);
 
-    [Obsolete("Use Procedure instead", true)]
+    [Obsolete("Use Procedure`2 instead", true)]
     public delegate void BinaryProcedureDelegate<T, U>(T first, U second);
 
-    [Obsolete("Use Function instead", true)]
+    [Obsolete("Use Function`2 instead", true)]
     public delegate R UnaryFunctionDelegate<R, T>(T parameter);
 
-    [Obsolete("Use Function instead", true)]
+    [Obsolete("Use Function`3 instead", true)]
     public delegate R BinaryFunctionDelegate<R, T, U>(T first, U second);
 }
 

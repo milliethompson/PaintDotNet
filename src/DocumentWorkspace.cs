@@ -15,6 +15,7 @@ using PaintDotNet.SystemLayer;
 using PaintDotNet.Tools;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -1664,11 +1665,11 @@ namespace PaintDotNet
         /// <remarks>
         /// The FileDialog should already have its InitialDirectory populated as a suggestion of where to start.
         /// </remarks>
-        public static DialogResult ShowFileDialog(Control owner, FileDialog fd)
+        public static DialogResult ShowFileDialog(Control owner, IFileDialog fd)
         {
-            string initialDirectory = Settings.CurrentUser.GetString(PdnSettings.LastFileDialogDirectory, fd.InitialDirectory);
+            string initialDirectory = Settings.CurrentUser.GetString(SettingNames.LastFileDialogDirectory, fd.InitialDirectory);
 
-            // TODO: spawn this in a background thread, if it doesn't respond within ~500ms, assume the dir doesn't exist
+            // TODO: spawn this in a background thread, if it doesn't respond within ~500ms?, assume the dir doesn't exist
             bool dirExists = false;
 
             try 
@@ -1691,12 +1692,27 @@ namespace PaintDotNet
             }
 
             fd.InitialDirectory = initialDirectory;
-            DialogResult result = UI.ShowFileDialogWithThumbnailView(owner, fd);
+            DialogResult result = fd.ShowDialog(owner);
 
             if (result == DialogResult.OK)
             {
-                string newDir = Path.GetDirectoryName(fd.FileNames[0]);
-                Settings.CurrentUser.SetString(PdnSettings.LastFileDialogDirectory, newDir);
+                string fileName;
+                
+                if (fd is IFileOpenDialog)
+                {
+                    fileName = ((IFileOpenDialog)fd).FileNames[0];
+                }
+                else if (fd is IFileSaveDialog)
+                {
+                    fileName = ((IFileSaveDialog)fd).FileName;
+                }
+                else
+                {
+                    throw new InvalidOperationException();
+                }
+                                
+                string newDir = Path.GetDirectoryName(fileName);
+                Settings.CurrentUser.SetString(SettingNames.LastFileDialogDirectory, newDir);
             }
 
             return result;
@@ -1733,7 +1749,7 @@ namespace PaintDotNet
         {
             FileTypeCollection fileTypes = FileTypes.GetFileTypes();
 
-            using (OpenFileDialog ofd = new OpenFileDialog())
+            using (IFileOpenDialog ofd = SystemLayer.CommonDialogs.CreateFileOpenDialog())
             {
                 if (startingDir != null)
                 {
@@ -1747,18 +1763,25 @@ namespace PaintDotNet
                 ofd.CheckFileExists = true;
                 ofd.CheckPathExists = true;
                 ofd.Multiselect = multiselect;
-                ofd.RestoreDirectory = true;
 
                 ofd.Filter = fileTypes.ToString(true, PdnResources.GetString("FileDialog.Types.AllImages"), false, true);
                 ofd.FilterIndex = 0;
 
                 DialogResult result = ShowFileDialog(owner, ofd);
-                fileNames = ofd.FileNames;
+
+                if (result == DialogResult.OK)
+                {
+                    fileNames = ofd.FileNames;
+                }
+                else
+                {
+                    fileNames = new string[0];
+                }
 
                 return result;
             }
         }
-        
+
         /// <summary>
         /// Use this to get a save config token. You should already know the filename and file type.
         /// An existing save config token is optional and will be used to pre-populate the config dialog.
@@ -1853,11 +1876,10 @@ namespace PaintDotNet
         {
             FileTypeCollection fileTypes = FileTypes.GetFileTypes();
 
-            using (SaveFileDialog sfd = new SaveFileDialog())
+            using (IFileSaveDialog sfd = SystemLayer.CommonDialogs.CreateFileSaveDialog())
             {
                 sfd.AddExtension = true;
                 sfd.CheckPathExists = true;
-                sfd.DefaultExt = string.Empty;
                 sfd.OverwritePrompt = true;
                 string filter = fileTypes.ToString(false, null, true, false);
                 sfd.Filter = filter;
@@ -1908,10 +1930,7 @@ namespace PaintDotNet
 
                 sfd.FilterIndex = 1 + fileTypes.IndexOfFileType(localFileType);
                 sfd.InitialDirectory = Path.GetDirectoryName(localFileName);
-                sfd.RestoreDirectory = true;
-                sfd.ShowHelp = false;
                 sfd.Title = PdnResources.GetString("SaveAsDialog.Title");
-                sfd.ValidateNames = true;
 
                 DialogResult dr1 = ShowFileDialog(this, sfd);
                 bool result;
@@ -1951,12 +1970,42 @@ namespace PaintDotNet
         /// <returns>Returns DialogResult.Yes if they want to proceed or DialogResult.No if they don't.</returns>
         private DialogResult WarnAboutFlattening()
         {
-            return MessageBox.Show(
-                AppWorkspace, 
-                PdnResources.GetString("WarnAboutFlattening.Text"),
-                PdnResources.GetString("WarnAboutFlattening.Title"), 
-                MessageBoxButtons.YesNo, 
-                MessageBoxIcon.Question);
+            Icon formIcon = Utility.ImageToIcon(ImageResource.Get("Icons.MenuFileSaveIcon.png").Reference);
+            string formTitle = PdnResources.GetString("WarnAboutFlattening.Title");
+
+            string introText = PdnResources.GetString("WarnAboutFlattening.IntroText");
+            Image taskImage = null;
+
+            TaskButton flattenTB = new TaskButton(
+                ImageResource.Get("Icons.MenuImageFlattenIcon.png").Reference,
+                PdnResources.GetString("WarnAboutFlattening.FlattenTB.ActionText"),
+                PdnResources.GetString("WarnAboutFlattening.FlattenTB.ExplanationText"));
+
+            TaskButton cancelTB = new TaskButton(
+                TaskButton.Cancel.Image,
+                PdnResources.GetString("WarnAboutFlattening.CancelTB.ActionText"),
+                PdnResources.GetString("WarnAboutFlattening.CancelTB.ExplanationText"));
+
+            TaskButton clickedTB = TaskDialog.Show(
+                AppWorkspace,
+                formIcon,
+                formTitle,
+                taskImage,
+                true,
+                introText,
+                new TaskButton[] { flattenTB, cancelTB },
+                flattenTB,
+                cancelTB,
+                (TaskDialog.DefaultPixelWidth96Dpi * 5) / 4);
+
+            if (clickedTB == flattenTB)
+            {
+                return DialogResult.Yes;
+            }
+            else
+            {
+                return DialogResult.No;
+            }
         }
         
         private static string GetDefaultSaveName()
@@ -1967,7 +2016,7 @@ namespace PaintDotNet
         private static string GetDefaultSavePath()
         {
             string myPics = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            string dir = Settings.CurrentUser.GetString(PdnSettings.LastFileDialogDirectory, null);
+            string dir = Settings.CurrentUser.GetString(SettingNames.LastFileDialogDirectory, null);
 
             if (dir == null)
             {

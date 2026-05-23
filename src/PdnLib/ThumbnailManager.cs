@@ -20,6 +20,7 @@ namespace PaintDotNet
     using ThumbnailReadyArgs = EventArgs<Pair<IThumbnailProvider, Surface>>;
     using ThumbnailReadyHandler = EventHandler<Pair<IThumbnailProvider, Surface>>;
     using ThumbnailStackItem = Triple<IThumbnailProvider, EventHandler<Pair<IThumbnailProvider, Surface>>, int>;
+    using ThumbnailReadyEventDetails = Triple<EventHandler<Pair<IThumbnailProvider, Surface>>, object, EventArgs<Pair<IThumbnailProvider, Surface>>>;
 
     public sealed class ThumbnailManager
         : IDisposable
@@ -50,20 +51,20 @@ namespace PaintDotNet
         // finishes rendering the thumbnail, or it decides not to). At all other times, this event is signaled.
         private ManualResetEvent renderingInactive;
 
-        private List<Triple<ThumbnailReadyHandler, object, ThumbnailReadyArgs>> thumbnailReadyInvokeList = 
-            new List<Triple<ThumbnailReadyHandler, object, ThumbnailReadyArgs>>();
+        private List<ThumbnailReadyEventDetails> thumbnailReadyInvokeList = 
+            new List<ThumbnailReadyEventDetails>();
 
         private void DrainThumbnailReadyInvokeList()
         {
-            List<Triple<ThumbnailReadyHandler, object, ThumbnailReadyArgs>> invokeListCopy = null;
+            List<ThumbnailReadyEventDetails> invokeListCopy = null;
 
             lock (this.thumbnailReadyInvokeList)
             {
                 invokeListCopy = this.thumbnailReadyInvokeList;
-                this.thumbnailReadyInvokeList = new List<Triple<ThumbnailReadyHandler, object, ThumbnailReadyArgs>>();
+                this.thumbnailReadyInvokeList = new List<ThumbnailReadyEventDetails>();
             }
 
-            foreach (Triple<ThumbnailReadyHandler, object, ThumbnailReadyArgs> invokeMe in invokeListCopy)
+            foreach (ThumbnailReadyEventDetails invokeMe in invokeListCopy)
             {
                 invokeMe.First.Invoke(invokeMe.Second, invokeMe.Third);
             }
@@ -76,7 +77,7 @@ namespace PaintDotNet
 
             lock (this.thumbnailReadyInvokeList)
             {
-                this.thumbnailReadyInvokeList.Add(new Triple<ThumbnailReadyHandler, object, ThumbnailReadyArgs>(callback, this, e));
+                this.thumbnailReadyInvokeList.Add(new ThumbnailReadyEventDetails(callback, this, e));
             }
 
             try
@@ -97,9 +98,9 @@ namespace PaintDotNet
             this.updateLock = new object();
             this.quitRenderThread = false;
             this.renderQueue = new Stack<ThumbnailStackItem>();
+            this.renderingInactive = new ManualResetEvent(true);
             this.renderThread = new Thread(new ThreadStart(RenderThread));
             this.renderThread.Start();
-            this.renderingInactive = new ManualResetEvent(true);
         }
 
         ~ThumbnailManager()

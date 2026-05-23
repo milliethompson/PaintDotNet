@@ -45,6 +45,24 @@ namespace PaintDotNet
             }
         }
 
+        public string[] AllExtensions
+        {
+            get
+            {
+                List<string> exts = new List<string>();
+
+                foreach (FileType fileType in this.fileTypes)
+                {
+                    foreach (string ext in fileType.Extensions)
+                    {
+                        exts.Add(ext);
+                    }
+                }
+
+                return exts.ToArray();
+            }
+        }
+
         internal FileTypeCollection(FileType[] fileTypes)
         {
             this.fileTypes = fileTypes;

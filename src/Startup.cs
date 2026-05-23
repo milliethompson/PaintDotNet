@@ -150,6 +150,7 @@ namespace PaintDotNet
                 {
                     "ICSharpCode.SharpZipLib.dll",
                     "Interop.WIA.dll",
+                    "PaintDotNet.Core.dll",
                     "PaintDotNet.Data.dll",
                     "PaintDotNet.Effects.dll",
                     "PaintDotNet.Resources.dll",
@@ -163,7 +164,6 @@ namespace PaintDotNet
                     "PaintDotNet.Strings.3.ZH-CN.resources",
                     "PaintDotNet.StylusReader.dll",
                     "PaintDotNet.SystemLayer.dll",
-                    "PdnLib.dll",
                     "SetupNgen.exe",
                     "ShellExtension_x64.dll",
                     "ShellExtension_x86.dll",
@@ -262,11 +262,11 @@ namespace PaintDotNet
         private void StartPart2()
         {
             // Set up locale / resource details
-            string locale = Settings.CurrentUser.GetString(PdnSettings.LanguageName, null);
+            string locale = Settings.CurrentUser.GetString(SettingNames.LanguageName, null);
 
             if (locale == null)
             {
-                locale = Settings.SystemWide.GetString(PdnSettings.LanguageName, null);
+                locale = Settings.SystemWide.GetString(SettingNames.LanguageName, null);
             }
 
             if (locale != null)
@@ -366,6 +366,8 @@ namespace PaintDotNet
             try
             {
 #endif
+                AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
+
                 instance = new Startup(args);
                 instance.Start();
 #if !DEBUG
@@ -388,6 +390,23 @@ namespace PaintDotNet
 #endif
 
             return 0;
+        }
+
+        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            // For v3.20, we renamed PdnLib.dll to PaintDotNet.Core.dll. So we should really make
+            // sure we stay compatible with old plugin DLL's.
+            const string oldCoreName = "PdnLib";
+
+            int index = args.Name.IndexOf(oldCoreName, StringComparison.InvariantCultureIgnoreCase);
+            Assembly newAssembly = null;
+
+            if (index == 0)
+            {
+                newAssembly = typeof(ColorBgra).Assembly;
+            }
+
+            return newAssembly;
         }
 
         private static void UnhandledException(Exception ex)
@@ -584,8 +603,8 @@ namespace PaintDotNet
                     {
                         localeName = 
                             "pdnr.c: " + PdnResources.Culture.Name +
-                            ", hklm: " + Settings.SystemWide.GetString(PdnSettings.LanguageName, "n/a") +
-                            ", hkcu: " + Settings.CurrentUser.GetString(PdnSettings.LanguageName, "n/a") + 
+                            ", hklm: " + Settings.SystemWide.GetString(SettingNames.LanguageName, "n/a") +
+                            ", hkcu: " + Settings.CurrentUser.GetString(SettingNames.LanguageName, "n/a") + 
                             ", cc: " + CultureInfo.CurrentCulture.Name + 
                             ", cuic: " + CultureInfo.CurrentUICulture.Name;
                     }

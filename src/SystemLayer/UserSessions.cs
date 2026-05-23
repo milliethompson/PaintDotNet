@@ -88,7 +88,7 @@ namespace PaintDotNet.SystemLayer
                         messageControl.WmWtSessionChange += new EventHandler(SessionStrobeHandler);
 
                         SafeNativeMethods.WTSRegisterSessionNotification(messageControl.Handle, NativeConstants.NOTIFY_FOR_ALL_SESSIONS);
-                        lastRemoteSessionValue = IsRemote();
+                        lastRemoteSessionValue = IsRemote;
                     }
                 }
             }
@@ -118,6 +118,7 @@ namespace PaintDotNet.SystemLayer
             }
         }
 
+        // TODO: this should be a property, not a function
         /// <summary>
         /// Determines whether the user is running within a remoted session (Terminal Server, Remote Desktop).
         /// </summary>
@@ -129,16 +130,19 @@ namespace PaintDotNet.SystemLayer
         /// are often bandwidth limited and less suitable for complex drawing.
         /// Note to implementors: This may be implemented as a no op; in this case, always return false.
         /// </remarks>
-        public static bool IsRemote()
+        public static bool IsRemote
         {
-            return 0 != SafeNativeMethods.GetSystemMetrics(NativeConstants.SM_REMOTESESSION);
+            get
+            {
+                return 0 != SafeNativeMethods.GetSystemMetrics(NativeConstants.SM_REMOTESESSION);
+            }
         }
 
         private static void SessionStrobeHandler(object sender, EventArgs e)
         {
-            if (IsRemote() != lastRemoteSessionValue)
+            if (IsRemote != lastRemoteSessionValue)
             {
-                lastRemoteSessionValue = IsRemote();
+                lastRemoteSessionValue = IsRemote;
                 OnSessionChanged();
             }
         }

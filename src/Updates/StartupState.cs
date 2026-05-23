@@ -63,7 +63,7 @@ namespace PaintDotNet.Updates
         private static void DeleteUpdateMsi()
         {
             // If we just installed an update, then delete it! Save some hard drive space.
-            string msiDeleteMeFull = Settings.CurrentUser.GetString(PdnSettings.UpdateMsiFileName, null);
+            string msiDeleteMeFull = Settings.CurrentUser.GetString(SettingNames.UpdateMsiFileName, null);
             string msiDeleteMe = Path.GetFileName(msiDeleteMeFull); // make sure someone can't put "..\..\..\..\windows\system32\cmd.exe" or something
             string msiDeleteMeExt = Path.GetExtension(msiDeleteMe);
 
@@ -111,7 +111,7 @@ namespace PaintDotNet.Updates
 
                 try
                 {
-                    Settings.CurrentUser.Delete(PdnSettings.UpdateMsiFileName);
+                    Settings.CurrentUser.Delete(SettingNames.UpdateMsiFileName);
                 }
 
                 catch (Exception)
@@ -144,7 +144,7 @@ namespace PaintDotNet.Updates
         public static bool ShouldCheckForUpdates()
         {
             bool shouldCheckForUpdates;
-            bool autoCheckForUpdates = ("1" == Settings.SystemWide.GetString(PdnSettings.AutoCheckForUpdates, "0"));
+            bool autoCheckForUpdates = ("1" == Settings.SystemWide.GetString(SettingNames.AutoCheckForUpdates, "0"));
 
             TimeSpan minAge = new TimeSpan(MinBuildAgeForUpdateChecking, 0, 0, 0);
             TimeSpan maxAge = new TimeSpan(MaxBuildAgeForUpdateChecking, 0, 0, 0);
@@ -159,7 +159,7 @@ namespace PaintDotNet.Updates
             {
                 try
                 {
-                    string lastUpdateCheckTimeTicksString = Settings.CurrentUser.GetString(PdnSettings.LastUpdateCheckTimeTicks, null);
+                    string lastUpdateCheckTimeTicksString = Settings.CurrentUser.GetString(SettingNames.LastUpdateCheckTimeTicks, null);
 
                     if (lastUpdateCheckTimeTicksString == null)
                     {
@@ -191,7 +191,7 @@ namespace PaintDotNet.Updates
 
         public static void PingLastUpdateCheckTime()
         {
-            Settings.CurrentUser.SetString(PdnSettings.LastUpdateCheckTimeTicks, DateTime.Now.Ticks.ToString());
+            Settings.CurrentUser.SetString(SettingNames.LastUpdateCheckTimeTicks, DateTime.Now.Ticks.ToString());
         }
 
         public override void OnEnteredState()

@@ -7,6 +7,7 @@
 // .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -112,6 +113,14 @@ namespace PaintDotNet.Effects
             int[] w = CreateGaussianBlurRow(bect.Amount);
             int wlen = w.Length;
 
+            long* waSums = stackalloc long[wlen];
+            long* wcSums = stackalloc long[wlen];
+            long* aSums = stackalloc long[wlen];
+            long* bSums = stackalloc long[wlen];
+            long* gSums = stackalloc long[wlen];
+            long* rSums = stackalloc long[wlen];
+            ulong arraysLength = (ulong)(sizeof(long) * wlen);
+
             for (int ri = startIndex; ri < startIndex + length; ++ri)
             {
                 Rectangle rect = rois[ri];
@@ -120,12 +129,13 @@ namespace PaintDotNet.Effects
                 {
                     for (int y = rect.Top; y < rect.Bottom; ++y)
                     {
-                        long* waSums = stackalloc long[wlen];
-                        long* wcSums = stackalloc long[wlen];
-                        long* aSums = stackalloc long[wlen];
-                        long* bSums = stackalloc long[wlen];
-                        long* gSums = stackalloc long[wlen];
-                        long* rSums = stackalloc long[wlen];
+                        Memory.SetToZero(waSums, arraysLength);
+                        Memory.SetToZero(wcSums, arraysLength);
+                        Memory.SetToZero(aSums, arraysLength);
+                        Memory.SetToZero(bSums, arraysLength);
+                        Memory.SetToZero(gSums, arraysLength);
+                        Memory.SetToZero(rSums, arraysLength);
+
                         long waSum = 0;
                         long wcSum = 0;
                         long aSum = 0;

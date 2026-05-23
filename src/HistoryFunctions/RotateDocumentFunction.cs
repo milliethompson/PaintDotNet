@@ -37,15 +37,12 @@ namespace PaintDotNet.HistoryFunctions
             switch (rotation)
             {
                 case RotateType.Clockwise90:
-                case RotateType.Clockwise270:
                 case RotateType.CounterClockwise90:
-                case RotateType.CounterClockwise270:
                     newWidth = historyWorkspace.Document.Height;
                     newHeight = historyWorkspace.Document.Width;
                     break;
 
-                case RotateType.Clockwise180:
-                case RotateType.CounterClockwise180:
+                case RotateType.Rotate180:
                     newWidth = historyWorkspace.Document.Width;
                     newHeight = historyWorkspace.Document.Height;
                     break;
@@ -60,29 +57,14 @@ namespace PaintDotNet.HistoryFunctions
 
             switch (rotation)
             {
-                case RotateType.Clockwise180:
-                    iconResName = "Icons.MenuImageRotate180CWIcon.png";
-                    suffix = PdnResources.GetString("RotateAction.180CW");
-                    break;
-
-                case RotateType.Clockwise270:
-                    iconResName = "Icons.MenuImageRotate270CWIcon.png";
-                    suffix = PdnResources.GetString("RotateAction.270CW");
+                case RotateType.Rotate180:
+                    iconResName = "Icons.MenuImageRotate180Icon.png";
+                    suffix = PdnResources.GetString("RotateAction.180");
                     break;
 
                 case RotateType.Clockwise90:
                     iconResName = "Icons.MenuImageRotate90CWIcon.png";
                     suffix = PdnResources.GetString("RotateAction.90CW");
-                    break;
-
-                case RotateType.CounterClockwise180:
-                    iconResName = "Icons.MenuImageRotate180CCWIcon.png";
-                    suffix = PdnResources.GetString("RotateAction.180CCW");
-                    break;
-
-                case RotateType.CounterClockwise270:
-                    iconResName = "Icons.MenuImageRotate270CCWIcon.png";
-                    suffix = PdnResources.GetString("RotateAction.270CCW");
                     break;
 
                 case RotateType.CounterClockwise90:
@@ -167,8 +149,7 @@ namespace PaintDotNet.HistoryFunctions
         {
             Surface surface = new Surface(width, height);
 
-            if (rotationType == RotateType.Clockwise180 ||
-                rotationType == RotateType.CounterClockwise180)
+            if (rotationType == RotateType.Rotate180)
             {
                 for (int y = 0; y < height; y++)
                 {
@@ -180,8 +161,7 @@ namespace PaintDotNet.HistoryFunctions
                     OnProgress(((double)y / (double)height) * (endProgress - startProgress) + startProgress);
                 }
             }
-            else if (rotationType == RotateType.Clockwise270 ||
-                     rotationType == RotateType.CounterClockwise90)
+            else if (rotationType == RotateType.CounterClockwise90)
             {
                 for (int y = 0; y < height; y++)
                 {
@@ -193,8 +173,7 @@ namespace PaintDotNet.HistoryFunctions
                     OnProgress(((double)y / (double)height) * (endProgress - startProgress) + startProgress);
                 }
             }
-            else if (rotationType == RotateType.Clockwise90 ||
-                     rotationType == RotateType.CounterClockwise270)
+            else if (rotationType == RotateType.Clockwise90)
             {
                 for (int y = 0; y < height; y++)
                 {

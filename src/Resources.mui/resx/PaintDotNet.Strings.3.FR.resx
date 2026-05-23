@@ -167,9 +167,6 @@
   <data name="HistoryForm.FastForwardButton.ToolTipText" xml:space="preserve">
     <value>Répéter tout (avance rapide)</value>
   </data>
-  <data name="HistoryForm.ClearHistoryButton.ToolTipText" xml:space="preserve">
-    <value>Effacer l'Historique</value>
-  </data>
   <data name="HistoryForm.RedoButton.ToolTipText" xml:space="preserve">
     <value>Répéter (avance pas à pas)</value>
   </data>
@@ -199,7 +196,7 @@
 ; La valeur alpha ('aa') représente la transparence, FF étant complètement opaque, et 00 complètement transparent.
 ; Une palette comprend obligatoirement quatre-vingt seize (96) couleurs. S'il y en a moins, les couleurs
 ; restantes seront le blanc (FFFFFFFF) ; s'il y en a plus, les couleurs en trop ne seront pas prises en compte.</value>
-    <comment>This is written to the beginning of palette files, which are stored in text files (*.txt)</comment>
+    <comment>Yes, this should be translated. This is written to the beginning of palette files, which are stored in text files (*.txt). They are intended to be understandable by the user.</comment>
   </data>
   <data name="SystemLayer.UserDataDirName">
     <value>Mes fichiers Paint.NET</value>
@@ -219,7 +216,7 @@
     <value>&amp;Ouvrir le dossier des palettes...</value>
   </data>
   <data name="ColorsForm.ColorPalettesButton.ResetToDefaultPalette.Text">
-    <value>Restaurer la palette par défaut</value>
+    <value>&amp;Restaurer la palette par défaut</value>
   </data>
   <data name="ColorsForm.RedLabel.Text" xml:space="preserve">
     <value>R :</value>
@@ -672,10 +669,6 @@ Touche de raccourci : X</value>
   <data name="ImportFromFileAction.Name" xml:space="preserve">
     <value>Importer à partir d'un fichier</value>
   </data>
-  <data name="ImportFromFileAction.AskForCanvasResize.Confirmation" xml:space="preserve">
-    <value>L'image importée est plus grande que la zone de dessin.
-Voulez-vous ajuster la zone de dessin à la taille de l'image ?</value>
-  </data>
   <data name="ImportFromFileAction.AskForCanvasResize.OutOfMemory" xml:space="preserve">
     <value>Paint.NET a manqué d'espace mémoire en essayant de redimensionner l'image.</value>
   </data>
@@ -720,7 +713,7 @@ Voulez-vous ajuster la zone de dessin à la taille de l'image ?</value>
     <value>Décalage : {0}{1} x {2}{3}, longueur : {4} {5}, angle: {6}°. En appuyant sur l'autre bouton, vous déplacerez les deux poignées.</value>
   </data>
   <data name="GradientTool.HelpText.Adjustable">
-    <value>Déplacez une poignée pour ajuster le dégradé. Cliquez avec le bouton droit pour échanger les couleurs. Appuyez sur Entrée pour finir, ou Esc pour annuler.</value>
+    <value>Déplacez une poignée pour ajuster le dégradé. Cliquez avec le bouton droit pour échanger les couleurs. Appuyez sur Entrée pour finir, ou Echap pour annuler.</value>
   </data>
   <data name="LineTool.Name" xml:space="preserve">
     <value>Droite / Courbe</value>
@@ -736,9 +729,6 @@ Voulez-vous ajuster la zone de dessin à la taille de l'image ?</value>
   </data>
   <data name="LineTool.CurvingHelpText" xml:space="preserve">
     <value>Appuyez sur Entrée pour finir la courbe, ou dessinez ailleurs pour une nouvelle courbe. Appuyez sur Ctrl pour afficher ou masquer les poignées.</value>
-  </data>
-  <data name="LoadProgressDialog.Description" xml:space="preserve">
-    <value>Chargement :</value>
   </data>
   <data name="MagicWandTool.Name" xml:space="preserve">
     <value>Baguette magique</value>
@@ -958,20 +948,11 @@ Voulez-vous ajuster la zone de dessin à la taille de l'image ?</value>
   <data name="ResizeDialog.AsteriskTextLabel.Bicubic" xml:space="preserve">
     <value>* Bicubique sera utilisé</value>
   </data>
-  <data name="RotateAction.180CW" xml:space="preserve">
-    <value>180° degrés à droite</value>
-  </data>
-  <data name="RotateAction.270CW" xml:space="preserve">
-    <value>270° degrés à droite</value>
+  <data name="RotateAction.180" xml:space="preserve">
+    <value>180°</value>
   </data>
   <data name="RotateAction.90CW" xml:space="preserve">
     <value>90° degrés à droite</value>
-  </data>
-  <data name="RotateAction.180CCW" xml:space="preserve">
-    <value>180° degrés à gauche</value>
-  </data>
-  <data name="RotateAction.270CCW" xml:space="preserve">
-    <value>270° degrés à gauche</value>
   </data>
   <data name="RotateAction.90CCW" xml:space="preserve">
     <value>90° degrés à gauche</value>
@@ -1256,13 +1237,6 @@ Version actuelle : Paint.NET v{1}</value>
   <data name="SaveAsDialog.Title" xml:space="preserve">
     <value>Enregistrer sous</value>
   </data>
-  <data name="WarnAboutFlattening.Text" xml:space="preserve">
-    <value>Enregistrer l'image dans ce format «l'aplatira», avec perte de toutes les informations de calque et de calques cachés.
-Désirez-vous continuer ?</value>
-  </data>
-  <data name="WarnAboutFlattening.Title" xml:space="preserve">
-    <value>Question</value>
-  </data>
   <data name="SaveImage.Error.UnauthorizedAccessException" xml:space="preserve">
     <value>Accès refusé. Sélectionnez Fichier-&gt;Enregistrer sous... pour enregistrer votre fichier à un autre emplacement ou sous un autre nom.</value>
   </data>
@@ -1280,6 +1254,24 @@ Désirez-vous continuer ?</value>
   </data>
   <data name="SaveImage.Error.Exception" xml:space="preserve">
     <value>Une erreur non spécifiée s'est produite lors de l'enregistrement du fichier.</value>
+  </data>
+  <data name="WarnAboutFlattening.Title">
+    <value>Enregistrer</value>
+  </data>
+  <data name="WarnAboutFlattening.IntroText">
+    <value>Enregistrer dans ce format requiert que l'image soit tout d'abord "aplatie", ce qui la réduit à un seul calque.</value>
+  </data>
+  <data name="WarnAboutFlattening.FlattenTB.ActionText">
+    <value>&amp;Aplatir</value>
+  </data>
+  <data name="WarnAboutFlattening.FlattenTB.ExplanationText">
+    <value>L'image sera aplatie, puis enregistrée. Vous aurez la possibilité d'annuler l'aplatissement après l'enregistrement.</value>
+  </data>
+  <data name="WarnAboutFlattening.CancelTB.ActionText">
+    <value>Annuler</value>
+  </data>
+  <data name="WarnAboutFlattening.CancelTB.ExplanationText">
+    <value>Annule l'action Enregistrer.</value>
   </data>
   <data name="CopyAction.Error.TransferToClipboard" xml:space="preserve">
     <value>Une erreur s'est produite en copiant l'image vers le Presse-papiers.</value>
@@ -1343,6 +1335,9 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
   </data>
   <data name="WIA.Error.UnableToLoad" xml:space="preserve">
     <value>Le fichier bibliothèque d'Acquisition d'image Windows (WIA), "wiaaut.dll" n'est pas disponible. Veuillez consulter le fichier d'aide (menu Aide -&gt; Rubriques d'aide), rubrique Forum Aux Questions (FAQ), pour obtenir des informations de dépannage.</value>
+  </data>
+  <data name="DragDrop.OpenOrImport.Title">
+    <value>Glisser-déplacer</value>
   </data>
   <data name="DragDrop.OpenOrImport.InfoText">
     <value>Que souhaitez-vous faire avec le(s) fichier(s) ?</value>
@@ -1473,9 +1468,6 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
   <data name="Menu.View.Grid.Text" xml:space="preserve">
     <value>&amp;Grille</value>
   </data>
-  <data name="Menu.View.Units.Text" xml:space="preserve">
-    <value>&amp;Unités</value>
-  </data>
   <data name="Menu.Image.Text" xml:space="preserve">
     <value>&amp;Image</value>
   </data>
@@ -1488,35 +1480,23 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
   <data name="Menu.Image.CanvasSize.Text" xml:space="preserve">
     <value>&amp;Taille de la zone de dessin...</value>
   </data>
-  <data name="Menu.Image.Flip.Text" xml:space="preserve">
-    <value>Retour&amp;ner</value>
+  <data name="Menu.Image.FlipHorizontal.Text" xml:space="preserve">
+    <value>Retourner &amp;horizontalement</value>
   </data>
-  <data name="Menu.Image.Flip.Horizontal.Text" xml:space="preserve">
-    <value>&amp;Horizontalement</value>
-  </data>
-  <data name="Menu.Image.Flip.Vertical.Text" xml:space="preserve">
-    <value>&amp;Verticalement</value>
+  <data name="Menu.Image.FlipVertical.Text" xml:space="preserve">
+    <value>Retourner &amp;verticalement</value>
   </data>
   <data name="Menu.Image.Rotate.Text" xml:space="preserve">
     <value>&amp;Faire pivoter</value>
   </data>
-  <data name="Menu.Image.Rotate.90CW.Text" xml:space="preserve">
-    <value>&amp;90° degrés à droite</value>
+  <data name="Menu.Image.Rotate90CW.Text" xml:space="preserve">
+    <value>Faire pivoter de &amp;90° à droite</value>
   </data>
-  <data name="Menu.Image.Rotate.180CW.Text" xml:space="preserve">
-    <value>&amp;180° degrés à droite</value>
+  <data name="Menu.Image.Rotate90CCW.Text" xml:space="preserve">
+    <value>Faire pivoter de 90° à gauche</value>
   </data>
-  <data name="Menu.Image.Rotate.270CW.Text" xml:space="preserve">
-    <value>&amp;270° degrés à droite</value>
-  </data>
-  <data name="Menu.Image.Rotate.90CCW.Text" xml:space="preserve">
-    <value>90° degrés à gauche</value>
-  </data>
-  <data name="Menu.Image.Rotate.180CCW.Text" xml:space="preserve">
-    <value>180° degrés à gauche</value>
-  </data>
-  <data name="Menu.Image.Rotate.270CCW.Text" xml:space="preserve">
-    <value>270° degrés à gauche</value>
+  <data name="Menu.Image.Rotate180.Text" xml:space="preserve">
+    <value>Faire pivoter de &amp;180°</value>
   </data>
   <data name="Menu.Image.Flatten.Text" xml:space="preserve">
     <value>&amp;Aplatir</value>
@@ -1542,14 +1522,11 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
   <data name="Menu.Layers.Adjustments.Text" xml:space="preserve">
     <value>Aj&amp;ustements</value>
   </data>
-  <data name="Menu.Layers.Flip.Text" xml:space="preserve">
-    <value>&amp;Retourner</value>
+  <data name="Menu.Layers.FlipHorizontal.Text" xml:space="preserve">
+    <value>Retourner &amp;horizontalement</value>
   </data>
-  <data name="Menu.Layers.Flip.Horizontal.Text" xml:space="preserve">
-    <value>&amp;Horizontalement</value>
-  </data>
-  <data name="Menu.Layers.Flip.Vertical.Text" xml:space="preserve">
-    <value>&amp;Verticalement</value>
+  <data name="Menu.Layers.FlipVertical.Text" xml:space="preserve">
+    <value>Retourner &amp;verticalement</value>
   </data>
   <data name="Menu.Layers.LayerProperties.Text" xml:space="preserve">
     <value>&amp;Propriétés du calque...</value>
@@ -1597,7 +1574,7 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
     <value>Onglet &amp;précédent</value>
   </data>
   <data name="Menu.Help.Language.Text" xml:space="preserve">
-    <value>Langue</value>
+    <value>&amp;Langue</value>
   </data>
   <data name="Menu.Help.Text" xml:space="preserve">
     <value>&amp;Aide</value>
@@ -1606,22 +1583,22 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
     <value>R&amp;ubriques d'aide</value>
   </data>
   <data name="Menu.Help.PdnWebsite.Text" xml:space="preserve">
-    <value>Site &amp;web de Paint.NET...</value>
+    <value>Site &amp;web de Paint.NET</value>
   </data>
   <data name="Menu.Help.Donate.Text" xml:space="preserve">
     <value>Faire un &amp;don...</value>
   </data>
   <data name="Menu.Help.Forum.Text" xml:space="preserve">
-    <value>&amp;Forum...</value>
+    <value>&amp;Forum</value>
   </data>
   <data name="Menu.Help.Tutorials.Text" xml:space="preserve">
-    <value>D&amp;idacticiels...</value>
+    <value>&amp;Didacticiels</value>
   </data>
   <data name="Menu.Help.Plugins.Text" xml:space="preserve">
-    <value>&amp;Plug-ins...</value>
+    <value>&amp;Plug-ins</value>
   </data>
   <data name="Menu.Help.About.Text" xml:space="preserve">
-    <value>À pr&amp;opos de...</value>
+    <value>À pr&amp;opos de</value>
   </data>
   <data name="Menu.Help.Updates.Text" xml:space="preserve">
     <value>&amp;Mises à jour</value>
@@ -1715,7 +1692,7 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
     <value>Densité couleur +</value>
   </data>
   <data name="UserBlendOps.ColorDodgeBlendOp.Name" xml:space="preserve">
-    <value>Densité couleur </value>
+    <value>Densité couleur</value>
   </data>
   <data name="UserBlendOps.ReflectBlendOp.Name" xml:space="preserve">
     <value>Reflet</value>
@@ -1752,6 +1729,15 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
   </data>
   <data name="Effects.Blurring.Submenu.Name" xml:space="preserve">
     <value>Flous</value>
+  </data>
+  <data name="PencilSketchEffect.Name">
+    <value>Croquis au crayon</value>
+  </data>
+  <data name="PencilSketchEffect.ConfigDialog.PencilTipSizeLabel">
+    <value>Taille de la pointe du crayon</value>
+  </data>
+  <data name="PencilSketchEffect.ConfigDialog.RangeLabel">
+    <value>Étendue </value>
   </data>
   <data name="OutlineEffect.Name">
     <value>Contour</value>
@@ -1901,7 +1887,7 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
     <value>Histogramme de sortie</value>
   </data>
   <data name="LevelsEffectConfigDialog.HistogramOutput.ToolTipText" xml:space="preserve">
-    <value>Cet histogramme est un aperçu de la distribution des couleurs de l'image résultante.</value>
+    <value>Cet histogramme est un aperçu de la distribution des couleurs de l'image résultante</value>
   </data>
   <data name="LevelsEffectConfigDialog.InputHistogramGroupBox.Text" xml:space="preserve">
     <value>Histogramme d'entrée</value>
@@ -1997,7 +1983,7 @@ Voulez-vous agrandir la zone de dessin à la taille de l'image ?</value>
     <value>Pourcentage de saturation</value>
   </data>
   <data name="RedEyeRemoveEffectDialog.UsageHintLabel.Text" xml:space="preserve">
-    <value>Conseil : pour de meilleurs résultats, utilisez d'abord les outils de sélection pour sélectionner chaque œil.</value>
+    <value>Conseil : pour de meilleurs résultats, utilisez d'abord les outils de sélection pour sélectionner chaque œil</value>
   </data>
   <data name="ReliefEffect.Name" xml:space="preserve">
     <value>Relief</value>
@@ -2214,7 +2200,7 @@ Cliquez sur OK pour visiter le site web de Paint.NET d'où vous pourrez peut-êt
     <value>&amp;Quitter</value>
   </data>
   <data name="ExpiredTaskDialog.DoNotCheckForUpdatesTB.ExplanationText">
-    <value>Quitter Paint.NET sans vérifier la disponibilité d'une mise à jour</value>
+    <value>Quitter Paint.NET sans vérifier la disponibilité d'une mise à jour.</value>
   </data>
   <data name="DownloadAndUnzipUpdateDialog.Text" xml:space="preserve">
     <value>Mises à jour de Paint.NET</value>
@@ -2228,8 +2214,24 @@ Cliquez sur OK pour visiter le site web de Paint.NET d'où vous pourrez peut-êt
   <data name="DownloadAndUnzipUpdateDialog.Error.Generic" xml:space="preserve">
     <value>Une erreur s'est produite lors du téléchargement et de l'installation de la nouvelle version. Veuillez réessayer ultérieurement en sélectionnant dans le menu Aide l'option Rechercher les mises à jour</value>
   </data>
-  <data name="SetLanguage.PleaseRestartApplication" xml:space="preserve">
-    <value>Vous devez redémarrez Paint.NET pour que cette modification soit prise en compte.</value>
+  <data name="ConfirmLanguageDialog.Title">
+    <value>Confirmation du choix de la langue</value>
+  </data>
+  <data name="ConfirmLanguageDialog.IntroText">
+    <value>Changer la langue nécessite que Paint.NET soit redémarré.</value>
+  </data>
+  <data name="ConfirmLanguageDialog.RestartTB.ActionText">
+    <value>&amp;Redémarrer Paint.NET</value>
+  </data>
+  <data name="ConfirmLanguageDialog.RestartTB.ExplanationText.Format">
+    <value>Ferme Paint.NET puis redémarre l'application en {0}. Il vous sera demandé d'enregistrer vos modifications si besoin.</value>
+    <comment>{0} is the name of the new language that has been chosen (ex, "English").</comment>
+  </data>
+  <data name="ConfirmLanguageDialog.CancelTB.ActionText">
+    <value>Annuler</value>
+  </data>
+  <data name="ConfirmLanguageDialog.CancelTB.ExplanationText">
+    <value>Ne ferme pas Paint.NET. Votre choix de langue sera ignoré.</value>
   </data>
   <data name="AddNoiseEffect.Amount1Label" xml:space="preserve">
     <value>Intensité</value>
@@ -2269,7 +2271,7 @@ Options de ligne de commande :
 /skipConfig  -  ignore les options de configuration et le répertoire d'installation. Utilise les propriétés du fichier MSI dans l'ordre suivant : 1. fournies dans la ligne de commande, 2. lues dans le registre (HKLM\Software\Paint.NET), 3. valeurs par défaut. Remarque : l'utilisation de cette option implique l'acceptation du contrat de licence.
 /auto  -  Installation automatique. Implique /skipConfig. N'affiche pas la dernière page de l'Assistant Installation qui résume les résultats de l'installation.
 /createMsi  -  Crée les packages MSI qui peuvent être utilisés à des fins de déploiement (AD/GPO). Toutes les propriétés spécifiées dans la ligne de commande sont groupées dans le package MSI, sans autres transformations nécessaires.
-PROPRIETE=VALEUR  -  Défini une propriété MSI. Consultez le fichier d'aide après installation pour plus d'information. Il n'est pas nécessaire de spécifier /saveMsi pour définir des propriétés.
+PROPRIETE=VALEUR  -  Définit une propriété MSI. Consultez le fichier d'aide après installation pour plus d'information. Il n'est pas nécessaire de spécifier /saveMsi pour définir des propriétés.
 
 Le code de retour est 0 en cas de succès, et une valeur différente de zéro en cas d'échec.</value>
   </data>
@@ -2507,6 +2509,7 @@ Cliquez sur Suivant pour commencer l'installation.</value>
   </data>
   <data name="WebExceptionStatus.ConnectFailure" xml:space="preserve">
     <value>Le point de service à distance n'a pas pu être contacté au niveau transport.</value>
+    <comment>All of the WebExceptionStatus.* strings are copied straight from MSDN's documentation (except where explicitely noted), http://msdn.microsoft.com/library/default.asp?url=/library/en-us/cpref/html/frlrfsystemnetwebexceptionstatusclasstopic.asp</comment>
   </data>
   <data name="WebExceptionStatus.ConnectionClosed" xml:space="preserve">
     <value>La connexion a été fermée prématurément.</value>
@@ -2545,10 +2548,10 @@ Cliquez sur Suivant pour commencer l'installation.</value>
     <comment>This text is different than what is in the MSDN documentation.</comment>
   </data>
   <data name="WebExceptionStatus.SecureChannelFailure" xml:space="preserve">
-    <value>Une erreur s'est produite dans un lien de canal sécurisé.</value>
+    <value>Une erreur s'est produite lors de la tentative de connexion SSL.</value>
   </data>
   <data name="WebExceptionStatus.SendFailure" xml:space="preserve">
-    <value>Une erreur s'est produite dans un lien de canal sécurisé.</value>
+    <value>Une requête complète n'a pas pu être envoyée au serveur distant.</value>
   </data>
   <data name="WebExceptionStatus.ServerProtocolViolation" xml:space="preserve">
     <value>La réponse du serveur n'était pas une réponse HTTP valide.</value>
@@ -2681,7 +2684,7 @@ Veuillez envoyer ce fichier dans un message électronique à l'adresse {0} de fa
     </value>
   </data>
   <data name="ControlShadow.BetaTag.Text.Format">
-    <value>Ceci est une version préliminaire, uniquement destinée à un usage de test. Expiration le {1}. Une mise à jour sera disponible avant cette date.
+    <value>Ceci est une version préliminaire, destinée à un usage de test seulement. Expiration le {1}. Une mise à jour sera disponible avant cette date.
 www.getpaint.net</value>
     <comment>{0} is the full application name, e.g. "Paint.NET v3.0 (Beta 1 Release build 3.0.2460.34921). {1} is a date string.</comment>
   </data>
@@ -2722,7 +2725,7 @@ www.getpaint.net</value>
     <value>Rastérisation</value>
   </data>
   <data name="ChooseToolDefaultsDialog.Text">
-    <value>Choisir les outils par défaut </value>
+    <value>Choisir les outils par défaut</value>
   </data>
   <data name="CloseWorkspaceAction.Title">
     <value>Modifications non enregistrées</value>
@@ -2816,6 +2819,30 @@ Touche de raccourci : [ (maintenez la touche Ctrl enfoncée pour diminuer de 5)<
     <value>Mode fusion</value>
   </data>
   <data name="CloudsEffect.ConfigDialog.ReseedButton.Text">
-    <value>Réinitialiser la valeur de départ aléatoire</value>
+    <value>&amp;Réinitialiser</value>
+  </data>
+  <data name="ExpandCanvasQuestion.Title">
+    <value>Coller</value>
+  </data>
+  <data name="ExpandCanvasQuestion.IntroText">
+    <value>L'image que vous essayez de coller est plus grande que la taille de la zone de dessin. Que souhaitez-vous faire ?</value>
+  </data>
+  <data name="ExpandCanvasQuestion.YesTB.ActionText">
+    <value>&amp;Agrandir la zone de dessin</value>
+  </data>
+  <data name="ExpandCanvasQuestion.YesTB.ExplanationText">
+    <value>Agrandit automatiquement la zone de dessin en l'ajustant à la taille de l'image collée.</value>
+  </data>
+  <data name="ExpandCanvasQuestion.NoTB.ActionText">
+    <value>&amp;Ne pas modifier la taille de la zone de dessin</value>
+  </data>
+  <data name="ExpandCanvasQuestion.NoTB.ExplanationText">
+    <value>N'agrandit pas la zone de dessin. Vous devrez déplacer l'image collée pour vous assurer que la partie que vous voulez est dans les limites de la zone de dessin.</value>
+  </data>
+  <data name="ExpandCanvasQuestion.CancelTB.ActionText">
+    <value>Annuler</value>
+  </data>
+  <data name="ExpandCanvasQuestion.CancelTB.ExplanationText">
+    <value>Annule l'action Coller.</value>
   </data>
 </root>

@@ -204,10 +204,6 @@
     <EmbeddedResource Include="Icons\MenuImageFlipHorizontalIcon.png" />
     <EmbeddedResource Include="Icons\MenuImageFlipVerticalIcon.png" />
     <EmbeddedResource Include="Icons\MenuImageResizeIcon.png" />
-    <EmbeddedResource Include="Icons\MenuImageRotate180CCWIcon.png" />
-    <EmbeddedResource Include="Icons\MenuImageRotate180CWIcon.png" />
-    <EmbeddedResource Include="Icons\MenuImageRotate270CCWIcon.png" />
-    <EmbeddedResource Include="Icons\MenuImageRotate270CWIcon.png" />
     <EmbeddedResource Include="Icons\MenuImageRotate90CCWIcon.png" />
     <EmbeddedResource Include="Icons\MenuImageRotate90CWIcon.png" />
     <EmbeddedResource Include="Icons\MenuLayersAddNewLayerIcon.png" />
@@ -262,9 +258,6 @@
     <EmbeddedResource Include="Icons\ZoomToolIcon.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Icons\todo.png" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Icons\MenuFileSaveAsIcon.png" />
   </ItemGroup>
   <ItemGroup>
@@ -295,9 +288,6 @@
   <ItemGroup>
     <EmbeddedResource Include="Icons\UnsavedChangesDialog.CancelButton.png" />
     <EmbeddedResource Include="Icons\UnsavedChangesDialog.SaveButton.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Icons\Question.ico" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Icons\CancelIcon.png" />
@@ -396,6 +386,22 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Icons\MenuHelpDonateIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\RightArrowBlue.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\MenuImageRotate180Icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\ExpandCanvasQuestion.NoTB.Image.png" />
+    <EmbeddedResource Include="Icons\ExpandCanvasQuestion.YesTB.Image.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\DragDrop.OpenOrImport.FormIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\PencilSketchEffectIcon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

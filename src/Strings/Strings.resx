@@ -167,9 +167,6 @@
   <data name="HistoryForm.FastForwardButton.ToolTipText" xml:space="preserve">
     <value>Redo All (Fast Forward)</value>
   </data>
-  <data name="HistoryForm.ClearHistoryButton.ToolTipText" xml:space="preserve">
-    <value>Clear History</value>
-  </data>
   <data name="HistoryForm.RedoButton.ToolTipText" xml:space="preserve">
     <value>Redo (Step Forward)</value>
   </data>
@@ -672,10 +669,6 @@ Shortcut key: X</value>
   <data name="ImportFromFileAction.Name" xml:space="preserve">
     <value>Import From File</value>
   </data>
-  <data name="ImportFromFileAction.AskForCanvasResize.Confirmation" xml:space="preserve">
-    <value>The image being imported is larger than the image canvas.
-Expand canvas to fit imported image?</value>
-  </data>
   <data name="ImportFromFileAction.AskForCanvasResize.OutOfMemory" xml:space="preserve">
     <value>Ran out of memory while trying to resize the image.</value>
   </data>
@@ -736,9 +729,6 @@ Expand canvas to fit imported image?</value>
   </data>
   <data name="LineTool.CurvingHelpText" xml:space="preserve">
     <value>Press Enter to finish the curve, or draw elsewhere for a new line. Tap Ctrl to toggle nubs.</value>
-  </data>
-  <data name="LoadProgressDialog.Description" xml:space="preserve">
-    <value>Loading:</value>
   </data>
   <data name="MagicWandTool.Name" xml:space="preserve">
     <value>Magic Wand</value>
@@ -958,20 +948,11 @@ Expand canvas to fit imported image?</value>
   <data name="ResizeDialog.AsteriskTextLabel.Bicubic" xml:space="preserve">
     <value>* Bicubic will be used</value>
   </data>
-  <data name="RotateAction.180CW" xml:space="preserve">
-    <value>180° CW</value>
-  </data>
-  <data name="RotateAction.270CW" xml:space="preserve">
-    <value>270° CW</value>
+  <data name="RotateAction.180" xml:space="preserve">
+    <value>180°</value>
   </data>
   <data name="RotateAction.90CW" xml:space="preserve">
     <value>90° CW</value>
-  </data>
-  <data name="RotateAction.180CCW" xml:space="preserve">
-    <value>180° CCW</value>
-  </data>
-  <data name="RotateAction.270CCW" xml:space="preserve">
-    <value>270° CCW</value>
   </data>
   <data name="RotateAction.90CCW" xml:space="preserve">
     <value>90° CCW</value>
@@ -1256,13 +1237,6 @@ Current version: Paint.NET v{1}</value>
   <data name="SaveAsDialog.Title" xml:space="preserve">
     <value>Save As</value>
   </data>
-  <data name="WarnAboutFlattening.Text" xml:space="preserve">
-    <value>Saving in this file format will "flatten" the image, discarding all layering information and hidden layers.
-Proceed?</value>
-  </data>
-  <data name="WarnAboutFlattening.Title" xml:space="preserve">
-    <value>Question</value>
-  </data>
   <data name="SaveImage.Error.UnauthorizedAccessException" xml:space="preserve">
     <value>Access is denied. Use File-&gt;Save As... to save under a different location or name.</value>
   </data>
@@ -1280,6 +1254,24 @@ Proceed?</value>
   </data>
   <data name="SaveImage.Error.Exception" xml:space="preserve">
     <value>There was an unspecified error while saving the file.</value>
+  </data>
+  <data name="WarnAboutFlattening.Title">
+    <value>Save</value>
+  </data>
+  <data name="WarnAboutFlattening.IntroText">
+    <value>Saving in this file format requires that the image is first "flattened", which reduces it to a single layer.</value>
+  </data>
+  <data name="WarnAboutFlattening.FlattenTB.ActionText">
+    <value>&amp;Flatten</value>
+  </data>
+  <data name="WarnAboutFlattening.FlattenTB.ExplanationText">
+    <value>The image will be flattened, and then saved. You will be able to undo the flatten operation after saving is finished.</value>
+  </data>
+  <data name="WarnAboutFlattening.CancelTB.ActionText">
+    <value>Cancel</value>
+  </data>
+  <data name="WarnAboutFlattening.CancelTB.ExplanationText">
+    <value>Cancels the save action.</value>
   </data>
   <data name="CopyAction.Error.TransferToClipboard" xml:space="preserve">
     <value>There was an error copying the image to the clipboard.</value>
@@ -1343,6 +1335,9 @@ Expand canvas to fit pasted image?</value>
   </data>
   <data name="WIA.Error.UnableToLoad" xml:space="preserve">
     <value>The Windows Image Acquisition (WIA) library, "wiaaut.dll" is unavailable. Please read the Help file (Help menu -&gt; Help Topics), in the Frequently Asked Questions topic, for troubleshooting information.</value>
+  </data>
+  <data name="DragDrop.OpenOrImport.Title">
+    <value>Drag and Drop</value>
   </data>
   <data name="DragDrop.OpenOrImport.InfoText">
     <value>What would you like to do with the file(s)?</value>
@@ -1473,9 +1468,6 @@ Expand canvas to fit pasted image?</value>
   <data name="Menu.View.Grid.Text" xml:space="preserve">
     <value>&amp;Grid</value>
   </data>
-  <data name="Menu.View.Units.Text" xml:space="preserve">
-    <value>&amp;Units</value>
-  </data>
   <data name="Menu.Image.Text" xml:space="preserve">
     <value>&amp;Image</value>
   </data>
@@ -1488,35 +1480,23 @@ Expand canvas to fit pasted image?</value>
   <data name="Menu.Image.CanvasSize.Text" xml:space="preserve">
     <value>Canvas &amp;Size...</value>
   </data>
-  <data name="Menu.Image.Flip.Text" xml:space="preserve">
-    <value>&amp;Flip</value>
+  <data name="Menu.Image.FlipHorizontal.Text" xml:space="preserve">
+    <value>Flip &amp;Horizontal</value>
   </data>
-  <data name="Menu.Image.Flip.Horizontal.Text" xml:space="preserve">
-    <value>&amp;Horizontal</value>
-  </data>
-  <data name="Menu.Image.Flip.Vertical.Text" xml:space="preserve">
-    <value>&amp;Vertical</value>
+  <data name="Menu.Image.FlipVertical.Text" xml:space="preserve">
+    <value>Flip &amp;Vertical</value>
   </data>
   <data name="Menu.Image.Rotate.Text" xml:space="preserve">
     <value>Ro&amp;tate</value>
   </data>
-  <data name="Menu.Image.Rotate.90CW.Text" xml:space="preserve">
-    <value>&amp;90° CW</value>
+  <data name="Menu.Image.Rotate90CW.Text" xml:space="preserve">
+    <value>Rotate &amp;90° Clockwise</value>
   </data>
-  <data name="Menu.Image.Rotate.180CW.Text" xml:space="preserve">
-    <value>&amp;180° CW</value>
+  <data name="Menu.Image.Rotate90CCW.Text" xml:space="preserve">
+    <value>Rotate 90° Counter-Clockwise</value>
   </data>
-  <data name="Menu.Image.Rotate.270CW.Text" xml:space="preserve">
-    <value>&amp;270° CW</value>
-  </data>
-  <data name="Menu.Image.Rotate.90CCW.Text" xml:space="preserve">
-    <value>90° CCW</value>
-  </data>
-  <data name="Menu.Image.Rotate.180CCW.Text" xml:space="preserve">
-    <value>180° CCW</value>
-  </data>
-  <data name="Menu.Image.Rotate.270CCW.Text" xml:space="preserve">
-    <value>270° CCW</value>
+  <data name="Menu.Image.Rotate180.Text" xml:space="preserve">
+    <value>Rotate &amp;180°</value>
   </data>
   <data name="Menu.Image.Flatten.Text" xml:space="preserve">
     <value>&amp;Flatten</value>
@@ -1542,14 +1522,11 @@ Expand canvas to fit pasted image?</value>
   <data name="Menu.Layers.Adjustments.Text" xml:space="preserve">
     <value>&amp;Adjustments</value>
   </data>
-  <data name="Menu.Layers.Flip.Text" xml:space="preserve">
-    <value>F&amp;lip</value>
+  <data name="Menu.Layers.FlipHorizontal.Text" xml:space="preserve">
+    <value>Flip &amp;Horizontal</value>
   </data>
-  <data name="Menu.Layers.Flip.Horizontal.Text" xml:space="preserve">
-    <value>&amp;Horizontal</value>
-  </data>
-  <data name="Menu.Layers.Flip.Vertical.Text" xml:space="preserve">
-    <value>&amp;Vertical</value>
+  <data name="Menu.Layers.FlipVertical.Text" xml:space="preserve">
+    <value>Flip &amp;Vertical</value>
   </data>
   <data name="Menu.Layers.LayerProperties.Text" xml:space="preserve">
     <value>Layer &amp;Properties...</value>
@@ -1606,22 +1583,22 @@ Expand canvas to fit pasted image?</value>
     <value>&amp;Help Topics</value>
   </data>
   <data name="Menu.Help.PdnWebsite.Text" xml:space="preserve">
-    <value>&amp;Paint.NET Website...</value>
+    <value>&amp;Paint.NET Website</value>
   </data>
   <data name="Menu.Help.Donate.Text" xml:space="preserve">
     <value>&amp;Donate...</value>
   </data>
   <data name="Menu.Help.Forum.Text" xml:space="preserve">
-    <value>&amp;Forum...</value>
+    <value>&amp;Forum</value>
   </data>
   <data name="Menu.Help.Tutorials.Text" xml:space="preserve">
-    <value>&amp;Tutorials...</value>
+    <value>&amp;Tutorials</value>
   </data>
   <data name="Menu.Help.Plugins.Text" xml:space="preserve">
-    <value>&amp;Plugins...</value>
+    <value>&amp;Plugins</value>
   </data>
   <data name="Menu.Help.About.Text" xml:space="preserve">
-    <value>&amp;About...</value>
+    <value>&amp;About</value>
   </data>
   <data name="Menu.Help.Updates.Text" xml:space="preserve">
     <value>&amp;Updates</value>
@@ -1752,6 +1729,15 @@ Expand canvas to fit pasted image?</value>
   </data>
   <data name="Effects.Blurring.Submenu.Name" xml:space="preserve">
     <value>Blurs</value>
+  </data>
+  <data name="PencilSketchEffect.Name">
+    <value>Pencil Sketch</value>
+  </data>
+  <data name="PencilSketchEffect.ConfigDialog.PencilTipSizeLabel">
+    <value>Pencil tip size</value>
+  </data>
+  <data name="PencilSketchEffect.ConfigDialog.RangeLabel">
+    <value>Range</value>
   </data>
   <data name="OutlineEffect.Name">
     <value>Outline</value>
@@ -2226,8 +2212,24 @@ Click OK to go to the Paint.NET website where you may download a newer version.<
   <data name="DownloadAndUnzipUpdateDialog.Error.Generic" xml:space="preserve">
     <value>There was an error downloading and installing the new version. Please try again later with the 'Help -&gt; Check for Updates ...' menu command.</value>
   </data>
-  <data name="SetLanguage.PleaseRestartApplication" xml:space="preserve">
-    <value>You must restart Paint.NET for this change to take effect.</value>
+  <data name="ConfirmLanguageDialog.Title">
+    <value>Language Choice Confirmation</value>
+  </data>
+  <data name="ConfirmLanguageDialog.IntroText">
+    <value>Changing the language requires that Paint.NET be restarted.</value>
+  </data>
+  <data name="ConfirmLanguageDialog.RestartTB.ActionText">
+    <value>&amp;Restart Paint.NET</value>
+  </data>
+  <data name="ConfirmLanguageDialog.RestartTB.ExplanationText.Format">
+    <value>Closes Paint.NET and then restarts it in {0}. You will be asked to save your changes if necessary.</value>
+    <comment>{0} is the name of the new language that has been chosen (ex, "English").</comment>
+  </data>
+  <data name="ConfirmLanguageDialog.CancelTB.ActionText">
+    <value>Cancel</value>
+  </data>
+  <data name="ConfirmLanguageDialog.CancelTB.ExplanationText">
+    <value>Does not close Paint.NET. Your language choice will be cancelled.</value>
   </data>
   <data name="AddNoiseEffect.Amount1Label" xml:space="preserve">
     <value>Intensity</value>
@@ -2816,5 +2818,29 @@ Shortcut key: [ (hold Ctrl to decrease by 5)</value>
   </data>
   <data name="CloudsEffect.ConfigDialog.ReseedButton.Text">
     <value>&amp;Reseed</value>
+  </data>
+  <data name="ExpandCanvasQuestion.Title">
+    <value>Paste</value>
+  </data>
+  <data name="ExpandCanvasQuestion.IntroText">
+    <value>The image being pasted is larger than the canvas size. What do you want to do?</value>
+  </data>
+  <data name="ExpandCanvasQuestion.YesTB.ActionText">
+    <value>&amp;Expand canvas</value>
+  </data>
+  <data name="ExpandCanvasQuestion.YesTB.ExplanationText">
+    <value>Automatically expands the canvas to fit the image being pasted.</value>
+  </data>
+  <data name="ExpandCanvasQuestion.NoTB.ActionText">
+    <value>&amp;Keep canvas size</value>
+  </data>
+  <data name="ExpandCanvasQuestion.NoTB.ExplanationText">
+    <value>Does not expand the canvas. You will have to move the pasted image around to make sure that the part you want is within the canvas boundaries.</value>
+  </data>
+  <data name="ExpandCanvasQuestion.CancelTB.ActionText">
+    <value>Cancel</value>
+  </data>
+  <data name="ExpandCanvasQuestion.CancelTB.ExplanationText">
+    <value>Cancels the paste action.</value>
   </data>
 </root>

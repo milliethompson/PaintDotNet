@@ -155,7 +155,7 @@ namespace PaintDotNet
                 {
                     ColorBgra *dstPtr = dst.GetRowAddressUnchecked(y);
                     ColorBgra *lhsPtr = lhs.GetRowAddressUnchecked(y);
-                    ColorBgra *rhsPtr = lhs.GetRowAddressUnchecked(y);
+                    ColorBgra *rhsPtr = rhs.GetRowAddressUnchecked(y);
 
                     Apply(dstPtr, lhsPtr, rhsPtr, dst.Width);
                 }

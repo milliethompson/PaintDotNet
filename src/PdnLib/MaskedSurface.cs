@@ -275,13 +275,12 @@ namespace PaintDotNet
             public unsafe void DrawScansNearestNeighbor(object cpuNumberObj)
             {
                 int cpuNumber = (int)cpuNumberObj;
-                int start = (this.dstScans.Length * cpuNumber) / Processor.LogicalCpuCount;
-                int end = (this.dstScans.Length * (cpuNumber + 1)) / Processor.LogicalCpuCount;
+                int inc = Processor.LogicalCpuCount;
                 void* scan0 = src.Scan0.VoidStar;
                 int stride = src.Stride;
                 PointF[] pts = new PointF[1];
 
-                for (int i = start; i < end; ++i)
+                for (int i = cpuNumber; i < this.dstScans.Length; i += inc)
                 {
                     Rectangle dstRect = this.dstScans[i];
 
@@ -393,11 +392,10 @@ namespace PaintDotNet
             public unsafe void DrawScansBilinear(object cpuNumberObj)
             {
                 int cpuNumber = (int)cpuNumberObj;
-                int start = (this.dstScans.Length * cpuNumber) / Processor.LogicalCpuCount;
-                int end = (this.dstScans.Length * (cpuNumber + 1)) / Processor.LogicalCpuCount;
+                int inc = Processor.LogicalCpuCount;
                 PointF[] pts2 = new PointF[1];
 
-                for (int i = start; i < end; ++i)
+                for (int i = cpuNumber; i < this.dstScans.Length; i += inc)
                 {
                     Rectangle dstRect = this.dstScans[i];
                     dstRect.Intersect(dst.Bounds);

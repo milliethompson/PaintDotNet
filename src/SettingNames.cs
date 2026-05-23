@@ -12,11 +12,12 @@ using System;
 
 namespace PaintDotNet
 {
+    // TODO: rename to SettingNames (get rid of silly 'Pdn' prefix where possible)
     /// <summary>
     /// Symbolic constants for our settings. Settings are stored in CurrentUser unless
     /// otherwise specified.
     /// </summary>
-    public sealed class PdnSettings
+    public sealed class SettingNames
     {
         /// <summary>
         /// The width of the main window (MainForm).
@@ -246,8 +247,7 @@ namespace PaintDotNet
         public const string AutoCheckForUpdates = "CHECKFORUPDATES";
 
         /// <summary>
-        /// Whether or not Paint.NET should inform the user of pre-release versions (Betas) of
-        /// Paint.NET                                                                   //.
+        /// Whether or not Paint.NET should inform the user of pre-release versions (Betas) of Paint.NET.
         /// </summary>
         /// <remarks>
         /// This is a SystemWide setting and may not be changed by non-admins.
@@ -315,7 +315,7 @@ namespace PaintDotNet
         /// </remarks>
         public const string DefaultAppEnvironment = "DefaultAppEnvironment";
 
-        private PdnSettings()
+        private SettingNames()
         {
         }
     }

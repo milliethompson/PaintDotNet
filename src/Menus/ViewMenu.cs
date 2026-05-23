@@ -22,13 +22,13 @@ namespace PaintDotNet.Menus
         private PdnMenuItem menuViewZoomToWindow;
         private PdnMenuItem menuViewZoomToSelection;
         private PdnMenuItem menuViewActualSize;
-        private System.Windows.Forms.ToolStripSeparator menuViewSeperator;
+        private ToolStripSeparator menuViewSeparator1;
         private PdnMenuItem menuViewGrid;
         private PdnMenuItem menuViewRulers;
-        private PdnMenuItem menuViewUnits;
-        private PdnMenuItem menuViewUnitsPixels;
-        private PdnMenuItem menuViewUnitsInches;
-        private PdnMenuItem menuViewUnitsCentimeters;
+        private ToolStripSeparator menuViewSeparator2;
+        private PdnMenuItem menuViewPixels;
+        private PdnMenuItem menuViewInches;
+        private PdnMenuItem menuViewCentimeters;
 
         private bool OnOemPlusShortcut(Keys keys)
         {
@@ -56,13 +56,13 @@ namespace PaintDotNet.Menus
             this.menuViewZoomToWindow = new PdnMenuItem();
             this.menuViewZoomToSelection = new PdnMenuItem();
             this.menuViewActualSize = new PdnMenuItem();
-            this.menuViewSeperator = new ToolStripSeparator();
+            this.menuViewSeparator1 = new ToolStripSeparator();
             this.menuViewGrid = new PdnMenuItem();
             this.menuViewRulers = new PdnMenuItem();
-            this.menuViewUnits = new PdnMenuItem();
-            this.menuViewUnitsPixels = new PdnMenuItem();
-            this.menuViewUnitsInches = new PdnMenuItem();
-            this.menuViewUnitsCentimeters = new PdnMenuItem();
+            this.menuViewSeparator2 = new ToolStripSeparator();
+            this.menuViewPixels = new PdnMenuItem();
+            this.menuViewInches = new PdnMenuItem();
+            this.menuViewCentimeters = new PdnMenuItem();
             // 
             // menuView
             // 
@@ -74,10 +74,13 @@ namespace PaintDotNet.Menus
                     this.menuViewZoomToWindow,
                     this.menuViewZoomToSelection,
                     this.menuViewActualSize,
-                    this.menuViewSeperator,
+                    this.menuViewSeparator1,
                     this.menuViewGrid,
                     this.menuViewRulers,
-                    this.menuViewUnits
+                    this.menuViewSeparator1,
+                    this.menuViewPixels,
+                    this.menuViewInches,
+                    this.menuViewCentimeters,
                 });
             this.Name = "Menu.View";
             this.Text = PdnResources.GetString("Menu.View.Text"); 
@@ -124,36 +127,49 @@ namespace PaintDotNet.Menus
             this.menuViewRulers.Name = "Rulers";
             this.menuViewRulers.Click += new System.EventHandler(this.MenuViewRulers_Click);
             //
-            // menuViewUnits
+            // menuViewPixels
             //
-            this.menuViewUnits.Name = "Units";
-            this.menuViewUnits.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                                                                                          this.menuViewUnitsPixels,
-                                                                                          this.menuViewUnitsInches,
-                                                                                          this.menuViewUnitsCentimeters});
-            this.menuViewUnits.DropDownOpening += new EventHandler(MenuViewUnits_DropDownOpening);
+            this.menuViewPixels.Name = "Pixels";
+            this.menuViewPixels.Click += new EventHandler(MenuViewPixels_Click);
+            this.menuViewPixels.Text = PdnResources.GetString("MeasurementUnit.Pixel.Plural");
             //
-            // menuViewUnitsPixels
+            // menuViewInches
             //
-            this.menuViewUnitsPixels.Name = "Pixels";
-            this.menuViewUnitsPixels.Click += new EventHandler(MenuViewUnitsPixels_Click);
-            this.menuViewUnitsPixels.Text = PdnResources.GetString("MeasurementUnit.Pixel.Plural");
+            this.menuViewInches.Name = "Inches";
+            this.menuViewInches.Text = PdnResources.GetString("MeasurementUnit.Inch.Plural");
+            this.menuViewInches.Click += new EventHandler(MenuViewInches_Click);
             //
-            // menuViewUnitsInches
+            // menuViewCentimeters
             //
-            this.menuViewUnitsInches.Name = "Inches";
-            this.menuViewUnitsInches.Text = PdnResources.GetString("MeasurementUnit.Inch.Plural");
-            this.menuViewUnitsInches.Click += new EventHandler(MenuViewUnitsInches_Click);
-            //
-            // menuViewUnitsCentimeters
-            //
-            this.menuViewUnitsCentimeters.Name = "Centimeters";
-            this.menuViewUnitsCentimeters.Click += new EventHandler(MenuViewUnitsCentimeters_Click);
-            this.menuViewUnitsCentimeters.Text = PdnResources.GetString("MeasurementUnit.Centimeter.Plural");
+            this.menuViewCentimeters.Name = "Centimeters";
+            this.menuViewCentimeters.Click += new EventHandler(MenuViewCentimeters_Click);
+            this.menuViewCentimeters.Text = PdnResources.GetString("MeasurementUnit.Centimeter.Plural");
         }
 
         protected override void OnDropDownOpening(EventArgs e)
         {
+            this.menuViewPixels.Checked = false;
+            this.menuViewInches.Checked = false;
+            this.menuViewCentimeters.Checked = false;
+
+            switch (AppWorkspace.Units)
+            {
+                case MeasurementUnit.Pixel:
+                    this.menuViewPixels.Checked = true;
+                    break;
+
+                case MeasurementUnit.Inch:
+                    this.menuViewInches.Checked = true;
+                    break;
+
+                case MeasurementUnit.Centimeter:
+                    this.menuViewCentimeters.Checked = true;
+                    break;
+
+                default:
+                    throw new InvalidEnumArgumentException();
+            }
+
             if (AppWorkspace.ActiveDocumentWorkspace != null)
             {
                 this.menuViewZoomIn.Enabled = true;
@@ -163,10 +179,9 @@ namespace PaintDotNet.Menus
                 this.menuViewActualSize.Enabled = true;
                 this.menuViewGrid.Enabled = true;
                 this.menuViewRulers.Enabled = true;
-                this.menuViewUnits.Enabled = true;
-                this.menuViewUnitsPixels.Enabled = true;
-                this.menuViewUnitsInches.Enabled = true;
-                this.menuViewUnitsCentimeters.Enabled = true;
+                this.menuViewPixels.Enabled = true;
+                this.menuViewInches.Enabled = true;
+                this.menuViewCentimeters.Enabled = true;
 
                 this.menuViewZoomToWindow.Checked = (AppWorkspace.ActiveDocumentWorkspace.ZoomBasis == ZoomBasis.FitToWindow);
                 this.menuViewGrid.Checked = AppWorkspace.ActiveDocumentWorkspace.DrawGrid;
@@ -181,10 +196,9 @@ namespace PaintDotNet.Menus
                 this.menuViewActualSize.Enabled = false;
                 this.menuViewGrid.Enabled = false;
                 this.menuViewRulers.Enabled = false;
-                this.menuViewUnits.Enabled = true;
-                this.menuViewUnitsPixels.Enabled = true;
-                this.menuViewUnitsInches.Enabled = true;
-                this.menuViewUnitsCentimeters.Enabled = true;
+                this.menuViewPixels.Enabled = true;
+                this.menuViewInches.Enabled = true;
+                this.menuViewCentimeters.Enabled = true;
             }
 
             base.OnDropDownOpening(e);
@@ -222,46 +236,17 @@ namespace PaintDotNet.Menus
             }
         }
 
-        private void MenuViewUnits_DropDownOpening(object sender, EventArgs e)
-        {
-            this.menuViewUnitsPixels.Enabled = true;
-            this.menuViewUnitsInches.Enabled = true;
-            this.menuViewUnitsCentimeters.Enabled = true;
-
-            this.menuViewUnitsPixels.Checked = false;
-            this.menuViewUnitsInches.Checked = false;
-            this.menuViewUnitsCentimeters.Checked = false;
-
-            switch (AppWorkspace.Units)
-            {
-                case MeasurementUnit.Pixel:
-                    this.menuViewUnitsPixels.Checked = true;
-                    break;
-
-                case MeasurementUnit.Inch:
-                    this.menuViewUnitsInches.Checked = true;
-                    break;
-
-                case MeasurementUnit.Centimeter:
-                    this.menuViewUnitsCentimeters.Checked = true;
-                    break;
-
-                default:
-                    throw new InvalidEnumArgumentException();
-            }
-        }
-
-        private void MenuViewUnitsPixels_Click(object sender, EventArgs e)
+        private void MenuViewPixels_Click(object sender, EventArgs e)
         {
             AppWorkspace.Units = MeasurementUnit.Pixel;
         }
 
-        private void MenuViewUnitsInches_Click(object sender, EventArgs e)
+        private void MenuViewInches_Click(object sender, EventArgs e)
         {
             AppWorkspace.Units = MeasurementUnit.Inch;
         }
 
-        private void MenuViewUnitsCentimeters_Click(object sender, EventArgs e)
+        private void MenuViewCentimeters_Click(object sender, EventArgs e)
         {
             AppWorkspace.Units = MeasurementUnit.Centimeter;
         }

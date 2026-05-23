@@ -252,7 +252,7 @@ namespace PaintDotNet
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(490, 100);
+            this.ClientSize = new System.Drawing.Size(450, 100);
             this.Controls.Add(this.infoLabel);
             this.Controls.Add(this.documentListHeader);
             this.Controls.Add(this.cancelButton);
@@ -278,7 +278,6 @@ namespace PaintDotNet
             this.Controls.SetChildIndex(this.infoLabel, 0);
             this.ResumeLayout(false);
             this.PerformLayout();
-
         }
 
         public event EventHandler<DocumentWorkspace> DocumentClicked;

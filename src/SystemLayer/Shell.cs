@@ -17,6 +17,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace PaintDotNet.SystemLayer
@@ -95,7 +96,7 @@ namespace PaintDotNet.SystemLayer
                     "The missing files are: " + missingFilesSB.ToString();
 
 #if DEBUG
-                infoLabel.Text += Environment.NewLine +
+                infoLabel.Text += Environment.NewLine + Environment.NewLine + 
                     "Since this is a DEBUG build, you should probably add /skipRepairAttempt to the command-line.";
 #endif
 
@@ -236,6 +237,8 @@ namespace PaintDotNet.SystemLayer
             /// </summary>
             RelaunchPdnOnExit
         }
+
+        private const string updateExeFileName = "UpdateMonitor.exe";
 
         /// <summary>
         /// Uses the shell to execute the command. This method must only be used by Paint.NET
@@ -405,8 +408,6 @@ namespace PaintDotNet.SystemLayer
 
         private static void RelaunchPdnHelperPart1(out string updateMonitorExePath)
         {
-            const string updateExeFileName = "UpdateMonitor.exe";
-
             string srcDir = Application.StartupPath;
             string srcPath = Path.Combine(srcDir, updateExeFileName);
 
@@ -430,6 +431,35 @@ namespace PaintDotNet.SystemLayer
             psi.WindowStyle = ProcessWindowStyle.Hidden;
             Process process = Process.Start(psi);
             process.Dispose();
+        }
+
+        /// <summary>
+        /// Asynchronously restarts Paint.NET.
+        /// </summary>
+        /// <remarks>
+        /// This method does not restart Paint.NET immediately. Instead, it waits
+        /// for Paint.NET to terminate and then restarts it. It does not perform
+        /// the termination or shutdown.
+        /// </remarks>
+        public static void RestartApplication()
+        {
+            string srcDir = Application.StartupPath;
+            string updateExePath = Path.Combine(srcDir, updateExeFileName);
+
+            Process thisProcess = Process.GetCurrentProcess();
+            IntPtr hProcess = thisProcess.Handle;
+
+            bool bResult = SafeNativeMethods.SetHandleInformation(
+                hProcess,
+                NativeConstants.HANDLE_FLAG_INHERIT,
+                NativeConstants.HANDLE_FLAG_INHERIT);
+
+            if (!bResult)
+            {
+                NativeMethods.ThrowOnWin32Error("SetHandleInformation() returned false");
+            }
+
+            RelaunchPdnHelperPart2(updateExePath, hProcess);
         }
 
         /// <summary>
@@ -464,6 +494,14 @@ namespace PaintDotNet.SystemLayer
 
         public static void AddToRecentDocumentsList(string fileName)
         {
+            // Apparently SHAddToRecentDocs can block for a very long period of time when certain
+            // conditions are met: so we just stick it on "the backburner."
+            ThreadPool.QueueUserWorkItem(new WaitCallback(AddToRecentDocumentsListImpl), fileName);
+        }
+
+        private static void AddToRecentDocumentsListImpl(object fileNameObj)
+        {
+            string fileName = (string)fileNameObj;
             IntPtr bstrFileName = IntPtr.Zero;
 
             try
