@@ -9,7 +9,7 @@
 
 using PaintDotNet.SystemLayer;
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -47,8 +47,6 @@ namespace PaintDotNet
         private System.ComponentModel.IContainer components = null;
         private ControlShadow controlShadow;
         private bool freeRenderSurface = true;
-
-        public event EventHandler Scroll;
 
         Graphics IInkHooks.CreateGraphics()
         {
@@ -144,7 +142,7 @@ namespace PaintDotNet
             }
         }
 
-        public BorderStyle BorderStyle
+        public new BorderStyle BorderStyle
         {
             get
             {
@@ -170,10 +168,77 @@ namespace PaintDotNet
 
             controlShadow = new ControlShadow();
             controlShadow.OccludingControl = surfaceBox;
+            controlShadow.Paint += new PaintEventHandler(controlShadow_Paint);
+            controlShadow.Resize += new EventHandler(controlShadow_Resize);
             panel.Controls.Add(controlShadow);
             panel.Controls.SetChildIndex(controlShadow, panel.Controls.Count - 1);
 
-            //this.surfaceBox.Renderers.Invalidated += new InvalidateEventHandler(Renderers_Invalidated);
+            surfaceBox.Renderers.Invalidated += new InvalidateEventHandler(Renderers_Invalidated);
+        }
+
+        void controlShadow_Resize(object sender, EventArgs e)
+        {
+            // We only want the control shadow to render double buffered if we have a SBGR that 
+            // wants to render itself. Otherwise, non-double buffered rendering is faster.
+            SurfaceBoxRenderer[][] renderers = this.surfaceBox.Renderers.Renderers;
+
+            foreach (SurfaceBoxRenderer[] renderList in renderers)
+            {
+                foreach (SurfaceBoxRenderer renderer in renderList)
+                {
+                    if (renderer.Visible)
+                    {
+                        SurfaceBoxGraphicsRenderer sbgr = renderer as SurfaceBoxGraphicsRenderer;
+
+                        if (sbgr != null && sbgr.ShouldRender())
+                        {
+                            this.controlShadow.EnableDoubleBuffer = true;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        void Renderers_Invalidated(object sender, InvalidateEventArgs e)
+        {
+            if (this.document != null)
+            {
+                RectangleF rectF = this.surfaceBox.Renderers.SourceToDestination(e.InvalidRect);
+                Rectangle rect = Utility.RoundRectangle(rectF);
+                InvalidateControlShadow(rect);
+            }
+        }
+
+        void controlShadow_Paint(object sender, PaintEventArgs e)
+        {
+            SurfaceBoxRenderer[][] renderers = this.surfaceBox.Renderers.Renderers;
+
+            Rectangle csScreenRect = this.RectangleToScreen(this.controlShadow.Bounds);
+            Rectangle sbScreenRect = this.RectangleToScreen(this.surfaceBox.Bounds);
+            Point offset = new Point(sbScreenRect.X - csScreenRect.X, sbScreenRect.Y - csScreenRect.Y);
+
+            foreach (SurfaceBoxRenderer[] renderList in renderers)
+            {
+                foreach (SurfaceBoxRenderer renderer in renderList)
+                {
+                    if (renderer.Visible)
+                    {
+                        SurfaceBoxGraphicsRenderer sbgr = renderer as SurfaceBoxGraphicsRenderer;
+
+                        if (sbgr != null)
+                        {
+                            Matrix oldMatrix = e.Graphics.Transform;
+                            //e.Graphics.TranslateTransform(offset.X, offset.Y, MatrixOrder.Append);
+                            //e.Graphics.TranslateTransform(offset.X, offset.Y, MatrixOrder.Append);
+                            sbgr.RenderToGraphics(e.Graphics, new Point(-offset.X, -offset.Y));
+                            e.Graphics.Transform = oldMatrix;
+                        }
+                    }
+                }
+            }
+
+            this.controlShadow.EnableDoubleBuffer = false;
         }
 
         private bool hookedMouseEvents = false;
@@ -198,46 +263,47 @@ namespace PaintDotNet
             this.panel.Select();
         }
 
-        protected virtual void OnScroll()
+        public void PerformMouseWheel(MouseEventArgs e)
         {
-            if (Scroll != null)
-            {
-                Scroll(this, EventArgs.Empty);
-            }
+            HandleMouseWheel(e);
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
         {
+            HandleMouseWheel(e);
+            base.OnMouseWheel(e);
+        }
+
+        private void HandleMouseWheel(MouseEventArgs e)
+        {
             // scroll by e.Delta pixels, in screen coordinates
             double docDelta = (double)e.Delta / this.ScaleFactor.Ratio;
-            double oldX = this.DocumentScrollPosition.X;
-            double oldY = this.DocumentScrollPosition.Y;
+            double oldX = this.DocumentScrollPositionF.X;
+            double oldY = this.DocumentScrollPositionF.Y;
             double newX;
             double newY;
 
             if (Control.ModifierKeys == Keys.Shift)
             {
-                newX = this.DocumentScrollPosition.X - docDelta;
-                newY = this.DocumentScrollPosition.Y;
+                newX = this.DocumentScrollPositionF.X - docDelta;
+                newY = this.DocumentScrollPositionF.Y;
             }
             else if (Control.ModifierKeys == Keys.None)
             {
-                newX = this.DocumentScrollPosition.X;
-                newY = this.DocumentScrollPosition.Y - docDelta;
+                newX = this.DocumentScrollPositionF.X;
+                newY = this.DocumentScrollPositionF.Y - docDelta;
             }
             else
             {
-                newX = this.DocumentScrollPosition.X;
-                newY = this.DocumentScrollPosition.Y;
+                newX = this.DocumentScrollPositionF.X;
+                newY = this.DocumentScrollPositionF.Y;
             }
 
             if (newX != oldX || newY != oldY)
             {
-                this.DocumentScrollPosition = new Point((int)newX, (int)newY);
+                this.DocumentScrollPositionF = new PointF((float)newX, (float)newY);
                 UpdateRulerOffsets();
             }
-
-            base.OnMouseWheel(e);
         }
 
         public override bool IsMouseCaptured()
@@ -249,17 +315,17 @@ namespace PaintDotNet
         /// Get or set upper left of scroll location in document coordinates.
         /// </summary>
         [Browsable(false)]
-        public Point DocumentScrollPosition
+        public PointF DocumentScrollPositionF
         {
             get
             {
                 if (panel == null || surfaceBox == null)
                 {
-                    return Point.Empty;
+                    return PointF.Empty;
                 }
                 else
                 {
-                    return VisibleDocumentRectangle.Location;
+                    return VisibleDocumentRectangleF.Location;
                 }
             }
 
@@ -270,7 +336,8 @@ namespace PaintDotNet
                     return;
                 }
 
-                Point sbClient = surfaceBox.SurfaceToClient(value);
+                PointF sbClientF = surfaceBox.SurfaceToClient(value);
+                Point sbClient = Point.Round(sbClientF);
 
                 if (panel.AutoScrollPosition != new Point(-sbClient.X, -sbClient.Y))
                 {
@@ -283,20 +350,20 @@ namespace PaintDotNet
         }
 
         [Browsable(false)]
-        public Point DocumentCenterPoint
+        public PointF DocumentCenterPointF
         {
             get
             {
-                Rectangle vsb = VisibleDocumentRectangle;
-                Point centerPt = new Point((vsb.Left + vsb.Right) / 2, (vsb.Top + vsb.Bottom) / 2);
+                RectangleF vsb = VisibleDocumentRectangleF;
+                PointF centerPt = new PointF((vsb.Left + vsb.Right) / 2, (vsb.Top + vsb.Bottom) / 2);
                 return centerPt;
             }
 
             set
             {
-                Rectangle vsb = VisibleDocumentRectangle;
-                Point newCornerPt = new Point(value.X - (vsb.Width / 2), value.Y - (vsb.Height / 2));
-                this.DocumentScrollPosition = newCornerPt;
+                RectangleF vsb = VisibleDocumentRectangleF;
+                PointF newCornerPt = new PointF(value.X - (vsb.Width / 2), value.Y - (vsb.Height / 2));
+                this.DocumentScrollPositionF = newCornerPt;
             }
         }
 
@@ -341,7 +408,7 @@ namespace PaintDotNet
             }
         }
 
-        protected virtual bool QueryNewZoomCenterPoint(ref Point newCenterPoint)
+        protected virtual bool QueryNewZoomCenterPoint(ref PointF newCenterPoint)
         {
             return false;
         }
@@ -350,9 +417,11 @@ namespace PaintDotNet
         {
             if (this.document != null)
             {
-                ScaleFactor zoom = ScaleFactor.Min(ClientRectantangleMax.Width - 10, 
+                Rectangle max = ClientRectangleMax;
+
+                ScaleFactor zoom = ScaleFactor.Min(max.Width - 10, 
                                                    document.Width,
-                                                   ClientRectantangleMax.Height - 10, 
+                                                   max.Height - 10, 
                                                    document.Height,
                                                    ScaleFactor.MinValue);
                
@@ -361,14 +430,68 @@ namespace PaintDotNet
             }
         }
 
-        public void ZoomIn()
+        private double GetZoomInFactorEpsilon()
         {
-            Point centerPt = this.DocumentCenterPoint;
+            // Increase ratio by 1 percentage point
+            double currentRatio = this.ScaleFactor.Ratio;
+            double factor1 = (currentRatio + 0.01) / currentRatio;
+
+            // Increase ratio so that we increase our view by 1 pixel
+            double ratioW = (double)(surfaceBox.Width + 1) / (double)surfaceBox.Surface.Width;
+            double ratioH = (double)(surfaceBox.Height + 1) / (double)surfaceBox.Surface.Height;
+            double ratio = Math.Max(ratioW, ratioH);
+            double factor2 = ratio / currentRatio;
+
+            double factor = Math.Max(factor1, factor2);
+
+            return factor;
+        }
+
+        private double GetZoomOutFactorEpsilon()
+        {
+            double ratio = this.ScaleFactor.Ratio;
+            return (ratio - 0.01) / ratio;
+        }
+
+        public void ZoomIn(double factor)
+        {
+            PointF centerPt = this.DocumentCenterPointF;
 
             ScaleFactor oldSF = this.ScaleFactor;
             ScaleFactor newSF = this.ScaleFactor;
-            int countdown = 2;
+            int countdown = 3;
 
+            // At a minimum we want to increase the size of visible document by 1 pixel
+            // Figure out what the ratio of ourSize : ourSize+1 is, and start out with that
+            double zoomInEps = GetZoomInFactorEpsilon();
+            double desiredFactor = Math.Max(factor, zoomInEps);
+            double newFactor = desiredFactor;
+
+            // Keep setting the ScaleFactor until it actually 'sticks'
+            // Important for certain image sizes where not all zoom levels create distinct
+            // screen sizes
+            do
+            {
+                newSF = ScaleFactor.FromDouble(newSF.Ratio * newFactor);
+                this.ScaleFactor = newSF;
+                --countdown;
+                newFactor *= 1.10;
+            } while (this.ScaleFactor == oldSF && countdown > 0);
+
+            this.DocumentCenterPointF = centerPt;
+        }
+
+        public void ZoomIn()
+        {
+            PointF centerPt = this.DocumentCenterPointF;
+
+            ScaleFactor oldSF = this.ScaleFactor;
+            ScaleFactor newSF = this.ScaleFactor;
+            int countdown = ScaleFactor.PresetValues.Length;
+
+            // Keep setting the ScaleFactor until it actually 'sticks'
+            // Important for certain image sizes where not all zoom levels create distinct
+            // screen sizes
             do
             {
                 newSF = newSF.GetNextLarger();
@@ -376,17 +499,49 @@ namespace PaintDotNet
                 --countdown;
             } while (this.ScaleFactor == oldSF && countdown > 0);
 
-            this.DocumentCenterPoint = centerPt;
+            this.DocumentCenterPointF = centerPt;
+        }
+
+        public void ZoomOut(double factor)
+        {
+            PointF centerPt = this.DocumentCenterPointF;
+
+            ScaleFactor oldSF = this.ScaleFactor;
+            ScaleFactor newSF = this.ScaleFactor;
+            int countdown = 3;
+
+            // At a minimum we want to decrease the size of visible document by 1 pixel (without dividing by zero of course)
+            // Figure out what the ratio of ourSize : ourSize-1 is, and start out with that
+            double zoomOutEps = GetZoomOutFactorEpsilon();
+            double factorRecip = 1.0 / factor;
+            double desiredFactor = Math.Min(factorRecip, zoomOutEps);
+            double newFactor = desiredFactor;
+
+            // Keep setting the ScaleFactor until it actually 'sticks'
+            // Important for certain image sizes where not all zoom levels create distinct
+            // screen sizes
+            do
+            {
+                newSF = ScaleFactor.FromDouble(newSF.Ratio * newFactor);
+                this.ScaleFactor = newSF;
+                --countdown;
+                newFactor *= 0.9;
+            } while (this.ScaleFactor == oldSF && countdown > 0);
+
+            this.DocumentCenterPointF = centerPt;
         }
 
         public void ZoomOut()
         {
-            Point centerPt = this.DocumentCenterPoint;
+            PointF centerPt = this.DocumentCenterPointF;
 
             ScaleFactor oldSF = this.ScaleFactor;
             ScaleFactor newSF = this.ScaleFactor;
-            int countdown = 2;
+            int countdown = ScaleFactor.PresetValues.Length;
 
+            // Keep setting the ScaleFactor until it actually 'sticks'
+            // Important for certain image sizes where not all zoom levels create distinct
+            // screen sizes
             do
             {
                 newSF = newSF.GetNextSmaller();
@@ -394,10 +549,35 @@ namespace PaintDotNet
                 --countdown;
             } while (this.ScaleFactor == oldSF && countdown > 0);
 
-            this.DocumentCenterPoint = centerPt;
+            this.DocumentCenterPointF = centerPt;
         }
 
         private ScaleFactor scaleFactor = new ScaleFactor(1, 1);
+
+        /// <summary>
+        /// Gets the maximum scale factor that the current document may be displayed at.
+        /// </summary>
+        public ScaleFactor MaxScaleFactor
+        {
+            get
+            {
+                ScaleFactor maxSF;
+
+                if (this.document.Width == 0 || this.document.Height == 0)
+                {
+                    maxSF = ScaleFactor.MaxValue;
+                }
+                else
+                {
+                    double maxHScale = (double)SurfaceBox.MaxSideLength / this.document.Width;
+                    double maxVScale = (double)SurfaceBox.MaxSideLength / this.document.Height;
+                    double maxScale = Math.Min(maxHScale, maxVScale);
+                    maxSF = ScaleFactor.FromDouble(maxScale);
+                }
+
+                return maxSF;
+            }
+        }
 
         [Browsable(false)]
         public ScaleFactor ScaleFactor
@@ -411,18 +591,21 @@ namespace PaintDotNet
             {
                 UI.SetControlRedraw(this, false);
 
-                if (value == this.scaleFactor && this.scaleFactor == ScaleFactor.OneToOne)
+                ScaleFactor newValue = ScaleFactor.Min(value, MaxScaleFactor);
+
+                if (newValue == this.scaleFactor && 
+                    this.scaleFactor == ScaleFactor.OneToOne)
                 {
                     // this space intentionally left blank
                 }
                 else
                 {       
-                    Rectangle visibleRect = this.VisibleDocumentRectangle;
+                    RectangleF visibleRect = this.VisibleDocumentRectangleF;
                     ScaleFactor oldSF = scaleFactor;
-                    scaleFactor = value;
+                    scaleFactor = newValue;
 
                     // This value is used later below to re-center the document on screen
-                    Point centerPt = new Point(visibleRect.X + visibleRect.Width / 2, 
+                    PointF centerPt = new PointF(visibleRect.X + visibleRect.Width / 2, 
                         visibleRect.Y + visibleRect.Height / 2);
 
                     if (surfaceBox != null && renderSurface != null)
@@ -442,22 +625,22 @@ namespace PaintDotNet
                     }
 
                     // re center ourself
-                    Rectangle visibleRect2 = this.VisibleDocumentRectangle;
+                    RectangleF visibleRect2 = this.VisibleDocumentRectangleF;
 
                     // zoom towards the selection -- DocumentWorkspace implements QueryNewZoomCenterPoint
-                    Point newCenterPt = Point.Empty;
+                    PointF newCenterPt = Point.Empty;
                     bool useNewCenterPt = QueryNewZoomCenterPoint(ref newCenterPt);
 
                     if (useNewCenterPt)
                     {
-                        Point centerDifference = new Point(centerPt.X - newCenterPt.X,
+                        PointF centerDifference = new PointF(centerPt.X - newCenterPt.X,
                             centerPt.Y - newCenterPt.Y);
 
                         centerDifference = oldSF.ScalePoint(centerDifference);
                         centerDifference = scaleFactor.UnscalePoint(centerDifference);
                         centerDifference = scaleFactor.UnscalePoint(centerDifference);
 
-                        centerPt = new Point(newCenterPt.X + centerDifference.X,
+                        centerPt = new PointF(newCenterPt.X + centerDifference.X,
                             newCenterPt.Y + centerDifference.Y);
                     }
 
@@ -477,7 +660,7 @@ namespace PaintDotNet
         /// in document coordinates.
         /// </summary>
         [Browsable(false)]
-        public Rectangle VisibleDocumentRectangle
+        public RectangleF VisibleDocumentRectangleF
         {
             get
             {
@@ -485,8 +668,8 @@ namespace PaintDotNet
                 Rectangle surfaceBoxRect = surfaceBox.RectangleToScreen(surfaceBox.ClientRectangle); // screen coords
                 Rectangle docScreenRect = Rectangle.Intersect(panelRect, surfaceBoxRect); // screen coords
                 Rectangle docClientRect = RectangleToClient(docScreenRect);
-                Rectangle docDocRect = Utility.RoundRectangle(ClientToDocument(docClientRect));
-                return docDocRect;
+                RectangleF docDocRectF = ClientToDocument(docClientRect);
+                return docDocRectF;
             }
         }
 
@@ -500,7 +683,7 @@ namespace PaintDotNet
             get
             {
                 // convert coordinates: document -> client -> screen
-                return RectangleToScreen(Utility.RoundRectangle(DocumentToClient(VisibleDocumentRectangle)));
+                return RectangleToScreen(Utility.RoundRectangle(DocumentToClient(VisibleDocumentRectangleF)));
             }
         }
 
@@ -526,11 +709,11 @@ namespace PaintDotNet
             }
         }
 
-        public Rectangle ClientRectantangleMax 
+        public Rectangle ClientRectangleMax 
         {
             get 
             {
-                return RectangleToClient(panel.Bounds);
+                return RectangleToClient(panel.RectangleToScreen(panel.Bounds));
             }
         }
 
@@ -538,7 +721,7 @@ namespace PaintDotNet
         {
             get 
             {
-                Rectangle bounds = RectangleToClient(panel.Bounds);
+                Rectangle bounds = ClientRectangleMax;
                 bounds.Width -= SystemInformation.VerticalScrollBarWidth;
                 bounds.Height -= SystemInformation.HorizontalScrollBarHeight;
                 return bounds;
@@ -587,7 +770,7 @@ namespace PaintDotNet
                     if (document != null)
                     {
                         document.Invalidated -= documentInvalidatedDelegate;
-                        document.MetaData.Changed -= this.documentMetaDataChangedDelegate;
+                        document.Metadata.Changed -= this.documentMetaDataChangedDelegate;
                     }
 
                     document = value;
@@ -624,7 +807,7 @@ namespace PaintDotNet
                         }
 
                         this.document.Invalidated += this.documentInvalidatedDelegate;
-                        this.document.MetaData.Changed += this.documentMetaDataChangedDelegate;
+                        this.document.Metadata.Changed += this.documentMetaDataChangedDelegate;
                     }
 
                     Invalidate(true);
@@ -651,7 +834,6 @@ namespace PaintDotNet
             this.leftRuler = new PaintDotNet.Ruler();
             this.panel = new PaintDotNet.PanelEx();
             this.surfaceBox = new PaintDotNet.SurfaceBox();
-            //this.selectionTimer = new System.Windows.Forms.Timer(this.components);
             this.panel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -685,7 +867,7 @@ namespace PaintDotNet
             this.panel.ScrollPosition = new System.Drawing.Point(0, 0);
             this.panel.Size = new System.Drawing.Size(368, 304);
             this.panel.TabIndex = 5;
-            this.panel.Scroll += new System.EventHandler(this.panel_Scroll);
+            this.panel.Scroll += new System.Windows.Forms.ScrollEventHandler(this.panel_Scroll);
             this.panel.KeyDown += new KeyEventHandler(panel_KeyDown);
             this.panel.KeyUp += new KeyEventHandler(panel_KeyUp);
             this.panel.KeyPress += new KeyPressEventHandler(panel_KeyPress);
@@ -837,7 +1019,7 @@ namespace PaintDotNet
         {
             Rectangle screen = RectangleToScreen(clientRect);
             Rectangle sbClient = surfaceBox.RectangleToClient(screen);
-            return surfaceBox.ClientToSurface(sbClient);
+            return surfaceBox.ClientToSurface((RectangleF)sbClient);
         }
 
         /// <summary>
@@ -1062,9 +1244,9 @@ namespace PaintDotNet
 
             if (!e.Handled)
             {
-                Point oldPt = this.DocumentScrollPosition;
-                Point newPt = oldPt;
-                Rectangle vdr = VisibleDocumentRectangle;
+                PointF oldPt = this.DocumentScrollPositionF;
+                PointF newPt = oldPt;
+                RectangleF vdr = VisibleDocumentRectangleF;
 
                 switch (e.KeyData)
                 {
@@ -1112,7 +1294,7 @@ namespace PaintDotNet
 
                 if (newPt != oldPt)
                 {
-                    DocumentScrollPosition = newPt;
+                    DocumentScrollPositionF = newPt;
                     e.Handled = true;
                 }
             }
@@ -1185,19 +1367,59 @@ namespace PaintDotNet
             leftRuler.Offset = ScaleFactor.UnscaleScalar(0.0f - surfaceBox.Location.Y);
         }
 
-        public void InvalidateSurface(PdnRegion region)
-        {
-            surfaceBox.Invalidate(region.GetRegionReadOnly());
-        }
-
         public void InvalidateSurface(Rectangle rect)
         {
             this.surfaceBox.Invalidate(rect);
+            InvalidateControlShadow(rect);
         }
 
         public void InvalidateSurface()
         {
             surfaceBox.Invalidate();
+            controlShadow.Invalidate();
+        }
+
+        private void InvalidateControlShadowNoClipping(Rectangle rect)
+        {
+            if (rect.Width > 0 && rect.Height > 0)
+            {
+                this.controlShadow.EnableDoubleBuffer = true;
+                Rectangle csRect = SurfaceBoxToControlShadow(rect);
+                this.controlShadow.Invalidate(csRect);
+            }
+        }
+
+        private void InvalidateControlShadow(Rectangle surfaceBoxRect)
+        {
+            if (this.document == null)
+            {
+                return;
+            }
+
+            Rectangle maxRect = SurfaceBoxRenderer.MaxBounds;
+            Size surfaceBoxSize = this.surfaceBox.Size;
+
+            Rectangle leftRect = Rectangle.FromLTRB(maxRect.Left, 0, 0, surfaceBoxSize.Height);
+            Rectangle topRect = Rectangle.FromLTRB(maxRect.Left, maxRect.Top, maxRect.Right, 0);
+            Rectangle rightRect = Rectangle.FromLTRB(surfaceBoxSize.Width, 0, maxRect.Right, surfaceBoxSize.Height);
+            Rectangle bottomRect = Rectangle.FromLTRB(maxRect.Left, surfaceBoxSize.Height, maxRect.Right, maxRect.Bottom);
+
+            leftRect.Intersect(surfaceBoxRect);
+            topRect.Intersect(surfaceBoxRect);
+            rightRect.Intersect(surfaceBoxRect);
+            bottomRect.Intersect(surfaceBoxRect);
+
+            InvalidateControlShadowNoClipping(leftRect);
+            InvalidateControlShadowNoClipping(topRect);
+            InvalidateControlShadowNoClipping(rightRect);
+            InvalidateControlShadowNoClipping(bottomRect);
+        }
+
+        private Rectangle SurfaceBoxToControlShadow(Rectangle rect)
+        {
+            Rectangle screenRect = this.surfaceBox.RectangleToScreen(rect);
+            Rectangle csRect = this.controlShadow.RectangleToClient(screenRect);
+            return csRect;
         }
 
         protected override void OnLayout(LayoutEventArgs e)
@@ -1258,7 +1480,7 @@ namespace PaintDotNet
             DoLayout();
         }       
 
-        private Point MouseToDocument(object sender, Point mouse) 
+        public Point MouseToDocument(object sender, Point mouse) 
         {
             if (!(sender is Control))
             {
@@ -1338,6 +1560,11 @@ namespace PaintDotNet
 
         private void DocumentInvalidatedHandler(object sender, InvalidateEventArgs e)
         {
+            // Note: We don't need to convert this rectangle to controlShadow coordinates and invalidate it
+            // because, by definition, any invalidation on the document should be within the document's
+            // bounds and thus within the surfaceBox's bounds and thus outside the controlShadow's clipping
+            // region.
+
             if (this.ScaleFactor == ScaleFactor.OneToOne)
             {
                 surfaceBox.Invalidate(e.InvalidRect);
@@ -1351,9 +1578,9 @@ namespace PaintDotNet
             }
         }
 
-        private void panel_Scroll(object sender, System.EventArgs e)
+        private void panel_Scroll(object sender, System.Windows.Forms.ScrollEventArgs e)
         {
-            OnScroll();
+            OnScroll(e);
             UpdateRulerOffsets();
         }
 
@@ -1394,15 +1621,15 @@ namespace PaintDotNet
                 = controlShadow.Visible = (refreshSuspended <= 0);
         }
 
-        public void RecenterView(Point newCenter) 
+        public void RecenterView(PointF newCenter) 
         {
-            Rectangle visibleRect = VisibleDocumentRectangle;
+            RectangleF visibleRect = VisibleDocumentRectangleF;
 
-            Point cornerPt = new Point(
+            PointF cornerPt = new PointF(
                 newCenter.X - (visibleRect.Width / 2), 
                 newCenter.Y - (visibleRect.Height / 2));
 
-            this.DocumentScrollPosition = cornerPt;
+            this.DocumentScrollPositionF = cornerPt;
         }
 
         public new void Focus()

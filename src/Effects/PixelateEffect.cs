@@ -18,8 +18,7 @@ namespace PaintDotNet.Effects
     /// </summary>
     [EffectTypeHint(EffectTypeHint.Fast)]
     public class PixelateEffect 
-        : Effect, 
-          IConfigurableEffect
+        : Effect
     {
         public static string StaticName
         {
@@ -31,54 +30,25 @@ namespace PaintDotNet.Effects
 
         public PixelateEffect() 
             : base(StaticName,
-                   PdnResources.GetImage("Icons.PixelateEffect.bmp"))
+                   PdnResources.GetImage("Icons.PixelateEffect.png"),
+                   true)
         {
-        }
-
-        public override void Render(RenderArgs dstArgs, RenderArgs srcArgs, Rectangle roi)
-        {
-            throw new InvalidOperationException("PixelateEffect must be used via the other Render overload");
         }
 
         private ColorBgra RenderPixel(int x, int y, RenderArgs src, int cellSize)
         {
-            Rectangle cell = GetCellBox(x,y,src, cellSize);
+            Rectangle cell = GetCellBox(x, y, cellSize);
+            cell.Intersect(src.Bounds);
             
             int left = cell.Left;
             int right = cell.Right - 1;
             int bottom = cell.Bottom - 1;
             int top = cell.Top;
-
-            Point topLeft = new Point(left, top);
-            Point topRight = new Point(right, top);
-            Point bottomLeft = new Point(left, bottom);
-            Point bottomRight = new Point(right, bottom); 
-
-            // Check for Overlapping Points
-            if (!Utility.IsPointInRectangle(topLeft, src.Bounds))
-            {
-                topLeft = new Point(src.Bounds.Left, src.Bounds.Top);
-            }
-
-            if (!Utility.IsPointInRectangle(topRight, src.Bounds))
-            {
-                topRight = new Point(src.Bounds.Right - 1, src.Bounds.Top);
-            }
-
-            if (!Utility.IsPointInRectangle(bottomLeft, src.Bounds))
-            {
-                bottomLeft = new Point(src.Bounds.Left, src.Bounds.Bottom - 1);
-            }
-
-            if (!Utility.IsPointInRectangle(bottomRight, src.Bounds))
-            {
-                bottomRight = new Point(src.Bounds.Right - 1, src.Bounds.Bottom - 1);
-            }
-
-            ColorBgra colorTopLeft     = src.Surface[topLeft.X, topLeft.Y];
-            ColorBgra colorTopRight    = src.Surface[topRight.X, topRight.Y];
-            ColorBgra colorBottomLeft  = src.Surface[bottomLeft.X, bottomLeft.Y];
-            ColorBgra colorBottomRight = src.Surface[bottomRight.X, bottomRight.Y];
+ 
+            ColorBgra colorTopLeft = src.Surface[left, top];
+            ColorBgra colorTopRight = src.Surface[right, top];
+            ColorBgra colorBottomLeft = src.Surface[left, bottom];
+            ColorBgra colorBottomRight = src.Surface[right, bottom];
 
             byte a = (byte)((colorTopLeft.A + colorTopRight.A + colorBottomLeft.A + colorBottomRight.A) / 4);
             byte r = (byte)((colorTopLeft.R + colorTopRight.R + colorBottomLeft.R + colorBottomRight.R) / 4);
@@ -88,7 +58,7 @@ namespace PaintDotNet.Effects
             return ColorBgra.FromBgra((byte)b,(byte)g,(byte)r,(byte)a);
         }
 
-        private Rectangle GetCellBox(int x, int y, RenderArgs src, int cellSize)
+        private Rectangle GetCellBox(int x, int y, int cellSize)
         {
             int widthBoxNum  = x % cellSize;
             int heightBoxNum = y % cellSize;
@@ -96,9 +66,8 @@ namespace PaintDotNet.Effects
             Rectangle returnMe = new Rectangle(leftUpper, new Size(cellSize, cellSize));
             return returnMe;
         }
-        #region IConfigurableEffect Members
 
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             AmountEffectConfigDialog aecg = new AmountEffectConfigDialog();
 
@@ -108,28 +77,49 @@ namespace PaintDotNet.Effects
             aecg.SliderMaximum = 100;
             aecg.SliderLabel = PdnResources.GetString("PixelateEffect.ConfigDialog.SliderLabel");
             aecg.SliderUnitsName = PdnResources.GetString("PixelateEffect.ConfigDialog.SliderUnitsName");
-            aecg.Icon = PdnResources.GetIconFromImage("Icons.PixelateEffect.bmp");
+            aecg.Icon = PdnResources.GetIconFromImage("Icons.PixelateEffect.png");
 
             return aecg;
         }
 
-        void IConfigurableEffect.Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
         {
-            AmountEffectConfigToken aecd = (AmountEffectConfigToken)properties;
+            AmountEffectConfigToken aecd = (AmountEffectConfigToken)parameters;
 
-            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
+            for (int i = startIndex; i < startIndex + length; ++i)
             {
-                for (int x = rect.Left; x < rect.Right; x++)
+                Rectangle rect = rois[i];
+
+                for (int y = rect.Top; y < rect.Bottom; y++)
                 {
-                    for (int y = rect.Top; y < rect.Bottom; y++)
+                    int yEnd = y + 1;
+
+                    for (int x = rect.Left; x < rect.Right; x++)
                     {
-                        dstArgs.Surface[x,y] = RenderPixel(x,y,srcArgs, aecd.Amount);
+                        Rectangle cellRect = GetCellBox(x, y, aecd.Amount);
+                        cellRect.Intersect(dstArgs.Bounds);
+                        ColorBgra color = RenderPixel(x, y, srcArgs, aecd.Amount);
+
+                        int xEnd = Math.Min(rect.Right, cellRect.Right);
+                        yEnd = Math.Min(rect.Bottom, cellRect.Bottom);
+
+                        for (int y2 = y; y2 < yEnd; ++y2)
+                        {
+                            ColorBgra *ptr = dstArgs.Surface.GetPointAddress(x, y2);
+
+                            for (int x2 = x; x2 < xEnd; ++x2)
+                            {
+                                ptr->Bgra = color.Bgra;
+                                ++ptr;
+                            }
+                        }
+
+                        x = xEnd - 1;
                     }
+
+                    y = yEnd - 1;
                 }
             }
         }
-
-        #endregion
     }
-
 }

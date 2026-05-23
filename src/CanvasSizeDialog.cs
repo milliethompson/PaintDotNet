@@ -44,7 +44,7 @@ namespace PaintDotNet
             // This call is required by the Windows Form Designer.
             InitializeComponent();
 
-            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuImageCanvasSizeIcon.bmp"), Color.FromArgb(192, 192, 192));
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuImageCanvasSizeIcon.png"), Utility.TransparentKey);
 
             this.Text = PdnResources.GetString("CanvasSizeDialog.Text"); // "Canvas Size";
             this.anchorHeader.Text = PdnResources.GetString("CanvasSizeDialog.AnchorHeader.Text"); //"Anchor";
@@ -102,7 +102,7 @@ namespace PaintDotNet
             // 
             // constrainCheckBox
             // 
-            this.constrainCheckBox.Location = new System.Drawing.Point(24, 74);
+            this.constrainCheckBox.Location = new System.Drawing.Point(27, 74);
             this.constrainCheckBox.Name = "constrainCheckBox";
             // 
             // okButton
@@ -238,12 +238,12 @@ namespace PaintDotNet
             // 
             // pixelSizeHeader
             // 
-            this.pixelSizeHeader.Location = new System.Drawing.Point(22, 98);
+            this.pixelSizeHeader.Location = new System.Drawing.Point(25, 98);
             this.pixelSizeHeader.Name = "pixelSizeHeader";
             // 
             // printSizeHeader
             // 
-            this.printSizeHeader.Location = new System.Drawing.Point(22, 189);
+            this.printSizeHeader.Location = new System.Drawing.Point(25, 189);
             this.printSizeHeader.Name = "printSizeHeader";
             // 
             // resamplingLabel
@@ -295,7 +295,8 @@ namespace PaintDotNet
             // 
             // CanvasSizeDialog
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(298, 395);
             this.Controls.Add(this.anchorEdgeCB);
             this.Controls.Add(this.anchorHeader);
@@ -303,9 +304,20 @@ namespace PaintDotNet
             this.Controls.Add(this.newSpaceLabel);
             this.Location = new System.Drawing.Point(0, 0);
             this.Name = "CanvasSizeDialog";
+            this.Controls.SetChildIndex(this.pixelsLabel1, 0);
             this.Controls.SetChildIndex(this.unitsLabel1, 0);
-            this.Controls.SetChildIndex(this.resizedImageHeader, 0);
+            this.Controls.SetChildIndex(this.newWidthLabel1, 0);
+            this.Controls.SetChildIndex(this.resamplingLabel, 0);
             this.Controls.SetChildIndex(this.resolutionLabel, 0);
+            this.Controls.SetChildIndex(this.asteriskTextLabel, 0);
+            this.Controls.SetChildIndex(this.asteriskLabel, 0);
+            this.Controls.SetChildIndex(this.pixelsLabel2, 0);
+            this.Controls.SetChildIndex(this.percentSignLabel, 0);
+            this.Controls.SetChildIndex(this.newSpaceLabel, 0);
+            this.Controls.SetChildIndex(this.newHeightLabel1, 0);
+            this.Controls.SetChildIndex(this.newWidthLabel2, 0);
+            this.Controls.SetChildIndex(this.newHeightLabel2, 0);
+            this.Controls.SetChildIndex(this.resizedImageHeader, 0);
             this.Controls.SetChildIndex(this.resolutionUpDown, 0);
             this.Controls.SetChildIndex(this.unitsComboBox2, 0);
             this.Controls.SetChildIndex(this.unitsComboBox1, 0);
@@ -313,25 +325,14 @@ namespace PaintDotNet
             this.Controls.SetChildIndex(this.printHeightUpDown, 0);
             this.Controls.SetChildIndex(this.pixelSizeHeader, 0);
             this.Controls.SetChildIndex(this.printSizeHeader, 0);
-            this.Controls.SetChildIndex(this.newWidthLabel1, 0);
-            this.Controls.SetChildIndex(this.newHeightLabel1, 0);
-            this.Controls.SetChildIndex(this.pixelsLabel1, 0);
             this.Controls.SetChildIndex(this.pixelHeightUpDown, 0);
             this.Controls.SetChildIndex(this.pixelWidthUpDown, 0);
-            this.Controls.SetChildIndex(this.newWidthLabel2, 0);
-            this.Controls.SetChildIndex(this.newHeightLabel2, 0);
-            this.Controls.SetChildIndex(this.pixelsLabel2, 0);
-            this.Controls.SetChildIndex(this.newSpaceLabel, 0);
             this.Controls.SetChildIndex(this.anchorChooserControl, 0);
-            this.Controls.SetChildIndex(this.percentSignLabel, 0);
             this.Controls.SetChildIndex(this.percentUpDown, 0);
             this.Controls.SetChildIndex(this.constrainCheckBox, 0);
-            this.Controls.SetChildIndex(this.resamplingLabel, 0);
             this.Controls.SetChildIndex(this.resamplingAlgorithmComboBox, 0);
             this.Controls.SetChildIndex(this.percentRB, 0);
             this.Controls.SetChildIndex(this.absoluteRB, 0);
-            this.Controls.SetChildIndex(this.asteriskTextLabel, 0);
-            this.Controls.SetChildIndex(this.asteriskLabel, 0);
             this.Controls.SetChildIndex(this.anchorHeader, 0);
             this.Controls.SetChildIndex(this.anchorEdgeCB, 0);
             this.Controls.SetChildIndex(this.okButton, 0);

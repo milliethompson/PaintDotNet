@@ -83,6 +83,9 @@ namespace PaintDotNet.Setup
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            this.BackColor = Color.FromArgb(255, 255, 255);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = AutoScaleMode.Dpi;
         }
         #endregion
     }

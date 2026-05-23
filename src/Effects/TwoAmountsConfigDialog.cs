@@ -220,7 +220,8 @@ namespace PaintDotNet.Effects
             // 
             this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.okButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.okButton.Location = new System.Drawing.Point(108, 151);
+            this.okButton.Location = new System.Drawing.Point(101, 151);
+            this.okButton.Size = new System.Drawing.Size(81, 23);
             this.okButton.Name = "okButton";
             this.okButton.TabIndex = 6;
             this.okButton.Click += new System.EventHandler(this.OnOkButtonClicked);
@@ -230,7 +231,8 @@ namespace PaintDotNet.Effects
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.cancelButton.Location = new System.Drawing.Point(189, 151);
+            this.cancelButton.Location = new System.Drawing.Point(188, 151);
+            this.cancelButton.Size = new System.Drawing.Size(81, 23);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.TabIndex = 7;
             this.cancelButton.Click += new System.EventHandler(this.OnCancelButtonClicked);
@@ -257,7 +259,7 @@ namespace PaintDotNet.Effects
                                                                           0,
                                                                           -2147483648});
             this.amount1UpDown.Name = "amount1UpDown";
-            this.amount1UpDown.Size = new System.Drawing.Size(76, 20);
+            this.amount1UpDown.Size = new System.Drawing.Size(81, 20);
             this.amount1UpDown.TabIndex = 1;
             this.amount1UpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.amount1UpDown.Enter += new System.EventHandler(this.amount1UpDown_Enter);
@@ -268,7 +270,7 @@ namespace PaintDotNet.Effects
             // 
             this.amount1Reset.Location = new System.Drawing.Point(188, 50);
             this.amount1Reset.Name = "amount1Reset";
-            this.amount1Reset.Size = new System.Drawing.Size(76, 20);
+            this.amount1Reset.Size = new System.Drawing.Size(81, 20);
             this.amount1Reset.TabIndex = 2;
             this.amount1Reset.Click += new System.EventHandler(this.amount1Reset_Click);
             // 
@@ -276,7 +278,7 @@ namespace PaintDotNet.Effects
             // 
             this.amount2Reset.Location = new System.Drawing.Point(188, 120);
             this.amount2Reset.Name = "amount2Reset";
-            this.amount2Reset.Size = new System.Drawing.Size(76, 20);
+            this.amount2Reset.Size = new System.Drawing.Size(81, 20);
             this.amount2Reset.TabIndex = 5;
             this.amount2Reset.Click += new System.EventHandler(this.amount2Reset_Click);
             // 
@@ -290,7 +292,7 @@ namespace PaintDotNet.Effects
                                                                           0,
                                                                           -2147483648});
             this.amount2UpDown.Name = "amount2UpDown";
-            this.amount2UpDown.Size = new System.Drawing.Size(76, 20);
+            this.amount2UpDown.Size = new System.Drawing.Size(81, 20);
             this.amount2UpDown.TabIndex = 4;
             this.amount2UpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.amount2UpDown.Enter += new System.EventHandler(this.amount2UpDown_Enter);
@@ -313,7 +315,7 @@ namespace PaintDotNet.Effects
             // 
             this.amount1Header.Location = new System.Drawing.Point(6, 8);
             this.amount1Header.Name = "amount1Header";
-            this.amount1Header.Size = new System.Drawing.Size(266, 14);
+            this.amount1Header.Size = new System.Drawing.Size(271, 14);
             this.amount1Header.TabIndex = 9;
             this.amount1Header.TabStop = false;
             this.amount1Header.Text = "Header 1";
@@ -322,7 +324,7 @@ namespace PaintDotNet.Effects
             // 
             this.amount2Header.Location = new System.Drawing.Point(6, 78);
             this.amount2Header.Name = "amount2Header";
-            this.amount2Header.Size = new System.Drawing.Size(266, 14);
+            this.amount2Header.Size = new System.Drawing.Size(271, 14);
             this.amount2Header.TabIndex = 10;
             this.amount2Header.TabStop = false;
             this.amount2Header.Text = "Header 2";
@@ -330,9 +332,10 @@ namespace PaintDotNet.Effects
             // TwoAmountsConfigDialog
             // 
             this.AcceptButton = this.okButton;
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(270, 180);
+            this.ClientSize = new System.Drawing.Size(275, 180);
             this.Controls.Add(this.amount2Header);
             this.Controls.Add(this.amount1Header);
             this.Controls.Add(this.cancelButton);
@@ -389,7 +392,7 @@ namespace PaintDotNet.Effects
             if (amount1UpDown.Value != (decimal)amount1Slider.Value)
             {
                 amount1UpDown.Value = (decimal)amount1Slider.Value;
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 
@@ -398,7 +401,7 @@ namespace PaintDotNet.Effects
             if (amount1Slider.Value != (int)amount1UpDown.Value)
             {
                 amount1Slider.Value = (int)amount1UpDown.Value;
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 
@@ -422,7 +425,7 @@ namespace PaintDotNet.Effects
             if (amount2UpDown.Value != (decimal)amount2Slider.Value)
             {
                 amount2UpDown.Value = (decimal)amount2Slider.Value;
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 
@@ -431,7 +434,7 @@ namespace PaintDotNet.Effects
             if (amount2Slider.Value != (int)amount2UpDown.Value)
             {
                 amount2Slider.Value = (int)amount2UpDown.Value;
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 

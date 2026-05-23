@@ -27,8 +27,8 @@ namespace PaintDotNet
 
         public FlipDocumentVerticalAction(DocumentWorkspace workspace)
             : base(workspace, 
-                   StaticName, 
-                   PdnResources.GetImage("Icons.MenuImageFlipVerticalIcon.bmp"), 
+                   StaticName,
+                   PdnResources.GetImage("Icons.MenuImageFlipVerticalIcon.png"), 
                    FlipType.Vertical)
         {
         }

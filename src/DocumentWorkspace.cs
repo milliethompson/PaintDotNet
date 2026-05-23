@@ -7,11 +7,11 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
-using DotNetWidgets;
 using PaintDotNet.Effects;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -33,10 +33,23 @@ namespace PaintDotNet
         private sealed class OurDocumentView
             : DocumentView
         {
-            protected override bool QueryNewZoomCenterPoint(ref Point newCenterPt)
+            private DocumentWorkspace parent;
+            public DocumentWorkspace WorkspaceParent
             {
-                DocumentWorkspace workspace = this.Parent as DocumentWorkspace;
-                DocumentEnvironment env = workspace.Environment;
+                get
+                {
+                    return this.parent;
+                }
+
+                set
+                {
+                    this.parent = value;
+                }
+            }
+
+            protected override bool QueryNewZoomCenterPoint(ref PointF newCenterPt)
+            {
+                DocumentEnvironment env = parent.Environment;
 
                 if (!env.Selection.IsEmpty) 
                 {
@@ -44,7 +57,7 @@ namespace PaintDotNet
                     {
                         Rectangle selectionBounds = selectedRegion.GetBoundsInt();
 
-                        Point selectionCenter = new Point((selectionBounds.Left + selectionBounds.Right) / 2,
+                        PointF selectionCenter = new PointF((selectionBounds.Left + selectionBounds.Right) / 2,
                             (selectionBounds.Top + selectionBounds.Bottom) / 2);
 
                         newCenterPt = selectionCenter;
@@ -72,11 +85,6 @@ namespace PaintDotNet
         private ToolInfo[] toolInfos;
         private Type[] tools;
         private Type[] effects = null;
-        private PenConfigWidget penConfigWidget;
-        private ZoomConfigWidget zoomConfigWidget;
-        private BrushConfigWidget brushConfigWidget;
-        private ShapeDrawTypeConfigWidget shapeDrawTypeConfigWidget;
-        private DrawModesConfigWidget drawModesConfigWidget;
         private OurDocumentView documentView;
         private SelectionRenderer selectionRenderer;
 
@@ -96,18 +104,21 @@ namespace PaintDotNet
         private PropertyEventHandler layerPropertyChangingDelegate;
         private PropertyEventHandler layerPropertyChangedDelegate;
 
-        private FlowPanel topDock;
-
         private DocumentWidgets widgets;
 
         private MainToolBarForm mainToolBarForm;
         private LayerForm layerForm;
         private HistoryForm historyForm;
-        private PaintDotNet.TextConfigWidget textConfigWidget;
-        private PaintDotNet.WorkspaceOptionsConfigWidget workspaceOptionsConfigWidget;
         private System.Windows.Forms.Timer toolPulseTimer;
-        private PaintDotNet.CommonActionsWidget commonActionsWidget;
         private ColorsForm colorsForm;
+
+        private const ToolStripGripStyle toolStripsGripStyle = ToolStripGripStyle.Hidden;
+        private CommonActionsStrip commonActionsStrip;
+        private ViewConfigStrip viewConfigStrip;
+        private DrawConfigStrip drawConfigStrip;
+        private TextConfigStrip textConfigStrip;
+
+        private ToolStripContainer toolStripContainer;
 
         // DocumentChanging
         // This event is raised right before the 'document' is changed via the 'Document' property.
@@ -166,11 +177,11 @@ namespace PaintDotNet
         }
 
         [Browsable(false)]
-        public Rectangle VisibleDocumentRectangle
+        public RectangleF VisibleDocumentRectangleF
         {
             get
             {
-                return documentView.VisibleDocumentRectangle;
+                return documentView.VisibleDocumentRectangleF;
             }
         }
 
@@ -218,11 +229,11 @@ namespace PaintDotNet
         {
             get 
             {
-                return zoomConfigWidget.ZoomBasis;
+                return viewConfigStrip.ZoomBasis;
             }
             set 
             {
-                zoomConfigWidget.ZoomBasis = value;
+                viewConfigStrip.ZoomBasis = value;
             }
         }
 
@@ -330,8 +341,8 @@ namespace PaintDotNet
             // We want it to say "Creation Software: Paint.NET vX.Y"
             // I have verified that other image editing software overwrites this tag,
             // and does not just add it when it does not exist.
-            PropertyItem pi = Exif.CreateAscii(ExifTagID.Software, Application.ProductName); // LOC? should this be localized? if so, use PdnInfo.GetProductName()
-            document.MetaData.ReplaceExifValues(ExifTagID.Software, new PropertyItem[1] { pi });
+            PropertyItem pi = Exif.CreateAscii(ExifTagID.Software, PdnInfo.GetProductName(false)); 
+            document.Metadata.ReplaceExifValues(ExifTagID.Software, new PropertyItem[1] { pi });
         }
         
         /// <summary>
@@ -347,6 +358,7 @@ namespace PaintDotNet
         /// <param name="document"></param>
         public void SetDocument(Document document)
         {
+            UI.SetControlRedraw(this, false);
             ZoomBasis savedZb = this.ZoomBasis;
             ScaleFactor savedSf = DocumentView.ScaleFactor;
 
@@ -460,6 +472,7 @@ namespace PaintDotNet
                 layer.Invalidate();
             }
 
+            UI.SetControlRedraw(this, true);
             Invalidate(true);
         }
 
@@ -612,24 +625,24 @@ namespace PaintDotNet
         }
 
         private void HistoryChangedHandler(object sender, EventArgs e)
-        {   
-            // enable/disable buttons on the CommonActionsWidget
+        {
+            // enable/disable buttons on the CommonActionsStrip
             if (history.UndoStack.Count > 1)
             {
-                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Undo, true);
+                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Undo, true);
             }
             else
             {
-                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Undo, false);
+                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Undo, false);
             }
 
             if (history.RedoStack.Count > 0)
             {
-                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Redo, true);
+                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Redo, true);
             }
             else
             {
-                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Redo, false);
+                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Redo, false);
             }
         }
 
@@ -648,6 +661,7 @@ namespace PaintDotNet
             // initialize!
             InitializeTools();
             InitializeComponent();
+            this.documentView.WorkspaceParent = this;
             InitializeFloatingForms();
             InitializeToolBars();
 
@@ -656,10 +670,10 @@ namespace PaintDotNet
             history.Changed += new EventHandler(HistoryChangedHandler);
            
             // set the workspace toggle buttons correctly
-            this.workspaceOptionsConfigWidget.Units = Environment.Units;
-            this.workspaceOptionsConfigWidget.RulersEnabled = documentView.RulersEnabled;
-            this.workspaceOptionsConfigWidget.DrawGrid = documentView.DrawGrid;
-            this.drawModesConfigWidget.AntiAliasing = Environment.AntiAliasing;
+            this.viewConfigStrip.Units = Environment.Units;
+            this.viewConfigStrip.RulersEnabled = documentView.RulersEnabled;
+            this.viewConfigStrip.DrawGrid = documentView.DrawGrid;
+            this.drawConfigStrip.AntiAliasing = Environment.AntiAliasing;
 
             // hook the DocumentView with its selectedPath ...
             this.selectionRenderer = new SelectionRenderer(this.DocumentView.Renderers, this.environment.Selection, this.DocumentView);
@@ -688,11 +702,11 @@ namespace PaintDotNet
             alphaBlendingChangedDelegate = new EventHandler(AlphaBlendingChangedHandler);
             Environment.AlphaBlendingChanged += alphaBlendingChangedDelegate;
             
-            Environment.FontInfo = textConfigWidget.FontInfo;
-            Environment.TextAlignment = textConfigWidget.TextAlignment;
-            textConfigWidget.TextAlignmentChanged += new EventHandler(textConfigWidget_TextAlignmentChanged);
-            textConfigWidget.FontTextChanged += new EventHandler(textConfigWidget_FontTextChanged);
-            textConfigWidget.RelinquishFocus += new EventHandler(RelinquishFocusHandler2);
+            Environment.FontInfo = textConfigStrip.FontInfo;
+            Environment.TextAlignment = textConfigStrip.TextAlignment;
+            textConfigStrip.TextAlignmentChanged += new EventHandler(textConfigStrip_TextAlignmentChanged);
+            textConfigStrip.FontTextChanged += new EventHandler(textConfigStrip_FontTextChanged);
+            textConfigStrip.RelinquishFocus += new EventHandler(RelinquishFocusHandler2);
             Environment.AntiAliasingChanged += new EventHandler(Environment_AntiAliasingChanged);
             Environment.UnitsChanged += new EventHandler(Environment_UnitsChanged);
             Environment.FontInfoChanged += new EventHandler(Environment_FontInfoChanged);
@@ -718,29 +732,81 @@ namespace PaintDotNet
 
             // init the Widgets container
             widgets = new DocumentWidgets(this);
-            widgets.TopDock = this.topDock;
-            widgets.PenConfigWidget = penConfigWidget;
-            widgets.ZoomConfigWidget = zoomConfigWidget;
-            widgets.BrushConfigWidget = brushConfigWidget;
-            widgets.ShapeDrawTypeConfigWidget = this.shapeDrawTypeConfigWidget;
-            widgets.CommonActionsWidget = this.commonActionsWidget;
-            widgets.TextConfigWidget = this.textConfigWidget;
-            widgets.DrawModesConfigWidget = this.drawModesConfigWidget;
+            widgets.ViewConfigStrip = viewConfigStrip;
+            widgets.DrawConfigStrip = drawConfigStrip;
+            widgets.CommonActionsStrip = this.commonActionsStrip;
+            widgets.TextConfigStrip = this.textConfigStrip;
             widgets.MainToolBarForm = mainToolBarForm;
             widgets.LayerForm = layerForm;
             widgets.HistoryForm = historyForm;
             widgets.ColorsForm = colorsForm;
 
             //
-            penConfigWidget.PerformPenChanged();
-            brushConfigWidget.PerformBrushChanged();
-            shapeDrawTypeConfigWidget.PerformShapeDrawTypeChanged();
+            drawConfigStrip.PerformPenChanged();
+            drawConfigStrip.PerformBrushChanged();
+            drawConfigStrip.PerformShapeDrawTypeChanged();
             
             // Synchronize
             Environment.PerformAllChanged();
 
             // PaintBrush tool = the default
             Widgets.MainToolBar.SelectTool(typeof(PaintBrushTool));
+        }
+
+        public void SaveSettings()
+        {
+            /*
+            Settings.CurrentUser.SetPoint(PdnSettings.CommonActionsLocation, this.commonActionsStrip.Location);
+            Settings.CurrentUser.SetPoint(PdnSettings.ViewConfigLocation, this.viewConfigStrip.Location);
+            Settings.CurrentUser.SetPoint(PdnSettings.DrawConfigLocation, this.drawConfigStrip.Location);
+            Settings.CurrentUser.SetPoint(PdnSettings.TextConfigLocation, this.textConfigStrip.Location);
+             * */
+        }
+
+        public void LoadSettings()
+        {
+            try
+            {
+                this.documentView.RulersEnabled = Settings.CurrentUser.GetBoolean(PdnSettings.Rulers, false);
+                this.documentView.DrawGrid = Settings.CurrentUser.GetBoolean(PdnSettings.DrawGrid, false);
+                this.environment.Units = (MeasurementUnit)Enum.Parse(typeof(MeasurementUnit), Settings.CurrentUser.GetString(PdnSettings.Units, MeasurementUnit.Pixel.ToString()), true);
+                this.environment.AlphaBlending = Settings.CurrentUser.GetBoolean(PdnSettings.AlphaBlending, true);
+                this.environment.AntiAliasing = Settings.CurrentUser.GetBoolean(PdnSettings.Antialiasing, true);
+
+                /*
+                this.commonActionsStrip.Location = Settings.CurrentUser.GetPoint(PdnSettings.CommonActionsLocation, this.commonActionsStrip.Location);
+                this.viewConfigStrip.Location = Settings.CurrentUser.GetPoint(PdnSettings.ViewConfigLocation, this.viewConfigStrip.Location);
+                this.drawConfigStrip.Location = Settings.CurrentUser.GetPoint(PdnSettings.DrawConfigLocation, this.drawConfigStrip.Location);
+                this.textConfigStrip.Location = Settings.CurrentUser.GetPoint(PdnSettings.TextConfigLocation, this.textConfigStrip.Location);
+                 * */
+            }
+
+            catch
+            {
+                try
+                {
+                    Settings.CurrentUser.Delete(
+                        new string[] 
+                        {    
+                             PdnSettings.Rulers, 
+                             PdnSettings.DrawGrid, 
+                             PdnSettings.Units,
+                             PdnSettings.Antialiasing,
+                             PdnSettings.AlphaBlending
+
+                            /*
+                            PdnSettings.CommonActionsLocation,
+                            PdnSettings.ViewConfigLocation,
+                            PdnSettings.DrawConfigLocation,
+                            PdnSettings.TextConfigLocation
+                             * */
+                        });
+                }
+
+                catch
+                {
+                }
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -781,21 +847,23 @@ namespace PaintDotNet
         /// </summary>
         private void ShapeDrawTypeChangedHandler(object sender, EventArgs e)
         {
-            if (widgets.ShapeDrawTypeConfigWidget.ShapeDrawType != Environment.ShapeDrawType)
+            if (widgets.DrawConfigStrip.ShapeDrawType != Environment.ShapeDrawType)
             {
-                widgets.ShapeDrawTypeConfigWidget.ShapeDrawType = Environment.ShapeDrawType;
+                widgets.DrawConfigStrip.ShapeDrawType = Environment.ShapeDrawType;
             }
         }
 
         /// <summary>
-        /// Keeps the Environment's Compositing Mode and the corresponding widget synchronized
+        /// Keeps the Environment's alpha blending value and the corresponding widget synchronized
         /// </summary>
         private void AlphaBlendingChangedHandler(object sender, EventArgs e)
         {
-            if (widgets.DrawModesConfigWidget.AlphaBlending != Environment.AlphaBlending)
+            if (widgets.DrawConfigStrip.AlphaBlending != Environment.AlphaBlending)
             {
-                widgets.DrawModesConfigWidget.AlphaBlending = Environment.AlphaBlending;
+                widgets.DrawConfigStrip.AlphaBlending = Environment.AlphaBlending;
             }
+
+            Settings.CurrentUser.SetBoolean(PdnSettings.AlphaBlending, Environment.AlphaBlending);
         }
 
         private void ColorDisplay_UserForeAndBackColorsChanged(object sender, EventArgs e)
@@ -956,7 +1024,7 @@ namespace PaintDotNet
 
             LayerPropertyHistoryAction lpha = new LayerPropertyHistoryAction(
                 haName, 
-                PdnResources.GetImage("Icons.MenuLayersLayerPropertiesIcon.bmp"), 
+                PdnResources.GetImage("Icons.MenuLayersLayerPropertiesIcon.png"), 
                 this, 
                 Document.Layers.IndexOf(sender));
 
@@ -1025,42 +1093,45 @@ namespace PaintDotNet
         private void SelectedPathChangedHandler(object sender, EventArgs e)
         {
             UpdateRulerSelectionTinting();
- 
-            // set buttons on CommonActionsWidgets
+
+            // set buttons on CommonActionsStrip
             if (Environment.Selection.IsEmpty)
             {
-                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Cut, false);
-                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Copy, false);
-                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Deselect, false);
+                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Cut, false);
+                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Copy, false);
+                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Deselect, false);
+                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.CropToSelection, false);
             }
             else
             {
-                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Cut, true);
-                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Copy, true);
-                widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.Deselect, true);
+                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Cut, true);
+                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Copy, true);
+                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Deselect, true);
+                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.CropToSelection, true);
             }
         }
         
         private void ZoomChangedHandler(object sender, EventArgs e)
         {
-            zoomConfigWidget.ZoomBasis = ZoomBasis.Factor;
-            zoomConfigWidget.ScaleFactor = documentView.ScaleFactor;
+            ScaleFactor sf = documentView.ScaleFactor;
+            viewConfigStrip.SuspendEvents();
+            viewConfigStrip.ZoomBasis = ZoomBasis.Factor;
+            viewConfigStrip.ScaleFactor = sf;
+            viewConfigStrip.ResumeEvents();
         }
 
         private void InitializeComponent()
         {
             this.documentView = new PaintDotNet.DocumentWorkspace.OurDocumentView();
-            this.topDock = new PaintDotNet.FlowPanel();
-            this.textConfigWidget = new PaintDotNet.TextConfigWidget();
-            this.shapeDrawTypeConfigWidget = new PaintDotNet.ShapeDrawTypeConfigWidget();
-            this.drawModesConfigWidget = new PaintDotNet.DrawModesConfigWidget();
-            this.penConfigWidget = new PaintDotNet.PenConfigWidget();
-            this.brushConfigWidget = new PaintDotNet.BrushConfigWidget();
-            this.workspaceOptionsConfigWidget = new PaintDotNet.WorkspaceOptionsConfigWidget();
-            this.zoomConfigWidget = new PaintDotNet.ZoomConfigWidget();
-            this.commonActionsWidget = new PaintDotNet.CommonActionsWidget();
+            this.toolStripContainer = new ToolStripContainer();
+            this.commonActionsStrip = new CommonActionsStrip();
+            this.viewConfigStrip = new ViewConfigStrip();
+            this.drawConfigStrip = new DrawConfigStrip();
+            this.textConfigStrip = new TextConfigStrip();
             this.toolPulseTimer = new System.Windows.Forms.Timer();
-            this.topDock.SuspendLayout();
+            this.toolStripContainer.ContentPanel.SuspendLayout();
+            this.toolStripContainer.TopToolStripPanel.SuspendLayout();
+            this.toolStripContainer.SuspendLayout();
             this.SuspendLayout();
             // 
             // documentView
@@ -1081,109 +1152,92 @@ namespace PaintDotNet
             this.documentView.DocumentMouseLeave += new EventHandler(this.DocumentMouseLeaveHandler);
             this.documentView.DocumentMouseMove += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseMoveHandler);
             this.documentView.DocumentMouseDown += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseDownHandler);
-            this.documentView.Scroll += new System.EventHandler(this.documentView_Scroll);
+            this.documentView.Scroll += new System.Windows.Forms.ScrollEventHandler(this.documentView_Scroll);
             this.documentView.DrawGridChanged += new System.EventHandler(this.documentView_DrawGridChanged);
             this.documentView.DocumentClick += new System.EventHandler(this.DocumentClick);
             this.documentView.DocumentMouseUp += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseUpHandler);
             this.documentView.DocumentKeyPress += new System.Windows.Forms.KeyPressEventHandler(this.DocumentKeyPress);
-            this.DocumentView.DocumentKeyUp += new KeyEventHandler(DocumenKeyUp);
-            this.DocumentView.DocumentKeyDown += new KeyEventHandler(DocumentKeyDown);
-            this.DocumentView.MouseWheel += new MouseEventHandler(DocumentView_MouseWheel);
+            this.documentView.DocumentKeyUp += new KeyEventHandler(DocumenKeyUp);
+            this.documentView.DocumentKeyDown += new KeyEventHandler(DocumentKeyDown);
+            this.documentView.MouseWheel += new MouseEventHandler(DocumentView_MouseWheel);
+            //
+            // toolStripContainer
+            //
+            this.toolStripContainer.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.toolStripContainer.Location = new System.Drawing.Point(0, 0);
+            this.toolStripContainer.Name = "toolStripContainer";
+            this.toolStripContainer.TabIndex = 0;
+            this.toolStripContainer.TabStop = false;
+            this.toolStripContainer.BottomToolStripPanelVisible = false;
+            this.toolStripContainer.LeftToolStripPanelVisible = false;
+            this.toolStripContainer.RightToolStripPanelVisible = false;
+            //
+            // toolStripContainer.ContentPanel
+            //
+            this.toolStripContainer.ContentPanel.Controls.Add(this.documentView);
+            //
+            // toolStripContainer.ToolStripPanel
+            //
+            LoadSettings();
+            this.toolStripContainer.TopToolStripPanel.Controls.Add(this.viewConfigStrip);
+            this.toolStripContainer.TopToolStripPanel.Controls.Add(this.commonActionsStrip);
+            this.toolStripContainer.TopToolStripPanel.Controls.Add(this.textConfigStrip);
+            this.toolStripContainer.TopToolStripPanel.Controls.Add(this.drawConfigStrip);
+            //
+            // commonActionsStrip
+            //
+            this.commonActionsStrip.Name = "commonActionsStrip";
+            this.commonActionsStrip.TabIndex = 0;
+            this.commonActionsStrip.Dock = DockStyle.None;
+            this.commonActionsStrip.GripStyle = toolStripsGripStyle;
+            this.commonActionsStrip.RelinquishFocusRequest += new EventHandler(OnToolStripRelinquishFocusRequest);
+            this.commonActionsStrip.MouseWheel += new MouseEventHandler(OnToolStripMouseWheel);
+            //
+            // viewConfigStrip
+            //
+            this.viewConfigStrip.Name = "viewConfigStrip";
+            this.viewConfigStrip.ZoomBasis = PaintDotNet.ZoomBasis.Window;
+            this.viewConfigStrip.TabStop = false;
+            this.viewConfigStrip.DrawGrid = false;
+            this.viewConfigStrip.DrawGridChanged += new System.EventHandler(this.viewConfigStrip_DrawGridChanged);
+            this.viewConfigStrip.RulersEnabledChanged += new System.EventHandler(this.viewConfigStrip_RulersEnabledChanged);
+            this.viewConfigStrip.ZoomBasisChanged += new System.EventHandler(this.viewConfigStrip_ZoomBasisChanged);
+            this.viewConfigStrip.ZoomScaleChanged += new System.EventHandler(this.viewConfigStrip_ZoomScaleChanged);
+            this.viewConfigStrip.ZoomIn += new EventHandler(viewConfigStrip_ZoomIn);
+            this.viewConfigStrip.ZoomOut += new EventHandler(viewConfigStrip_ZoomOut);
+            this.viewConfigStrip.UnitsChanged += new EventHandler(viewConfigStrip_UnitsChanged);
+            this.viewConfigStrip.TabIndex = 1;
+            this.viewConfigStrip.Dock = DockStyle.None;
+            this.viewConfigStrip.GripStyle = toolStripsGripStyle;
+            this.viewConfigStrip.RelinquishFocusRequest += new EventHandler(OnToolStripRelinquishFocusRequest);
+            this.viewConfigStrip.MouseWheel += new MouseEventHandler(OnToolStripMouseWheel);
+            //
+            // drawConfigStrip
+            //
+            this.drawConfigStrip.Name = "drawConfigStrip";
+            this.drawConfigStrip.ShapeDrawType = PaintDotNet.ShapeDrawType.Outline;
+            this.drawConfigStrip.BrushChanged += new System.EventHandler(this.drawConfigStrip_BrushChanged);
+            this.drawConfigStrip.ShapeDrawTypeChanged += new System.EventHandler(this.drawConfigStrip_ShapeDrawTypeChanged);
+            this.drawConfigStrip.PenChanged += new System.EventHandler(this.drawConfigStrip_PenChanged);
+            this.drawConfigStrip.AlphaBlendingChanged += new EventHandler(drawConfigStrip_AlphaBlendingChanged);
+            this.drawConfigStrip.AntiAliasingChanged += new System.EventHandler(this.drawConfigStrip_AntiAliasingChanged);
+            this.drawConfigStrip.TabIndex = 2;
+            this.drawConfigStrip.Dock = DockStyle.None;
+            this.drawConfigStrip.GripStyle = toolStripsGripStyle;
+            this.drawConfigStrip.RelinquishFocusRequest += new EventHandler(OnToolStripRelinquishFocusRequest);
+            this.drawConfigStrip.MouseWheel += new MouseEventHandler(OnToolStripMouseWheel);
             // 
-            // topDock
+            // textConfigStrip
             // 
-            this.topDock.BackColor = SystemColors.Control;
-            this.topDock.Controls.Add(this.textConfigWidget);
-            this.topDock.Controls.Add(this.drawModesConfigWidget);
-            this.topDock.Controls.Add(this.penConfigWidget);
-            this.topDock.Controls.Add(this.shapeDrawTypeConfigWidget);
-            this.topDock.Controls.Add(this.brushConfigWidget);
-            this.topDock.Controls.Add(this.workspaceOptionsConfigWidget);
-            this.topDock.Controls.Add(this.zoomConfigWidget);
-            this.topDock.Controls.Add(this.commonActionsWidget);
-            this.topDock.Dock = System.Windows.Forms.DockStyle.Top;
-            this.topDock.Location = new System.Drawing.Point(0, 0);
-            this.topDock.Name = "topDock";
-            this.topDock.Size = new System.Drawing.Size(872, 54);
-            this.topDock.TabIndex = 3;
-            // 
-            // textConfigWidget
-            // 
-            this.textConfigWidget.FontSize = 12F;
-            this.textConfigWidget.FontStyle = System.Drawing.FontStyle.Regular;
-            this.textConfigWidget.Location = new System.Drawing.Point(78, 27);
-            this.textConfigWidget.Name = "textConfigWidget";
-            this.textConfigWidget.Size = new System.Drawing.Size(397, 27);
-            this.textConfigWidget.TabIndex = 3;
-            this.textConfigWidget.TextAlignment = PaintDotNet.TextAlignment.Left;
-            // 
-            // shapeDrawTypeConfigWidget
-            // 
-            this.shapeDrawTypeConfigWidget.Location = new System.Drawing.Point(0, 27);
-            this.shapeDrawTypeConfigWidget.Name = "shapeDrawTypeConfigWidget";
-            this.shapeDrawTypeConfigWidget.ShapeDrawType = PaintDotNet.ShapeDrawType.Outline;
-            this.shapeDrawTypeConfigWidget.Size = new System.Drawing.Size(83, 27);
-            this.shapeDrawTypeConfigWidget.TabIndex = 1;
-            this.shapeDrawTypeConfigWidget.TabStop = false;
-            this.shapeDrawTypeConfigWidget.ShapeDrawTypeChanged += new System.EventHandler(this.shapeDrawTypeConfigWidget_ShapeDrawTypeChanged);
-            // 
-            // drawModesConfigWidget
-            // 
-            this.drawModesConfigWidget.Name = "drawModesConfigWidget";
-            this.drawModesConfigWidget.Size = new System.Drawing.Size(62, 27);
-            this.drawModesConfigWidget.TabIndex = 1;
-            this.drawModesConfigWidget.TabStop = false;
-            this.drawModesConfigWidget.AlphaBlendingChanged += new EventHandler(drawModesConfigWidget_AlphaBlendingChanged);
-            this.drawModesConfigWidget.AntiAliasingChanged += new System.EventHandler(this.drawModesConfigWidget_AntiAliasingChanged);
-            // 
-            // penConfigWidget
-            // 
-            this.penConfigWidget.Location = new System.Drawing.Point(659, 0);
-            this.penConfigWidget.Name = "penConfigWidget";
-            this.penConfigWidget.Size = new System.Drawing.Size(137, 27);
-            this.penConfigWidget.TabIndex = 2;
-            this.penConfigWidget.PenChanged += new System.EventHandler(this.penConfigWidget_PenChanged);
-            // 
-            // brushConfigWidget
-            // 
-            this.brushConfigWidget.Location = new System.Drawing.Point(456, 0);
-            this.brushConfigWidget.Name = "brushConfigWidget";
-            this.brushConfigWidget.Size = new System.Drawing.Size(213, 27);
-            this.brushConfigWidget.TabIndex = 1;
-            this.brushConfigWidget.BrushChanged += new System.EventHandler(this.brushConfigWidget_BrushChanged);
-            // 
-            // workspaceOptionsConfigWidget
-            // 
-            this.workspaceOptionsConfigWidget.DrawGrid = false;
-            this.workspaceOptionsConfigWidget.Location = new System.Drawing.Point(374, 0);
-            this.workspaceOptionsConfigWidget.Name = "workspaceOptionsConfigWidget";
-            this.workspaceOptionsConfigWidget.RulersEnabled = false;
-            this.workspaceOptionsConfigWidget.Size = new System.Drawing.Size(201, 27);
-            this.workspaceOptionsConfigWidget.TabIndex = 3;
-            this.workspaceOptionsConfigWidget.TabStop = false;
-            this.workspaceOptionsConfigWidget.RulersEnabledChanged += new System.EventHandler(this.workspaceOptionsConfigWidget_RulersEnabledChanged);
-            this.workspaceOptionsConfigWidget.DrawGridChanged += new System.EventHandler(this.workspaceOptionsConfigWidget_DrawGridChanged);
-            this.workspaceOptionsConfigWidget.UnitsChanged += new EventHandler(workspaceOptionsConfigWidget_UnitsChanged);
-            // 
-            // zoomConfigWidget
-            // 
-            this.zoomConfigWidget.Location = new System.Drawing.Point(256, 0);
-            this.zoomConfigWidget.Name = "zoomConfigWidget";
-            this.zoomConfigWidget.Size = new System.Drawing.Size(127, 27);
-            this.zoomConfigWidget.TabIndex = 0;
-            this.zoomConfigWidget.ZoomBasis = PaintDotNet.ZoomBasis.Window;
-            this.zoomConfigWidget.ZoomBasisChanged += new System.EventHandler(this.zoomConfigWidget_ZoomBasisChanged);
-            this.zoomConfigWidget.ZoomScaleChanged += new System.EventHandler(this.zoomConfigWidget_ZoomScaleChanged);
-            this.zoomConfigWidget.ZoomIn += new EventHandler(zoomConfigWidget_ZoomIn);
-            this.zoomConfigWidget.ZoomOut += new EventHandler(zoomConfigWidget_ZoomOut);
-            // 
-            // commonActionsWidget
-            // 
-            this.commonActionsWidget.Location = new System.Drawing.Point(0, 0);
-            this.commonActionsWidget.Name = "commonActionsWidget";
-            this.commonActionsWidget.Size = new System.Drawing.Size(256, 27);
-            this.commonActionsWidget.TabIndex = 4;
-            this.commonActionsWidget.TabStop = false;
+            this.textConfigStrip.FontSize = 12F;
+            this.textConfigStrip.FontStyle = System.Drawing.FontStyle.Regular;
+            this.textConfigStrip.Name = "textConfigStrip";
+            this.textConfigStrip.TabIndex = 3;
+            this.textConfigStrip.TextAlignment = PaintDotNet.TextAlignment.Left;
+            this.textConfigStrip.Dock = DockStyle.None;
+            this.textConfigStrip.GripStyle = toolStripsGripStyle;
+            this.textConfigStrip.RelinquishFocusRequest += new EventHandler(OnToolStripRelinquishFocusRequest);
+            this.textConfigStrip.MouseWheel += new MouseEventHandler(OnToolStripMouseWheel);
             // 
             // toolPulseTimer
             // 
@@ -1192,12 +1246,27 @@ namespace PaintDotNet
             // 
             // DocumentWorkspace
             // 
-            this.Controls.Add(this.documentView);
-            this.Controls.Add(this.topDock);
+            this.Controls.Add(this.toolStripContainer);
             this.Name = "DocumentWorkspace";
             this.Size = new System.Drawing.Size(872, 640);
-            this.topDock.ResumeLayout(false);
+            this.toolStripContainer.ContentPanel.ResumeLayout(false);
+            this.toolStripContainer.ContentPanel.PerformLayout();
+            this.toolStripContainer.TopToolStripPanel.ResumeLayout(false);
+            this.toolStripContainer.TopToolStripPanel.PerformLayout();
+            this.toolStripContainer.ResumeLayout(false);
+            this.toolStripContainer.PerformLayout();
             this.ResumeLayout(false);
+        }
+
+        void OnToolStripMouseWheel(object sender, MouseEventArgs e)
+        {
+            this.documentView.PerformMouseWheel(e);
+            DocumentView_MouseWheel(sender, e);
+        }
+
+        void OnToolStripRelinquishFocusRequest(object sender, EventArgs e)
+        {
+            this.documentView.Focus();
         }
 
         // The Document* events are raised by the Document class, handled here,
@@ -1284,6 +1353,7 @@ namespace PaintDotNet
             mainToolBarForm.MainToolBar.ColorDisplay.UserBackColorClick += new EventHandler(colorDisplay_BackColorClicked);
             mainToolBarForm.RelinquishFocus += new EventHandler(RelinquishFocusHandler);
             mainToolBarForm.AttachControl = this.DocumentView;
+            mainToolBarForm.ProcessCmdKeyEvent += new CmdKeysEventHandler(OnToolFormProcessCmdKeyEvent);
 
             // LayerForm
             layerForm = new LayerForm();
@@ -1297,6 +1367,7 @@ namespace PaintDotNet
             layerForm.PropertiesButtonClick += new EventHandler(layerForm_PropertiesButtonClick);
             layerForm.RelinquishFocus += new EventHandler(RelinquishFocusHandler);
             layerForm.AttachControl = this.DocumentView;
+            layerForm.ProcessCmdKeyEvent += new CmdKeysEventHandler(OnToolFormProcessCmdKeyEvent);
             
             // HistoryForm
             historyForm = new HistoryForm();
@@ -1307,6 +1378,7 @@ namespace PaintDotNet
             historyForm.FastForwardButtonClicked += new EventHandler(historyForm_FastForwardButtonClicked);
             historyForm.RelinquishFocus += new EventHandler(RelinquishFocusHandler);
             historyForm.AttachControl = this.DocumentView;
+            historyForm.ProcessCmdKeyEvent += new CmdKeysEventHandler(OnToolFormProcessCmdKeyEvent);
 
             // ColorsForm
             colorsForm = new ColorsForm();
@@ -1317,6 +1389,21 @@ namespace PaintDotNet
             colorsForm.UserBackColorChanged += new ColorEventHandler(colorsForm_UserBackColorChanged);
             colorsForm.RelinquishFocus += new EventHandler(RelinquishFocusHandler);
             colorsForm.AttachControl = this.DocumentView;
+            colorsForm.ProcessCmdKeyEvent += new CmdKeysEventHandler(OnToolFormProcessCmdKeyEvent);
+        }
+
+        public event CmdKeysEventHandler ProcessCmdKeyEvent;
+
+        bool OnToolFormProcessCmdKeyEvent(object sender, ref Message msg, Keys keyData)
+        {
+            if (ProcessCmdKeyEvent != null)
+            {
+                return ProcessCmdKeyEvent(sender, ref msg, keyData);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         protected void InitializeTools()
@@ -1368,7 +1455,7 @@ namespace PaintDotNet
 
         private Type[] GetEffectsFromAssembly(Assembly assembly)
         {
-            ArrayList effects = new ArrayList();
+            List<Type> effects = new List<Type>();
 
             foreach (Type type in assembly.GetTypes())
             {
@@ -1378,13 +1465,14 @@ namespace PaintDotNet
                 }
             }
 
-            // convert from ArrayList to normal array
-            return (Type[])effects.ToArray(typeof(Type));
+            effects.Sort(delegate(Type x, Type y) { return string.Compare(x.Name, y.Name); });
+
+            return effects.ToArray();
         }
 
         private void InitializeEffects()
         {
-            ArrayList effectsArrays = new ArrayList();
+            List<Type[]> effectsArrays = new List<Type[]>();
             string homeDir = PdnInfo.GetApplicationDir();
 
             try
@@ -1429,11 +1517,12 @@ namespace PaintDotNet
                         success = true;
                     }
 
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        string errorFormat = PdnResources.GetString("DocumentWorkspace.InitializeEffects.DllLoadFailed.Format");
-                        string errorText = string.Format(errorFormat, fileName);
-                        Utility.ErrorBox(this, errorText);
+                        //string errorFormat = PdnResources.GetString("DocumentWorkspace.InitializeEffects.DllLoadFailed.Format");
+                        //string errorText = string.Format(errorFormat, fileName);
+                        //Utility.ErrorBox(this, errorText);
+                        Tracing.Ping("Exception while loading " + fileName + ": " + ex.ToString());
                     }
 
                     if (success)
@@ -1445,7 +1534,7 @@ namespace PaintDotNet
 
             effectsArrays.Add(GetEffectsFromAssembly(Assembly.GetExecutingAssembly()));
 
-            // convert ArrayList of arrays into one big array
+            // collate List<T> of arrays into one big array
             int count = 0;
 
             foreach (Type[] typeArray in effectsArrays)
@@ -1600,24 +1689,24 @@ namespace PaintDotNet
             Environment.ToolChanged += new EventHandler(this.ToolChangedHandler);
         }
 
-        private void workspaceOptionsConfigWidget_DrawGridChanged(object sender, EventArgs e)
+        private void viewConfigStrip_DrawGridChanged(object sender, EventArgs e)
         {
-            documentView.DrawGrid = ((WorkspaceOptionsConfigWidget)sender).DrawGrid;
+            documentView.DrawGrid = ((ViewConfigStrip)sender).DrawGrid;
         }
 
-        private void drawModesConfigWidget_AntiAliasingChanged(object sender, System.EventArgs e)
+        private void drawConfigStrip_AntiAliasingChanged(object sender, System.EventArgs e)
         {
-            Environment.AntiAliasing = ((DrawModesConfigWidget)sender).AntiAliasing;
+            Environment.AntiAliasing = ((DrawConfigStrip)sender).AntiAliasing;
         }
 
-        private void penConfigWidget_PenChanged(object sender, System.EventArgs e)
+        private void drawConfigStrip_PenChanged(object sender, System.EventArgs e)
         {
-            Environment.PenInfo = penConfigWidget.PenInfo;
+            Environment.PenInfo = drawConfigStrip.PenInfo;
         }
 
-        private void brushConfigWidget_BrushChanged(object sender, System.EventArgs e)
+        private void drawConfigStrip_BrushChanged(object sender, System.EventArgs e)
         {
-            Environment.BrushInfo = brushConfigWidget.BrushInfo;
+            Environment.BrushInfo = drawConfigStrip.BrushInfo;
         }
 
         private void layerControl_ClickedOnLayer(object sender, PaintDotNet.LayerEventArgs ce)
@@ -1648,11 +1737,12 @@ namespace PaintDotNet
         {
             BitmapLayer newLayer = null;
             newLayer = new BitmapLayer(Document.Width, Document.Height);
-            newLayer.Name = "Layer " + (Document.Layers.Count + 1).ToString();
+            string newLayerNameFormat = PdnResources.GetString("DocumentWorkspace.NewLayerName.Format");
+            newLayer.Name = string.Format(newLayerNameFormat, (1 + Document.Layers.Count).ToString());
 
             NewLayerHistoryAction ha = new NewLayerHistoryAction(
                 PdnResources.GetString("DocumentWorkspace.AddNewLayerToDocument.NewLayerHistoryActionName"),
-                PdnResources.GetImage("Icons.MenuLayersAddNewLayerIcon.bmp"), 
+                PdnResources.GetImage("Icons.MenuLayersAddNewLayerIcon.png"), 
                 this, 
                 document.Layers.Count);
 
@@ -1679,7 +1769,7 @@ namespace PaintDotNet
 
                     CompoundHistoryAction cha = new CompoundHistoryAction(
                         PdnResources.GetString("DocumentWorkspace.DeleteLayerButtonClicked.DeleteLayerHistoryActionName"),
-                        PdnResources.GetImage("Icons.MenuLayersDeleteLayerIcon.bmp"), 
+                        PdnResources.GetImage("Icons.MenuLayersDeleteLayerIcon.png"), 
                         new HistoryAction[] { ha1, ha2 });
 
                     History.PushNewAction(cha);
@@ -1708,7 +1798,7 @@ namespace PaintDotNet
 
             HistoryAction ha = new NewLayerHistoryAction(
                 PdnResources.GetString("DocumentWorkspace.DuplicateLayerButtonClicked.DuplicateLayerHistoryActionName"),
-                PdnResources.GetImage("Icons.MenuLayersDuplicateLayerIcon.bmp"), 
+                PdnResources.GetImage("Icons.MenuLayersDuplicateLayerIcon.png"), 
                 this, 
                 newIndex);
 
@@ -1721,47 +1811,47 @@ namespace PaintDotNet
         {
             int index = Document.Layers.IndexOf(ActiveLayer);
 
-            if (index == 0)
+            if (index == Document.Layers.Count - 1)
             {
                 return;
             }
 
             SwapLayerHistoryAction slha = new SwapLayerHistoryAction(PdnResources.GetString("DocumentWorkspace.MoveLayerUpButtonClicked.MoveLayerUpHistoryActionName"),
-                                                                     PdnResources.GetImage("Icons.MenuLayersMoveLayerUpIcon.bmp"),
-                                                                     this, 
-                                                                     index, 
+                                                                     PdnResources.GetImage("Icons.MenuLayersMoveLayerUpIcon.png"),
+                                                                     this,
+                                                                     index,
+                                                                     index + 1);
+
+            HistoryAction ha = slha.PerformUndo();
+            history.PushNewAction(ha);
+
+            this.ActiveLayer = (Layer)Document.Layers[index + 1]; 
+        }
+
+        private void layerForm_MoveLayerDownButtonClicked(object sender, System.EventArgs e)
+        {
+            int index = Document.Layers.IndexOf(ActiveLayer);
+
+            if (index == 0)
+            {
+                return;
+            }
+
+            SwapLayerHistoryAction slha = new SwapLayerHistoryAction(PdnResources.GetString("DocumentWorkspace.MoveLayerDownButtonClicked.MoveLayerDownHistoryActionName"),
+                                                                     PdnResources.GetImage("Icons.MenuLayersMoveLayerDownIcon.png"),
+                                                                     this,
+                                                                     index,
                                                                      index - 1);
 
             HistoryAction ha = slha.PerformUndo();
             history.PushNewAction(ha);
         }
 
-        private void layerForm_MoveLayerDownButtonClicked(object sender, System.EventArgs e)
+        private void drawConfigStrip_ShapeDrawTypeChanged(object sender, System.EventArgs e)
         {
-            int index = Document.Layers.IndexOf(ActiveLayer);
-            
-            if (index == Document.Layers.Count - 1)
+            if (Environment.ShapeDrawType != widgets.DrawConfigStrip.ShapeDrawType)
             {
-                return;
-            }
-
-            SwapLayerHistoryAction slha = new SwapLayerHistoryAction(PdnResources.GetString("DocumentWorkspace.MoveLayerDownButtonClicked.MoveLayerDownHistoryActionName"),
-                                                                     PdnResources.GetImage("Icons.MenuLayersMoveLayerDownIcon.bmp"),
-                                                                     this, 
-                                                                     index, 
-                                                                     index + 1);
-
-            HistoryAction ha = slha.PerformUndo();
-            history.PushNewAction(ha);
-
-            this.ActiveLayer = (Layer)Document.Layers[index + 1];
-        }
-
-        private void shapeDrawTypeConfigWidget_ShapeDrawTypeChanged(object sender, System.EventArgs e)
-        {
-            if (Environment.ShapeDrawType != widgets.ShapeDrawTypeConfigWidget.ShapeDrawType)
-            {
-                Environment.ShapeDrawType = widgets.ShapeDrawTypeConfigWidget.ShapeDrawType;
+                Environment.ShapeDrawType = widgets.DrawConfigStrip.ShapeDrawType;
             }
         }
 
@@ -1773,7 +1863,7 @@ namespace PaintDotNet
 
                 history.PushNewAction(new NullHistoryAction(
                     PdnResources.GetString("DocumentWorkspace.ClearHistoryButtonClicked.ClearHistoryActionName"),
-                    PdnResources.GetImage("Icons.MenuLayersDeleteLayerIcon.bmp")));
+                    PdnResources.GetImage("Icons.MenuLayersDeleteLayerIcon.png")));
             }
         }
 
@@ -1811,14 +1901,16 @@ namespace PaintDotNet
             }
         }
 
-        private void workspaceOptionsConfigWidget_RulersEnabledChanged(object sender, System.EventArgs e)
+        private void viewConfigStrip_RulersEnabledChanged(object sender, System.EventArgs e)
         {
-            documentView.RulersEnabled = workspaceOptionsConfigWidget.RulersEnabled;
+            documentView.RulersEnabled = viewConfigStrip.RulersEnabled;
         }
 
         private void historyForm_RewindButtonClicked(object sender, EventArgs e)
         {
             DateTime lastUpdate = DateTime.Now;
+
+            History.BeginStepGroup();
 
             while (History.UndoStack.Count > 1)
             {
@@ -1828,11 +1920,15 @@ namespace PaintDotNet
 
                     if ((DateTime.Now - lastUpdate).TotalMilliseconds >= 500)
                     {
+                        History.EndStepGroup();
                         Update();
                         lastUpdate = DateTime.Now;
+                        History.BeginStepGroup();
                     }
                 }
             }
+
+            History.EndStepGroup();
 
             Utility.GCFullCollect();
             document.Invalidate();
@@ -1843,6 +1939,8 @@ namespace PaintDotNet
         {
             DateTime lastUpdate = DateTime.Now;
 
+            History.BeginStepGroup();
+
             while (History.RedoStack.Count > 0)
             {
                 using (new WaitCursorChanger(this))
@@ -1851,11 +1949,15 @@ namespace PaintDotNet
 
                     if ((DateTime.Now - lastUpdate).TotalMilliseconds >= 500)
                     {
+                        History.EndStepGroup();
                         Update();
                         lastUpdate = DateTime.Now;
+                        History.BeginStepGroup();
                     }                
                 }
             }
+
+            History.EndStepGroup();
 
             Utility.GCFullCollect();
             document.Invalidate();
@@ -1872,22 +1974,22 @@ namespace PaintDotNet
 
         private void Environment_FontInfoChanged(object sender, EventArgs e)
         {
-            widgets.TextConfigWidget.FontInfo = Environment.FontInfo;
+            widgets.TextConfigStrip.FontInfo = Environment.FontInfo;
         }
 
         private void Environment_TextAlignmentChanged(object sender, EventArgs e)
         {
-            widgets.TextConfigWidget.TextAlignment = Environment.TextAlignment;
+            widgets.TextConfigStrip.TextAlignment = Environment.TextAlignment;
         }
 
-        private void textConfigWidget_TextAlignmentChanged(object sender, EventArgs e)
+        private void textConfigStrip_TextAlignmentChanged(object sender, EventArgs e)
         {
-            Environment.TextAlignment = widgets.TextConfigWidget.TextAlignment;
+            Environment.TextAlignment = widgets.TextConfigStrip.TextAlignment;
         }
 
-        private void textConfigWidget_FontTextChanged(object sender, EventArgs e)
+        private void textConfigStrip_FontTextChanged(object sender, EventArgs e)
         {
-            Environment.FontInfo = widgets.TextConfigWidget.FontInfo;
+            Environment.FontInfo = widgets.TextConfigStrip.FontInfo;
         }
 
         private void toolPulseTimer_Tick(object sender, EventArgs e)
@@ -1905,8 +2007,8 @@ namespace PaintDotNet
 
         protected override void OnLayout(LayoutEventArgs levent)
         {
-            zoomConfigWidget_ZoomBasisChanged(this, EventArgs.Empty);
-            base.OnLayout (levent);
+            viewConfigStrip_ZoomBasisChanged(this, EventArgs.Empty);
+            base.OnLayout(levent);
         }
 
         protected override void OnResize(EventArgs e)
@@ -1922,46 +2024,52 @@ namespace PaintDotNet
                 else
                 {
                     toolPulseTimer.Enabled = true;
-                    zoomConfigWidget_ZoomBasisChanged(this, EventArgs.Empty);
+                    viewConfigStrip_ZoomBasisChanged(this, EventArgs.Empty);
                 }
             }
         }
 
-        public event EventHandler Scroll;
-        protected virtual void OnScroll()
+        private void documentView_Scroll(object sender, System.Windows.Forms.ScrollEventArgs e)
         {
-            if (Scroll != null)
-            {
-                Scroll(this, EventArgs.Empty);
-            }
+            OnScroll(e);
         }
 
-        private void documentView_Scroll(object sender, System.EventArgs e)
+        public void ZoomIn(double factor)
         {
-            OnScroll();
+            this.viewConfigStrip.ZoomBasis = ZoomBasis.Factor;
+            this.documentView.ZoomIn(factor);
         }
 
         public void ZoomIn()
         {
-            documentView.ZoomIn();
+            this.viewConfigStrip.ZoomBasis = ZoomBasis.Factor;
+            this.documentView.ZoomIn();
+        }
+
+        public void ZoomOut(double factor)
+        {
+            this.viewConfigStrip.ZoomBasis = ZoomBasis.Factor;
+            this.documentView.ZoomOut(factor);
         }
 
         public void ZoomOut()
         {
-            documentView.ZoomOut();
+            this.viewConfigStrip.ZoomBasis = ZoomBasis.Factor;
+            this.documentView.ZoomOut();
         }
 
         public void ZoomToWindow()
         {
-            documentView.ZoomToWindow();
+            this.viewConfigStrip.ZoomBasis = ZoomBasis.Window;
+            this.documentView.ZoomToWindow();
         }
 
         public void ZoomToRectangle(Rectangle selectionBounds)
         {
-            Point selectionCenter = new Point((selectionBounds.Left + selectionBounds.Right + 1) / 2,
+            PointF selectionCenter = new PointF((selectionBounds.Left + selectionBounds.Right + 1) / 2,
                 (selectionBounds.Top + selectionBounds.Bottom + 1) / 2);
 
-            Point cornerPosition;
+            PointF cornerPosition;
 
             ScaleFactor zoom = ScaleFactor.Min(documentView.ClientRectantangleMin.Width, selectionBounds.Width + 2,
                                                documentView.ClientRectantangleMin.Height, selectionBounds.Height + 2,
@@ -1970,10 +2078,10 @@ namespace PaintDotNet
             // Zoom out to fit the image
             documentView.ScaleFactor = zoom;
 
-            cornerPosition = new Point(selectionCenter.X - (VisibleDocumentRectangle.Width / 2),
-                selectionCenter.Y - (VisibleDocumentRectangle.Height / 2));
+            cornerPosition = new PointF(selectionCenter.X - (VisibleDocumentRectangleF.Width / 2),
+                selectionCenter.Y - (VisibleDocumentRectangleF.Height / 2));
 
-            documentView.DocumentScrollPosition = cornerPosition;
+            documentView.DocumentScrollPositionF = cornerPosition;
         }
 
         public void ZoomToSelection()
@@ -1992,7 +2100,7 @@ namespace PaintDotNet
         }
 
         private uint ignore = 0; //to stop the feedback loop
-        private void zoomConfigWidget_ZoomBasisChanged(object sender, EventArgs e)
+        private void viewConfigStrip_ZoomBasisChanged(object sender, EventArgs e)
         {
             if (ignore == 0) 
             {
@@ -2000,21 +2108,23 @@ namespace PaintDotNet
 
                 try
                 {
-                    switch (zoomConfigWidget.ZoomBasis) 
+                    switch (viewConfigStrip.ZoomBasis) 
                     {
                         case ZoomBasis.Window:
+                            this.viewConfigStrip.BeginZoomChanges();
                             ZoomToWindow();
                             // Enable PanelAutoScroll only long enough to recenter the view
-                            documentView.PanelAutoScroll = true;
-                            documentView.PanelAutoScroll = false;
+                            this.documentView.PanelAutoScroll = true;
+                            this.documentView.PanelAutoScroll = false;
+                            this.viewConfigStrip.EndZoomChanges();
                             // This would be unset by the scalefactor change.
-                            zoomConfigWidget.ZoomBasis = ZoomBasis.Window;
+                            this.viewConfigStrip.ZoomBasis = ZoomBasis.Window;
                             break;
 
                         case ZoomBasis.Selection:
                             ZoomToSelection();
-                            documentView.PanelAutoScroll = true;
-                            zoomConfigWidget.ZoomBasis = ZoomBasis.Factor;
+                            this.documentView.PanelAutoScroll = true;
+                            this.viewConfigStrip.ZoomBasis = ZoomBasis.Factor;
                             break;
 
                         case ZoomBasis.Factor:
@@ -2022,7 +2132,7 @@ namespace PaintDotNet
                             break;
 
                         default:
-                            throw new InvalidEnumArgumentException("zoomConfigWidget.ZoomBasis was not a valid enumeration value");
+                            throw new InvalidEnumArgumentException("viewConfigStrip.ZoomBasis was not a valid enumeration value");
                     }
                 }
 
@@ -2033,77 +2143,109 @@ namespace PaintDotNet
             }
         }
 
-        private void zoomConfigWidget_ZoomScaleChanged(object sender, EventArgs e)
+        private void viewConfigStrip_ZoomScaleChanged(object sender, EventArgs e)
         {
-            if (zoomConfigWidget.ZoomBasis == ZoomBasis.Factor) 
+            if (viewConfigStrip.ZoomBasis == ZoomBasis.Factor) 
             {
-                documentView.ScaleFactor = zoomConfigWidget.ScaleFactor;
+                documentView.ScaleFactor = viewConfigStrip.ScaleFactor;
             }
         }
 
         private void documentView_RulersEnabledChanged(object sender, EventArgs e)
         {
-            workspaceOptionsConfigWidget.RulersEnabled = documentView.RulersEnabled;
-            zoomConfigWidget_ZoomBasisChanged(this, EventArgs.Empty);
+            viewConfigStrip.RulersEnabled = documentView.RulersEnabled;
+            viewConfigStrip_ZoomBasisChanged(this, EventArgs.Empty);
             UpdateRulerSelectionTinting();
+
+            Settings.CurrentUser.SetBoolean(PdnSettings.Rulers, this.documentView.RulersEnabled);
         }
 
         private void documentView_DrawGridChanged(object sender, EventArgs e)
         {
-            workspaceOptionsConfigWidget.DrawGrid = documentView.DrawGrid;
+            viewConfigStrip.DrawGrid = documentView.DrawGrid;
+            Settings.CurrentUser.SetBoolean(PdnSettings.DrawGrid, this.documentView.DrawGrid);
         }
 
         private void Environment_AntiAliasingChanged(object sender, EventArgs e)
         {
-            drawModesConfigWidget.AntiAliasing = Environment.AntiAliasing;
+            drawConfigStrip.AntiAliasing = Environment.AntiAliasing;
+            Settings.CurrentUser.SetBoolean(PdnSettings.Antialiasing, Environment.AntiAliasing);
         }
 
-        private void zoomConfigWidget_ZoomIn(object sender, EventArgs e)
+        private void viewConfigStrip_ZoomIn(object sender, EventArgs e)
         {
             this.ZoomIn();
         }
 
-        private void zoomConfigWidget_ZoomOut(object sender, EventArgs e)
+        private void viewConfigStrip_ZoomOut(object sender, EventArgs e)
         {
             this.ZoomOut();
         }
 
-        private void workspaceOptionsConfigWidget_UnitsChanged(object sender, EventArgs e)
+        private void viewConfigStrip_UnitsChanged(object sender, EventArgs e)
         {
-            this.environment.Units = this.workspaceOptionsConfigWidget.Units;
+            this.environment.Units = this.viewConfigStrip.Units;
 
-            if (this.workspaceOptionsConfigWidget.Units != MeasurementUnit.Pixel)
+            if (this.viewConfigStrip.Units != MeasurementUnit.Pixel)
             {
-                Settings.CurrentUser.SetString(PdnSettings.LastNonPixelUnits, this.workspaceOptionsConfigWidget.Units.ToString());
+                Settings.CurrentUser.SetString(PdnSettings.LastNonPixelUnits, this.viewConfigStrip.Units.ToString());
             }
         }
 
         private void Environment_UnitsChanged(object sender, EventArgs e)
         {
-            this.workspaceOptionsConfigWidget.Units = this.environment.Units;
+            this.viewConfigStrip.Units = this.environment.Units;
             this.documentView.Units = this.environment.Units;
+            Settings.CurrentUser.SetString(PdnSettings.Units, this.environment.Units.ToString());
         }
 
         private void DocumentView_MouseWheel(object sender, MouseEventArgs e)
         {
             if (Control.ModifierKeys == Keys.Control)
             {
+                double mouseDelta = (double)e.Delta / 120.0f;
+                Rectangle visibleDocBoundsStart = this.documentView.VisibleDocumentBounds;
+
+                Point mouseDocPt = this.documentView.MouseToDocument(sender, new Point(e.X, e.Y));
+                RectangleF visibleDocDocRect1 = this.documentView.VisibleDocumentRectangleF;
+                PointF mouseNPt = new PointF(
+                    (mouseDocPt.X - visibleDocDocRect1.X) / visibleDocDocRect1.Width,
+                    (mouseDocPt.Y - visibleDocDocRect1.Y) / visibleDocDocRect1.Height);
+
+                const double factor = 1.12;
+                double mouseFactor = Math.Pow(factor, Math.Abs(mouseDelta));
+
                 if (e.Delta > 0)
                 {
-                    this.documentView.ScaleFactor = this.documentView.ScaleFactor.GetNextLarger();
+                    this.ZoomIn(mouseFactor);
                 }
                 else if (e.Delta < 0)
                 {
-                    this.documentView.ScaleFactor = this.documentView.ScaleFactor.GetNextSmaller();
+                    this.ZoomOut(mouseFactor);
+                }
+
+                RectangleF visibleDocDocRect2 = this.documentView.VisibleDocumentRectangleF;
+                PointF scrollPt2 = new PointF(
+                    mouseDocPt.X - visibleDocDocRect2.Width * mouseNPt.X,
+                    mouseDocPt.Y - visibleDocDocRect2.Height * mouseNPt.Y);
+
+                this.documentView.DocumentScrollPositionF = scrollPt2;
+
+                Rectangle visibleDocBoundsEnd = this.documentView.VisibleDocumentBounds;
+
+                if (e.Delta < 0 && visibleDocBoundsEnd != visibleDocBoundsStart)
+                {
+                    // Make sure the screen updates, otherwise it can get a little funky looking
+                    this.documentView.Update();
                 }
             }
         }
 
-        private void drawModesConfigWidget_AlphaBlendingChanged(object sender, EventArgs e)
+        private void drawConfigStrip_AlphaBlendingChanged(object sender, EventArgs e)
         {
-            if (Environment.AlphaBlending != widgets.DrawModesConfigWidget.AlphaBlending)
+            if (Environment.AlphaBlending != widgets.DrawConfigStrip.AlphaBlending)
             {
-                Environment.AlphaBlending = widgets.DrawModesConfigWidget.AlphaBlending;
+                Environment.AlphaBlending = widgets.DrawConfigStrip.AlphaBlending;
             }
         }
 

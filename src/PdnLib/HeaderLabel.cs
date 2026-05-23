@@ -7,6 +7,7 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -50,21 +51,6 @@ namespace PaintDotNet
             }
         }
 
-        [DefaultValue(1)]
-        public int LeftMargin
-        {
-            get
-            {
-                return this.leftMargin;
-            }
-
-            set
-            {
-                this.leftMargin = value;
-                PerformLayout();
-            }
-        }
-
         [DefaultValue(8)]
         public int RightMargin
         {
@@ -89,7 +75,6 @@ namespace PaintDotNet
         {
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
-
             PerformLayout();
         }
 
@@ -155,12 +140,14 @@ namespace PaintDotNet
 
         protected override void OnLayout(LayoutEventArgs levent)
         {
-            this.groupBox.Location = new Point(-8 + leftMargin, 0);
+            this.groupBox.Location = new Point(-8 + UI.ScaleWidth(leftMargin), 0);
             this.groupBox.Size = new Size(this.ClientRectangle.Width + 16, this.ClientRectangle.Height + 16);
             this.leftMask.Location = new Point(-1, 0);
             this.leftMask.Size = new Size(1 + leftMargin, this.ClientRectangle.Height);
             this.rightMask.Location = new Point(this.ClientRectangle.Width - rightMargin, 0);
             this.rightMask.Size = new Size(1 + rightMargin, this.ClientRectangle.Height);
+
+            this.leftMask.Visible = false;
 
             base.OnLayout(levent);
         }

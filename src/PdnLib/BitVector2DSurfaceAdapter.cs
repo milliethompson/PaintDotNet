@@ -13,7 +13,8 @@ using System.Drawing;
 namespace PaintDotNet
 {
     /// <summary>
-    /// Adapts a Surface class so it can be used as a two dimensional boolean array
+    /// Adapts a Surface class so it can be used as a two dimensional boolean array.
+    /// Elements are stored compactly, such that each pixel stores 32 boolean values.
     /// </summary>
     public sealed class BitVector2DSurfaceAdapter
         : IBitVector2D
@@ -58,25 +59,19 @@ namespace PaintDotNet
         {
             unsafe
             {
+                uint val = newValue ? 0xffffffff : 0;
+
                 for (int y = 0; y < Height; ++y)
                 {
                     ColorBgra *row = surface.GetRowAddress(y);
 
-                    if (newValue)
+                    int w = (this.Width + 31) / 32;
+
+                    while (w > 0)
                     {
-                        for (int x = 0; x < Width; ++x)
-                        {
-                            row->A |= 1; // turn on low bit
-                            ++row;
-                        }
-                    }
-                    else
-                    {
-                        for (int x = 0; x < Width; ++x)
-                        {
-                            row->A &= 254; // turn off low bit
-                            ++row;
-                        }
+                        row->Bgra = val;
+                        ++row;
+                        --w;
                     }
                 }
             }
@@ -84,17 +79,40 @@ namespace PaintDotNet
 
         public bool Get(int x, int y)
         {
-            return this[x, y];
+            if (x < 0 || x >= this.Width)
+            {
+                throw new ArgumentOutOfRangeException("x");
+            }
+
+            if (y < 0 || y >= this.Height)
+            {
+                throw new ArgumentOutOfRangeException("y");
+            }
+
+            return GetUnchecked(x, y);
         }
 
         public unsafe bool GetUnchecked(int x, int y)
         {
-            return (0 != (1 & surface.GetPointAddressUnchecked(x, y)->A));
+            int cx = x / 32;
+            int sx = x % 32;
+            uint mask = surface.GetPointAddressUnchecked(cx, y)->Bgra;
+            return 0 != (mask & (1 << sx));
         }
 
         public void Set(int x, int y, bool newValue)
         {
-            this[x, y] = newValue;
+            if (x < 0 || x >= this.Width)
+            {
+                throw new ArgumentOutOfRangeException("x");
+            }
+
+            if (y < 0 || y >= this.Height)
+            {
+                throw new ArgumentOutOfRangeException("y");
+            }
+
+            SetUnchecked(x, y, newValue);
         }
 
         public void Set(Point pt, bool newValue)
@@ -134,14 +152,23 @@ namespace PaintDotNet
 
         public unsafe void SetUnchecked(int x, int y, bool newValue)
         {
+            int cx = x / 32;
+            int sx = x % 32;
+            ColorBgra *ptr = surface.GetPointAddressUnchecked(cx, y);
+            uint mask = ptr->Bgra;
+            uint slice = ((uint)1 << sx);
+            uint newMask;
+            
             if (newValue)
             {
-                surface.GetPointAddressUnchecked(x, y)->A |= 1;
+                newMask = mask | slice;
             }
             else
             {
-                surface.GetPointAddressUnchecked(x, y)->A &= 254;
+                newMask = mask & ~slice;
             }
+
+            ptr->Bgra = newMask;
         }
 
         public void Invert(int x, int y)
@@ -201,24 +228,12 @@ namespace PaintDotNet
         {
             get
             {
-                return (surface[x, y].A & 1) == 1;
+                return Get(x, y);
             }
 
             set
             {
-                unsafe
-                {
-                    ColorBgra *ptr = surface.GetPointAddress(x, y);
-
-                    if (value)
-                    {
-                        ptr->A |= 1; // turn on low bit
-                    }
-                    else
-                    {
-                        ptr->A &= 254; // turn off low bit
-                    }
-                }
+                Set(x, y, value);
             }
         }
 

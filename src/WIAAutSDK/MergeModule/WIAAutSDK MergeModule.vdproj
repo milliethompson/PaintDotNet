@@ -1,7 +1,7 @@
 "DeployProject"
 {
-"VSVersion" = "3:701"
-"ProjectType" = "8:{DD7A5B58-C2F9-40FF-B2EF-0773356FB978}"
+"VSVersion" = "3:800"
+"ProjectType" = "8:{06A35CCD-C46D-44D5-987B-CF40FF872267}"
 "IsWebType" = "8:FALSE"
 "ProjectName" = "8:WIAAutSDK MergeModule"
 "LanguageId" = "3:1033"
@@ -37,6 +37,17 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:1"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:FALSE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                }
+            }
         }
         "Release"
         {
@@ -53,6 +64,17 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:1"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:FALSE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                }
+            }
         }
         "Release and Package"
         {
@@ -69,6 +91,17 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:1"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:FALSE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                }
+            }
         }
     }
     "Deployable"
@@ -84,12 +117,12 @@
         }
         "File"
         {
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_CCCD8EC5AA52462B8CB29067C750A332"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CCCD8EC5AA52462B8CB29067C750A332"
             {
             "SourcePath" = "8:..\\wiaaut.dll"
             "TargetName" = "8:wiaaut.dll"
             "Tag" = "8:"
-            "Folder" = "8:_B4E7CF6DFB2E43AA8C11D62072AD6AFC"
+            "Folder" = "8:_31CFCAE86B4A499787CD80CCB470FC11"
             "Condition" = "8:(VersionNT >= 502) or (VersionNT = 501 and ServicePackLevel >= 1)"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -110,27 +143,13 @@
         }
         "Folder"
         {
-            "{78BAF5CE-F2E5-45BE-83BC-DB6AF387E941}:_58AB56AC2D094E8BA7B121C0ADB3F16A"
+            "{1525181F-901A-416C-8A58-119130FE478E}:_31CFCAE86B4A499787CD80CCB470FC11"
             {
-            "Name" = "8:#1910"
+            "Name" = "8:#1914"
             "AlwaysCreate" = "11:FALSE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
-            "Property" = "8:CommonFilesFolder"
-                "Folders"
-                {
-                }
-            }
-            "{29CD8198-A6F0-4B93-8B90-AC03CFEAD328}:_B4E7CF6DFB2E43AA8C11D62072AD6AFC"
-            {
-            "DefaultLocation" = "8:[TARGETDIR]"
-            "DisplayName" = "8:Module Retargetable Folder"
-            "Description" = "8:"
-            "Name" = "8:Module Retargetable Folder"
-            "AlwaysCreate" = "11:FALSE"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Property" = "8:NEWRETARGETABLEPROPERTY1"
+            "Property" = "8:SystemFolder"
                 "Folders"
                 {
                 }
@@ -153,6 +172,10 @@
         "Comments" = "8:"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
+        "TargetPlatform" = "3:0"
+        "PreBuildEvent" = "8:"
+        "PostBuildEvent" = "8:"
+        "RunPostBuildEvent" = "3:0"
         }
         "ProjectOutput"
         {

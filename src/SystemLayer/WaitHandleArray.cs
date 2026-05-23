@@ -49,7 +49,7 @@ namespace PaintDotNet.SystemLayer
             set
             {
                 waitHandles[index] = value;
-                nativeHandles[index] = value.Handle;
+                nativeHandles[index] = value.SafeWaitHandle.DangerousGetHandle();
             }
         }
 
@@ -78,13 +78,37 @@ namespace PaintDotNet.SystemLayer
             this.waitHandles = new WaitHandle[count];
             this.nativeHandles = new IntPtr[count];
         }
-        
+
+        private uint WaitForAll(uint dwTimeout)
+        {
+            return SafeNativeMethods.WaitForMultipleObjects(this.nativeHandles, true, dwTimeout);
+        }
+
         /// <summary>
         /// Waits for all of the WaitHandles to be signaled.
         /// </summary>
         public void WaitAll()
         {
-            uint result = SafeNativeMethods.WaitForMultipleObjects(this.nativeHandles, true, NativeConstants.INFINITE);
+            WaitForAll(NativeConstants.INFINITE);
+        }
+
+        public bool AreAllSignaled()
+        {
+            return AreAllSignaled(0);
+        }
+
+        public bool AreAllSignaled(uint msTimeout)
+        {
+            uint result = WaitForAll(msTimeout);
+
+            if (result >= NativeConstants.WAIT_OBJECT_0 && result < NativeConstants.WAIT_OBJECT_0 + this.Length)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>

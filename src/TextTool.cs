@@ -9,6 +9,7 @@
 
 using PaintDotNet.SystemLayer;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
@@ -154,7 +155,7 @@ namespace PaintDotNet
             this.threadPool = new PaintDotNet.Threading.ThreadPool();
 
             this.moveNub = new MoveNubRenderer(this.Renderers);
-            this.moveNub.DrawCompass = true;
+            this.moveNub.Shape = MoveNubShape.Compass;
             this.moveNub.Size = 10;
             this.moveNub.Visible = false;
             this.Renderers.Add(this.moveNub, false);
@@ -774,7 +775,7 @@ namespace PaintDotNet
                             else
                             {
                                 // do expensive blending
-                                *dstPtr = BinaryPixelOps.AlphaBlend.ApplyStatic(dstPixel, brushPixel);
+                                *dstPtr = UserBlendOps.NormalBlendOp.ApplyStatic(dstPixel, brushPixel);
                             }
 
                             ++dstPtr;
@@ -1007,12 +1008,12 @@ namespace PaintDotNet
             if (this.mode != EditingMode.NotEditing)
             {
                 Point p = Point.Truncate(TextPositionToPoint(new Position(linePos, textPos)));
-                Rectangle bounds = Workspace.VisibleDocumentRectangle;
+                Rectangle bounds = Utility.RoundRectangle(Workspace.VisibleDocumentRectangleF);
                 bounds.Inflate(-(int)font.Height, -(int)font.Height);
 
                 if (!Utility.IsPointInRectangle(p, bounds))
                 {
-                    Point newCenterPt = Utility.GetRectangleCenter(bounds);
+                    PointF newCenterPt = Utility.GetRectangleCenter((RectangleF)bounds);
 
                     // horizontally off
                     if (p.X > bounds.Right || p.Y < bounds.Left)
@@ -1026,7 +1027,7 @@ namespace PaintDotNet
                         newCenterPt.Y = p.Y;
                     }
 
-                    Workspace.DocumentView.DocumentCenterPoint = newCenterPt;
+                    Workspace.DocumentView.DocumentCenterPointF = newCenterPt;
                 }
             }
 
@@ -1055,14 +1056,49 @@ namespace PaintDotNet
 
         protected override void OnKeyPress(KeyPressEventArgs e)
         {
-            if (mode != EditingMode.NotEditing && !tracking)
+            switch (e.KeyChar)
+            {
+                case (char)13: // Enter
+                    if (tracking)
+                    {
+                        e.Handled = true;
+                    }
+                    break;
+
+                case (char)27: // Escape
+                    if (tracking)
+                    {
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        if (mode == EditingMode.Editing)
+                        {
+                            SaveHistoryAction();
+                        }
+                        else if (mode == EditingMode.EmptyEdit)
+                        {
+                            RedrawText(false);
+                        }
+
+                        if (mode != EditingMode.NotEditing)
+                        {
+                            e.Handled = true;
+                            StopEditing();
+                        }
+                    }
+
+                    break;
+            }
+
+            if (!e.Handled && mode != EditingMode.NotEditing && !tracking)
             {
                 e.Handled = true;
 
                 if (mode == EditingMode.EmptyEdit)
                 {
                     mode = EditingMode.Editing;
-                    CompoundHistoryAction cha = new CompoundHistoryAction(Name, Image, new ArrayList());
+                    CompoundHistoryAction cha = new CompoundHistoryAction(Name, Image, new List<HistoryAction>());
                     this.currentHA = cha;
                     Workspace.History.PushNewAction(cha);
                 }
@@ -1118,19 +1154,6 @@ namespace PaintDotNet
 
                     case Keys.Enter:  
                         PerformEnter();     
-                        break;
-
-                    case Keys.Escape:
-                        if (mode == EditingMode.Editing)
-                        {
-                            SaveHistoryAction();
-                        }
-                        else if (mode == EditingMode.EmptyEdit)
-                        {
-                            RedrawText(false);
-                        }
-
-                        StopEditing();
                         break;
 
                     case Keys.Left: 
@@ -1352,7 +1375,7 @@ namespace PaintDotNet
                         break;
                 }
 
-                clickPoint = Utility.GetPointFromMouseXY(e);
+                clickPoint = new Point(e.X, e.Y);
                 StartEditing();
                 RedrawText(true);
             }
@@ -1488,7 +1511,7 @@ namespace PaintDotNet
         
         public TextTool(DocumentWorkspace parent)
             : base(parent,
-                   PdnResources.GetImage("Icons.TextToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.TextToolIcon.png"),
                    PdnResources.GetString("TextTool.Name"),
                    PdnResources.GetString("TextTool.HelpText"),
                    't')

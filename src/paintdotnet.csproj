@@ -1,1073 +1,593 @@
-<VisualStudioProject>
-    <CSHARP
-        ProjectType = "Local"
-        ProductVersion = "7.10.3077"
-        SchemaVersion = "2.0"
-        ProjectGuid = "{34920450-488E-41DF-8565-AA22C2A56902}"
-    >
-        <Build>
-            <Settings
-                ApplicationIcon = "Resources\icons\PaintDotNet.ico"
-                AssemblyKeyContainerName = ""
-                AssemblyName = "PaintDotNet"
-                AssemblyOriginatorKeyFile = ""
-                DefaultClientScript = "JScript"
-                DefaultHTMLPageLayout = "Grid"
-                DefaultTargetSchema = "IE50"
-                DelaySign = "false"
-                OutputType = "WinExe"
-                PreBuildEvent = ""
-                PostBuildEvent = '@rem copy manifest file over&#xd;&#xa;echo Copying manifest to target dir ...&#xd;&#xa;copy "$(SolutionDir)\PaintDotNet.exe.manifest" "$(TargetDir)\"&#xd;&#xa;&#xd;&#xa;@rem copy RotateZoom.dll over&#xd;&#xa;mkdir "$(TargetDir)\Effects"&#xd;&#xa;copy "$(SolutionDir)\Effects\RotateZoom\bin\$(ConfigurationName)\RotateZoom.dll" "$(TargetDir)\Effects"&#xd;&#xa;&#xd;&#xa;@rem copy TgaFileType.dll over&#xd;&#xa;mkdir "$(TargetDir)\FileTypes"&#xd;&#xa;copy "$(SolutionDir)\Data\TgaFileType\bin\$(ConfigurationName)\TgaFileType.dll" "$(TargetDir)\FileTypes"&#xd;&#xa;&#xd;&#xa;@rem copy English strings over&#xd;&#xa;copy "$(SolutionDir)\Strings\$(ConfigurationName)\PaintDotNet.Strings.resources" "$(TargetDir)"&#xd;&#xa;&#xd;&#xa;@rem copy German strings over&#xd;&#xa;copy "$(SolutionDir)\Strings.de\$(ConfigurationName)\PaintDotNet.Strings.de.resources" "$(TargetDir)"&#xd;&#xa;&#xd;&#xa;@rem copy German resources over&#xd;&#xa;mkdir "$(TargetDir)\Resources"&#xd;&#xa;mkdir "$(TargetDir)\Resources\de"&#xd;&#xa;copy "$(SolutionDir)\Resources.de\Resources\de\*.*"  "$(TargetDir)\Resources\de"&#xd;&#xa;&#xd;&#xa;:done'
-                RootNamespace = "PaintDotNet"
-                RunPostBuildEvent = "OnBuildSuccess"
-                StartupObject = ""
-            >
-                <Config
-                    Name = "Debug"
-                    AllowUnsafeBlocks = "true"
-                    BaseAddress = "301989888"
-                    CheckForOverflowUnderflow = "true"
-                    ConfigurationOverrideFile = ""
-                    DefineConstants = "DEBUG;TRACE"
-                    DocumentationFile = ""
-                    DebugSymbols = "true"
-                    FileAlignment = "4096"
-                    IncrementalBuild = "true"
-                    NoStdLib = "false"
-                    NoWarn = ""
-                    Optimize = "false"
-                    OutputPath = "bin\Debug\"
-                    RegisterForComInterop = "false"
-                    RemoveIntegerChecks = "false"
-                    TreatWarningsAsErrors = "true"
-                    WarningLevel = "4"
-                />
-                <Config
-                    Name = "Release"
-                    AllowUnsafeBlocks = "true"
-                    BaseAddress = "301989888"
-                    CheckForOverflowUnderflow = "false"
-                    ConfigurationOverrideFile = ""
-                    DefineConstants = "TRACE"
-                    DocumentationFile = ""
-                    DebugSymbols = "false"
-                    FileAlignment = "4096"
-                    IncrementalBuild = "true"
-                    NoStdLib = "false"
-                    NoWarn = ""
-                    Optimize = "true"
-                    OutputPath = "bin\Release\"
-                    RegisterForComInterop = "false"
-                    RemoveIntegerChecks = "false"
-                    TreatWarningsAsErrors = "true"
-                    WarningLevel = "4"
-                />
-                <Config
-                    Name = "Release and Package"
-                    AllowUnsafeBlocks = "true"
-                    BaseAddress = "285212672"
-                    CheckForOverflowUnderflow = "false"
-                    ConfigurationOverrideFile = ""
-                    DefineConstants = ""
-                    DocumentationFile = ""
-                    DebugSymbols = "false"
-                    FileAlignment = "4096"
-                    IncrementalBuild = "false"
-                    NoStdLib = "false"
-                    NoWarn = ""
-                    Optimize = "true"
-                    OutputPath = "bin\Release\"
-                    RegisterForComInterop = "false"
-                    RemoveIntegerChecks = "false"
-                    TreatWarningsAsErrors = "true"
-                    WarningLevel = "4"
-                />
-            </Settings>
-            <References>
-                <Reference
-                    Name = "System"
-                    AssemblyName = "System"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.dll"
-                />
-                <Reference
-                    Name = "System.Drawing"
-                    AssemblyName = "System.Drawing"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Drawing.dll"
-                />
-                <Reference
-                    Name = "System.Windows.Forms"
-                    AssemblyName = "System.Windows.Forms"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Windows.Forms.dll"
-                />
-                <Reference
-                    Name = "DotNetWidgets"
-                    AssemblyName = "DotNetWidgets"
-                    HintPath = "dotnetwidgets\bin\DotNetWidgets.dll"
-                />
-                <Reference
-                    Name = "PdnLib"
-                    Project = "{1EADE568-A866-4DD4-9898-0A151E3F0E26}"
-                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
-                />
-                <Reference
-                    Name = "Effects"
-                    Project = "{2E4E8805-00F7-4B18-A967-C23994BBCE75}"
-                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
-                />
-                <Reference
-                    Name = "SystemLayer"
-                    Project = "{80572820-93A5-4278-A513-D902BEA2639C}"
-                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
-                />
-                <Reference
-                    Name = "Data"
-                    Project = "{66681BB0-955D-451D-A466-94C045B1CF4A}"
-                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
-                />
-                <Reference
-                    Name = "ICSharpCode.SharpZipLib"
-                    AssemblyName = "ICSharpCode.SharpZipLib"
-                    HintPath = "SharpZipLib\ICSharpCode.SharpZipLib.dll"
-                />
-                <Reference
-                    Name = "Resources"
-                    Project = "{0B173113-1F9B-4939-A62F-A176336F13AC}"
-                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
-                />
-                <Reference
-                    Name = "System.XML"
-                    AssemblyName = "System.Xml"
-                    HintPath = "..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.XML.dll"
-                />
-                <Reference
-                    Name = "System.Data"
-                    AssemblyName = "System.Data"
-                    HintPath = "..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Data.dll"
-                />
-            </References>
-        </Build>
-        <Files>
-            <Include>
-                <File
-                    RelPath = "AboutDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "AboutDialog.resx"
-                    DependentUpon = "AboutDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "AnchorChooserControl.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "AnchorChooserControl.resx"
-                    DependentUpon = "AnchorChooserControl.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "AnchorEdge.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "AssemblyInfo.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BitmapHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BrushConfigWidget.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BrushConfigWidget.resx"
-                    DependentUpon = "BrushConfigWidget.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "BrushInfo.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BrushPreviewRenderer.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BrushType.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "CallbackWithProgressDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "CanvasSizeAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "CanvasSizeDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "CanvasSizeDialog.resx"
-                    DependentUpon = "CanvasSizeDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "CloneStampTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorDisplayWidget.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorDisplayWidget.resx"
-                    DependentUpon = "ColorDisplayWidget.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "ColorEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorPickerTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorRectangleControl.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorRectangleControl.resx"
-                    DependentUpon = "ColorRectangleControl.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "ColorsForm.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorsForm.resx"
-                    DependentUpon = "ColorsForm.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "ColorWheel.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorWheel.resx"
-                    DependentUpon = "ColorWheel.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "CommonAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "CommonActionsWidget.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "CommonActionsWidget.resx"
-                    DependentUpon = "CommonActionsWidget.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "CompoundHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "CropAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DeleteLayerHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DeselectAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DocumentAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DocumentEnvironment.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DocumentMetaDataHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DocumentWidgets.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DocumentWorkspace.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DocumentWorkspace.resx"
-                    DependentUpon = "DocumentWorkspace.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "DrawModesConfigWidget.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DrawModesConfigWidget.resx"
-                    DependentUpon = "DrawModesConfigWidget.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "EllipseSelectTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EllipseTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EnumValueEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EnumValueEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EraserTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EraseSelectionAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ExecutedHistoryActionEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ExecutedHistoryActionEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ExecutingHistoryActionEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ExecutingHistoryActionEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FileTypes.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FlattenAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FlipDocumentAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FlipDocumentHorizontalAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FlipDocumentVerticalAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FlipLayerAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FlipLayerHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FlipLayerHorizontalAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FlipLayerVerticalAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FlipType.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FloatingToolForm.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FloatingToolForm.resx"
-                    DependentUpon = "FloatingToolForm.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "FloodTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FlowPanel.cs"
-                    SubType = "Component"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FlowPanel.resx"
-                    DependentUpon = "FlowPanel.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "FontInfo.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FreeformShapeTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "GraphicsPathWrapper.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HistoryActionData.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HistoryControl.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HistoryControl.resx"
-                    DependentUpon = "HistoryControl.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "HistoryElement.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HistoryElement.resx"
-                    DependentUpon = "HistoryElement.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "HistoryForm.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HistoryForm.resx"
-                    DependentUpon = "HistoryForm.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "HistoryStack.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IconBox.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IconBox.resx"
-                    DependentUpon = "IconBox.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "ImportFromFileAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ImportLayersDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ImportLayersDialog.resx"
-                    DependentUpon = "ImportLayersDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "InvertSelectionAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "InvokeWorkspaceAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "LassoSelectTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "LayerControl.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "LayerControl.resx"
-                    DependentUpon = "LayerControl.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "LayerElement.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "LayerElement.resx"
-                    DependentUpon = "LayerElement.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "LayerEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "LayerEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "LayerForm.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "LayerForm.resx"
-                    DependentUpon = "LayerForm.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "LayerPropertyHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "LineTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "LoadProgressDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MagicWandTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MainForm.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MainForm.resx"
-                    DependentUpon = "MainForm.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "MainToolBar.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MainToolBar.resx"
-                    DependentUpon = "MainToolBar.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "MainToolBarForm.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MainToolBarForm.resx"
-                    DependentUpon = "MainToolBarForm.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "MostRecentFile.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MostRecentFiles.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MoveNubRenderer.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MoveSelectionTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MoveTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MoveToolBase.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "NameEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "NameEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "NativeMethods.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "NewFileDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "NewFileDialog.resx"
-                    DependentUpon = "NewFileDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "NewLayerHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "NullHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PaintBrushTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PaintBucketTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PaintDotNet.exe.manifest"
-                    BuildAction = "Content"
-                />
-                <File
-                    RelPath = "PanTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PdnSettings.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PdnVersionInfo.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PdnVersionManifest.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PencilTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PenConfigWidget.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PenConfigWidget.resx"
-                    DependentUpon = "PenConfigWidget.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "PenInfo.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ProgressDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ProgressDialog.resx"
-                    DependentUpon = "ProgressDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "readme.txt"
-                    BuildAction = "None"
-                />
-                <File
-                    RelPath = "RecoloringTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RectangleSelectTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RectangleTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ReplaceDocumentHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ResizeAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ResizeDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ResizeDialog.resx"
-                    DependentUpon = "ResizeDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "RotateAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RotateNubRenderer.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RotateType.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RoundedRectangleTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SaveConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SaveConfigDialog.resx"
-                    DependentUpon = "SaveConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "SaveProgressDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SelectAllAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SelectionHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SelectionRenderer.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SelectionTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SentinelHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ShapeDrawType.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ShapeDrawTypeConfigWidget.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ShapeDrawTypeConfigWidget.resx"
-                    DependentUpon = "ShapeDrawTypeConfigWidget.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "ShapeTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SplashForm.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SplashForm.resx"
-                    DependentUpon = "SplashForm.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Startup.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SurfaceForClipboard.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SwapLayerHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "TextAlignment.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "TextConfigWidget.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "TextConfigWidget.resx"
-                    DependentUpon = "TextConfigWidget.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "TextTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ToleranceSliderControl.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ToleranceSliderControl.resx"
-                    DependentUpon = "ToleranceSliderControl.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Tool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ToolClickedEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ToolClickedEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ToolHistoryAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ToolInfo.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Updates.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "UpdatesDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "UpdatesDialog.resx"
-                    DependentUpon = "UpdatesDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "WhichEdge.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "WhichUserColor.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "WorkspaceAction.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "WorkspaceOptionsConfigWidget.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "WorkspaceOptionsConfigWidget.resx"
-                    DependentUpon = "WorkspaceOptionsConfigWidget.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "ZoomBasis.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ZoomConfigWidget.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ZoomConfigWidget.resx"
-                    DependentUpon = "ZoomConfigWidget.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "ZoomTool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-            </Include>
-        </Files>
-    </CSHARP>
-</VisualStudioProject>
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{34920450-488E-41DF-8565-AA22C2A56902}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>Resources\icons\PaintDotNet.ico</ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>PaintDotNet</AssemblyName>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>PaintDotNet</RootNamespace>
+    <RunPostBuildEvent>Always</RunPostBuildEvent>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseAddress>301989888</BaseAddress>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseAddress>301989888</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>true</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>pdbonly</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <Name>ICSharpCode.SharpZipLib</Name>
+      <HintPath>SharpZipLib\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing">
+      <Name>System.Drawing</Name>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <Name>System.Windows.Forms</Name>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Name>System.XML</Name>
+    </Reference>
+    <ProjectReference Include="Data\Data.csproj">
+      <Name>Data</Name>
+      <Project>{66681BB0-955D-451D-A466-94C045B1CF4A}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+    <ProjectReference Include="Effects\Effects.csproj">
+      <Name>Effects</Name>
+      <Project>{2E4E8805-00F7-4B18-A967-C23994BBCE75}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+    <ProjectReference Include="PdnLib\PdnLib.csproj">
+      <Name>PdnLib</Name>
+      <Project>{1EADE568-A866-4DD4-9898-0A151E3F0E26}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+    <ProjectReference Include="Resources\Resources.csproj">
+      <Name>Resources</Name>
+      <Project>{0B173113-1F9B-4939-A62F-A176336F13AC}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+    <ProjectReference Include="SystemLayer\SystemLayer.csproj">
+      <Name>SystemLayer</Name>
+      <Project>{80572820-93A5-4278-A513-D902BEA2639C}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AboutDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AnchorChooserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AnchorEdge.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BitmapHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BrushInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BrushPreviewRenderer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BrushType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CallbackWithProgressDialog.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CanvasSizeAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CanvasSizeDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CloneStampTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ColorDisplayWidget.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ColorEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ColorEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ColorPickerTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ColorRectangleControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ColorsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ColorWheel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="CommonAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CommonActionsStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CompoundHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CropAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DeleteLayerHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DeselectAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DocumentAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DocumentEnvironment.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DocumentMetaDataHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DocumentWidgets.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DocumentWorkspace.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="DrawConfigStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="EllipseSelectTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EllipseTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EnumValueEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EnumValueEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EraserTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EraseSelectionAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ExecutedHistoryActionEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ExecutedHistoryActionEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ExecutingHistoryActionEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ExecutingHistoryActionEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FileTypes.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FlattenAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FlipDocumentAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FlipDocumentHorizontalAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FlipDocumentVerticalAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FlipLayerAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FlipLayerHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FlipLayerHorizontalAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FlipLayerVerticalAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FlipType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FloatingToolForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FloodTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FlowPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="FontInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FreeformShapeTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="GraphicsPathWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HistoryActionData.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HistoryControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HistoryElement.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HistoryForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="HistoryStack.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IconBox.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ImportFromFileAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ImportLayersDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="InvertSelectionAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="InvokeWorkspaceAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LassoSelectTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LayerControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="LayerElement.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="LayerEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LayerEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LayerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LayerPropertyHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LineTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LoadProgressDialog.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MagicWandTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainToolBar.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="MainToolBarForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MostRecentFile.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MostRecentFiles.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MoveNubRenderer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MoveNubShape.cs" />
+    <Compile Include="MoveSelectionTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MoveTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MoveToolBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="NameEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="NameEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="NativeMethods.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="NewFileDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NewLayerHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="NullHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PaintBrushTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PaintBucketTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PanTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PdnSettings.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PdnVersionInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PdnVersionManifest.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PencilTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PenInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ProgressDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RecoloringTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RectangleSelectTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RectangleTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReplaceDocumentHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ResizeAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ResizeDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RotateAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RotateNubRenderer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RotateType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RoundedRectangleTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SaveConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SaveProgressDialog.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SelectAllAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SelectionHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SelectionRenderer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SelectionTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SentinelHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ShapeDrawType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ShapeTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SplashForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Startup.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SurfaceForClipboard.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SwapLayerHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TextAlignment.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TextConfigStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="TextTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ToleranceSliderControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Tool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ToolClickedEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ToolClickedEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ToolHistoryAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ToolInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Updates.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UpdatesDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="WhichEdge.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WhichUserColor.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WorkspaceAction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ZoomBasis.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ViewConfigStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ZoomTool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <None Include="readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HistoryForm.resx">
+      <DependentUpon>HistoryForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="LayerForm.resx">
+      <DependentUpon>LayerForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>@rem Sign
+call "$(SolutionDir)signfile.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)"
+call "$(SolutionDir)signfile.bat" "$(TargetPath)"
 
+@rem copy Interop.WIA.dll over
+copy "$(SolutionDir)\Interop.WIA\Interop.WIA.dll" "$(TargetDir)"
+
+@rem copy WiaProxy32.exe over
+copy "$(SolutionDir)\WiaProxy32\bin\$(ConfigurationName)\WiaProxy32.exe" "$(TargetDir)"
+
+@rem copy English strings over
+copy "$(SolutionDir)\Strings\$(ConfigurationName)\PaintDotNet.Strings.resources" "$(TargetDir)"
+
+@rem copy German strings over
+copy "$(SolutionDir)\Strings.de\$(ConfigurationName)\PaintDotNet.Strings.de.resources" "$(TargetDir)"
+
+@rem copy German resources over
+mkdir "$(TargetDir)\Resources"
+mkdir "$(TargetDir)\Resources\de"
+copy "$(SolutionDir)\Resources.de\Resources\de\*.*"  "$(TargetDir)\Resources\de"
+
+:done
+rem call "$(ProjectDir)prejit.bat" "$(TargetPath)"</PostBuildEvent>
+  </PropertyGroup>
+</Project>

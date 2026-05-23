@@ -86,7 +86,7 @@ namespace PaintDotNet
             this.anchorEdgeToXy.Add(AnchorEdge.BottomRight, new Point(2, 2));
 
             this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | 
-                ControlStyles.DoubleBuffer | ControlStyles.ResizeRedraw, true);
+                ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
         }
 
         /// <summary> 

@@ -22,6 +22,48 @@ namespace PaintDotNet.SystemLayer
         }
 
         [StructLayout(LayoutKind.Sequential)]
+        internal struct MEMORYSTATUSEX 
+        {  
+            internal uint dwLength;
+            internal uint dwMemoryLoad;
+            internal ulong ullTotalPhys;
+            internal ulong ullAvailPhys;
+            internal ulong ullTotalPageFile;
+            internal ulong ullAvailPageFile;
+            internal ulong ullTotalVirtual;
+            internal ulong ullAvailVirtual;
+            internal ulong ullAvailExtendedVirtual;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        internal struct OSVERSIONINFOEX
+        {
+            public static int SizeOf
+            {
+                get
+                {
+                    return Marshal.SizeOf(typeof(OSVERSIONINFOEX));
+                }
+            }
+
+            public uint dwOSVersionInfoSize;
+            public uint dwMajorVersion;
+            public uint dwMinorVersion;
+            public uint dwBuildNumber;
+            public uint dwPlatformId;
+
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+            public string szCSDVersion;
+
+            public ushort wServicePackMajor;
+
+            public ushort wServicePackMinor;
+            public ushort wSuiteMask;
+            public byte wProductType;
+            public byte wReserved;
+        };
+
+        [StructLayout(LayoutKind.Sequential)]
         internal struct OVERLAPPED 
         {
             internal UIntPtr Internal;  

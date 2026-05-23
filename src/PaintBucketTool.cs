@@ -102,7 +102,7 @@ namespace PaintDotNet
 
         public PaintBucketTool(DocumentWorkspace parent) 
             : base(parent,
-                   PdnResources.GetImage("Icons.PaintBucketIcon.bmp"),
+                   PdnResources.GetImage("Icons.PaintBucketIcon.png"),
                    PdnResources.GetString("PaintBucketTool.Name"),
                    PdnResources.GetString("PaintBucketTool.HelpText"),
                    'f')

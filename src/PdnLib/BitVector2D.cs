@@ -14,13 +14,13 @@ using System.Drawing;
 
 namespace PaintDotNet
 {
-	/// <summary>
-	/// Summary description for BitVector2D.
-	/// </summary>
-	public sealed class BitVector2D
+    /// <summary>
+    /// Summary description for BitVector2D.
+    /// </summary>
+    public sealed class BitVector2D
         : IBitVector2D,
           ICloneable
-	{
+    {
         private BitArray bitArray;
         private int width;
         private int height;
@@ -78,13 +78,13 @@ namespace PaintDotNet
                 bitArray[pt.X + (pt.Y * width)] = value;
             }
         }
-        
+
         public BitVector2D(int width, int height)
-		{
+        {
             this.width = width;
             this.height = height;
             this.bitArray = new BitArray(width * height, false);
-		}
+        }
 
         public BitVector2D(BitVector2D copyMe)
         {
@@ -105,7 +105,7 @@ namespace PaintDotNet
         {
             bitArray.SetAll(newValue);
         }
-        
+
         public bool Get(int x, int y)
         {
             return this[x, y];
@@ -245,7 +245,7 @@ namespace PaintDotNet
             foreach (Rectangle rect in region.GetRegionScansReadOnlyInt())
             {
                 Invert(rect);
-            }        
+            }
         }
 
         public object Clone()

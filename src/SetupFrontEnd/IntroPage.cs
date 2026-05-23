@@ -54,7 +54,7 @@ namespace PaintDotNet.Setup
             }
 
             string introFormat = PdnResources.GetString("SetupWizard.IntroPage.IntroText.Text.Format");
-            string appNameWithTag = PdnResources.GetString("Application.ProductName.WithTag");
+            string appNameWithTag = PdnInfo.GetProductName();
             string intro = string.Format(introFormat, appNameWithTag);
             this.introText.Text = intro;
 
@@ -84,13 +84,19 @@ namespace PaintDotNet.Setup
             {
                 WizardHost.HeaderText = PdnResources.GetString("SetupWizard.IntroPage.HeaderText");
                 this.introText.Font = WizardHost.NormalTextFont;
+                this.introText.ForeColor = WizardHost.TextColor;
                 Font normalFont = WizardHost.NormalTextFont;
                 Font rbFont = new Font(normalFont, normalFont.Style | FontStyle.Bold);
                 this.quickRB.Font = rbFont;
+                this.quickRB.ForeColor = WizardHost.TextColor;
                 this.quickDescription.Font = WizardHost.NormalTextFont;
+                this.quickDescription.ForeColor = WizardHost.TextColor;
                 this.customRB.Font = rbFont;
+                this.customRB.ForeColor = WizardHost.TextColor;
                 this.customDescription.Font = WizardHost.NormalTextFont;
+                this.customDescription.ForeColor = WizardHost.TextColor;
                 this.copyrightLabel.Font = WizardHost.FootNoteFont;
+                this.copyrightLabel.ForeColor = WizardHost.TextColor;
                 WizardHost.SetBackEnabled(false);
             }
 
@@ -137,7 +143,6 @@ namespace PaintDotNet.Setup
             // 
             // introText
             // 
-            this.introText.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.introText.Location = new System.Drawing.Point(12, 6);
             this.introText.Name = "introText";
             this.introText.Size = new System.Drawing.Size(464, 50);
@@ -146,7 +151,7 @@ namespace PaintDotNet.Setup
             // 
             // copyrightLabel
             // 
-            this.copyrightLabel.Location = new System.Drawing.Point(8, 208);
+            this.copyrightLabel.Location = new System.Drawing.Point(12, 208);
             this.copyrightLabel.Name = "copyrightLabel";
             this.copyrightLabel.Size = new System.Drawing.Size(472, 48);
             this.copyrightLabel.TabIndex = 5;
@@ -154,7 +159,6 @@ namespace PaintDotNet.Setup
             // 
             // quickRB
             // 
-            this.quickRB.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.quickRB.Location = new System.Drawing.Point(32, 56);
             this.quickRB.Name = "quickRB";
             this.quickRB.Size = new System.Drawing.Size(448, 24);
@@ -162,7 +166,6 @@ namespace PaintDotNet.Setup
             // 
             // customRB
             // 
-            this.customRB.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.customRB.Location = new System.Drawing.Point(32, 125);
             this.customRB.Name = "customRB";
             this.customRB.Size = new System.Drawing.Size(448, 24);
@@ -190,6 +193,8 @@ namespace PaintDotNet.Setup
             this.Controls.Add(this.quickDescription);
             this.Controls.Add(this.copyrightLabel);
             this.Controls.Add(this.introText);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             this.Name = "IntroPage";
             this.ResumeLayout(false);
 

@@ -82,7 +82,10 @@ namespace PaintDotNet
             }
             
             Workspace.SetDocument(newDocument);
-            CompoundHistoryAction cha = new CompoundHistoryAction(Name, PdnResources.GetImage("Icons.MenuImageCropIcon.bmp"), new HistoryAction[] { sha, rdha });
+            CompoundHistoryAction cha = new CompoundHistoryAction(
+                Name, 
+                PdnResources.GetImage("Icons.MenuImageCropIcon.png"), 
+                new HistoryAction[] { sha, rdha });
 
             return cha;
         }

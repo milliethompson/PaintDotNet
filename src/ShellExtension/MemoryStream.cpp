@@ -330,8 +330,9 @@ STDMETHODIMP CMemoryStream::Stat(STATSTG *pstatstg,
     {
         WCHAR wszName[64];
         wsprintfW(wszName, L"%p", m_pbBuffer);
-        pstatstg->pwcsName = (LPOLESTR)CoTaskMemAlloc(1 + wcslen(wszName));
-        wcscpy(pstatstg->pwcsName, wszName);
+		size_t nSize = 1 + wcslen(wszName);
+        pstatstg->pwcsName = (LPOLESTR)CoTaskMemAlloc(nSize);
+        wcscpy_s(pstatstg->pwcsName, nSize, wszName);
     }
 
     pstatstg->type = STGTY_STREAM;

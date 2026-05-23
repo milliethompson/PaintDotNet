@@ -72,8 +72,34 @@ namespace PaintDotNet.Effects
 			base.OnKeyPress (e);
 		}
 
-		public void HighlightLine(int line) 
+		public void Highlight(int line, int column) 
 		{
+            int startIndex = 0;
+            int endIndex = -1;
+            int linesPassed = 0;
+            string txt = this.Text;
+
+            for (int i = 0; i < txt.Length; ++i)
+            {
+                if (txt[i] == '\n')
+                {
+                    linesPassed++;
+
+                    if (linesPassed == line - 1)
+                    {
+                        startIndex = i + column;
+                    }
+                    else if (linesPassed == line)
+                    {
+                        endIndex = i - 1;
+                    }
+                }
+            }
+
+            if (startIndex > 0 && endIndex > 0)
+            {
+                this.Select(startIndex, endIndex - startIndex);
+            }
         }
 
         private void compileTimer_Tick(object sender, EventArgs e)

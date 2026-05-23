@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -29,7 +30,7 @@ namespace PaintDotNet
         protected Context context;
         protected bool hostShouldShowAngle;
         protected float hostAngle;
-        protected ArrayList currentHistoryActions = new ArrayList();
+        protected List<HistoryAction> currentHistoryActions = new List<HistoryAction>();
         protected bool deactivateOnLayerChange = true;
         protected bool enableOutline = true;
 
@@ -368,6 +369,40 @@ namespace PaintDotNet
             return;
         }
 
+        protected override void OnPulse()
+        {
+            if (this.moveNubs != null)
+            {
+                for (int i = 0; i < this.moveNubs.Length; ++i)
+                {
+                    // Oscillate between 25% and 100% alpha over a period of 2 seconds
+                    // Alpha value of 100% is sustained for a large duration of this period
+                    const int period = 10000 * 2000; // 10000 ticks per ms, 2000ms per second
+                    long tick = (DateTime.Now.Ticks % period) + (i * (period / this.moveNubs.Length)); ;
+                    double sin = Math.Sin(((double)tick / (double)period) * (2.0 * Math.PI));
+                    // sin is [-1, +1]
+
+                    sin = Math.Min(0.5, sin);
+                    // sin is [-1, +0.5]
+
+                    sin += 1.0;
+                    // sin is [0, 1.5]
+
+                    sin /= 2.0;
+                    // sin is [0, 0.75]
+
+                    sin += 0.25;
+                    // sin is [0.25, 1]
+
+                    int newAlpha = (int)(sin * 255.0);
+
+                    this.moveNubs[i].Alpha = newAlpha;
+                }
+            }
+
+            base.OnPulse();
+        }
+
         protected void PositionNubs(Mode currentMode)
         {
             if (this.moveNubs == null)
@@ -383,15 +418,23 @@ namespace PaintDotNet
                 RectangleF bounds = Workspace.Environment.Selection.GetBoundsF(false);
 
                 this.moveNubs[(int)Edge.TopLeft].Location = new PointF(bounds.Left, bounds.Top);
+                this.moveNubs[(int)Edge.TopLeft].Shape = MoveNubShape.Circle;
+
                 this.moveNubs[(int)Edge.Top].Location = new PointF((bounds.Left + bounds.Right) / 2.0f, bounds.Top);
+
                 this.moveNubs[(int)Edge.TopRight].Location = new PointF(bounds.Right, bounds.Top);
+                this.moveNubs[(int)Edge.TopRight].Shape = MoveNubShape.Circle;
 
                 this.moveNubs[(int)Edge.Left].Location = new PointF(bounds.Left, (bounds.Top + bounds.Bottom) / 2.0f);
                 this.moveNubs[(int)Edge.Right].Location = new PointF(bounds.Right, (bounds.Top + bounds.Bottom) / 2.0f);
 
                 this.moveNubs[(int)Edge.BottomLeft].Location = new PointF(bounds.Left, bounds.Bottom);
+                this.moveNubs[(int)Edge.BottomLeft].Shape = MoveNubShape.Circle;
+
                 this.moveNubs[(int)Edge.Bottom].Location = new PointF((bounds.Left + bounds.Right) / 2.0f, bounds.Bottom);
+
                 this.moveNubs[(int)Edge.BottomRight].Location = new PointF(bounds.Right, bounds.Bottom);
+                this.moveNubs[(int)Edge.BottomRight].Shape = MoveNubShape.Circle;
             }
 
             if (this.rotateNub == null)
@@ -625,7 +668,7 @@ namespace PaintDotNet
             Workspace.EnableSelectionOutline = this.enableOutline;
 
             if (!context.lifted)
-            {   
+            {
                 Lift(e);
             }
 
@@ -692,7 +735,7 @@ namespace PaintDotNet
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
-            
+
             if (!tracking)
             {
                 Cursor cursor = this.moveToolCursor;
@@ -753,7 +796,7 @@ namespace PaintDotNet
                             double thetaDelta = theta2 - theta1;
                             this.angleDelta = (float)(thetaDelta * (180.0f / Math.PI));
                             float angle = this.context.startAngle + this.angleDelta;
-                            
+
                             if ((ModifierKeys & Keys.Shift) != 0)
                             {
                                 angle = ConstrainAngle(angle);
@@ -763,7 +806,6 @@ namespace PaintDotNet
                             translateMatrix.RotateAt(angleDelta, center, MatrixOrder.Append);
                             this.rotateNub.Location = center;
                             this.rotateNub.Angle = this.context.startAngle + angleDelta;
-                          
                             break;
 
                         case Mode.Scale:
@@ -885,7 +927,7 @@ namespace PaintDotNet
 
                             if (allowConstrain && (this.ModifierKeys & Keys.Shift) != 0)
                             {
-                                ConstrainScaling(this.context.liftedBounds, spBounds2.Width, spBounds2.Height, 
+                                ConstrainScaling(this.context.liftedBounds, spBounds2.Width, spBounds2.Height,
                                     newWidth, newHeight, out xScale, out yScale);
                             }
 
@@ -904,11 +946,16 @@ namespace PaintDotNet
                     this.context.deltaTransform.Multiply(translateMatrix, MatrixOrder.Append);
 
                     translateMatrix.Multiply(this.context.baseTransform, MatrixOrder.Prepend);
+
                     Workspace.Environment.Selection.SetInterimTransform(translateMatrix);
 
                     interim.Dispose();
                     interim = null;
                 }
+
+                // advertise our angle of rotation to any host (i.e. mainform) that might want to use that information
+                this.hostShouldShowAngle = this.rotateNub.Visible;
+                this.hostAngle = -this.rotateNub.Angle;
 
                 Workspace.Environment.Selection.PerformChanged();
                 dontDrop = false;
@@ -917,10 +964,6 @@ namespace PaintDotNet
                 Update();
 
                 this.context.offset = newOffset;
-
-                // advertise our angle of rotation to any host (i.e. mainform) that might want to use that information
-                this.hostShouldShowAngle = this.rotateNub.Visible;
-                this.hostAngle = -this.rotateNub.Angle;
 
                 if (this.enableOutline)
                 {

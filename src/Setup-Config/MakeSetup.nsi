@@ -14,20 +14,36 @@
 
 ;--------------------------------
 
+!ifdef Compress
+  SetCompressor /SOLID lzma
+  !ifdef FullInstaller
+    SetCompressorDictSize 32
+  !else
+    SetCompressorDictSize 8
+  !endif
+!else
+  SetCompress off
+!endif
+
 ; The name of the installer
-Name "PaintDotNet Setup SFX"
+Name "Paint.NET SFX"
 
 ; The default installation directory
 InstallDir $TEMP\PdnSetup
 
-SilentInstall silent
+!ifdef FullInstaller
+!else
+  SilentInstall silent
+!endif
+
+Icon ..\Setup\SetupIcon.ico
 
 VIAddVersionKey ProductName "Paint.NET Setup"
-VIAddVersionKey ProductVersion "2.5.0.0"
-VIAddVersionKey FileVersion "2.5.0.0"
-VIAddVersionKey LegalCopyright "Copyright © 2005 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2005 Microsoft Corporation. All Rights Reserved."
+VIAddVersionKey ProductVersion "2.6.1.0"
+VIAddVersionKey FileVersion "2.6.1.0"
+VIAddVersionKey LegalCopyright "Copyright © 2006 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2006 Microsoft Corporation. All Rights Reserved."
 VIAddVersionKey FileDescription "Installs Paint.NET."
-VIProductVersion "2.5.0.0"
+VIProductVersion "2.6.1.0"
 
 ; The file to write
 !ifdef Debug
@@ -70,44 +86,45 @@ Section "" ;No components page, name is not important
   Pop $Args
   
   ; Put file there
-!ifdef Debug
-  File ..\Setup\Debug\PaintDotNet.msi
-  File ..\SetupFrontEnd\bin\Debug\PaintDotNet.Resources.dll
-  File ..\SetupFrontEnd\bin\Debug\PaintDotNet.Strings.*.resources
-  File ..\SetupFrontEnd\bin\Debug\PaintDotNet.Strings.resources
-  File ..\SetupFrontEnd\bin\Debug\SetupFrontEnd.exe
-  File ..\SetupShim\Debug\SetupShim.exe
-!else
   File ..\Setup\Release\PaintDotNet.msi
   File ..\SetupFrontEnd\bin\Release\PaintDotNet.Resources.dll
+  File ..\SetupFrontEnd\bin\Release\PaintDotNet.SystemLayer.dll
   File ..\SetupFrontEnd\bin\Release\PaintDotNet.Strings.*.resources
   File ..\SetupFrontEnd\bin\Release\PaintDotNet.Strings.resources
   File ..\SetupFrontEnd\bin\Release\SetupFrontEnd.exe
   File ..\SetupShim\Release\SetupShim.exe
-!endif
 
 !ifdef FullInstaller
-  File ..\..\programs\dotnetfx.exe
-  File ..\..\programs\dotnet_1_1_SP1\NDP1.1sp1-KB867460-X86.exe
-  File ..\..\programs\dotnet_1_1_SP1\WindowsServer2003-KB867460-x86-ENU.EXE
+  ; Ordering these files is important so that files that are similar
+  ; are next to each other and can be compressed together via the
+  ; solid archive compression.
+  File /r /x CVS ..\..\programs\dotnet_2_0\*.ini
+  File /r /x CVS ..\..\programs\dotnet_2_0\*.txt
+  File /r /x CVS ..\..\programs\dotnet_2_0\*.dll
+  File /r /x CVS ..\..\programs\dotnet_2_0\*.exe
+  File /r /x CVS ..\..\programs\dotnet_2_0\*.bmp
+  File /r /x CVS ..\..\programs\dotnet_2_0\*.msi
+  File /r /x CVS ..\..\programs\dotnet_2_0\*.cab
 !endif
   
+!ifdef FullInstaller
+  SetAutoClose true
+  HideWindow
+!endif
+
   ExecWait "SetupShim.exe $Args"
 
-!ifdef FullInstaller
-  Delete $INSTDIR\dotnetfx.exe
-  Delete $INSTDIR\NDP1.1sp1-KB867460-X86.exe
-  Delete $INSTDIR\WindowsServer2003-KB867460-x86-ENU.EXE
-!endif
   Delete $INSTDIR\SetupShim.exe
   Delete $INSTDIR\SetupFrontEnd.exe
   Delete $INSTDIR\PaintDotNet.Strings.resources
-  Delete $INSTDIR\PaintDotNet.Strings.de.resources
+  Delete $INSTDIR\PaintDotNet.Strings.*.resources
   Delete $INSTDIR\PaintDotNet.Resources.dll
+  Delete $INSTDIR\PaintDotNet.SystemLayer.dll
   Delete $INSTDIR\PaintDotNet.msi
-  RMDir $INSTDIR
   
-SectionEnd ; end the section
+  RMDir /r $INSTDIR
+  
+SectionEnd
 
 ; GetParameters
 ; input, none

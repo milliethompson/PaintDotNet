@@ -71,7 +71,7 @@ namespace PaintDotNet
         /// The state of whether rulers are enabled in the DocumentView.
         /// </summary>
         /// <remarks>
-        /// Written on app close, and read on app startup.
+        /// Written to whenever the value is changed, and read on app startup.
         /// </remarks>
         public const string Rulers = "Rulers";
 
@@ -79,7 +79,7 @@ namespace PaintDotNet
         /// The unit of measurement the user has selected via the WorkspaceOptionsConfigWidget.
         /// </summary>
         /// <remarks>
-        /// Written on app close, and read on app startup.
+        /// Written to whenever the value is changed, and read on app startup.
         /// </remarks>
         public const string Units = "Units";
 
@@ -114,7 +114,7 @@ namespace PaintDotNet
         /// The state of whether the grid is enabled in the DocumentView.
         /// </summary>
         /// <remarks>
-        /// Written on app close, and read on app startup.
+        /// Written to whenever the value is changed, and read on app startup.
         /// </remarks>
         public const string DrawGrid = "DrawGrid";
 
@@ -125,6 +125,22 @@ namespace PaintDotNet
         /// Written to whenever the value is changed, and read on app startup.
         /// </remarks>
         public const string Tolerance = "Tolerance";
+
+        /// <summary>
+        /// Whether or not AA is enabled.
+        /// </summary>
+        /// <remarks>
+        /// Written to whenever the value is changed, and read on app startup.
+        /// </remarks>
+        public const string Antialiasing = "Antialiasing";
+
+        /// <summary>
+        /// Whether or not alpha blending is enabled.
+        /// </summary>
+        /// <remarks>
+        /// Written to whenever the value is changed, and read on app startup.
+        /// </remarks>
+        public const string AlphaBlending = "AlphaBlending";
 
         /// <summary>
         /// The state of whether translucent windows are enabled (Window -> Translucent).
@@ -298,6 +314,38 @@ namespace PaintDotNet
         /// This is a SystemWide setting and may not be changed by non-admins.
         /// </remarks>
         public const string InstallDirectory = "TARGETDIR";
+
+        /// <summary>
+        /// The x,y location of the CommonActionsStrip.
+        /// </summary>
+        /// <remarks>
+        /// Read from at app startup, and written to at app close.
+        /// </remarks>
+        public const string CommonActionsLocation = "ToolStrip.CommonActionsLocation";
+
+        /// <summary>
+        /// The x,y location of the ViewConfigStrip.
+        /// </summary>
+        /// <remarks>
+        /// Read from at app startup, and written to at app close.
+        /// </remarks>
+        public const string ViewConfigLocation = "ToolStrip.ViewConfigLocation";
+
+        /// <summary>
+        /// The x,y location of the DrawConfigStrip.
+        /// </summary>
+        /// <remarks>
+        /// Read from at app startup, and written to at app close.
+        /// </remarks>
+        public const string DrawConfigLocation = "ToolStrip.DrawConfigLocation";
+
+        /// <summary>
+        /// The x,y location of the TextConfigStrip.
+        /// </summary>
+        /// <remarks>
+        /// Read from at app startup, and written to at app close.
+        /// </remarks>
+        public const string TextConfigLocation = "ToolStrip.TextConfigLocation";
 
         private PdnSettings()
         {

@@ -27,7 +27,6 @@ namespace PaintDotNet.SystemLayer
     {
         private Form host;
         private RealParentWndProcDelegate realParentWndProc;
-        private static Skybound.VisualStyles.VisualStyleProvider visualStyleProvider;
         private bool forceActiveTitleBar = false;
 
         /// <summary>
@@ -78,6 +77,7 @@ namespace PaintDotNet.SystemLayer
             return null;
         }
 
+        /*
         /// <summary>
         /// This method is called to recursively enable visual style support on the form.
         /// Normally this is called during OnLoad but you can override this method to
@@ -146,6 +146,7 @@ namespace PaintDotNet.SystemLayer
                 return (Skybound.VisualStyles.VisualStyleProvider)visualStyleProvider;
             }
         }
+         * */
 
         private int ignoreNcActivate = 0;
 

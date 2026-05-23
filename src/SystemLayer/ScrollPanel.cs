@@ -59,6 +59,8 @@ namespace PaintDotNet.SystemLayer
             }
         }
 
+        /*
+        // TODO: remove
         /// <summary>
         /// Occurs when the panel is scrolled.
         /// </summary>
@@ -71,11 +73,14 @@ namespace PaintDotNet.SystemLayer
                 Scroll(this, EventArgs.Empty);
             }
         }
+        */
 
         protected override void WndProc(ref Message m)
         {
             switch (m.Msg)
             {
+                    // TODO: Remove
+                    /*
                 case NativeConstants.WM_HSCROLL:
                 case NativeConstants.WM_VSCROLL:
                 case NativeConstants.SBM_SETPOS:
@@ -85,6 +90,7 @@ namespace PaintDotNet.SystemLayer
                     base.WndProc(ref m);
                     OnScroll();
                     break;
+                     * */
 
                 case NativeConstants.WM_SETFOCUS:
                     if (IgnoreSetFocus)

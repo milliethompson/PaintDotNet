@@ -1,9 +1,8 @@
 @rem echo off
 if "%SIGNPDN%" == "1" (
-    if exist "%PDNSPC%" (
-        if exist "%PDNPVK%" (
-            signcode -a sha1 -spc "%PDNSPC%" -v "%PDNPVK%" -n "Paint.NET v2.5" -i http://www.eecs.wsu.edu/paint.net -t http://timestamp.comodoca.com/authenticode "%1"
-        )
+    if exist "%PDNPFX%" (
+        signtool sign /f "%PDNPFX%" /d "Paint.NET v2.6" /du "http://www.eecs.wsu.edu/paint.net" "%1"
+        signtool timestamp /t http://timestamp.comodoca.com/authenticode /v "%1"
     )
 )
 

@@ -29,6 +29,9 @@ namespace PaintDotNet.SystemLayer
         public static readonly Settings SystemWide = new Settings(Microsoft.Win32.Registry.LocalMachine);
         public static readonly Settings CurrentUser = new Settings(Microsoft.Win32.Registry.CurrentUser);
 
+        private const string pointXSuffix = ".X";
+        private const string pointYSuffix = ".Y";
+
         private RegistryKey rootKey;
 
         private Settings(RegistryKey rootKey)
@@ -200,6 +203,42 @@ namespace PaintDotNet.SystemLayer
         /// </summary>
         /// <param name="key">The name of the key to retrieve.</param>
         /// <returns>The value of the key.</returns>
+        public Point GetPoint(string key)
+        {
+            int x = GetInt32(key + pointXSuffix);
+            int y = GetInt32(key + pointYSuffix);
+            return new Point(x, y);
+        }
+
+        /// <summary>
+        /// Retrieves the value of a settings key.
+        /// </summary>
+        /// <param name="key">The name of the key to retrieve.</param>
+        /// <param name="defaultValue">The default value to use if the key doesn't exist.</param>
+        /// <returns>The value of the key, or defaultValue if it didn't exist.</returns>
+        public Point GetPoint(string key, Point defaultValue)
+        {
+            int x = GetInt32(key + pointXSuffix, defaultValue.X);
+            int y = GetInt32(key + pointYSuffix, defaultValue.Y);
+            return new Point(x, y);
+        }
+
+        /// <summary>
+        /// Sets the value of a settings key.
+        /// </summary>
+        /// <param name="key">The name of the key to set.</param>
+        /// <param name="value">The new value of the key.</param>
+        public void SetPoint(string key, Point value)
+        {
+            SetInt32(key + pointXSuffix, value.X);
+            SetInt32(key + pointYSuffix, value.Y);
+        }
+
+        /// <summary>
+        /// Retrieves the value of a settings key.
+        /// </summary>
+        /// <param name="key">The name of the key to retrieve.</param>
+        /// <returns>The value of the key.</returns>
         public Int32 GetInt32(string key)
         {
             return Int32.Parse(GetString(key));
@@ -268,7 +307,7 @@ namespace PaintDotNet.SystemLayer
             string imageB64 = GetString(key);
             byte[] pngBytes = Convert.FromBase64String(imageB64);
             MemoryStream ms = new MemoryStream(pngBytes);
-            Image image = Image.FromStream(ms);
+            Image image = PdnResources.LoadImage(ms); //Image.FromStream(ms);
             ms.Close();
             return image;
         }

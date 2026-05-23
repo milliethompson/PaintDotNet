@@ -7,9 +7,10 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet;
 using System;
 using System.Drawing;
-using PaintDotNet;
+using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
@@ -23,7 +24,8 @@ namespace PaintDotNet.Effects
     {
         private UnaryPixelOps.Level levels = null;
 
-        public override void Render(RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle roi)
+        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
+            Rectangle[] rois, int startIndex, int length)
         {
             if (levels == null) 
             {
@@ -34,14 +36,14 @@ namespace PaintDotNet.Effects
 
             if (levels.isValid)
             {
-                levels.Apply(dstArgs.Surface, roi.Location, srcArgs.Surface, roi.Location, roi.Size);
+                levels.Apply(dstArgs.Surface, srcArgs.Surface, rois, startIndex, length);
             }
         }
 
         public AutoLevel()
             : base(PdnResources.GetString("AutoLevel.Name"),
-                   PdnResources.GetImage("Icons.AutoLevel.bmp"), 
-                   System.Windows.Forms.Shortcut.CtrlShiftL)
+                   PdnResources.GetImage("Icons.AutoLevel.png"), 
+                   Keys.Control | Keys.Shift | Keys.L)
         {
         }
     }

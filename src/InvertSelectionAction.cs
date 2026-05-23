@@ -28,8 +28,8 @@ namespace PaintDotNet
 
         public override HistoryAction PerformAction()
         {
-            SelectionHistoryAction sha = new SelectionHistoryAction(name, 
-                PdnResources.GetImage("Icons.MenuEditInvertSelectionIcon.bmp"), Workspace);
+            SelectionHistoryAction sha = new SelectionHistoryAction(name,
+                PdnResources.GetImage("Icons.MenuEditInvertSelectionIcon.png"), Workspace);
 
             PdnRegion selectedRegion = Workspace.Environment.Selection.CreateRegion();
             selectedRegion.Xor(Workspace.Document.Bounds);

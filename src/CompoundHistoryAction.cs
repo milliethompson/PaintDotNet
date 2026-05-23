@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace PaintDotNet
@@ -23,7 +24,7 @@ namespace PaintDotNet
     public class CompoundHistoryAction
         : HistoryAction
     {
-        private ArrayList actions;
+        private List<HistoryAction> actions;
 
         protected override void OnFlush()
         {
@@ -31,18 +32,18 @@ namespace PaintDotNet
             {
                 if (actions[i] != null)
                 {
-                    ((HistoryAction)actions[i]).Flush();
+                    actions[i].Flush();
                 }
             }
         }
 
         protected override HistoryAction OnUndo()
         {
-            ArrayList redoActions = new ArrayList(actions.Count);
+            List<HistoryAction> redoActions = new List<HistoryAction>(actions.Count);
 
             for (int i = 0; i < actions.Count; ++i)
             {
-                HistoryAction ha = (HistoryAction)actions[actions.Count - i - 1];
+                HistoryAction ha = actions[actions.Count - i - 1];
                 HistoryAction rha = null;
 
                 if (ha != null)
@@ -62,16 +63,16 @@ namespace PaintDotNet
             actions.Add(newHA);
         }
 
-        public CompoundHistoryAction(string name, Image image, ArrayList actions)
+        public CompoundHistoryAction(string name, Image image, List<HistoryAction> actions)
             : base(name, image)
         {
-            this.actions = (ArrayList)actions.Clone();
+            this.actions = new List<HistoryAction>(actions);
         }
 
         public CompoundHistoryAction(string name, Image image, HistoryAction[] actions)
             : base(name, image)
         {
-            this.actions = new ArrayList(actions);
+            this.actions = new List<HistoryAction>(actions);
         }
     }
 }

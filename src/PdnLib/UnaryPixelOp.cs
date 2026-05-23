@@ -24,8 +24,7 @@ namespace PaintDotNet
     {
         public abstract ColorBgra Apply(ColorBgra color);
 
-        [CLSCompliant(false)]
-        protected unsafe override void Apply(ColorBgra *dst, ColorBgra *src, int length)
+        public unsafe override void Apply(ColorBgra *dst, ColorBgra *src, int length)
         {
             unsafe
             {
@@ -39,8 +38,7 @@ namespace PaintDotNet
             }
         }
 
-        [CLSCompliant(false)]
-        protected unsafe virtual void Apply(ColorBgra *ptr, int length)
+        public unsafe virtual void Apply(ColorBgra* ptr, int length)
         {
             unsafe
             {

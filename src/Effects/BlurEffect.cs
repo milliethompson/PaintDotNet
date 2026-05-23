@@ -13,12 +13,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for BlurEffect.
-    /// </summary>
     public class BlurEffect
-        : Effect, 
-          IConfigurableEffect
+        : Effect
     {
         public static string StaticName
         {
@@ -30,19 +26,15 @@ namespace PaintDotNet.Effects
 
         public BlurEffect()
             : base(StaticName,
-                   PdnResources.GetImage("Icons.BlurEffect.bmp"),
-                   Shortcut.None,
+                   PdnResources.GetImage("Icons.BlurEffect.png"),
+                   Keys.None,
                    PdnResources.GetString("Effects.Blurring.Submenu.Name"),
-                   EffectDirectives.None)
+                   EffectDirectives.None,
+                   true)
         {
         }
 
-        public override void Render(RenderArgs dstArgs, RenderArgs srcArgs, Rectangle roi)
-        {
-            throw new InvalidOperationException("Use the other Render override");
-        }
-
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {   
             AmountEffectConfigDialog aecg = new AmountEffectConfigDialog();
             aecg.Effect = this;
@@ -52,7 +44,7 @@ namespace PaintDotNet.Effects
             aecg.SliderLabel = PdnResources.GetString("BlurEffect.ConfigDialog.SliderLabel");
             aecg.SliderUnitsName = PdnResources.GetString("BlurEffect.ConfigDialog.SliderUnitsName");
 
-            aecg.Icon = PdnResources.GetIconFromImage("Icons.BlurEffect.bmp");
+            aecg.Icon = PdnResources.GetIconFromImage("Icons.BlurEffect.png");
             return aecg;
         }
 
@@ -62,7 +54,8 @@ namespace PaintDotNet.Effects
             int[] weights = new int[size];
 
             for (int i = 0; i <= amount; ++i)
-            {// 1 + aa - aa + 2ai - ii
+            {
+                // 1 + aa - aa + 2ai - ii
                 weights[i] = 16 * (i + 1);
                 weights[weights.Length - i - 1] = weights[i];
             }
@@ -109,9 +102,9 @@ namespace PaintDotNet.Effects
             return weights;
         }
 
-        public unsafe void Render(EffectConfigToken configToken, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public override unsafe void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
         {
-            AmountEffectConfigToken bect = (AmountEffectConfigToken)configToken;
+            AmountEffectConfigToken bect = (AmountEffectConfigToken)parameters;
 
             Surface dst = dstArgs.Surface;
             Surface src = srcArgs.Surface;
@@ -120,8 +113,10 @@ namespace PaintDotNet.Effects
             int[] w = CreateGaussianBlurRow(bect.Amount);
             int wlen = w.Length;
 
-            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
+            for (int ri = startIndex; ri < startIndex + length; ++ri)
             {
+                Rectangle rect = rois[ri];
+
                 if (rect.Height >= 1 && rect.Width >= 1)
                 {
                     for (int y = rect.Top; y < rect.Bottom; ++y)

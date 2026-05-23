@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -56,7 +57,7 @@ namespace PaintDotNet
             return spline;
         }
 
-        protected override ArrayList TrimShapePath(ArrayList points)
+        protected override List<PointF> TrimShapePath(List<PointF> points)
         {
             if (this.inCurveMode)
             {
@@ -64,7 +65,7 @@ namespace PaintDotNet
             }
             else
             {
-                ArrayList array = new ArrayList();
+                List<PointF> array = new List<PointF>();
 
                 if (points.Count > 0)
                 {
@@ -210,6 +211,49 @@ namespace PaintDotNet
             base.OnPulse ();
         }
 
+        private bool controlKeyDown = false;
+        private DateTime controlKeyDownTime = DateTime.MinValue;
+        private readonly TimeSpan controlKeyDownThreshold = new TimeSpan(0, 0, 0, 0, 400);
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            switch (e.KeyCode)
+            {
+                case Keys.ControlKey:
+                    if (!this.controlKeyDown)
+                    {
+                        this.controlKeyDown = true;
+                        this.controlKeyDownTime = DateTime.Now;
+                    }
+                    break;
+            }
+
+            base.OnKeyDown(e);
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            switch (e.KeyCode)
+            {
+                case Keys.ControlKey:
+                    TimeSpan heldDuration = (DateTime.Now - this.controlKeyDownTime);
+
+                    // If the user taps Ctrl, then we should toggle the visiblity of the moveNubs
+                    if (heldDuration < this.controlKeyDownThreshold)
+                    {
+                        for (int i = 0; i < this.moveNubs.Length; ++i)
+                        {
+                            this.moveNubs[i].Visible = !this.moveNubs[i].Visible;
+                        }
+                    }
+
+                    this.controlKeyDown = false;
+                    break;
+            }
+
+            base.OnKeyUp(e); base.OnKeyUp(e);
+        }
+
         protected override void OnKeyPress(KeyPressEventArgs e)
         {
             if (this.inCurveMode)
@@ -217,10 +261,12 @@ namespace PaintDotNet
                 switch (e.KeyChar)
                 {
                     case '\r': // Enter
+                        e.Handled = true;
                         CommitShape();
                         break;
 
                     case (char)27: // Escape
+                        e.Handled = true;
                         Workspace.History.StepBackward();
                         break;
                 }
@@ -246,7 +292,7 @@ namespace PaintDotNet
         protected override bool OnShapeEnd()
         {
             // init move nubs
-            ArrayList points = GetTrimmedShapePath();
+            List<PointF> points = GetTrimmedShapePath();
 
             if (points.Count < 2)
             {
@@ -263,7 +309,7 @@ namespace PaintDotNet
                 }
 
                 PointF[] spline = LineToSpline(a, b, controlPointCount);
-                ArrayList newPoints = new ArrayList();
+                List<PointF> newPoints = new List<PointF>();
 
                 this.inCurveMode = true;
                 for (int i = 0; i < this.moveNubs.Length; ++i)
@@ -387,7 +433,7 @@ namespace PaintDotNet
             {
                 PointF mousePt = new PointF(e.Fx, e.Fy);
                 this.moveNubs[this.draggingNubIndex].Location = mousePt;
-                ArrayList points = GetTrimmedShapePath();
+                List<PointF> points = GetTrimmedShapePath();
                 points[this.draggingNubIndex] = mousePt;
                 SetShapePath(points);
             }
@@ -491,7 +537,7 @@ namespace PaintDotNet
 
         public LineTool(DocumentWorkspace parent)
             : base(parent,
-                   PdnResources.GetImage("Icons.LineToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.LineToolIcon.png"),
                    PdnResources.GetString("LineTool.Name"),
                    PdnResources.GetString("LineTool.HelpText"))
         {

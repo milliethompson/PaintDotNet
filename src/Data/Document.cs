@@ -7,7 +7,6 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
-using ICSharpCode.SharpZipLib.GZip;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
@@ -18,6 +17,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.Remoting.Messaging;
 using System.Runtime.Serialization;
@@ -50,7 +50,7 @@ namespace PaintDotNet
         private InvalidateEventHandler layerInvalidatedDelegate;
 
         [NonSerialized]
-        private RectangleVector updateRegion;
+        private Vector<Rectangle> updateRegion;
 
         [NonSerialized]
         private bool dirty;
@@ -58,7 +58,7 @@ namespace PaintDotNet
         private Version savedWith;
 
         [NonSerialized]
-        private MetaData metaData = null;
+        private Metadata metadata = null;
 
         [NonSerialized]
         private XmlDocument headerXml;
@@ -132,7 +132,7 @@ namespace PaintDotNet
         {
             get
             {
-                PropertyItem[] pis = this.MetaData.GetExifValues(ExifTagID.ResolutionUnit);
+                PropertyItem[] pis = this.Metadata.GetExifValues(ExifTagID.ResolutionUnit);
 
                 if (pis.Length == 0)
                 {
@@ -150,7 +150,7 @@ namespace PaintDotNet
 
                     catch
                     {
-                        this.MetaData.RemoveExifValues(ExifTagID.ResolutionUnit);
+                        this.Metadata.RemoveExifValues(ExifTagID.ResolutionUnit);
                         return this.DpuUnit; // recursive call
                     }
                 }
@@ -159,7 +159,7 @@ namespace PaintDotNet
             set
             {
                 PropertyItem pi = Exif.CreateShort(ExifTagID.ResolutionUnit, (ushort)value);
-                this.MetaData.ReplaceExifValues(ExifTagID.ResolutionUnit, new PropertyItem[1] { pi });
+                this.Metadata.ReplaceExifValues(ExifTagID.ResolutionUnit, new PropertyItem[1] { pi });
 
                 if (value == MeasurementUnit.Pixel)
                 {
@@ -177,6 +177,7 @@ namespace PaintDotNet
         private const double defaultDpi = 96.0;
         public const double CmPerInch = 2.54;
         private const double defaultDpcm = defaultDpi / CmPerInch;
+        public const double MinimumDpu = 0.01;
 
         public static double InchesToCentimeters(double inches)
         {
@@ -251,13 +252,14 @@ namespace PaintDotNet
         /// If DpuUnit is equal to MeasurementUnit.Pixel, then this property may not be set
         /// to any value other than 1.0. Setting DpuUnit to MeasurementUnit.Pixel will reset
         /// this property to 1.0. This property may only be set to a value greater than 0.
-        /// One dot is always equal to one pixel.
+        /// One dot is always equal to one pixel. This property will not return a value less
+        /// than 0.01.
         /// </remarks>
         public double DpuX
         {
             get
             {
-                PropertyItem[] pis = this.MetaData.GetExifValues(ExifTagID.XResolution);
+                PropertyItem[] pis = this.Metadata.GetExifValues(ExifTagID.XResolution);
 
                 if (pis.Length == 0)
                 {
@@ -280,13 +282,13 @@ namespace PaintDotNet
                         }
                         else
                         {
-                            return (double)numerator / (double)denominator;
+                            return Math.Max(MinimumDpu, (double)numerator / (double)denominator);
                         }
                     }
 
                     catch
                     {
-                        this.MetaData.RemoveExifValues(ExifTagID.XResolution);
+                        this.Metadata.RemoveExifValues(ExifTagID.XResolution);
                         return this.DpuX; // recursive call;
                     }
                 }
@@ -307,7 +309,7 @@ namespace PaintDotNet
                 byte[] data = GetDoubleAsRationalExifData(value);
                
                 PropertyItem pi = Exif.CreatePropertyItem(ExifTagID.XResolution, ExifTagType.Rational, data);
-                this.MetaData.ReplaceExifValues(ExifTagID.XResolution, new PropertyItem[1] { pi });
+                this.Metadata.ReplaceExifValues(ExifTagID.XResolution, new PropertyItem[1] { pi });
             }
         }
 
@@ -318,13 +320,14 @@ namespace PaintDotNet
         /// If DpuUnit is equal to MeasurementUnit.Pixel, then this property may not be set
         /// to any value other than 1.0. Setting DpuUnit to MeasurementUnit.Pixel will reset
         /// this property to 1.0. This property may only be set to a value greater than 0.
-        /// One dot is always equal to one pixel.
+        /// One dot is always equal to one pixel. This property will not return a value less
+        /// than 0.01.
         /// </remarks>
         public double DpuY
         {
             get
             {
-                PropertyItem[] pis = this.MetaData.GetExifValues(ExifTagID.YResolution);
+                PropertyItem[] pis = this.Metadata.GetExifValues(ExifTagID.YResolution);
 
                 if (pis.Length == 0)
                 {
@@ -348,13 +351,13 @@ namespace PaintDotNet
                         }
                         else
                         {
-                            return (double)numerator / (double)denominator;
+                            return Math.Max(MinimumDpu, (double)numerator / (double)denominator);
                         }
                     }
 
                     catch
                     {
-                        this.MetaData.RemoveExifValues(ExifTagID.YResolution);
+                        this.Metadata.RemoveExifValues(ExifTagID.YResolution);
                         return this.DpuY; // recursive call;
                     }
                 }
@@ -375,7 +378,7 @@ namespace PaintDotNet
                 byte[] data = GetDoubleAsRationalExifData(value);
                
                 PropertyItem pi = Exif.CreatePropertyItem(ExifTagID.YResolution, ExifTagType.Rational, data);
-                this.MetaData.ReplaceExifValues(ExifTagID.YResolution, new PropertyItem[1] { pi });
+                this.Metadata.ReplaceExifValues(ExifTagID.YResolution, new PropertyItem[1] { pi });
             }
         }
 
@@ -650,128 +653,131 @@ namespace PaintDotNet
             }
         }
 
-        public MetaData MetaData
+        public Metadata Metadata
         {
             get
             {
-                if (metaData == null)
+                if (metadata == null)
                 {
-                    metaData = new MetaData(userMetaData);
+                    metadata = new Metadata(userMetaData);
                 }
 
-                return metaData;
+                return metadata;
             }
-        }
-
-        [Obsolete("This method has been renamed to ReplaceMetaDataFrom().", true)]
-        public void CopyPropertiesFrom(Document other) 
-        {
-            ReplaceMetaDataFrom(other);
         }
 
         public void ReplaceMetaDataFrom(Document other)
         {
-            this.MetaData.ReplaceWithDataFrom(other.MetaData);
+            this.Metadata.ReplaceWithDataFrom(other.Metadata);
         }
 
         public void ClearMetaData()
         {
-            this.MetaData.Clear();
+            this.Metadata.Clear();
         }
 
         [Obsolete("don't use this property; implementors should expose type-safe properties instead", false)]
+        // Note, we can not remove this property because then the compiler complains that 'tag' is unused.
         public object Tag
         {
             get
             {
-                return tag;
+                return this.tag;
             }
 
             set
             {
-                tag = value;
-            }
-        }
-
-        // TODO: This should be part of DocumentView, not Document.
-        /// <summary>
-        /// Clears a portion of the surface to a background checkerboard
-        /// pattern. The x and y position are necessary to determine where in
-        /// the checkerboard pattern the target pixel lies.
-        /// </summary>
-        /// <param name="ptr">The address of the first pixel to clear</param>
-        /// <param name="length">The number of pixels (including the start pixel) to clear</param>
-        /// <param name="x">The x-value of the start pixel</param>
-        /// <param name="y">The y-value of the start pixel</param>
-        private unsafe void ClearToBackground(ColorBgra *ptr, int length, int x, int y) 
-        {
-            for (int i = 0; i < length; i++) 
-            {
-                //We take the xor or the 3rd bit the color used.
-                //Ends up being 128 or 192
-                int v = (((x + i) ^ y) & 8) * 8 + 128;
-                //Set the pixel value to be opaque + RGB(1, 1, 1) * v
-                ptr[i].Bgra = (uint)0xff000000 | ((uint)0x00010101 * (uint)v);
+                this.tag = value;
             }
         }
 
         /// <summary>
-        /// Clears a portion of a surface to a background checkerboard
-        /// pattern.
+        /// Clears a portion of a surface to transparent.
         /// </summary>
         /// <param name="surface">The surface to partially clear</param>
         /// <param name="roi">The rectangle to clear</param>
-        private unsafe void ClearToBackground(Surface surface, Rectangle roi) 
+        private unsafe void ClearBackground(Surface surface, Rectangle roi)
         {
+            roi.Intersect(surface.Bounds);
+
             for (int y = roi.Top; y < roi.Bottom; y++)
             {
-                ClearToBackground(surface.GetPointAddress(roi.Left, y), roi.Width, roi.Left, y);
+                ColorBgra *ptr = surface.GetPointAddressUnchecked(roi.Left, y);
+                Memory.SetToZero(ptr, (ulong)roi.Width * ColorBgra.SizeOf);
             }
         }
 
         /// <summary>
-        /// Clears a portion of a surface to a background checkerboard
-        /// pattern.
+        /// Clears a portion of a surface to transparent.
         /// </summary>
         /// <param name="surface">The surface to partially clear</param>
         /// <param name="rois">The array of Rectangles designating the areas to clear</param>
         /// <param name="startIndex">The start index within the rois array to clear</param>
         /// <param name="length">The number of Rectangles in the rois array (staring with startIndex) to clear</param>
-        private void ClearToBackground(Surface surface, Rectangle[] rois, int startIndex, int length) 
+        private void ClearBackground(Surface surface, Rectangle[] rois, int startIndex, int length)
         {
-            for (int i = startIndex; i < startIndex + length; i++) 
+            for (int i = startIndex; i < startIndex + length; i++)
             {
-                ClearToBackground(surface, rois[i]);
+                ClearBackground(surface, rois[i]);
             }
         }
 
-        /// <summary>
-        /// Renders the document onto the given RenderArgs. Assumes you have already cleared the surface
-        /// to whatever color value you wish to blend with (recommend: BGRA=[255,255,255,0]).
-        /// </summary>
-        /// <param name="args">The target RenderArgs</param>
-        public void RenderFlat(RenderArgs args)
+        public void Render(RenderArgs args)
         {
-            foreach (Layer layer in Layers)
-            {
-                if (layer.Visible)
-                {
-                    layer.Render(args, args.Surface.Bounds);
-                }
-            }
+            Render(args, args.Surface.Bounds);
+        }
+
+        public void Render(RenderArgs args, Rectangle roi)
+        {
+            Render(args, roi, false);
+        }
+
+        public void Render(RenderArgs args, bool clearBackground)
+        {
+            Render(args, args.Surface.Bounds, clearBackground);
         }
 
         /// <summary>
-        /// Renders a requested region of the document.
+        /// Renders a requested region of the document. Will clear the background of the input
+        /// before rendering if requested.
         /// </summary>
         /// <param name="args">Contains information used to control where rendering occurs.</param>
         /// <param name="roi">The rectangular region to render.</param>
-        public void Render(RenderArgs args, Rectangle roi)
+        /// <param name="clearBackground">If true, 'args' will be cleared to zero before rendering.</param>
+        public void Render(RenderArgs args, Rectangle roi, bool clearBackground)
         {
-            ClearToBackground(args.Surface, roi);
+            int startIndex;
 
-            foreach (Layer layer in Layers)
+            if (clearBackground)
             {
+                BitmapLayer layer0;
+                layer0 = this.layers[0] as BitmapLayer;
+
+                // Special case: if the first layer is a visible BitmapLayer with full opacity using 
+                // the default blend op, we can just copy the pixels straight over
+                if (layer0 != null && 
+                    layer0.Visible && 
+                    layer0.Opacity == 255 &&
+                    layer0.BlendOp.GetType() == UserBlendOps.GetDefaultBlendOp())
+                {
+                    args.Surface.CopySurface(layer0.Surface);
+                    startIndex = 1;
+                }
+                else
+                {
+                    ClearBackground(args.Surface, roi);
+                    startIndex = 0;
+                }
+            }
+            else
+            {
+                startIndex = 0;
+            }
+
+            for (int i = startIndex; i < this.layers.Count; ++i)
+            {
+                Layer layer = (Layer)this.layers[i];
+
                 if (layer.Visible)
                 {
                     layer.Render(args, roi);
@@ -779,37 +785,51 @@ namespace PaintDotNet
             }
         }
 
-        public void Render(RenderArgs args, Rectangle[] roi)
+        public void Render(RenderArgs args, Rectangle[] roi, bool clearBackground)
         {
-            this.Render(args, roi, 0, roi.Length);
+            this.Render(args, roi, 0, roi.Length, clearBackground);
         }
 
-        public void Render(RenderArgs args, Rectangle[] roi, int startIndex, int length)
+        public void Render(RenderArgs args, Rectangle[] roi, int startIndex, int length, bool clearBackground)
         {
-            ClearToBackground(args.Surface, roi, startIndex, length);
+            int startLayerIndex;
 
-            foreach (Layer layer in Layers)
+            if (clearBackground)
             {
+                BitmapLayer layer0;
+                layer0 = this.layers[0] as BitmapLayer;
+
+                // Special case: if the first layer is a visible BitmapLayer with full opacity using 
+                // the default blend op, we can just copy the pixels straight over
+                if (layer0 != null && 
+                    layer0.Visible && 
+                    layer0.Opacity == 255 &&
+                    layer0.BlendOp.GetType() == UserBlendOps.GetDefaultBlendOp())
+                {
+                    args.Surface.CopySurface(layer0.Surface, roi, startIndex, length);
+                    startLayerIndex = 1;
+                }
+                else
+                {
+                    ClearBackground(args.Surface, roi, startIndex, length);
+                    startLayerIndex = 0;
+                }
+            }
+            else
+            {
+                startLayerIndex = 0;
+            }
+
+            for (int i = startLayerIndex; i < this.layers.Count; ++i)
+            {
+                Layer layer = (Layer)this.layers[i];
+
                 if (layer.Visible)
                 {
-                    for (int i = startIndex; i < startIndex + length; ++i)
-                    {
-                        layer.Render(args, roi[i]);
-                    }
+                    layer.RenderUnchecked(args, roi, startIndex, length);
                 }
             }
         }
-
-        /// <summary>
-        /// Renders a requested region of the document.
-        /// </summary>
-        /// <param name="args">Contains information used to control where rendering occurs.</param>
-        /// <param name="roi">The Region to render.</param>
-        public void Render(RenderArgs args, PdnRegion roi)
-        {
-            Rectangle[] rects = roi.GetRegionScansReadOnlyInt();
-            this.Render(args, rects);
-        }   
 
         private sealed class UpdateScansContext
         {
@@ -821,7 +841,7 @@ namespace PaintDotNet
 
             public void UpdateScans(object context)
             {
-                document.Render(dst, scans, startIndex, length);
+                document.Render(dst, scans, startIndex, length, true);
             }
 
             public UpdateScansContext(Document document, RenderArgs dst, Rectangle[] scans, int startIndex, int length)
@@ -833,7 +853,7 @@ namespace PaintDotNet
                 this.length = length;
             }
         }
-        
+
         /// <summary>
         /// Renders only the portions of the document that have changed (been Invalidated) since 
         /// the last call to this function.
@@ -848,13 +868,13 @@ namespace PaintDotNet
 
             Rectangle[] updateRects;
             int updateRectsLength;
-            updateRegion.GetRectangleArrayReadOnly(out updateRects, out updateRectsLength);
+            updateRegion.GetArrayReadOnly(out updateRects, out updateRectsLength);
             PdnRegion region = Utility.RectanglesToRegion(updateRects, 0, updateRectsLength);
 
             Rectangle[] rectsOriginal = region.GetRegionScansReadOnlyInt();
             Rectangle[] rectsToUse;
 
-            // Special case where we're drawing 1 big rectangle: split it in half!
+            // Special case where we're drawing 1 big rectangle: split it up!
             // This case happens quite frequently, but we don't want to spend a lot of
             // time analyzing any other case that is more complicated.
             if (rectsOriginal.Length == 1 && rectsOriginal[0].Height > 1)
@@ -875,9 +895,18 @@ namespace PaintDotNet
                 int end = ((i + 1) * rectsToUse.Length) / cpuCount;
 
                 UpdateScansContext usc = new UpdateScansContext(this, dst, rectsToUse, start, end - start);
-                threadPool.QueueUserWorkItem(new WaitCallback(usc.UpdateScans), usc);
+
+                if (i == cpuCount - 1)
+                {   
+                    // Reuse this thread for the last job -- no sense creating a new thread.
+                    usc.UpdateScans(usc);
+                }
+                else
+                {
+                    threadPool.QueueUserWorkItem(new WaitCallback(usc.UpdateScans), usc);
+                }
             }
-        
+
             threadPool.Drain();
             Validate();
         }
@@ -892,7 +921,7 @@ namespace PaintDotNet
             this.width = width;
             this.height = height;
             this.Dirty = true;
-            this.updateRegion = new RectangleVector();
+            this.updateRegion = new Vector<Rectangle>();
             layers = new LayerList(this);
             SetupEvents();
             userMetaData = new NameValueCollection();
@@ -926,7 +955,7 @@ namespace PaintDotNet
         /// <param name="sender"></param>
         public void OnDeserialization(object sender)
         {
-            this.updateRegion = new RectangleVector();
+            this.updateRegion = new Vector<Rectangle>();
             this.updateRegion.Add(this.Bounds);
             this.threadPool = new PaintDotNet.Threading.ThreadPool();
             SetupEvents();
@@ -935,7 +964,7 @@ namespace PaintDotNet
 
         [NonSerialized]
         private InvalidateEventHandler invalidated;
-        
+
         /// <summary>
         /// Occurs when a part of the document has changed.
         /// </summary>
@@ -1126,12 +1155,12 @@ namespace PaintDotNet
             long oldPosition = stream.Position;
             bool pdn21Format = true;
 
-            // Version 2.1 file format:
+            // Version 2.1+ file format:
             //   Starts with bytes as defined by MagicBytes 
-            //   Next two bytes are 24-bit unsigned int 'N' (first byte is low-word, second byte is middle-word, third byte is high word)
+            //   Next three bytes are 24-bit unsigned int 'N' (first byte is low-word, second byte is middle-word, third byte is high word)
             //   The next N bytes are a string, this is the document header (it is XML, UTF-8 encoded)
             //     Important: 'N' indicates a byte count, not a character count. 'N' bytes may result in less than 'N' characters,
-            //                depending on how the characters decode as per UTF8!
+            //                depending on how the characters decode as per UTF8
             //   If the next 2 bytes are 0x00, 0x01: This signifies that non-compressed .NET serialized data follows.
             //   If the next 2 bytes are 0x1f, 0x8b: This signifies the start of the gzip compressed .NET serialized data
             //
@@ -1234,7 +1263,7 @@ namespace PaintDotNet
             else if (first == 0x1f && second == 0x8b)
             {
                 stream.Position = oldPosition2; // rewind to the start of 0x1f, 0x8b
-                GZipInputStream gZipStream = new GZipInputStream(stream, 4096);
+                GZipStream gZipStream = new GZipStream(stream, CompressionMode.Decompress, true);
                 docObject = formatter.UnsafeDeserialize(gZipStream, null);
             }
             else
@@ -1298,9 +1327,8 @@ namespace PaintDotNet
 
             // Write the remainder of the file (gzip compressed)
             SiphonStream siphonStream = new SiphonStream(stream);
-
             BinaryFormatter formatter = new BinaryFormatter();
-            DeferredFormatter deferred = new DeferredFormatter();
+            DeferredFormatter deferred = new DeferredFormatter(true, null);
             SaveProgressRelay relay = new SaveProgressRelay(deferred, callback);
             formatter.Context = new StreamingContext(formatter.Context.State, deferred);
             formatter.Serialize(siphonStream, this);
@@ -1327,7 +1355,7 @@ namespace PaintDotNet
                 long reportedBytes = formatter.ReportedBytes;
                 bool raiseEvent;
                 long length = 0;
-                
+
                 lock (this)
                 {
                     raiseEvent = (reportedBytes > lastReportedBytes);
@@ -1339,7 +1367,7 @@ namespace PaintDotNet
                     }
                 }
 
-                if (raiseEvent)
+                if (raiseEvent && ioCallback != null)
                 {
                     ioCallback(this, new IOEventArgs(IOOperationType.Write, reportedBytes - length, (int)length));
                 }
@@ -1367,7 +1395,7 @@ namespace PaintDotNet
 
             using (RenderArgs renderArgs = new RenderArgs(dst))
             {
-                RenderFlat(renderArgs);
+                Render(renderArgs, true);
             }
         }
 
@@ -1415,13 +1443,18 @@ namespace PaintDotNet
             }
         }
 
-        public object Clone()
+        public Document Clone()
         {
             // I cheat.
             MemoryStream stream = new MemoryStream();
             SaveToStream(stream);
             stream.Seek(0, SeekOrigin.Begin);
-            return Document.FromStream(stream);
+            return (Document)Document.FromStream(stream);
+        }
+
+        object ICloneable.Clone()
+        {
+            return Clone();
         }
     }
 }

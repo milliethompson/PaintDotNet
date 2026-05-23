@@ -94,6 +94,13 @@ namespace PaintDotNet
             {
                 ra.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 PointF ptF = this.BrushLocation;
+
+                if (this.BrushSize == 0.5f)
+                {
+                    ptF.X += 0.5f;
+                    ptF.Y += 0.5f;
+                }
+
                 ptF.X *= (float)OwnerList.ScaleFactor.Ratio;
                 ptF.Y *= (float)OwnerList.ScaleFactor.Ratio;
 

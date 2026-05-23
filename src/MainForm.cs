@@ -15,6 +15,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
@@ -30,194 +31,142 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for MainForm.
-    /// </summary>
     public class MainForm 
         : PaintDotNet.PdnBaseForm
     {
-        // This class is used to reduce flickering in the status bar when the width changes
-        // We limit redrawing to 10 times per second.
-        private class PdnStatusBar
-            : StatusBar
-        {
-            private int oldWidth = -1;
-            private DateTime lastTime = DateTime.MinValue;
-            private System.Windows.Forms.Timer timer = null;
-
-            protected override void OnResize(EventArgs e)
-            {
-                if (this.oldWidth != this.Width)
-                {
-                    UI.SetControlRedraw(this, false);
-                }
-
-                base.OnResize (e);
-
-                if (this.oldWidth != this.Width)
-                {
-                    UI.SetControlRedraw(this, true);
-
-                    if (timer == null)
-                    {
-                        timer = new System.Windows.Forms.Timer();
-                        timer.Tick += new EventHandler(timer_Tick);
-                    }
-
-                    if (DateTime.Now - this.lastTime > new TimeSpan(0, 0, 0, 0, 100))
-                    {
-                        this.lastTime = DateTime.Now;
-                        Invalidate();
-                        Update();
-                    }
-                    else if (!timer.Enabled)
-                    {
-                        timer.Interval = 100;
-                        timer.Enabled = true;
-                    }
-                }
-
-                this.oldWidth = this.Width;
-            }
-
-            private void timer_Tick(object sender, EventArgs e)
-            {
-                Invalidate();
-                Update();
-                timer.Enabled = false;
-            }
-        }
-
-        private const int effectRefreshInterval = 100;
-        private const int tilesPerCpu = 25;
+        private const int effectRefreshInterval = 16;
+        private const int tilesPerCpu = 200;
         private int renderingThreadCount = Math.Max(2, Processor.LogicalCpuCount);
 
-        private System.Windows.Forms.MainMenu mainMenu;
+        private PaintDotNet.SystemLayer.MenuStripEx mainMenu;
 
-        private System.Windows.Forms.MenuItem menuFile;
-        private System.Windows.Forms.MenuItem menuFileExit;
-        private System.Windows.Forms.MenuItem menuFileOpen;
-        private System.Windows.Forms.MenuItem menuFileNew;
-        private System.Windows.Forms.MenuItem menuFileSave;
-        private System.Windows.Forms.MenuItem menuFileSaveAs;
-        private System.Windows.Forms.MenuItem menuFileAcquire;
-        private System.Windows.Forms.MenuItem menuFileAcquireFromScannerOrCamera;
-        private System.Windows.Forms.MenuItem menuFileAcquireFromClipboard;
-        private System.Windows.Forms.MenuItem menuFileOpenInNewWindow;
-        private System.Windows.Forms.MenuItem menuFileNewWindow;
-        private System.Windows.Forms.MenuItem menuFileOpenRecent;
-        private System.Windows.Forms.MenuItem menuFileLanguage;
-        private System.Windows.Forms.MenuItem menuFileLanguageSentinel;
-        private System.Windows.Forms.MenuItem menuFileUpdates;
-        private System.Windows.Forms.MenuItem menuFileUpdatesCheckNow;
-        private System.Windows.Forms.MenuItem menuFileUpdatesAutoCheckEnabled;
-        private System.Windows.Forms.MenuItem menuFileUpdatesCheckForBetas;
-        private System.Windows.Forms.MenuItem menuFilePrint;
+        private System.Windows.Forms.ToolStripMenuItem menuFile;
+        private System.Windows.Forms.ToolStripMenuItem menuFileExit;
+        private System.Windows.Forms.ToolStripMenuItem menuFileOpen;
+        private System.Windows.Forms.ToolStripMenuItem menuFileNew;
+        private System.Windows.Forms.ToolStripMenuItem menuFileSave;
+        private System.Windows.Forms.ToolStripMenuItem menuFileSaveAs;
+        private System.Windows.Forms.ToolStripMenuItem menuFileAcquire;
+        private System.Windows.Forms.ToolStripMenuItem menuFileAcquireFromScannerOrCamera;
+        private System.Windows.Forms.ToolStripMenuItem menuFileAcquireFromClipboard;
+        private System.Windows.Forms.ToolStripMenuItem menuFileOpenInNewWindow;
+        private System.Windows.Forms.ToolStripMenuItem menuFileNewWindow;
+        private System.Windows.Forms.ToolStripMenuItem menuFileOpenRecent;
+        private System.Windows.Forms.ToolStripMenuItem menuFileLanguage;
+        private System.Windows.Forms.ToolStripMenuItem menuFileLanguageSentinel;
+        private System.Windows.Forms.ToolStripMenuItem menuFileUpdates;
+        private System.Windows.Forms.ToolStripMenuItem menuFileUpdatesCheckNow;
+        private System.Windows.Forms.ToolStripMenuItem menuFileUpdatesAutoCheckEnabled;
+        private System.Windows.Forms.ToolStripMenuItem menuFileUpdatesCheckForBetas;
+        private System.Windows.Forms.ToolStripMenuItem menuFilePrint;
 
-        private System.Windows.Forms.MenuItem menuEdit;
-        private System.Windows.Forms.MenuItem menuEditUndo;
-        private System.Windows.Forms.MenuItem menuEditRedo;
-        private System.Windows.Forms.MenuItem menuEditCopy;
-        private System.Windows.Forms.MenuItem menuEditPaste;
-        private System.Windows.Forms.MenuItem menuEditCut;
-        private System.Windows.Forms.MenuItem menuEditInvertSelection;
-        private System.Windows.Forms.MenuItem menuEditSelectAll;
-        private System.Windows.Forms.MenuItem menuEditDeselect;
-        private System.Windows.Forms.MenuItem menuEditEraseSelection;
-        private System.Windows.Forms.MenuItem menuEditPasteInToNewLayer;
+        private System.Windows.Forms.ToolStripMenuItem menuEdit;
+        private System.Windows.Forms.ToolStripMenuItem menuEditUndo;
+        private System.Windows.Forms.ToolStripMenuItem menuEditRedo;
+        private System.Windows.Forms.ToolStripMenuItem menuEditCopy;
+        private System.Windows.Forms.ToolStripMenuItem menuEditPaste;
+        private System.Windows.Forms.ToolStripMenuItem menuEditCut;
+        private System.Windows.Forms.ToolStripMenuItem menuEditInvertSelection;
+        private System.Windows.Forms.ToolStripMenuItem menuEditSelectAll;
+        private System.Windows.Forms.ToolStripMenuItem menuEditDeselect;
+        private System.Windows.Forms.ToolStripMenuItem menuEditEraseSelection;
+        private System.Windows.Forms.ToolStripMenuItem menuEditPasteInToNewLayer;
 
-        private System.Windows.Forms.MenuItem menuView;
-        private System.Windows.Forms.MenuItem menuViewZoomIn;
-        private System.Windows.Forms.MenuItem menuViewZoomOut;
-        private System.Windows.Forms.MenuItem menuViewZoomToWindow;
-        private System.Windows.Forms.MenuItem menuViewZoomToSelection;
-        private System.Windows.Forms.MenuItem menuViewActualSize;
-        private System.Windows.Forms.MenuItem menuViewSeperator;
-        private System.Windows.Forms.MenuItem menuViewGrid;
-        private System.Windows.Forms.MenuItem menuViewRulers;
-        private System.Windows.Forms.MenuItem menuViewUnits;
-        private System.Windows.Forms.MenuItem menuViewUnitsPixels;
-        private System.Windows.Forms.MenuItem menuViewUnitsInches;
-        private System.Windows.Forms.MenuItem menuViewUnitsCentimeters;
+        private System.Windows.Forms.ToolStripMenuItem menuView;
+        private System.Windows.Forms.ToolStripMenuItem menuViewZoomIn;
+        private System.Windows.Forms.ToolStripMenuItem menuViewZoomOut;
+        private System.Windows.Forms.ToolStripMenuItem menuViewZoomToWindow;
+        private System.Windows.Forms.ToolStripMenuItem menuViewZoomToSelection;
+        private System.Windows.Forms.ToolStripMenuItem menuViewActualSize;
+        private System.Windows.Forms.ToolStripSeparator menuViewSeperator;
+        private System.Windows.Forms.ToolStripMenuItem menuViewGrid;
+        private System.Windows.Forms.ToolStripMenuItem menuViewRulers;
+        private System.Windows.Forms.ToolStripMenuItem menuViewUnits;
+        private System.Windows.Forms.ToolStripMenuItem menuViewUnitsPixels;
+        private System.Windows.Forms.ToolStripMenuItem menuViewUnitsInches;
+        private System.Windows.Forms.ToolStripMenuItem menuViewUnitsCentimeters;
 
-        private System.Windows.Forms.MenuItem menuImage;
-        private System.Windows.Forms.MenuItem menuImageCrop;
-        private System.Windows.Forms.MenuItem menuImageResize;
-        private System.Windows.Forms.MenuItem menuImageFlip;
-        private System.Windows.Forms.MenuItem menuImageFlipHorizontal;
-        private System.Windows.Forms.MenuItem menuImageFlipVertical;
-        private System.Windows.Forms.MenuItem menuImageFlatten;
-        private System.Windows.Forms.MenuItem menuImageCanvasSize;
-        private System.Windows.Forms.MenuItem menuImageRotate;
-        private System.Windows.Forms.MenuItem menuImageRotate90CW;
-        private System.Windows.Forms.MenuItem menuImageRotate180CW;
-        private System.Windows.Forms.MenuItem menuImageRotate270CW;
-        private System.Windows.Forms.MenuItem menuImageRotate90CCW;
-        private System.Windows.Forms.MenuItem menuImageRotate180CCW;
-        private System.Windows.Forms.MenuItem menuImageRotate270CCW;
+        private System.Windows.Forms.ToolStripMenuItem menuImage;
+        private System.Windows.Forms.ToolStripMenuItem menuImageCrop;
+        private System.Windows.Forms.ToolStripMenuItem menuImageResize;
+        private System.Windows.Forms.ToolStripMenuItem menuImageFlip;
+        private System.Windows.Forms.ToolStripMenuItem menuImageFlipHorizontal;
+        private System.Windows.Forms.ToolStripMenuItem menuImageFlipVertical;
+        private System.Windows.Forms.ToolStripMenuItem menuImageFlatten;
+        private System.Windows.Forms.ToolStripMenuItem menuImageCanvasSize;
+        private System.Windows.Forms.ToolStripMenuItem menuImageRotate;
+        private System.Windows.Forms.ToolStripMenuItem menuImageRotate90CW;
+        private System.Windows.Forms.ToolStripMenuItem menuImageRotate180CW;
+        private System.Windows.Forms.ToolStripMenuItem menuImageRotate270CW;
+        private System.Windows.Forms.ToolStripMenuItem menuImageRotate90CCW;
+        private System.Windows.Forms.ToolStripMenuItem menuImageRotate180CCW;
+        private System.Windows.Forms.ToolStripMenuItem menuImageRotate270CCW;
 
-        private System.Windows.Forms.MenuItem menuLayers;
-        private System.Windows.Forms.MenuItem menuLayersAddNewLayer;
-        private System.Windows.Forms.MenuItem menuLayersDeleteLayer;
-        private System.Windows.Forms.MenuItem menuLayersFlip;
-        private System.Windows.Forms.MenuItem menuLayersFlipHorizontal;
-        private System.Windows.Forms.MenuItem menuLayersFlipVertical;
-        private System.Windows.Forms.MenuItem menuLayersRotateZoom;
-        private System.Windows.Forms.MenuItem menuLayersDuplicateLayer;
-        private System.Windows.Forms.MenuItem menuLayersLayerProperties;
-        private System.Windows.Forms.MenuItem menuLayersAdjustments;
-        private System.Windows.Forms.MenuItem menuLayersImportFromFile;
+        private System.Windows.Forms.ToolStripMenuItem menuLayers;
+        private System.Windows.Forms.ToolStripMenuItem menuLayersAddNewLayer;
+        private System.Windows.Forms.ToolStripMenuItem menuLayersDeleteLayer;
+        private System.Windows.Forms.ToolStripMenuItem menuLayersFlip;
+        private System.Windows.Forms.ToolStripMenuItem menuLayersFlipHorizontal;
+        private System.Windows.Forms.ToolStripMenuItem menuLayersFlipVertical;
+        private System.Windows.Forms.ToolStripMenuItem menuLayersRotateZoom;
+        private System.Windows.Forms.ToolStripMenuItem menuLayersDuplicateLayer;
+        private System.Windows.Forms.ToolStripMenuItem menuLayersLayerProperties;
+        private System.Windows.Forms.ToolStripMenuItem menuLayersAdjustments;
+        private System.Windows.Forms.ToolStripMenuItem menuLayersImportFromFile;
 
-        private System.Windows.Forms.MenuItem menuEffects;
-        private System.Windows.Forms.MenuItem menuEffectsSentinel;
+        private System.Windows.Forms.ToolStripMenuItem menuEffects;
+        private System.Windows.Forms.ToolStripMenuItem menuEffectsSentinel;
 
-        private System.Windows.Forms.MenuItem menuTools;
-        private System.Windows.Forms.MenuItem menuToolsAntiAliasing;
-        private System.Windows.Forms.MenuItem menuToolsAlphaBlending;
-        private System.Windows.Forms.MenuItem menuToolsSeperator;
+        private System.Windows.Forms.ToolStripMenuItem menuTools;
+        private System.Windows.Forms.ToolStripMenuItem menuToolsAntialiasing;
+        private System.Windows.Forms.ToolStripMenuItem menuToolsAlphaBlending;
+        private System.Windows.Forms.ToolStripSeparator menuToolsSeperator;
 
-        private System.Windows.Forms.MenuItem menuWindow;
-        private System.Windows.Forms.MenuItem menuWindowResetWindowLocations;
-        private System.Windows.Forms.MenuItem menuWindowTools;
-        private System.Windows.Forms.MenuItem menuWindowHistory;
-        private System.Windows.Forms.MenuItem menuWindowLayers;
-        private System.Windows.Forms.MenuItem menuWindowColors;
-        private System.Windows.Forms.MenuItem menuWindowTranslucent;
+        private System.Windows.Forms.ToolStripMenuItem menuWindow;
+        private System.Windows.Forms.ToolStripMenuItem menuWindowResetWindowLocations;
+        private System.Windows.Forms.ToolStripMenuItem menuWindowTools;
+        private System.Windows.Forms.ToolStripMenuItem menuWindowHistory;
+        private System.Windows.Forms.ToolStripMenuItem menuWindowLayers;
+        private System.Windows.Forms.ToolStripMenuItem menuWindowColors;
+        private System.Windows.Forms.ToolStripMenuItem menuWindowTranslucent;
 
-        private System.Windows.Forms.MenuItem menuHelp;
-        private System.Windows.Forms.MenuItem menuHelpHelpTopics;
-        private System.Windows.Forms.MenuItem menuHelpSendFeedback;
-        private System.Windows.Forms.MenuItem menuHelpAbout;
+        private System.Windows.Forms.ToolStripMenuItem menuHelp;
+        private System.Windows.Forms.ToolStripMenuItem menuHelpHelpTopics;
+        private System.Windows.Forms.ToolStripMenuItem menuHelpDonate;
+        private System.Windows.Forms.ToolStripMenuItem menuHelpSendFeedback;
+        private System.Windows.Forms.ToolStripMenuItem menuHelpAbout;
 
-        private System.Windows.Forms.MenuItem menuDebug;
-        private System.Windows.Forms.MenuItem menuItem1;
-        private System.Windows.Forms.MenuItem menuItem4;
+        private System.Windows.Forms.ToolStripMenuItem menuDebug;
+        private System.Windows.Forms.ToolStripMenuItem menuItem1;
+        private System.Windows.Forms.ToolStripMenuItem menuItem4;
 
-        private System.Windows.Forms.MenuItem menuSeparator1;
-        private System.Windows.Forms.MenuItem menuSeparator2;
-        private System.Windows.Forms.MenuItem menuSeparator4;
-        private System.Windows.Forms.MenuItem menuSeparator5;
-        private System.Windows.Forms.MenuItem menuSeparator6;
-        private System.Windows.Forms.MenuItem menuSeparator9;
-        private System.Windows.Forms.MenuItem menuSeparator10;
-        private System.Windows.Forms.MenuItem menuItem5;
-        private System.Windows.Forms.MenuItem menuItem10;
-        private System.Windows.Forms.MenuItem menuItem11;
-        private System.Windows.Forms.MenuItem menuItem8;
-        private System.Windows.Forms.MenuItem menuItem14;
-        private System.Windows.Forms.MenuItem menuItem6;
-        private System.Windows.Forms.MenuItem menuItem7;
-        private System.Windows.Forms.MenuItem menuItem9;
-        private System.Windows.Forms.MenuItem menuItem13;
-        private System.Windows.Forms.MenuItem menuItem16;
-        private System.Windows.Forms.MenuItem menuItem17;
-        private System.Windows.Forms.MenuItem menuItem12;
-        private System.Windows.Forms.MenuItem menuItem18;
+        private System.Windows.Forms.ToolStripMenuItem menuItem8;
+
+        private System.Windows.Forms.ToolStripSeparator menuSeparator1;
+        private System.Windows.Forms.ToolStripSeparator menuSeparator2;
+        private System.Windows.Forms.ToolStripSeparator menuSeparator4;
+        private System.Windows.Forms.ToolStripSeparator menuSeparator5;
+        private System.Windows.Forms.ToolStripSeparator menuSeparator6;
+        private System.Windows.Forms.ToolStripSeparator menuSeparator9;
+        private System.Windows.Forms.ToolStripSeparator menuSeparator10;
+        private System.Windows.Forms.ToolStripSeparator menuItem5;
+        private System.Windows.Forms.ToolStripSeparator menuItem10;
+        private System.Windows.Forms.ToolStripSeparator menuItem11;
+        private System.Windows.Forms.ToolStripSeparator menuItem14;
+        private System.Windows.Forms.ToolStripSeparator menuItem6;
+        private System.Windows.Forms.ToolStripSeparator menuItem7;
+        private System.Windows.Forms.ToolStripSeparator menuItem9;
+        private System.Windows.Forms.ToolStripSeparator menuItem13;
+        private System.Windows.Forms.ToolStripSeparator menuItem16;
+        private System.Windows.Forms.ToolStripSeparator menuItem17;
+        private System.Windows.Forms.ToolStripSeparator menuItem12;
+        private System.Windows.Forms.ToolStripSeparator menuItem18;
+        private System.Windows.Forms.ToolStripSeparator menuSeparator7;
+        private System.Windows.Forms.ToolStripSeparator menuSeparator8;
 
         private System.ComponentModel.IContainer components;
         private PaintDotNet.DocumentWorkspace workspace;
 
-        private System.Windows.Forms.ImageList menuImages;
         private EventHandler menuEffectsClickDelegate;
         private EventHandler menuToolsClickDelegate;
         private CancelEventHandler hideInsteadOfCloseDelegate;
@@ -230,36 +179,30 @@ namespace PaintDotNet
         //       PaintDotNet.Effects.dll until after we start up
         private object lastEffect = null;
 
-        private System.Windows.Forms.StatusBar statusBar;
-        private System.Windows.Forms.StatusBarPanel progressStatusBar;
-        private System.Windows.Forms.StatusBarPanel imageInfoStatusBar;
-        private System.Windows.Forms.StatusBarPanel cursorInfoStatusBar;
-        private System.Windows.Forms.StatusBarPanel contextStatusBar;
-
-        private System.Windows.Forms.MenuItem menuSeparator7;
+        private System.Windows.Forms.StatusStrip statusStrip;
+        private System.Windows.Forms.ToolStripSeparator progressStatusSeparator;
+        private System.Windows.Forms.ToolStripProgressBar progressStatusBar;
+        private System.Windows.Forms.ToolStripStatusLabel imageInfoStatusLabel;
+        private System.Windows.Forms.ToolStripStatusLabel cursorInfoStatusLabel;
+        private System.Windows.Forms.ToolStripStatusLabel contextStatusLabel;
 
         // We keep track of each configurable effect's last token
         // This way it keeps its values in between user invocations
         private Hashtable effectTokenHash = new Hashtable();
-        private System.Windows.Forms.MenuItem menuSeparator8;
         private System.Windows.Forms.Timer floaterOpacityTimer;
         private FloatingToolForm[] floaters;
-        private System.Windows.Forms.Timer populateEffectsTimer;
+        private System.Windows.Forms.Timer deferredInitializationTimer;
 
         private MostRecentFiles mostRecentFiles = null;
         private const int defaultMostRecentFilesMax = 8;
         private const int mruIconSize = 40;
-        private System.Windows.Forms.ImageList mruImageList;
-        private DotNetWidgets.DotNetMenuProvider mruDotNetMenuProvider = null;
-        private DotNetWidgets.DotNetMenuProvider dotNetMenuProvider = null;
         private System.Windows.Forms.Timer invalidateTimer;
 
         private Icon paintDotNetIcon;
-        private Icon stopWatchIcon;
-        private Icon selectionIcon;
-        private Icon helpIcon;
-        private Icon cursorXYIcon;
-        private Icon imageSizeIcon;
+        private Image selectionIcon;
+        private Image helpIcon;
+        private Image cursorXYIcon;
+        private Image imageSizeIcon;
         private Image addNewLayerIcon;
         private Image fileNewIcon;
         private Image editCutIcon;
@@ -285,13 +228,13 @@ namespace PaintDotNet
         private Exception versionCheckException;
         private int versionManifestIndex = -1;
 
-        private Icon HelpIcon
+        private Image HelpIcon
         {
             get
             {
                 if (this.helpIcon == null)
                 {
-                    this.helpIcon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuHelpHelpTopicsIcon.bmp"), true);
+                    this.helpIcon = PdnResources.GetImage("Icons.MenuHelpHelpTopicsIcon.png");
                 }
 
                 return this.helpIcon;
@@ -304,59 +247,46 @@ namespace PaintDotNet
             {
                 if (this.layersImportFromFileIcon == null)
                 {
-                    this.layersImportFromFileIcon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuLayersImportFromFileIcon.bmp"), true);
+                    this.layersImportFromFileIcon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuLayersImportFromFileIcon.png"), true);
                 }
 
                 return this.layersImportFromFileIcon;
             }
         }
 
-        private Icon StopWatchIcon
-        {
-            get
-            {
-                if (this.stopWatchIcon == null)
-                {
-                    this.stopWatchIcon = PdnResources.GetIcon("Icons.StopWatchIcon.ico");
-                }
-
-                return this.stopWatchIcon;
-            }
-        }
-
-        private Icon SelectionIcon
+        private Image SelectionIcon
         {
             get
             {
                 if (this.selectionIcon == null)
                 {
-                    this.selectionIcon = PdnResources.GetIcon("Icons.SelectionIcon.ico");
+                    this.selectionIcon = PdnResources.GetImage("Icons.SelectionIcon.png");
                 }
 
                 return this.selectionIcon;
             }
         }
 
-        private Icon CursorXYIcon
+        private Image CursorXYIcon
         {
             get
             {
                 if (this.cursorXYIcon == null)
                 {
-                    this.cursorXYIcon = PdnResources.GetIcon("Icons.CursorXYIcon.ico");
+                    this.cursorXYIcon = PdnResources.GetImage("Icons.CursorXYIcon.png");
                 }
 
                 return this.cursorXYIcon;
             }
         }
 
-        private Icon ImageSizeIcon
+        private Image ImageSizeIcon
         {
             get
             {
                 if (this.imageSizeIcon == null)
                 {
-                    this.imageSizeIcon = PdnResources.GetIcon("Icons.ImageSizeIcon.ico");
+                    this.imageSizeIcon = PdnResources.GetImage("Icons.ImageSizeIcon.png");
                 }
 
                 return this.imageSizeIcon;
@@ -369,7 +299,7 @@ namespace PaintDotNet
             {
                 if (this.addNewLayerIcon == null)
                 {
-                    this.addNewLayerIcon = PdnResources.GetImage("Icons.MenuLayersAddNewLayerIcon.bmp");
+                    this.addNewLayerIcon = PdnResources.GetImage("Icons.MenuLayersAddNewLayerIcon.png");
                 }
 
                 return this.addNewLayerIcon;
@@ -382,7 +312,7 @@ namespace PaintDotNet
             {
                 if (this.fileNewIcon == null)
                 {
-                    this.fileNewIcon = PdnResources.GetImage("Icons.MenuFileNewIcon.bmp");
+                    this.fileNewIcon = PdnResources.GetImage("Icons.MenuFileNewIcon.png");
                 }
 
                 return this.fileNewIcon;
@@ -395,7 +325,7 @@ namespace PaintDotNet
             {
                 if (this.editCutIcon == null)
                 {
-                    this.editCutIcon = PdnResources.GetImage("Icons.MenuEditCutIcon.bmp");
+                    this.editCutIcon = PdnResources.GetImage("Icons.MenuEditCutIcon.png");
                 }
 
                 return this.editCutIcon;
@@ -408,7 +338,7 @@ namespace PaintDotNet
             {
                 if (this.imageFromDiskIcon == null)
                 {
-                    this.imageFromDiskIcon = PdnResources.GetImage("Icons.ImageFromDiskIcon.bmp");
+                    this.imageFromDiskIcon = PdnResources.GetImage("Icons.ImageFromDiskIcon.png");
                 }
 
                 return this.imageFromDiskIcon;
@@ -448,6 +378,18 @@ namespace PaintDotNet
                     // This lets us use an alternate update manifest on the web server so that
                     // we can test manifests on a small scale before "deploying" them to everybody
                     PdnInfo.IsTestMode = true;
+                }
+                else if (0 == string.Compare(argument, "/profileStartupTimed", true))
+                {
+                    // profileStartupTimed and profileStartupWorkingSet compete, which
+                    // ever is last in the args list wins.
+                    PdnInfo.StartupTest = PdnInfo.StartupTestType.Timed;
+                }
+                else if (0 == string.Compare(argument, "/profileStartupWorkingSet", true))
+                {
+                    // profileStartupTimed and profileStartupWorkingSet compete, which
+                    // ever is last in the args list wins.
+                    PdnInfo.StartupTest = PdnInfo.StartupTestType.WorkingSet;
                 }
                 else
                 {
@@ -497,13 +439,7 @@ namespace PaintDotNet
             this.menuWindow.Text = PdnResources.GetString("MainForm.Menu.Window.Text");
             this.menuHelp.Text = PdnResources.GetString("MainForm.Menu.Help.Text");
 
-            this.dotNetMenuProvider = new DotNetWidgets.DotNetMenuProvider();
-            this.components.Add(dotNetMenuProvider);
-            dotNetMenuProvider.ImageList = this.menuImages;
-            TurnOnSpecialDrawing();
-
             workspace.DocumentView.ScaleFactorChanged += new EventHandler(DocumentView_ScaleFactorChanged);
-            this.mruImageList.ImageSize = new System.Drawing.Size(2 + MainForm.mruIconSize, 2 + MainForm.mruIconSize);
 
             components = null;
 
@@ -539,10 +475,6 @@ namespace PaintDotNet
 
             workspace.Document.Dirty = false;
 
-            // WHen the user changes the display resolution, we need to do some fixing of our UI
-            // like making sure our floaters are actually on screen
-            Microsoft.Win32.SystemEvents.DisplaySettingsChanged += new EventHandler(SystemEvents_DisplaySettingsChanged);
-
 #if !DEBUG
             menuDebug.Visible = false;
 #endif
@@ -571,9 +503,8 @@ namespace PaintDotNet
 
             SetupStatusBars();
             LoadWindowState();
-            UserSessions.SessionChanged += new EventHandler(UserSessions_SessionChanged);
 
-            populateEffectsTimer.Enabled = true;
+            deferredInitializationTimer.Enabled = true;
 
             workspace.Environment.UnitsChanged += new EventHandler(Environment_UnitsChanged);
 
@@ -587,12 +518,6 @@ namespace PaintDotNet
             Application.Idle += new EventHandler(Application_Idle);
         }
 
-        protected override void OnEnableStyles()
-        {
-            // do nothing initially
-            //base.OnEnableStyles();
-        }
-
         private void SetToolHelpText()
         {
             if (workspace.Environment.Tool != null)
@@ -601,8 +526,9 @@ namespace PaintDotNet
                 string helpText = workspace.Environment.Tool.HelpText;
 
                 string contextFormat = PdnResources.GetString("MainForm.StatusBar.Context.Help.Text.Format");
-                contextStatusBar.Text = string.Format(contextFormat, toolName, helpText);
-                contextStatusBar.Icon = this.HelpIcon;
+
+                contextStatusLabel.Text = string.Format(contextFormat, toolName, helpText);
+                contextStatusLabel.Image = this.HelpIcon;
             }
         }
 
@@ -627,27 +553,6 @@ namespace PaintDotNet
             else
             {
                 return new Size(800, 600);
-            }
-        }
-
-        private void TurnOnSpecialDrawing()
-        {
-            foreach (MenuItem mi in this.mainMenu.MenuItems)
-            {
-                TurnOnSpecialDrawing(mi, true);
-            }
-        }
-
-        private void TurnOnSpecialDrawing(MenuItem menuItem, bool skipFirst)
-        {
-            if (!skipFirst)
-            {
-                dotNetMenuProvider.SetDrawSpecial(menuItem, true);
-            }
-
-            foreach (MenuItem mi in menuItem.MenuItems)
-            {
-                TurnOnSpecialDrawing(mi, false);
             }
         }
 
@@ -698,9 +603,6 @@ namespace PaintDotNet
         {
             try
             {
-                this.workspace.DocumentView.RulersEnabled = Settings.CurrentUser.GetBoolean(PdnSettings.Rulers, false);
-                this.workspace.DocumentView.DrawGrid = Settings.CurrentUser.GetBoolean(PdnSettings.DrawGrid, false);
-                this.workspace.Environment.Units = (MeasurementUnit)Enum.Parse(typeof(MeasurementUnit), Settings.CurrentUser.GetString(PdnSettings.Units, MeasurementUnit.Pixel.ToString()), true);
                 PdnBaseForm.EnableOpacity = Settings.CurrentUser.GetBoolean(PdnSettings.TranslucentWindows, true);
             }
 
@@ -708,14 +610,20 @@ namespace PaintDotNet
             {
                 Tracing.Ping("Exception in MainForm.LoadSettings:" + ex.ToString());
 
-                Settings.CurrentUser.Delete(new string[] { 
-                                                             PdnSettings.Rulers, 
-                                                             PdnSettings.DrawGrid, 
-                                                             PdnSettings.TranslucentWindows,
-                                                             PdnSettings.Tolerance,
-                                                             PdnSettings.Units
-                                                         });
+                try
+                {
+                    Settings.CurrentUser.Delete(new string[] 
+                                                { 
+                                                    PdnSettings.TranslucentWindows
+                                                });
+                }
+
+                catch
+                {
+                }
             }
+
+            this.workspace.LoadSettings();
         }
 
         private void LoadMruList()
@@ -766,9 +674,6 @@ namespace PaintDotNet
             Settings.CurrentUser.SetInt32(PdnSettings.Left, this.Left);
             Settings.CurrentUser.SetString(PdnSettings.WindowState, this.WindowState.ToString());
 
-            Settings.CurrentUser.SetBoolean(PdnSettings.Rulers, this.workspace.DocumentView.RulersEnabled);
-            Settings.CurrentUser.SetBoolean(PdnSettings.DrawGrid, this.workspace.DocumentView.DrawGrid);
-            Settings.CurrentUser.SetString(PdnSettings.Units, this.workspace.Environment.Units.ToString(CultureInfo.InvariantCulture));
             Settings.CurrentUser.SetBoolean(PdnSettings.TranslucentWindows, PdnBaseForm.EnableOpacity);
 
             if (this.WindowState != FormWindowState.Minimized)
@@ -778,6 +683,8 @@ namespace PaintDotNet
                 Settings.CurrentUser.SetBoolean(PdnSettings.HistoryFormVisible, this.workspace.Widgets.HistoryForm.Visible);
                 Settings.CurrentUser.SetBoolean(PdnSettings.LayersFormVisible, this.workspace.Widgets.LayerForm.Visible);
             }
+
+            this.workspace.SaveSettings();
 
             SaveMruList();
         }
@@ -789,7 +696,7 @@ namespace PaintDotNet
                 return;
             }
 
-            Settings.CurrentUser.SetInt32("MRUMax", this.mostRecentFiles.MaxCount);
+            Settings.CurrentUser.SetInt32(PdnSettings.MruMax, this.mostRecentFiles.MaxCount);
             MostRecentFile[] mrfArray = mostRecentFiles.GetFileList();
 
             for (int i = 0; i < mostRecentFiles.MaxCount; ++i)
@@ -818,16 +725,20 @@ namespace PaintDotNet
             this.workspace.Environment.ToolChanged += new EventHandler(Environment_ToolChanged);
 
             // cursorInfo (x,y info)
-            this.cursorInfoStatusBar.Icon = this.CursorXYIcon;
-            this.cursorInfoStatusBar.Text = string.Empty;
+            this.cursorInfoStatusLabel.Image = this.CursorXYIcon;
+            this.cursorInfoStatusLabel.Text = string.Empty;
+
             this.workspace.DocumentView.DocumentMouseMove += new MouseEventHandler(DocumentView_DocumentMouseMove);
             
             // imageInfo (width,height info)
-            this.imageInfoStatusBar.Icon = this.ImageSizeIcon;
+            this.imageInfoStatusLabel.Image = this.ImageSizeIcon;
             this.workspace.DocumentChanged += new EventHandler(workspace_DocumentChanged);
 
             // progress
-            this.progressStatusBar.Text = string.Empty;
+            this.progressStatusBar.Visible = false;
+            this.progressStatusSeparator.Visible = false;
+            this.progressStatusBar.Height -= 4;
+            this.progressStatusBar.ProgressBar.Style = ProgressBarStyle.Continuous;
         }
 
         protected override void OnQueryEndSession(CancelEventArgs e)
@@ -937,59 +848,38 @@ namespace PaintDotNet
             base.OnClosed (e);
         }
 
-        // ImageList functions
-        private Hashtable imageListImages = new Hashtable(); // maps image->int which is used as index into this.menuImages
-        private int AddImageToMenuImages(Image newImage)
+        private void SetMenuIcon(ToolStripMenuItem menuItem, string imageName)
         {
-            object result = imageListImages[newImage];
-
-            if (result == null)
-            {
-                int index = menuImages.Images.Add(newImage, menuImages.TransparentColor);
-                imageListImages.Add(newImage, index);
-                return index;
-            }
-            else
-            {
-                return (int)result;
-            }
+            menuItem.ImageTransparentColor = Utility.TransparentKey;
+            menuItem.Image = PdnResources.GetImage(imageName);
         }
 
-        private void SetMenuIcon(MenuItem menuItem, string imageName)
+        private void SetMenuIcon(ToolStripMenuItem menuItem, Image image)
         {
-            int index = AddImageToMenuImages(PdnResources.GetImage(imageName));
-            this.dotNetMenuProvider.SetDrawSpecial(menuItem, true);
-            this.dotNetMenuProvider.SetImageIndex(menuItem, index);
+            menuItem.ImageTransparentColor = Utility.TransparentKey;
+            menuItem.Image = image;
         }
 
-        private void SetMenuIcon(MenuItem menuItem, Image image)
-        {
-            int index = AddImageToMenuImages(image);
-            this.dotNetMenuProvider.SetDrawSpecial(menuItem, true);
-            this.dotNetMenuProvider.SetImageIndex(menuItem, index);
-        }
-
-        private void ClickOnMenuItem(MenuItem menuItem)
+        private void ClickOnMenuItem(ToolStripMenuItem menuItem)
         {
             menuItem.PerformClick();
         }
 
-        private delegate void VoidMenuItemDelegate(MenuItem menuItem);
+        private delegate void VoidMenuItemDelegate(ToolStripMenuItem menuItem);
 
-        private void ClickOnMenuItemAsync(MenuItem menuItem)
+        private void ClickOnMenuItemAsync(ToolStripMenuItem menuItem)
         {
             this.BeginInvoke(new VoidMenuItemDelegate(ClickOnMenuItem), new object[] { menuItem });
         }
 
-        private void ClearMenuItem(MenuItem menuItem)
+        private void ClearMenuItem(ToolStripMenuItem menuItem)
         {
-            menuItem.MenuItems.Clear();
+            menuItem.DropDownItems.Clear();
         }
 
-        private void AddToMenuItem(MenuItem addToMe, MenuItem addMe)
+        private void AddToMenuItem(ToolStripMenuItem addToMe, ToolStripMenuItem addMe)
         {
-            addToMe.MenuItems.Add(addMe);
-            this.dotNetMenuProvider.SetDrawSpecial(addMe, true);
+            addToMe.DropDownItems.Add(addMe);
         }
 
         /// <summary>
@@ -1023,140 +913,139 @@ namespace PaintDotNet
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.mainMenu = new System.Windows.Forms.MainMenu();
-            this.menuFile = new System.Windows.Forms.MenuItem();
-            this.menuFileNew = new System.Windows.Forms.MenuItem();
-            this.menuFileOpen = new System.Windows.Forms.MenuItem();
-            this.menuFileOpenRecent = new System.Windows.Forms.MenuItem();
-            this.menuItem16 = new System.Windows.Forms.MenuItem();
-            this.menuFileAcquire = new System.Windows.Forms.MenuItem();
-            this.menuFileAcquireFromClipboard = new System.Windows.Forms.MenuItem();
-            this.menuFileAcquireFromScannerOrCamera = new System.Windows.Forms.MenuItem();
-            this.menuItem11 = new System.Windows.Forms.MenuItem();
-            this.menuFileNewWindow = new System.Windows.Forms.MenuItem();
-            this.menuFileOpenInNewWindow = new System.Windows.Forms.MenuItem();
-            this.menuSeparator1 = new System.Windows.Forms.MenuItem();
-            this.menuFileSave = new System.Windows.Forms.MenuItem();
-            this.menuFileSaveAs = new System.Windows.Forms.MenuItem();
-            this.menuItem10 = new System.Windows.Forms.MenuItem();
-            this.menuFilePrint = new System.Windows.Forms.MenuItem();
-            this.menuSeparator2 = new System.Windows.Forms.MenuItem();
-            this.menuFileExit = new System.Windows.Forms.MenuItem();
-            this.menuEdit = new System.Windows.Forms.MenuItem();
-            this.menuEditUndo = new System.Windows.Forms.MenuItem();
-            this.menuEditRedo = new System.Windows.Forms.MenuItem();
-            this.menuSeparator4 = new System.Windows.Forms.MenuItem();
-            this.menuEditCut = new System.Windows.Forms.MenuItem();
-            this.menuEditCopy = new System.Windows.Forms.MenuItem();
-            this.menuEditPaste = new System.Windows.Forms.MenuItem();
-            this.menuEditPasteInToNewLayer = new System.Windows.Forms.MenuItem();
-            this.menuEditEraseSelection = new System.Windows.Forms.MenuItem();
-            this.menuSeparator6 = new System.Windows.Forms.MenuItem();
-            this.menuEditInvertSelection = new System.Windows.Forms.MenuItem();
-            this.menuEditSelectAll = new System.Windows.Forms.MenuItem();
-            this.menuEditDeselect = new System.Windows.Forms.MenuItem();
-            this.menuView = new System.Windows.Forms.MenuItem();
-            this.menuViewZoomIn = new System.Windows.Forms.MenuItem();
-            this.menuViewZoomOut = new System.Windows.Forms.MenuItem();
-            this.menuViewZoomToWindow = new System.Windows.Forms.MenuItem();
-            this.menuViewZoomToSelection = new System.Windows.Forms.MenuItem();
-            this.menuViewActualSize = new System.Windows.Forms.MenuItem();
-            this.menuViewSeperator = new System.Windows.Forms.MenuItem();
-            this.menuViewGrid = new System.Windows.Forms.MenuItem();
-            this.menuViewRulers = new System.Windows.Forms.MenuItem();
-            this.menuViewUnits = new System.Windows.Forms.MenuItem();
-            this.menuViewUnitsPixels = new System.Windows.Forms.MenuItem();
-            this.menuViewUnitsInches = new System.Windows.Forms.MenuItem();
-            this.menuViewUnitsCentimeters = new System.Windows.Forms.MenuItem();
-            this.menuImage = new System.Windows.Forms.MenuItem();
-            this.menuImageCrop = new System.Windows.Forms.MenuItem();
-            this.menuImageResize = new System.Windows.Forms.MenuItem();
-            this.menuImageCanvasSize = new System.Windows.Forms.MenuItem();
-            this.menuSeparator8 = new System.Windows.Forms.MenuItem();
-            this.menuImageFlip = new System.Windows.Forms.MenuItem();
-            this.menuImageFlipHorizontal = new System.Windows.Forms.MenuItem();
-            this.menuImageFlipVertical = new System.Windows.Forms.MenuItem();
-            this.menuImageRotate = new System.Windows.Forms.MenuItem();
-            this.menuImageRotate90CW = new System.Windows.Forms.MenuItem();
-            this.menuImageRotate180CW = new System.Windows.Forms.MenuItem();
-            this.menuImageRotate270CW = new System.Windows.Forms.MenuItem();
-            this.menuItem13 = new System.Windows.Forms.MenuItem();
-            this.menuImageRotate90CCW = new System.Windows.Forms.MenuItem();
-            this.menuImageRotate180CCW = new System.Windows.Forms.MenuItem();
-            this.menuImageRotate270CCW = new System.Windows.Forms.MenuItem();
-            this.menuLayers = new System.Windows.Forms.MenuItem();
-            this.menuLayersAddNewLayer = new System.Windows.Forms.MenuItem();
-            this.menuLayersDeleteLayer = new System.Windows.Forms.MenuItem();
-            this.menuLayersDuplicateLayer = new System.Windows.Forms.MenuItem();
-            this.menuLayersImportFromFile = new System.Windows.Forms.MenuItem();
-            this.menuSeparator5 = new System.Windows.Forms.MenuItem();
-            this.menuLayersAdjustments = new System.Windows.Forms.MenuItem();
-            this.menuItem17 = new System.Windows.Forms.MenuItem();
-            this.menuImageFlatten = new System.Windows.Forms.MenuItem();
-            this.menuItem18 = new System.Windows.Forms.MenuItem();
-            this.menuLayersFlip = new System.Windows.Forms.MenuItem();
-            this.menuLayersFlipHorizontal = new System.Windows.Forms.MenuItem();
-            this.menuLayersFlipVertical = new System.Windows.Forms.MenuItem();
-            this.menuLayersRotateZoom = new System.Windows.Forms.MenuItem();
-            this.menuItem9 = new System.Windows.Forms.MenuItem();
-            this.menuLayersLayerProperties = new System.Windows.Forms.MenuItem();
-            this.menuEffects = new System.Windows.Forms.MenuItem();
-            this.menuEffectsSentinel = new System.Windows.Forms.MenuItem();
-            this.menuTools = new System.Windows.Forms.MenuItem();
-            this.menuToolsAntiAliasing = new System.Windows.Forms.MenuItem();
-            this.menuToolsAlphaBlending = new System.Windows.Forms.MenuItem();
-            this.menuToolsSeperator = new System.Windows.Forms.MenuItem();
-            this.menuWindow = new System.Windows.Forms.MenuItem();
-            this.menuWindowResetWindowLocations = new System.Windows.Forms.MenuItem();
-            this.menuItem7 = new System.Windows.Forms.MenuItem();
-            this.menuWindowTranslucent = new System.Windows.Forms.MenuItem();
-            this.menuItem12 = new System.Windows.Forms.MenuItem();
-            this.menuWindowTools = new System.Windows.Forms.MenuItem();
-            this.menuWindowHistory = new System.Windows.Forms.MenuItem();
-            this.menuWindowLayers = new System.Windows.Forms.MenuItem();
-            this.menuWindowColors = new System.Windows.Forms.MenuItem();
-            this.menuDebug = new System.Windows.Forms.MenuItem();
-            this.menuItem1 = new System.Windows.Forms.MenuItem();
-            this.menuItem4 = new System.Windows.Forms.MenuItem();
-            this.menuItem5 = new System.Windows.Forms.MenuItem();
-            this.menuItem6 = new System.Windows.Forms.MenuItem();
-            this.menuItem8 = new System.Windows.Forms.MenuItem();
-            this.menuItem14 = new System.Windows.Forms.MenuItem();
-            this.menuHelp = new System.Windows.Forms.MenuItem();
-            this.menuHelpHelpTopics = new System.Windows.Forms.MenuItem();
-            this.menuSeparator7 = new System.Windows.Forms.MenuItem();
-            this.menuHelpAbout = new System.Windows.Forms.MenuItem();
-            this.menuFileLanguage = new System.Windows.Forms.MenuItem();
-            this.menuFileLanguageSentinel = new System.Windows.Forms.MenuItem();
-            this.menuFileUpdates = new System.Windows.Forms.MenuItem();
-            this.menuFileUpdatesCheckNow = new System.Windows.Forms.MenuItem();
-            this.menuSeparator9 = new System.Windows.Forms.MenuItem();
-            this.menuFileUpdatesAutoCheckEnabled = new System.Windows.Forms.MenuItem();
-            this.menuFileUpdatesCheckForBetas = new System.Windows.Forms.MenuItem();
-            this.menuHelpSendFeedback = new System.Windows.Forms.MenuItem();
-            this.menuSeparator10 = new System.Windows.Forms.MenuItem();
+            this.mainMenu = new PaintDotNet.SystemLayer.MenuStripEx();
+            this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFileNew = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFileOpen = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFileOpenRecent = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem16 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuFileAcquire = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFileAcquireFromClipboard = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFileAcquireFromScannerOrCamera = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem11 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuFileNewWindow = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFileOpenInNewWindow = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuFileSave = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFileSaveAs = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem10 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuFilePrint = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuFileExit = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEdit = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEditUndo = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEditRedo = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuEditCut = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEditCopy = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEditPaste = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEditPasteInToNewLayer = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEditEraseSelection = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuSeparator6 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuEditInvertSelection = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEditSelectAll = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEditDeselect = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuView = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuViewZoomIn = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuViewZoomOut = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuViewZoomToWindow = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuViewZoomToSelection = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuViewActualSize = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuViewSeperator = new System.Windows.Forms.ToolStripSeparator();
+            this.menuViewGrid = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuViewRulers = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuViewUnits = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuViewUnitsPixels = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuViewUnitsInches = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuViewUnitsCentimeters = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImage = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImageCrop = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImageResize = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImageCanvasSize = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuSeparator8 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuImageFlip = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImageFlipHorizontal = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImageFlipVertical = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImageRotate = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImageRotate90CW = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImageRotate180CW = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImageRotate270CW = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem13 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuImageRotate90CCW = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImageRotate180CCW = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImageRotate270CCW = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLayers = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLayersAddNewLayer = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLayersDeleteLayer = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLayersDuplicateLayer = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLayersImportFromFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuSeparator5 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuLayersAdjustments = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem17 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuImageFlatten = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem18 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuLayersFlip = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLayersFlipHorizontal = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLayersFlipVertical = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLayersRotateZoom = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem9 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuLayersLayerProperties = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEffects = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEffectsSentinel = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTools = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuToolsAntialiasing = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuToolsAlphaBlending = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuToolsSeperator = new System.Windows.Forms.ToolStripSeparator();
+            this.menuWindow = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuWindowResetWindowLocations = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem7 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuWindowTranslucent = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem12 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuWindowTools = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuWindowHistory = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuWindowLayers = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuWindowColors = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuDebug = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem4 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem5 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuItem6 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuItem8 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItem14 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuHelp = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuHelpHelpTopics = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuHelpDonate = new ToolStripMenuItem();
+            this.menuSeparator7 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuHelpAbout = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFileLanguage = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFileLanguageSentinel = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFileUpdates = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFileUpdatesCheckNow = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuSeparator9 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuFileUpdatesAutoCheckEnabled = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFileUpdatesCheckForBetas = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuHelpSendFeedback = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuSeparator10 = new System.Windows.Forms.ToolStripSeparator();
             this.defaultButton = new System.Windows.Forms.Button();
 
-            this.statusBar = new PdnStatusBar(); //new System.Windows.Forms.StatusBar();
-            this.contextStatusBar = new System.Windows.Forms.StatusBarPanel();
-            this.progressStatusBar = new System.Windows.Forms.StatusBarPanel();
-            this.imageInfoStatusBar = new System.Windows.Forms.StatusBarPanel();
-            this.cursorInfoStatusBar = new System.Windows.Forms.StatusBarPanel();
+            this.statusStrip = new StatusStrip();
+            this.contextStatusLabel = new ToolStripStatusLabel();
+            this.progressStatusSeparator = new ToolStripSeparator();
+            this.progressStatusBar = new ToolStripProgressBar();
+            this.imageInfoStatusLabel = new ToolStripStatusLabel();
+            this.cursorInfoStatusLabel = new ToolStripStatusLabel();
             this.workspace = new PaintDotNet.DocumentWorkspace();
-            this.menuImages = new System.Windows.Forms.ImageList(this.components);
             this.floaterOpacityTimer = new System.Windows.Forms.Timer(this.components);
             this.invalidateTimer = new System.Windows.Forms.Timer(this.components);
-            this.populateEffectsTimer = new System.Windows.Forms.Timer(this.components);
-            this.mruImageList = new System.Windows.Forms.ImageList(this.components);
-            ((System.ComponentModel.ISupportInitialize)(this.contextStatusBar)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.progressStatusBar)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.imageInfoStatusBar)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.cursorInfoStatusBar)).BeginInit();
+            this.deferredInitializationTimer = new System.Windows.Forms.Timer(this.components);
+            this.statusStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // mainMenu
             // 
-            this.mainMenu.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.mainMenu.ItemAdded += new ToolStripItemEventHandler(OnMenuItemAdded);
+            this.mainMenu.ItemRemoved += new ToolStripItemEventHandler(OnMenuItemRemoved);
+            this.mainMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                      this.menuFile,
                                                                                      this.menuEdit,
                                                                                      this.menuView,
@@ -1167,11 +1056,11 @@ namespace PaintDotNet
                                                                                      this.menuWindow,
                                                                                      this.menuDebug,
                                                                                      this.menuHelp});
+            this.mainMenu.LayoutStyle = ToolStripLayoutStyle.Flow;
             // 
             // menuFile
             // 
-            this.menuFile.Index = 0;
-            this.menuFile.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                      this.menuFileNew,
                                                                                      this.menuFileOpen,
                                                                                      this.menuFileOpenRecent,
@@ -1192,113 +1081,82 @@ namespace PaintDotNet
             // 
             // menuFileNew
             // 
-            this.menuFileNew.Index = 0;
-            this.menuFileNew.Shortcut = System.Windows.Forms.Shortcut.CtrlN;
+            this.menuFileNew.ShortcutKeys = Keys.Control | Keys.N;
             this.menuFileNew.Click += new System.EventHandler(this.menuFileNew_Click);
             // 
             // menuFileOpen
             // 
-            this.menuFileOpen.Index = 1;
-            this.menuFileOpen.Shortcut = System.Windows.Forms.Shortcut.CtrlO;
+            this.menuFileOpen.ShortcutKeys = Keys.Control | Keys.O;
             this.menuFileOpen.Click += new System.EventHandler(this.menuFileOpen_Click);
             // 
             // menuFileOpenRecent
             // 
-            this.menuFileOpenRecent.Index = 2;
-            this.menuFileOpenRecent.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuFileOpenRecent.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                                this.menuItem16});
-            this.menuFileOpenRecent.Popup += new System.EventHandler(this.menuFileOpenRecent_Popup);
+            this.menuFileOpenRecent.DropDownOpening += new System.EventHandler(this.menuFileOpenRecent_DropDownOpening);
+            this.menuFileOpenRecent.DropDownClosed += new EventHandler(OnMenuDropDownClosed);
             // 
             // menuItem16
             // 
-            this.menuItem16.Index = 0;
             this.menuItem16.Text = "sentinel";
             // 
             // menuFileAcquire
             // 
-            this.menuFileAcquire.Index = 3;
-            this.menuFileAcquire.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuFileAcquire.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                             this.menuFileAcquireFromClipboard,
                                                                                             this.menuFileAcquireFromScannerOrCamera});
-            this.menuFileAcquire.Popup += new System.EventHandler(this.menuFileAcquire_Popup);
+            this.menuFileAcquire.DropDownOpening += new System.EventHandler(this.menuFileAcquire_DropDownOpening);
+            this.menuFileAcquire.DropDownClosed += new EventHandler(OnMenuDropDownClosed);
             // 
             // menuFileAcquireFromClipboard
             // 
-            this.menuFileAcquireFromClipboard.Index = 0;
             this.menuFileAcquireFromClipboard.Click += new System.EventHandler(this.menuFileAcquireFromClipboard_Click);
             // 
             // menuFileAcquireFromScannerOrCamera
             // 
-            this.menuFileAcquireFromScannerOrCamera.Index = 1;
             this.menuFileAcquireFromScannerOrCamera.Click += new System.EventHandler(this.menuFileAcquireFromScannerOrCamera_Click);
-            // 
-            // menuItem11
-            // 
-            this.menuItem11.Index = 4;
-            this.menuItem11.Text = "-";
             // 
             // menuFileNewWindow
             // 
-            this.menuFileNewWindow.Index = 5;
-            this.menuFileNewWindow.Shortcut = System.Windows.Forms.Shortcut.CtrlShiftW;
+            this.menuFileNewWindow.ShortcutKeys = Keys.Control | Keys.Shift | Keys.W;
             this.menuFileNewWindow.Click += new System.EventHandler(this.menuFileNewWindow_Click);
             // 
             // menuFileOpenInNewWindow
             // 
-            this.menuFileOpenInNewWindow.Index = 6;
-            this.menuFileOpenInNewWindow.Shortcut = System.Windows.Forms.Shortcut.CtrlShiftO;
+            this.menuFileOpenInNewWindow.ShortcutKeys = Keys.Control | Keys.Shift | Keys.O;
             this.menuFileOpenInNewWindow.Click += new System.EventHandler(this.menuFileOpenInNewWindow_Click);
-            // 
-            // menuSeparator1
-            // 
-            this.menuSeparator1.Index = 7;
-            this.menuSeparator1.Text = "-";
             // 
             // menuFileSave
             // 
-            this.menuFileSave.Index = 8;
-            this.menuFileSave.Shortcut = System.Windows.Forms.Shortcut.CtrlS;
+            this.menuFileSave.ShortcutKeys = Keys.Control | Keys.S;
             this.menuFileSave.Click += new System.EventHandler(this.menuFileSave_Click);
             // 
             // menuFileSaveAs
             // 
-            this.menuFileSaveAs.Index = 9;
-            this.menuFileSaveAs.Shortcut = System.Windows.Forms.Shortcut.CtrlShiftS;
+            this.menuFileSaveAs.ShortcutKeys = Keys.Control | Keys.Shift | Keys.S;
             this.menuFileSaveAs.Click += new System.EventHandler(this.menuFileSaveAs_Click);
-            // 
-            // menuItem10
-            // 
-            this.menuItem10.Index = 10;
-            this.menuItem10.Text = "-";
             // 
             // menuFilePrint
             // 
-            this.menuFilePrint.Index = 11;
-            this.menuFilePrint.Shortcut = System.Windows.Forms.Shortcut.CtrlP;
+            this.menuFilePrint.ShortcutKeys = Keys.Control | Keys.P;
             this.menuFilePrint.Click += new System.EventHandler(this.menuFilePrint_Click);
-            // 
-            // menuSeparator2
-            // 
-            this.menuSeparator2.Index = 12;
-            this.menuSeparator2.Text = "-";
             //
             // menuFileLanguage
             //
-            this.menuFileLanguage.Index = 13;
-            this.menuFileLanguage.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuFileLanguage.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                              this.menuFileLanguageSentinel});
-            this.menuFileLanguage.Popup += new EventHandler(menuFileLanguage_Popup);
+            this.menuFileLanguage.DropDownOpening += new EventHandler(menuFileLanguage_DropDownOpening);
+            this.menuFileLanguage.DropDownClosed += new EventHandler(OnMenuDropDownClosed);
             // 
             // menuFileLanguageSentinel
             //
-            this.menuFileLanguageSentinel.Index = 0;
             this.menuFileLanguageSentinel.Text = "(sentinel)";
             //
             // menuFileUpdates
             //
-            this.menuFileUpdates.Index = 14;
-            this.menuFileUpdates.Popup += new EventHandler(menuFileUpdates_Popup);
-            this.menuFileUpdates.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuFileUpdates.DropDownOpening += new EventHandler(menuFileUpdates_DropDownOpening);
+            this.menuFileUpdates.DropDownClosed += new EventHandler(OnMenuDropDownClosed);
+            this.menuFileUpdates.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                             this.menuFileUpdatesCheckNow,
                                                                                             this.menuSeparator9,
                                                                                             this.menuFileUpdatesAutoCheckEnabled,
@@ -1306,38 +1164,23 @@ namespace PaintDotNet
             //
             // menuFileUpdatesCheckNow
             //
-            this.menuFileUpdatesCheckNow.Index = 0;
             this.menuFileUpdatesCheckNow.Click += new EventHandler(menuFileUpdatesCheckNow_Click);
-            //
-            // menuSeparator9
-            //
-            this.menuSeparator9.Index = 1;
-            this.menuSeparator9.Text = "-";
             //
             // menuFileUpdatesAutoCheckEnabled
             //
-            this.menuFileUpdatesAutoCheckEnabled.Index = 2;
             this.menuFileUpdatesAutoCheckEnabled.Click += new EventHandler(menuFileUpdatesAutoCheckEnabled_Click);
             //
             // menuFileUpdatesCheckForBetas
             //
-            this.menuFileUpdatesCheckForBetas.Index = 3;
             this.menuFileUpdatesCheckForBetas.Click += new EventHandler(menuFileUpdatesCheckForBetas_Click);
-            //
-            // menuSeparator10
-            //
-            this.menuSeparator10.Index = 15;
-            this.menuSeparator10.Text = "-";
             // 
             // menuFileExit
             // 
-            this.menuFileExit.Index = 16;
             this.menuFileExit.Click += new System.EventHandler(this.menuFileExit_Click);
             // 
             // menuEdit
             // 
-            this.menuEdit.Index = 1;
-            this.menuEdit.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuEdit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                      this.menuEditUndo,
                                                                                      this.menuEditRedo,
                                                                                      this.menuSeparator4,
@@ -1350,82 +1193,62 @@ namespace PaintDotNet
                                                                                      this.menuEditInvertSelection,
                                                                                      this.menuEditSelectAll,
                                                                                      this.menuEditDeselect});
-            this.menuEdit.Popup += new System.EventHandler(this.menuEdit_Popup);
+            this.menuEdit.DropDownOpening += new System.EventHandler(this.menuEdit_DropDownOpening);
+            this.menuEdit.DropDownClosed += new EventHandler(this.OnMenuDropDownClosed);
             // 
             // menuEditUndo
             // 
-            this.menuEditUndo.Index = 0;
-            this.menuEditUndo.Shortcut = System.Windows.Forms.Shortcut.CtrlZ;
+            this.menuEditUndo.ShortcutKeys = Keys.Control | Keys.Z;
             this.menuEditUndo.Click += new System.EventHandler(this.menuEditUndo_Click);
             // 
             // menuEditRedo
             // 
-            this.menuEditRedo.Index = 1;
-            this.menuEditRedo.Shortcut = System.Windows.Forms.Shortcut.CtrlY;
+            this.menuEditRedo.ShortcutKeys = Keys.Control | Keys.Y; 
             this.menuEditRedo.Click += new System.EventHandler(this.menuEditRedo_Click);
-            // 
-            // menuSeparator4
-            // 
-            this.menuSeparator4.Index = 2;
-            this.menuSeparator4.Text = "-";
             // 
             // menuEditCut
             // 
-            this.menuEditCut.Index = 3;
-            this.menuEditCut.Shortcut = System.Windows.Forms.Shortcut.CtrlX;
+            this.menuEditCut.ShortcutKeys = Keys.Control | Keys.X;
             this.menuEditCut.Click += new System.EventHandler(this.menuEditCut_Click);
             // 
             // menuEditCopy
             // 
-            this.menuEditCopy.Index = 4;
-            this.menuEditCopy.Shortcut = System.Windows.Forms.Shortcut.CtrlC;
+            this.menuEditCopy.ShortcutKeys = Keys.Control | Keys.C;
             this.menuEditCopy.Click += new System.EventHandler(this.menuEditCopy_Click);
             // 
             // menuEditPaste
             // 
-            this.menuEditPaste.Index = 5;
-            this.menuEditPaste.Shortcut = System.Windows.Forms.Shortcut.CtrlV;
+            this.menuEditPaste.ShortcutKeys = Keys.Control | Keys.V;
             this.menuEditPaste.Click += new System.EventHandler(this.menuEditPaste_Click);
             // 
             // menuEditPasteInToNewLayer
             // 
-            this.menuEditPasteInToNewLayer.Index = 6;
-            this.menuEditPasteInToNewLayer.Shortcut = System.Windows.Forms.Shortcut.CtrlShiftV;
+            this.menuEditPasteInToNewLayer.ShortcutKeys = Keys.Control | Keys.Shift | Keys.V;
             this.menuEditPasteInToNewLayer.Click += new System.EventHandler(this.menuEditPasteInToNewLayer_Click);
             // 
             // menuEditEraseSelection
             // 
-            this.menuEditEraseSelection.Index = 7;
-            this.menuEditEraseSelection.Shortcut = System.Windows.Forms.Shortcut.Del;
+            this.menuEditEraseSelection.ShortcutKeys = Keys.Delete;
             this.menuEditEraseSelection.Click += new System.EventHandler(this.menuEditClearSelection_Click);
-            // 
-            // menuSeparator6
-            // 
-            this.menuSeparator6.Index = 8;
-            this.menuSeparator6.Text = "-";
             // 
             // menuEditInvertSelection
             // 
-            this.menuEditInvertSelection.Index = 9;
             this.menuEditInvertSelection.Click += new System.EventHandler(this.menuEditInvertSelection_Click);
-            this.menuEditInvertSelection.Shortcut = System.Windows.Forms.Shortcut.CtrlI;
+            this.menuEditInvertSelection.ShortcutKeys = Keys.Control | Keys.I;
             // 
             // menuEditSelectAll
             // 
-            this.menuEditSelectAll.Index = 10;
-            this.menuEditSelectAll.Shortcut = System.Windows.Forms.Shortcut.CtrlA;
+            this.menuEditSelectAll.ShortcutKeys = Keys.Control | Keys.A;
             this.menuEditSelectAll.Click += new System.EventHandler(this.menuEditSelectAll_Click);
             // 
             // menuEditDeselect
             // 
-            this.menuEditDeselect.Index = 11;
-            this.menuEditDeselect.Shortcut = System.Windows.Forms.Shortcut.CtrlD;
+            this.menuEditDeselect.ShortcutKeys = Keys.Control | Keys.D;
             this.menuEditDeselect.Click += new System.EventHandler(this.menuEditDeselect_Click);
             // 
             // menuView
             // 
-            this.menuView.Index = 2;
-            this.menuView.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuView.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                      this.menuViewZoomIn,
                                                                                      this.menuViewZoomOut,
                                                                                      this.menuViewZoomToWindow,
@@ -1435,81 +1258,66 @@ namespace PaintDotNet
                                                                                      this.menuViewGrid,
                                                                                      this.menuViewRulers,
                                                                                      this.menuViewUnits});
-            this.menuView.Popup += new System.EventHandler(this.menuView_Popup);
+            this.menuView.DropDownOpening += new System.EventHandler(this.menuView_DropDownOpening);
+            this.menuView.DropDownClosed += new EventHandler(this.OnMenuDropDownClosed);
             // 
             // menuViewZoomIn
             // 
-            this.menuViewZoomIn.Index = 0;
-            this.menuViewZoomIn.Shortcut = System.Windows.Forms.Shortcut.CtrlK;
+            this.menuViewZoomIn.ShortcutKeys = Keys.Control | Keys.K;
             this.menuViewZoomIn.Click += new System.EventHandler(this.menuViewZoomIn_Click);
             // 
             // menuViewZoomOut
             // 
-            this.menuViewZoomOut.Index = 1;
-            this.menuViewZoomOut.Shortcut = System.Windows.Forms.Shortcut.CtrlJ;
+            this.menuViewZoomOut.ShortcutKeys = Keys.Control | Keys.J;
             this.menuViewZoomOut.Click += new System.EventHandler(this.menuViewZoomOut_Click);
             // 
             // menuViewZoomToWindow
             // 
-            this.menuViewZoomToWindow.Index = 2;
-            this.menuViewZoomToWindow.Shortcut = System.Windows.Forms.Shortcut.CtrlB;
+            this.menuViewZoomToWindow.ShortcutKeys = Keys.Control | Keys.B;
             this.menuViewZoomToWindow.Click += new System.EventHandler(this.menuViewZoomToWindow_Click);
             // 
             // menuViewZoomToSelection
             // 
-            this.menuViewZoomToSelection.Index = 3;
-            this.menuViewZoomToSelection.Shortcut = System.Windows.Forms.Shortcut.CtrlShiftB;
+            this.menuViewZoomToSelection.ShortcutKeys = Keys.Control | Keys.Shift | Keys.B;
             this.menuViewZoomToSelection.Click += new System.EventHandler(this.menuViewZoomToSelection_Click);
             // 
             // menuViewActualSize
             // 
-            this.menuViewActualSize.Index = 4;
-            this.menuViewActualSize.Shortcut = System.Windows.Forms.Shortcut.CtrlShiftA;
+            this.menuViewActualSize.ShortcutKeys = Keys.Control | Keys.Shift | Keys.A;
             this.menuViewActualSize.Click += new System.EventHandler(this.menuViewActualSize_Click);
-            // 
-            // menuViewSeperator
-            // 
-            this.menuViewSeperator.Index = 5;
-            this.menuViewSeperator.Text = "-";
             // 
             // menuViewGrid
             // 
-            this.menuViewGrid.Index = 6;
             this.menuViewGrid.Click += new System.EventHandler(this.menuViewGrid_Click);
             // 
             // menuViewRulers
             // 
-            this.menuViewRulers.Index = 7;
             this.menuViewRulers.Click += new System.EventHandler(this.menuViewRulers_Click);
             //
             // menuViewUnits
             //
-            this.menuViewUnits.Index = 8;
-            this.menuViewUnits.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuViewUnits.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                           this.menuViewUnitsPixels,
                                                                                           this.menuViewUnitsInches,
                                                                                           this.menuViewUnitsCentimeters});
-            this.menuViewUnits.Popup += new EventHandler(menuViewUnits_Popup);
+            this.menuViewUnits.DropDownOpening += new EventHandler(menuViewUnits_DropDownOpening);
+            this.menuViewUnits.DropDownClosed += new EventHandler(OnMenuDropDownClosed);
             //
             // menuViewUnitsPixels
             //
-            this.menuViewUnitsPixels.Index = 0;
             this.menuViewUnitsPixels.Click += new EventHandler(menuViewUnitsPixels_Click);
             //
             // menuViewUnitsInches
             //
-            this.menuViewUnitsInches.Index = 1;
             this.menuViewUnitsInches.Click += new EventHandler(menuViewUnitsInches_Click);
             //
             // menuViewUnitsCentimeters
             //
-            this.menuViewUnitsCentimeters.Index = 2;
             this.menuViewUnitsCentimeters.Click += new EventHandler(menuViewUnitsCentimeters_Click);
             // 
             // menuImage
             // 
-            this.menuImage.Index = 3;
-            this.menuImage.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuImage.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                       this.menuImageCrop,
                                                                                       this.menuImageResize,
                                                                                       this.menuImageCanvasSize,
@@ -1518,51 +1326,41 @@ namespace PaintDotNet
                                                                                       this.menuImageRotate,
                                                                                       this.menuItem18,
                                                                                       this.menuImageFlatten });
-            this.menuImage.Popup += new System.EventHandler(this.menuImage_Popup);
+            this.menuImage.DropDownOpening += new System.EventHandler(this.menuImage_DropDownOpening);
+            this.menuImage.DropDownClosed += new EventHandler(this.OnMenuDropDownClosed);
             // 
             // menuImageCrop
             // 
-            this.menuImageCrop.Index = 0;
             this.menuImageCrop.Click += new System.EventHandler(this.menuImageCrop_Click);
+            this.menuImageCrop.ShortcutKeys = Keys.Control | Keys.Shift | Keys.X;
             // 
             // menuImageResize
             // 
-            this.menuImageResize.Index = 1;
-            this.menuImageResize.Shortcut = System.Windows.Forms.Shortcut.CtrlR;
+            this.menuImageResize.ShortcutKeys = Keys.Control | Keys.R;
             this.menuImageResize.Click += new System.EventHandler(this.menuImageResize_Click);
             // 
             // menuImageCanvasSize
             // 
-            this.menuImageCanvasSize.Index = 2;
-            this.menuImageCanvasSize.Shortcut = System.Windows.Forms.Shortcut.CtrlShiftR;
+            this.menuImageCanvasSize.ShortcutKeys = Keys.Control | Keys.Shift | Keys.R;
             this.menuImageCanvasSize.Click += new System.EventHandler(this.menuImageCanvasSize_Click);
-            // 
-            // menuSeparator8
-            // 
-            this.menuSeparator8.Index = 3;
-            this.menuSeparator8.Text = "-";
             // 
             // menuImageFlip
             // 
-            this.menuImageFlip.Index = 4;
-            this.menuImageFlip.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuImageFlip.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                           this.menuImageFlipHorizontal,
                                                                                           this.menuImageFlipVertical});
             // 
             // menuImageFlipHorizontal
             // 
-            this.menuImageFlipHorizontal.Index = 0;
             this.menuImageFlipHorizontal.Click += new System.EventHandler(this.menuImageFlipHorizontal_Click);
             // 
             // menuImageFlipVertical
             // 
-            this.menuImageFlipVertical.Index = 1;
             this.menuImageFlipVertical.Click += new System.EventHandler(this.menuImageFlipVertical_Click);
             // 
             // menuImageRotate
             // 
-            this.menuImageRotate.Index = 5;
-            this.menuImageRotate.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuImageRotate.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                             this.menuImageRotate90CW,
                                                                                             this.menuImageRotate180CW,
                                                                                             this.menuImageRotate270CW,
@@ -1573,56 +1371,38 @@ namespace PaintDotNet
             // 
             // menuImageRotate90CW
             // 
-            this.menuImageRotate90CW.Index = 0;
-            this.menuImageRotate90CW.Shortcut = System.Windows.Forms.Shortcut.CtrlH;
+            this.menuImageRotate90CW.ShortcutKeys = Keys.Control | Keys.H;
             this.menuImageRotate90CW.Click += new System.EventHandler(this.menuImageRotate90CW_Click);
             // 
             // menuImageRotate180CW
             // 
-            this.menuImageRotate180CW.Index = 1;
             this.menuImageRotate180CW.Click += new System.EventHandler(this.menuImageRotate180CW_Click);
             // 
             // menuImageRotate270CW
             // 
-            this.menuImageRotate270CW.Index = 2;
             this.menuImageRotate270CW.Click += new System.EventHandler(this.menuImageRotate270CW_Click);
-            // 
-            // menuItem13
-            // 
-            this.menuItem13.Index = 3;
-            this.menuItem13.Text = "-";
             // 
             // menuImageRotate90CCW
             // 
-            this.menuImageRotate90CCW.Index = 4;
-            this.menuImageRotate90CCW.Shortcut = System.Windows.Forms.Shortcut.CtrlG;
+            this.menuImageRotate90CCW.ShortcutKeys = Keys.Control | Keys.G;
             this.menuImageRotate90CCW.Click += new System.EventHandler(this.menuImageRotate90CCW_Click);
             // 
             // menuImageRotate180CCW
             // 
-            this.menuImageRotate180CCW.Index = 5;
             this.menuImageRotate180CCW.Click += new System.EventHandler(this.menuImageRotate180CCW_Click);
             // 
             // menuImageRotate270CCW
             // 
-            this.menuImageRotate270CCW.Index = 6;
             this.menuImageRotate270CCW.Click += new System.EventHandler(this.menuImageRotate270CCW_Click);
-            //
-            // menuItem18
-            //
-            this.menuItem18.Index = 6;
-            this.menuItem18.Text = "-";
             // 
             // menuImageFlatten
             // 
-            this.menuImageFlatten.Index = 7;
-            this.menuImageFlatten.Shortcut = System.Windows.Forms.Shortcut.CtrlShiftF;
+            this.menuImageFlatten.ShortcutKeys = Keys.Control | Keys.Shift | Keys.F;
             this.menuImageFlatten.Click += new System.EventHandler(this.menuImageFlatten_Click);
             // 
             // menuLayers
             // 
-            this.menuLayers.Index = 4;
-            this.menuLayers.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuLayers.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                        this.menuLayersAddNewLayer,
                                                                                        this.menuLayersDeleteLayer,
                                                                                        this.menuLayersDuplicateLayer,
@@ -1633,121 +1413,93 @@ namespace PaintDotNet
                                                                                        this.menuLayersRotateZoom,
                                                                                        this.menuItem9,
                                                                                        this.menuLayersLayerProperties});
-            this.menuLayers.Popup += new System.EventHandler(this.menuLayers_Popup);
+            this.menuLayers.DropDownOpening += new System.EventHandler(this.menuLayers_DropDownOpening);
+            this.menuLayers.DropDownClosed += new EventHandler(this.OnMenuDropDownClosed);
             // 
             // menuLayersAddNewLayer
             // 
-            this.menuLayersAddNewLayer.Index = 0;
-            this.menuLayersAddNewLayer.Shortcut = System.Windows.Forms.Shortcut.CtrlShiftN;
+            this.menuLayersAddNewLayer.ShortcutKeys = Keys.Control | Keys.Shift | Keys.N;
             this.menuLayersAddNewLayer.Click += new System.EventHandler(this.menuLayersAddNewLayer_Click);
             // 
             // menuLayersDeleteLayer
             // 
-            this.menuLayersDeleteLayer.Index = 1;
-            this.menuLayersDeleteLayer.Shortcut = System.Windows.Forms.Shortcut.ShiftDel;
+            this.menuLayersDeleteLayer.ShortcutKeys = Keys.Shift | Keys.Delete;
             this.menuLayersDeleteLayer.Click += new System.EventHandler(this.menuLayersDeleteLayer_Click);
             // 
             // menuLayersDuplicateLayer
             // 
-            this.menuLayersDuplicateLayer.Index = 2;
-            this.menuLayersDuplicateLayer.Shortcut = System.Windows.Forms.Shortcut.CtrlShiftD;
+            this.menuLayersDuplicateLayer.ShortcutKeys = Keys.Control | Keys.Shift | Keys.D;
             this.menuLayersDuplicateLayer.Click += new System.EventHandler(this.menuLayersDuplicateLayer_Click);
             // 
             // menuLayersImportFromFile
             // 
-            this.menuLayersImportFromFile.Index = 3;
             this.menuLayersImportFromFile.Click += new System.EventHandler(this.menuLayersImportFromFile_click);
-            // 
-            // menuSeparator5
-            // 
-            this.menuSeparator5.Index = 4;
-            this.menuSeparator5.Text = "-";
             // 
             // menuLayersAdjustments
             // 
-            this.menuLayersAdjustments.Index = 5;
-            this.menuLayersAdjustments.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuLayersAdjustments.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                                   this.menuItem17});
-            this.menuLayersAdjustments.Popup += new System.EventHandler(this.menuLayersAdjustments_Popup);
+            this.menuLayersAdjustments.DropDownOpening += new System.EventHandler(this.menuLayersAdjustments_DropDownOpening);
+            this.menuLayersAdjustments.DropDownClosed += new EventHandler(OnMenuDropDownClosed);
             // 
             // menuItem17
             // 
-            this.menuItem17.Index = 0;
             this.menuItem17.Text = "(sentinel)";
             // 
             // menuLayersFlip
             // 
-            this.menuLayersFlip.Index = 6;
-            this.menuLayersFlip.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuLayersFlip.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                            this.menuLayersFlipHorizontal,
                                                                                            this.menuLayersFlipVertical});
             // 
             // menuLayersFlipHorizontal
             // 
-            this.menuLayersFlipHorizontal.Index = 0;
             this.menuLayersFlipHorizontal.Click += new System.EventHandler(this.menuLayersFlipHorizontal_Click);
             // 
             // menuLayersFlipVertical
             // 
-            this.menuLayersFlipVertical.Index = 1;
             this.menuLayersFlipVertical.Click += new System.EventHandler(this.menuLayersFlipVertical_Click);
             //
             // menuLayersRotateZoom
             //
-            this.menuLayersRotateZoom.Index = 7;
             this.menuLayersRotateZoom.Click += new EventHandler(menuLayersRotateZoom_Click);
-            // 
-            // menuItem9
-            // 
-            this.menuItem9.Index = 8;
-            this.menuItem9.Text = "-";
             // 
             // menuLayersLayerProperties
             // 
-            this.menuLayersLayerProperties.Index = 9;
-            this.menuLayersLayerProperties.Shortcut = System.Windows.Forms.Shortcut.F4;
+            this.menuLayersLayerProperties.ShortcutKeys = Keys.F4;
             this.menuLayersLayerProperties.Click += new System.EventHandler(this.menuLayersLayerProperties_Click);
             // 
             // menuEffects
             // 
-            this.menuEffects.Index = 5;
-            this.menuEffects.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuEffects.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                         this.menuEffectsSentinel});
-            this.menuEffects.Popup += new System.EventHandler(this.menuEffects_Popup);
+            this.menuEffects.DropDownOpening += new System.EventHandler(this.menuEffects_DropDownOpening);
+            this.menuEffects.DropDownClosed += new EventHandler(OnMenuDropDownClosed);
             // 
             // menuEffectsSentinel
             // 
-            this.menuEffectsSentinel.Index = 0;
             this.menuEffectsSentinel.Text = "sentinel";
             // 
             // menuTools
             // 
-            this.menuTools.Index = 6;
-            this.menuTools.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
-                                                                                      this.menuToolsAntiAliasing,
+            this.menuTools.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+                                                                                      this.menuToolsAntialiasing,
                                                                                       this.menuToolsAlphaBlending,
                                                                                       this.menuToolsSeperator});
-            this.menuTools.Popup += new System.EventHandler(this.menuTools_Popup);
+            this.menuTools.DropDownOpening += new System.EventHandler(this.menuTools_DropDownOpening);
+            this.menuTools.DropDownClosed += new EventHandler(OnMenuDropDownClosed);
             // 
             // menuToolsAntiAliasing
             // 
-            this.menuToolsAntiAliasing.Index = 0;
-            this.menuToolsAntiAliasing.Click += new System.EventHandler(this.menuToolsAntiAliasing_Click);
+            this.menuToolsAntialiasing.Click += new System.EventHandler(this.menuToolsAntiAliasing_Click);
             //
             // menuToolsAlphaBlending
             //
-            this.menuToolsAlphaBlending.Index = 1;
             this.menuToolsAlphaBlending.Click += new EventHandler(menuToolsAlphaBlending_Click);
-            // 
-            // menuToolsSeperator
-            // 
-            this.menuToolsSeperator.Index = 2;
-            this.menuToolsSeperator.Text = "-";
             // 
             // menuWindow
             // 
-            this.menuWindow.Index = 7;
-            this.menuWindow.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuWindow.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                        this.menuWindowResetWindowLocations,
                                                                                        this.menuItem7,
                                                                                        this.menuWindowTranslucent,
@@ -1756,56 +1508,40 @@ namespace PaintDotNet
                                                                                        this.menuWindowHistory,
                                                                                        this.menuWindowLayers,
                                                                                        this.menuWindowColors});
-            this.menuWindow.Popup += new System.EventHandler(this.menuWindow_Popup);
+            this.menuWindow.DropDownOpening += new System.EventHandler(this.menuWindow_DropDownOpening);
+            this.menuWindow.DropDownClosed += new EventHandler(OnMenuDropDownClosed);
             // 
             // menuWindowResetWindowLocations
             // 
-            this.menuWindowResetWindowLocations.Index = 0;
             this.menuWindowResetWindowLocations.Click += new System.EventHandler(this.menuWindowResetWindowLocations_Click);
-            // 
-            // menuItem7
-            // 
-            this.menuItem7.Index = 1;
-            this.menuItem7.Text = "-";
             // 
             // menuWindowTranslucent
             // 
-            this.menuWindowTranslucent.Index = 2;
             this.menuWindowTranslucent.Click += new System.EventHandler(this.menuWindowTranslucent_Click);
-            // 
-            // menuItem12
-            // 
-            this.menuItem12.Index = 3;
-            this.menuItem12.Text = "-";
             // 
             // menuWindowTools
             // 
-            this.menuWindowTools.Index = 4;
-            this.menuWindowTools.Shortcut = System.Windows.Forms.Shortcut.F5;
+            this.menuWindowTools.ShortcutKeys = Keys.F5;
             this.menuWindowTools.Click += new System.EventHandler(this.menuWindowTools_Click);
             // 
             // menuWindowHistory
             // 
-            this.menuWindowHistory.Index = 5;
-            this.menuWindowHistory.Shortcut = System.Windows.Forms.Shortcut.F6;
+            this.menuWindowHistory.ShortcutKeys = Keys.F6;
             this.menuWindowHistory.Click += new System.EventHandler(this.menuWindowHistory_Click);
             // 
             // menuWindowLayers
             // 
-            this.menuWindowLayers.Index = 6;
-            this.menuWindowLayers.Shortcut = System.Windows.Forms.Shortcut.F7;
+            this.menuWindowLayers.ShortcutKeys = Keys.F7;
             this.menuWindowLayers.Click += new System.EventHandler(this.menuWindowLayers_Click);
             // 
             // menuWindowColors
             // 
-            this.menuWindowColors.Index = 7;
-            this.menuWindowColors.Shortcut = System.Windows.Forms.Shortcut.F8;
+            this.menuWindowColors.ShortcutKeys = Keys.F8;
             this.menuWindowColors.Click += new System.EventHandler(this.menuWindowColors_Click);
             // 
             // menuDebug
             // 
-            this.menuDebug.Index = 8;
-            this.menuDebug.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuDebug.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                       this.menuItem1,
                                                                                       this.menuItem4,
                                                                                       this.menuItem5,
@@ -1815,97 +1551,101 @@ namespace PaintDotNet
             // 
             // menuItem1
             // 
-            this.menuItem1.Index = 0;
             this.menuItem1.Text = "Invalidate Document";
             this.menuItem1.Click += new System.EventHandler(this.menuItem1_Click);
             // 
             // menuItem4
             // 
-            this.menuItem4.Index = 1;
             this.menuItem4.Text = "GC.Collect";
             this.menuItem4.Click += new System.EventHandler(this.menuItem4_Click);
             // 
             // menuItem5
             // 
-            this.menuItem5.Index = 2;
             this.menuItem5.Text = "Breakpoint";
             this.menuItem5.Click += new System.EventHandler(this.menuItem5_Click);
             // 
             // menuItem6
             // 
-            this.menuItem6.Index = 3;
             this.menuItem6.Text = "Resposition floaters";
             this.menuItem6.Click += new System.EventHandler(this.menuItem6_Click);
             // 
             // menuItem8
             // 
-            this.menuItem8.Index = 4;
-            this.menuItem8.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuItem8.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                       this.menuItem14});
             this.menuItem8.Text = "Stress";
             // 
             // menuItem14
             // 
-            this.menuItem14.Index = 0;
             this.menuItem14.Text = "Open All Files On C:, D:";
             this.menuItem14.Click += new System.EventHandler(this.menuItem14_Click);
             // 
             // menuHelp
             // 
-            this.menuHelp.Index = 9;
-            this.menuHelp.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuHelp.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
                                                                                      this.menuHelpHelpTopics,
+                                                                                     this.menuHelpDonate,
                                                                                      this.menuHelpSendFeedback,
                                                                                      this.menuSeparator7,
                                                                                      this.menuHelpAbout});
             // 
             // menuHelpHelpTopics
             // 
-            this.menuHelpHelpTopics.Index = 0;
-            this.menuHelpHelpTopics.Shortcut = System.Windows.Forms.Shortcut.F1;
+            this.menuHelpHelpTopics.ShortcutKeys = Keys.F1;
             this.menuHelpHelpTopics.Click += new System.EventHandler(this.menuHelpHelpTopics_Click);
+            //
+            // menuHelpDonate
+            //
+            this.menuHelpDonate.Click += new EventHandler(menuHelpDonate_Click);
             //
             // menuHelpSendFeedback
             //
-            this.menuHelpSendFeedback.Index = 1;
             this.menuHelpSendFeedback.Click += new EventHandler(menuHelpSendFeedback_Click);
-            // 
-            // menuSeparator7
-            // 
-            this.menuSeparator7.Index = 2;
-            this.menuSeparator7.Text = "-";
             // 
             // menuHelpAbout
             // 
-            this.menuHelpAbout.Index = 3;
             this.menuHelpAbout.Click += new System.EventHandler(this.menuHelpAbout_Click);
-            // 
-            // statusBar
-            // 
-            this.statusBar.Location = new System.Drawing.Point(0, 648);
-            this.statusBar.Name = "statusBar";
-            this.statusBar.Panels.AddRange(new System.Windows.Forms.StatusBarPanel[] {
-                                                                                         this.contextStatusBar,
-                                                                                         this.progressStatusBar,
-                                                                                         this.imageInfoStatusBar,
-                                                                                         this.cursorInfoStatusBar});
-            this.statusBar.ShowPanels = true;
-            this.statusBar.Size = new System.Drawing.Size(752, 22);
-            this.statusBar.TabIndex = 1;
-            this.statusBar.Text = "Status Bar";
-            // 
-            // contextStatusBar
-            // 
-            this.contextStatusBar.AutoSize = System.Windows.Forms.StatusBarPanelAutoSize.Spring;
-            this.contextStatusBar.Width = 436;
             //
-            // imageInfoStatusBar
+            // statusStrip
             //
-            this.imageInfoStatusBar.Width = 130;
+            this.statusStrip.Items.Add(this.contextStatusLabel);
+            this.statusStrip.Items.Add(this.progressStatusSeparator);
+            this.statusStrip.Items.Add(this.progressStatusBar);
+            this.statusStrip.Items.Add(new ToolStripSeparator());
+            this.statusStrip.Items.Add(this.imageInfoStatusLabel);
+            this.statusStrip.Items.Add(new ToolStripSeparator());
+            this.statusStrip.Items.Add(this.cursorInfoStatusLabel);
+            this.statusStrip.Name = "statusStrip";
             //
-            // cursorInfoStatusBar
+            // contextStatusLabel
             //
-            this.cursorInfoStatusBar.Width = 130;
+            this.contextStatusLabel.Name = "contextStatusLabel";
+            this.contextStatusLabel.Width = UI.ScaleWidth(436);
+            this.contextStatusLabel.Spring = true;
+            this.contextStatusLabel.TextAlign = ContentAlignment.MiddleLeft;
+            this.contextStatusLabel.ImageAlign = ContentAlignment.MiddleLeft;
+            //
+            // progressStatusBar
+            //
+            this.progressStatusBar.Name = "progressStatusBar";
+            this.progressStatusBar.Width = 130;
+            this.progressStatusBar.AutoSize = false;
+            //
+            // imageInfoStatusLabel
+            //
+            this.imageInfoStatusLabel.Name = "imageInfoStatusLabel";
+            this.imageInfoStatusLabel.Width = UI.ScaleWidth(130);
+            this.imageInfoStatusLabel.TextAlign = ContentAlignment.MiddleLeft;
+            this.imageInfoStatusLabel.ImageAlign = ContentAlignment.MiddleLeft;
+            this.imageInfoStatusLabel.AutoSize = false;
+            //
+            // cursorInfoStatusLabel
+            //
+            this.cursorInfoStatusLabel.Name = "cursorInfoStatusLabel";
+            this.cursorInfoStatusLabel.Width = UI.ScaleWidth(130);
+            this.cursorInfoStatusLabel.TextAlign = ContentAlignment.MiddleLeft;
+            this.cursorInfoStatusLabel.ImageAlign = ContentAlignment.MiddleLeft;
+            this.cursorInfoStatusLabel.AutoSize = false;
             // 
             // workspace
             // 
@@ -1915,15 +1655,10 @@ namespace PaintDotNet
             this.workspace.Name = "workspace";
             this.workspace.Size = new System.Drawing.Size(752, 648);
             this.workspace.TabIndex = 2;
-            this.workspace.Scroll += new System.EventHandler(this.workspace_Scroll);
+            this.workspace.Scroll += new System.Windows.Forms.ScrollEventHandler(this.workspace_Scroll);
             this.workspace.DocumentChanged += new System.EventHandler(this.workspace_DocumentChanged);
             this.workspace.ToolStatusChanged += new EventHandler(workspace_ToolStatusChanged);
-            // 
-            // menuImages
-            // 
-            this.menuImages.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
-            this.menuImages.ImageSize = new System.Drawing.Size(16, 16);
-            this.menuImages.TransparentColor = System.Drawing.Color.FromArgb(((System.Byte)(192)), ((System.Byte)(192)), ((System.Byte)(192)));
+            this.workspace.ProcessCmdKeyEvent += new CmdKeysEventHandler(workspace_ProcessCmdKeyEvent);
             // 
             // floaterOpacityTimer
             // 
@@ -1933,19 +1668,13 @@ namespace PaintDotNet
             // 
             // invalidateTimer
             // 
-            this.invalidateTimer.Interval = 25;
+            this.invalidateTimer.Interval = effectRefreshInterval;
             this.invalidateTimer.Tick += new System.EventHandler(this.invalidateTimer_Tick);
             //
             // populateEffectsTimer
             //
-            this.populateEffectsTimer.Interval = 250;
-            this.populateEffectsTimer.Tick += new EventHandler(populateEffectsTimer_Tick);
-            // 
-            // mruImageList
-            // 
-            this.mruImageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
-            this.mruImageList.ImageSize = new System.Drawing.Size(16, 16);
-            this.mruImageList.TransparentColor = System.Drawing.Color.Transparent;
+            this.deferredInitializationTimer.Interval = 250;
+            this.deferredInitializationTimer.Tick += new EventHandler(DeferredInitialization);
             //
             // defaultButton
             //
@@ -1958,27 +1687,105 @@ namespace PaintDotNet
             // MainForm
             // 
             this.AllowDrop = true;
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(950, 738);
             this.Controls.Add(this.workspace);
-            this.Controls.Add(this.statusBar);
+            this.Controls.Add(this.statusStrip);
             this.Controls.Add(this.defaultButton);
+            this.Controls.Add(this.mainMenu);
             this.AcceptButton = this.defaultButton;
-            this.Menu = this.mainMenu;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.WindowsDefaultLocation;
-            this.BackColor = SystemColors.ControlDark;
             this.ForceActiveTitleBar = true;
             this.KeyPreview = true;
-            this.Controls.SetChildIndex(this.statusBar, 0);
+            this.Controls.SetChildIndex(this.statusStrip, 0);
             this.Controls.SetChildIndex(this.workspace, 0);
-            ((System.ComponentModel.ISupportInitialize)(this.contextStatusBar)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.progressStatusBar)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.imageInfoStatusBar)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.cursorInfoStatusBar)).EndInit();
+            this.statusStrip.ResumeLayout(false);
+            this.statusStrip.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
         }
         #endregion
+
+        private void menuHelpDonate_Click(object sender, EventArgs e)
+        {
+            Shell.OpenUrl(this, InvariantStrings.DonateUrl);
+        }
+
+        void OnMenuItemAdded(object sender, ToolStripItemEventArgs e)
+        {
+            ToolStripMenuItem mi = e.Item as ToolStripMenuItem;
+
+            if (mi != null)
+            {
+                mi.DropDown.ItemAdded += OnMenuItemRemoved;
+                mi.Click += OnMenuItemClicked;
+            }
+        }
+
+        void OnMenuItemRemoved(object sender, ToolStripItemEventArgs e)
+        {
+            ToolStripMenuItem mi = e.Item as ToolStripMenuItem;
+
+            if (mi != null)
+            {
+                mi.DropDown.ItemAdded -= OnMenuItemRemoved;
+                mi.Click -= OnMenuItemClicked;
+            }
+        }
+
+        void OnMenuItemClicked(object sender, EventArgs e)
+        {
+            this.workspace.DocumentView.Focus();
+        }
+
+        private Keys CharToKeys(char c)
+        {
+            Keys keys = Keys.None;
+            c = Char.ToLower(c);
+
+            if (c >= 'a' && c <= 'z')
+            {
+                keys = (Keys)((int)Keys.A + (int)c - (int)'a');
+            }
+
+            return keys;
+        }
+
+        private Keys GetMenuCmdKey(string text)
+        {
+            Keys keys = Keys.None;
+
+            for (int i = 0; i < text.Length - 1; ++i)
+            {
+                if (text[i] == '&')
+                {
+                    keys = Keys.Alt | CharToKeys(text[i + 1]);
+                    break;
+                }
+            }
+
+            return keys;
+        }
+
+        bool workspace_ProcessCmdKeyEvent(object sender, ref Message msg, Keys keyData)
+        {
+            bool result = false;
+
+            foreach (ToolStripMenuItem mi in this.mainMenu.Items)
+            {
+                Keys keys = GetMenuCmdKey(mi.Text);
+
+                if (keyData == keys)
+                {
+                    mi.ShowDropDown();
+                    result = true;
+                }
+            }
+
+            return result;
+        }
 
         private void DeleteUpdateMsi()
         {
@@ -2048,7 +1855,7 @@ namespace PaintDotNet
                 this.Move += new EventHandler(ftf.RepositionForm); // TODO: eliminate OO misnomer?
             }
 
-            workspace.Widgets.CommonActionsWidget.ButtonClick += new EnumValueEventHandler(CommonActionsWidget_ButtonClick);
+            workspace.Widgets.CommonActionsStrip.ButtonClick += new EnumValueEventHandler(CommonActionsStrip_ButtonClick);
             workspace.Environment.Selection.Changed += new EventHandler(Environment_SelectedPathChanged);
             workspace.DocumentView.Layout += new LayoutEventHandler(DocumentView_Layout);
             workspace.History.Changed += new EventHandler(History_Changed);
@@ -2066,7 +1873,8 @@ namespace PaintDotNet
                 splash = null;
             }
 
-            if (SystemLayer.Security.IsAdministrator)
+            if (SystemLayer.Security.IsAdministrator &&
+                PdnInfo.StartupTest == PdnInfo.StartupTestType.None)
             {
                 // Should we check for updates? Only enable this stuff if the user is an admin.
 
@@ -2090,7 +1898,22 @@ namespace PaintDotNet
                 }
             }
 
-            base.OnLoad (e);
+            base.OnLoad(e);
+
+            switch (PdnInfo.StartupTest)
+            {
+                case PdnInfo.StartupTestType.Timed:
+                    Application.DoEvents();
+                    Application.Exit();
+                    break;
+
+                case PdnInfo.StartupTestType.WorkingSet:
+                    const int waitPeriodForVadumpSnapshot = 20000;
+                    Application.DoEvents();
+                    Thread.Sleep(waitPeriodForVadumpSnapshot);
+                    Application.Exit();
+                    break;
+            }
         }
 
         private void BackgroundCheckForUpdates()
@@ -2128,22 +1951,19 @@ namespace PaintDotNet
 
         private void EnableUpdatesButton()
         {
-            if (!this.workspace.Widgets.CommonActionsWidget.GetButtonEnabled(CommonAction.CheckForUpdates))
+            if (!this.workspace.Widgets.CommonActionsStrip.GetButtonEnabled(CommonAction.CheckForUpdates))
             {
-                this.workspace.Widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.CheckForUpdates, true);
-                this.workspace.Widgets.CommonActionsWidget.SetButtonVisible(CommonAction.CheckForUpdates, true);
-                this.workspace.Widgets.CommonActionsWidget.Width += 32;
-                this.workspace.Widgets.CommonActionsWidget.BlinkButton(CommonAction.CheckForUpdates, 5, 350);
+                this.workspace.Widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.CheckForUpdates, true);
+                this.workspace.Widgets.CommonActionsStrip.SetButtonVisible(CommonAction.CheckForUpdates, true);
             }
         }
 
         private void DisableUpdatesButton()
         {
-            if (this.workspace.Widgets.CommonActionsWidget.GetButtonEnabled(CommonAction.CheckForUpdates))
+            if (this.workspace.Widgets.CommonActionsStrip.GetButtonEnabled(CommonAction.CheckForUpdates))
             {
-                this.workspace.Widgets.CommonActionsWidget.SetButtonEnabled(CommonAction.CheckForUpdates, false);
-                this.workspace.Widgets.CommonActionsWidget.SetButtonVisible(CommonAction.CheckForUpdates, false);
-                this.workspace.Widgets.CommonActionsWidget.Width -= 32;
+                this.workspace.Widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.CheckForUpdates, false);
+                this.workspace.Widgets.CommonActionsStrip.SetButtonVisible(CommonAction.CheckForUpdates, false);
             }
         }
 
@@ -2232,7 +2052,9 @@ namespace PaintDotNet
 
             if (result == DialogResult.OK)
             {
-                DownloadAndUnzipUpdateDialog dialog = new DownloadAndUnzipUpdateDialog(this, manifest.VersionInfos[versionIndex]);
+                DownloadAndUnzipUpdateDialog dialog = new DownloadAndUnzipUpdateDialog(this, 
+                    manifest.VersionInfos[versionIndex]);
+
                 dialog.ShowDialog();
 
                 if (dialog.UpgradeMsiFileName != null)
@@ -2326,7 +2148,7 @@ namespace PaintDotNet
 
             floaterOpacityTimer.Enabled = true;
 
-            workspace.Focus();
+            workspace.DocumentView.Focus();
         }
 
         protected override void OnResize(EventArgs e)
@@ -2356,17 +2178,17 @@ namespace PaintDotNet
 
         private void RegisterMenuPopupFirstTimeDelegates()
         {
-            foreach (MenuItem mi in mainMenu.MenuItems)
+            foreach (ToolStripMenuItem mi in mainMenu.Items)
             {
-                mi.Popup += new EventHandler(MenuPopupFirstTimeHandler);
+                mi.DropDownOpening += new EventHandler(MenuPopupFirstTimeHandler);
             }
         }
 
         private void UnregisterMenuPopupFirstTimeDelegates()
         {
-            foreach (MenuItem mi in mainMenu.MenuItems)
+            foreach (ToolStripMenuItem mi in mainMenu.Items)
             {
-                mi.Popup -= new EventHandler(MenuPopupFirstTimeHandler);
+                mi.DropDownOpening -= new EventHandler(MenuPopupFirstTimeHandler);
             }
         }
 
@@ -2446,25 +2268,18 @@ namespace PaintDotNet
             this.menuLayersFlipVertical.Text = PdnResources.GetString("MainForm.Menu.Layers.Flip.Vertical.Text");
 
             // Fill in Rotate/Zoom menu item
-            string appDir = Path.GetDirectoryName(Application.ExecutablePath);
-            string rzPath = Path.Combine(appDir, "Effects/RotateZoom.dll");
-            Assembly rzAssembly = Assembly.LoadFrom(rzPath);
-            Type rzType = rzAssembly.GetType("PaintDotNet.Effects.RotateZoom.RotateZoomEffect", true);
-            PropertyInfo rzNamePI = rzType.GetProperty("StaticName", BindingFlags.Public | BindingFlags.Static);
-            string rzName = (string)rzNamePI.GetValue(null, null);
-            PropertyInfo rzShortcutPI = rzType.GetProperty("StaticShortcut", BindingFlags.Public | BindingFlags.Static);
-            Shortcut rzShortcut = (Shortcut)rzShortcutPI.GetValue(null, null);
-            PropertyInfo rzImagePI = rzType.GetProperty("StaticImage", BindingFlags.Public | BindingFlags.Static);
-            Image rzImage = (Image)rzImagePI.GetValue(null, null);
+            string rzName = RotateZoomEffect.StaticName;
+            Keys rzShortcut = RotateZoomEffect.StaticShortcutKeys;
+            Image rzImage = RotateZoomEffect.StaticImage;
             string rzNameFormatString = PdnResources.GetString("MainForm.Effects.Name.Format.Configurable");
             string rzMenuName = string.Format(rzNameFormatString, rzName);
             this.menuLayersRotateZoom.Text = rzMenuName;
             this.SetMenuIcon(this.menuLayersRotateZoom, rzImage);
-            this.menuLayersRotateZoom.Shortcut = rzShortcut;
+            this.menuLayersRotateZoom.ShortcutKeys = rzShortcut;
 
             this.menuLayersLayerProperties.Text = PdnResources.GetString("MainForm.Menu.Layers.LayerProperties.Text");
 
-            this.menuToolsAntiAliasing.Text = PdnResources.GetString("MainForm.Menu.Tools.AntiAliasing.Text");
+            this.menuToolsAntialiasing.Text = PdnResources.GetString("MainForm.Menu.Tools.AntiAliasing.Text");
             this.menuToolsAlphaBlending.Text = PdnResources.GetString("MainForm.Menu.Tools.AlphaBlending.Text");
 
             this.menuWindowResetWindowLocations.Text = PdnResources.GetString("MainForm.Menu.Window.ResetWindowLocations.Text");
@@ -2475,6 +2290,7 @@ namespace PaintDotNet
             this.menuWindowColors.Text = PdnResources.GetString("MainForm.Menu.Window.Colors.Text");
 
             this.menuHelpHelpTopics.Text = PdnResources.GetString("MainForm.Menu.Help.HelpTopics.Text");
+            this.menuHelpDonate.Text = PdnResources.GetString("MainForm.Menu.Help.Donate.Text");
             this.menuHelpAbout.Text = PdnResources.GetString("MainForm.Menu.Help.About.Text");
             this.menuHelpSendFeedback.Text = PdnResources.GetString("MainForm.Menu.Help.SendFeedback.Text");
         }
@@ -2494,15 +2310,15 @@ namespace PaintDotNet
 
             foreach (FieldInfo fi in fields)
             {
-                if (fi.FieldType == typeof(MenuItem))
+                if (fi.FieldType == typeof(ToolStripMenuItem))
                 {
-                    string iconFileName = "Icons." + fi.Name[0].ToString().ToUpper() + fi.Name.Substring(1) + "Icon.bmp";
-                    MenuItem mi = (MenuItem)fi.GetValue(this);
+                    string iconFileName = "Icons." + fi.Name[0].ToString().ToUpper() + fi.Name.Substring(1) + "Icon.png";
+                    ToolStripMenuItem mi = (ToolStripMenuItem)fi.GetValue(this);
                     Stream iconStream = PdnResources.GetResourceStream(iconFileName);
 
                     if (iconStream != null)
                     {
-                        Image iconImage = Image.FromStream(iconStream);
+                        Image iconImage = PdnResources.LoadImage(iconStream); //Image.FromStream(iconStream);
                         this.SetMenuIcon(mi, iconImage);
                     }
                 }
@@ -2561,32 +2377,91 @@ namespace PaintDotNet
                 }
             }
 
-            string tempName;
-            ScanResult result = ScanningAndPrinting.Scan(this, out tempName);
+            string tempName = Path.ChangeExtension(SystemLayer.FileSystem.GetTempFileName(), ".bmp");
+            ScanResult result = ScanningAndPrinting.Scan(this, tempName);
 
-            if (tempName != null)
+            if (result == ScanResult.Success)
             {
-                using (new WaitCursorChanger(this))
+                string errorText = null;
+
+                try
                 {
-                    using (Image image = Image.FromFile(tempName))
+                    Image image;
+
+                    try
                     {
-                        workspace.SetDocument(Document.FromImage(image));
-                        workspace.SetDocumentSaveOptions(null, null, null);
-                        //workspace.DocumentView.ScaleFactor = new ScaleFactor(1, 1);
+                        image = PdnResources.LoadImage(tempName);
+                    }
+
+                    catch (FileNotFoundException)
+                    {
+                        errorText = PdnResources.GetString("MainForm.LoadDocument.Error.FileNotFoundException");
+                        throw;
+                    }
+
+                    catch (OutOfMemoryException)
+                    {
+                        errorText = PdnResources.GetString("MainForm.LoadDocument.Error.OutOfMemoryException");
+                        throw;
+                    }
+
+                    Document document;
+
+                    try
+                    {
+                        document = Document.FromImage(image);
+                    }
+
+                    catch (OutOfMemoryException)
+                    {
+                        errorText = PdnResources.GetString("MainForm.LoadDocument.Error.OutOfMemoryException");
+                        throw;
+                    }
+
+                    finally
+                    {
+                        image.Dispose();
+                        image = null;
+                    }
+
+                    try
+                    {
+                        workspace.SetDocument(document);
+                    }
+
+                    catch (OutOfMemoryException)
+                    {
+                        errorText = PdnResources.GetString("MainForm.LoadDocument.Error.OutOfMemoryException");
+                        throw;
+                    }
+
+                    document = null;
+                    workspace.SetDocumentSaveOptions(null, null, null);
+                    workspace.History.ClearAll();
+                    HistoryAction newHA = new NullHistoryAction(PdnResources.GetString("AcquireImageAction.Name"), this.AddNewLayerIcon);
+                    workspace.History.PushNewAction(newHA);
+
+                    // Try to delete the temp file but don't worry if we can't
+                    try
+                    {
+                        File.Delete(tempName);
+                    }
+
+                    catch
+                    {
                     }
                 }
 
-                workspace.History.ClearAll();
-                workspace.History.PushNewAction(new NullHistoryAction(PdnResources.GetString("AcquireImageAction.Name"), this.AddNewLayerIcon));
-
-                // Try to delete the temp file but don't worry if we can't
-                try
+                catch (Exception)
                 {
-                    File.Delete(tempName);
-                }
-
-                catch
-                {
+                    if (errorText != null)
+                    {
+                        Utility.ErrorBox(this, errorText);
+                    }
+                    else
+                    {
+                        throw;
+                    }
                 }
             }
         }
@@ -2688,13 +2563,15 @@ namespace PaintDotNet
                 CoordinatesToStrings(workspace.Document.Width, workspace.Document.Height, 
                     out widthString, out heightString, out units);
 
-                this.imageInfoStatusBar.Text = string.Format(
+                string imageText = string.Format(
                     CultureInfo.InvariantCulture, 
                     this.imageInfoStatusBarFormat, 
                     widthString, 
                     units, 
                     heightString, 
                     units);
+
+                this.imageInfoStatusLabel.Text = imageText;
             }
 
             OnResize(EventArgs.Empty);
@@ -2756,85 +2633,148 @@ namespace PaintDotNet
 
         private void menuEditUndo_Click(object sender, System.EventArgs e)
         {
-            workspace.Widgets.HistoryForm.PerformUndoClick();
+            if (!workspace.DocumentView.IsMouseCaptured())
+            {
+                workspace.Widgets.HistoryForm.PerformUndoClick();
+            }
         }
 
         private void menuEditRedo_Click(object sender, System.EventArgs e)
         {
-            workspace.Widgets.HistoryForm.PerformRedoClick();
+            if (!workspace.DocumentView.IsMouseCaptured())
+            {
+                workspace.Widgets.HistoryForm.PerformRedoClick();
+            }
         }
 
         private void menuFileNew_Click(object sender, System.EventArgs e)
         {
-            if (workspace.Document.Dirty)
+            StringBuilder sbTrace = new StringBuilder();
+
+            try
             {
-                switch (AskForSave())
+                sbTrace.Append("1 ");
+                if (workspace.Document.Dirty)
                 {
-                    case DialogResult.Yes:
-                        if (!DoSave())
-                        {
+                    sbTrace.Append("2 ");
+                    switch (AskForSave())
+                    {
+                        case DialogResult.Yes:
+                            sbTrace.Append("3 ");
+                            if (!DoSave())
+                            {
+                                sbTrace.Append("4 ");
+                                return;
+                            }
+
+                            sbTrace.Append("5 ");
+                            break;
+
+                        case DialogResult.No:
+                            sbTrace.Append("6 ");
+                            break;
+
+                        case DialogResult.Cancel:
+                            sbTrace.Append("7 ");
                             return;
+                    }
+                }
+
+                using (NewFileDialog nfd = new NewFileDialog())
+                {
+                    sbTrace.Append("8 ");
+                    Size newDocSize = GetNewDocumentSize();
+                    sbTrace.Append("9 ");
+
+                    if (IsClipboardImageAvailable())
+                    {
+                        sbTrace.Append("10 ");
+                        try
+                        {
+                            sbTrace.Append("11 ");
+                            Utility.GCFullCollect();
+                            sbTrace.Append("12 ");
+                            IDataObject clipData = Clipboard.GetDataObject();
+                            sbTrace.Append("13 ");
+
+                            using (Image clipImage = (Image)clipData.GetData(DataFormats.Bitmap))
+                            {
+                                sbTrace.Append("14 ");
+                                int width2 = clipImage.Width;
+                                sbTrace.Append("15 ");
+                                int height2 = clipImage.Height;
+                                sbTrace.Append("16 ");
+                                newDocSize = new Size(width2, height2);
+                            }
                         }
 
-                        break;
+                        catch (Exception ex)
+                        {
+                            if (ex is OutOfMemoryException)
+                            {
+                                sbTrace.Append("17 ");
+                            }
+                            else if (ex is ExternalException)
+                            {
+                                sbTrace.Append("18 ");
+                            }
+                            else if (ex is NullReferenceException)
+                            {
+                                sbTrace.Append("18_2 ");
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
+                    }
 
-                    case DialogResult.No:
-                        break;
+                    nfd.OriginalSize = new Size(newDocSize.Width, newDocSize.Height);
+                    sbTrace.Append("19 ");
+                    nfd.OriginalDpuUnit = PdnSettings.GetLastNonPixelUnits();
+                    sbTrace.Append("20 ");
+                    nfd.OriginalDpu = Document.GetDefaultDpu(nfd.OriginalDpuUnit);
+                    sbTrace.Append("21 ");
+                    nfd.Units = nfd.OriginalDpuUnit;
+                    sbTrace.Append("22 ");
+                    nfd.Resolution = nfd.OriginalDpu;
+                    sbTrace.Append("23 ");
+                    nfd.ConstrainToAspect = Settings.CurrentUser.GetBoolean(PdnSettings.LastMaintainAspectRatioNF, false);
+                    sbTrace.Append("24 ");
 
-                    case DialogResult.Cancel:
-                        return;
+                    if (Utility.ShowDialog(nfd, this) == DialogResult.OK)
+                    {
+                        sbTrace.Append("25 ");
+                        CreateBlankDocument(new Size(nfd.ImageWidth, nfd.ImageHeight), nfd.Units, nfd.Resolution);
+
+                        sbTrace.Append("25a ");
+                        workspace.ZoomBasis = ZoomBasis.Window;
+
+                        sbTrace.Append("26 ");
+                        Settings.CurrentUser.SetBoolean(PdnSettings.LastMaintainAspectRatioNF, nfd.ConstrainToAspect);
+                        sbTrace.Append("27 ");
+
+                        if (nfd.Units != MeasurementUnit.Pixel)
+                        {
+                            sbTrace.Append("28 ");
+                            Settings.CurrentUser.SetString(PdnSettings.LastNonPixelUnits, nfd.Units.ToString());
+                        }
+                        sbTrace.Append("29 ");
+
+                        if (workspace.Environment.Units != MeasurementUnit.Pixel)
+                        {
+                            sbTrace.Append("30 ");
+                            workspace.Environment.Units = nfd.Units;
+                        }
+                    }
                 }
             }
 
-            using (NewFileDialog nfd = new NewFileDialog())
+            // We're getting crash reports in this function. I have an idea of the cause
+            // but nothing concrete. This should help.          
+            catch (Exception ex)
             {
-                Size newDocSize = GetNewDocumentSize();
-                
-                if (IsClipboardImageAvailable())
-                {
-                    try
-                    {
-                        Utility.GCFullCollect();
-                        IDataObject clipData = Clipboard.GetDataObject();
-
-                        using (Image clipImage = (Image)clipData.GetData(DataFormats.Bitmap))
-                        {
-                            newDocSize.Width = clipImage.Width;
-                            newDocSize.Height = clipImage.Height;
-                        }
-                    }
-
-                    catch (OutOfMemoryException)
-                    {
-                    }
-
-                    catch (ExternalException)
-                    {
-                    }
-                }
-
-                nfd.OriginalSize = new Size(newDocSize.Width, newDocSize.Height);
-                nfd.OriginalDpuUnit = PdnSettings.GetLastNonPixelUnits();
-                nfd.OriginalDpu = Document.GetDefaultDpu(nfd.OriginalDpuUnit);
-                nfd.Units = nfd.OriginalDpuUnit;
-                nfd.Resolution = nfd.OriginalDpu;
-                nfd.ConstrainToAspect = Settings.CurrentUser.GetBoolean(PdnSettings.LastMaintainAspectRatioNF, false);
-
-                if (Utility.ShowDialog(nfd, this) == DialogResult.OK)
-                {
-                    CreateBlankDocument(new Size(nfd.ImageWidth, nfd.ImageHeight), nfd.Units, nfd.Resolution);
-                    Settings.CurrentUser.SetBoolean(PdnSettings.LastMaintainAspectRatioNF, nfd.ConstrainToAspect);
-
-                    if (nfd.Units != MeasurementUnit.Pixel)
-                    {
-                        Settings.CurrentUser.SetString(PdnSettings.LastNonPixelUnits, nfd.Units.ToString());
-                    }
-
-                    if (workspace.Environment.Units != MeasurementUnit.Pixel)
-                    {
-                        workspace.Environment.Units = nfd.Units;
-                    }
-                }
+                throw new ApplicationException("Traced code path: " + sbTrace.ToString(), ex);
             }
         }
 
@@ -3097,36 +3037,24 @@ namespace PaintDotNet
             }
             else
             {
-                workspace.DocumentView.SuspendRefresh();
-
-                try
+                using (new WaitCursorChanger(this))
                 {
-                    using (new WaitCursorChanger(this))
-                    {
-                        workspace.SetDocumentSaveOptions(fileName, fileType, null);
-                        workspace.SetDocument(document);
-                        workspace.History.ClearAll();
+                    workspace.SetDocumentSaveOptions(fileName, fileType, null);
+                    workspace.SetDocument(document);
+                    workspace.History.ClearAll();
 
-                        workspace.History.PushNewAction(new NullHistoryAction(PdnResources.GetString("OpenImageAction.Name"), 
-                            this.ImageFromDiskIcon));
+                    workspace.History.PushNewAction(new NullHistoryAction(PdnResources.GetString("OpenImageAction.Name"), 
+                        this.ImageFromDiskIcon));
 
-                        workspace.Document.Dirty = false;
-                    }
-
-                    SetTitleText();
-                
-                    if (document != null) 
-                    {
-                        workspace.ZoomBasis = ZoomBasis.Window;
-                    } 
+                    workspace.Document.Dirty = false;
                 }
 
-                finally
-                {                
-                    workspace.DocumentView.ResumeRefresh();
-                }
-
-                Invalidate(true);
+                SetTitleText();
+            
+                if (document != null)
+                {
+                    workspace.ZoomBasis = ZoomBasis.Window;
+                } 
 
                 // add to MRU list
                 AddMru(fileName);
@@ -3136,8 +3064,9 @@ namespace PaintDotNet
                 // 2.1 Build 1921 signifies when MemoryBlock was upgraded to support 64-bits, which broke it again
                 // 2.1 Build 1924 upgraded to "unimportant ordering" for MemoryBlock serialization so we can to faster multiproc saves
                 //                (in v2.5 we always save in order, although that doesn't change the file format's laxness)
-                // 2.5 Build 2105 signifies when we introduced strong naming, and changed the way PropertyItems are serialized
-                if (workspace.Document.SavedWithVersion < new Version(2, 5, 2105))
+                // 2.5 Build 2105 changed the way PropertyItems are serialized
+                // 2.6 Build      upgrade to .NET 2.0, does not appear to be compatible with 2.5 and earlier files as a result
+                if (workspace.Document.SavedWithVersion < new Version(2, 6, 0))
                 {
                     Version ourVersion = PdnInfo.GetVersion();
                     Version ourVersion2 = new Version(ourVersion.Major, ourVersion.Minor);
@@ -3157,7 +3086,9 @@ namespace PaintDotNet
                     string text = string.Format(format, workspace.Document.SavedWithVersion.ToString(fields),
                         new Version(Application.ProductVersion).ToString(fields));
 
-                    Utility.InfoBox(this, text);
+                    // TODO: should we even bother to inform them? It is probably more annoying than not,
+                    //       especially since older versions will say "Hey this file is corrupt OR saved with a newer version"
+                    //Utility.InfoBox(this, text);
                 }
             }
 
@@ -3450,6 +3381,24 @@ namespace PaintDotNet
             {
                 using (SaveConfigDialog scd = new SaveConfigDialog())
                 {
+                    ProgressEventHandler peh = delegate(object sender, ProgressEventArgs e)
+                    {
+                        if (e.Percent < 0 || e.Percent >= 100)
+                        {
+                            ResetProgressStatusBar();
+                            EraseProgressStatusBar();
+                        }
+                        else
+                        {
+                            SetProgressStatusBar(e.Percent);
+                        }
+                    };
+
+                    if (fileType.SavesWithProgress)
+                    {
+                        scd.Progress += peh;
+                    }
+
                     scd.Document = workspace.Document;
                     scd.FileType = fileType;
 
@@ -3465,6 +3414,13 @@ namespace PaintDotNet
 
                     // show configuration/preview dialog
                     DialogResult dr = scd.ShowDialog(this);
+
+                    if (fileType.SavesWithProgress)
+                    {
+                        scd.Progress -= peh;
+                        ResetProgressStatusBar();
+                        EraseProgressStatusBar();
+                    }
 
                     if (dr == DialogResult.OK)
                     {
@@ -3792,18 +3748,8 @@ namespace PaintDotNet
                     using (new WaitCursorChanger(this))
                     {
                         Utility.GCFullCollect();
-                        //if (fileType.SavesWithProgress)
-                        {
-                            SaveProgressDialog sd = new SaveProgressDialog(this);
-                            sd.Save(stream, workspace.Document, fileType, saveConfigToken);
-                        }
-                        /*
-                        else
-                        {
-                            fileType.Save(workspace.Document, stream, saveConfigToken, null);
-                        }
-                        */
-
+                        SaveProgressDialog sd = new SaveProgressDialog(this);
+                        sd.Save(stream, workspace.Document, fileType, saveConfigToken);
                         success = true;
                     }
                 }
@@ -3849,7 +3795,11 @@ namespace PaintDotNet
                     }
                 }
 
-                if (!success)
+                if (success)
+                {
+                    Shell.AddToRecentDocumentsList(fileName);
+                }
+                else
                 {
                     return false;
                 }
@@ -3906,7 +3856,7 @@ namespace PaintDotNet
             }
         }
 
-        private void menuEdit_Popup(object sender, System.EventArgs e)
+        private void menuEdit_DropDownOpening(object sender, System.EventArgs e)
         {
             bool selection = !workspace.Environment.Selection.IsEmpty;
 
@@ -3950,6 +3900,22 @@ namespace PaintDotNet
             menuEditRedo.Enabled = (workspace.History.RedoStack.Count > 0);
         }
 
+        // For the menus where we dynamically enable menu items (e.g. Copy only enabled when there's a selection),
+        // we have to make sure to re-enable all the items when the menu goes way.
+        // This is important for cases where, for example: Edit menu is opened, "Deselect" is disabled because
+        // there is no selection. User then clicks on Select All. The menu then goes away. However, since Deselect
+        // was disabled, the Ctrl+D shortcut will not be honored even though there is a selection.
+        // So the disabling of menu items should only be temporary for the duration of the menu's visibility.
+        private void OnMenuDropDownClosed(object sender, System.EventArgs e)
+        {
+            ToolStripMenuItem menu = (ToolStripMenuItem)sender;
+
+            foreach (ToolStripItem tsi in menu.DropDownItems)
+            {
+                tsi.Enabled = true;
+            }
+        }
+
         private bool CopySelectionToClipboard()
         {
             bool success = true;
@@ -3972,68 +3938,72 @@ namespace PaintDotNet
                     SurfaceForClipboard surfaceForClipboard = new SurfaceForClipboard(maskedSurface);
                     Rectangle selectionBounds = Utility.GetRegionBounds(selectionRegion);
 
-                    Surface copySurface = new Surface((int)selectionBounds.Width, (int)selectionBounds.Height);
-                    Bitmap copyBitmap = copySurface.CreateAliasedBitmap();
-                    Bitmap copyOpaqueBitmap = new Bitmap(copySurface.Width, copySurface.Height, PixelFormat.Format24bppRgb);
-
-                    using (Graphics copyBitmapGraphics = Graphics.FromImage(copyBitmap))
+                    if (selectionBounds.Width > 0 && selectionBounds.Height > 0)
                     {
-                        copyBitmapGraphics.Clear(Color.White);
-                    }
+                        Surface copySurface = new Surface(selectionBounds.Width, selectionBounds.Height);
+                        Bitmap copyBitmap = copySurface.CreateAliasedBitmap();
+                        Bitmap copyOpaqueBitmap = new Bitmap(copySurface.Width, copySurface.Height, PixelFormat.Format24bppRgb);
 
-                    maskedSurface.Draw(copySurface, -selectionBounds.X, -selectionBounds.Y);
-
-                    using (Graphics copyOpaqueBitmapGraphics = Graphics.FromImage(copyOpaqueBitmap)) 
-                    {
-                        copyOpaqueBitmapGraphics.Clear(Color.White);
-                        copyOpaqueBitmapGraphics.DrawImage(copyBitmap, 0, 0);
-                    }
-
-                    DataObject dataObject = new DataObject();
-
-                    dataObject.SetData(DataFormats.Bitmap, copyOpaqueBitmap);
-                    dataObject.SetData(surfaceForClipboard);
-
-                    int retryCount = 2;
-
-                    while (retryCount >= 0)
-                    {
-                        try
+                        using (Graphics copyBitmapGraphics = Graphics.FromImage(copyBitmap))
                         {
-                            using (new WaitCursorChanger(this))
-                            {
-                                Clipboard.SetDataObject(dataObject, true);
-                            }
-
-                            break;
+                            copyBitmapGraphics.Clear(Color.White);
                         }
 
-                        catch
+                        maskedSurface.Draw(copySurface, -selectionBounds.X, -selectionBounds.Y);
+
+                        using (Graphics copyOpaqueBitmapGraphics = Graphics.FromImage(copyOpaqueBitmap))
                         {
-                            if (retryCount == 0)
+                            copyOpaqueBitmapGraphics.Clear(Color.White);
+                            copyOpaqueBitmapGraphics.DrawImage(copyBitmap, 0, 0);
+                        }
+
+                        DataObject dataObject = new DataObject();
+
+                        dataObject.SetData(DataFormats.Bitmap, copyOpaqueBitmap);
+                        dataObject.SetData(surfaceForClipboard);
+
+                        int retryCount = 2;
+
+                        while (retryCount >= 0)
+                        {
+                            try
                             {
-                                success = false;
-                                Utility.ErrorBox(this, PdnResources.GetString("CopyAction.Error.TransferToClipboard"));
+                                using (new WaitCursorChanger(this))
+                                {
+                                    Clipboard.SetDataObject(dataObject, true);
+                                }
+
+                                break;
                             }
-                            else
+
+                            catch
                             {
-                                Thread.Sleep(200);
+                                if (retryCount == 0)
+                                {
+                                    success = false;
+                                    Utility.ErrorBox(this, PdnResources.GetString("CopyAction.Error.TransferToClipboard"));
+                                }
+                                else
+                                {
+                                    Thread.Sleep(200);
+                                }
+                            }
+
+                            finally
+                            {
+                                --retryCount;
                             }
                         }
 
-                        finally
-                        {
-                            --retryCount;
-                        }
+                        copySurface.Dispose();
+                        copyBitmap.Dispose();
+                        copyOpaqueBitmap.Dispose();
                     }
 
                     selectionRegion.Dispose();
                     selectionOutline.Dispose();
                     renderArgs.Dispose();
                     maskedSurface.Dispose();
-                    copySurface.Dispose();
-                    copyBitmap.Dispose();
-                    copyOpaqueBitmap.Dispose();                
                 }
             }
 
@@ -4133,7 +4103,14 @@ namespace PaintDotNet
 
         private void FinishedRenderingHandler(object sender, EventArgs e)
         {
-            workspace.EnableOutlineAnimation = true;
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new EventHandler(FinishedRenderingHandler), new object[] { sender, e });
+            }
+            else
+            {
+                workspace.EnableOutlineAnimation = true;
+            }
         }
 
         private void StartingRenderingHandler(object sender, EventArgs e)
@@ -4172,11 +4149,7 @@ namespace PaintDotNet
                 {
                     if (effect.Image != null)
                     {
-                        aed.Icon = Utility.ImageToIcon(effect.Image, Color.FromArgb(192, 192, 192));
-                    }
-                    else
-                    {
-                        aed.Icon = this.StopWatchIcon;
+                        aed.Icon = Utility.ImageToIcon(effect.Image, Utility.TransparentKey);
                     }
 
                     aed.Opacity = 0.9;
@@ -4337,13 +4310,13 @@ namespace PaintDotNet
                     string repeatFormat = PdnResources.GetString("MainForm.Effects.RepeatMenuItem.Format");
                     string repeatName = string.Format(repeatFormat, effect.Name);
 
-                    if (effect is IConfigurableEffect)
+                    if (effect.IsConfigurable)
                     {
                         string configurableFormat = PdnResources.GetString("MainForm.Effects.Name.Format.Configurable");
                         name = string.Format(configurableFormat, name);
                     }
                 
-                    if (repeatName == ((MenuItem)sender).Text)
+                    if (repeatName == ((ToolStripMenuItem)sender).Text)
                     {
                         Surface copy = workspace.ScratchSurface;
 
@@ -4355,12 +4328,12 @@ namespace PaintDotNet
                         ((Effect)lastEffect).EnvironmentParameters = eep;
                         DoEffect((Effect)lastEffect, (EffectConfigToken)lastEffectToken, selectedRegion, selectedRegion, copy);
                     }
-                    else if (name == ((MenuItem)sender).Text)
+                    else if (name == ((ToolStripMenuItem)sender).Text)
                     {
                         EffectConfigToken newLastToken = null;
                         effect.EnvironmentParameters = eep;
 
-                        if (!(effect is IConfigurableEffect))
+                        if (!(effect.IsConfigurable))
                         {
                             Surface copy = workspace.ScratchSurface;
 
@@ -4374,7 +4347,7 @@ namespace PaintDotNet
                         else
                         {
                             PdnRegion previewRegion = (PdnRegion)selectedRegion.Clone();
-                            previewRegion.Intersect(Rectangle.Inflate(workspace.VisibleDocumentRectangle, 1, 1));
+                            previewRegion.Intersect(RectangleF.Inflate(workspace.VisibleDocumentRectangleF, 1, 1));
 
                             Surface originalSurface = workspace.ScratchSurface;
 
@@ -4387,8 +4360,7 @@ namespace PaintDotNet
                             workspace.Widgets.LayerControl.SuspendLayerPreviewUpdates();
                             //
 
-                            IConfigurableEffect config = (IConfigurableEffect)effect;
-                            using (EffectConfigDialog configDialog = config.CreateConfigDialog())
+                            using (EffectConfigDialog configDialog = effect.CreateConfigDialog())
                             {
                                 configDialog.Opacity = 0.9;
 
@@ -4533,34 +4505,35 @@ namespace PaintDotNet
         private void PopulateEffectsMenu()
         {
             // Clear out the menu items!
-            foreach (MenuItem mi in menuEffects.MenuItems)
+            foreach (ToolStripItem mi in menuEffects.DropDownItems)
             {
-                mi.Click -= menuEffectsClickDelegate;
+                if (mi is ToolStripMenuItem)
+                {
+                    mi.Click -= menuEffectsClickDelegate;
+                }
             }
 
-            menuEffects.MenuItems.Clear();
+            menuEffects.DropDownItems.Clear();
 
             // If we have a repeatable effect, add it with "Repeat ___ (Ctrl+F)" along with a separator
             if (this.lastEffect != null)
             {
                 string repeatFormat = PdnResources.GetString("MainForm.Effects.RepeatMenuItem.Format");
                 string menuName = string.Format(repeatFormat, ((Effect)lastEffect).Name);
-                MenuItem mi = new MenuItem(menuName, menuEffectsClickDelegate, Shortcut.CtrlF);
-                this.dotNetMenuProvider.SetDrawSpecial(mi, true);
+                ToolStripMenuItem mi = new ToolStripMenuItem(menuName, null, menuEffectsClickDelegate, Keys.Control | Keys.F);
 
                 if (((Effect)lastEffect).Image != null)
                 {
                     SetMenuIcon(mi, ((Effect)lastEffect).Image);
                 }
 
-                mi.Shortcut = Shortcut.CtrlF;
+                mi.ShortcutKeys = Keys.Control | Keys.F;
 
-                menuEffects.MenuItems.Add(mi);
+                menuEffects.DropDownItems.Add(mi);
 
                 // add separator
-                MenuItem separator = new MenuItem("-");
-                this.dotNetMenuProvider.SetDrawSpecial(separator, true);
-                menuEffects.MenuItems.Add(separator);
+                ToolStripSeparator separator = new ToolStripSeparator();
+                menuEffects.DropDownItems.Add(separator);
                 repeatEffectKeyboardHackEnabled = true;
                 effectsKeyboardHackEnabled = true;
             }
@@ -4573,7 +4546,7 @@ namespace PaintDotNet
 
         private void PopulateAdjustmentsMenu()
         {
-            menuLayersAdjustments.MenuItems.Clear();
+            menuLayersAdjustments.DropDownItems.Clear();
             AddEffectsToMenu(menuLayersAdjustments, new BoolObjectDelegate(AdjustmentsMenuPredicate), true);
             adjustmentsPopulated = true;
         }
@@ -4584,7 +4557,7 @@ namespace PaintDotNet
             PopulateAdjustmentsMenu();
         }
 
-        private void menuEffects_Popup(object sender, System.EventArgs e)
+        private void menuEffects_DropDownOpening(object sender, System.EventArgs e)
         {
             if (!reinitEffectsMenu)
             {
@@ -4605,19 +4578,31 @@ namespace PaintDotNet
             return ((Effect)effect).Category == EffectCategory.Effect;
         }
 
-        private void menuLayersAdjustments_Popup(object sender, System.EventArgs e)
+        private void menuLayersAdjustments_DropDownOpening(object sender, System.EventArgs e)
         {
             PopulateAdjustmentsMenu();
-            menuLayersAdjustments.Popup -= new EventHandler(menuLayersAdjustments_Popup);
+            menuLayersAdjustments.DropDownOpening -= new EventHandler(menuLayersAdjustments_DropDownOpening);
         }
 
-        private void AddEffectsToMenu(MenuItem topMenu, BoolObjectDelegate predicate, bool withShortcuts)
+        private void AddEffectsToMenu(ToolStripMenuItem topMenu, BoolObjectDelegate predicate, bool withShortcuts)
         {
             // Fill the menu with the effect names, and "..." if it is configurable
             foreach (Type type in workspace.Effects)
             {
-                ConstructorInfo ci = type.GetConstructor(Type.EmptyTypes);
-                Effect effect = (Effect)ci.Invoke(null);
+                Effect effect;
+
+                try
+                {
+                    ConstructorInfo ci = type.GetConstructor(Type.EmptyTypes);
+                    effect = (Effect)ci.Invoke(null);
+                }
+
+                catch
+                {
+                    // We don't want a DLL that can't be figured out to cause the app to crash
+                    // But should we show an error message?
+                    continue;
+                }
 
                 if (!predicate(effect))
                 {
@@ -4626,60 +4611,55 @@ namespace PaintDotNet
 
                 string name = effect.Name;
 
-                if (effect is IConfigurableEffect)
+                if (effect.IsConfigurable)
                 {
                     string configurableFormat = PdnResources.GetString("MainForm.Effects.Name.Format.Configurable");
                     name = string.Format(configurableFormat, name);
                 }
 
-                MenuItem mi;
-                
-                if (withShortcuts)
-                {
-                    mi = new MenuItem(name, menuEffectsClickDelegate, effect.Shortcut);
-                }
-                else
-                {
-                    mi = new MenuItem(name, menuEffectsClickDelegate);
-                }
-
-                this.dotNetMenuProvider.SetDrawSpecial(mi, true);
+                ToolStripMenuItem mi = new ToolStripMenuItem(name, null, menuEffectsClickDelegate, 
+                    withShortcuts ? effect.ShortcutKeys : Keys.None);
 
                 if (effect.Image != null)
                 {
                     this.SetMenuIcon(mi, effect.Image);
                 }
 
-                MenuItem addEffectHere = topMenu;
+                ToolStripMenuItem addEffectHere = topMenu;
 
                 if (effect.SubMenuName != null)
                 {
-                    MenuItem subMenu = null;
+                    ToolStripMenuItem subMenu = null;
 
                     // search for this subMenu
-                    foreach (MenuItem sub in menuEffects.MenuItems)
+                    foreach (ToolStripItem sub in menuEffects.DropDownItems)
                     {
-                        if (sub.Text == effect.SubMenuName)
+                        ToolStripMenuItem submi = sub as ToolStripMenuItem;
+
+                        if (submi != null)
                         {
-                            subMenu = sub;
+                            if (submi.Text == effect.SubMenuName)
+                            {
+                                subMenu = submi;
+                                break;
+                            }
                         }
                     }
 
                     if (subMenu == null)
                     {
-                        subMenu = new MenuItem(effect.SubMenuName);
-                        this.dotNetMenuProvider.SetDrawSpecial(subMenu, true);
-                        topMenu.MenuItems.Add(subMenu);
+                        subMenu = new ToolStripMenuItem(effect.SubMenuName);
+                        topMenu.DropDownItems.Add(subMenu);
                     }
 
                     addEffectHere = subMenu;
                 }
 
-                addEffectHere.MenuItems.Add(mi);
+                addEffectHere.DropDownItems.Add(mi);
             }         
         }
 
-        private void menuFileAcquire_Popup(object sender, System.EventArgs e)
+        private void menuFileAcquire_DropDownOpening(object sender, System.EventArgs e)
         {
             menuFileAcquireFromClipboard.Enabled = this.IsClipboardImageAvailable();        
 
@@ -4702,7 +4682,14 @@ namespace PaintDotNet
 
         private void menuEditInvertSelection_Click(object sender, System.EventArgs e)
         {
-            workspace.PerformAction(typeof(InvertSelectionAction));
+            if (!workspace.Environment.Selection.IsEmpty)
+            {
+                workspace.PerformAction(typeof(InvertSelectionAction));
+
+                // Make sure that the selection info shows up in the status bar, and not the tool's help text
+                workspace.Environment.Selection.PerformChanging();
+                workspace.Environment.Selection.PerformChanged();
+            }
         }
 
         private void menuEditClearSelection_Click(object sender, System.EventArgs e)
@@ -4713,6 +4700,10 @@ namespace PaintDotNet
         private void menuEditSelectAll_Click(object sender, System.EventArgs e)
         {
             workspace.PerformAction(typeof(SelectAllAction));
+
+            // Make sure that the selection info shows up in the status bar, and not the tool's help text
+            workspace.Environment.Selection.PerformChanging();
+            workspace.Environment.Selection.PerformChanged();
         }
 
         private void menuEditDeselect_Click(object sender, System.EventArgs e)
@@ -4847,8 +4838,8 @@ namespace PaintDotNet
                         Size newSize = new Size(Math.Max(bounds.Width, workspace.Document.Width),
                                                 Math.Max(bounds.Height, workspace.Document.Height));
 
-                        Document newDoc = CanvasSizeAction.ResizeDocument(this, workspace.Document, newSize, 
-                            AnchorEdge.TopLeft, workspace.Environment.BackColor, false, false);
+                        Document newDoc = CanvasSizeAction.ResizeDocument(workspace.Document, newSize,
+                            AnchorEdge.TopLeft, workspace.Environment.BackColor);
 
                         if (newDoc == null)
                         {
@@ -4895,7 +4886,8 @@ namespace PaintDotNet
 
             // Paste to the place it was originally copied from (for PDN-to-PDN transfers)
             // and then if its not pasted within the viewable rectangle we pan to that location
-            Rectangle visibleDocRect = workspace.DocumentView.VisibleDocumentRectangle;
+            RectangleF visibleDocRectF = workspace.DocumentView.VisibleDocumentRectangleF;
+            Rectangle visibleDocRect = Utility.RoundRectangle(visibleDocRectF);
             Rectangle bounds2 = new Rectangle(new Point(bounds.X + pasteOffset.X, bounds.Y + pasteOffset.Y), bounds.Size);
             Rectangle intersect2 = Rectangle.Intersect(bounds2, visibleDocRect);
             bool doPan = intersect2.IsEmpty;
@@ -4916,12 +4908,12 @@ namespace PaintDotNet
                 Size delta = new Size(centerPtPasted.X - centerPtView.X,
                                       centerPtPasted.Y - centerPtView.Y);
 
-                Point docScrollPos = workspace.DocumentView.DocumentScrollPosition;
+                PointF docScrollPos = workspace.DocumentView.DocumentScrollPositionF;
 
-                Point newDocScrollPos = new Point(docScrollPos.X + delta.Width,
-                                                  docScrollPos.Y + delta.Height);
+                PointF newDocScrollPos = new PointF(docScrollPos.X + delta.Width,
+                                                    docScrollPos.Y + delta.Height);
 
-                workspace.DocumentView.DocumentScrollPosition = newDocScrollPos;
+                workspace.DocumentView.DocumentScrollPositionF = newDocScrollPos;
             }
 
             return true;
@@ -4948,6 +4940,11 @@ namespace PaintDotNet
 
         private void menuImageFlatten_Click(object sender, System.EventArgs e)
         {
+            if (workspace.Document.Layers.Count <= 1)
+            {
+                return;
+            }
+
             bool foundHidden = false;
 
             foreach (Layer layer in workspace.Document.Layers)
@@ -4980,7 +4977,7 @@ namespace PaintDotNet
             workspace.PerformAction(typeof(FlattenAction));
         }
 
-        private void menuLayers_Popup(object sender, System.EventArgs e)
+        private void menuLayers_DropDownOpening(object sender, System.EventArgs e)
         {
         }
 
@@ -4989,7 +4986,7 @@ namespace PaintDotNet
             workspace.Widgets.LayerForm.PerformDeleteLayerClick();
         }
 
-        private void menuWindow_Popup(object sender, System.EventArgs e)
+        private void menuWindow_DropDownOpening(object sender, System.EventArgs e)
         {
             menuWindowTranslucent.Checked = PdnBaseForm.EnableOpacity;
             menuWindowTools.Checked = workspace.Widgets.MainToolBarForm.Visible;
@@ -5004,7 +5001,7 @@ namespace PaintDotNet
             if (!workspace.Widgets.MainToolBarForm.Visible) 
             {
                 //if we don't do this, hiding the last floating window can cause PDN to lose focus
-                workspace.Focus();
+                workspace.DocumentView.Focus();
             }
         }
 
@@ -5014,7 +5011,7 @@ namespace PaintDotNet
             if (!workspace.Widgets.HistoryForm.Visible) 
             {
                 //if we don't do this, hiding the last floating window can cause PDN to lose focus
-                workspace.Focus();
+                workspace.DocumentView.Focus();
             }
         }
 
@@ -5024,7 +5021,7 @@ namespace PaintDotNet
             if (!workspace.Widgets.LayerForm.Visible) 
             {
                 //if we don't do this, hiding the last floating window can cause PDN to lose focus
-                workspace.Focus();
+                workspace.DocumentView.Focus();
             }
         }
 
@@ -5034,11 +5031,11 @@ namespace PaintDotNet
             if (!workspace.Widgets.ColorsForm.Visible) 
             {
                 //if we don't do this, hiding the last floating window can cause PDN to lose focus
-                workspace.Focus();
+                workspace.DocumentView.Focus();
             }
         }
 
-        private void menuImage_Popup(object sender, System.EventArgs e)
+        private void menuImage_DropDownOpening(object sender, System.EventArgs e)
         {
             menuImageCrop.Enabled = !workspace.Environment.Selection.IsEmpty;
             menuImageFlatten.Enabled = (workspace.Document.Layers.Count > 1);
@@ -5046,7 +5043,10 @@ namespace PaintDotNet
 
         private void menuImageCrop_Click(object sender, System.EventArgs e)
         {
-            workspace.PerformAction(typeof(CropAction));
+            if (!workspace.Environment.Selection.IsEmpty)
+            {
+                workspace.PerformAction(typeof(CropAction));
+            }
         }
 
         private void menuImageResize_Click(object sender, System.EventArgs e)
@@ -5054,55 +5054,60 @@ namespace PaintDotNet
             workspace.PerformAction(typeof(ResizeAction));
         }
 
-        private void menuTools_Popup(object sender, System.EventArgs e)
+        private void menuTools_DropDownOpening(object sender, System.EventArgs e)
         {
-            menuTools.MenuItems.Clear();
-            menuTools.MenuItems.Add(menuToolsAntiAliasing);
-            menuTools.MenuItems.Add(menuToolsAlphaBlending);
-            menuTools.MenuItems.Add(menuToolsSeperator);
+            menuTools.DropDownItems.Clear();
+            menuTools.DropDownItems.Add(menuToolsAntialiasing);
+            menuTools.DropDownItems.Add(menuToolsAlphaBlending);
+            menuTools.DropDownItems.Add(menuToolsSeperator);
 
             foreach (ToolInfo toolInfo in workspace.ToolInfos)
             {
-                MenuItem mi = new MenuItem(toolInfo.Name, menuToolsClickDelegate);
+                ToolStripMenuItem mi = new ToolStripMenuItem(toolInfo.Name, null, menuToolsClickDelegate);
                 SetMenuIcon(mi, (Image)toolInfo.Image.Clone());
-                menuTools.MenuItems.Add(mi);
+                menuTools.DropDownItems.Add(mi);
             }
             
-            menuTools.Popup -= new EventHandler(menuTools_Popup);
-            menuTools.Popup += new EventHandler(menuTools_Popup2);
-            menuTools_Popup2(sender, e);
+            menuTools.DropDownOpening -= new EventHandler(menuTools_DropDownOpening);
+            menuTools.DropDownOpening += new EventHandler(menuTools_DropDownOpening2);
+            menuTools_DropDownOpening2(sender, e);
         }
 
-        private void menuTools_Popup2(object sender, System.EventArgs e)
+        private void menuTools_DropDownOpening2(object sender, System.EventArgs e)
         {
             Tool currentTool = workspace.Environment.Tool;
 
-            foreach (MenuItem mi in menuTools.MenuItems)
+            foreach (ToolStripItem tsi in menuTools.DropDownItems)
             {
-                string name = null;
+                ToolStripMenuItem mi = tsi as ToolStripMenuItem;
 
-                if (currentTool != null)
+                if (mi != null)
                 {
-                    name = workspace.Environment.Tool.Name;
-                }
+                    string name = null;
 
-                if (name != null && mi.Text == workspace.Environment.Tool.Name)
-                {
-                    mi.Checked = true;
-                }
-                else
-                {
-                    mi.Checked = false;
+                    if (currentTool != null)
+                    {
+                        name = workspace.Environment.Tool.Name;
+                    }
+
+                    if (name != null && mi.Text == workspace.Environment.Tool.Name)
+                    {
+                        mi.Checked = true;
+                    }
+                    else
+                    {
+                        mi.Checked = false;
+                    }
                 }
             }
 
-            menuToolsAntiAliasing.Checked = workspace.Environment.AntiAliasing;
+            menuToolsAntialiasing.Checked = workspace.Environment.AntiAliasing;
             menuToolsAlphaBlending.Checked = workspace.Environment.AlphaBlending;
         }
 
         private void menuTools_ClickHandler(object sender, System.EventArgs e)
         {
-            MenuItem mi = (MenuItem)sender;
+            ToolStripMenuItem mi = (ToolStripMenuItem)sender;
 
             foreach (ToolInfo toolInfo in workspace.ToolInfos)
             {
@@ -5223,13 +5228,16 @@ namespace PaintDotNet
 
             CoordinatesToStrings(e.X, e.Y, out xString, out yString, out units);
 
-            this.cursorInfoStatusBar.Text = string.Format(
+            string cursorText = string.Format(
                 CultureInfo.InvariantCulture, 
                 this.cursorInfoStatusBarFormat, 
                 xString, 
                 units, 
                 yString, 
                 units);
+
+            this.cursorInfoStatusLabel.Text = cursorText;
+            this.statusStrip.Update();
         }
 
         private void InvokeResetProgressStatusBar()
@@ -5250,41 +5258,24 @@ namespace PaintDotNet
 
         private void EraseProgressStatusBar()
         {
-            this.progressStatusBar.Text = string.Empty;
-            this.progressStatusBar.Icon = null;
+            this.progressStatusSeparator.Visible = false;
+            this.progressStatusBar.Visible = false;
+            this.progressStatusBar.Value = 0;
         }
 
         private string progressTextFormat = PdnResources.GetString("MainForm.StatusBar.Progress.Percentage.Format");
         private void ResetProgressStatusBar()
         {
-            this.progressStatusBar.Text = string.Format(this.progressTextFormat, 0);
-
-            if (this.progressStatusBar.Icon == null)
-            {
-                this.progressStatusBar.Icon = this.StopWatchIcon;
-            }
+            this.progressStatusBar.Value = 0;
+            this.progressStatusSeparator.Visible = true;
+            this.progressStatusBar.Visible = true;
         }
 
         private double GetProgressStatusBarValue()
         {
             lock (progressStatusBar)
             {
-                try
-                {
-                    if (progressStatusBar.Text == string.Empty)
-                    {
-                        return -1.0;
-                    }
-                    else
-                    {
-                        return double.Parse(progressStatusBar.Text.Substring(0, progressStatusBar.Text.Length - 1));
-                    }
-                }
-
-                catch (FormatException)
-                {
-                    return -1.0;
-                }
+                return progressStatusBar.Value;
             }
         }
 
@@ -5297,15 +5288,10 @@ namespace PaintDotNet
         {
             lock (progressStatusBar)
             {
-                if (GetProgressStatusBarValue() < percent)
-                {
-                    this.progressStatusBar.Text = string.Format(this.progressTextFormat, (int)percent);
-
-                    if (this.progressStatusBar.Icon == null)
-                    {
-                        this.progressStatusBar.Icon = this.StopWatchIcon;
-                    }
-                }
+                progressStatusBar.Value = (int)percent;
+                bool visible = (percent != 100);
+                progressStatusBar.Visible = visible;
+                progressStatusSeparator.Visible = visible;
             }
         }
 
@@ -5315,11 +5301,6 @@ namespace PaintDotNet
         }
 
         private void menuItem6_Click(object sender, System.EventArgs e)
-        {
-            this.PositionFloatingForms();
-        }
-
-        private void SystemEvents_DisplaySettingsChanged(object sender, EventArgs e)
         {
             this.PositionFloatingForms();
         }
@@ -5380,8 +5361,8 @@ namespace PaintDotNet
         }
 
         /// <summary>
-        /// There seems to be a problem with the way WinForms (or DotNetWidgets?) handles additions to the 
-        /// menu system that have shortcuts. It seems that when you add a new menu item w/ a shortcut, it
+        /// There seems to be a problem with the way WinForms handles additions to the menu system that 
+        /// have shortcuts. It seems that when you add a new menu item w/ a shortcut, it
         /// is not recognize the first time the user tries to press any accelerator key. The next time, it
         /// does work.
         /// So what we do is enable our "accelerator hack" until the user has run an effect for the first
@@ -5394,6 +5375,96 @@ namespace PaintDotNet
         /// "Repeat ..." has been added to the effects menu for the first time.
         /// </summary>
         private bool repeatEffectKeyboardHackEnabled = true;
+
+#if DEBUG
+        static MainForm()
+        {
+            new Thread(FocusPrintThread).Start();
+        }
+
+        private static string GetControlName(Control control)
+        {
+            if (control == null)
+            {
+                return "null";
+            }
+
+            string name = control.Name + "(" + control.GetType().Name + ")";
+
+            if (control.Parent != null)
+            {
+                name += " <- " + GetControlName(control.Parent);
+            }
+
+            return name;
+        }
+
+        private static void PrintFocus()
+        {
+            Control c = FindFocus();
+            //Tracing.Ping("Focused: " + GetControlName(c));
+        }
+
+        private static void FocusPrintThread()
+        {
+            Thread.CurrentThread.IsBackground = true;
+
+            while (true)
+            {
+                try
+                {
+                    Form form = Form.ActiveForm;
+
+                    if (form != null)
+                    {
+                        form.BeginInvoke(new VoidVoidDelegate(PrintFocus));
+                    }
+                }
+
+                catch
+                {
+                }
+
+                Thread.Sleep(1000);
+            }
+        }
+#endif
+
+        // Useful for when you're debugging and want to figure out who in the world has focus
+        public static Control FindFocus()
+        {
+            foreach (Form form in Application.OpenForms)
+            {
+                Control focused = FindFocus(form);
+
+                if (focused != null)
+                {
+                    return focused;
+                }
+            }
+
+            return null;
+        }
+
+        private static Control FindFocus(Control c)
+        {
+            if (c.Focused)
+            {
+                return c;
+            }
+
+            foreach (Control child in c.Controls)
+            {
+                Control f = FindFocus(child);
+
+                if (f != null)
+                {
+                    return f;
+                }
+            }
+
+            return null;
+        }
 
         protected override void OnKeyUp(KeyEventArgs e)
         {
@@ -5420,16 +5491,19 @@ namespace PaintDotNet
                 } 
                 else 
                 {
-                    if (repeatEffectKeyboardHackEnabled && e.Control && e.KeyCode == Keys.F)
+                    if (repeatEffectKeyboardHackEnabled && e.Control && e.KeyCode == Keys.F && !e.Shift)
                     {
-                        if (menuEffects.MenuItems.Count > 0 &&
-                            menuEffects.MenuItems[0].Shortcut == Shortcut.CtrlF)
+                        if (menuEffects.DropDownItems.Count > 0 &&
+                            ((ToolStripMenuItem)menuEffects.DropDownItems[0]).ShortcutKeys == (Keys.Control | Keys.F))
                         {
-                            menuEffects.MenuItems[0].PerformClick();
+                            menuEffects.DropDownItems[0].PerformClick();
                             repeatEffectKeyboardHackEnabled = false;
                         }
                     }
-                    else if (effectsKeyboardHackEnabled && IsDynamicAcceleratorHACK(e))
+                    // HACK: For some reason, Ctrl+Shift+L only works once (for Auto-Levels). It doesn't seem to 
+                    //       work unless our hack is specially cased enabled for it.
+                    else if ((effectsKeyboardHackEnabled || e.KeyData == (Keys.Control | Keys.Shift | Keys.L)) && 
+                              IsDynamicAcceleratorHACK(e))
                     {
                         DoDynamicAcceleratorHACK(e);
                         effectsKeyboardHackEnabled = false;
@@ -5532,52 +5606,6 @@ namespace PaintDotNet
         }
 
         /// <summary>
-        /// Used to convert a Keys into a string that can be used for direct
-        /// comparison to a Shortcut enumeration member. This method is used
-        /// by DoAcceleratorHACK().
-        /// </summary>
-        /// <param name="key">The "Keys" that were pressed.</param>
-        /// <returns>A string that can be compared to a Shortcut.ToString()</returns>
-        private static string KeysToString(KeyEventArgs key)
-        {
-            string ret = string.Empty;
-
-            if (key.Alt)
-            {
-                ret += "Alt";
-            }
-
-            if (key.Control)
-            {
-                ret += "Ctrl";
-            }
-
-            if (key.Shift)
-            {
-                ret += "Shift";
-            }
-
-            if (key.KeyCode == Keys.Back)
-            {
-                ret += "Bksp";
-            }
-            else if (key.KeyCode == Keys.Insert)
-            {
-                ret += "Ins";
-            }
-            else if (key.KeyCode == Keys.Delete)
-            {
-                ret += "Del";
-            }
-            else
-            {
-                ret += key.KeyCode.ToString();
-            }
-
-            return ret;
-        }
-
-        /// <summary>
         /// Similar to DoAcceleratorHACK, but only tests whether a key is an accelerator or not.
         /// Does not actually perform the "menu item click."
         /// </summary>
@@ -5585,20 +5613,18 @@ namespace PaintDotNet
         /// <returns></returns>
         private bool IsAcceleratorHACK(KeyEventArgs keyInfo)
         {
-            string keyName = KeysToString(keyInfo);
-            
             Type ourType = this.GetType();
 
             FieldInfo[] fields = ourType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
             foreach (FieldInfo fi in fields)
             {
-                if (fi.FieldType == typeof(MenuItem))
+                if (fi.FieldType == typeof(ToolStripMenuItem))
                 {
-                    MenuItem mi = (MenuItem)fi.GetValue(this);
-                    Shortcut shortcut = mi.Shortcut;
+                    ToolStripMenuItem mi = (ToolStripMenuItem)fi.GetValue(this);
+                    Keys shortcutKeys = mi.ShortcutKeys;
                     
-                    if (keyName == shortcut.ToString())
+                    if (keyInfo.KeyData == shortcutKeys)
                     {
                         return true;
                     }
@@ -5610,17 +5636,15 @@ namespace PaintDotNet
 
         private bool IsDynamicAcceleratorHACK(KeyEventArgs keyInfo)
         {
-            string keyName = KeysToString(keyInfo);
-
             // Populate the Layers->Adjustments list if it isn't populated.
-            if (menuLayersAdjustments.MenuItems.Count <= 1)
+            if (menuLayersAdjustments.DropDownItems.Count <= 1)
             {
-                this.menuLayersAdjustments_Popup(this, EventArgs.Empty);
+                this.menuLayersAdjustments_DropDownOpening(this, EventArgs.Empty);
             }
 
-            foreach (MenuItem mi in menuLayersAdjustments.MenuItems)
+            foreach (ToolStripMenuItem mi in menuLayersAdjustments.DropDownItems)
             {
-                if (keyName == mi.Shortcut.ToString())
+                if (keyInfo.KeyData == mi.ShortcutKeys)
                 {
                     return true;
                 }
@@ -5640,15 +5664,14 @@ namespace PaintDotNet
         /// <param name="keyInfo">A KeyEventArgs passed from a KeyUp event in a child form.</param>
         private void DoAcceleratorHACK(KeyEventArgs keyInfo)
         {
-            string keyName = KeysToString(keyInfo);
             Type ourType = this.GetType();
             FieldInfo[] fields = ourType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
             foreach (FieldInfo fi in fields)
             {
-                if (fi.FieldType == typeof(MenuItem))
+                if (fi.FieldType == typeof(ToolStripMenuItem))
                 {
-                    MenuItem mi = (MenuItem)fi.GetValue(this);
+                    ToolStripMenuItem mi = (ToolStripMenuItem)fi.GetValue(this);
 
                     // If they want to paste and the ColorsForm is active, don't handle it
                     if (mi == menuEditPaste && Form.ActiveForm == workspace.Widgets.ColorsForm)
@@ -5656,9 +5679,9 @@ namespace PaintDotNet
                         continue;
                     }
 
-                    Shortcut shortcut = mi.Shortcut;
+                    Keys shortcutKeys = mi.ShortcutKeys; // TODO shortcut
                     
-                    if (keyName == shortcut.ToString())
+                    if (keyInfo.KeyData == shortcutKeys)
                     {
                         ClickOnMenuItem(mi);
                         keyInfo.Handled = true;
@@ -5675,21 +5698,14 @@ namespace PaintDotNet
 
         private void DoDynamicAcceleratorHACK(KeyEventArgs keyInfo) 
         {
-            string keyName = KeysToString(keyInfo);
-
-            if (keyName.Length < 2)
-            {
-                return;
-            }
-
-            if (menuLayersAdjustments.MenuItems.Count <= 1)
+            if (menuLayersAdjustments.DropDownItems.Count <= 1)
             {
                 PopulateAdjustmentsMenu();
             }
 
-            foreach (MenuItem mi in menuLayersAdjustments.MenuItems)
+            foreach (ToolStripMenuItem mi in menuLayersAdjustments.DropDownItems)
             {
-                if (keyName == mi.Shortcut.ToString())
+                if (keyInfo.KeyData == mi.ShortcutKeys)
                 {
                     ClickOnMenuItem(mi);
                     keyInfo.Handled = true;
@@ -5703,7 +5719,7 @@ namespace PaintDotNet
             PerformLayout();
         }
 
-        private void CommonActionsWidget_ButtonClick(object sender, EnumValueEventArgs e)
+        private void CommonActionsStrip_ButtonClick(object sender, EnumValueEventArgs e)
         {
             CommonAction ca = (CommonAction)e.EnumValue;
 
@@ -5741,6 +5757,10 @@ namespace PaintDotNet
                     ClickOnMenuItem(this.menuEditPaste);
                     break;
 
+                case CommonAction.CropToSelection:
+                    ClickOnMenuItem(this.menuImageCrop);
+                    break;
+
                 case CommonAction.Deselect:
                     ClickOnMenuItem(this.menuEditDeselect);
                     break;
@@ -5764,6 +5784,8 @@ namespace PaintDotNet
                 default:
                     throw new InvalidEnumArgumentException("e.EnumValue");
             }
+
+            workspace.DocumentView.Focus();
         }
 
         private readonly string contextStatusBarFormat = PdnResources.GetString("MainForm.StatusBar.Context.SelectedArea.Text.Format");
@@ -5773,8 +5795,8 @@ namespace PaintDotNet
         {
             if (workspace.Environment.Selection.IsEmpty)
             {
-                this.contextStatusBar.Text = string.Empty;
-                this.contextStatusBar.Icon = null;
+                this.contextStatusLabel.Text = string.Empty;
+                this.contextStatusLabel.Image = null;
             }
             else
             {
@@ -5808,7 +5830,7 @@ namespace PaintDotNet
                     areaString = areaD.ToString("N", nfi);
                 }
                 
-                string pluralUnits = PdnResources.GetString("MeasurementUnit." + workspace.Environment.Units.ToString(CultureInfo.InvariantCulture) + ".Plural");
+                string pluralUnits = PdnResources.GetString("MeasurementUnit." + workspace.Environment.Units.ToString() + ".Plural");
 
                 MoveToolBase moveTool = workspace.Environment.Tool as MoveToolBase;
                 if (moveTool != null && moveTool.HostShouldShowAngle)
@@ -5827,7 +5849,7 @@ namespace PaintDotNet
                         angle += 360.0f;
                     }
 
-                    this.contextStatusBar.Text = string.Format(
+                    string contextText = string.Format(
                         contextStatusBarWithAngleFormat, 
                         widthString, 
                         unitsAbbreviation, 
@@ -5836,10 +5858,12 @@ namespace PaintDotNet
                         areaString,
                         pluralUnits.ToLower(),
                         moveTool.HostAngle.ToString("N", nfi2));
+
+                    this.contextStatusLabel.Text = contextText;
                 }
                 else
                 {
-                    this.contextStatusBar.Text = string.Format(
+                    string contextText = string.Format(
                         contextStatusBarFormat, 
                         widthString, 
                         unitsAbbreviation, 
@@ -5847,13 +5871,14 @@ namespace PaintDotNet
                         unitsAbbreviation,
                         areaString,
                         pluralUnits.ToLower());
+
+                    this.contextStatusLabel.Text = contextText;
                 }
 
-                if (!object.ReferenceEquals(this.contextStatusBar.Icon, this.SelectionIcon))
-                {
-                    this.contextStatusBar.Icon = this.SelectionIcon;
-                }
+                this.contextStatusLabel.Image = this.SelectionIcon;
             }
+
+            this.statusStrip.Update();
         }
 
         private void floaterOpacityTimer_Tick(object sender, System.EventArgs e)
@@ -5965,14 +5990,19 @@ namespace PaintDotNet
         {
             // WIA requires Windows XP SP1 or later, or Windows Server 2003
             // So if we know they're on WS2k3, we tell them to enable WIA.
-            // Otherwise we tell them they need XP SP1.
-            if (Environment.OSVersion.Version >= new Version(5, 2))
+            // If they're on XP or later, tell them that WIA isn't available.
+            // Otherwise we tell them they need XP SP1 (for the Win2K folks).
+            if (OS.Type == OSType.Server)
             {
                 Utility.ErrorBox(this, PdnResources.GetString("WIA.Error.EnableMe"));
             }
-            else
+            else if (Environment.OSVersion.Version < OS.WindowsXP)
             {
                 Utility.ErrorBox(this, PdnResources.GetString("WIA.Error.RequiresXPSP1"));
+            }
+            else
+            {
+                Utility.ErrorBox(this, PdnResources.GetString("WIA.Error.UnableToLoad"));
             }
         }
 
@@ -5995,7 +6025,8 @@ namespace PaintDotNet
             this.Update();
             using (new WaitCursorChanger(this))
             {
-                workspace.Document.RenderFlat(ra);
+                ra.Surface.Clear(ColorBgra.White);
+                workspace.Document.Render(ra, false);
             }
             
             string tempName = Path.GetTempFileName();
@@ -6045,7 +6076,7 @@ namespace PaintDotNet
 
         private string[] PruneDirectories(string[] fileNames)
         {
-            ArrayList result = new ArrayList();
+            List<string> result = new List<string>();
 
             foreach (string fileName in fileNames)
             {
@@ -6064,7 +6095,7 @@ namespace PaintDotNet
                 }
             }
 
-            return (string[])result.ToArray(typeof(string));
+            return result.ToArray();
         }
 
         protected override void OnDragDrop(DragEventArgs drgevent)
@@ -6218,7 +6249,7 @@ namespace PaintDotNet
         
                 try
                 {
-                    Image image = Image.FromFile(fileName);
+                    Image image = PdnResources.LoadImage(fileName); //Image.FromFile(fileName);
                     image.Dispose();
                     this.DoOpenFile(fileName);
                     Update();
@@ -6264,7 +6295,7 @@ namespace PaintDotNet
             SetTitleText();
         }
 
-        private void menuFileOpenRecent_Popup(object sender, System.EventArgs e)
+        private void menuFileOpenRecent_DropDownOpening(object sender, System.EventArgs e)
         {
             LoadMruList();
             MostRecentFile[] filesReverse = mostRecentFiles.GetFileList();
@@ -6276,30 +6307,13 @@ namespace PaintDotNet
                 files[files.Length - i - 1] = filesReverse[i];
             }
 
-            foreach (MenuItem mi in menuFileOpenRecent.MenuItems)
+            foreach (ToolStripItem mi in menuFileOpenRecent.DropDownItems)
             {
                 mi.Click -= new EventHandler(menuFileOpenRecentFile_Click);
             }
 
-            if (mruDotNetMenuProvider != null)
-            {
-                mruDotNetMenuProvider.OwnerForm = null;
-                mruDotNetMenuProvider.Dispose();
-                mruDotNetMenuProvider = null;
-            }
+            menuFileOpenRecent.DropDownItems.Clear();
 
-            mruDotNetMenuProvider = new DotNetWidgets.DotNetMenuProvider();
-            mruDotNetMenuProvider.OwnerForm = this;
-            mruDotNetMenuProvider.ImageList = mruImageList;
-
-            menuFileOpenRecent.MenuItems.Clear();
-
-            foreach (Image image in mruImageList.Images)
-            {
-                image.Dispose();
-            }
-
-            mruImageList.Images.Clear();
             i = 0;
 
             foreach (MostRecentFile mrf in files)
@@ -6316,56 +6330,46 @@ namespace PaintDotNet
                 }
 
                 menuName += (1 + i).ToString() + " " + Path.GetFileName(mrf.FileName);
-                MenuItem mi = new MenuItem(menuName);
+                ToolStripMenuItem mi = new ToolStripMenuItem(menuName);
                 mi.Click += new EventHandler(menuFileOpenRecentFile_Click);
-                int thumbIndex = mruImageList.Images.Add(mrf.Thumb, mruImageList.TransparentColor);
-                mruDotNetMenuProvider.SetDrawSpecial(mi, true);
-                mruDotNetMenuProvider.SetImageIndex(mi, thumbIndex);
-                menuFileOpenRecent.MenuItems.Add(mi);
+                mi.ImageScaling = ToolStripItemImageScaling.None;
+                mi.Image = (Image)mrf.Thumb.Clone();
+                menuFileOpenRecent.DropDownItems.Add(mi);
                 ++i;
             }
 
-            if (menuFileOpenRecent.MenuItems.Count == 0)
+            if (menuFileOpenRecent.DropDownItems.Count == 0)
             {
-                MenuItem none = new MenuItem(PdnResources.GetString("MainForm.Menu.File.OpenRecent.None"));
+                ToolStripMenuItem none = new ToolStripMenuItem(PdnResources.GetString("MainForm.Menu.File.OpenRecent.None"));
                 none.Enabled = false;
-                mruDotNetMenuProvider.SetDrawSpecial(none, true);
-                menuFileOpenRecent.MenuItems.Add(none);
+                menuFileOpenRecent.DropDownItems.Add(none);
             }
             else
             {
-                MenuItem separator = new MenuItem("-");
-                mruDotNetMenuProvider.SetDrawSpecial(separator, true);
-                menuFileOpenRecent.MenuItems.Add(separator);
+                ToolStripSeparator separator = new ToolStripSeparator();
+                menuFileOpenRecent.DropDownItems.Add(separator);
 
-                MenuItem clearList = new MenuItem();
+                ToolStripMenuItem clearList = new ToolStripMenuItem();
                 clearList.Text = PdnResources.GetString("MainForm.Menu.File.OpenRecent.ClearThisList");
-                mruDotNetMenuProvider.SetDrawSpecial(clearList, true);
-                menuFileOpenRecent.MenuItems.Add(clearList);
-                Image deleteIcon = PdnResources.GetImage("Icons.MenuEditEraseSelectionIcon.bmp");
-                Bitmap bitmap = new Bitmap(mruDotNetMenuProvider.ImageList.ImageSize.Width, mruDotNetMenuProvider.ImageList.ImageSize.Height);
+                menuFileOpenRecent.DropDownItems.Add(clearList);
+                Image deleteIcon = PdnResources.GetImage("Icons.MenuEditEraseSelectionIcon.png");
+                clearList.ImageTransparentColor = Utility.TransparentKey;
+                clearList.ImageAlign = ContentAlignment.MiddleCenter;
+                clearList.ImageScaling = ToolStripItemImageScaling.None;
+                Bitmap bitmap = new Bitmap(mruIconSize + 2, mruIconSize + 2);
 
                 using (Graphics g = Graphics.FromImage(bitmap))
                 {
-                    g.Clear(mruDotNetMenuProvider.ImageList.TransparentColor);
-                    Point offset = new Point((bitmap.Width - deleteIcon.Width) / 2, (bitmap.Height - deleteIcon.Height) / 2);
+                    g.Clear(clearList.ImageTransparentColor);
+
+                    Point offset = new Point((bitmap.Width - deleteIcon.Width) / 2, 
+                        (bitmap.Height - deleteIcon.Height) / 2);
+
                     g.CompositingMode = CompositingMode.SourceCopy;
                     g.DrawImage(deleteIcon, offset.X, offset.Y, deleteIcon.Width, deleteIcon.Height);
                 }
 
-                for (int y = 0; y < bitmap.Height; ++y)
-                {
-                    for (int x = 0; x < bitmap.Width; ++x)
-                    {
-                        if (bitmap.GetPixel(x, y) == Color.FromArgb(192, 192, 192))
-                        {
-                            bitmap.SetPixel(x, y, mruImageList.TransparentColor);
-                        }
-                    }
-                }
-             
-                int index = mruImageList.Images.Add(bitmap, mruImageList.TransparentColor);
-                mruDotNetMenuProvider.SetImageIndex(clearList, index);
+                clearList.Image = bitmap;
                 clearList.Click += new EventHandler(clearList_Click);
             }
         }
@@ -6374,7 +6378,7 @@ namespace PaintDotNet
         {
             try
             {
-                MenuItem mi = (MenuItem)sender;
+                ToolStripMenuItem mi = (ToolStripMenuItem)sender;
                 int spaceIndex = mi.Text.IndexOf(" ");
                 string indexString = mi.Text.Substring(1, spaceIndex - 1);
                 int index = int.Parse(indexString) - 1;
@@ -6424,7 +6428,7 @@ namespace PaintDotNet
             workspace.Environment.AntiAliasing = !workspace.Environment.AntiAliasing;
         }
 
-        private void menuView_Popup(object sender, System.EventArgs e)
+        private void menuView_DropDownOpening(object sender, System.EventArgs e)
         {
             menuViewZoomToSelection.Enabled = !workspace.Environment.Selection.IsEmpty;
             menuViewZoomToWindow.Checked = (workspace.ZoomBasis == ZoomBasis.Window);
@@ -6432,55 +6436,20 @@ namespace PaintDotNet
             menuViewRulers.Checked = workspace.DocumentView.RulersEnabled;
         }
 
-        protected override void WndProc(ref Message m)
+        private void DeferredInitialization(object sender, EventArgs e)
         {
-            switch (m.Msg)
-            {
-                // HACK: Doing this fixes a really messed up bug that we run into in the following circumstances:
-                //       Sometimes a StackOverflowException is raised if you do the following:
-                //       1. Start up Paint.NET and then have the window in a normal (non-maximized, non-mimized) state.
-                //       2. Select the Lasso tool and scribble with it in a medium-sized area for maybe 5-10 seconds.
-                //       3. Find another program and maximize it so it overlaps Paint.NET (like IE, FF, VS, whatever)
-                //       4. Wait 1 minute.
-                //       5. Click on Paint.NET.
-                //       6. Crash!
-                // So to work around this. we just redraw the entire document on activation (user clicks on us).
-                // (bug #907)
-                // Note: We use WM_ACTIVATEAPP instead of override OnActivated because we don't want to do this
-                //       when switching between forms inside of *our* application
-                case NativeMethods.WmConstants.WM_ACTIVATEAPP:
-                    if (m.WParam == new IntPtr(1))
-                    {
-                        if (workspace != null)
-                        {
-                            if (!workspace.Environment.Selection.IsEmpty)
-                            {
-                                this.workspace.Document.Invalidate();
-                            }
-                        }
-                    }
-
-                    goto default;
-
-                default:
-                    base.WndProc (ref m);
-                    break;
-            }
-        }
-
-        private void populateEffectsTimer_Tick(object sender, EventArgs e)
-        {
-            populateEffectsTimer.Enabled = false;
-            populateEffectsTimer.Tick -= new EventHandler(populateEffectsTimer_Tick);
-            populateEffectsTimer.Dispose();
-            populateEffectsTimer = null;
+            deferredInitializationTimer.Enabled = false;
+            deferredInitializationTimer.Tick -= new EventHandler(DeferredInitialization);
+            deferredInitializationTimer.Dispose();
+            deferredInitializationTimer = null;
 
             PopulateEffectsAndAdjustmentsMenus();
+            UserSessions.SessionChanged += new EventHandler(UserSessions_SessionChanged);
         }
 
         private void ftf_VisibleChanged(object sender, EventArgs e)
         {
-            workspace.Focus();
+            workspace.DocumentView.Focus();
         }
 
         private class CheckForUpdatesDialog
@@ -6494,7 +6463,7 @@ namespace PaintDotNet
                        PdnResources.GetString("CheckForUpdatesDialog.Description"))
             {
                 this.callback = callback;
-                this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileUpdatesIcon.bmp"), true);
+                this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileUpdatesIcon.png"), true);
             }
 
             public DialogResult ShowDialog()
@@ -6751,7 +6720,7 @@ namespace PaintDotNet
                        PdnResources.GetString("DownloadAndUnzipUpdateDialog.Description.Downloading"))
             {
                 this.downloadMe = downloadMe;
-                this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileUpdatesIcon.bmp"), true);
+                this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileUpdatesIcon.png"), true);
             }
         }
 
@@ -6840,7 +6809,7 @@ namespace PaintDotNet
             }
         }
 
-        private void menuFileUpdates_Popup(object sender, EventArgs e)
+        private void menuFileUpdates_DropDownOpening(object sender, EventArgs e)
         {
             this.menuFileUpdatesAutoCheckEnabled.Checked = ("1" == Settings.SystemWide.GetString(PdnSettings.AutoCheckForUpdates, "0"));
             this.menuFileUpdatesCheckForBetas.Checked = ("1" == Settings.SystemWide.GetString(PdnSettings.AlsoCheckForBetas, "0"));
@@ -6867,7 +6836,7 @@ namespace PaintDotNet
         {
             workspace_DocumentChanged(sender, e);
             Environment_SelectedPathChanged(sender, e); 
-            this.cursorInfoStatusBar.Text = string.Empty;
+            this.cursorInfoStatusLabel.Text = string.Empty;
         }
 
         private void History_Changed(object sender, EventArgs e)
@@ -6879,15 +6848,6 @@ namespace PaintDotNet
         private void menuLayersRotateZoom_Click(object sender, EventArgs e)
         {
             this.menuEffects_ClickHandler(this.menuLayersRotateZoom, EventArgs.Empty);
-        }
-
-        private class MenuTitleAndLocaleComparer
-            : IComparer
-        {
-            public int Compare(object x, object y)
-            {
-                return string.Compare(((MenuTitleAndLocale)x).title, ((MenuTitleAndLocale)y).title);
-            }
         }
 
         private class MenuTitleAndLocale
@@ -6906,7 +6866,7 @@ namespace PaintDotNet
         {
             if (ci.Parent.Name == "")
             {
-                return ci.DisplayName;
+                return ci.NativeName;
             }
             else
             {
@@ -6914,48 +6874,32 @@ namespace PaintDotNet
             }
         }
 
-        private void menuFileLanguage_Popup(object sender, EventArgs e)
+        private void menuFileLanguage_DropDownOpening(object sender, EventArgs e)
         {
-            this.menuFileLanguage.MenuItems.Clear();
-            const string left = "PaintDotNet.Strings";
-            const string right = ".resources";
-            string ourDir = Path.GetDirectoryName(Application.ExecutablePath);
-            string fileSpec = left + "*" + right;
-            string[] pathNames = Directory.GetFiles(ourDir, fileSpec);
-            MenuTitleAndLocale[] mtals = new MenuTitleAndLocale[pathNames.Length];
+            this.menuFileLanguage.DropDownItems.Clear();
 
-            for (int i = 0; i < pathNames.Length; ++i)
+            string[] locales = PdnResources.GetInstalledLocales();
+
+            MenuTitleAndLocale[] mtals = new MenuTitleAndLocale[locales.Length];
+
+            for (int i = 0; i < locales.Length; ++i)
             {
-                string pathName = pathNames[i];
-                string dirName = Path.GetDirectoryName(pathName);
-                string fileName = Path.GetFileName(pathName);
-                string sansRight = fileName.Substring(0, fileName.Length - right.Length);
-                string sansLeft = sansRight.Substring(left.Length);
-
-                string locale;
-                if (sansLeft.Length > 0 && sansLeft[0] == '.')
-                {
-                    locale = sansLeft.Substring(1);
-                }
-                else if (sansLeft.Length == 0)
-                {
-                    locale = "en-US";
-                }
-                else
-                {
-                    locale = sansLeft;
-                }
-
-                CultureInfo cultureInfo = new CultureInfo(locale, true);
-                mtals[i] = new MenuTitleAndLocale(cultureInfo.DisplayName, locale);
+                string locale = locales[i];
+                CultureInfo ci = new CultureInfo(locale);
+                mtals[i] = new MenuTitleAndLocale(ci.DisplayName, locale);
             }
 
-            Array.Sort(mtals, new MenuTitleAndLocaleComparer());
+            Array.Sort(
+                mtals,
+                delegate(MenuTitleAndLocale x, MenuTitleAndLocale y)
+                {
+                    return string.Compare(x.title, y.title, StringComparison.InvariantCultureIgnoreCase);
+                });
 
             foreach (MenuTitleAndLocale mtal in mtals)
             {
-                MenuItemWithTag menuItem = new MenuItemWithTag();
-                menuItem.Text = GetCultureInfoName(new CultureInfo(mtal.locale)); // mtal.title;
+                ToolStripMenuItem menuItem = new ToolStripMenuItem();
+                menuItem.Text = GetCultureInfoName(new CultureInfo(mtal.locale));
                 menuItem.Tag = mtal.locale;
                 menuItem.Click += new EventHandler(LanguageMenuItem_Click);
 
@@ -6964,14 +6908,13 @@ namespace PaintDotNet
                     menuItem.Checked = true;
                 }
 
-                this.dotNetMenuProvider.SetDrawSpecial(menuItem, true);
-                this.menuFileLanguage.MenuItems.Add(menuItem);
+                this.menuFileLanguage.DropDownItems.Add(menuItem);
             }
         }
        
         private void LanguageMenuItem_Click(object sender, EventArgs e)
         {
-            MenuItemWithTag miwt = (MenuItemWithTag)sender;
+            ToolStripMenuItem miwt = (ToolStripMenuItem)sender;
             Settings.CurrentUser.SetString(PdnSettings.LanguageName, (string)miwt.Tag);
             string message = PdnResources.GetString("SetLanguage.PleaseRestartApplication");
             Utility.InfoBox(this, message);
@@ -6996,8 +6939,8 @@ namespace PaintDotNet
 
         private void workspace_ToolStatusChanged(object sender, EventArgs e)
         {
-            contextStatusBar.Text = workspace.Environment.Tool.StatusText;
-            contextStatusBar.Icon = workspace.Environment.Tool.StatusIcon;
+            this.contextStatusLabel.Text = workspace.Environment.Tool.StatusText;
+            this.contextStatusLabel.Image = workspace.Environment.Tool.StatusIcon.ToBitmap();
         }
 
         private string GetEmailLaunchString(string email, string subject, string body)
@@ -7029,7 +6972,7 @@ namespace PaintDotNet
             }
         }
 
-        private void menuViewUnits_Popup(object sender, EventArgs e)
+        private void menuViewUnits_DropDownOpening(object sender, EventArgs e)
         {
             menuViewUnitsPixels.Checked = false;
             menuViewUnitsInches.Checked = false;

@@ -7,8 +7,6 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
-using ICSharpCode.SharpZipLib.GZip;
-using ICSharpCode.SharpZipLib.Zip.Compression;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
@@ -16,6 +14,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Security;
@@ -107,7 +106,6 @@ namespace PaintDotNet
             }
         }
 
-        [CLSCompliant(false)]
         public void *VoidStar
         {
             get
@@ -354,7 +352,7 @@ namespace PaintDotNet
                 {
                     if (this.bitmapHandle != IntPtr.Zero)
                     {
-                        Memory.FreeBitmap(this.bitmapHandle);
+                        Memory.FreeBitmap(this.bitmapHandle, this.bitmapWidth, this.bitmapHeight);
                     }
                     else if (this.length >= largeBlockThreshold)
                     {
@@ -750,7 +748,7 @@ namespace PaintDotNet
         {
             // decompress data
             MemoryStream compressedStream = new MemoryStream(compressedBytes, false);
-            GZipInputStream gZipStream = new GZipInputStream(compressedStream);
+            GZipStream gZipStream = new GZipStream(compressedStream, CompressionMode.Decompress, true);
 
             byte[] decompressedBytes = new byte[chunkSize];
                 
@@ -972,7 +970,7 @@ namespace PaintDotNet
         {
             lock (currentLock)
             {
-                int compression = deferredFormatter.CompressionLevel;
+                bool useCompression = deferredFormatter.UseCompression;
 
                 MemoryStream chunkOutput = new MemoryStream();
 
@@ -994,17 +992,15 @@ namespace PaintDotNet
 
                 chunkOutput.Flush();
 
-                if (compression == 0)
+                if (useCompression)
                 {
-                    chunkOutput.Write(array, 0, array.Length);
+                    GZipStream gZipStream = new GZipStream(chunkOutput, CompressionMode.Compress, true);
+                    gZipStream.Write(array, 0, array.Length);
+                    gZipStream.Close();
                 }
                 else
                 {
-                    GZipOutputStream gZipStream = new GZipOutputStream(chunkOutput);
-                    gZipStream.SetLevel(compression);
-                    gZipStream.Write(array, 0, array.Length);
-                    gZipStream.Finish();
-                    gZipStream.Flush();
+                    chunkOutput.Write(array, 0, array.Length);
                 }
 
                 long endPos = chunkOutput.Position;
@@ -1027,16 +1023,16 @@ namespace PaintDotNet
 
         void IDeferredSerializable.FinishSerialization(Stream output, DeferredFormatter context)
         {
-            int compression = context.CompressionLevel;
+            bool useCompression = context.UseCompression;
 
             // formatVersion = 0 for GZIP, or 1 for uncompressed
-            if (compression == 0)
+            if (useCompression)
             {
-                output.WriteByte(1);
+                output.WriteByte(0);
             }
             else
             {
-                output.WriteByte(0);
+                output.WriteByte(1);
             }
 
             // chunkSize

@@ -21,6 +21,19 @@ namespace PaintDotNet
         private SurfaceBoxRendererList ownerList;
         private bool visible;
 
+        public const int MinXCoordinate = -131072;
+        public const int MaxXCoordinate = +131072;
+        public const int MinYCoordinate = -131072;
+        public const int MaxYCoordinate = +131072;
+
+        public static Rectangle MaxBounds
+        {
+            get
+            {
+                return Rectangle.FromLTRB(MinXCoordinate, MinYCoordinate, MaxXCoordinate + 1, MaxYCoordinate + 1);
+            }
+        }
+
         protected object SyncRoot
         {
             get
@@ -61,6 +74,10 @@ namespace PaintDotNet
             }
         }
 
+        protected virtual void OnVisibleChanging()
+        {
+        }
+
         protected abstract void OnVisibleChanged();
 
         public bool Visible
@@ -74,6 +91,7 @@ namespace PaintDotNet
             {
                 if (this.visible != value)
                 {
+                    OnVisibleChanging();
                     this.visible = value;
                     OnVisibleChanged();
                 }
@@ -115,7 +133,7 @@ namespace PaintDotNet
 
         public void Invalidate()
         {
-            Invalidate(new Rectangle(0, 0, SourceSize.Width, SourceSize.Height));
+            Invalidate(Rectangle.FromLTRB(MinXCoordinate, MinYCoordinate, MaxXCoordinate + 1, MaxYCoordinate + 1));
         }
 
         public SurfaceBoxRenderer(SurfaceBoxRendererList ownerList)

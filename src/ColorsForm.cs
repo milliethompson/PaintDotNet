@@ -66,8 +66,6 @@ namespace PaintDotNet
         private PaintDotNet.HeaderLabel hsvHeader;
         private PaintDotNet.HeaderLabel alphaHeader;
 
-        private bool haveDoneInitStyles = false;
-
         private class WhichUserColorWrapper
         {
             private WhichUserColor whichUserColor;
@@ -382,16 +380,8 @@ namespace PaintDotNet
         protected override void OnLoad(EventArgs e)
         {
             this.inMoreState = true;
-            haveDoneInitStyles = true;
             moreLessButton.PerformClick();
-            haveDoneInitStyles = false;
             base.OnLoad(e);
-        }
-
-        protected override void OnEnableStyles()
-        {
-            // do nothing else (yet)
-            EnableStyles(this.moreLessButton);
         }
 
         /// <summary>
@@ -756,7 +746,8 @@ namespace PaintDotNet
             // 
             // ColorsForm
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(386, 264);
             this.Controls.Add(this.alphaHeader);
             this.Controls.Add(this.hsvHeader);
@@ -1175,12 +1166,6 @@ namespace PaintDotNet
         private void moreLessButton_Click(object sender, System.EventArgs e)
         {
             OnRelinquishFocus();
-
-            if (!haveDoneInitStyles)
-            {
-                EnableStyles(this);
-                haveDoneInitStyles = true;
-            }
 
             this.SuspendLayout();
 

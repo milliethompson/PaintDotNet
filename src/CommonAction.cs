@@ -16,6 +16,7 @@ namespace PaintDotNet
     /// </summary>
     public enum CommonAction
     {
+        CheckForUpdates,
         New,
         Open,
         Save,
@@ -23,11 +24,11 @@ namespace PaintDotNet
         Cut,
         Copy,
         Paste,
+        CropToSelection,
         Deselect,
         Undo,
         Redo,
         ZoomIn,
         ZoomOut,
-        CheckForUpdates
     }
 }

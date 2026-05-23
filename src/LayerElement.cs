@@ -32,7 +32,7 @@ namespace PaintDotNet
 
         private Layer layer;
         private bool isSelected;
-        public const int ThumbSize = 40;
+        public static int ThumbSize = UI.ScaleWidth(40);
 
         private PropertyEventHandler layerPropertyChangedDelegate;
         private System.Windows.Forms.Label layerDescription;
@@ -354,7 +354,21 @@ namespace PaintDotNet
             
                 Thread.Sleep(100);
 
-                if (layerElement.IsHandleCreated)
+                bool doRefresh = true;
+
+                // Make sure that the next queued update is not ourself. Otherwise, we will be wasting our time
+                lock (refreshLock)
+                {
+                    if (layersToRefresh.Count > 0 &&
+                        object.ReferenceEquals(layerElement, layersToRefresh.Peek()))
+                    {
+                        doRefresh = false;
+                    }
+                }
+
+                doRefresh &= layerElement.IsHandleCreated;
+
+                if (doRefresh)
                 {
                     try
                     {

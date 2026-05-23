@@ -20,18 +20,7 @@ namespace PaintDotNet.Effects
         : EffectConfigDialog
     {
         private bool[] mask = new bool[3];
-        private PaintDotNet.ColorGradientControl gradientOutput;
-        private System.Windows.Forms.NumericUpDown numericUpDown5;
-        private System.Windows.Forms.GroupBox outputGroupBox;
-        private System.Windows.Forms.NumericUpDown outputHiUpDown;
-        private System.Windows.Forms.NumericUpDown outputLowUpDown;
-        private System.Windows.Forms.NumericUpDown outputGammaUpDown;
-        private PaintDotNet.HistogramControl histogramOutput;
-        private System.Windows.Forms.Panel panelOutput;
         private uint ignore = 0;
-        private System.Windows.Forms.Panel swatchOutHigh;
-        private System.Windows.Forms.Panel swatchOutLow;
-        private System.Windows.Forms.Panel panelMask;
         private System.Windows.Forms.CheckBox redMaskCheckBox;
         private System.Windows.Forms.CheckBox greenMaskCheckBox;
         private System.Windows.Forms.CheckBox blueMaskCheckBox;
@@ -39,35 +28,43 @@ namespace PaintDotNet.Effects
         private System.Windows.Forms.Button cancelButton;
         private System.Windows.Forms.Button autoButton;
         private System.Windows.Forms.Button resetButton;
-        private System.Windows.Forms.Panel panelInput;
-        private PaintDotNet.HistogramControl histogramInput;
-        private System.Windows.Forms.GroupBox inputGroupBox;
-        private System.Windows.Forms.Panel swatchInHigh;
-        private System.Windows.Forms.NumericUpDown inputLoUpDown;
-        private System.Windows.Forms.NumericUpDown inputHiUpDown;
-        private PaintDotNet.ColorGradientControl gradientInput;
-        private System.Windows.Forms.Panel swatchInLow;
-        private System.Windows.Forms.Panel panelAdjustments;
         private System.Windows.Forms.ToolTip tooltipProvider;
+        private TableLayoutPanel tableLayoutPanel2;
+        private ColorGradientControl gradientInput;
+        private NumericUpDown outputHiUpDown;
+        private Panel swatchOutHigh;
+        private NumericUpDown outputGammaUpDown;
+        private Panel swatchOutMid;
+        private Panel swatchOutLow;
+        private NumericUpDown outputLowUpDown;
+        private ColorGradientControl gradientOutput;
+        private HistogramControl histogramOutput;
+        private HistogramControl histogramInput;
+        private NumericUpDown inputHiUpDown;
+        private Panel swatchInHigh;
+        private NumericUpDown inputLoUpDown;
+        private Panel swatchInLow;
+        private HeaderLabel headerHistogramOutput;
+        private HeaderLabel headerControlsOutput;
+        private HeaderLabel headerControlsInput;
+        private HeaderLabel headerHistogramInput;
+        private TableLayoutPanel tableMain;
         private System.ComponentModel.IContainer components;
-        private System.Windows.Forms.GroupBox outputHistogramGroupBox;
-        private System.Windows.Forms.GroupBox inputHistogramGroupBox;
-        private System.Windows.Forms.Panel swatchOutMid;
     
         public LevelsEffectConfigDialog()
         {
             InitializeComponent();
 
             this.Text = PdnResources.GetString("LevelsEffectConfigDialog.Text");
-            this.outputGroupBox.Text = PdnResources.GetString("LevelsEffectConfigDialog.OutputGroupBox.Text");
+            this.headerControlsOutput.Text = PdnResources.GetString("LevelsEffectConfigDialog.OutputGroupBox.Text");
             this.tooltipProvider.SetToolTip(this.outputGammaUpDown, PdnResources.GetString("LevelsEffectConfigDialog.OutputGammaUpDown.ToolTipText"));
             this.tooltipProvider.SetToolTip(this.swatchOutHigh, PdnResources.GetString("LevelsEffectConfigDialog.SwatchOutHigh.ToolTipText"));
             this.tooltipProvider.SetToolTip(this.swatchOutLow, PdnResources.GetString("LevelsEffectConfigDialog.SwatchOutLow.ToolTipText"));
-            this.outputHistogramGroupBox.Text = PdnResources.GetString("LevelsEffectConfigDialog.OutputHistogramGroupBox.Text");
+            this.headerHistogramOutput.Text = PdnResources.GetString("LevelsEffectConfigDialog.OutputHistogramGroupBox.Text");
             this.tooltipProvider.SetToolTip(this.histogramOutput, PdnResources.GetString("LevelsEffectConfigDialog.HistogramOutput.ToolTipText"));
-            this.inputHistogramGroupBox.Text = PdnResources.GetString("LevelsEffectConfigDialog.InputHistogramGroupBox.Text");
+            this.headerHistogramInput.Text = PdnResources.GetString("LevelsEffectConfigDialog.InputHistogramGroupBox.Text");
             this.tooltipProvider.SetToolTip(this.histogramInput, PdnResources.GetString("LevelsEffectConfigDialog.HistogramInput.ToolTipText"));
-            this.inputGroupBox.Text = PdnResources.GetString("LevelsEffectConfigDialog.InputGroupBox.Text");
+            this.headerControlsInput.Text = PdnResources.GetString("LevelsEffectConfigDialog.InputGroupBox.Text");
             this.tooltipProvider.SetToolTip(this.swatchInHigh, PdnResources.GetString("LevelsEffectConfigDialog.SwatchInHigh.ToolTipText"));
             this.tooltipProvider.SetToolTip(this.swatchInLow, PdnResources.GetString("LevelsEffectConfigDialog.SwatchInLow.ToolTipText"));
             this.redMaskCheckBox.Text = PdnResources.GetString("LevelsEffectConfigDialog.RedMaskCheckBox.Text");
@@ -87,29 +84,8 @@ namespace PaintDotNet.Effects
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.gradientOutput = new PaintDotNet.ColorGradientControl();
-            this.outputHiUpDown = new System.Windows.Forms.NumericUpDown();
-            this.numericUpDown5 = new System.Windows.Forms.NumericUpDown();
-            this.outputLowUpDown = new System.Windows.Forms.NumericUpDown();
-            this.outputGroupBox = new System.Windows.Forms.GroupBox();
-            this.outputGammaUpDown = new System.Windows.Forms.NumericUpDown();
-            this.swatchOutHigh = new System.Windows.Forms.Panel();
-            this.swatchOutLow = new System.Windows.Forms.Panel();
-            this.swatchOutMid = new System.Windows.Forms.Panel();
-            this.outputHistogramGroupBox = new System.Windows.Forms.GroupBox();
-            this.histogramOutput = new PaintDotNet.HistogramControl();
-            this.panelOutput = new System.Windows.Forms.Panel();
-            this.panelAdjustments = new System.Windows.Forms.Panel();
-            this.panelInput = new System.Windows.Forms.Panel();
-            this.inputHistogramGroupBox = new System.Windows.Forms.GroupBox();
-            this.histogramInput = new PaintDotNet.HistogramControl();
-            this.inputGroupBox = new System.Windows.Forms.GroupBox();
-            this.swatchInHigh = new System.Windows.Forms.Panel();
-            this.inputLoUpDown = new System.Windows.Forms.NumericUpDown();
-            this.inputHiUpDown = new System.Windows.Forms.NumericUpDown();
-            this.gradientInput = new PaintDotNet.ColorGradientControl();
-            this.swatchInLow = new System.Windows.Forms.Panel();
-            this.panelMask = new System.Windows.Forms.Panel();
+            PaintDotNet.HistogramRgb histogramRgb1 = new PaintDotNet.HistogramRgb();
+            PaintDotNet.HistogramRgb histogramRgb2 = new PaintDotNet.HistogramRgb();
             this.redMaskCheckBox = new System.Windows.Forms.CheckBox();
             this.greenMaskCheckBox = new System.Windows.Forms.CheckBox();
             this.blueMaskCheckBox = new System.Windows.Forms.CheckBox();
@@ -118,457 +94,467 @@ namespace PaintDotNet.Effects
             this.autoButton = new System.Windows.Forms.Button();
             this.resetButton = new System.Windows.Forms.Button();
             this.tooltipProvider = new System.Windows.Forms.ToolTip(this.components);
-            ((System.ComponentModel.ISupportInitialize)(this.outputHiUpDown)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown5)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.outputLowUpDown)).BeginInit();
-            this.outputGroupBox.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.outputGammaUpDown)).BeginInit();
-            this.outputHistogramGroupBox.SuspendLayout();
-            this.panelOutput.SuspendLayout();
-            this.panelAdjustments.SuspendLayout();
-            this.panelInput.SuspendLayout();
-            this.inputHistogramGroupBox.SuspendLayout();
-            this.inputGroupBox.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.inputLoUpDown)).BeginInit();
+            this.tableMain = new System.Windows.Forms.TableLayoutPanel();
+            this.headerHistogramOutput = new PaintDotNet.HeaderLabel();
+            this.headerControlsOutput = new PaintDotNet.HeaderLabel();
+            this.headerControlsInput = new PaintDotNet.HeaderLabel();
+            this.headerHistogramInput = new PaintDotNet.HeaderLabel();
+            this.swatchInLow = new System.Windows.Forms.Panel();
+            this.inputHiUpDown = new System.Windows.Forms.NumericUpDown();
+            this.swatchInHigh = new System.Windows.Forms.Panel();
+            this.inputLoUpDown = new System.Windows.Forms.NumericUpDown();
+            this.swatchOutLow = new System.Windows.Forms.Panel();
+            this.outputGammaUpDown = new System.Windows.Forms.NumericUpDown();
+            this.swatchOutHigh = new System.Windows.Forms.Panel();
+            this.outputHiUpDown = new System.Windows.Forms.NumericUpDown();
+            this.gradientInput = new PaintDotNet.ColorGradientControl();
+            this.swatchOutMid = new System.Windows.Forms.Panel();
+            this.gradientOutput = new PaintDotNet.ColorGradientControl();
+            this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
+            this.histogramInput = new PaintDotNet.HistogramControl();
+            this.histogramOutput = new PaintDotNet.HistogramControl();
+            this.outputLowUpDown = new System.Windows.Forms.NumericUpDown();
+            this.tableMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.inputHiUpDown)).BeginInit();
-            this.panelMask.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.inputLoUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.outputGammaUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.outputHiUpDown)).BeginInit();
+            this.tableLayoutPanel2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.outputLowUpDown)).BeginInit();
             this.SuspendLayout();
-            // 
-            // gradientOutput
-            // 
-            this.gradientOutput.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-                | System.Windows.Forms.AnchorStyles.Left)));
-            this.gradientOutput.BottomColor = System.Drawing.Color.Black;
-            this.gradientOutput.Count = 3;
-            this.gradientOutput.Location = new System.Drawing.Point(8, 16);
-            this.gradientOutput.Name = "gradientOutput";
-            this.gradientOutput.Size = new System.Drawing.Size(32, 166);
-            this.gradientOutput.TabIndex = 0;
-            this.gradientOutput.TopColor = System.Drawing.Color.White;
-            this.gradientOutput.Value = 0;
-            this.gradientOutput.ValueChanged += new IndexEventHandler(this.gradientOutput_ValueChanged);
-            // 
-            // outputHiUpDown
-            // 
-            this.outputHiUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.outputHiUpDown.Location = new System.Drawing.Point(46, 16);
-            this.outputHiUpDown.Maximum = new System.Decimal(new int[] {
-                                                                        255,
-                                                                        0,
-                                                                        0,
-                                                                        0});
-            this.outputHiUpDown.Name = "outputHiUpDown";
-            this.outputHiUpDown.Size = new System.Drawing.Size(48, 20);
-            this.outputHiUpDown.TabIndex = 1;
-            this.outputHiUpDown.Value = new System.Decimal(new int[] {
-                                                                      255,
-                                                                      0,
-                                                                      0,
-                                                                      0});
-            this.outputHiUpDown.Validated += new System.EventHandler(this.outputHiUpDown_ValueChanged);
-            this.outputHiUpDown.ValueChanged += new System.EventHandler(this.outputHiUpDown_ValueChanged);
-            // 
-            // numericUpDown5
-            // 
-            this.numericUpDown5.Location = new System.Drawing.Point(-24, 24);
-            this.numericUpDown5.Name = "numericUpDown5";
-            this.numericUpDown5.Size = new System.Drawing.Size(24, 20);
-            this.numericUpDown5.TabIndex = 1;
-            // 
-            // outputLowUpDown
-            // 
-            this.outputLowUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.outputLowUpDown.Location = new System.Drawing.Point(46, 158);
-            this.outputLowUpDown.Maximum = new System.Decimal(new int[] {
-                                                                        255,
-                                                                        0,
-                                                                        0,
-                                                                        0});
-            this.outputLowUpDown.Name = "outputLowUpDown";
-            this.outputLowUpDown.Size = new System.Drawing.Size(48, 20);
-            this.outputLowUpDown.TabIndex = 1;
-            this.outputLowUpDown.Validated += new System.EventHandler(this.outputLowUpDown_ValueChanged);
-            this.outputLowUpDown.ValueChanged += new System.EventHandler(this.outputLowUpDown_ValueChanged);
-            // 
-            // outputGroupBox
-            // 
-            this.outputGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-                | System.Windows.Forms.AnchorStyles.Left)));
-            this.outputGroupBox.Controls.Add(this.outputGammaUpDown);
-            this.outputGroupBox.Controls.Add(this.numericUpDown5);
-            this.outputGroupBox.Controls.Add(this.outputLowUpDown);
-            this.outputGroupBox.Controls.Add(this.outputHiUpDown);
-            this.outputGroupBox.Controls.Add(this.gradientOutput);
-            this.outputGroupBox.Controls.Add(this.swatchOutHigh);
-            this.outputGroupBox.Controls.Add(this.swatchOutLow);
-            this.outputGroupBox.Controls.Add(this.swatchOutMid);
-            this.outputGroupBox.Location = new System.Drawing.Point(2, 0);
-            this.outputGroupBox.Name = "outputGroupBox";
-            this.outputGroupBox.Size = new System.Drawing.Size(102, 190);
-            this.outputGroupBox.TabIndex = 2;
-            this.outputGroupBox.TabStop = false;
-            this.outputGroupBox.Layout += new System.Windows.Forms.LayoutEventHandler(this.grpOutput_Layout);
-            // 
-            // outputGammaUpDown
-            // 
-            this.outputGammaUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.outputGammaUpDown.DecimalPlaces = 2;
-            this.outputGammaUpDown.Increment = new System.Decimal(new int[] {
-                                                                             1,
-                                                                             0,
-                                                                             0,
-                                                                             65536});
-            this.outputGammaUpDown.Location = new System.Drawing.Point(46, 73);
-            this.outputGammaUpDown.Maximum = new System.Decimal(new int[] {
-                                                                           100,
-                                                                           0,
-                                                                           0,
-                                                                           65536});
-            this.outputGammaUpDown.Minimum = new System.Decimal(new int[] {
-                                                                           1,
-                                                                           0,
-                                                                           0,
-                                                                           65536});
-            this.outputGammaUpDown.Name = "outputGammaUpDown";
-            this.outputGammaUpDown.Size = new System.Drawing.Size(48, 20);
-            this.outputGammaUpDown.TabIndex = 1;
-            this.outputGammaUpDown.Value = new System.Decimal(new int[] {
-                                                                         1,
-                                                                         0,
-                                                                         0,
-                                                                         0});
-            this.outputGammaUpDown.Validated += new System.EventHandler(this.outputGammaUpDown_ValueChanged);
-            this.outputGammaUpDown.ValueChanged += new System.EventHandler(this.outputGammaUpDown_ValueChanged);
-            // 
-            // swatchOutHigh
-            // 
-            this.swatchOutHigh.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.swatchOutHigh.BackColor = System.Drawing.Color.White;
-            this.swatchOutHigh.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.swatchOutHigh.Location = new System.Drawing.Point(46, 37);
-            this.swatchOutHigh.Name = "swatchOutHigh";
-            this.swatchOutHigh.Size = new System.Drawing.Size(48, 24);
-            this.swatchOutHigh.TabIndex = 2;
-            this.swatchOutHigh.DoubleClick += new System.EventHandler(this.swatch_DoubleClick);
-            // 
-            // swatchOutLow
-            // 
-            this.swatchOutLow.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.swatchOutLow.BackColor = System.Drawing.Color.Black;
-            this.swatchOutLow.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.swatchOutLow.Location = new System.Drawing.Point(46, 133);
-            this.swatchOutLow.Name = "swatchOutLow";
-            this.swatchOutLow.Size = new System.Drawing.Size(48, 24);
-            this.swatchOutLow.TabIndex = 2;
-            this.swatchOutLow.DoubleClick += new System.EventHandler(this.swatch_DoubleClick);
-            // 
-            // swatchOutMid
-            // 
-            this.swatchOutMid.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.swatchOutMid.BackColor = System.Drawing.Color.White;
-            this.swatchOutMid.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.swatchOutMid.Location = new System.Drawing.Point(46, 97);
-            this.swatchOutMid.Name = "swatchOutMid";
-            this.swatchOutMid.Size = new System.Drawing.Size(48, 24);
-            this.swatchOutMid.TabIndex = 2;
-            this.swatchOutMid.DoubleClick += new System.EventHandler(this.swatch_DoubleClick);
-            // 
-            // outputHistogramGroupBox
-            // 
-            this.outputHistogramGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-                | System.Windows.Forms.AnchorStyles.Left) 
-                | System.Windows.Forms.AnchorStyles.Right)));
-            this.outputHistogramGroupBox.Controls.Add(this.histogramOutput);
-            this.outputHistogramGroupBox.Location = new System.Drawing.Point(108, 0);
-            this.outputHistogramGroupBox.Name = "outputHistogramGroupBox";
-            this.outputHistogramGroupBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.outputHistogramGroupBox.Size = new System.Drawing.Size(130, 190);
-            this.outputHistogramGroupBox.TabIndex = 3;
-            this.outputHistogramGroupBox.TabStop = false;
-            // 
-            // histogramOutput
-            // 
-            this.histogramOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-                | System.Windows.Forms.AnchorStyles.Left) 
-                | System.Windows.Forms.AnchorStyles.Right)));
-            this.histogramOutput.FlipHorizontal = false;
-            this.histogramOutput.FlipVertical = false;
-            this.histogramOutput.Location = new System.Drawing.Point(8, 16);
-            this.histogramOutput.Name = "histogramOutput";
-            this.histogramOutput.Size = new System.Drawing.Size(114, 166);
-            this.histogramOutput.TabIndex = 0;
-            this.histogramOutput.Histogram = new HistogramRgb();
-            // 
-            // panelOutput
-            // 
-            this.panelOutput.Controls.Add(this.outputHistogramGroupBox);
-            this.panelOutput.Controls.Add(this.outputGroupBox);
-            this.panelOutput.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panelOutput.Location = new System.Drawing.Point(240, 0);
-            this.panelOutput.Name = "panelOutput";
-            this.panelOutput.Size = new System.Drawing.Size(240, 192);
-            this.panelOutput.TabIndex = 5;
-            // 
-            // panelAdjustments
-            // 
-            this.panelAdjustments.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-                | System.Windows.Forms.AnchorStyles.Left) 
-                | System.Windows.Forms.AnchorStyles.Right)));
-            this.panelAdjustments.Controls.Add(this.panelOutput);
-            this.panelAdjustments.Controls.Add(this.panelInput);
-            this.panelAdjustments.Location = new System.Drawing.Point(0, 0);
-            this.panelAdjustments.Name = "panelAdjustments";
-            this.panelAdjustments.Size = new System.Drawing.Size(480, 192);
-            this.panelAdjustments.TabIndex = 7;
-            this.panelAdjustments.Layout += new System.Windows.Forms.LayoutEventHandler(this.panelAdjustments_Layout);
-            // 
-            // panelInput
-            // 
-            this.panelInput.Controls.Add(this.inputHistogramGroupBox);
-            this.panelInput.Controls.Add(this.inputGroupBox);
-            this.panelInput.Dock = System.Windows.Forms.DockStyle.Left;
-            this.panelInput.Location = new System.Drawing.Point(0, 0);
-            this.panelInput.Name = "panelInput";
-            this.panelInput.Size = new System.Drawing.Size(240, 192);
-            this.panelInput.TabIndex = 6;
-            // 
-            // inputHistogramGroupBox
-            // 
-            this.inputHistogramGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-                | System.Windows.Forms.AnchorStyles.Left) 
-                | System.Windows.Forms.AnchorStyles.Right)));
-            this.inputHistogramGroupBox.Controls.Add(this.histogramInput);
-            this.inputHistogramGroupBox.Location = new System.Drawing.Point(2, 0);
-            this.inputHistogramGroupBox.Name = "inputHistogramGroupBox";
-            this.inputHistogramGroupBox.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.inputHistogramGroupBox.Size = new System.Drawing.Size(130, 190);
-            this.inputHistogramGroupBox.TabIndex = 3;
-            this.inputHistogramGroupBox.TabStop = false;
-            // 
-            // histogramInput
-            // 
-            this.histogramInput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-                | System.Windows.Forms.AnchorStyles.Left) 
-                | System.Windows.Forms.AnchorStyles.Right)));
-            this.histogramInput.FlipHorizontal = true;
-            this.histogramInput.FlipVertical = false;
-            this.histogramInput.Location = new System.Drawing.Point(8, 16);
-            this.histogramInput.Name = "histogramInput";
-            this.histogramInput.Size = new System.Drawing.Size(114, 166);
-            this.histogramInput.TabIndex = 0;
-            this.histogramInput.Histogram = new HistogramRgb();
-            // 
-            // inputGroupBox
-            // 
-            this.inputGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-                | System.Windows.Forms.AnchorStyles.Right)));
-            this.inputGroupBox.Controls.Add(this.swatchInHigh);
-            this.inputGroupBox.Controls.Add(this.inputLoUpDown);
-            this.inputGroupBox.Controls.Add(this.inputHiUpDown);
-            this.inputGroupBox.Controls.Add(this.gradientInput);
-            this.inputGroupBox.Controls.Add(this.swatchInLow);
-            this.inputGroupBox.Location = new System.Drawing.Point(136, 0);
-            this.inputGroupBox.Name = "inputGroupBox";
-            this.inputGroupBox.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.inputGroupBox.Size = new System.Drawing.Size(102, 190);
-            this.inputGroupBox.TabIndex = 2;
-            this.inputGroupBox.TabStop = false;
-            // 
-            // swatchInHigh
-            // 
-            this.swatchInHigh.BackColor = System.Drawing.Color.White;
-            this.swatchInHigh.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.swatchInHigh.Location = new System.Drawing.Point(8, 37);
-            this.swatchInHigh.Name = "swatchInHigh";
-            this.swatchInHigh.Size = new System.Drawing.Size(48, 24);
-            this.swatchInHigh.TabIndex = 2;
-            this.swatchInHigh.DoubleClick += new System.EventHandler(this.swatch_DoubleClick);
-            // 
-            // inputLoUpDown
-            // 
-            this.inputLoUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.inputLoUpDown.Location = new System.Drawing.Point(8, 158);
-            this.inputLoUpDown.Maximum = new System.Decimal(new int[] {
-                                                                       255,
-                                                                       0,
-                                                                       0,
-                                                                       0});
-            this.inputLoUpDown.Name = "inputLoUpDown";
-            this.inputLoUpDown.Size = new System.Drawing.Size(48, 20);
-            this.inputLoUpDown.TabIndex = 1;
-            this.inputLoUpDown.Validated += new System.EventHandler(this.txtInputLo_ValueChanged);
-            this.inputLoUpDown.ValueChanged += new System.EventHandler(this.txtInputLo_ValueChanged);
-            // 
-            // inputHiUpDown
-            // 
-            this.inputHiUpDown.Location = new System.Drawing.Point(8, 16);
-            this.inputHiUpDown.Maximum = new System.Decimal(new int[] {
-                                                                       255,
-                                                                       0,
-                                                                       0,
-                                                                       0});
-            this.inputHiUpDown.Name = "inputHiUpDown";
-            this.inputHiUpDown.Size = new System.Drawing.Size(48, 20);
-            this.inputHiUpDown.TabIndex = 1;
-            this.inputHiUpDown.Value = new System.Decimal(new int[] {
-                                                                     255,
-                                                                     0,
-                                                                     0,
-                                                                     0});
-            this.inputHiUpDown.Validated += new System.EventHandler(this.txtInputHi_ValueChanged);
-            this.inputHiUpDown.ValueChanged += new System.EventHandler(this.txtInputHi_ValueChanged);
-            // 
-            // gradientInput
-            // 
-            this.gradientInput.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-                | System.Windows.Forms.AnchorStyles.Right)));
-            this.gradientInput.BottomColor = System.Drawing.Color.Black;
-            this.gradientInput.Count = 2;
-            this.gradientInput.Location = new System.Drawing.Point(62, 16);
-            this.gradientInput.Name = "gradientInput";
-            this.gradientInput.Size = new System.Drawing.Size(32, 166);
-            this.gradientInput.TabIndex = 0;
-            this.gradientInput.TopColor = System.Drawing.Color.White;
-            this.gradientInput.Value = 0;
-            this.gradientInput.ValueChanged += new IndexEventHandler(this.gradientInput_ValueChanged);
-            // 
-            // swatchInLow
-            // 
-            this.swatchInLow.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.swatchInLow.BackColor = System.Drawing.Color.Black;
-            this.swatchInLow.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.swatchInLow.Location = new System.Drawing.Point(8, 133);
-            this.swatchInLow.Name = "swatchInLow";
-            this.swatchInLow.Size = new System.Drawing.Size(48, 24);
-            this.swatchInLow.TabIndex = 2;
-            this.swatchInLow.DoubleClick += new System.EventHandler(this.swatch_DoubleClick);
-            // 
-            // panelMask
-            // 
-            this.panelMask.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.panelMask.Controls.Add(this.redMaskCheckBox);
-            this.panelMask.Controls.Add(this.greenMaskCheckBox);
-            this.panelMask.Controls.Add(this.blueMaskCheckBox);
-            this.panelMask.Location = new System.Drawing.Point(192, 200);
-            this.panelMask.Name = "panelMask";
-            this.panelMask.Size = new System.Drawing.Size(96, 24);
-            this.panelMask.TabIndex = 14;
             // 
             // redMaskCheckBox
             // 
             this.redMaskCheckBox.Checked = true;
             this.redMaskCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.redMaskCheckBox.Location = new System.Drawing.Point(0, 0);
+            this.redMaskCheckBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.redMaskCheckBox.Location = new System.Drawing.Point(165, 3);
             this.redMaskCheckBox.Name = "redMaskCheckBox";
-            this.redMaskCheckBox.Size = new System.Drawing.Size(32, 24);
-            this.redMaskCheckBox.TabIndex = 1;
+            this.redMaskCheckBox.Size = new System.Drawing.Size(34, 23);
+            this.redMaskCheckBox.TabIndex = 8;
             this.redMaskCheckBox.Click += new System.EventHandler(this.redMaskCheckBox_CheckedChanged);
+            this.redMaskCheckBox.CheckedChanged += new System.EventHandler(this.redMaskCheckBox_CheckedChanged);
             // 
             // greenMaskCheckBox
             // 
             this.greenMaskCheckBox.Checked = true;
             this.greenMaskCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.greenMaskCheckBox.Location = new System.Drawing.Point(32, 0);
+            this.greenMaskCheckBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.greenMaskCheckBox.Location = new System.Drawing.Point(205, 3);
             this.greenMaskCheckBox.Name = "greenMaskCheckBox";
-            this.greenMaskCheckBox.Size = new System.Drawing.Size(32, 24);
-            this.greenMaskCheckBox.TabIndex = 1;
+            this.greenMaskCheckBox.Size = new System.Drawing.Size(34, 23);
+            this.greenMaskCheckBox.TabIndex = 9;
             this.greenMaskCheckBox.Click += new System.EventHandler(this.greenMaskCheckBox_CheckedChanged);
+            this.greenMaskCheckBox.CheckedChanged += new System.EventHandler(this.greenMaskCheckBox_CheckedChanged);
             // 
             // blueMaskCheckBox
             // 
             this.blueMaskCheckBox.Checked = true;
             this.blueMaskCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.blueMaskCheckBox.Location = new System.Drawing.Point(64, 0);
+            this.blueMaskCheckBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.blueMaskCheckBox.Location = new System.Drawing.Point(245, 3);
             this.blueMaskCheckBox.Name = "blueMaskCheckBox";
-            this.blueMaskCheckBox.Size = new System.Drawing.Size(32, 24);
-            this.blueMaskCheckBox.TabIndex = 1;
+            this.blueMaskCheckBox.Size = new System.Drawing.Size(34, 23);
+            this.blueMaskCheckBox.TabIndex = 10;
             this.blueMaskCheckBox.Click += new System.EventHandler(this.blueMaskCheckBox_CheckedChanged);
+            this.blueMaskCheckBox.CheckedChanged += new System.EventHandler(this.blueMaskCheckBox_CheckedChanged);
             // 
             // okButton
             // 
-            this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.okButton.Dock = System.Windows.Forms.DockStyle.Fill;
             this.okButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.okButton.Location = new System.Drawing.Point(312, 200);
+            this.okButton.Location = new System.Drawing.Point(285, 3);
             this.okButton.Name = "okButton";
+            this.okButton.Size = new System.Drawing.Size(75, 23);
             this.okButton.TabIndex = 11;
             this.okButton.Click += new System.EventHandler(this.okButton_Click);
             // 
             // cancelButton
             // 
-            this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.cancelButton.Dock = System.Windows.Forms.DockStyle.Fill;
             this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.cancelButton.Location = new System.Drawing.Point(400, 200);
+            this.cancelButton.Location = new System.Drawing.Point(366, 3);
             this.cancelButton.Name = "cancelButton";
-            this.cancelButton.TabIndex = 13;
+            this.cancelButton.Size = new System.Drawing.Size(77, 23);
+            this.cancelButton.TabIndex = 12;
             this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
             // 
             // autoButton
             // 
-            this.autoButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.autoButton.Dock = System.Windows.Forms.DockStyle.Fill;
             this.autoButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.autoButton.Location = new System.Drawing.Point(8, 200);
+            this.autoButton.Location = new System.Drawing.Point(3, 3);
             this.autoButton.Name = "autoButton";
-            this.autoButton.TabIndex = 10;
+            this.autoButton.Size = new System.Drawing.Size(75, 23);
+            this.autoButton.TabIndex = 6;
             this.autoButton.Click += new System.EventHandler(this.autoButton_Click);
             // 
             // resetButton
             // 
-            this.resetButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.resetButton.Dock = System.Windows.Forms.DockStyle.Fill;
             this.resetButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.resetButton.Location = new System.Drawing.Point(88, 200);
+            this.resetButton.Location = new System.Drawing.Point(84, 3);
             this.resetButton.Name = "resetButton";
-            this.resetButton.TabIndex = 12;
+            this.resetButton.Size = new System.Drawing.Size(75, 23);
+            this.resetButton.TabIndex = 7;
             this.resetButton.Click += new System.EventHandler(this.resetButton_Click);
+            // 
+            // tableMain
+            // 
+            this.tableMain.ColumnCount = 6;
+            this.tableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 50F));
+            this.tableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 40F));
+            this.tableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 40F));
+            this.tableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 50F));
+            this.tableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableMain.Controls.Add(this.headerHistogramOutput, 5, 0);
+            this.tableMain.Controls.Add(this.headerControlsOutput, 3, 0);
+            this.tableMain.Controls.Add(this.headerControlsInput, 1, 0);
+            this.tableMain.Controls.Add(this.headerHistogramInput, 0, 0);
+            this.tableMain.Controls.Add(this.swatchInLow, 1, 7);
+            this.tableMain.Controls.Add(this.inputHiUpDown, 1, 1);
+            this.tableMain.Controls.Add(this.swatchInHigh, 1, 2);
+            this.tableMain.Controls.Add(this.inputLoUpDown, 1, 8);
+            this.tableMain.Controls.Add(this.swatchOutLow, 4, 7);
+            this.tableMain.Controls.Add(this.outputGammaUpDown, 4, 4);
+            this.tableMain.Controls.Add(this.swatchOutHigh, 4, 2);
+            this.tableMain.Controls.Add(this.outputHiUpDown, 4, 1);
+            this.tableMain.Controls.Add(this.gradientInput, 2, 1);
+            this.tableMain.Controls.Add(this.swatchOutMid, 4, 5);
+            this.tableMain.Controls.Add(this.gradientOutput, 3, 1);
+            this.tableMain.Controls.Add(this.tableLayoutPanel2, 0, 9);
+            this.tableMain.Controls.Add(this.histogramInput, 0, 1);
+            this.tableMain.Controls.Add(this.histogramOutput, 5, 1);
+            this.tableMain.Controls.Add(this.outputLowUpDown, 4, 8);
+            this.tableMain.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableMain.Location = new System.Drawing.Point(0, 0);
+            this.tableMain.Name = "tableMain";
+            this.tableMain.RowCount = 10;
+            this.tableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
+            this.tableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
+            this.tableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
+            this.tableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
+            this.tableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
+            this.tableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
+            this.tableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 35F));
+            this.tableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tableMain.Size = new System.Drawing.Size(452, 211);
+            this.tableMain.TabStop = false;
+            // 
+            // headerHistogramOutput
+            // 
+            this.headerHistogramOutput.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.headerHistogramOutput.Location = new System.Drawing.Point(319, 3);
+            this.headerHistogramOutput.Name = "headerHistogramOutput";
+            this.headerHistogramOutput.RightMargin = 3;
+            this.headerHistogramOutput.Size = new System.Drawing.Size(130, 14);
+            this.headerHistogramOutput.TabStop = false;
+            // 
+            // headerControlsOutput
+            // 
+            this.tableMain.SetColumnSpan(this.headerControlsOutput, 2);
+            this.headerControlsOutput.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.headerControlsOutput.Location = new System.Drawing.Point(229, 3);
+            this.headerControlsOutput.Name = "headerControlsOutput";
+            this.headerControlsOutput.RightMargin = 3;
+            this.headerControlsOutput.Size = new System.Drawing.Size(84, 14);
+            this.headerControlsOutput.TabStop = false;
+            // 
+            // headerControlsInput
+            // 
+            this.tableMain.SetColumnSpan(this.headerControlsInput, 2);
+            this.headerControlsInput.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.headerControlsInput.Location = new System.Drawing.Point(139, 3);
+            this.headerControlsInput.Name = "headerControlsInput";
+            this.headerControlsInput.RightMargin = 3;
+            this.headerControlsInput.Size = new System.Drawing.Size(84, 14);
+            this.headerControlsInput.TabStop = false;
+            // 
+            // headerHistogramInput
+            // 
+            this.headerHistogramInput.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.headerHistogramInput.Location = new System.Drawing.Point(3, 3);
+            this.headerHistogramInput.Name = "headerHistogramInput";
+            this.headerHistogramInput.RightMargin = 3;
+            this.headerHistogramInput.Size = new System.Drawing.Size(130, 14);
+            this.headerHistogramInput.TabStop = false;
+            // 
+            // swatchInLow
+            // 
+            this.swatchInLow.BackColor = System.Drawing.Color.Black;
+            this.swatchInLow.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.swatchInLow.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.swatchInLow.Location = new System.Drawing.Point(139, 127);
+            this.swatchInLow.Name = "swatchInLow";
+            this.swatchInLow.Size = new System.Drawing.Size(44, 20);
+            this.swatchInLow.TabStop = false;
+            // 
+            // inputHiUpDown
+            // 
+            this.inputHiUpDown.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.inputHiUpDown.Location = new System.Drawing.Point(139, 23);
+            this.inputHiUpDown.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+            this.inputHiUpDown.Name = "inputHiUpDown";
+            this.inputHiUpDown.Size = new System.Drawing.Size(44, 20);
+            this.inputHiUpDown.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.inputHiUpDown.ValueChanged += new System.EventHandler(this.txtInputHi_ValueChanged);
+            this.inputHiUpDown.Validating += new System.ComponentModel.CancelEventHandler(this.txtInputHi_Validating);
+            this.inputHiUpDown.TabIndex = 1;
+            // 
+            // swatchInHigh
+            // 
+            this.swatchInHigh.BackColor = System.Drawing.Color.White;
+            this.swatchInHigh.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.swatchInHigh.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.swatchInHigh.Location = new System.Drawing.Point(139, 49);
+            this.swatchInHigh.Name = "swatchInHigh";
+            this.swatchInHigh.Size = new System.Drawing.Size(44, 20);
+            this.swatchInHigh.TabStop = false;
+            // 
+            // inputLoUpDown
+            // 
+            this.inputLoUpDown.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.inputLoUpDown.Location = new System.Drawing.Point(139, 153);
+            this.inputLoUpDown.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+            this.inputLoUpDown.Name = "inputLoUpDown";
+            this.inputLoUpDown.Size = new System.Drawing.Size(44, 20);
+            this.inputLoUpDown.TabIndex = 4;
+            this.inputLoUpDown.ValueChanged += new System.EventHandler(this.txtInputLo_ValueChanged);
+            this.inputLoUpDown.Validating += new System.ComponentModel.CancelEventHandler(this.txtInputLo_Validating);
+            // 
+            // swatchOutLow
+            // 
+            this.swatchOutLow.BackColor = System.Drawing.Color.Black;
+            this.swatchOutLow.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.swatchOutLow.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.swatchOutLow.Location = new System.Drawing.Point(269, 127);
+            this.swatchOutLow.Name = "swatchOutLow";
+            this.swatchOutLow.Size = new System.Drawing.Size(44, 20);
+            this.swatchOutLow.TabStop = false;
+            // 
+            // outputGammaUpDown
+            // 
+            this.outputGammaUpDown.DecimalPlaces = 2;
+            this.outputGammaUpDown.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.outputGammaUpDown.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
+            this.outputGammaUpDown.Location = new System.Drawing.Point(269, 75);
+            this.outputGammaUpDown.Maximum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            65536});
+            this.outputGammaUpDown.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
+            this.outputGammaUpDown.Name = "outputGammaUpDown";
+            this.outputGammaUpDown.Size = new System.Drawing.Size(44, 20);
+            this.outputGammaUpDown.TabIndex = 3;
+            this.outputGammaUpDown.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.outputGammaUpDown.Validating += new System.ComponentModel.CancelEventHandler(this.outputGammaUpDown_Validating);
+            // 
+            // swatchOutHigh
+            // 
+            this.swatchOutHigh.BackColor = System.Drawing.Color.White;
+            this.swatchOutHigh.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.swatchOutHigh.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.swatchOutHigh.Location = new System.Drawing.Point(269, 49);
+            this.swatchOutHigh.Name = "swatchOutHigh";
+            this.swatchOutHigh.Size = new System.Drawing.Size(44, 20);
+            this.swatchOutLow.TabStop = false;
+            // 
+            // outputHiUpDown
+            // 
+            this.outputHiUpDown.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.outputHiUpDown.Location = new System.Drawing.Point(269, 23);
+            this.outputHiUpDown.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+            this.outputHiUpDown.Name = "outputHiUpDown";
+            this.outputHiUpDown.Size = new System.Drawing.Size(44, 20);
+            this.outputHiUpDown.TabIndex = 2;
+            this.outputHiUpDown.Value = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+            this.outputHiUpDown.Validating += new System.ComponentModel.CancelEventHandler(this.outputHiUpDown_Validating);
+            // 
+            // gradientInput
+            // 
+            this.gradientInput.BottomColor = System.Drawing.Color.Black;
+            this.gradientInput.Count = 2;
+            this.gradientInput.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.gradientInput.Location = new System.Drawing.Point(189, 23);
+            this.gradientInput.Name = "gradientInput";
+            this.tableMain.SetRowSpan(this.gradientInput, 8);
+            this.gradientInput.Size = new System.Drawing.Size(34, 150);
+            this.gradientInput.TopColor = System.Drawing.Color.White;
+            this.gradientInput.Value = 0;
+            this.gradientInput.ValueChanged += new PaintDotNet.IndexEventHandler(this.gradientInput_ValueChanged);
+            this.swatchOutLow.TabStop = false;
+            // 
+            // swatchOutMid
+            // 
+            this.swatchOutMid.BackColor = System.Drawing.Color.White;
+            this.swatchOutMid.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.swatchOutMid.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.swatchOutMid.Location = new System.Drawing.Point(269, 101);
+            this.swatchOutMid.Name = "swatchOutMid";
+            this.swatchOutMid.Size = new System.Drawing.Size(44, 20);
+            this.swatchOutMid.TabStop = false;
+            // 
+            // gradientOutput
+            // 
+            this.gradientOutput.BottomColor = System.Drawing.Color.Black;
+            this.gradientOutput.Count = 3;
+            this.gradientOutput.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.gradientOutput.Location = new System.Drawing.Point(229, 23);
+            this.gradientOutput.Name = "gradientOutput";
+            this.tableMain.SetRowSpan(this.gradientOutput, 8);
+            this.gradientOutput.Size = new System.Drawing.Size(34, 150);
+            this.gradientOutput.TopColor = System.Drawing.Color.White;
+            this.gradientOutput.Value = 0;
+            this.gradientOutput.ValueChanged += new PaintDotNet.IndexEventHandler(this.gradientOutput_ValueChanged);
+            this.gradientOutput.TabStop = false;
+            // 
+            // tableLayoutPanel2
+            // 
+            this.tableLayoutPanel2.ColumnCount = 9;
+            this.tableMain.SetColumnSpan(this.tableLayoutPanel2, 6);
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 81F));
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 81F));
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 40F));
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 40F));
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 40F));
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 81F));
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 83F));
+            this.tableLayoutPanel2.Controls.Add(this.blueMaskCheckBox, 5, 0);
+            this.tableLayoutPanel2.Controls.Add(this.greenMaskCheckBox, 4, 0);
+            this.tableLayoutPanel2.Controls.Add(this.redMaskCheckBox, 3, 0);
+            this.tableLayoutPanel2.Controls.Add(this.autoButton, 0, 0);
+            this.tableLayoutPanel2.Controls.Add(this.resetButton, 1, 0);
+            this.tableLayoutPanel2.Controls.Add(this.okButton, 7, 0);
+            this.tableLayoutPanel2.Controls.Add(this.cancelButton, 8, 0);
+            this.tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel2.Location = new System.Drawing.Point(3, 179);
+            this.tableLayoutPanel2.Name = "tableLayoutPanel2";
+            this.tableLayoutPanel2.RowCount = 1;
+            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel2.Size = new System.Drawing.Size(446, 29);
+            // 
+            // histogramInput
+            // 
+            this.histogramInput.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.histogramInput.FlipHorizontal = true;
+            this.histogramInput.FlipVertical = false;
+            this.histogramInput.Histogram = histogramRgb1;
+            this.histogramInput.Location = new System.Drawing.Point(3, 23);
+            this.histogramInput.Name = "histogramInput";
+            this.tableMain.SetRowSpan(this.histogramInput, 8);
+            this.histogramInput.Size = new System.Drawing.Size(130, 150);
+            this.histogramInput.TabStop = false;
+            // 
+            // histogramOutput
+            // 
+            this.histogramOutput.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.histogramOutput.FlipHorizontal = false;
+            this.histogramOutput.FlipVertical = false;
+            this.histogramOutput.Histogram = histogramRgb2;
+            this.histogramOutput.Location = new System.Drawing.Point(319, 23);
+            this.histogramOutput.Name = "histogramOutput";
+            this.tableMain.SetRowSpan(this.histogramOutput, 8);
+            this.histogramOutput.Size = new System.Drawing.Size(130, 150);
+            this.histogramOutput.TabStop = false;
+            // 
+            // outputLowUpDown
+            // 
+            this.outputLowUpDown.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.outputLowUpDown.Location = new System.Drawing.Point(269, 153);
+            this.outputLowUpDown.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+            this.outputLowUpDown.Name = "outputLowUpDown";
+            this.outputLowUpDown.Size = new System.Drawing.Size(44, 20);
+            this.outputLowUpDown.TabIndex = 5;
+            this.outputLowUpDown.ValueChanged += new System.EventHandler(this.outputLowUpDown_ValueChanged);
+            this.outputLowUpDown.Validating += new System.ComponentModel.CancelEventHandler(this.outputLowUpDown_Validating);
             // 
             // LevelsEffectConfigDialog
             // 
             this.AcceptButton = this.okButton;
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(480, 229);
-            this.Controls.Add(this.panelMask);
-            this.Controls.Add(this.okButton);
-            this.Controls.Add(this.cancelButton);
-            this.Controls.Add(this.autoButton);
-            this.Controls.Add(this.resetButton);
-            this.Controls.Add(this.panelAdjustments);
+            this.ClientSize = new System.Drawing.Size(452, 211);
+            this.Controls.Add(this.tableMain);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
-            this.Location = new System.Drawing.Point(0, 0);
             this.MaximizeBox = true;
-            this.MinimumSize = new System.Drawing.Size(439, 231);
+            this.MinimumSize = new System.Drawing.Size(460, 245);
             this.Name = "LevelsEffectConfigDialog";
             this.Load += new System.EventHandler(this.LevelsEffectConfigDialog_Load);
-            this.Controls.SetChildIndex(this.panelAdjustments, 0);
-            this.Controls.SetChildIndex(this.resetButton, 0);
-            this.Controls.SetChildIndex(this.autoButton, 0);
-            this.Controls.SetChildIndex(this.cancelButton, 0);
-            this.Controls.SetChildIndex(this.okButton, 0);
-            this.Controls.SetChildIndex(this.panelMask, 0);
-            ((System.ComponentModel.ISupportInitialize)(this.outputHiUpDown)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown5)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.outputLowUpDown)).EndInit();
-            this.outputGroupBox.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.outputGammaUpDown)).EndInit();
-            this.outputHistogramGroupBox.ResumeLayout(false);
-            this.panelOutput.ResumeLayout(false);
-            this.panelAdjustments.ResumeLayout(false);
-            this.panelInput.ResumeLayout(false);
-            this.inputHistogramGroupBox.ResumeLayout(false);
-            this.inputGroupBox.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.inputLoUpDown)).EndInit();
+            this.Controls.SetChildIndex(this.tableMain, 0);
+            this.tableMain.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.inputHiUpDown)).EndInit();
-            this.panelMask.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.inputLoUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.outputGammaUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.outputHiUpDown)).EndInit();
+            this.tableLayoutPanel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.outputLowUpDown)).EndInit();
             this.ResumeLayout(false);
 
         }
-    
+
+        private void SetEnabledControls(bool enabled)
+        {
+            this.inputHiUpDown.Enabled = enabled;
+            this.outputHiUpDown.Enabled = enabled;
+            this.inputLoUpDown.Enabled = enabled;
+            this.outputLowUpDown.Enabled = enabled;
+            this.outputGammaUpDown.Enabled = enabled;
+            this.gradientInput.Enabled = enabled;
+            this.gradientOutput.Enabled = enabled;
+        }
+
         private void MaskChanged() 
         {
             bool anyOn = mask[0] || mask[1] || mask[2];
 
-            inputGroupBox.Enabled = anyOn;
-            outputGroupBox.Enabled = anyOn;
+            SetEnabledControls(anyOn);
 
             ColorBgra top = ColorBgra.Black;
 
@@ -760,18 +746,25 @@ namespace PaintDotNet.Effects
             }
     
         }
+
         protected override void InitDialogFromToken(EffectConfigToken effectToken)
         {
             UnaryPixelOps.Level levels = ((LevelsEffectConfigToken)effectToken).Levels;
 
-            outputHiUpDown.Value = MaskAvg(levels.ColorOutHigh);
-            outputLowUpDown.Value = MaskAvg(levels.ColorOutLow);
+            float gamma = MaskGamma(levels);
+            int lo = MaskAvg(levels.ColorOutLow);
+            int hi = MaskAvg(levels.ColorOutHigh);
+            int md = (int)(lo + (hi - lo) * Math.Pow(0.5, gamma));
+
+            outputHiUpDown.Value = hi;
+            outputGammaUpDown.Value = (decimal)gamma;
+            outputLowUpDown.Value = lo;
             inputHiUpDown.Value = MaskAvg(levels.ColorInHigh);
             inputLoUpDown.Value = MaskAvg(levels.ColorInLow);
-            
-            gradientOutput.SetValue(0, (int)outputLowUpDown.Value);
-            gradientOutput.SetValue(2, (int)outputHiUpDown.Value);
-            outputGammaUpDown.Value = outputGammaUpDown.Value;
+
+            gradientOutput.SetValue(0, lo);
+            gradientOutput.SetValue(1, md);
+            gradientOutput.SetValue(2, hi);
 
             swatchInHigh.BackColor = levels.ColorInHigh.ToColor();
             swatchInLow.BackColor = levels.ColorInLow.ToColor();
@@ -779,20 +772,12 @@ namespace PaintDotNet.Effects
             swatchOutMid.Invalidate();
             swatchOutHigh.BackColor = levels.ColorOutHigh.ToColor();
             swatchOutLow.BackColor = levels.ColorOutLow.ToColor();
-
-            outputGammaUpDown.Value = (decimal)MaskGamma(levels);
         }
 
         private void UpdateLevels() 
         {   
-            UpdateToken();
+            FinishTokenUpdate();
             UpdateOutputHistogram();
-        }
-
-        private void grpOutput_Layout(object sender, LayoutEventArgs e)
-        {
-            outputGammaUpDown.Top = (outputGroupBox.Height / 2) - outputGammaUpDown.Height;
-            swatchOutMid.Top = 1 + (outputGroupBox.Height / 2);
         }
 
         private void gradientOutput_ValueChanged(object sender, IndexEventArgs e)
@@ -913,15 +898,6 @@ namespace PaintDotNet.Effects
         protected override void OnLayout(LayoutEventArgs levent)
         {
             base.OnLayout (levent);
-            if (levent.AffectedControl == this && panelMask != null)
-            {
-                panelMask.Left = (this.ClientSize.Width - panelMask.Width) / 2;
-            }
-        }
-
-        private void panelAdjustments_Layout(object sender, LayoutEventArgs e)
-        {
-            panelInput.Width = this.ClientSize.Width / 2;
         }
 
         private void okButton_Click(object sender, System.EventArgs e)

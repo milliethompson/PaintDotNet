@@ -16,6 +16,20 @@ namespace PaintDotNet.Setup
     /// </summary>
     internal sealed class NativeConstants
     {
+        internal const ushort PROCESSOR_ARCHITECTURE_INTEL = 0;
+        internal const ushort PROCESSOR_ARCHITECTURE_IA64 = 6;
+        internal const ushort PROCESSOR_ARCHITECTURE_AMD64 = 9;
+        internal const ushort PROCESSOR_ARCHITECTURE_UNKNOWN = 0xFFFF;
+
+        internal const uint MSIDBOPEN_READONLY = 0;      // database open read-only, no persistent changes
+        internal const uint MSIDBOPEN_TRANSACT = 1;      // database read/write in transaction mode
+        internal const uint MSIDBOPEN_DIRECT = 2;        // database direct read/write without transaction
+        internal const uint MSIDBOPEN_CREATE = 3;        // create new database, transact mode read/write
+        internal const uint MSIDBOPEN_CREATEDIRECT = 4;  // create new database, direct mode read/write
+
+        internal const uint PID_TEMPLATE = 7;
+        internal const uint VT_LPSTR = 30;
+        
         internal const uint MB_ABORTRETRYIGNORE = 0x00000002;
         internal const uint MB_OK = 0x00000000;
         internal const uint MB_OKCANCEL = 0x00000001;
@@ -36,6 +50,17 @@ namespace PaintDotNet.Setup
         internal const uint MB_DEFBUTTON2 = 0x00000100;
         internal const uint MB_DEFBUTTON3 = 0x00000200;
         internal const uint MB_DEFBUTTON4 = 0x00000300;
+
+        internal const uint MB_TYPEMASK = 0x0000000F;
+        internal const uint MB_ICONMASK = 0x000000F0;
+        internal const uint MB_DEFMASK = 0x00000F00;
+        internal const uint MB_MODEMASK = 0x00003000;
+        internal const uint MB_MISCMASK = 0x0000C000;
+
+        internal const ushort LANG_NEUTRAL = 0;
+
+        internal const int IDOK = 1;
+        internal const int IDCANCEL = 2;
 
         internal const uint INSTALLMESSAGE_FATALEXIT = 0x00000000;          // premature termination, possibly fatal OOM
         internal const uint INSTALLMESSAGE_ERROR = 0x01000000;              // formatted error message
@@ -82,9 +107,31 @@ namespace PaintDotNet.Setup
         internal const uint INSTALLUILEVEL_HIDECANCEL   = 0x20;    // do not display the cancel button in basic UI
         internal const uint INSTALLUILEVEL_SOURCERESONLY = 0x100;  // force display of source resolution even if quiet
 
+        internal const int MSIMODIFY_SEEK = -1;             // reposition to current record primary key
+        internal const int MSIMODIFY_REFRESH = 0;           // refetch current record data
+        internal const int MSIMODIFY_INSERT = 1;            // insert new record, fails if matching key exists
+        internal const int MSIMODIFY_UPDATE = 2;            // update existing non-key data of fetched record
+        internal const int MSIMODIFY_ASSIGN = 3;            // insert record, replacing any existing record
+        internal const int MSIMODIFY_REPLACE = 4;           // update record, delete old if primary key edit
+        internal const int MSIMODIFY_MERGE = 5;             // fails if record with duplicate key not identical
+        internal const int MSIMODIFY_DELETE = 6;            // remove row referenced by this record from table
+        internal const int MSIMODIFY_INSERT_TEMPORARY = 7;  // insert a temporary record
+        internal const int MSIMODIFY_VALIDATE = 8;          // validate a fetched record
+        internal const int MSIMODIFY_VALIDATE_NEW = 9;      // validate a new record
+        internal const int MSIMODIFY_VALIDATE_FIELD = 10;   // validate field(s) of an incomplete record
+        internal const int MSIMODIFY_VALIDATE_DELETE = 11;  // validate before deleting record
+
+        internal const uint FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x100;
+        internal const uint FORMAT_MESSAGE_IGNORE_INSERTS = 0x200;
+        internal const uint FORMAT_MESSAGE_FROM_STRING = 0x400;
+        internal const uint FORMAT_MESSAGE_FROM_HMODULE = 0x800;
+        internal const uint FORMAT_MESSAGE_FROM_SYSTEM = 0x1000;
+        internal const uint FORMAT_MESSAGE_ARGUMENT_ARRAY = 0x2000;
+
         internal const uint ERROR_SUCCESS = 0;
         internal const uint ERROR_SUCCESS_REBOOT_REQUIRED = 3010;
         internal const uint ERROR_SUCCESS_REBOOT_INITIATED = 1641;
+        internal const uint ERROR_NO_MORE_ITEMS = 259;
 
         internal const int MAX_PATH = 260;
         internal const uint SHGFP_TYPE_CURRENT = 0;

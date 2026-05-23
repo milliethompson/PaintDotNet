@@ -170,7 +170,8 @@ namespace PaintDotNet.Effects
             // AngleChooserConfigDialog
             // 
             this.AcceptButton = this.okButton;
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(186, 124);
             this.Controls.Add(this.angleHeader);
@@ -198,7 +199,7 @@ namespace PaintDotNet.Effects
             if (angleUpDown.Value != (decimal)angleChooserControl.Value)
             {
                 angleUpDown.Value = (decimal)angleChooserControl.ValueDouble;
-                UpdateToken();
+                FinishTokenUpdate();
                 Update();
             }
         }
@@ -208,7 +209,7 @@ namespace PaintDotNet.Effects
             if (angleChooserControl.ValueDouble != (double)angleUpDown.Value)
             {
                 angleChooserControl.ValueDouble = (double)angleUpDown.Value;
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 

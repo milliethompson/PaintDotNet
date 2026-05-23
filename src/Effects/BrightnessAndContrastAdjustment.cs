@@ -10,17 +10,14 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for BrightnessAndContrastAdjustment.
-    /// </summary>
     [EffectCategory(EffectCategory.Adjustment)]
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public class BrightnessAndContrastAdjustment
-        : Effect,
-          IConfigurableEffect
+        : Effect
     {
         public static string StaticName
         {
@@ -30,76 +27,71 @@ namespace PaintDotNet.Effects
             }
         }
 
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             return new BrightnessAndContrastAdjustmentConfigDialog();
         }
 
-        public void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
         {
-            BrightnessAndContrastAdjustmentConfigToken token = (BrightnessAndContrastAdjustmentConfigToken)properties;
+            BrightnessAndContrastAdjustmentConfigToken token = (BrightnessAndContrastAdjustmentConfigToken)parameters;
             int contrast = token.Contrast;
             int brightness = token.Brightness;
             int multiply = token.Multiply;
             int divide = token.Divide;
             byte[] rgbTable = token.RgbTable;
 
-            unsafe
+            for (int r = startIndex; r < startIndex + length; ++r)
             {
-                foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
+                Rectangle rect = rois[r];
+
+                for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
-                    for (int y = rect.Top; y < rect.Bottom; ++y)
+                    ColorBgra *srcRowPtr = srcArgs.Surface.GetPointAddress(rect.Left, y);
+                    ColorBgra *dstRowPtr = dstArgs.Surface.GetPointAddress(rect.Left, y);
+                    ColorBgra *dstRowEndPtr = dstRowPtr + rect.Width;
+
+                    if (divide == 0)
                     {
-                        ColorBgra *srcRowPtr = srcArgs.Surface.GetPointAddress(rect.Left, y);
-                        ColorBgra *dstRowPtr = dstArgs.Surface.GetPointAddress(rect.Left, y);
-                        ColorBgra *dstRowEndPtr = dstRowPtr + rect.Width;
-
-                        if (divide == 0)
+                        while (dstRowPtr < dstRowEndPtr)
                         {
-                            while (dstRowPtr < dstRowEndPtr)
-                            {
-                                ColorBgra col = *srcRowPtr;
-                                int i = col.GetIntensityByte();
-                                uint c = rgbTable[i];
-                                dstRowPtr->Bgra = (col.Bgra & 0xff000000) | c | (c << 8) | (c << 16);
+                            ColorBgra col = *srcRowPtr;
+                            int i = col.GetIntensityByte();
+                            uint c = rgbTable[i];
+                            dstRowPtr->Bgra = (col.Bgra & 0xff000000) | c | (c << 8) | (c << 16);
 
-                                ++dstRowPtr;
-                                ++srcRowPtr;
-                            }
+                            ++dstRowPtr;
+                            ++srcRowPtr;
                         }
-                        else
+                    }
+                    else
+                    {
+                        while (dstRowPtr < dstRowEndPtr)
                         {
-                            while (dstRowPtr < dstRowEndPtr)
-                            {
-                                ColorBgra col = *srcRowPtr;
-                                int i = col.GetIntensityByte();
-                                int shiftIndex = i * 256;
+                            ColorBgra col = *srcRowPtr;
+                            int i = col.GetIntensityByte();
+                            int shiftIndex = i * 256;
 
-                                col.R = rgbTable[shiftIndex + col.R];
-                                col.G = rgbTable[shiftIndex + col.G]; 
-                                col.B = rgbTable[shiftIndex + col.B];
+                            col.R = rgbTable[shiftIndex + col.R];
+                            col.G = rgbTable[shiftIndex + col.G]; 
+                            col.B = rgbTable[shiftIndex + col.B];
 
-                                *dstRowPtr = col;
-                                ++dstRowPtr;
-                                ++srcRowPtr;
-                            }
+                            *dstRowPtr = col;
+                            ++dstRowPtr;
+                            ++srcRowPtr;
                         }
                     }
                 }
             }
-
+            
             return;
-        }
-
-        public override void Render(RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle roi)
-        {
-            throw new InvalidOperationException("BrightnessAndContrastEffect must be used via the other Render overload");
         }
 
         public BrightnessAndContrastAdjustment()
             : base(StaticName,
-                   PdnResources.GetImage("Icons.BrightnessAndContrastAdjustment.bmp"),
-                   System.Windows.Forms.Shortcut.CtrlShiftC)
+                   PdnResources.GetImage("Icons.BrightnessAndContrastAdjustment.png"),
+                   Keys.Control | Keys.Shift | Keys.C,
+                   true)
         {
         }
     }

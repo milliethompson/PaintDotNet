@@ -71,27 +71,22 @@ namespace PaintDotNet.SystemLayer
 
         public PropertyItem2(int id, int len, short type, byte[] value)
         {
-            if (value == null)
-            {
-                throw new ArgumentNullException("value");
-            }
-
             this.id = id;
             this.len = len;
             this.type = type;
-            this.value = (byte[])value.Clone();
+
+            if (value == null)
+            {
+                this.value = new byte[0];
+            }
+            else
+            {
+                this.value = (byte[])value.Clone();
+            }
         }
 
         public string ToBlob()
         {
-            /*
-            BinaryFormatter bf = new BinaryFormatter();
-            MemoryStream ms = new MemoryStream();
-            bf.Serialize(ms, this);
-            byte[] bytes = ms.ToArray();
-            string blob = Convert.ToBase64String(bytes);
-            */
-
             string blob = string.Format("<{0} {1}=\"{2}\" {3}=\"{4}\" {5}=\"{6}\" {7}=\"{8}\" />",
                 piElementName, 
                 idPropertyName, this.id.ToString(CultureInfo.InvariantCulture),
@@ -168,12 +163,13 @@ namespace PaintDotNet.SystemLayer
         // This depends on PropertyItem.png being an embedded resource in this assembly.
         private static Image propertyItemImage;
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private static PropertyItem GetPropertyItem()
         {
             if (propertyItemImage == null)
             {
                 Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("PaintDotNet.SystemLayer.PropertyItem.png");
-                propertyItemImage = Image.FromStream(stream);
+                propertyItemImage = PdnResources.LoadImage(stream); //Image.FromStream(stream);
             }
 
             PropertyItem pi = propertyItemImage.PropertyItems[0];

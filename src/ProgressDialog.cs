@@ -144,7 +144,7 @@ namespace PaintDotNet
                 if (text != percentText.Text)
                 {
                     percentText.Text = text;
-                    progressBar.Value = intValue;
+                    progressBar.Value = Math.Max(progressBar.Minimum, Math.Min(progressBar.Maximum, intValue));
                     Update();
                 }
             }
@@ -276,7 +276,8 @@ namespace PaintDotNet
             // 
             // ProgressDialog
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(218, 109);
             this.Controls.Add(this.cancelButton);

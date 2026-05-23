@@ -10,6 +10,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 [assembly: CLSCompliant(false)]
 
@@ -18,11 +19,11 @@ using System.Runtime.CompilerServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-[assembly: AssemblyTitle("Paint.NET v2.5 System Layer")]
+[assembly: AssemblyTitle("Paint.NET v2.61 System Layer")]
 [assembly: AssemblyDescription("Image and photo editing software written in C#.")]
 [assembly: AssemblyCompany("Paint.NET Team")]
-[assembly: AssemblyProduct("Paint.NET v2.5")]
-[assembly: AssemblyCopyright("Copyright © 2005 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2005 Microsoft Corporation. All Rights Reserved.")]
+[assembly: AssemblyProduct("Paint.NET v2.61")]
+[assembly: AssemblyCopyright("Copyright © 2006 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2006 Microsoft Corporation. All Rights Reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")] 
 
@@ -37,7 +38,7 @@ using System.Runtime.CompilerServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("2.5.*")]
+[assembly: AssemblyVersion("2.61.*")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -67,3 +68,10 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyFile("")]
 [assembly: AssemblyKeyName("")]
+
+[assembly: StringFreezing()]
+[assembly: DefaultDependency(LoadHint.Always)]
+[assembly: Dependency("System.Windows.Forms", LoadHint.Always)]
+[assembly: Dependency("System.Drawing", LoadHint.Always)]
+[assembly: Dependency("StylusReader", LoadHint.Sometimes)]
+[assembly: ComVisibleAttribute(false)]

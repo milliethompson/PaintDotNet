@@ -23,7 +23,7 @@ namespace PaintDotNet
         private object context;
         private long totalSize;
         private long totalReportedBytes;
-        private int compressionLevel;
+        private bool useCompression;
         private object lockObject = new object();
 
         public object Context
@@ -34,27 +34,22 @@ namespace PaintDotNet
             }
         }
 
-        public int CompressionLevel
+        public bool UseCompression
         {
             get
             {
-                return this.compressionLevel;
+                return this.useCompression;
             }
         }
 
         public DeferredFormatter()
-            : this(6, null)
+            : this(false, null)
         {
         }
 
-        public DeferredFormatter(int compressionLevel, object context)
+        public DeferredFormatter(bool useCompression, object context)
         {
-            if (compressionLevel < 0 || compressionLevel > 9)
-            {
-                throw new ArgumentOutOfRangeException("Compression level should be between 0 and 9, inclusive");
-            }
-
-            this.compressionLevel = compressionLevel;
+            this.useCompression = useCompression;
             this.context = context;
         }
 

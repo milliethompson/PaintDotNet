@@ -17,8 +17,7 @@ namespace PaintDotNet.Effects
     /// Summary description for RadialBlurEffect.
     /// </summary>
     public unsafe class RadialBlurEffect
-        : Effect,
-          IConfigurableEffect
+        : Effect
     {
         public static string StaticName
         {
@@ -28,23 +27,17 @@ namespace PaintDotNet.Effects
             }
         }
 
-        public override void Render(RenderArgs dstArgs, RenderArgs srcArgs, Rectangle roi)
-        {
-            throw new NotImplementedException("Use the other render method");
-        }
-
         public RadialBlurEffect()
             : base(StaticName,
-                   PdnResources.GetImage("Icons.RadialBlurEffect.bmp"),
-                   Shortcut.None,
+                   PdnResources.GetImage("Icons.RadialBlurEffect.png"),
+                   Keys.None,
                    PdnResources.GetString("Effects.Blurring.Submenu.Name"),
-                   EffectDirectives.None)
+                   EffectDirectives.None,
+                   true)
         {
         }
 
-        #region IConfigurableEffect Members
-
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             AmountEffectConfigDialog oacd = new AmountEffectConfigDialog();
 
@@ -52,7 +45,7 @@ namespace PaintDotNet.Effects
             oacd.SliderLabel = PdnResources.GetString("RadialBlurEffect.ConfigDialog.RadialLabel");
             oacd.SliderMaximum = 360;
             oacd.SliderMinimum = 0;
-            oacd.Icon = PdnResources.GetIconFromImage("Icons.RadialBlurEffect.bmp");
+            oacd.Icon = PdnResources.GetIconFromImage("Icons.RadialBlurEffect.png");
 
             return oacd;
         }
@@ -68,9 +61,10 @@ namespace PaintDotNet.Effects
             fy = cy + ((cx >> 8) * fr >> 8) - ((cy >> 14) * (fr * fr >> 11) >> 8);
         }
 
-        void IConfigurableEffect.Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
+            Rectangle[] rois, int startIndex, int length)
         {
-            AmountEffectConfigToken token = (AmountEffectConfigToken)properties;
+            AmountEffectConfigToken token = (AmountEffectConfigToken)parameters;
             int w = dstArgs.Bounds.Width;
             int h = dstArgs.Bounds.Height;
             int fcx = w << 15;
@@ -81,8 +75,10 @@ namespace PaintDotNet.Effects
             ColorBgra* srcPtr = srcArgs.Surface.GetRowAddressUnchecked(0);
             ColorBgra* dstPtr = dstArgs.Surface.GetRowAddressUnchecked(0);
             
-            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
+            for (int r = startIndex; r < startIndex + length; ++r)
             {
+                Rectangle rect = rois[r];
+
                 for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
                     ColorBgra *dstRow = (ColorBgra *)(strideDst * y + (byte *)dstPtr);
@@ -168,7 +164,5 @@ namespace PaintDotNet.Effects
                 }
             }                       
         }
-
-        #endregion
     }
 }

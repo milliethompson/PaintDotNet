@@ -24,6 +24,7 @@ namespace PaintDotNet.Effects
     /// can then retrieve the (possibly modified) EffectConfigToken and use 
     /// it in a call to the new 4-parameter Render method. 
     /// </summary>
+    [Obsolete("Just use the appropriate Effect overrides")]
     public interface IConfigurableEffect
     {
         EffectConfigDialog CreateConfigDialog();

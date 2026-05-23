@@ -33,8 +33,8 @@ namespace PaintDotNet
     ///   first chance at handling the event. These methods are private and non-overridable.
     /// * On[Event]() methods are then called by [Event]() if necessary, and should be overrided 
     ///   as necessary by derived classes. Always call the base implementation unless the
-    ///   documentation says otherwise. The base implementation gives the Tool class a last
-    ///   chance to handle the event if necessary. 
+    ///   documentation says otherwise. The base implementation gives the Tool a chance to provide
+    ///   default, overridable behavior for an event.
     /// </remarks>
     public class Tool
         : IDisposable
@@ -62,6 +62,9 @@ namespace PaintDotNet
         private MouseButtons lastButton = MouseButtons.None;
         private Surface scratchSurface;
         private PdnRegion saveRegion;
+#if DEBUG
+        private bool haveClearedScratch = false;
+#endif
 
         private int mouseEnter; // increments on MouseEnter, decrements on MouseLeave. The MouseLeave event is ONLY raised when this value decrements to 0, and MouseEnter is ONLY raised when this value increments to 1
 
@@ -69,6 +72,14 @@ namespace PaintDotNet
         {
             get
             {
+#if DEBUG
+                if (!haveClearedScratch)
+                {
+                    scratchSurface.Clear(ColorBgra.FromBgra(64, 128, 192, 128));
+                    haveClearedScratch = true;
+                }
+#endif
+
                 return scratchSurface;
             }
         }
@@ -109,7 +120,7 @@ namespace PaintDotNet
             }
         }
 
-        private const int saveTileGranularity = 16;
+        private const int saveTileGranularity = 32;
         private BitVector2D savedTiles;
 
         public void SaveRegion(PdnRegion saveMeRegion, Rectangle saveMeBounds)
@@ -145,23 +156,52 @@ namespace PaintDotNet
 
             for (int tileY = topTile; tileY <= bottomTile; ++tileY)
             {
+                Rectangle rowAccumBounds = Rectangle.Empty;
+
                 for (int tileX = leftTile; tileX <= rightTile; ++tileX)
                 {
                     if (!savedTiles.Get(tileX, tileY))
                     {
-                        Rectangle tileBounds = new Rectangle(tileX * saveTileGranularity, tileY * saveTileGranularity, 
+                        Rectangle tileBounds = new Rectangle(tileX * saveTileGranularity, tileY * saveTileGranularity,
                             saveTileGranularity, saveTileGranularity);
 
                         tileBounds.Intersect(activeLayer.Bounds);
 
-                        using (Surface dst = ScratchSurface.CreateWindow(tileBounds),
-                                       src = activeLayer.Surface.CreateWindow(tileBounds))
+                        if (rowAccumBounds == Rectangle.Empty)
                         {
-                            dst.CopySurface(src);
+                            rowAccumBounds = tileBounds;
+                        }
+                        else
+                        {
+                            rowAccumBounds = Rectangle.Union(rowAccumBounds, tileBounds);
                         }
 
                         savedTiles.Set(tileX, tileY, true);
                     }
+                    else
+                    {
+                        if (rowAccumBounds != Rectangle.Empty)
+                        {
+                            using (Surface dst = ScratchSurface.CreateWindow(rowAccumBounds),
+                                           src = activeLayer.Surface.CreateWindow(rowAccumBounds))
+                            {
+                                dst.CopySurface(src);
+                            }
+
+                            rowAccumBounds = Rectangle.Empty;
+                        }
+                    }
+                }
+
+                if (rowAccumBounds != Rectangle.Empty)
+                {
+                    using (Surface dst = ScratchSurface.CreateWindow(rowAccumBounds),
+                                   src = activeLayer.Surface.CreateWindow(rowAccumBounds))
+                    {
+                        dst.CopySurface(src);
+                    }
+
+                    rowAccumBounds = Rectangle.Empty;
                 }
             }
 
@@ -205,7 +245,7 @@ namespace PaintDotNet
 
         /// <summary>
         /// Tells you whether the tool is "active" or not. If the tool is not active
-        /// it is not safe to call any other method besides PerformActive. All
+        /// it is not safe to call any other method besides PerformActivate. All
         /// properties are safe to get values from.
         /// </summary>
         public bool Active
@@ -563,20 +603,33 @@ namespace PaintDotNet
             this.saveRegion = null;
 
             this.scratchSurface = Workspace.ScratchSurface;
+#if DEBUG
+            this.haveClearedScratch = false;
+#endif
             Workspace.ScratchSurface = null;
 
             Workspace.Environment.Selection.Changing += new EventHandler(SelectionChangingHandler);
             Workspace.Environment.Selection.Changed += new EventHandler(SelectionChangedHandler);
             Workspace.History.ExecutingHistoryAction += new ExecutingHistoryActionEventHandler(ExecutingHistoryAction);
             Workspace.History.ExecutedHistoryAction += new ExecutedHistoryActionEventHandler(ExecutedHistoryAction);
+            Workspace.History.FinishedStepGroup += new EventHandler(FinishedHistoryStepGroup);
 
             this.trackingNub = new MoveNubRenderer(this.Renderers);
             this.trackingNub.Visible = false;
             this.trackingNub.Size = 10;
-            this.trackingNub.DrawCompass = true;
+            this.trackingNub.Shape = MoveNubShape.Compass;
             this.Renderers.Add(this.trackingNub, false);
 
             OnActivate();
+        }
+
+        void FinishedHistoryStepGroup(object sender, EventArgs e)
+        {
+            OnFinishedHistoryStepGroup();
+        }
+
+        protected virtual void OnFinishedHistoryStepGroup()
+        {
         }
 
         /// <summary>
@@ -596,6 +649,7 @@ namespace PaintDotNet
             Workspace.Environment.Selection.Changed -= new EventHandler(SelectionChangedHandler);
             Workspace.History.ExecutingHistoryAction -= new ExecutingHistoryActionEventHandler(ExecutingHistoryAction);
             Workspace.History.ExecutedHistoryAction -= new ExecutedHistoryActionEventHandler(ExecutedHistoryAction);
+            Workspace.History.FinishedStepGroup -= new EventHandler(FinishedHistoryStepGroup);
 
             OnDeactivate();
 
@@ -684,10 +738,10 @@ namespace PaintDotNet
                 // stack up)
 
                 Point position = new Point(e.X, e.Y);
-                Rectangle visibleRect = Workspace.VisibleDocumentRectangle;
-                Point visibleCenterPt = Utility.GetRectangleCenter(visibleRect);
-                Point delta = new Point(e.X - lastPanMouseXY.X, e.Y - lastPanMouseXY.Y);
-                Point newScroll = Workspace.DocumentView.DocumentScrollPosition;
+                RectangleF visibleRect = Workspace.VisibleDocumentRectangleF;
+                PointF visibleCenterPt = Utility.GetRectangleCenter(visibleRect);
+                PointF delta = new PointF(e.X - lastPanMouseXY.X, e.Y - lastPanMouseXY.Y);
+                PointF newScroll = Workspace.DocumentView.DocumentScrollPositionF;
 
                 if (delta.X != 0 || delta.Y != 0)
                 {
@@ -695,11 +749,11 @@ namespace PaintDotNet
                     newScroll.Y -= delta.Y;
 
                     lastPanMouseXY = new Point(e.X, e.Y);
-                    lastPanMouseXY.X -= delta.X;
-                    lastPanMouseXY.Y -= delta.Y;
+                    lastPanMouseXY.X -= (int)Math.Truncate(delta.X);
+                    lastPanMouseXY.Y -= (int)Math.Truncate(delta.Y);
 
                     ++this.ignoreMouseMove; // setting DocumentScrollPosition incurs a MouseMove event. ignore it prevents 'jittering' at non-integral zoom levels (like, say, 743%)
-                    Workspace.DocumentView.DocumentScrollPosition = newScroll;
+                    Workspace.DocumentView.DocumentScrollPositionF = newScroll;
                     Update();
                 }
 
@@ -859,6 +913,24 @@ namespace PaintDotNet
                         break;
                     }
                 }
+
+                // If the keypress is still not handled ...
+                if (!e.Handled)
+                {
+                    switch (e.KeyChar)
+                    {
+                        // By default, Esc/Enter clear the current selection if there is any
+                        case (char)13: // Enter
+                        case (char)27: // Escape
+                            if (this.mouseDown == 0 && !Workspace.Environment.Selection.IsEmpty)
+                            {
+                                e.Handled = true;
+                                Workspace.PerformAction(typeof(DeselectAction));
+                            }
+
+                            break;
+                    }
+                }
             }
         }
 
@@ -946,7 +1018,10 @@ namespace PaintDotNet
 
         private bool CanPan()
         {
-            if (Workspace.DocumentView.VisibleDocumentRectangle.Size == Workspace.Document.Size)
+            Rectangle vis = Utility.RoundRectangle(Workspace.DocumentView.VisibleDocumentRectangleF);
+            vis.Intersect(Workspace.Document.Bounds);
+
+            if (vis == Workspace.Document.Bounds)
             {
                 return false;
             }
@@ -1137,10 +1212,10 @@ namespace PaintDotNet
             if (this.panTracking && this.lastButton == MouseButtons.Right)
             {
                 Point position = this.lastMouseXY; //new Point(e.X, e.Y);
-                Rectangle visibleRect = Workspace.VisibleDocumentRectangle;
-                Point visibleCenterPt = Utility.GetRectangleCenter(visibleRect);
-                Point delta = new Point(position.X - visibleCenterPt.X, position.Y - visibleCenterPt.Y);
-                Point newScroll = Workspace.DocumentView.DocumentScrollPosition;
+                RectangleF visibleRect = Workspace.VisibleDocumentRectangleF;
+                PointF visibleCenterPt = Utility.GetRectangleCenter(visibleRect);
+                PointF delta = new PointF(position.X - visibleCenterPt.X, position.Y - visibleCenterPt.Y);
+                PointF newScroll = Workspace.DocumentView.DocumentScrollPositionF;
 
                 this.trackingNub.Visible = true;
 
@@ -1151,9 +1226,9 @@ namespace PaintDotNet
 
                     ++this.ignoreMouseMove; // setting DocumentScrollPosition incurs a MouseMove event. ignore it prevents 'jittering' at non-integral zoom levels (like, say, 743%)
                     UI.SetControlRedraw(Workspace.DocumentView, false);
-                    Workspace.DocumentView.DocumentScrollPosition = newScroll;
+                    Workspace.DocumentView.DocumentScrollPositionF = newScroll;
                     this.trackingNub.Visible = true;
-                    this.trackingNub.Location = Utility.GetRectangleCenter(Workspace.VisibleDocumentRectangle);
+                    this.trackingNub.Location = Utility.GetRectangleCenter(Workspace.VisibleDocumentRectangleF);
                     UI.SetControlRedraw(Workspace.DocumentView, true);
                     Workspace.DocumentView.Invalidate(true);
                     Update();
@@ -1163,14 +1238,14 @@ namespace PaintDotNet
 
         protected bool ScrollIfNecessary(PointF position) 
         {
-            if (!autoScroll) 
+            if (!autoScroll || !CanPan()) 
             {
                 return false;
             }
 
-            Rectangle visible = Workspace.DocumentView.VisibleDocumentRectangle;
-            PointF lastScrollPosition = Workspace.DocumentView.DocumentScrollPosition;
-            PointF delta = Point.Empty;
+            RectangleF visible = Workspace.DocumentView.VisibleDocumentRectangleF;
+            PointF lastScrollPosition = Workspace.DocumentView.DocumentScrollPositionF;
+            PointF delta = PointF.Empty;
             PointF zoomedPoint = PointF.Empty;
 
             zoomedPoint.X = Utility.Lerp((visible.Left + visible.Right) / 2.0f, position.X, 1.02f);
@@ -1196,9 +1271,8 @@ namespace PaintDotNet
 
             if (!delta.IsEmpty) 
             {
-                lastScrollPosition.X += delta.X;
-                lastScrollPosition.Y += delta.Y;
-                Workspace.DocumentView.DocumentScrollPosition = Point.Truncate(lastScrollPosition);
+                PointF newScrollPosition = new PointF(lastScrollPosition.X + delta.X, lastScrollPosition.Y + delta.Y);
+                Workspace.DocumentView.DocumentScrollPositionF = newScrollPosition;
                 Update();
                 return true;
             }
@@ -1249,7 +1323,7 @@ namespace PaintDotNet
         {
             if (statusIcon == null && statusText != null)
             {
-                this.statusIcon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuHelpHelpTopicsIcon.bmp"), true);
+                this.statusIcon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuHelpHelpTopicsIcon.png"), true);
             }
             else
             {

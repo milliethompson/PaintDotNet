@@ -75,7 +75,7 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuLayersLayerPropertiesIcon.bmp"), Color.FromArgb(192, 192, 192));
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuLayersLayerPropertiesIcon.png"), Color.FromArgb(192, 192, 192));
 
             this.Text = PdnResources.GetString("LayerPropertiesDialog.Text");
             this.visibleCheckBox.Text = PdnResources.GetString("LayerPropertiesDialog.VisibleCheckBox.Text");
@@ -178,7 +178,8 @@ namespace PaintDotNet
             // LayerPropertiesDialog
             // 
             this.AcceptButton = this.okButton;
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(274, 96);
             this.Controls.Add(this.generalHeader);

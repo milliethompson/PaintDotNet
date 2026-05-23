@@ -32,17 +32,6 @@ namespace PaintDotNet
         private bool enableOpacity = true;
         private double ourOpacity = 1.0; // store opacity setting so that when we go from disabled->enabled opacity we can set the correct value
 
-        // These are here to fix an odd bug where a modal form will prevent the main form from
-        // being visible:
-        // 1. Start up Paint.NET
-        // 2. Open some image and start rendering a long effect (say, Gaussian Blur of '100')
-        // 3. Completely occlude the Paint.NET window
-        // 4. Now click on Paint.NET in the taskbar
-        // 5. Only the modal form pops up!
-        // I found this workaround on Google Groups. No idea how they figured it out.
-        private System.Windows.Forms.ToolTip toolTipSentinel;
-        private System.Windows.Forms.Control fixNoToolTipsAndFocusBugSentinel;
-
         private System.ComponentModel.IContainer components;
         private bool instanceEnableOpacity = true;
         private static bool globalEnableOpacity = true;
@@ -125,14 +114,15 @@ namespace PaintDotNet
 
         public PdnBaseForm()
         {
+            UI.InitScaling(this);
+
             this.SuspendLayout();
             InitializeComponent();
 
             this.formEx = new PaintDotNet.SystemLayer.FormEx(this, new RealParentWndProcDelegate(this.RealWndProc));
             this.Controls.Add(this.formEx);
             this.formEx.Visible = false;
-
-            toolTipSentinel.SetToolTip(fixNoToolTipsAndFocusBugSentinel, "fixed");
+            DecideOpacitySetting();
             this.ResumeLayout(false);
         }
 
@@ -141,7 +131,6 @@ namespace PaintDotNet
             if (!this.DesignMode)
             {
                 LoadResources();
-                OnEnableStyles();
             }
 
             base.OnLoad(e);
@@ -261,21 +250,6 @@ namespace PaintDotNet
             }
         }
 
-        protected virtual void OnEnableStyles()
-        {
-            EnableStyles();
-        }
-
-        protected void EnableStyles()
-        {
-            this.formEx.EnableStyles();
-        }
-
-        protected void EnableStyles(Control control)
-        {
-            this.formEx.EnableStyles(control);
-        }
-
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing(e);
@@ -338,14 +312,19 @@ namespace PaintDotNet
         {
             get
             {
-                return ourOpacity;
+                return this.ourOpacity;
             }
 
             set
             {
                 if (enableOpacity)
                 {
-                    base.Opacity = value;
+                    // Bypassing Form.Opacity eliminates a "black flickering" that occurs when
+                    // the form transitions from Opacity=1.0 to Opacity != 1.0, or vice versa.
+                    // It appears to be a result of toggling the WS_EX_LAYERED style, or the
+                    // fact that Form.Opacity re-applies visual styles when this value transition
+                    // takes place.
+                    SystemLayer.UI.SetFormOpacity(this, value);
                 }
 
                 this.ourOpacity = value;
@@ -359,31 +338,37 @@ namespace PaintDotNet
         {
             if (UserSessions.IsRemote() || !PdnBaseForm.globalEnableOpacity || !this.EnableInstanceOpacity)
             {
-                try
+                if (this.enableOpacity)
                 {
-                    base.Opacity = 1.0;
-                }
+                    try
+                    {
+                        UI.SetFormOpacity(this, 1.0);
+                    }
 
                     // This fails in certain odd situations (bug #746), so we just eat the exception.
-                catch (System.ComponentModel.Win32Exception)
-                {
+                    catch (System.ComponentModel.Win32Exception)
+                    {
+                    }
                 }
 
-                enableOpacity = false;
+                this.enableOpacity = false;
             }
             else
             {
-                enableOpacity = true;
-
-                // This fails in certain odd situations (bug #746), so we just eat the exception.
-                try
+                if (!this.enableOpacity)
                 {
-                    base.Opacity = ourOpacity;
+                    // This fails in certain odd situations (bug #746), so we just eat the exception.
+                    try
+                    {
+                        UI.SetFormOpacity(this, this.ourOpacity);
+                    }
+
+                    catch (System.ComponentModel.Win32Exception)
+                    {
+                    }
                 }
 
-                catch (System.ComponentModel.Win32Exception)
-                {
-                }
+                this.enableOpacity = true;
             }
         }
 
@@ -405,25 +390,13 @@ namespace PaintDotNet
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.toolTipSentinel = new System.Windows.Forms.ToolTip(this.components);
-            this.fixNoToolTipsAndFocusBugSentinel = new System.Windows.Forms.Control();
             this.SuspendLayout();
-            // 
-            // fixNoToolTipsAndFocusBugSentinel
-            // 
-            this.fixNoToolTipsAndFocusBugSentinel.Location = new System.Drawing.Point(10000, 10000);
-            this.fixNoToolTipsAndFocusBugSentinel.Name = "fixNoToolTipsAndFocusBugSentinel";
-            this.fixNoToolTipsAndFocusBugSentinel.Size = new System.Drawing.Size(75, 23);
-            this.fixNoToolTipsAndFocusBugSentinel.TabIndex = 0;
-            this.fixNoToolTipsAndFocusBugSentinel.TabStop = false;
-            this.fixNoToolTipsAndFocusBugSentinel.Text = "control1";
             // 
             // PdnBaseForm
             // 
-            this.AutoScale = false;
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(291, 270);
-            this.Controls.Add(this.fixNoToolTipsAndFocusBugSentinel);
             this.Name = "PdnBaseForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "PdnBaseForm";
@@ -439,7 +412,6 @@ namespace PaintDotNet
             {
                 Moving(this, mea);
             }
-
         }
         
         public event CancelEventHandler QueryEndSession;
@@ -463,7 +435,11 @@ namespace PaintDotNet
 
         protected override void WndProc(ref Message m)
         {
-            if (!this.formEx.HandleParentWndProc(ref m))
+            if (this.formEx == null)
+            {
+                base.WndProc(ref m);
+            }
+            else if (!this.formEx.HandleParentWndProc(ref m))
             {
                 OurWndProc(ref m);
             }

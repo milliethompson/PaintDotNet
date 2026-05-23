@@ -111,13 +111,15 @@ namespace PaintDotNet.Effects
             // 
             // okButton
             // 
-            this.okButton.Location = new System.Drawing.Point(108, 219);
+            this.okButton.Location = new System.Drawing.Point(101, 219);
+            this.okButton.Size = new System.Drawing.Size(81, 23);
             this.okButton.Name = "okButton";
             this.okButton.TabIndex = 9;
             // 
             // cancelButton
             // 
-            this.cancelButton.Location = new System.Drawing.Point(189, 219);
+            this.cancelButton.Location = new System.Drawing.Point(188, 219);
+            this.cancelButton.Size = new System.Drawing.Size(81, 23);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.TabIndex = 10;
             // 
@@ -125,7 +127,7 @@ namespace PaintDotNet.Effects
             // 
             this.amount3Reset.Location = new System.Drawing.Point(188, 188);
             this.amount3Reset.Name = "amount3Reset";
-            this.amount3Reset.Size = new System.Drawing.Size(76, 20);
+            this.amount3Reset.Size = new System.Drawing.Size(81, 20);
             this.amount3Reset.TabIndex = 8;
             this.amount3Reset.Click += new System.EventHandler(this.amount3Reset_Click);
             // 
@@ -139,7 +141,7 @@ namespace PaintDotNet.Effects
                                                                           0,
                                                                           -2147483648});
             this.amount3UpDown.Name = "amount3UpDown";
-            this.amount3UpDown.Size = new System.Drawing.Size(76, 20);
+            this.amount3UpDown.Size = new System.Drawing.Size(81, 20);
             this.amount3UpDown.TabIndex = 7;
             this.amount3UpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.amount3UpDown.Enter += new System.EventHandler(this.amount3UpDown_Enter);
@@ -162,15 +164,16 @@ namespace PaintDotNet.Effects
             // 
             this.amount3Header.Location = new System.Drawing.Point(6, 148);
             this.amount3Header.Name = "amount3Header";
-            this.amount3Header.Size = new System.Drawing.Size(266, 14);
+            this.amount3Header.Size = new System.Drawing.Size(271, 14);
             this.amount3Header.TabIndex = 11;
             this.amount3Header.TabStop = false;
             this.amount3Header.Text = "Header 3";
             // 
             // ThreeAmountsConfigDialog
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.ClientSize = new System.Drawing.Size(270, 248);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(275, 248);
             this.Controls.Add(this.amount3Header);
             this.Controls.Add(this.amount3Slider);
             this.Controls.Add(this.amount3Reset);
@@ -201,7 +204,7 @@ namespace PaintDotNet.Effects
             if (amount3UpDown.Value != (decimal)amount3Slider.Value)
             {
                 amount3UpDown.Value = (decimal)amount3Slider.Value;
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 
@@ -210,7 +213,7 @@ namespace PaintDotNet.Effects
             if (amount3Slider.Value != (int)amount3UpDown.Value)
             {
                 amount3Slider.Value = (int)amount3UpDown.Value;
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 

@@ -231,7 +231,7 @@ namespace PaintDotNet
 
         public Ruler()
         {
-            SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
+            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
 
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();

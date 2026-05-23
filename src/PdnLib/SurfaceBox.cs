@@ -104,6 +104,8 @@ namespace PaintDotNet
             ++this.justPaintWhite;
         }
 
+        public const int MaxSideLength = 32767;
+
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
@@ -114,20 +116,20 @@ namespace PaintDotNet
             // in Tool.cs.
 
             Size mySize = this.Size;
-            if (this.Width == 32767 && surface != null)
+            if (this.Width == MaxSideLength && surface != null)
             { 
-                // Windows forms clamped this control's width, so we have to fix the height.
-                mySize.Height = (32768 * surface.Height) / surface.Width;
+                // Windows forms probably clamped this control's width, so we have to fix the height.
+                mySize.Height = (int)(((long)(MaxSideLength + 1) * (long)surface.Height) / (long)surface.Width);
             }
             else if (mySize.Width == 0)
             {
                 mySize.Width = 1;
-            } 
-            
-            if (this.Width == 32767 && surface != null)
+            }
+
+            if (this.Width == MaxSideLength && surface != null)
             { 
-                // Windows forms clamped this control's height, so we have to fix the width.
-                mySize.Width = (32768 * surface.Width) / surface.Height;
+                // Windows forms probably clamped this control's height, so we have to fix the width.
+                mySize.Width = (int)(((long)(MaxSideLength + 1) * (long)surface.Width) / (long)surface.Height);
             }
             else if (mySize.Height == 0) 
             {
@@ -159,7 +161,7 @@ namespace PaintDotNet
         {
             get
             {
-                return scaleFactor;
+                return this.scaleFactor;
             }
         }
 
@@ -387,7 +389,6 @@ namespace PaintDotNet
             }
 
             this.threadPool.Drain();
-            this.threadPool.DrainExceptions();
         }
 
         private Rectangle[] realUpdateRects = null;
@@ -495,7 +496,8 @@ namespace PaintDotNet
 
         private void renderers_Invalidated(object sender, InvalidateEventArgs e)
         {
-            Rectangle rect = SurfaceToClient(Rectangle.Inflate(e.InvalidRect, 1, 1));
+            Rectangle rect = SurfaceToClient(e.InvalidRect);
+            rect.Inflate(1, 1);
             Invalidate(rect);
         }
     }

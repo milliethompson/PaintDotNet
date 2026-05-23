@@ -17,6 +17,7 @@ namespace PaintDotNet.Setup
     public sealed class PropertyNames
     {
         public const string JpgPngBmpEditor = "JPGPNGBMPEDITOR";
+        public const string QueueNgen = "QUEUENGEN";
         public const string TgaEditor = "TGAEDITOR";
         public const string CheckForUpdates = "CHECKFORUPDATES";
         public const string CheckForBetas = "CHECKFORBETAS";
@@ -24,15 +25,48 @@ namespace PaintDotNet.Setup
         public const string DesktopShortcut = "DESKTOPSHORTCUT";
         public const string PdnUpdating = "PDNUPDATING";
         public const string SkipCleanup = "SKIPCLEANUP";
-        public const string Pdn25Beta4Plus = "PDN25BETA4PLUS";
+        public const string ProgramsGroup = "PROGRAMSGROUP";
+        public const string UsingWizard = "USINGWIZARD";
 
-        public static readonly string[] Defaults = new string[] {
-                                                                    JpgPngBmpEditor, "1",
-                                                                    TgaEditor, "1",
-                                                                    CheckForUpdates, "1",
-                                                                    CheckForBetas, "0",
-                                                                    DesktopShortcut, "1"
-                                                                };
+        public static string CheckForBetasDefault
+        {
+            get
+            {
+                if (PdnInfo.IsFinalBuild)
+                {
+                    return "0";
+                }
+                else
+                {
+                    return "1";
+                }
+            }
+        }
+
+        public static readonly string[] Defaults = new string[] 
+        {
+            JpgPngBmpEditor, "1",
+            TgaEditor, "1",
+            CheckForUpdates, "1",
+            CheckForBetas, CheckForBetasDefault,
+            DesktopShortcut, "1",
+            ProgramsGroup, "",
+            QueueNgen, "1",
+            UsingWizard, "1"
+        };
+
+        public static readonly string[] AdGpoDefaults = new string[] 
+        {
+            JpgPngBmpEditor, "1",
+            TgaEditor, "1",
+            CheckForUpdates, "0",
+            CheckForBetas, "0",
+            DesktopShortcut, "1",
+            ProgramsGroup, "",
+            QueueNgen, "0",
+            SkipCleanup, "0",
+            UsingWizard, "1"
+        };
         
         private PropertyNames()
         {

@@ -8,45 +8,58 @@
 
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Reflection;
+using System.IO;
 using Microsoft.CSharp;
 
 namespace PaintDotNet.Effects
 {
-	public class CodeLab : Effect, IConfigurableEffect
-	{
-		public CodeLab() : base("Code Lab", null)
-		{
-		}
+    public class CodeLab : Effect
+    {
+        public static Image StaticImage
+        {
+            get
+            {
+                Assembly ourAssembly = Assembly.GetExecutingAssembly();
+                Stream imageStream = ourAssembly.GetManifestResourceStream("PaintDotNet.Effects.Icons.CodeLab.png");
+                Image image = Image.FromStream(imageStream);
+                return image;
+            }
+        }
 
-		public EffectConfigDialog CreateConfigDialog()
-		{
-			CodeLabConfigDialog secd = new CodeLabConfigDialog();
-			return secd;
-		}
+        public CodeLab()
+            : base("Code Lab", StaticImage, true)
+        {
+        }
 
-		public void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
-		{
-			CodeLabConfigToken sect = (CodeLabConfigToken)properties;
+        public override EffectConfigDialog CreateConfigDialog()
+        {
+            CodeLabConfigDialog secd = new CodeLabConfigDialog();
+            return secd;
+        }
+
+        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
+        {
+            CodeLabConfigToken sect = (CodeLabConfigToken)parameters;
             Effect userEffect = sect.UserScriptObject;
-			if (userEffect != null) 
-			{
+
+            if (userEffect != null)
+            {
                 userEffect.EnvironmentParameters = this.EnvironmentParameters;
 
-				try 
-				{
-					foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt()) 
-					{
-						userEffect.Render(dstArgs, srcArgs, rect);
-					}
-				}
+                try
+                {
+                    userEffect.Render(null, dstArgs, srcArgs, rois, startIndex, length);
+                }
 
-				catch (Exception exc)
-				{
-					sect.LastException = exc;
-					dstArgs.Surface.CopySurface(srcArgs.Surface);
-					sect.UserScriptObject = null;
-				}
-			}
-		}
-	}
+                catch (Exception exc)
+                {
+                    sect.LastExceptions.Add(exc);
+                    dstArgs.Surface.CopySurface(srcArgs.Surface);
+                    sect.UserScriptObject = null;
+                }
+            }
+        }
+    }
 }

@@ -8,13 +8,16 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using Microsoft.Win32;
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 namespace PaintDotNet.Setup
 {
@@ -28,6 +31,13 @@ namespace PaintDotNet.Setup
         private const string stagingDirName = "Staging";
         private string appName;
         private System.Windows.Forms.Label infoText;
+        private ProgressBar progressBar;
+
+        private string installingText;
+        private string uninstallingText;
+        private string optimizingText;
+        private Label errorLabel;
+
         /// <summary> 
         /// Required designer variable.
         /// </summary>
@@ -39,8 +49,11 @@ namespace PaintDotNet.Setup
             InitializeComponent();
 
             string introFormat = PdnResources.GetString("SetupWizard.InstallingPage.InfoText.Text.Installing.Format");
-            this.appName = PdnResources.GetString("Application.ProductName.WithTag");
-            this.infoText.Text = string.Format(introFormat, appName);
+            this.appName = PdnInfo.GetProductName();
+            this.installingText = string.Format(introFormat, appName);
+
+            this.uninstallingText = PdnResources.GetString("SetupWizard.InstallingPage.InfoText.Text.Uninstalling");
+            this.optimizingText = PdnResources.GetString("SetupWizard.InstallingPage.InfoText.Text.Optimizing");
         }
 
         private string GetOriginalMsiName(string msiPath)
@@ -72,7 +85,12 @@ namespace PaintDotNet.Setup
             WizardHost.SetCancelEnabled(false);
 
             IntPtr hWnd = this.Handle;
-            NativeMethods.MsiSetInternalUI(NativeConstants.INSTALLUILEVEL_BASIC | NativeConstants.INSTALLUILEVEL_HIDECANCEL, ref hWnd);
+
+            uint result = NativeMethods.MsiSetInternalUI(
+                NativeConstants.INSTALLUILEVEL_BASIC | NativeConstants.INSTALLUILEVEL_HIDECANCEL, 
+                ref hWnd);
+
+            // value of result is discarded
 
             string ourDir = Path.GetDirectoryName(Application.ExecutablePath);
             string originalPackagePath = Path.Combine(ourDir, msiName);
@@ -86,18 +104,6 @@ namespace PaintDotNet.Setup
             string oldTargetDir = WizardHost.GetMsiProperty(PropertyNames.TargetDir, targetDir, true);
             string oldStagingDir = Path.Combine(oldTargetDir, stagingDirName);
 
-            // Some of the logic changed with 2.5 Beta 3. Before that we always recreated the desktop
-            // and Programs shortcut. Updating from Beta 2 to Beta 3+ needs to be intelligent so that
-            // we always create these two shortcuts. Otherwise Beta 2- will uninstall and delete these
-            // shortcuts, and then the Beta 3+ installer will not create them again.
-            // So, if we do not see the Pdn25Beta3Plus property set to "1", then we force PdnUpdating
-            // and SkipCleanup to "0".
-            // ... And then there was a bug in SetupNgen for 2.5 Beta 3 that made it delete the
-            // desktop shortcut anyway. But it's fixed now in Beta 4. Which is why things refer to
-            // Pdn25Beta4Plus and not Pdn25Beta3Plus.
-            string pdn25Beta4PlusStr = WizardHost.GetMsiProperty(PropertyNames.Pdn25Beta4Plus, "0");
-            bool pdn25Beta4Plus = (pdn25Beta4PlusStr == "1");
-
             // Uninstallers should skip certain parts of cleanup when we're going to turn around
             // and install a newer version right away
             WizardHost.SetMsiProperty(PropertyNames.SkipCleanup, "0");
@@ -105,31 +111,38 @@ namespace PaintDotNet.Setup
             // Uninstall anything already in the staging directory (should only be the previous version)
             if (Directory.Exists(oldStagingDir))
             {
+                this.infoText.Text = this.uninstallingText;
                 WizardHost.SetMsiProperty(PropertyNames.SkipCleanup, "1");
 
                 foreach (string filePath in Directory.GetFiles(oldStagingDir, "*.msi"))
                 {
-                    NativeMethods.MsiInstallProduct(filePath, "REMOVE=ALL " + 
+                    NativeMethods.MsiInstallProduct(
+                        filePath, 
+                        "REMOVE=ALL " + 
                         PropertyNames.SkipCleanup + "=1 " + 
                         PropertyNames.DesktopShortcut + "=" + WizardHost.GetMsiProperty(PropertyNames.DesktopShortcut, "1"));
                 }
             }
 
-            // If we're not upgrading from 2.5 Beta 3+ to another 2.5 Beta 3+ build, then
-            // we do not want to skip creation of the desktop and Programs icons.
-            if (!pdn25Beta4Plus)
-            {
-                WizardHost.SetMsiProperty(PropertyNames.PdnUpdating, "0");
-                WizardHost.SetMsiProperty(PropertyNames.SkipCleanup, "0");
-            }
-
             // Proceed with installation
+            this.infoText.Text = this.installingText;
+
             Directory.CreateDirectory(stagingDir);
             string msiPath = Path.Combine(stagingDir, msiName);
             string dstPackagePath = GetOriginalMsiName(msiPath);
 
+            // Copy the MSI to the Staging directory before installing. This way it will always
+            // be available when Windows Installer needs to refer to it.
             FileInfo info = new FileInfo(originalPackagePath);
             info.CopyTo(dstPackagePath, true);
+
+            // Keep an open file handle so that setupngen.exe cannot delete the file.
+            // This happens if the current installation of Paint.NET 
+
+            // We need to set the Target Platform property of the MSI before we install it.
+            // This way if the user types "C:\Program Files\Whatever" on an x64 system, it will
+            // not get redirected over to "C:\Program Files (x86)\Whatever"
+            Msi.SetMsiTargetPlatform(dstPackagePath, PaintDotNet.SystemLayer.Processor.NativeArchitecture);
 
             string commandLine1 = WizardHost.GetMsiCommandLine();
             string commandLine = commandLine1;
@@ -138,19 +151,16 @@ namespace PaintDotNet.Setup
             {
                 commandLine += " ";
             }
-            
-            commandLine += "FRONTEND=1";
+
+            commandLine += PropertyNames.QueueNgen + "=1";
 
             // Install newest package
-            uint result = NativeMethods.MsiInstallProduct(dstPackagePath, commandLine);
-
-            WizardHost.SetFinished(true);
+            result = NativeMethods.MsiInstallProduct(dstPackagePath, commandLine);
 
             if (result == NativeConstants.ERROR_SUCCESS ||
                 result == NativeConstants.ERROR_SUCCESS_REBOOT_INITIATED ||
                 result == NativeConstants.ERROR_SUCCESS_REBOOT_REQUIRED)
             {
-                WizardHost.SetMsiProperty(PropertyNames.Pdn25Beta4Plus, "1");
                 WizardHost.SaveMsiProperties();
 
                 // clean up staging dir
@@ -165,17 +175,53 @@ namespace PaintDotNet.Setup
                     }
                 }
 
+                // Run "ngen.exe executeQueuedItems"
+                if (Application.VisualStyleState == VisualStyleState.ClientAreaEnabled ||
+                    Application.VisualStyleState == VisualStyleState.ClientAndNonClientAreasEnabled)
+                {
+                    this.progressBar.Style = ProgressBarStyle.Marquee;
+                    this.progressBar.Visible = true;
+                }
+
+                string ngenExe = PdnInfo.GetNgenPath();
+                const string ngenArg = "executeQueuedItems";
+
+                try
+                {
+                    this.infoText.Text = this.optimizingText;
+                    ProcessStartInfo psi = new ProcessStartInfo(ngenExe, ngenArg);
+                    psi.UseShellExecute = false;
+                    psi.CreateNoWindow = true;
+                    Process process = Process.Start(psi);
+
+                    while (!process.HasExited)
+                    {
+                        System.Threading.Thread.Sleep(10);
+                        Application.DoEvents();
+                    }
+                }
+
+                catch
+                {
+                    // If this fails, do not fail the installation
+                }
+
+                WizardHost.SetFinished(true);
+                this.progressBar.Visible = false;
+
                 // set text to indicate success
                 WizardHost.HeaderText = PdnResources.GetString("SetupWizard.InstallingPage.HeaderText.Success");
                 string infoFormat;
                     
-                if (result != NativeConstants.ERROR_SUCCESS)
+                if (result == NativeConstants.ERROR_SUCCESS)
                 {
-                    infoFormat = PdnResources.GetString("SetupWizard.InstallingPage.InfoText.Text.Success.RebootRequired.Format");
+                    WizardHost.RebootRequired = false;
+                    infoFormat = PdnResources.GetString("SetupWizard.InstallingPage.InfoText.Text.Success.Format");
                 }
                 else
                 {
-                    infoFormat = PdnResources.GetString("SetupWizard.InstallingPage.InfoText.Text.Success.Format");
+                    WizardHost.RebootRequired = true;
+                    infoFormat = PdnResources.GetString("SetupWizard.InstallingPage.InfoText.Text.Success.RebootRequired.Format");
                 }
 
                 this.infoText.Text = string.Format(infoFormat, this.appName);
@@ -188,6 +234,7 @@ namespace PaintDotNet.Setup
                     string ticksStr = ticks.ToString();
                     const string regKeyName = @"SOFTWARE\Paint.NET";
                     const string regKeyValue = "LastUpdateCheckTimeTicks";
+
                     using (RegistryKey key = Registry.LocalMachine.CreateSubKey(regKeyName))
                     {
                         if (key != null)
@@ -204,10 +251,17 @@ namespace PaintDotNet.Setup
             }
             else
             {
+                WizardHost.SetFinished(true);
+                this.progressBar.Visible = false;
+
                 // set text to indicate failure
                 WizardHost.HeaderText = PdnResources.GetString("SetupWizard.InstallingPage.HeaderText.Failure");
                 string infoFormat = PdnResources.GetString("SetupWizard.InstallingPage.InfoText.Text.Failure.Format");
-                this.infoText.Text = string.Format(infoFormat, this.appName);
+                string errorString = NativeMethods.FormatMessageW(result);
+                this.errorLabel.Font = WizardHost.NormalTextFont;
+                this.errorLabel.Visible = true;
+                this.errorLabel.Text = errorString;
+                this.infoText.Text = string.Format(infoFormat, this.appName) + " (" + result.ToString() + ")";
                 WizardHost.SetBackEnabled(false);
             }
         }
@@ -220,6 +274,9 @@ namespace PaintDotNet.Setup
             {
                 WizardHost.HeaderText = PdnResources.GetString("SetupWizard.InstallingPage.HeaderText.Installing");
                 this.infoText.Font = WizardHost.NormalTextFont;
+                this.infoText.ForeColor = WizardHost.TextColor;
+                this.errorLabel.Font = WizardHost.NormalTextFont;
+                this.errorLabel.ForeColor = WizardHost.TextColor;
                 this.BeginInvoke(new VoidVoidDelegate(this.DoInstallation), null);
             }
 
@@ -229,7 +286,7 @@ namespace PaintDotNet.Setup
         public override void OnNextClicked()
         {
             WizardHost.Close();
-            base.OnNextClicked ();
+            base.OnNextClicked();
         }
 
         /// <summary> 
@@ -256,20 +313,44 @@ namespace PaintDotNet.Setup
         private void InitializeComponent()
         {
             this.infoText = new System.Windows.Forms.Label();
+            this.progressBar = new System.Windows.Forms.ProgressBar();
+            this.errorLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // infoText
             // 
-            this.infoText.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.infoText.Location = new System.Drawing.Point(12, 6);
             this.infoText.Name = "infoText";
-            this.infoText.Size = new System.Drawing.Size(468, 38);
+            this.infoText.Size = new System.Drawing.Size(468, 44);
             this.infoText.TabIndex = 0;
             this.infoText.Text = "label1";
             // 
+            // progressBar
+            // 
+            this.progressBar.Location = new System.Drawing.Point(42, 59);
+            this.progressBar.MarqueeAnimationSpeed = 50;
+            this.progressBar.Name = "progressBar";
+            this.progressBar.Size = new System.Drawing.Size(408, 19);
+            this.progressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+            this.progressBar.TabIndex = 1;
+            this.progressBar.Visible = false;
+            // 
+            // errorLabel
+            // 
+            this.errorLabel.Location = new System.Drawing.Point(12, 50);
+            this.errorLabel.Name = "errorLabel";
+            this.errorLabel.Size = new System.Drawing.Size(468, 200);
+            this.errorLabel.TabIndex = 2;
+            this.errorLabel.Text = "label1";
+            this.errorLabel.Visible = false;
+            // 
             // InstallingPage
             // 
+            this.Controls.Add(this.progressBar);
             this.Controls.Add(this.infoText);
+            this.Controls.Add(this.errorLabel);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             this.Name = "InstallingPage";
             this.ResumeLayout(false);
 

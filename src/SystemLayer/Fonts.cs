@@ -49,7 +49,24 @@ namespace PaintDotNet.SystemLayer
             uint fdwCharSet = logFont.lfCharSet;
             uint fdwOutputPrecision = logFont.lfOutPrecision;
             uint fdwClipPrecision = logFont.lfClipPrecision;
-            uint fdwQuality = (antiAliasing ? NativeConstants.PROOF_QUALITY : NativeConstants.NONANTIALIASED_QUALITY);
+            uint fdwQuality;
+            
+            if (antiAliasing)
+            {
+                if (Environment.OSVersion.Version >= OS.WindowsXP)
+                {
+                    fdwQuality = NativeConstants.CLEARTYPE_NATURAL_QUALITY;
+                }
+                else
+                {
+                    fdwQuality = NativeConstants.PROOF_QUALITY;
+                }
+            }
+            else
+            {
+                fdwQuality = NativeConstants.NONANTIALIASED_QUALITY;
+            }
+
             uint fdwPitchAndFamily = logFont.lfPitchAndFamily;
             string lpszFace = logFont.lfFaceName;
 
@@ -108,7 +125,7 @@ namespace PaintDotNet.SystemLayer
                 rect.left = 0;
                 rect.top = 0;
                 rect.right = rect.left;
-                rect.bottom = rect.bottom;
+                rect.bottom = rect.top;
 
                 int result = SafeNativeMethods.DrawTextW(hdc, text, text.Length, ref rect, 
                     NativeConstants.DT_CALCRECT | NativeConstants.DT_LEFT | NativeConstants.DT_NOCLIP | 
@@ -172,7 +189,7 @@ namespace PaintDotNet.SystemLayer
                 rect.left = pt.X;
                 rect.top = pt.Y;
                 rect.right = rect.left;
-                rect.bottom = rect.bottom;
+                rect.bottom = rect.top;
 
                 int result = SafeNativeMethods.DrawTextW(hdc, text, text.Length, ref rect, 
                     NativeConstants.DT_LEFT | NativeConstants.DT_NOCLIP | NativeConstants.DT_NOPREFIX | 

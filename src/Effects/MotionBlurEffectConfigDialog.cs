@@ -245,7 +245,8 @@ namespace PaintDotNet.Effects
             // MotionBlurEffectConfigDialog
             // 
             this.AcceptButton = this.okButton;
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(335, 126);
             this.Controls.Add(this.degreeLabel);
@@ -287,7 +288,7 @@ namespace PaintDotNet.Effects
             {
                 angleUpDown.Value = (decimal)angleChooserControl.ValueDouble;
                 Update();
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 
@@ -297,7 +298,7 @@ namespace PaintDotNet.Effects
             {
                 angleChooserControl.ValueDouble = (double)angleUpDown.Value;
                 Update();
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 
@@ -307,7 +308,7 @@ namespace PaintDotNet.Effects
             {
                 distanceTrackBar.Value = (int)distanceUpDown.Value;
                 Update();
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 
@@ -317,7 +318,7 @@ namespace PaintDotNet.Effects
             {
                 distanceUpDown.Value = (decimal)distanceTrackBar.Value;
                 Update();
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 
@@ -337,7 +338,7 @@ namespace PaintDotNet.Effects
 
         private void centeredCheckBox_CheckedChanged(object sender, System.EventArgs e)
         {
-            UpdateToken();
+            FinishTokenUpdate();
         }
 
         private void angleUpDown_Leave(object sender, System.EventArgs e)

@@ -22,6 +22,19 @@ namespace PaintDotNet.SystemLayer
         {
         }
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool GlobalMemoryStatusEx(ref NativeStructs.MEMORYSTATUSEX lpBuffer);
+
+        [DllImport("shell32.dll")]
+        internal static extern void SHAddToRecentDocs(uint uFlags, IntPtr pv);
+
+        [DllImport("kernel32.dll")]
+        internal static extern void GetSystemInfo(ref NativeStructs.SYSTEM_INFO lpSystemInfo);
+
+        [DllImport("kernel32.dll")]
+        internal static extern void GetNativeSystemInfo(ref NativeStructs.SYSTEM_INFO lpSystemInfo);
+
         [DllImport("Wintrust.dll", PreserveSig = true)]
         internal extern static unsafe int WinVerifyTrust(
             IntPtr hWnd,
@@ -48,7 +61,7 @@ namespace PaintDotNet.SystemLayer
             
             if (lastWin32Error != NativeConstants.ERROR_SUCCESS)
             {
-                throw new Win32Exception(lastWin32Error, message);
+                throw new Win32Exception(lastWin32Error, message + " (" + lastWin32Error.ToString() + ")");
             }
         }
     }

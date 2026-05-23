@@ -10,6 +10,7 @@
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.IO;
@@ -84,21 +85,59 @@ namespace PaintDotNet
     /// </remarks>
     public class Updates
     {
-        private const string versionManifestUrl = "http://www.eecs.wsu.edu/paint.net/updates/versions.txt";
+        // {0} is schema version
+        // {1} is platform (x86, x64, ia64)
+        private const string versionManifestUrlFormat = "http://www.eecs.wsu.edu/paint.net/updates/versions.{0}.{1}.{2}.txt";
+        private const string versionManifestTestUrl = "http://www.eecs.wsu.edu/paint.net/updates/versions.txt.test.txt";
+        private const int schemaVersion = 2;
+
+        private static string VersionManifestUrl
+        {
+            get
+            {
+                string versionManifestUrl;
+
+                if (PdnInfo.IsTestMode)
+                {
+                    versionManifestUrl = versionManifestTestUrl;
+                }
+                else
+                {
+                    string schemaVersionStr = schemaVersion.ToString(CultureInfo.InvariantCulture);
+                    Version osVersion = Environment.OSVersion.Version;
+                    ProcessorArchitecture platform = SystemLayer.Processor.Architecture;
+                    OSType osType = SystemLayer.OS.Type;
+
+                    // If this is XP x64, we want to fudge the NT version to be 5.1 instead of 5.2
+                    // This helps us discern between XP x64 and Server 2003 x64 stats.
+                    if (osVersion.Major == 5 && osVersion.Minor == 2 && platform == ProcessorArchitecture.X64 && osType == OSType.Workstation)
+                    {
+                        osVersion = new Version(5, 1, osVersion.Build, osVersion.Revision);
+                    }
+
+                    int osVersionInt = (osVersion.Major * 100) + osVersion.Minor;
+                    string osVersionStr = osVersionInt.ToString(CultureInfo.InvariantCulture);
+                    string platformStr = platform.ToString().ToLower();
+                    versionManifestUrl = string.Format(versionManifestUrlFormat, schemaVersionStr, osVersionStr, platformStr);
+                }
+
+                return versionManifestUrl;
+            }
+        }
 
         // Beta and alpha builds should check every day
-        // Final builds should check every 14 days
+        // Final builds should check every 5 days
         public static int UpdateCheckIntervalDays
         {
             get
             {
                 if (PdnInfo.IsFinalBuild)
                 {
-                    return 14;
+                    return 5;
                 }
                 else
                 {
-                    return 3;
+                    return 1;
                 }
             }
         }
@@ -330,7 +369,7 @@ namespace PaintDotNet
         private static string[] BreakIntoLines(string text)
         {
             StringReader sr = new StringReader(text);
-            ArrayList strings = new ArrayList();
+            List<string> strings = new List<string>();
             string line;
 
             while ((line = sr.ReadLine()) != null)
@@ -341,7 +380,7 @@ namespace PaintDotNet
                 }
             }
 
-            return (string[])strings.ToArray(typeof(string));
+            return strings.ToArray();
         }
 
         private static void LineToNameValue(string line, out string name, out string value)
@@ -423,12 +462,7 @@ namespace PaintDotNet
         {
             try
             {
-                string versionsUrl = versionManifestUrl;
-
-                if (PdnInfo.IsTestMode)
-                {
-                    versionsUrl += ".test.txt";
-                }
+                string versionsUrl = VersionManifestUrl;
 
                 Uri versionsUri = new Uri(versionsUrl);
                 byte[] manifestBuffer = DownloadSmallFile(versionsUri);

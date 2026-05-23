@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -31,9 +32,9 @@ namespace PaintDotNet
             return Utility.SimplifyTrace(path.PathPoints);
         }
 
-        protected override ArrayList TrimShapePath(ArrayList points)
+        protected override List<PointF> TrimShapePath(List<PointF> points)
         {
-            ArrayList array = new ArrayList();
+            List<PointF> array = new List<PointF>();
 
             if (points.Count > 0)
             {
@@ -96,7 +97,7 @@ namespace PaintDotNet
 
         public RoundedRectangleTool(DocumentWorkspace parent)
             : base(parent,
-                   PdnResources.GetImage("Icons.RoundedRectangleToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.RoundedRectangleToolIcon.png"),
                    PdnResources.GetString("RoundedRectangleTool.Name"),
                    PdnResources.GetString("RoundedRectangleTool.HelpText"))
         {

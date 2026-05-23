@@ -21,6 +21,7 @@
 		<li><a href="index.html">Overview</a><br>
 		</li>
 		<li><a href="Features.html">Features</a><br>
+		<a href="Tutorials.html">Tutorials</a><br>
 		</li>
 	</ul>
 	<h3>User Interface</h3>
@@ -38,6 +39,7 @@
 				<li class="comment"><a href="RotateZoom.html">Rotate / Zoom</a></li>
 				<li><a href="Adjustments.html">Adjustments</a>
 				<ul class="toc">
+				    <li><a href="Curves.html">Curves</a></li>
 					<li><a href="Levels.html">Levels</a></li>
 				</ul></li>
 			</ul></li>
@@ -85,106 +87,116 @@
 		<p>This FAQ is up-to-date as of the release of this version of 
 		Paint.NET. The most up-to-date version is
 		<a href="http://www.eecs.wsu.edu/paint.net/redirect/faq.html">online</a>.</p>
-		<h3>Where&#39;s the Crop tool?</h3>
-		<p><span class="postbody">Right under your nose. Simply select the area 
-		you want to crop by using one of the selection tools. You can then move, 
-		resize, or rotate the selection by using the Move Selection tool (2nd 
-		row, 2nd column). Finally, click on the
-		<a href="Image.html#CropToSelection">Image <font face="Times New Roman">
-		&#8594;</font> Crop to Selection</a> menu item. </span></p>
-		<h3>Why aren&#39;t Windows 98 or ME supported?</h3>
-		<p>These legacy operating systems are not supported for many reasons. First 
-		is that it would require us to do extensive testing on each older version 
-		of Windows. We don&#39;t have the time, the equipment, or the older copies of 
-		Windows to test with. Second is that it would radically complicate our installation 
-		process, which is complicated enough as it is. Third, it would also compromise 
-		the quality of Paint.NET on the versions of Windows that we do currently 
-		support by requiring us to reduce or limit functionality. We use features 
-		of Windows that aren&#39;t available unless you have at least Windows 2000 or 
-		even XP. One of these features is the ability to consistently use Unicode 
-		(as opposed to ANSI) character and strings, a prerequisite for rich text 
-		compatibility and international support. Other features are related to security, 
+		<h3>Is Paint.NET free?</h3>
+		<p>Yes, Paint.NET is indeed free in the sense that we do not charge 
+		money for it.</p>
+		<h3>Will Paint.NET ever replace Paint in Windows?</h3>
+		<p>There are no plans to include Paint.NET with Windows. But you can 
+		always download it for free from our website.</p>
+		<h3>Is Paint.NET optimized for dual-core processors? I just bought an 
+		Athlon X2 ...</h3>
+		<p>Yes. Paint.NET has been optimized for multicore and multiprocessor 
+		systems since its first release. Everything from effect rendering, layer 
+		composition, .PDN file saving/loading, blitting, and more, are optimized 
+		for this. Our benchmarks show very impressive scaling based on the 
+		number of cores in a system. We've tested on everything from a normal 
+		single processor system all the way up to a quad dual-core Opteron (yes, 
+		that's 8 cores, and yes it was frightfully fast).</p>
+		<h3>Does Paint.NET support 64-bit processors?</h3>
+		<p>Yes. New for Paint.NET v2.6 is support for 64-bit mode if both your 
+		processor and operating system support it. For example, if you have an 
+		Athlon 64 processor and are using Windows XP Professional x64 Edition, 
+		you will get the benefit of faster performance and the ability to work 
+		with larger images.</p>
+		<h3>Where's the Crop tool?</h3>
+		<p>Right under your nose, so to speak. Simply select the area you want 
+		to crop by using one of the selection tools. You can then move, resize, 
+		or even rotate the selection by using the Move Selection tool (2nd row, 
+		2nd column). Finally, click on Crop to Selection in the Image menu (or 
+		press Ctrl + Shift + X, or use the button in the toolbar). If you're 
+		interested in selecting, say, a 4 inch by 6 inch area of the image, make 
+		sure the &quot;Units&quot; are set to inches (in the toolbar, or in the View -&gt; 
+		Units menu), and then watch the statusbar (lower left in the main 
+		window) to see how large a selection is while you are drawing it.</p>
+		<h3>Why aren't Windows 98 or ME supported?</h3>
+		<p>These legacy operating systems are not supported for many reasons. 
+		First is that it would require us to do extensive testing on each older 
+		version of Windows. We don't have the time, the equipment, or the older 
+		copies of Windows to test with. Second is that it would radically 
+		complicate our installation process, which is complicated enough as it 
+		is. Third, it would also compromise the quality of Paint.NET on the 
+		versions of Windows that we do currently support by requiring us to 
+		reduce or limit functionality. We use features of Windows that aren't 
+		available unless you have at least Windows 2000 or even XP. One of these 
+		features is the ability to consistently use Unicode (as opposed to ANSI) 
+		character and strings, a prerequisite for rich text compatibility and 
+		international support. Other features are related to security, 
 		performance, and reliability.</p>
 		<h3>What about Windows Vista support?</h3>
-		<p>Paint.NET v2.5 should work on Windows Vista, but we can&#39;t fully guarantee 
-		its stability since we have not had the opportunity to test with it yet. 
-		Also, we are planning on including Vista-specific enhancements in future 
-		versions.</p>
-		<h3>Why can&#39;t I scan or print?</h3>
-		<p>There are three possible reasons. One is that you&#39;re using Windows 2000. 
-		We use WIA v2.0 (Windows Image Acquisition) for our printing and scanning 
-		functionality, and this is a system component that is not available unless 
-		you have Windows XP SP1 or later installed.</p>
-		<p>Second, if you can&#39;t scan, then maybe your scanner doesn&#39;t support WIA. 
-		You can check to see if you scanner supports WIA by verifying that it shows 
-		up in the &quot;Scanners and Cameras&quot; control panel. Some scanners or cameras 
-		require that special software or drivers be installed before they work with 
-		WIA.</p>
-		<p>Lastly, if you are running Windows Server 2003 you should know that the 
-		Windows Image Acquisition system service is not enabled by default. Simply 
-		set it to &quot;Automatic&quot; and it should work.</p>
-		<h3>I already have .NET 2.0 installed, why does Paint.NET say that .NET 
-		1.1 is required?</h3>
-		<p>The first thing to understand is that the various versions of the .NET 
-		Framework are designed to be installable together in a <i>side-by-side</i> 
-		fashion. If you have both .NET 1.0 and .NET 1.1 installed and run a program 
-		that was built to run on .NET 1.0, then it will use the .NET 1.0 DLL&#39;s and 
-		functionality even though .NET 1.1 is present. Newer versions of .NET do 
-		not necessarily supercede older versions. Quite often functionality is added 
-		or <i>changed</i> in newer versions and it&#39;s very important to us that Paint.NET 
-		functions in exactly the way we designed it to.</p>
-		<p>The confusing part for the user is that installing .NET 2.0 does <i>not</i> 
-		install .NET 1.1 or 1.0. With other redistributable packages, such as DirectX 
-		9.0, you are actually installing all the previous versions as well. .NET 
-		uses a different type of versioning that is alien for most users (and many 
-		developers) at this time.</p>
-		<p>Because of all this, we can&#39;t yet predict how Paint.NET will behave if 
-		it is run with .NET 2.0. It may run fine for the most part, or maybe it 
-		will behave oddly, crash, or worse. Because we prefer that Paint.NET run 
-		reliably for users, we require that .NET 1.1 is installed even if .NET 2.0 
-		is already there. If you already have .NET 2.0 installed, you simply need 
-		to install .NET 1.1 as well. It will not erase or corrupt your .NET 2.0 
-		installation.</p>
-		<p>Our v2.6 release, planned for mid-January 2006, will be built on .NET 
-		2.0 and will also have native support for 64-bit processors and operating 
-		systems.</p>
-		<h3>When will a native 64-bit or &quot;x64&quot; version be made available?</h3>
-		<p>Our v2.6 release is scheduled to add this and should be available in 
-		mid-January 2006.</p>
-		<h3>What benefits will the 64-bit version bring?</h3>
-		<p>If you have a 64-bit compatible processor and operating system installed, 
-		you will see increased performance and the ability to work with larger images 
-		with getting an &quot;Out of Memory&quot; error.</p>
-		<h3>Will it ever be ported to Mac OS, Linux, or any other operating system?</h3>
-		<p>We will not be porting Paint.NET to any other operating system. However, 
-		if anyone else would like to do so we&#39;d be glad to post a link on our download 
-		page.</p>
-		<h3>Why can&#39;t I load or save icons (.ico files)?</h3>
-		<p>Icons are meant to hold multiple images of various dimensions and color 
-		depths. Paint.NET is meant to work with single images composed of multiple 
-		layers that are exactly the same dimensions and only with the 32-bit color 
-		depth. So Paint.NET would make an awful icon editor. Check out
-		<a href="http://axialis.com/iconworkshop/">Axialis IconWorkshop</a> instead.</p>
-		<h3>Is Paint.NET free?</h3>
-		<p>Yes, Paint.NET is indeed free. It started off as a school project, and 
-		we want to leave it open as long as we work on it.</p>
-		<h3>Will Paint.NET ever replace Paint in Windows?</h3>
-		<p>There are no plans to include Paint.NET with Windows. But you can always 
-		download it, for free, from <a href="http://www.eecs.wsu.edu/paint.net">
-		our website</a>.</p>
+		<p>Paint.NET v2.5 and v2.6 work on the current beta release of Vista, 
+		although there are some issues that were are looking in to. We are 
+		planning on including Vista-specific enhancements in future releases as 
+		well.</p>
+		<h3>Why can't I scan or print?</h3>
+		<p>There are three possible reasons. One is that you're using Windows 
+		2000. We use WIA v2.0 (Windows Image Acquisition) for our printing and 
+		scanning functionality, and this is a system component that is not 
+		available unless you have Windows XP SP1 or later installed.</p>
+		<p>Second, if you can't scan, then maybe your scanner doesn't support 
+		WIA. You can check to see if you scanner supports WIA by verifying that 
+		it shows up in the &quot;Scanners and Cameras&quot; control panel. Some scanners 
+		or cameras require that special software or drivers be installed before 
+		they work with WIA.</p>
+		<p>Lastly, if you are running Windows Server 2003 you should know that 
+		the Windows Image Acquisition system service is not enabled by default. 
+		Simply set it to &quot;Automatic&quot; and it should work.</p>
+		<h3>(1) Will it ever be ported to Mac OS, Linux, or any other operating 
+		system?<br>
+		(2) What about Mono support? Wouldn't that be really easy?</h3>
+		<p>We will not be doing any work to directly support Mac OS, Linux, 
+		Mono, or any other platform. It's not that we dislike any of them, it's 
+		just that they're entirely differenet development platforms than Windows 
+		+ .NET. They all have their own set of implementation intricacies, bugs, 
+		and support issues. Remember, there's only 3 (yes three) of us on this 
+		project. We only have so much time, and by focusing strictly on Windows 
+		+ .NET we can make sure that the experience there is the best we can 
+		possibly make it. <i>(Side note: Yes, it'd technically be possible, but 
+		we're Windows developers with years of experience on this platform and 
+		none on Linux or Mac OS. You wouldn't want us writing code for Linux or 
+		Mac OS because it'd probably be wrong, flakey, slow, or worse.)</i></p>
+		<p>As for it being easy: maybe, maybe not. Everytime we add support for 
+		a new platform it adds an extra burden on us. When we add or change 
+		something we have to retest a lot of things on every platform that we're 
+		supporting. Not to mention we get lots of bug reports from beta users 
+		that we have to figure out solutions for.</p>
+		<p>Currently the list of platforms we support is Windows 2000 with .NET, 
+		Windows XP/Server 2003 with .NET, 64-bit Windows XP/Server 2003 with 
+		.NET, and 64-bit Windows for Itanium with .NET. Supporting Mono, even on 
+		Windows, would mean doubling that list to include Windows 2000 with 
+		Mono, Windows XP with Mono, etc.</p>
+		<p>As always, the source code is available so someone else is more than 
+		welcome to do this themselves.</p>
+		<h3>Why can't I load or save icons (.ico files)?</h3>
+		<p>Icons are meant to hold multiple images of various dimensions and 
+		color depths. Paint.NET is meant to work with single images composed of 
+		multiple layers that are exactly the same dimensions and only with the 
+		32-bit color depth. So Paint.NET would make an awful icon editor. We 
+		recommend checking out out Axialis IconWorkshop, http://www.axialis.com/iconworkshop/ 
+		, instead.</p>
 		<h3>Is Paint.NET based off of the Paint code?</h3>
 		<p>No. Paint.NET was written from the scratch and is completely separate 
 		from Paint in every way except for its name. Any similarity between the 
-		two is on purpose, and is neither accidental nor the fault of legacy code.</p>
-	</div>
+		two is on purpose, and is neither accidental nor the fault of legacy 
+		code.</div>
 	<!-- #EndEditable -->
 	<h4><br>
 	<br>
 	</h4>
 	<p align="center">
-	<font color="#808080" size="1">Copyright <font face="Times New Roman">© 2005 </font>Rick Brewster, Chris Crosetto, Tom 
+	<font color="#808080" size="1">Copyright <font face="Times New Roman">© 2006 </font>Rick Brewster, 
+	Chris Crosetto, Dennis Dietrich, Tom 
 	Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright
-	<font face="Times New Roman">© 2005 </font>Microsoft Corporation. All Rights Reserved.</font><font size="1"> <br>
+	<font face="Times New Roman">© 2006 </font>Microsoft Corporation. All Rights Reserved.</font><font size="1"> <br>
 	</font>
 </div>
 </b>

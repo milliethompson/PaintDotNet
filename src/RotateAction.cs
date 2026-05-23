@@ -62,32 +62,32 @@ namespace PaintDotNet
             switch (rotation)
             {
                 case RotateType.Clockwise180:
-                    icon = PdnResources.GetImage("Icons.MenuImageRotate180CWIcon.bmp");
+                    icon = PdnResources.GetImage("Icons.MenuImageRotate180CWIcon.png");
                     suffix = PdnResources.GetString("RotateAction.180CW");
                     break;
 
                 case RotateType.Clockwise270:
-                    icon = PdnResources.GetImage("Icons.MenuImageRotate270CWIcon.bmp");
+                    icon = PdnResources.GetImage("Icons.MenuImageRotate270CWIcon.png");
                     suffix = PdnResources.GetString("RotateAction.270CW");
                     break;
 
                 case RotateType.Clockwise90:
-                    icon = PdnResources.GetImage("Icons.MenuImageRotate90CWIcon.bmp");
+                    icon = PdnResources.GetImage("Icons.MenuImageRotate90CWIcon.png");
                     suffix = PdnResources.GetString("RotateAction.90CW");
                     break;
 
                 case RotateType.CounterClockwise180:
-                    icon = PdnResources.GetImage("Icons.MenuImageRotate180CCWIcon.bmp");
+                    icon = PdnResources.GetImage("Icons.MenuImageRotate180CCWIcon.png");
                     suffix = PdnResources.GetString("RotateAction.180CCW");
                     break;
 
                 case RotateType.CounterClockwise270:
-                    icon = PdnResources.GetImage("Icons.MenuImageRotate270CCWIcon.bmp");
+                    icon = PdnResources.GetImage("Icons.MenuImageRotate270CCWIcon.png");
                     suffix = PdnResources.GetString("RotateAction.270CCW");
                     break;
 
                 case RotateType.CounterClockwise90:
-                    icon = PdnResources.GetImage("Icons.MenuImageRotate90CCWIcon.bmp");
+                    icon = PdnResources.GetImage("Icons.MenuImageRotate90CCWIcon.png");
                     suffix = PdnResources.GetString("RotateAction.90CCW");
                     break;
 
@@ -135,7 +135,7 @@ namespace PaintDotNet
                 {
                     for (int y = 0; y < height; y++)
                     {
-                        surface[x,y] = layer.Surface[width - x - 1, height - y - 1];
+                        surface[x, y] = layer.Surface[width - x - 1, height - y - 1];
                     }
                 }
             }
@@ -146,7 +146,7 @@ namespace PaintDotNet
                 {
                     for (int y = 0; y < height; y++)
                     {
-                        surface[x,y] = layer.Surface[height - y - 1, x];
+                        surface[x, y] = layer.Surface[height - y - 1, x];
                     }
                 }
             }
@@ -157,12 +157,12 @@ namespace PaintDotNet
                 {
                     for (int y = 0; y < height; y++)
                     {
-                        surface[x,y] = layer.Surface[y, width - 1 - x];
+                        surface[x, y] = layer.Surface[y, width - 1 - x];
                     }
                 }
             }
 
-            BitmapLayer returnMe = new BitmapLayer(surface);
+            BitmapLayer returnMe = new BitmapLayer(surface, true);
             returnMe.LoadProperties(layer.SaveProperties());            
             return returnMe;
         }

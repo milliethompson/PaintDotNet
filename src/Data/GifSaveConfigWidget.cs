@@ -136,7 +136,7 @@ namespace PaintDotNet
             // 
             this.preMultiplyAlphaCheckBox.Location = new System.Drawing.Point(8, 171);
             this.preMultiplyAlphaCheckBox.Name = "preMultiplyAlphaCheckBox";
-            this.preMultiplyAlphaCheckBox.Size = new System.Drawing.Size(168, 16);
+            this.preMultiplyAlphaCheckBox.Width = 168;
             this.preMultiplyAlphaCheckBox.TabIndex = 6;
             this.preMultiplyAlphaCheckBox.CheckedChanged += new System.EventHandler(this.preMultiplyAlphaCheckBox_CheckedChanged);
             // 
@@ -188,6 +188,8 @@ namespace PaintDotNet
             this.Controls.Add(this.ditherUpDown);
             this.Controls.Add(this.ditherLabel);
             this.Controls.Add(this.ditherSlider);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Name = "GifSaveConfigWidget";
             this.Size = new System.Drawing.Size(180, 200);
             ((System.ComponentModel.ISupportInitialize)(this.thresholdSlider)).EndInit();

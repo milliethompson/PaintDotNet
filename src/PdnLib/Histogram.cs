@@ -19,8 +19,8 @@ namespace PaintDotNet
     /// </summary>
     public abstract class Histogram
     {
-        protected long [,] histogram = new long[3, 256];
-        public long[,] HistogramValues
+        protected long[][] histogram;
+        public long[][] HistogramValues
         {
             get
             {
@@ -28,14 +28,14 @@ namespace PaintDotNet
             }
             set
             {
-                if (value.GetLength(0) == histogram.GetLength(0) && value.GetLength(1) == histogram.GetLength(1))
+                if (value.Length == histogram.Length && value[0].Length == histogram[0].Length)
                 {
                     histogram = value;
                     OnHistogramUpdated();
                 }
                 else
                 {
-                    throw new ArgumentException("value muse be a 3x256 array", "value");
+                    throw new ArgumentException("value muse be an array of arrays of matching size", "value");
                 }
             }
         }
@@ -44,7 +44,7 @@ namespace PaintDotNet
         {
             get
             {
-                return histogram.GetLength(0);
+                return histogram.Length;
             }
         }
      
@@ -52,7 +52,17 @@ namespace PaintDotNet
         {
             get
             {
-                return histogram.GetLength(1);
+                return histogram[0].Length;
+            }
+        }
+
+        protected Histogram(int channels, int entries)
+        {
+            histogram = new long[channels][];
+
+            for (int channel = 0; channel < channels; ++channel)
+            {
+                histogram[channel] = new long[entries];
             }
         }
 
@@ -73,38 +83,36 @@ namespace PaintDotNet
 
         public long GetOccurrences(int channel, int val) 
         {
-            return histogram[channel, val];
+            return histogram[channel][val];
         }
 
         public long GetMax() 
         {
             long max = -1;
 
-            foreach (long i in histogram)
+            foreach (long[] channelHistogram in histogram)
             {
-                if (i > max)
+                foreach (long i in channelHistogram)
                 {
-                    max = i;
+                    if (i > max)
+                    {
+                        max = i;
+                    }
                 }
             }
             
             return max;
         }
 
-        public long GetMax(int channel) 
+        public long GetMax(int channel)
         {
-            if (channel < 0 || channel >= 3) 
-            {
-                throw new ArgumentOutOfRangeException("channel", channel, "Channel must be between 0 and 2");
-            }
-
             long max = -1;
 
-            for (int v = 0; v < 256; v++) 
+            foreach (long i in histogram[channel])
             {
-                if (max < histogram[channel, v]) 
+                if (i > max)
                 {
-                    max = histogram[channel, v];
+                    max = i;
                 }
             }
 
@@ -113,26 +121,27 @@ namespace PaintDotNet
 
         public float[] GetMean() 
         {
-            float[] ret = new float[histogram.GetLength(0)];
+            float[] ret = new float[Channels];
 
-            for (int i = 0; i < histogram.GetLength(0); i++) 
+            for (int channel = 0; channel < Channels; ++channel)
             {
+                long[] channelHistogram = histogram[channel];
                 long avg = 0;
                 long sum = 0;
 
-                for (int j = 0; j < histogram.GetLength(1); j++) 
+                for (int j = 0; j < channelHistogram.Length; j++)
                 {
-                    avg += j * histogram[i, j];
-                    sum += histogram[i, j];
+                    avg += j * channelHistogram[j];
+                    sum += channelHistogram[j];
                 }
 
                 if (sum != 0)
                 {
-                    ret[i] = (float)avg / (float)sum;
+                    ret[channel] = (float)avg / (float)sum;
                 }
                 else
                 {
-                    ret[i] = 0;
+                    ret[channel] = 0;
                 }
             }
 
@@ -141,25 +150,26 @@ namespace PaintDotNet
 
         public int[] GetPercentile(float fraction) 
         {
-            int[] ret = new int[histogram.GetLength(0)];
+            int[] ret = new int[Channels];
 
-            for (int i = 0; i < histogram.GetLength(0); i++) 
+            for (int channel = 0; channel < Channels; ++channel)
             {
+                long[] channelHistogram = histogram[channel];
                 long integral = 0;
                 long sum = 0;
 
-                for (int j = 0; j < histogram.GetLength(1); j++) 
+                for (int j = 0; j < channelHistogram.Length; j++) 
                 {
-                    sum += histogram[i, j];
+                    sum += channelHistogram[j];
                 }
 
-                for (int j = 0; j < histogram.GetLength(1); j++)
+                for (int j = 0; j < channelHistogram.Length; j++)
                 {
-                    integral += histogram[i, j];
+                    integral += channelHistogram[j];
 
                     if (integral > sum * fraction) 
                     {
-                        ret[i] = j;
+                        ret[channel] = j;
                         break;
                     }
                 }

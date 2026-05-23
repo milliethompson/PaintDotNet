@@ -48,7 +48,7 @@ namespace PaintDotNet
 
                 using (RenderArgs ra = new RenderArgs(surface))
                 {
-                    input.RenderFlat(ra);
+                    input.Render(ra, true);
                 }
                 
                 using (Bitmap bitmap = surface.CreateAliasedBitmap())

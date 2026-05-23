@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <root>
     <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
         <xsd:element name="root" msdata:IsDataSet="true">
@@ -39,15 +39,16 @@
     <resheader name="Writer">
         <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
     </resheader>
-    <data name="Application.ProductName">
-        <value>Paint.NET v2.5</value>
-    </data>
-    <data name="Application.ProductName.WithTag">
-        <value>Paint.NET v2.5</value>
-        <comment>If this is an alpha release, this will include the pre-release tag, e.g. &quot;Paint.NET v2.2 Alpha 2&quot;. Otherwise this string is the same as Application.ProductName.</comment>
-    </data>
     <data name="Application.ProductName.Bare">
         <value>Paint.NET</value>
+    </data>
+    <data name="Application.ProductName.Format">
+        <value>{0} v{1}{2}</value>
+        <comment>{0} is Application.ProductName.Bare. {1} is the version number (e.g., "2.6"). {2} is either an empty string, or a version tag constructed with Application.ProductNage.Format (e.g., "Beta 5")</comment>
+    </data>
+    <data name="Application.ProductName.Tag.Format">
+        <value> {0}</value>
+        <comment>{0} is the version tag, e.g. Beta 5</comment>
     </data>
     <data name="Application.Copyright.AllRightsReserved">
         <value>All Rights Reserved.</value>
@@ -418,6 +419,9 @@
     <data name="CommonAction.Paste">
         <value>Paste</value>
     </data>
+    <data name="CommonAction.CropToSelection">
+        <value>Crop to Selection</value>
+    </data>
     <data name="CommonAction.Deselect">
         <value>Deselect</value>
     </data>
@@ -455,6 +459,10 @@
     </data>
     <data name="DocumentWorkspace.AddNewLayerToDocument.NewLayerHistoryActionName">
         <value>New Layer</value>
+    </data>
+    <data name="DocumentWorkspace.NewLayerName.Format">
+        <value>Layer {0}</value>
+        <comment>{0} is the number of the new layer</comment>
     </data>
     <data name="DocumentWorkspace.DeleteLayerButtonClicked.MustHaveOneLayer">
         <value>There must be at least one layer in an image.</value>
@@ -582,7 +590,7 @@ Expand canvas to fit imported image?</value>
         <value>Drag nubs to curve line (right button for Bezier), or press Enter to finish line, or draw elsewhere for a new line.</value>
     </data>
     <data name="LineTool.CurvingHelpText">
-        <value>Press Enter to finish the curve, or draw elsewhere for a new line.</value>
+        <value>Press Enter to finish the curve, or draw elsewhere for a new line. Tap Ctrl to toggle nubs.</value>
     </data>
     <data name="LoadProgressDialog.Description">
         <value>Loading:</value>
@@ -665,7 +673,16 @@ Expand canvas to fit imported image?</value>
     </data>
     <data name="PdnInfo.VersionString.Format">
         <value>{0} {1} build {2}</value>
-        <comment>{0} is the friendly version name (configuration name), such as "Beta 2" or "Final". {1} is Debug or Release. {2} is the product version</comment>
+        <comment>{0} is the friendly version name (configuration name), such as "Beta 2" or "Final". {1} is Debug or Release. {2} is the product version.</comment>
+    </data>
+    <data name="ProcessorArchitecture.X86">
+        <value>x86</value>
+    </data>
+    <data name="ProcessorArchitecture.X64">
+        <value>x64</value>
+    </data>
+    <data name="ProcessorArchitecture.IA64">
+        <value>IA64</value>
     </data>
     <data name="PdnInfo.FriendlyVersionString.ConfigWithSpace.Format">
         <value> {0}</value>
@@ -1157,6 +1174,9 @@ Expand canvas to fit pasted image?</value>
     <data name="WIA.Error.RequiresXPSP1">
         <value>This feature requires Windows XP SP1 or later.</value>
     </data>
+    <data name="WIA.Error.UnableToLoad">
+        <value>The Windows Image Acquisition (WIA) library, &quot;wiaaut.dll&quot; is unavailable. Please read the Help file (Help menu -> Help Topics), in the Frequently Asked Questions topic, for troubleshooting information.</value>
+    </data>
     <data name="MainForm.DragDrop.Question.Confirmation.Title">
         <value>Would you like to import these files as new layers into the current image?</value>
     </data>
@@ -1167,7 +1187,7 @@ Expand canvas to fit pasted image?</value>
         <value>Open it as a new image</value>
     </data>
     <data name="MainForm.DragDrop.Question.OpenOrImport.Import">
-        <value>Import is as new layer(s) into the current image</value>
+        <value>Import it as new layer(s) into the current image</value>
     </data>
     <data name="MainForm.Menu.File.OpenRecent.None">
         <value>(none)</value>
@@ -1388,6 +1408,9 @@ Expand canvas to fit pasted image?</value>
     <data name="MainForm.Menu.Help.Text">
         <value>&amp;Help</value>
     </data>
+    <data name="MainForm.Menu.Help.Donate.Text">
+        <value>&amp;Donate ...</value>
+    </data>
     <data name="MainForm.Menu.Help.HelpTopics.Text">
         <value>&amp;Help Topics</value>
     </data>
@@ -1488,6 +1511,24 @@ Expand canvas to fit pasted image?</value>
     <data name="UserBlendOps.AdditiveBlendOp.Name">
         <value>Additive</value>
     </data>
+    <data name="UserBlendOps.ColorBurnBlendOp.Name">
+        <value>Color Burn</value>
+    </data>
+    <data name="UserBlendOps.ColorDodgeBlendOp.Name">
+        <value>Color Dodge</value>
+    </data>
+    <data name="UserBlendOps.ReflectBlendOp.Name">
+        <value>Reflect</value>
+    </data>
+    <data name="UserBlendOps.GlowBlendOp.Name">
+        <value>Glow</value>
+    </data>
+    <data name="UserBlendOps.OverlayBlendOp.Name">
+        <value>Overlay</value>
+    </data>
+    <data name="UserBlendOps.NegationBlendOp.Name">
+        <value>Negation</value>
+    </data>
     <data name="UserBlendOps.DifferenceBlendOp.Name">
         <value>Difference</value>
     </data>
@@ -1499,6 +1540,9 @@ Expand canvas to fit pasted image?</value>
     </data>
     <data name="UserBlendOps.DarkenBlendOp.Name">
         <value>Darken</value>
+    </data>
+    <data name="UserBlendOps.XorBlendOp.Name">
+        <value>Xor</value>
     </data>
     <data name="AngleChooserConfigDialog.AngleHeader.Text">
         <value>Angle</value>
@@ -1522,7 +1566,7 @@ Expand canvas to fit pasted image?</value>
         <value>Contrast</value>
     </data>
     <data name="DesaturateEffect.Name">
-        <value>Desaturate</value>
+        <value>Black and White</value>
     </data>
     <data name="EdgeDetectEffect.Name">
         <value>Edge Detect</value>
@@ -1845,9 +1889,13 @@ Command-line options:
 
 /skipConfig  -  Skips configuration of options and install directory. Uses MSI properties in the following order of precedence: 1. supplied on command-line, 2. read from HKLM\Software\Paint.NET, 3. default values. NOTE: Use of this option infers acceptance of the License Agreement.
 /auto  -  Automatic install. Infers /skipConfig. Does not show the final wizard page that details the result of installation.
-PROPERTY=VALUE  -  Sets an MSI property. Paint.NET specific properties are TARGETDIR=installDir, CHECKFORBETAS=0 or 1, CHECKFORUPDATES=0 or 1, JPGPNGBMPEDITOR=0 or 1, TGAEDITOR=0 or 1, DESKTOPSHORTCUT=0 or 1. Multiple properties may be specified.</value>
+/createMsi  -  Creates MSI packages that may be used for deployment (AD/GPO) purposes. All properties specified on the command-line are merged into the MSI packages, so no further transforms are necessary.
+PROPERTY=VALUE  -  Sets an MSI property. See help file after installing for more information. You do not need to specify /saveMsi to specify properties.
 
-Return code is 0 on success, or non-zero on failure.
+Return code is 0 on success, or non-zero on failure.</value>
+    </data>
+    <data name="SetupWizard.x86Msi.LaunchCondition.NotAllowedOn64bitOS">
+        <value>32-bit MSI may not be installed on 64-bit OS.</value>
     </data>
     <data name="SetupWizard.Error.Win2KRequired">
         <value>Paint.NET requires Windows 2000 SP3, Windows XP SP1, Windows Server 2003, or later.</value>
@@ -1971,8 +2019,14 @@ Click &quot;Next&quot; to start the installation.</value>
     <data name="SetupWizard.InstallingPage.HeaderText.Failure">
         <value>Error</value>
     </data>
+    <data name="SetupWizard.InstallingPage.InfoText.Text.Uninstalling">
+        <value>Removing previous version ...</value>
+    </data>
     <data name="SetupWizard.InstallingPage.InfoText.Text.Installing.Format">
-        <value>{0} is being installed.</value>
+        <value>{0} is being installed ...</value>
+    </data>
+    <data name="SetupWizard.InstallingPage.InfoText.Text.Optimizing">
+        <value>Optimizing performance for your system. This may take a minute.</value>
     </data>
     <data name="SetupWizard.InstallingPage.InfoText.Text.Success.Format">
         <value>{0} was installed successfully. Click &quot;Finish&quot; to close this installation wizard.</value>
@@ -1982,6 +2036,15 @@ Click &quot;Next&quot; to start the installation.</value>
     </data>   
     <data name="SetupWizard.InstallingPage.InfoText.Text.Failure.Format">
         <value>There was an error while installing {0}.</value>
+    </data>
+    <data name="SetupWizard.CreateMsiPage.HeaderText">
+        <value>Deployment Wizard</value>
+    </data>
+    <data name="SetupWizard.CreateMsiPage.IntroText.Text.Creating">
+        <value>Creating MSI packages ...</value>
+    </data>
+    <data name="SetupWizard.CreateMsiPage.IntroText.Text.Finished">
+        <value>The MSI packages have been placed into the following directory: '{0}'.</value>
     </data>
     <data name="Setup.DesktopShortcut.LinkName">
         <value>Paint.NET</value>
@@ -2121,4 +2184,47 @@ Click &quot;Next&quot; to start the installation.</value>
     <data name="WebExceptionStatus.UnknownError">
         <value>An exception of unknown type has occurred.</value>
     </data>
+    <data name="CurvesEffect.Name">
+		<value>Curves</value>
+	</data>
+	<data name="CurvesEffectConfigDialog.Text">
+		<value>Curves</value>
+	</data>
+	<data name="CurvesEffectConfigDialog.InputHeader.Text">
+		<value>Input Histogram</value>
+	</data>
+	<data name="CurvesEffectConfigDialog.TransferHeader.Text">
+		<value>Transfer Map</value>
+	</data>
+	<data name="CurvesEffectConfigDialog.OutputHeader.Text">
+		<value>Output Histogram</value>
+	</data>
+  <data name="CurveControlRgb.Red">
+    <value>Red</value>
+  </data>
+  <data name="CurveControlRgb.Green">
+    <value>Green</value>
+  </data>
+  <data name="CurveControlRgb.Blue">
+    <value>Blue</value>
+  </data>
+  <data name="CurveControlLuminosity.Luminosity">
+    <value>Luminosity</value>
+  </data>
+  <data name="CurvesEffectConfigDialog.HelpText.Text">
+    <value>Tip: Right-click to remove control points.</value>
+  </data>
+  <data name="CurvesEffectConfigDialog.Coordinates.Format">
+    <value>({0}, {1})</value>
+  </data>
+  <data name="CurvesEffectConfigDialog.ResetButton.Text">
+        <value>&amp;Reset</value>
+    </data>
+    <data name="ColorTransferMode.Luminosity">
+        <value>Luminosity</value>
+    </data>
+    <data name="ColorTransferMode.Rgb">
+        <value>RGB</value>
+    </data>
+  
 </root>

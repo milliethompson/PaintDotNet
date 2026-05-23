@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 
 namespace PaintDotNet
@@ -61,15 +62,40 @@ namespace PaintDotNet
             }
         }
 
-        public override string ToString()
+        public static FileType[] FilterFileTypeList(FileType[] input, bool excludeCantSave, bool excludeCantLoad)
         {
+            List<FileType> filtered = new List<FileType>();
+
+            foreach (FileType fileType in input)
+            {
+                if (excludeCantSave && !fileType.SupportsSaving)
+                {
+                    continue;
+                }
+
+                if (excludeCantLoad && !fileType.SupportsLoading)
+                {
+                    continue;
+                }
+
+                filtered.Add(fileType);
+            }
+
+            return filtered.ToArray();
+        }
+
+        public string ToString(bool excludeCantSave, bool excludeCantLoad)
+        {
+            FileType[] filtered = FilterFileTypeList(this.fileTypes, excludeCantSave, excludeCantLoad);
+
             StringBuilder sb = new StringBuilder();
 
-            for (int i = 0; i < fileTypes.Length; ++i)
+            for (int i = 0; i < filtered.Length; ++i)
             {
-                sb.Append(fileTypes[i].ToString());
+                FileType fileType = filtered[i];
+                sb.Append(fileType.ToString());
 
-                if (i != fileTypes.Length - 1)
+                if (i != filtered.Length - 1)
                 {
                     sb.Append("|");
                 }
@@ -97,26 +123,17 @@ namespace PaintDotNet
                 StringBuilder description = new StringBuilder(allName);
                 StringBuilder formats = new StringBuilder();
                 bool didFirst = false;
+                FileType[] filtered = FilterFileTypeList(this.fileTypes, excludeCantSave, excludeCantLoad);
 
-                for (int i = 0; i < fileTypes.Length; ++i)
+                for (int i = 0; i < filtered.Length; ++i)
                 {
-                    if (excludeCantSave && !fileTypes[i].SupportsSaving)
-                    {
-                        continue;
-                    }
-
-                    if (excludeCantLoad && !fileTypes[i].SupportsLoading)
-                    {
-                        continue;
-                    }
-
                     if (!didFirst)
                     {
                         didFirst = true;
                         description.Append(" (");
                     }
 
-                    string[] extensions = (fileTypes[i]).Extensions;
+                    string[] extensions = (filtered[i]).Extensions;
 
                     for (int j = 0; j < extensions.Length; ++j)
                     {
@@ -126,14 +143,14 @@ namespace PaintDotNet
                         formats.Append(extensions[j]);
 
                         // if this is NOT the last extension in the whole list ...
-                        if (!(j == extensions.Length - 1 && i == fileTypes.Length - 1))
+                        if (!(j == extensions.Length - 1 && i == filtered.Length - 1))
                         {
                             description.Append(", ");
                             formats.Append(";");
                         }
                     }
 
-                }    
+                }
 
                 if (didFirst)
                 {
@@ -142,16 +159,16 @@ namespace PaintDotNet
 
                 string ret = description.ToString() + "|" + formats.ToString();
 
-                if (fileTypes.Length != 0)
+                if (filtered.Length != 0)
                 {
-                    ret += "|" + ToString();
+                    ret += "|" + ToString(excludeCantSave, excludeCantLoad);
                 }
 
                 return ret;
             }
             else
             {
-                return ToString();
+                return ToString(excludeCantSave, excludeCantLoad);
             }
         }
 

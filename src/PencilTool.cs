@@ -7,8 +7,9 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Data;
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -18,24 +19,21 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for PencilTool.
-    /// </summary>
     public class PencilTool
         : Tool 
     {
         private bool mouseDown = false;
         private ColorBgra color;
         private MouseButtons mouseButton;
-        private ArrayList savedSurfaces;
         private BitmapLayer bitmapLayer;
         private RenderArgs renderArgs;
-        private ArrayList tracePoints;
+        private List<Point> tracePoints;
+        private List<Rectangle> savedRects;
         private PdnRegion clipRegion;
         private Point lastPoint;
         private Point difference;
         private Cursor pencilToolCursor;
-        private BinaryPixelOp blendOp = new BinaryPixelOps.AlphaBlend();
+        private BinaryPixelOp blendOp = new UserBlendOps.NormalBlendOp();
         private BinaryPixelOp copyOp = new BinaryPixelOps.AssignFromRhs();
 
         protected override void OnActivate()
@@ -45,13 +43,13 @@ namespace PaintDotNet
             this.pencilToolCursor = new Cursor(PdnResources.GetResourceStream("Cursors.PencilToolCursor.cur"));
             this.Cursor = this.pencilToolCursor;
 
-            savedSurfaces = new ArrayList();
+            this.savedRects = new List<Rectangle>();
 
             if (Workspace.ActiveLayer != null)
             {
                 bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
                 renderArgs = new RenderArgs(bitmapLayer.Surface);
-                tracePoints = new ArrayList();
+                tracePoints = new List<Point>();
             }
             else
             {
@@ -77,27 +75,17 @@ namespace PaintDotNet
                 OnMouseUp(new MouseEventArgs(mouseButton, 0, lastPoint.X, lastPoint.Y, 0));
             }
 
-            if (savedSurfaces != null)
-            {
-                foreach (PlacedSurface ps in savedSurfaces)
-                {
-                    ps.Dispose();
-                }
+            this.savedRects = null;
+            this.tracePoints = null;
+            this.bitmapLayer = null;
 
-                savedSurfaces.Clear();
-                savedSurfaces = null;
+            if (this.renderArgs != null)
+            {
+                this.renderArgs.Dispose();
+                this.renderArgs = null;
             }
 
-            tracePoints = null;
-            bitmapLayer = null;
-
-            if (renderArgs != null)
-            {
-                renderArgs.Dispose();
-                renderArgs = null;
-            }
-
-            mouseDown = false;
+            this.mouseDown = false;
 
             Utility.Dispose(clipRegion);
         }
@@ -115,7 +103,7 @@ namespace PaintDotNet
             }
         }
 
-        private void DrawLines(RenderArgs ra, ArrayList points, int startIndex, int length, ColorBgra color)
+        private void DrawLines(RenderArgs ra, List<Point> points, int startIndex, int length, ColorBgra color)
         {
             // Draw a point in the line
             if (points.Count == 0)
@@ -133,9 +121,9 @@ namespace PaintDotNet
             }
             else
             {
-                for (int i = 1; i < points.Count; ++i)
+                for (int i = startIndex + 1; i < startIndex + length; ++i)
                 {
-                    Point[] linePoints = Utility.GetLinePoints((Point)points[i - 1], (Point)points[i]);
+                    Point[] linePoints = Utility.GetLinePoints(points[i - 1], points[i]);
                     int startPoint = 0;
 
                     if (i != 1)
@@ -166,7 +154,7 @@ namespace PaintDotNet
             {
                 mouseDown = true;
                 mouseButton = e.Button;
-                tracePoints = new ArrayList();
+                tracePoints = new List<Point>();
                 bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
                 renderArgs = new RenderArgs(bitmapLayer.Surface);
 
@@ -235,15 +223,15 @@ namespace PaintDotNet
                         saveRect = Utility.PointsToRectangle((Point)tracePoints[tracePoints.Count - 1], (Point)tracePoints[tracePoints.Count - 2]);
                     }
 
-                    saveRect.Inflate(2,2);
+                    saveRect.Inflate(2, 2);
                     saveRect.Intersect(Workspace.ActiveLayer.Bounds);
 
                     // drawing outside of the canvas is a no-op, so don't do anything in that case!
                     // also make sure it's within the clipping bounds
                     if (saveRect.Width > 0 && saveRect.Height > 0 && renderArgs.Graphics.IsVisible(saveRect))
                     {
-                        PlacedSurface savedPI = new PlacedSurface(renderArgs.Surface, saveRect);
-                        savedSurfaces.Add(savedPI);
+                        SaveRegion(null, saveRect);
+                        this.savedRects.Add(saveRect);
 
                         int startIndex;
                         int length;
@@ -282,35 +270,16 @@ namespace PaintDotNet
                 OnMouseMove(e);
                 mouseDown = false;
 
-                if (savedSurfaces.Count > 0)
+                if (savedRects.Count > 0)
                 {
-                    PdnRegion saveMeRegion = new PdnRegion();
-                    saveMeRegion.MakeEmpty();
-
-                    foreach (PlacedSurface pi1 in savedSurfaces)
-                    {
-                        saveMeRegion.Union(pi1.Bounds);
-                    }
-
-                    PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(saveMeRegion);
-
-                    // draw in *reverse* order: that's why we don't use foreach
-                    for (int i = savedSurfaces.Count - 1; i >= 0; --i)
-                    {
-                        PlacedSurface pi = (PlacedSurface)savedSurfaces[i];
-                        pi.Draw(renderArgs.Surface);
-                        pi.Dispose();
-                    }
-
-                    savedSurfaces.Clear();
-
-                    HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, simplifiedRegion);
-                    DrawLines(renderArgs, tracePoints, 0, tracePoints.Count, color);
-                    bitmapLayer.Invalidate(simplifiedRegion);
+                    Rectangle[] savedScans = this.savedRects.ToArray();
+                    PdnRegion saveMeRegion = Utility.RectanglesToRegion(savedScans);
+                    HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex,
+                        saveMeRegion, ScratchSurface);
                     Workspace.History.PushNewAction(ha);
-
-                    simplifiedRegion.Dispose();
                     saveMeRegion.Dispose();
+                    this.savedRects.Clear();
+                    ClearSavedMemory();
                 }
 
                 tracePoints = null;
@@ -319,7 +288,7 @@ namespace PaintDotNet
 
         public PencilTool(DocumentWorkspace parent)
             : base(parent,
-                   PdnResources.GetImage("Icons.PencilToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.PencilToolIcon.png"),
                    PdnResources.GetString("PencilTool.Name"),
                    PdnResources.GetString("PencilTool.HelpText"),
                    'p')

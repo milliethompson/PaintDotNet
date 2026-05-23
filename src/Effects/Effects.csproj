@@ -1,450 +1,297 @@
-<VisualStudioProject>
-    <CSHARP
-        ProjectType = "Local"
-        ProductVersion = "7.10.3077"
-        SchemaVersion = "2.0"
-        ProjectGuid = "{2E4E8805-00F7-4B18-A967-C23994BBCE75}"
-    >
-        <Build>
-            <Settings
-                ApplicationIcon = ""
-                AssemblyKeyContainerName = ""
-                AssemblyName = "PaintDotNet.Effects"
-                AssemblyOriginatorKeyFile = ""
-                DefaultClientScript = "JScript"
-                DefaultHTMLPageLayout = "Grid"
-                DefaultTargetSchema = "IE50"
-                DelaySign = "false"
-                OutputType = "Library"
-                PreBuildEvent = ""
-                PostBuildEvent = ""
-                RootNamespace = "PaintDotNet.Effects"
-                RunPostBuildEvent = "OnBuildSuccess"
-                StartupObject = ""
-            >
-                <Config
-                    Name = "Debug"
-                    AllowUnsafeBlocks = "true"
-                    BaseAddress = "310378496"
-                    CheckForOverflowUnderflow = "true"
-                    ConfigurationOverrideFile = ""
-                    DefineConstants = "DEBUG;TRACE"
-                    DocumentationFile = ""
-                    DebugSymbols = "true"
-                    FileAlignment = "4096"
-                    IncrementalBuild = "true"
-                    NoStdLib = "false"
-                    NoWarn = ""
-                    Optimize = "false"
-                    OutputPath = "bin\Debug\"
-                    RegisterForComInterop = "false"
-                    RemoveIntegerChecks = "false"
-                    TreatWarningsAsErrors = "true"
-                    WarningLevel = "4"
-                />
-                <Config
-                    Name = "Release"
-                    AllowUnsafeBlocks = "true"
-                    BaseAddress = "310378496"
-                    CheckForOverflowUnderflow = "false"
-                    ConfigurationOverrideFile = ""
-                    DefineConstants = "TRACE"
-                    DocumentationFile = ""
-                    DebugSymbols = "false"
-                    FileAlignment = "4096"
-                    IncrementalBuild = "false"
-                    NoStdLib = "false"
-                    NoWarn = ""
-                    Optimize = "true"
-                    OutputPath = "bin\Release\"
-                    RegisterForComInterop = "false"
-                    RemoveIntegerChecks = "false"
-                    TreatWarningsAsErrors = "true"
-                    WarningLevel = "4"
-                />
-            </Settings>
-            <References>
-                <Reference
-                    Name = "System"
-                    AssemblyName = "System"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.dll"
-                />
-                <Reference
-                    Name = "System.Drawing"
-                    AssemblyName = "System.Drawing"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Drawing.dll"
-                />
-                <Reference
-                    Name = "PdnLib"
-                    Project = "{1EADE568-A866-4DD4-9898-0A151E3F0E26}"
-                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
-                />
-                <Reference
-                    Name = "Resources"
-                    Project = "{0B173113-1F9B-4939-A62F-A176336F13AC}"
-                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
-                />
-                <Reference
-                    Name = "System.Windows.Forms"
-                    AssemblyName = "System.Windows.Forms"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Windows.Forms.dll"
-                />
-                <Reference
-                    Name = "System.Data"
-                    AssemblyName = "System.Data"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Data.dll"
-                />
-                <Reference
-                    Name = "System.XML"
-                    AssemblyName = "System.Xml"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.XML.dll"
-                />
-            </References>
-        </Build>
-        <Files>
-            <Include>
-                <File
-                    RelPath = "AddNoiseEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "AmountEffectConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "AmountEffectConfigDialog.resx"
-                    DependentUpon = "AmountEffectConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "AmountEffectConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "AngleChooserConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "anglechooserconfigdialog.resx"
-                    DependentUpon = "AngleChooserConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "AngleChooserConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "AssemblyInfo.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "AutoLevel.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BackgroundEffectRenderer.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BlurEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BrightnessAndContrastAdjustment.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BrightnessAndContrastAdjustmentConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BrightnessAndContrastAdjustmentConfigDialog.resx"
-                    DependentUpon = "BrightnessAndContrastAdjustmentConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "BrightnessAndContrastAdjustmentConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorDifferenceEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ConvolutionFilterEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DesaturateEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EdgeDetectConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EdgeDetectConfigDialog.resx"
-                    DependentUpon = "EdgeDetectConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "EdgeDetectConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EdgeDetectEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Effect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EffectCategory.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EffectCategoryAttribute.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EffectConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EffectConfigDialog.resx"
-                    DependentUpon = "EffectConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "EffectConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EffectDirectives.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EffectEnvironmentParameters.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EffectSubMenuAttribute.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EffectTypeHint.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EffectTypeHintAttribute.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EmbossEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EmbossEffectConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EmbossEffectConfigDialog.resx"
-                    DependentUpon = "EmbossEffectConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "EmbossEffectConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "FrostedGlassEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HueAndSaturationAdjustment.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IConfigurableEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "InvertColorsEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "LevelsEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "LevelsEffectConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "LevelsEffectConfigDialog.resx"
-                    DependentUpon = "LevelsEffectConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "LevelsEffectConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MotionBlurEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MotionBlurEffectConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MotionBlurEffectConfigDialog.resx"
-                    DependentUpon = "MotionBlurEffectConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "MotionBlurEffectConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "OilPaintingEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PixelateEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RadialBlurEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RedEyeRemoveEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RedEyeRemoveEffectDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RedEyeRemoveEffectDialog.resx"
-                    DependentUpon = "RedEyeRemoveEffectDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "ReliefEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ReliefEffectConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ReliefEffectConfigDialog.resx"
-                    DependentUpon = "ReliefEffectConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "ReliefEffectConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SepiaEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SharpenEffect.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SingleThreadedEffectAttribute.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ThreeAmountsConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ThreeAmountsConfigDialog.resx"
-                    DependentUpon = "ThreeAmountsConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "ThreeAmountsConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "TwoAmountsConfigDialog.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "TwoAmountsConfigDialog.resx"
-                    DependentUpon = "TwoAmountsConfigDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "TwoAmountsConfigToken.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-            </Include>
-        </Files>
-    </CSHARP>
-</VisualStudioProject>
-
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{2E4E8805-00F7-4B18-A967-C23994BBCE75}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>PaintDotNet.Effects</AssemblyName>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>Library</OutputType>
+    <RootNamespace>PaintDotNet.Effects</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseAddress>310378496</BaseAddress>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseAddress>310378496</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>true</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>pdbonly</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+    <Reference Include="System.Drawing">
+      <Name>System.Drawing</Name>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <Name>System.Windows.Forms</Name>
+    </Reference>
+    <ProjectReference Include="..\Data\Data.csproj">
+      <Project>{66681BB0-955D-451D-A466-94C045B1CF4A}</Project>
+      <Name>Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PdnLib\PdnLib.csproj">
+      <Name>PdnLib</Name>
+      <Project>{1EADE568-A866-4DD4-9898-0A151E3F0E26}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+    <ProjectReference Include="..\Resources\Resources.csproj">
+      <Name>Resources</Name>
+      <Project>{0B173113-1F9B-4939-A62F-A176336F13AC}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+    <ProjectReference Include="..\SystemLayer\SystemLayer.csproj">
+      <Project>{80572820-93A5-4278-A513-D902BEA2639C}</Project>
+      <Name>SystemLayer</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AddNoiseEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AmountEffectConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AmountEffectConfigToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AngleChooserConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AngleChooserConfigToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AutoLevel.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BackgroundEffectRenderer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BlurEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BrightnessAndContrastAdjustment.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BrightnessAndContrastAdjustmentConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BrightnessAndContrastAdjustmentConfigToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ColorDifferenceEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ConvolutionFilterEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CurvesEffect.cs" />
+    <Compile Include="CurvesEffectConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CurvesEffectConfigToken.cs" />
+    <Compile Include="DesaturateEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EdgeDetectConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EdgeDetectConfigToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EdgeDetectEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Effect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EffectCategory.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EffectCategoryAttribute.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EffectConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EffectConfigToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EffectDirectives.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EffectEnvironmentParameters.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EffectTypeHint.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EffectTypeHintAttribute.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EmbossEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EmbossEffectConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EmbossEffectConfigToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FrostedGlassEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HueAndSaturationAdjustment.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IConfigurableEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="InvertColorsEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LevelsEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LevelsEffectConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LevelsEffectConfigToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MotionBlurEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MotionBlurEffectConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MotionBlurEffectConfigToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="OilPaintingEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PanControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="PixelateEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RadialBlurEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RedEyeRemoveEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RedEyeRemoveEffectDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ReliefEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReliefEffectConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ReliefEffectConfigToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RollControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="RotateZoomEffect.cs" />
+    <Compile Include="RotateZoomEffectConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RotateZoomEffectConfigToken.cs" />
+    <Compile Include="SepiaEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SharpenEffect.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ThreeAmountsConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ThreeAmountsConfigToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TwoAmountsConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TwoAmountsConfigToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>@rem Sign
+call "$(SolutionDir)signfile.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)"
+call "$(SolutionDir)signfile.bat" "$(TargetPath)"
+</PostBuildEvent>
+  </PropertyGroup>
+</Project>

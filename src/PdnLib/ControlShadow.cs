@@ -45,8 +45,24 @@ namespace PaintDotNet
             }
         }
 
+        public bool EnableDoubleBuffer
+        {
+            get
+            {
+                return this.DoubleBuffered;
+            }
+
+            set
+            {
+                this.DoubleBuffered = value;
+            }
+        }
+
         public ControlShadow()
         {
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
+            this.SetStyle(ControlStyles.UserPaint, true);
+
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
@@ -83,15 +99,14 @@ namespace PaintDotNet
 
         protected override void OnPaint(PaintEventArgs pe)
         {
-            // Calling the base class OnPaint
-            base.OnPaint(pe);
             DrawShadow(pe.Graphics, pe.ClipRectangle, false);
+            base.OnPaint(pe);
         }
 
         protected override void OnPaintBackground(PaintEventArgs pevent)
         {
-            //base.OnPaintBackground (pevent);
             DrawShadow(pevent.Graphics, pevent.ClipRectangle, true);
+            //base.OnPaintBackground(pevent);
         }
 
         private void DrawShadow(Graphics g, Rectangle clipRect, bool drawBackground)
@@ -113,12 +128,14 @@ namespace PaintDotNet
                 shadowRect.X += 1;
                 shadowRect.Y += 1;
 
+                // Draw shadow
                 Rectangle[] rects = new Rectangle[] { new Rectangle(shadowRect.Right, shadowRect.Top + 3, 4, shadowRect.Height + 1),
                                                       new Rectangle(shadowRect.Left + 2, shadowRect.Bottom, shadowRect.Width + 1, 4) };
 
                 Color shadowColor = Color.FromArgb(this.BackColor.R / 2, this.BackColor.G / 2, this.BackColor.B / 2);
                 PdnGraphics.FillRectangles(g, shadowColor, rects);
 
+                // Draw outline
                 Point[] polygon = new Point[] { 
                                                   new Point(outlineRect.Left, outlineRect.Top),
                                                   new Point(outlineRect.Right, outlineRect.Top),

@@ -168,12 +168,12 @@ namespace PaintDotNet
 
         public int ScaleScalar(int x)
         {
-            return (x * numerator) / denominator;
+            return (int)(((long)x * numerator) / denominator);
         }
 
         public int UnscaleScalar(int x)
         {
-            return (x * denominator) / numerator;
+            return (int)(((long)x * denominator) / numerator);
         }
 
         public float ScaleScalar(float x)
@@ -296,38 +296,75 @@ namespace PaintDotNet
             return new Rectangle(UnscalePoint(rect.Location), UnscaleSize(rect.Size));
         }
 
+        private static readonly double[] scales = 
+            { 
+                0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.12, 0.16, 0.25, 0.33, 0.50, 0.66, 1,
+                2, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32
+            };
+
+        /// <summary>
+        /// Gets a list of values that GetNextLarger() and GetNextSmaller() will cycle through.
+        /// </summary>
+        /// <remarks>
+        /// 1.0 is guaranteed to be in the array returned by this property. This list is also
+        /// sorted in ascending order.
+        /// </remarks>
+        public static double[] PresetValues
+        {
+            get
+            {
+                double[] returnValue = new double[scales.Length];
+                scales.CopyTo(returnValue, 0);
+                return returnValue;
+            }
+        }
+
         /// <summary>
         /// Rounds the current scaling factor up to the next power of two.
         /// </summary>
         /// <returns>The new ScaleFactor value.</returns>
         public ScaleFactor GetNextLarger()
         {
-            //Add 0.01 so that we zoom in by at least 0.5%, regardless of rounding
-            double log = Math.Log(Ratio + 0.005, 2.0f);
-            double newLog = Math.Floor(log + 1); 
-            double newzoom = Math.Pow(2.0, newLog);
+            double ratio = Ratio + 0.005;
 
-            if (newzoom > MaxValue.Ratio)
+            int index = Array.FindIndex(
+                scales,
+                delegate(double scale)
+                {
+                    return ratio <= scale;
+                });
+
+            if (index == -1)
             {
-                newzoom = MaxValue.Ratio;
+                index = scales.Length;
             }
 
-            return ScaleFactor.FromDouble(newzoom);
+            index = Math.Min(index, scales.Length - 1);
+
+            return ScaleFactor.FromDouble(scales[index]);
         }
 
         public ScaleFactor GetNextSmaller()
         {
-            //Add 0.01 so that we zoom out by at least 0.5%, regardless of rounding
-            double log = Math.Log(Ratio - 0.005, 2.0f);
-            double newLog = Math.Ceiling(log - 1);
-            double newzoom = Math.Pow(2.0, newLog);
+            double ratio = Ratio - 0.005;
 
-            if (newzoom < MinValue.Ratio)
+            int index = Array.FindIndex(
+                scales,
+                delegate(double scale)
+                {
+                    return ratio <= scale;
+                });
+
+            --index;
+
+            if (index == -1)
             {
-                newzoom = MinValue.Ratio;
+                index = 0;
             }
 
-            return ScaleFactor.FromDouble(newzoom);
+            index = Math.Max(index, 0);
+
+            return ScaleFactor.FromDouble(scales[index]);
         }
 
         private static ScaleFactor Reduce(int numerator, int denominator)

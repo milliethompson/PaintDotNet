@@ -9,6 +9,8 @@
 
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Collections;
 using System.ComponentModel;
 using System.Windows.Forms;
@@ -26,9 +28,8 @@ namespace PaintDotNet
         private System.Windows.Forms.Label creditsLabel;
         private System.Windows.Forms.RichTextBox richCreditsBox;
         private System.Windows.Forms.TextBox copyrightLabel;
-        private System.Windows.Forms.TextBox versionLabel;
+        private System.Windows.Forms.Label versionLabel;
         private System.Windows.Forms.LinkLabel linkLabel;
-        private System.Windows.Forms.Control whiteBackground;
 
         public AboutDialog()
         {
@@ -37,16 +38,72 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
+            this.richCreditsBox.BackColor = SystemColors.Window;
+
             string textFormat = PdnResources.GetString("AboutDialog.Text.Format");
             this.Text = string.Format(textFormat, PdnInfo.GetBareProductName());
-            this.logoBox.Image = PdnResources.GetImage("Images.Logo.png");
-            this.logoBox.Size = logoBox.Image.Size;
-            this.logoBox.SizeMode = PictureBoxSizeMode.Normal;
+
+            Image logo = PdnResources.GetImage("Images.TransparentLogo.png");
+            Image gradient = PdnResources.GetImage("Images.BannerGradient.png");
+            Bitmap bitmap = new Bitmap(350, 71);
+
+            using (Graphics g = Graphics.FromImage(bitmap))
+            {
+                g.Clear(Color.White);
+
+                Rectangle gradientSrcRect = new Rectangle(0, 0, gradient.Width, gradient.Height);
+
+                const int gradientScrunch = 125;
+                const int gradientOffset = 50;
+
+                Rectangle gradientDstRect = new Rectangle(gradientOffset + gradientScrunch + bitmap.Width - gradient.Width, 0, 
+                    gradient.Width - gradientScrunch, gradient.Height);
+
+                gradientDstRect.Inflate(1, 1);
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.DrawImage(gradient, gradientDstRect, gradientSrcRect, GraphicsUnit.Pixel);
+
+                Rectangle logoRect = new Rectangle(0, 0, logo.Width, logo.Height);
+                g.DrawImage(logo, logoRect, logoRect, GraphicsUnit.Pixel);
+
+            }
+
+            int newWidth = this.ClientSize.Width;
+            int newHeight = (bitmap.Height * newWidth) / bitmap.Width;
+            this.logoBox.Size = new Size(newWidth, newHeight);
+            this.logoBox.SizeMode = PictureBoxSizeMode.CenterImage;
             this.logoBox.BackColor = Color.White;
 
-            this.versionLabel.Text = PdnInfo.GetFriendlyVersionString(); //PdnInfo.GetFullAppName();
+            Bitmap useThis;
+
+            if (this.logoBox.Size == bitmap.Size)
+            {
+                useThis = bitmap;
+            }
+            else
+            {
+                Bitmap highQuality = new Bitmap(this.logoBox.Width, this.logoBox.Height,
+                    PixelFormat.Format24bppRgb);
+
+                using (Graphics g = Graphics.FromImage(highQuality))
+                {
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+
+                    g.DrawImage(
+                        bitmap,
+                        new Rectangle(0, 0, logoBox.Width, logoBox.Height),
+                        new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                        GraphicsUnit.Pixel);
+                }
+
+                useThis = highQuality;
+            }
+
+            this.logoBox.Image = useThis;
+
+            this.versionLabel.Text = PdnInfo.GetFriendlyVersionString();
             this.versionLabel.Font = new Font("Verdana", 8.0f);
-            this.linkLabel.Text = PdnResources.GetString("AboutDialog.WebSiteLink.Text"); //"Go to the Paint.NET website"
+            this.linkLabel.Text = PdnResources.GetString("AboutDialog.WebSiteLink.Text");
             this.richCreditsBox.LoadFile(PdnResources.GetResourceStream("Files.AboutCredits.rtf"), RichTextBoxStreamType.RichText);
             this.copyrightLabel.Text = PdnInfo.GetCopyrightString();
 
@@ -68,17 +125,9 @@ namespace PaintDotNet
             this.creditsLabel = new System.Windows.Forms.Label();
             this.richCreditsBox = new System.Windows.Forms.RichTextBox();
             this.copyrightLabel = new System.Windows.Forms.TextBox();
-            this.versionLabel = new System.Windows.Forms.TextBox();
+            this.versionLabel = new System.Windows.Forms.Label();
             this.linkLabel = new System.Windows.Forms.LinkLabel();
-            this.whiteBackground = new System.Windows.Forms.Control();
             this.SuspendLayout();
-            //
-            // whiteBackground
-            //
-            this.whiteBackground.BackColor = Color.White;
-            this.whiteBackground.TabStop = false;
-            this.whiteBackground.Dock = DockStyle.Top;
-            this.whiteBackground.Size = new Size(350, 73);
             // 
             // okButton
             // 
@@ -91,10 +140,12 @@ namespace PaintDotNet
             // 
             // logoBox
             // 
-            this.logoBox.Location = new System.Drawing.Point(45, 0);
+            this.logoBox.Location = new System.Drawing.Point(0, 0);
             this.logoBox.Name = "logoBox";
+            this.logoBox.SizeMode = PictureBoxSizeMode.StretchImage;
             this.logoBox.TabIndex = 1;
             this.logoBox.TabStop = false;
+            this.logoBox.Controls.Add(this.versionLabel);
             // 
             // creditsLabel
             // 
@@ -124,17 +175,15 @@ namespace PaintDotNet
             this.copyrightLabel.ReadOnly = true;
             this.copyrightLabel.Size = new System.Drawing.Size(336, 36);
             this.copyrightLabel.TabIndex = 4;
-            this.copyrightLabel.Text = "";
             // 
             // versionLabel
             // 
             this.versionLabel.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.versionLabel.Location = new System.Drawing.Point(101, 47);
+            this.versionLabel.Location = new System.Drawing.Point(53, 47);
             this.versionLabel.Name = "versionLabel";
-            this.versionLabel.ReadOnly = true;
             this.versionLabel.Size = new System.Drawing.Size(239, 50);
             this.versionLabel.TabIndex = 2;
-            this.versionLabel.BackColor = Color.White;
+            this.versionLabel.BackColor = Color.Transparent;
             this.versionLabel.ForeColor = Color.Black;
             // 
             // linkLabel
@@ -149,12 +198,11 @@ namespace PaintDotNet
             // AboutDialog
             // 
             this.AcceptButton = this.okButton;
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.okButton;
             this.ClientSize = new System.Drawing.Size(350, 375);
-            this.Controls.Add(this.whiteBackground);
             this.Controls.Add(this.linkLabel);
-            this.Controls.Add(this.versionLabel);
             this.Controls.Add(this.copyrightLabel);
             this.Controls.Add(this.richCreditsBox);
             this.Controls.Add(this.creditsLabel);
@@ -167,13 +215,11 @@ namespace PaintDotNet
             this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Controls.SetChildIndex(this.whiteBackground, 0);
             this.Controls.SetChildIndex(this.okButton, 0);
             this.Controls.SetChildIndex(this.logoBox, 0);
             this.Controls.SetChildIndex(this.creditsLabel, 0);
             this.Controls.SetChildIndex(this.richCreditsBox, 0);
             this.Controls.SetChildIndex(this.copyrightLabel, 0);
-            this.Controls.SetChildIndex(this.versionLabel, 0);
             this.Controls.SetChildIndex(this.linkLabel, 0);
             this.ResumeLayout(false);
 
@@ -184,16 +230,7 @@ namespace PaintDotNet
         {
             if (null != e.LinkText && e.LinkText.StartsWith("http://"))
             {
-                try
-                {
-                    System.Diagnostics.Process.Start(e.LinkText);
-                }
-
-                catch
-                {
-                    string message = PdnResources.GetString("LaunchLink.Error");
-                    Utility.ErrorBox(this, message);
-                }
+                SystemLayer.Shell.OpenUrl(this, e.LinkText);
             }
         }
 

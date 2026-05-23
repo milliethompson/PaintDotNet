@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -34,7 +35,7 @@ namespace PaintDotNet
         private RenderArgs renderArgs;
         private PdnRegion interiorSaveRegion;
         private PdnRegion outlineSaveRegion;
-        private ArrayList points;
+        private List<PointF> points;
         private PdnRegion lastDrawnRegion = null;
         private Cursor cursorMouseUp;
         private Cursor cursorMouseDown;
@@ -88,9 +89,9 @@ namespace PaintDotNet
         /// first and last points.
         /// It is ok to return the same array that was passed in, even if it is modified.
         /// </summary>
-        /// <param name="points">An ArrayList containing PointF instances.</param>
+        /// <param name="points">A list containing PointF instances.</param>
         /// <returns></returns>
-        protected virtual ArrayList TrimShapePath(ArrayList points)
+        protected virtual List<PointF> TrimShapePath(List<PointF> points)
         {
             return points;
         }
@@ -226,7 +227,7 @@ namespace PaintDotNet
                 }
 
                 // reset the points we're drawing!
-                points = new ArrayList();
+                points = new List<PointF>();
 
                 OnStylusMove(e);
             }
@@ -262,14 +263,14 @@ namespace PaintDotNet
             return PixelOffsetMode.Half;
         }
 
-        protected ArrayList GetTrimmedShapePath()
+        protected List<PointF> GetTrimmedShapePath()
         {
-            ArrayList pointsCopy = (ArrayList)this.points.Clone();
+            List<PointF> pointsCopy = new List<PointF>(this.points);
             pointsCopy = TrimShapePath(pointsCopy);
             return pointsCopy;
         }
 
-        protected void SetShapePath(ArrayList newPoints)
+        protected void SetShapePath(List<PointF> newPoints)
         {
             this.points = newPoints;
         }
@@ -343,7 +344,7 @@ namespace PaintDotNet
 
             // get the region we want to save
             points = this.TrimShapePath(points);
-            PointF[] pointsArray = (PointF[])points.ToArray(typeof(PointF));
+            PointF[] pointsArray = points.ToArray();
             PdnGraphicsPath shapePath = CreateShapePath(pointsArray);
 
             if (shapePath != null)
@@ -560,7 +561,7 @@ namespace PaintDotNet
                 else
                 {
                     // place a 'sentinel' history action on the stack that will be filled in later
-                    CompoundHistoryAction cha = new CompoundHistoryAction(Name, Image, new ArrayList());
+                    CompoundHistoryAction cha = new CompoundHistoryAction(Name, Image, new List<HistoryAction>());
                     Workspace.History.PushNewAction(cha);
                     this.chaAlreadyOnStack = cha;
                 }

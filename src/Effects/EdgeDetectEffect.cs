@@ -14,13 +14,9 @@ using System.Drawing;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for EdgeDetectEffect.
-    /// </summary>
     [EffectTypeHint(EffectTypeHint.Fast)]
     public class EdgeDetectEffect
-        : ColorDifferenceEffect, 
-          IConfigurableEffect
+        : ColorDifferenceEffect
     {
         public static string StaticName
         {
@@ -32,23 +28,20 @@ namespace PaintDotNet.Effects
 
         public EdgeDetectEffect()
             : base(StaticName,
-                   PdnResources.GetImage("Icons.EdgeDetectEffect.bmp"))
+                   PdnResources.GetImage("Icons.EdgeDetectEffect.png"),
+                   true)
         {
         }
 
-        #region IConfigurableEffect Members
-
-        void IConfigurableEffect.Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
         {
-            EdgeDetectConfigToken token = (EdgeDetectConfigToken)properties;
-            base.RenderColorDifferenceEffect(token.Weights, dstArgs, srcArgs, roi);
+            EdgeDetectConfigToken token = (EdgeDetectConfigToken)parameters;
+            base.RenderColorDifferenceEffect(token.Weights, dstArgs, srcArgs, rois, startIndex, length);
         }
 
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             return new EdgeDetectConfigDialog();
         }
-
-        #endregion
     }
 }

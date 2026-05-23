@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.IO;
@@ -43,22 +44,12 @@ namespace PaintDotNet
 
         private static bool IsInterfaceImplemented(Type derivedType, Type interfaceType)
         {
-            Type[] interfaces = derivedType.GetInterfaces();
-
-            foreach (Type type in interfaces)
-            {
-                if (type == interfaceType)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return -1 != Array.IndexOf<Type>(derivedType.GetInterfaces(), interfaceType); 
         }
 
         private static Type[] GetFileTypeFactoriesFromAssembly(Assembly assembly)
         {
-            ArrayList fileTypeFactories = new ArrayList();
+            List<Type> fileTypeFactories = new List<Type>();
 
             foreach (Type type in assembly.GetTypes())
             {
@@ -68,16 +59,26 @@ namespace PaintDotNet
                 }
             }
 
-            return (Type[])fileTypeFactories.ToArray(typeof(Type));
+            return fileTypeFactories.ToArray();
         }
 
         private static Type[] GetFileTypeFactoriesFromAssemblies(ICollection assemblies)
         {
-            ArrayList allFactories = new ArrayList();
+            List<Type> allFactories = new List<Type>();
 
             foreach (Assembly assembly in assemblies)
             {
-                Type[] factories = GetFileTypeFactoriesFromAssembly(assembly);
+                Type[] factories;
+
+                try
+                {
+                    factories = GetFileTypeFactoriesFromAssembly(assembly);
+                }
+
+                catch
+                {
+                    continue;
+                }
 
                 foreach (Type type in factories)
                 {
@@ -85,12 +86,12 @@ namespace PaintDotNet
                 }
             }
 
-            return (Type[])allFactories.ToArray(typeof(Type));
+            return allFactories.ToArray();
         }
 
         private static FileTypeCollection LoadFileTypes()
         {
-            ArrayList assemblies = new ArrayList();
+            List<Assembly> assemblies = new List<Assembly>();
 
             // add the built-in IFileTypeFactory house
             assemblies.Add(typeof(FileType).Assembly);
@@ -139,7 +140,7 @@ namespace PaintDotNet
 
             // Get all the IFileTypeFactory implementations
             Type[] fileTypeFactories = GetFileTypeFactoriesFromAssemblies(assemblies);
-            ArrayList allFileTypes = new ArrayList(10);
+            List<FileType> allFileTypes = new List<FileType>(10);
             
             foreach (Type type in fileTypeFactories)
             {

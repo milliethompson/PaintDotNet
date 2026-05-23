@@ -38,7 +38,7 @@ namespace PaintDotNet
         {
             get
             {
-                return PdnResources.GetImage("Icons.MenuImageResizeIcon.bmp");
+                return PdnResources.GetImage("Icons.MenuImageResizeIcon.png");
             }
         }
 

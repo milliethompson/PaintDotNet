@@ -29,7 +29,7 @@ namespace PaintDotNet
 
         private bool CanPan()
         {
-            if (Workspace.DocumentView.VisibleDocumentRectangle.Size == Workspace.Document.Size)
+            if (Workspace.DocumentView.VisibleDocumentRectangleF.Size == Workspace.Document.Size)
             {
                 return false;
             }
@@ -87,10 +87,10 @@ namespace PaintDotNet
 
                 if (delta.Width != 0 || delta.Height != 0)
                 {
-                    Point scrollPos = Workspace.DocumentView.DocumentScrollPosition;
-                    Point newScrollPos = new Point(scrollPos.X - delta.Width, scrollPos.Y - delta.Height);
+                    PointF scrollPos = Workspace.DocumentView.DocumentScrollPositionF;
+                    PointF newScrollPos = new PointF(scrollPos.X - delta.Width, scrollPos.Y - delta.Height);
                     ++this.ignoreMouseMove; // setting DocumentScrollPosition incurs a MouseMove event
-                    Workspace.DocumentView.DocumentScrollPosition = newScrollPos;
+                    Workspace.DocumentView.DocumentScrollPositionF = newScrollPos;
 
                     lastMouseXY = mouseXY;
                     lastMouseXY.X -= delta.Width;
@@ -145,7 +145,7 @@ namespace PaintDotNet
 
         public PanTool(DocumentWorkspace workspace)
             : base(workspace,
-                   PdnResources.GetImage("Icons.PanToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.PanToolIcon.png"),
                    PdnResources.GetString("PanTool.Name"),
                    PdnResources.GetString("PanTool.HelpText"), 
                    'h')

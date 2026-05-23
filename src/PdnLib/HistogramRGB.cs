@@ -20,8 +20,8 @@ namespace PaintDotNet
     public class HistogramRgb : Histogram
     {
         public HistogramRgb()
+            : base(3, 256)
         {
-            this.histogram = new long[3, 256];
             visualColors = new ColorBgra[]{     
                                               ColorBgra.Blue,
                                               ColorBgra.Green,
@@ -45,14 +45,18 @@ namespace PaintDotNet
 
         protected override unsafe void AddSurfaceRectangleToHistogram(Surface surface, Rectangle rect)
         {
+            long[] histogramB = histogram[0];
+            long[] histogramG = histogram[1];
+            long[] histogramR = histogram[2];
+
             for (int y = rect.Top; y < rect.Bottom; ++y)
             {
                 ColorBgra* ptr = surface.GetPointAddressUnchecked(rect.Left, y);
                 for (int x = rect.Left; x < rect.Right; ++x)
                 {
-                    ++histogram[0, ptr->B];
-                    ++histogram[1, ptr->G];
-                    ++histogram[2, ptr->R];
+                    ++histogramB[ptr->B];
+                    ++histogramG[ptr->G];
+                    ++histogramR[ptr->R];
                     ++ptr;
                 }
             }
@@ -67,47 +71,52 @@ namespace PaintDotNet
 
             Clear();
 
-            for (int v = 0; v <= 255; v ++)
+
+            float[] before = new float[3];
+            float[] slopes = new float[3];
+
+            for (int c = 0; c < 3; c++)
             {
-                ColorBgra after = ColorBgra.FromRgb((byte)v, (byte)v, (byte)v);
-                float [] before = new float[3];
-                float [] slopes = new float[3];
+                long[] channelHistogramOutput = histogram[c];
+                long[] channelHistogramInput = inputHistogram.histogram[c];
 
-                upo.UnApply(after, before, slopes);
-
-                for (int c = 0; c < 3; c++) 
+                for (int v = 0; v <= 255; v++)
                 {
+                    ColorBgra after = ColorBgra.FromRgb((byte)v, (byte)v, (byte)v);
+
+                    upo.UnApply(after, before, slopes);
+
                     if (after[c] > upo.ColorOutHigh[c]
                         || after[c] < upo.ColorOutLow[c]
                         || (int)Math.Floor(before[c]) < 0
                         || (int)Math.Ceiling(before[c]) > 255
                         || float.IsNaN(before[c])) 
                     {
-                        histogram[c, v] = 0;
+                        channelHistogramOutput[v] = 0;
                     }
                     else if (before[c] <= upo.ColorInLow[c]) 
                     {
-                        histogram[c, v] = 0;
+                        channelHistogramOutput[v] = 0;
 
                         for (int i = 0; i <= upo.ColorInLow[c]; i++)
                         {
-                            histogram[c, v] += inputHistogram.histogram[c, i];
+                            channelHistogramOutput[v] += channelHistogramInput[i];
                         }
                     } 
                     else if (before[c] >= upo.ColorInHigh[c])
                     {
-                        histogram[c, v] = 0;
+                        channelHistogramOutput[v] = 0;
 
                         for (int i = upo.ColorInHigh[c]; i < 256; i++)
                         {
-                            histogram[c, v] += inputHistogram.histogram[c, i];
+                            channelHistogramOutput[v] += channelHistogramInput[i];
                         }
                     }
                     else
                     {
-                        histogram[c, v] = (int)(slopes[c] * Utility.Lerp(
-                            inputHistogram.histogram[c, (int)Math.Floor(before[c])],
-                            inputHistogram.histogram[c, (int)Math.Ceiling(before[c])],
+                        channelHistogramOutput[v] = (int)(slopes[c] * Utility.Lerp(
+                            channelHistogramInput[(int)Math.Floor(before[c])],
+                            channelHistogramInput[(int)Math.Ceiling(before[c])],
                             before[c] - Math.Floor(before[c])));
                     }
                 }

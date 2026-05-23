@@ -22,6 +22,15 @@ namespace PaintDotNet.Threading
     /// </summary>
     public class ThreadPool
     {
+        private static ThreadPool global = new ThreadPool(2 * Processor.LogicalCpuCount);
+        public static ThreadPool Global
+        {
+            get
+            {
+                return global;
+            }
+        }
+
         private ArrayList exceptions = ArrayList.Synchronized(new ArrayList());
         private bool useFXTheadPool;
 
@@ -109,14 +118,27 @@ namespace PaintDotNet.Threading
             }
         }
 
+        public bool IsDrained(uint msTimeout)
+        {
+            bool result = counter.IsEmpty(msTimeout);
+
+            if (result)
+            {
+                Drain();
+            }
+
+            return result;
+        }
+
+        public bool IsDrained()
+        {
+            return IsDrained(0);
+        }
+
         public void Drain()
         {
             counter.WaitForEmpty();
-
-            if (this.exceptions.Count != 0)
-            {
-                throw new WorkerThreadException("Worker thread threw an exception", (Exception)this.exceptions[0]);
-            }
+            DrainExceptions();
         }
 
         private sealed class ThreadWrapperContext

@@ -127,7 +127,6 @@ namespace PaintDotNet
 
             SelectionHistoryAction sha = new SelectionHistoryAction(this.Name, this.Image, this.Workspace);
             this.currentHistoryActions.Add(sha);
-            //Workspace.Environment.Selection.CommitInterimTransform();
 
             this.context.Dispose();
             this.context = new Context();
@@ -230,7 +229,7 @@ namespace PaintDotNet
             if (this.currentHistoryActions.Count > 0)
             {
                 CompoundHistoryAction cha = new CompoundHistoryAction(null, null,
-                    (HistoryAction[])this.currentHistoryActions.ToArray(typeof(HistoryAction)));
+                    this.currentHistoryActions.ToArray());
 
                 string haName;
 
@@ -256,7 +255,7 @@ namespace PaintDotNet
 
         public MoveSelectionTool(DocumentWorkspace workspace)
             : base(workspace,
-                   PdnResources.GetImage("Icons.MoveSelectionToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.MoveSelectionToolIcon.png"),
                    MoveSelectionTool.StaticName,
                    PdnResources.GetString("MoveSelectionTool.HelpText"), // "Click and drag to move a selected region",
                    'm')

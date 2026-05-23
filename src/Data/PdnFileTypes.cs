@@ -7,6 +7,7 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Data;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -25,6 +26,7 @@ namespace PaintDotNet
         public static readonly FileType Tiff = new GdiPlusFileType("TIFF", ImageFormat.Tiff, false, new string[] { ".tif", ".tiff" });
         public static readonly FileType Png = new PngFileType();
         public static readonly FileType Pdn = new PdnFileType();
+        public static readonly FileType Tga = new TgaFileType();
 
         private static FileType[] fileTypes = new FileType[] { 
                                                                  Pdn,
@@ -33,6 +35,7 @@ namespace PaintDotNet
                                                                  Jpeg,
                                                                  Png,
                                                                  Tiff,
+                                                                 Tga
                                                              };
 
         internal FileTypeCollection GetFileTypeCollection()

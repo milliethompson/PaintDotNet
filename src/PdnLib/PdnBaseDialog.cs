@@ -27,8 +27,11 @@ namespace PaintDotNet
             // This call is required by the Windows Form Designer.
             InitializeComponent();
 
-            this.baseOkButton.Text = PdnResources.GetString("Form.OkButton.Text");
-            this.baseCancelButton.Text = PdnResources.GetString("Form.CancelButton.Text");
+            if (!this.DesignMode)
+            {
+                this.baseOkButton.Text = PdnResources.GetString("Form.OkButton.Text");
+                this.baseCancelButton.Text = PdnResources.GetString("Form.CancelButton.Text");
+            }
         }
 
         /// <summary>
@@ -82,7 +85,8 @@ namespace PaintDotNet
             // PdnBaseDialog
             // 
             this.AcceptButton = this.baseOkButton;
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.baseCancelButton;
             this.ClientSize = new System.Drawing.Size(248, 158);
             this.Controls.Add(this.baseCancelButton);

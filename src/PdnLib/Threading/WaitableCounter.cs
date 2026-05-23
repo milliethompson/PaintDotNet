@@ -112,6 +112,16 @@ namespace PaintDotNet.Threading
             }
         }
 
+        public bool IsEmpty()
+        {
+            return IsEmpty(0);
+        }
+
+        public bool IsEmpty(uint msTimeout)
+        {
+            return freeEvents.AreAllSignaled(msTimeout);
+        }
+
         public void WaitForEmpty()
         {
             freeEvents.WaitAll();

@@ -152,6 +152,7 @@ namespace PaintDotNet
             this.blendOpComboBox.Size = new System.Drawing.Size(121, 21);
             this.blendOpComboBox.TabIndex = 4;
             this.blendOpComboBox.SelectedIndexChanged += new System.EventHandler(this.blendOpComboBox_SelectedIndexChanged);
+            this.blendOpComboBox.MaxDropDownItems = 100;
             // 
             // opacityUpDown
             // 
@@ -199,7 +200,8 @@ namespace PaintDotNet
             // 
             // BitmapLayerPropertiesDialog
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(274, 181);
             this.Controls.Add(this.blendingHeader);
             this.Controls.Add(this.blendOpComboBox);

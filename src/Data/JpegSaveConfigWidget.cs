@@ -121,6 +121,8 @@ namespace PaintDotNet
             this.Controls.Add(this.qualityUpDown);
             this.Controls.Add(this.qualityLabel);
             this.Controls.Add(this.qualitySlider);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Name = "JpegSaveConfigWidget";
             this.Size = new System.Drawing.Size(180, 72);
             ((System.ComponentModel.ISupportInitialize)(this.qualitySlider)).EndInit();

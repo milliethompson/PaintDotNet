@@ -13,6 +13,7 @@ using Microsoft.StylusInput.PluginData;
 using PaintDotNet;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -54,7 +55,7 @@ namespace PaintDotNet
         {
             lock (hookedControls.SyncRoot)
             {
-                ArrayList deleteUs = new ArrayList();
+                List<WeakReference> deleteUs = new List<WeakReference>();
 
                 foreach (WeakReference weakRef in hookedControls.Keys)
                 {
@@ -87,8 +88,9 @@ namespace PaintDotNet
 
         private static void control_Disposed(object sender, EventArgs e)
         {
-            ((Control)sender).Disposed -= new EventHandler(control_Disposed);
-            UnhookStylus((Control)sender);
+            Control asControl = (Control)sender;
+            asControl.Disposed -= new EventHandler(control_Disposed);
+            UnhookStylus(asControl);
         }
     }
 }

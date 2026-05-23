@@ -21,8 +21,7 @@ namespace PaintDotNet.Effects
     [EffectCategory(EffectCategory.Adjustment)]
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public class HueAndSaturationAdjustment
-        : Effect,
-          IConfigurableEffect  
+        : Effect
     {
         public static string StaticName
         {
@@ -36,18 +35,19 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return PdnResources.GetImage("Icons.HueAndSaturationAdjustment.bmp");
+                return PdnResources.GetImage("Icons.HueAndSaturationAdjustment.png");
             }
         }
 
         public HueAndSaturationAdjustment()
             : base(StaticName,
                    StaticImage,
-                   System.Windows.Forms.Shortcut.CtrlShiftU)
+                   Keys.Control | Keys.Shift | Keys.U,
+                   true)
         {
         }
 
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             ThreeAmountsConfigDialog tacg = new ThreeAmountsConfigDialog();
 
@@ -68,14 +68,14 @@ namespace PaintDotNet.Effects
             tacg.Amount3Maximum = 100;
             tacg.Amount3Minimum = -100;
 
-            tacg.Icon = PdnResources.GetIconFromImage("Icons.HueAndSaturationAdjustment.bmp");
+            tacg.Icon = PdnResources.GetIconFromImage("Icons.HueAndSaturationAdjustment.png");
 
             return tacg;
         }
 
-        public unsafe void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
         {
-            ThreeAmountsConfigToken token = (ThreeAmountsConfigToken)properties;
+            ThreeAmountsConfigToken token = (ThreeAmountsConfigToken)parameters;
             int hueDelta = token.Amount1;
             int satDelta = token.Amount2;
             int lightness = token.Amount3;
@@ -99,11 +99,8 @@ namespace PaintDotNet.Effects
             {
                 op = new UnaryPixelOps.HueSaturationLightness(hueDelta, satDelta, lightness);
             }
-            
-            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
-            {
-                op.Apply(dst, src, rect);
-            }
+
+            op.Apply(dst, src, rois, startIndex, length);
         }
     }
 }

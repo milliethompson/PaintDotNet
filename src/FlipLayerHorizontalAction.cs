@@ -27,8 +27,8 @@ namespace PaintDotNet
 
         public FlipLayerHorizontalAction(DocumentWorkspace workspace)
             : base(workspace, 
-                   StaticName, 
-                   PdnResources.GetImage("Icons.MenuLayersFlipHorizontalIcon.bmp"), 
+                   StaticName,
+                   PdnResources.GetImage("Icons.MenuLayersFlipHorizontalIcon.png"), 
                    FlipType.Horizontal)
         {
         }

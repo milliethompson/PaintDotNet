@@ -7,6 +7,7 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using Microsoft.Win32.SafeHandles;
 using System;
 
 namespace PaintDotNet.SystemLayer
@@ -20,8 +21,31 @@ namespace PaintDotNet.SystemLayer
         {
         }
 
+        internal const uint SHARD_PIDL = 0x00000001;
+        internal const uint SHARD_PATHA = 0x00000002;
+        internal const uint SHARD_PATHW = 0x00000003;
+        
+        internal const uint VER_NT_WORKSTATION = 0x0000001;
+        internal const uint VER_NT_DOMAIN_CONTROLLER = 0x0000002;
+        internal const uint VER_NT_SERVER = 0x0000003; 
+        
+        internal const uint LWA_COLORKEY = 0x00000001;
+        internal const uint LWA_ALPHA = 0x00000002;
+        internal const uint WS_EX_LAYERED = 0x00080000;
+
+        internal const ushort PROCESSOR_ARCHITECTURE_INTEL = 0;
+        internal const ushort PROCESSOR_ARCHITECTURE_IA64 = 6;
+        internal const ushort PROCESSOR_ARCHITECTURE_AMD64 = 9;
+        internal const ushort PROCESSOR_ARCHITECTURE_UNKNOWN = 0xFFFF; 
+        
         internal const uint SHVIEW_THUMBNAIL = 0x702d;
         internal const uint WM_COMMAND = 0x111;
+        internal const uint WM_MOUSEACTIVATE = 0x21;
+
+        internal const uint MA_ACTIVATE = 1;
+        internal const uint MA_ACTIVATEANDEAT = 2;
+        internal const uint MA_NOACTIVATE = 3;
+        internal const uint MA_NOACTIVATEANDEAT = 4;
 
         internal const uint IDI_APPLICATION = 32512;
 
@@ -561,7 +585,6 @@ namespace PaintDotNet.SystemLayer
         internal const uint CLIP_TT_ALWAYS = (2 << 4);
         internal const uint CLIP_EMBEDDED = (8 << 4);
 
-
         internal const uint DEFAULT_QUALITY = 0;
         internal const uint DRAFT_QUALITY = 1;
         internal const uint PROOF_QUALITY = 2;
@@ -584,5 +607,6 @@ namespace PaintDotNet.SystemLayer
         internal const uint FF_SCRIPT = (4 << 4);
         internal const uint FF_DECORATIVE = (5 << 4);
 
+        internal const int SB_HORZ = 0;
     }
 }

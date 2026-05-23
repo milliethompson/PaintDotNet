@@ -22,115 +22,59 @@ namespace PaintDotNet
     {
         private DocumentWorkspace workspace;
 
-        private FlowPanel topDock;
-        public FlowPanel TopDock
+        private ViewConfigStrip viewConfigStrip;
+        public ViewConfigStrip ViewConfigStrip
         {
             get
             {
-                return topDock;
+                return viewConfigStrip;
             }
 
             set
             {
-                topDock = value;
+                viewConfigStrip = value;
             }
         }
 
-        private PenConfigWidget penConfigWidget;
-        public PenConfigWidget PenConfigWidget
+        private DrawConfigStrip drawConfigStrip;
+        public DrawConfigStrip DrawConfigStrip
         {
             get
             {
-                return penConfigWidget;
+                return this.drawConfigStrip;
             }
 
             set
             {
-                penConfigWidget = value;
+                this.drawConfigStrip = value;
             }
         }
 
-        private ZoomConfigWidget zoomConfigWidget;
-        public ZoomConfigWidget ZoomConfigWidget
+        private CommonActionsStrip commonActionsStrip;
+        public CommonActionsStrip CommonActionsStrip
         {
             get
             {
-                return zoomConfigWidget;
+                return commonActionsStrip;
             }
 
             set
             {
-                zoomConfigWidget = value;
+                commonActionsStrip = value;
             }
         }
 
-        private BrushConfigWidget brushConfigWidget;
-        public BrushConfigWidget BrushConfigWidget
+        private TextConfigStrip textConfigStrip;
+        public TextConfigStrip TextConfigStrip
         {
             get
             {
-                return brushConfigWidget;
+                return this.textConfigStrip;
             }
 
             set
             {
-                brushConfigWidget = value;
-            }
-        }
-
-        private ShapeDrawTypeConfigWidget shapeDrawTypeConfigWidget;
-        public ShapeDrawTypeConfigWidget ShapeDrawTypeConfigWidget 
-        {
-            get
-            {
-                return shapeDrawTypeConfigWidget;
-            }
-
-            set
-            {
-                shapeDrawTypeConfigWidget = value;
-            }
-        }
-
-        private DrawModesConfigWidget drawModesConfigWidget;
-        public DrawModesConfigWidget DrawModesConfigWidget 
-        {
-            get
-            {
-                return drawModesConfigWidget;
-            }
-
-            set
-            {
-                drawModesConfigWidget = value;
-            }
-        }
-
-        private CommonActionsWidget commonActionsWidget;
-        public CommonActionsWidget CommonActionsWidget
-        {
-            get
-            {
-                return commonActionsWidget;
-            }
-
-            set
-            {
-                commonActionsWidget = value;
-            }
-        }
-
-        private TextConfigWidget textConfigWidget;
-        public TextConfigWidget TextConfigWidget
-        {
-            get
-            {
-                return textConfigWidget;
-            }
-
-            set
-            {
-                textConfigWidget = value;
+                this.textConfigStrip = value;
             }
         }
 

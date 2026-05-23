@@ -7,8 +7,10 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -44,7 +46,8 @@ namespace PaintDotNet
 
         private static bool CheckColor(ColorBgra a, ColorBgra b, int tolerance)
         {
-            int sum = 0, diff;
+            int sum = 0;
+            int diff;
 
             diff = a.R - b.R;
             sum += (1 + diff * diff) * a.A / 256;
@@ -61,7 +64,8 @@ namespace PaintDotNet
             return (sum <= tolerance * tolerance * 4);
         }
 
-        public unsafe static void FillStencilByColor(Surface surface, IBitVector2D stencil, ColorBgra cmp, int tolerance, out Rectangle boundingBox, PdnRegion limitRegion, bool limitToSelection)
+        public unsafe static void FillStencilByColor(Surface surface, IBitVector2D stencil, ColorBgra cmp, int tolerance, 
+            out Rectangle boundingBox, PdnRegion limitRegion, bool limitToSelection)
         {
             int top = int.MaxValue;
             int bottom = int.MinValue;
@@ -111,6 +115,7 @@ namespace PaintDotNet
 
                         foundPixelInRow = true;
                     }
+
                     ++ptr;
                 }
 
@@ -137,10 +142,9 @@ namespace PaintDotNet
         }
 
         
-        public unsafe static void FillStencilFromPoint(Surface surface, IBitVector2D stencil, Point start, int tolerance, out Rectangle boundingBox, PdnRegion limitRegion, bool limitToSelection)
+        public unsafe static void FillStencilFromPoint(Surface surface, IBitVector2D stencil, Point start, 
+            int tolerance, out Rectangle boundingBox, PdnRegion limitRegion, bool limitToSelection)
         {
-            int added;
-            int length = 0;
             ColorBgra cmp = surface[start];
             int top = int.MaxValue;
             int bottom = int.MinValue;
@@ -167,89 +171,118 @@ namespace PaintDotNet
                 stencil.Set(rect, true);
             }
 
-            Queue queue = new Queue(1024);
+            Queue<Point> queue = new Queue<Point>(16);
             queue.Enqueue(start);
 
-            do
+            while (queue.Count > 0)
             {
-                length = queue.Count;
-                added = 0;
+                Point pt = queue.Dequeue();
 
-                while (length-- > 0)
+                ColorBgra* rowPtr = surface.GetRowAddressUnchecked(pt.Y);
+                int localLeft = pt.X - 1;
+                int localRight = pt.X;
+
+                while (localLeft >= 0 &&
+                       !stencil.GetUnchecked(localLeft, pt.Y) &&
+                       CheckColor(cmp, rowPtr[localLeft], tolerance))
                 {
-                    Point pt = (Point)queue.Dequeue();
+                    stencil.SetUnchecked(localLeft, pt.Y, true);
+                    --localLeft;
+                }
 
-                    if (!stencil.GetUnchecked(pt.X, pt.Y) && 
-                        CheckColor(cmp, *surface.GetPointAddressUnchecked(pt), tolerance))
+                while (localRight < surface.Width &&
+                       !stencil.GetUnchecked(localRight, pt.Y) &&
+                       CheckColor(cmp, rowPtr[localRight], tolerance))
+                {
+                    stencil.SetUnchecked(localRight, pt.Y, true);
+                    ++localRight;
+                }
+
+                ++localLeft;
+                --localRight;
+
+                if (pt.Y > 0)
+                {
+                    int sleft = localLeft;
+                    int sright = localLeft;
+                    ColorBgra* rowPtrUp = surface.GetRowAddressUnchecked(pt.Y - 1);
+
+                    for (int sx = localLeft; sx <= localRight; ++sx)
                     {
-                        stencil.SetUnchecked(pt.X, pt.Y, true);
-
-                        if (pt.X > 0)
+                        if (!stencil.GetUnchecked(sx, pt.Y - 1) &&
+                            CheckColor(cmp, rowPtrUp[sx], tolerance))
                         {
-                            if (pt.X - 1 < left)
-                            {
-                                left = pt.X - 1;
-                            }
-                            
-                            added++;
-                            queue.Enqueue(new Point(pt.X - 1, pt.Y));
+                            ++sright;
                         }
-
-                        if (pt.Y > 0)
+                        else
                         {
-                            if (pt.Y - 1 < top)
+                            if (sright - sleft > 0)
                             {
-                                top = pt.Y - 1;
+                                queue.Enqueue(new Point(sleft, pt.Y - 1));
                             }
 
-                            added++;
-                            queue.Enqueue(new Point(pt.X, pt.Y - 1));
-                        }
-
-                        if (pt.X < surface.Width - 1)
-                        {
-                            if (pt.X + 1 > right)
-                            {
-                                right = pt.X + 1;
-                            }
-
-                            added++;
-                            queue.Enqueue(new Point(pt.X + 1, pt.Y));
-                        }
-
-                        if (pt.Y < surface.Height - 1)
-                        {
-                            if (pt.Y + 1 > bottom)
-                            {
-                                bottom = pt.Y + 1;
-                            }
-
-                            added++;
-                            queue.Enqueue(new Point(pt.X, pt.Y + 1));
-                        }
-
-                        if (pt.X < left)
-                        {
-                            left = pt.X;
-                        }
-                        
-                        if (pt.X > right)
-                        {
-                            right = pt.X;
-                        }
-
-                        if (pt.Y < top)
-                        {
-                            top = pt.Y;
-                        }
-                        
-                        if (pt.Y > bottom)
-                        {
-                            bottom = pt.Y;
+                            ++sright;
+                            sleft = sright;
                         }
                     }
+
+                    if (sright - sleft > 0)
+                    {
+                        queue.Enqueue(new Point(sleft, pt.Y - 1));
+                    }
                 }
-            } while (added > 0);
+
+                if (pt.Y < surface.Height - 1)
+                {
+                    int sleft = localLeft;
+                    int sright = localLeft;
+                    ColorBgra* rowPtrDown = surface.GetRowAddressUnchecked(pt.Y + 1);
+
+                    for (int sx = localLeft; sx <= localRight; ++sx)
+                    {
+                        if (!stencil.GetUnchecked(sx, pt.Y + 1) &&
+                            CheckColor(cmp, rowPtrDown[sx], tolerance))
+                        {
+                            ++sright;
+                        }
+                        else
+                        {
+                            if (sright - sleft > 0)
+                            {
+                                queue.Enqueue(new Point(sleft, pt.Y + 1));
+                            }
+
+                            ++sright;
+                            sleft = sright;
+                        }
+                    }
+
+                    if (sright - sleft > 0)
+                    {
+                        queue.Enqueue(new Point(sleft, pt.Y + 1));
+                    }
+                }
+
+                if (localLeft < left)
+                {
+                    left = localLeft;
+                }
+
+                if (localRight > right)
+                {
+                    right = localRight;
+                }
+
+                if (pt.Y < top)
+                {
+                    top = pt.Y;
+                }
+
+                if (pt.Y > bottom)
+                {
+                    bottom = pt.Y;
+                }
+            }
 
             foreach (Rectangle rect in scans)
             {
@@ -270,10 +303,7 @@ namespace PaintDotNet
             if (Utility.IsPointInRectangle(pos, Workspace.Document.Bounds))
             {
                 base.OnMouseDown (e);
-                PdnRegion currentRegion;
-
-                // Create the Current Region
-                currentRegion = Workspace.Environment.Selection.CreateRegion();
+                PdnRegion currentRegion = Workspace.Environment.Selection.CreateRegion();
 
                 // See if the mouse click is valid
                 if (!currentRegion.IsVisible(pos) && limitToSelection)
@@ -281,7 +311,7 @@ namespace PaintDotNet
                     currentRegion.Dispose();
                     currentRegion = null;
                     return;
-                }           
+                }
             
                 // Set the current surface, color picked and color to draw
                 Surface surface = ((BitmapLayer)Workspace.ActiveLayer).Surface;

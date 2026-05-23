@@ -9,8 +9,10 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
@@ -21,17 +23,51 @@ namespace PaintDotNet
 {
     public sealed class PdnResources
     {
-        private static readonly ResourceManager resourceManager;
+        private static ResourceManager resourceManager;
         private const string ourNamespace = "PaintDotNet";
-        private static readonly Assembly ourAssembly;
-        private static readonly string[] localeDirs;
-        private static readonly CultureInfo pdnCulture;
+        private static Assembly ourAssembly;
+        private static string[] localeDirs;
+        private static CultureInfo pdnCulture;
+        private static string resourcesDir;
 
         private PdnResources()
         {
         }
 
-        static PdnResources()
+        public static string ResourcesDir
+        {
+            get
+            {
+                if (resourcesDir == null)
+                {
+                    resourcesDir = Path.GetDirectoryName(typeof(PdnResources).Assembly.Location);
+                }
+
+                return resourcesDir;
+            }
+
+            set
+            {
+                resourcesDir = value;
+                Initialize();
+            }
+        }
+
+        public static CultureInfo Culture
+        {
+            get
+            {
+                return pdnCulture;
+            }
+
+            set
+            {
+                System.Threading.Thread.CurrentThread.CurrentUICulture = value;
+                Initialize();
+            }
+        }
+
+        private static void Initialize()
         {
             resourceManager = CreateResourceManager();
             ourAssembly = Assembly.GetExecutingAssembly();
@@ -39,9 +75,52 @@ namespace PaintDotNet
             localeDirs = GetLocaleDirs();
         }
 
+        static PdnResources()
+        {
+            Initialize();
+        }
+
+        public static string[] GetInstalledLocales()
+        {
+            const string left = "PaintDotNet.Strings";
+            const string right = ".resources";
+            string ourDir = ResourcesDir; //PdnInfo.GetApplicationDir();
+            string fileSpec = left + "*" + right;
+            string[] pathNames = Directory.GetFiles(ourDir, fileSpec);
+            string[] locales = new string[pathNames.Length];
+
+            for (int i = 0; i < pathNames.Length; ++i)
+            {
+                string pathName = pathNames[i];
+                string dirName = Path.GetDirectoryName(pathName);
+                string fileName = Path.GetFileName(pathName);
+                string sansRight = fileName.Substring(0, fileName.Length - right.Length);
+                string sansLeft = sansRight.Substring(left.Length);
+
+                string locale;
+
+                if (sansLeft.Length > 0 && sansLeft[0] == '.')
+                {
+                    locale = sansLeft.Substring(1);
+                }
+                else if (sansLeft.Length == 0)
+                {
+                    locale = "en-US";
+                }
+                else
+                {
+                    locale = sansLeft;
+                }
+
+                locales[i] = locale;
+            }
+
+            return locales;
+        }
+
         public static string[] GetLocaleNameChain()
         {
-            ArrayList names = new ArrayList();
+            List<string> names = new List<string>();
             CultureInfo ci = pdnCulture;
 
             while (ci.Name != "")
@@ -50,15 +129,15 @@ namespace PaintDotNet
                 ci = ci.Parent;
             }
 
-            return (string[])names.ToArray(typeof(string));
+            return names.ToArray();
         }
 
         private static string[] GetLocaleDirs()
         {
             const string rootDirName = "Resources";
-            string appDir = PdnInfo.GetApplicationDir();
+            string appDir = ResourcesDir; // PdnInfo.GetApplicationDir();
             string rootDir = Path.Combine(appDir, rootDirName);
-            ArrayList dirs = new ArrayList();
+            List<string> dirs = new List<string>();
 
             CultureInfo ci = pdnCulture;
 
@@ -74,13 +153,13 @@ namespace PaintDotNet
                 ci = ci.Parent;
             }
 
-            return (string[])dirs.ToArray(typeof(string));
+            return dirs.ToArray();
         }
 
         private static ResourceManager CreateResourceManager()
         {
             const string stringsFileName = "PaintDotNet.Strings";
-            ResourceManager rm = ResourceManager.CreateFileBasedResourceManager(stringsFileName, PdnInfo.GetApplicationDir(), null);
+            ResourceManager rm = ResourceManager.CreateFileBasedResourceManager(stringsFileName, ResourcesDir /*PdnInfo.GetApplicationDir()*/, null);
             return rm;
         }
 
@@ -128,28 +207,124 @@ namespace PaintDotNet
             return stream;
         }
 
+        public static Image GetImageBmpOrPng(string fileNameNoExt)
+        {
+            // using Path.ChangeExtension is not what we want; quite often filenames are "Icons.BlahBlahBlah"
+            string fileNameBmp = fileNameNoExt + ".bmp";
+            Image image = GetImage(fileNameBmp);
+
+            if (image == null)
+            {
+                string fileNamePng = fileNameNoExt + ".png";
+                image = GetImage(fileNamePng);
+            }
+
+            return image;
+        }
+
         public static Image GetImage(string fileName)
         {
             Stream stream = GetResourceStream(fileName);
-            Image image = Image.FromStream(stream);
+
+            Image image = null;
+            if (stream != null)
+            {
+                image = LoadImage(stream); //Image.FromStream(stream);
+            }
+
             return image;
         }
 
         public static Icon GetIcon(string fileName)
         {
             Stream stream = GetResourceStream(fileName);
-            Icon icon = new Icon(stream);
+            Icon icon = null;
+
+            if (stream != null)
+            {
+                icon = new Icon(stream);
+            }
+
             return icon;
         }
 
         public static Icon GetIconFromImage(string fileName)
         {
             Stream stream = GetResourceStream(fileName);
-            Image image = Image.FromStream(stream);
-            Icon icon = Icon.FromHandle(((Bitmap)image).GetHicon());
-            image.Dispose();
-            stream.Close();
+
+            Icon icon = null;
+
+            if (stream != null)
+            {
+                Image image = LoadImage(stream); // Image.FromStream(stream);
+                icon = Icon.FromHandle(((Bitmap)image).GetHicon());
+                image.Dispose();
+                stream.Close();
+            }
+
             return icon;
+        }
+
+        private static bool CheckForSignature(Stream input, byte[] signature)
+        {
+            long oldPos = input.Position;
+            byte[] inputSig = new byte[signature.Length];
+            int amountRead = input.Read(inputSig, 0, inputSig.Length);
+
+            bool foundSig = false;
+            if (amountRead == signature.Length)
+            {
+                foundSig = true;
+
+                for (int i = 0; i < signature.Length; ++i)
+                {
+                    foundSig &= (signature[i] == inputSig[i]);
+                }
+            }
+
+            input.Position = oldPos;
+            return foundSig;
+        }
+
+        public static bool IsGdiPlusImageAllowed(Stream input)
+        {
+            byte[] wmfSig = new byte[] { 0xd7, 0xcd, 0xc6, 0x9a };
+            byte[] emfSig = new byte[] { 0x01, 0x00, 0x00, 0x00 };
+
+            // Check for and explicitely block WMF and EMF images
+            return !(CheckForSignature(input, emfSig) || CheckForSignature(input, wmfSig));
+        }
+
+        public static Image LoadImage(string fileName)
+        {
+            using (FileStream stream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                return LoadImage(stream);
+            }
+        }
+
+        /// <summary>
+        /// Loads an image from the given stream. The stream must be seekable.
+        /// </summary>
+        /// <param name="input">The Stream to load the image from.</param>
+        public static Image LoadImage(Stream input)
+        {
+            /*
+            if (!IsGdiPlusImageAllowed(input))
+            {
+                throw new IOException("File format is not supported");
+            }
+            */
+
+            Image image = Image.FromStream(input);
+
+            if (image.RawFormat == ImageFormat.Wmf || image.RawFormat == ImageFormat.Emf)
+            {
+                image.Dispose();
+                throw new IOException("File format isn't supported");
+            }
+
+            return image;
         }
     }
 }

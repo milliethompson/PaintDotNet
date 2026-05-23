@@ -102,7 +102,7 @@ namespace PaintDotNet
 
         public MagicWandTool(DocumentWorkspace workspace)
             : base(workspace,
-                   PdnResources.GetImage("Icons.MagicWandToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.MagicWandToolIcon.png"),
                    PdnResources.GetString("MagicWandTool.Name"),
                    PdnResources.GetString("MagicWandTool.HelpText"), 
                    's')

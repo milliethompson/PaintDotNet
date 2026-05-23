@@ -15,11 +15,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for SelectionRenderer.
-    /// </summary>
     public class SelectionRenderer
-        : SurfaceBoxRenderer
+        : SurfaceBoxGraphicsRenderer
     {
         private const int dancingAntsInterval = 60;
         private const double maxCpuTime = 0.2; // max 20% CPU time
@@ -51,18 +48,48 @@ namespace PaintDotNet
         protected override void OnVisibleChanged()
         {
             this.selectionTimer.Enabled = this.Visible;
+
+            if (this.selection != null)
+            {
+                Rectangle rect = this.selection.GetBounds();
+                Invalidate(rect);
+            }
+        }
+
+        public override void OnDestinationSizeChanged()
+        {
+            lock (SyncRoot)
+            {
+                this.simplifiedRegionForTimer = null;
+            }
+
+            base.OnDestinationSizeChanged();
+        }
+
+        public override void OnSourceSizeChanged()
+        {
+            lock (SyncRoot)
+            {
+                this.simplifiedRegionForTimer = null;
+            }
+
+            base.OnSourceSizeChanged();
         }
 
         public bool EnableOutlineAnimation
         {
             get
             {
-                return enableOutlineAnimation;
+                return this.enableOutlineAnimation;
             }
 
             set
             {
-                enableOutlineAnimation = value;
+                if (this.enableOutlineAnimation != value)
+                {
+                    this.enableOutlineAnimation = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -75,8 +102,11 @@ namespace PaintDotNet
 
             set
             {
-                this.invertedTinting = value;
-                Invalidate();
+                if (this.invertedTinting != value)
+                {
+                    this.invertedTinting = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -116,7 +146,7 @@ namespace PaintDotNet
 
         private void OnSelectionChanged(object sender, EventArgs e)
         {
-            render = true;
+            this.render = true;
             PdnGraphicsPath path = this.selection.CreatePath();
 
             if (this.selectedPath == null)
@@ -156,9 +186,12 @@ namespace PaintDotNet
             float ratio = 1.0f / (float)OwnerList.ScaleFactor.Ratio;
             int ratioInt = (int)Math.Ceiling(ratio);
 
-            using (PdnRegion simplified = Utility.SimplifyAndInflateRegion(selectionRedrawInterior, Utility.DefaultSimplificationFactor, 2 * ratioInt))
+            if (this.Visible && (this.EnableSelectionOutline || this.EnableSelectionTinting))
             {
-                Invalidate(simplified);
+                using (PdnRegion simplified = Utility.SimplifyAndInflateRegion(selectionRedrawInterior, Utility.DefaultSimplificationFactor, 2 * ratioInt))
+                {
+                    Invalidate(simplified);
+                }
             }
 
             if (fullInvalidate)
@@ -167,6 +200,7 @@ namespace PaintDotNet
                 Invalidate(rect);
                 lastFullInvalidate = DateTime.Now;
             }
+            
 
             this.selectionRedrawInterior.Dispose();
             this.selectionRedrawInterior = null;
@@ -179,8 +213,8 @@ namespace PaintDotNet
 
             this.simplifiedRegionForTimer = null;
 
-            // prepare for next SetSelectedPath call
-            if (this.selectedPath != null && this.selectedPath.PointCount > 0)
+            // prepare for next call
+            if (this.selectedPath != null && !this.selectedPath.IsEmpty)
             {
                 this.selectionRedrawOutline = (PdnGraphicsPath)this.selectedPath.Clone();
                 this.selectionRedrawInterior = new PdnRegion(this.selectedPath);
@@ -241,28 +275,31 @@ namespace PaintDotNet
         private Timing timer = new Timing();
         private double renderTime = 0.0;
 
-        public override void Render(Surface dst, System.Drawing.Point offset)
+        public override bool ShouldRender()
         {
-            if (this.render && (this.EnableSelectionOutline || this.EnableSelectionTinting))
+            return (this.render && (this.EnableSelectionOutline || this.EnableSelectionTinting));            
+        }
+
+        public override void RenderToGraphics(Graphics g, Point offset)
+        {
+            double start = timer.GetTickCountDouble();
+
+            lock (SyncRoot)
             {
-                double start = timer.GetTickCountDouble();
+                PdnGraphicsPath path = GetAppropriateRenderPath();
 
-                lock (SyncRoot)
+                if (path == null || path.IsEmpty)
                 {
-                    PdnGraphicsPath path = GetAppropriateRenderPath();
-
-                    if (path != null && path.PointCount != 0)
-                    {
-                        using (RenderArgs ra = new RenderArgs(dst))
-                        {
-                            ra.Graphics.TranslateTransform(-offset.X, -offset.Y);
-                            DrawSelection(ra.Graphics, path);
-                        }
-                    }
-
-                    double end = timer.GetTickCountDouble();
-                    renderTime += (end - start);
+                    this.render = false; // will be reset next time selection changes
                 }
+                else
+                {
+                    g.TranslateTransform(-offset.X, -offset.Y);
+                    DrawSelection(g, path);
+                }
+
+                double end = timer.GetTickCountDouble();
+                this.renderTime += (end - start);
             }
         }
 
@@ -337,7 +374,11 @@ namespace PaintDotNet
 
             set
             {
-                enableSelectionOutline = value;
+                if (this.enableSelectionOutline != value)
+                {
+                    enableSelectionOutline = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -439,7 +480,29 @@ namespace PaintDotNet
             PixelOffsetMode oldPOM = g.PixelOffsetMode;
             g.PixelOffsetMode = PixelOffsetMode.None;
 
+            Region oldClipRegion = null;
+            RectangleF outlineBounds = outline.GetBounds();
+
+            if (outlineBounds.Left < 0 ||
+                outlineBounds.Top < 0 ||
+                outlineBounds.Right >= this.SourceSize.Width ||
+                outlineBounds.Bottom >= this.SourceSize.Height)
+            {
+                oldClipRegion = g.Clip;
+
+                Region newClipRegion = oldClipRegion.Clone();
+                newClipRegion.Intersect(new Rectangle(0, 0, this.SourceSize.Width, this.SourceSize.Height));
+                g.Clip = newClipRegion;
+                newClipRegion.Dispose();
+            }
+             
             g.FillPath(InteriorBrush, outline);
+
+            if (oldClipRegion != null)
+            {
+                g.Clip = oldClipRegion;
+                oldClipRegion.Dispose();
+            }
 
             g.PixelOffsetMode = oldPOM;
             g.SmoothingMode = oldSM;
@@ -500,11 +563,6 @@ namespace PaintDotNet
             }
 
             if (!enableOutlineAnimation)
-            {
-                return;
-            }
-
-            if (selectedPath == null)
             {
                 return;
             }

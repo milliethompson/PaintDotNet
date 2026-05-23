@@ -7,9 +7,9 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
-#if WIN64
-#define NOINK
-#endif
+//#if WIN64
+//#define NOINK
+//#endif
 
 using System;
 using System.Collections;
@@ -19,9 +19,6 @@ using PaintDotNet;
 
 namespace PaintDotNet.SystemLayer
 {
-    /// <summary>
-    /// Summary description for Ink.
-    /// </summary>
     public sealed class Ink
     {
         private static bool isInkAvailable = false;
@@ -80,7 +77,12 @@ namespace PaintDotNet.SystemLayer
         /// </remarks>
         public static bool IsAvailable()
         {
-            if (!isInkAvailableInit)
+            if (Processor.NativeArchitecture != ProcessorArchitecture.X86)
+            {
+                isInkAvailableInit = true;
+                isInkAvailable = false;
+            }
+            else if (!isInkAvailableInit)
             {
                 // For debug builds we try to load the assembly. This enables us to work with ink
                 // if we have the Tablet PC SDK installed. 
@@ -100,9 +102,11 @@ namespace PaintDotNet.SystemLayer
                     isInkAvailable = false;
                 }
 #else
-                if (Environment.OSVersion.Version >= new Version(6, 0))
+                if (Environment.OSVersion.Version >= new Version(5, 2))
                 {
-                    // Ink appears to be causing crashes on Vista at this time
+                    // Ink appears to be causing crashes on Vista at this time,
+                    // and there's no Tablet PC Edition of either Windows Server 2003
+                    // or Windows XP x64 (both are NT 5.2)
                     // TODO: proper fix
                     isInkAvailable = false;
                 }

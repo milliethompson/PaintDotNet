@@ -29,7 +29,6 @@ namespace PaintDotNet
             }
         }
 
-
         private PaintDotNet.MainToolBar mainToolBar = null;
 
         /// <summary>
@@ -40,12 +39,7 @@ namespace PaintDotNet
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            this.ClientSize = new Size(mainToolBar.Width - 2, mainToolBar.Height);
-        }
-
-        protected override void OnEnableStyles()
-        {
-            //base.OnEnableStyles ();
+            this.ClientSize = new Size(mainToolBar.Width, mainToolBar.Height);
         }
 
         public MainToolBarForm()
@@ -91,18 +85,24 @@ namespace PaintDotNet
             this.mainToolBar.Name = "mainToolBar";
             this.mainToolBar.Size = new System.Drawing.Size(50, 88);
             this.mainToolBar.TabIndex = 0;
+            this.mainToolBar.RelinquishFocusRequest += new EventHandler(mainToolBar_RelinquishFocusRequest);
             // 
             // MainToolBarForm
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(50, 273);
             this.Controls.Add(this.mainToolBar);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "MainToolBarForm";
             this.Controls.SetChildIndex(this.mainToolBar, 0);
             this.ResumeLayout(false);
-
         }
         #endregion
+
+        void mainToolBar_RelinquishFocusRequest(object sender, EventArgs e)
+        {
+            OnRelinquishFocus();
+        }
     }
 }

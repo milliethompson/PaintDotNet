@@ -155,14 +155,14 @@ namespace PaintDotNet
         {
             base.OnDeactivate();
 
-            this.Renderers.Remove(this.previewRenderer);
-            this.previewRenderer.Dispose();
-            this.previewRenderer = null;
-
             if (mouseDown)
             {
                 OnMouseUp(new MouseEventArgs(mouseButton, 0, lastMouseXY.X, lastMouseXY.Y, 0));
             }
+
+            this.Renderers.Remove(this.previewRenderer);
+            this.previewRenderer.Dispose();
+            this.previewRenderer = null;
 
             if (savedSurfaces != null)
             {
@@ -190,8 +190,7 @@ namespace PaintDotNet
                 clipRegion.Dispose();
                 clipRegion = null;
             }
-
-
+                
             if (cursorMouseUp != null)
             {
                 cursorMouseUp.Dispose();
@@ -392,8 +391,17 @@ namespace PaintDotNet
             float length = Utility.Magnitude(direction);
             float bw = Workspace.Environment.PenInfo.Width / 2;
 
+            float fInc;
+            if (length == 0.0f)
+            {
+                fInc = float.PositiveInfinity;
+            }
+            else
+            {
+                fInc = (float)Math.Sqrt(bw) / length;
+            }
+
             // iterate through all points in the linear stroke
-            float fInc = (float)Math.Sqrt(bw) / length;
             for (float f = 0; f < 1; f += fInc) 
             {
                 PointF q = new PointF(finish.X * (1 - f) + f * start.X, 
@@ -458,9 +466,6 @@ namespace PaintDotNet
                                     // adjust the channel color up and down based on the difference calculated
                                     // from the source.  These values are clamped to a byte.  It's possible
                                     // that the new color is too dark or too bright to take the whole range 
-
-                                    // float diff = Utility.ColorDifferenceSquared(colorLifted, colorToReplace) / (1.0f + myTolerance + myTolerance);
-                                    // if (diff <= 1) 
 
                                     bool boolCIT = this.IsColorInTolerance(colorLifted, colorToReplace);
                                     bool boolPAAA = false;
@@ -816,7 +821,7 @@ namespace PaintDotNet
 
         public RecolorTool(DocumentWorkspace parent)
             : base(parent,
-                   PdnResources.GetImage("Icons.RecoloringToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.RecoloringToolIcon.png"),
                    PdnResources.GetString("RecolorTool.Name"), 
                    PdnResources.GetString("RecolorTool.HelpText"),
                    'r')

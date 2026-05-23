@@ -55,8 +55,8 @@ namespace PaintDotNet
             Workspace.Environment.SetTool(oldToolType, Workspace);
 
             return new CompoundHistoryAction(
-                this.Name, 
-                PdnResources.GetImage("Icons.MenuEditEraseSelectionIcon.bmp"), 
+                this.Name,
+                PdnResources.GetImage("Icons.MenuEditEraseSelectionIcon.png"), 
                 new HistoryAction[] { ha, sha });
         }
 

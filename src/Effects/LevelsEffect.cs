@@ -9,6 +9,7 @@
 
 using System;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
@@ -18,32 +19,25 @@ namespace PaintDotNet.Effects
     [EffectCategory(EffectCategory.Adjustment)]
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public class LevelsEffect 
-        : Effect, 
-          IConfigurableEffect
+        : Effect
     {
         public LevelsEffect() :
             base(PdnResources.GetString("LevelsEffect.Name"),
-                 PdnResources.GetImage("Icons.LevelsEffect.bmp"),
-                 System.Windows.Forms.Shortcut.CtrlL)
+                 PdnResources.GetImage("Icons.LevelsEffect.png"),
+                 Keys.Control | Keys.L,
+                 true)
         {
         }
-        #region IConfigurableEffect Members
 
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             return new LevelsEffectConfigDialog();
         }
 
-        public void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
         {
-            UnaryPixelOps.Level levels = (properties as LevelsEffectConfigToken).Levels;
-
-            foreach (Rectangle r in roi.GetRegionScansReadOnlyInt())
-            {
-                levels.Apply(dstArgs.Surface, srcArgs.Surface, r);
-            }
+            UnaryPixelOps.Level levels = (parameters as LevelsEffectConfigToken).Levels;
+            levels.Apply(dstArgs.Surface, srcArgs.Surface, rois, startIndex, length);
         }
-
-        #endregion
     }
 }

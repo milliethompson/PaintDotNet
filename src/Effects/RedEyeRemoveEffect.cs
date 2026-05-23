@@ -11,15 +11,11 @@ using System;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for DesaturateEffect.
-    /// </summary>
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public class RedEyeRemoveEffect
-        : Effect,
-        IConfigurableEffect
+        : Effect
     {
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {   
             RedEyeRemoveEffectDialog tacd = new RedEyeRemoveEffectDialog();
 
@@ -35,27 +31,23 @@ namespace PaintDotNet.Effects
             tacd.Amount2Default = 90;
             tacd.Amount2Label = PdnResources.GetString("RedEyeRemoveEffect.ConfigDialog.Amount2Label");
 
-            tacd.Icon = PdnResources.GetIconFromImage("Icons.RedEyeRemoveEffect.bmp");
+            tacd.Icon = PdnResources.GetIconFromImage("Icons.RedEyeRemoveEffect.png");
 
             return tacd;
         }
 
-        void IConfigurableEffect.Render(EffectConfigToken configToken, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle[] rois, int startIndex, int length)
         {
-            TwoAmountsConfigToken tact = (TwoAmountsConfigToken)configToken;
-        
+            TwoAmountsConfigToken tact = (TwoAmountsConfigToken)parameters;
             PixelOp redEyeRemove = new UnaryPixelOps.RedEyeRemove(tact.Amount1,tact.Amount2);
-            
-            System.Drawing.Rectangle[] rects = roi.GetRegionScansInt();     
-            foreach (System.Drawing.Rectangle rect in rects)
-            {
-                redEyeRemove.Apply(dstArgs.Surface, rect.Location, srcArgs.Surface, rect.Location, rect.Size);
-            }
+
+            redEyeRemove.Apply(dstArgs.Surface, srcArgs.Surface, rois, startIndex, length);
         }
 
         public RedEyeRemoveEffect()
             : base(PdnResources.GetString("RedEyeRemoveEffect.Name"),
-                   PdnResources.GetImage("Icons.RedEyeRemoveEffect.bmp"))
+                   PdnResources.GetImage("Icons.RedEyeRemoveEffect.png"),
+                   true)
         {
         }
     }

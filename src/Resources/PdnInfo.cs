@@ -24,6 +24,27 @@ namespace PaintDotNet
         {
         }
 
+        public enum StartupTestType
+        {
+            None,
+            Timed,
+            WorkingSet,
+        }
+
+        private static StartupTestType startupTest = StartupTestType.None;
+        public static StartupTestType StartupTest
+        {
+            get 
+            {
+                return startupTest; 
+            }
+
+            set 
+            {
+                startupTest = value; 
+            }
+        }
+
         private static bool isTestMode = false;
         public static bool IsTestMode
         {
@@ -52,13 +73,20 @@ namespace PaintDotNet
             }
         }
 
+        private static readonly string appConfig = GetAppConfig();
+
+        private static string GetAppConfig()
+        {
+            object[] attributes = typeof(PdnInfo).Assembly.GetCustomAttributes(typeof(AssemblyConfigurationAttribute), false);
+            AssemblyConfigurationAttribute aca = (AssemblyConfigurationAttribute)attributes[0];
+            return aca.Configuration;
+        }
+
         private static readonly bool isFinalBuild = GetIsFinalBuild();
 
         private static bool GetIsFinalBuild()
         {
-            object[] attributes = typeof(PdnInfo).Assembly.GetCustomAttributes(typeof(AssemblyConfigurationAttribute), false);
-            AssemblyConfigurationAttribute aca = (AssemblyConfigurationAttribute)attributes[0];
-            return !(aca.Configuration.IndexOf("Final") == -1);
+            return !(GetAppConfig().IndexOf("Final") == -1);
         }
 
         public static bool IsFinalBuild
@@ -81,14 +109,14 @@ namespace PaintDotNet
             }
         }
 
-        // Pre-release builds expire after this many days.
+        // Pre-release builds expire after this many days. (debug+"final" also equals expiration)
         public const int BetaExpireTimeDays = 30;
 
         public static DateTime ExpirationDate
         {
             get
             {
-                if (PdnInfo.IsFinalBuild)
+                if (PdnInfo.IsFinalBuild && !IsDebugBuild)
                 {
                     return DateTime.MaxValue;
                 }
@@ -99,6 +127,35 @@ namespace PaintDotNet
             }
         }
 
+        /// <summary>
+        /// Checks if the build is expired, and displays a dialog box that takes the user to
+        /// the Paint.NET website if necessary.
+        /// </summary>
+        /// <returns>true if the user should be allowed to continue, false if the build has expired</returns>
+        public static bool HandleExpiration()
+        {
+            if (!PdnInfo.IsFinalBuild || PdnInfo.IsDebugBuild)
+            {
+                if (DateTime.Now > PdnInfo.ExpirationDate)
+                {
+                    string expiredMessage = PdnResources.GetString("ExpiredDialog.Message");
+
+                    DialogResult result = MessageBox.Show(expiredMessage, PdnInfo.GetProductName(true),
+                        MessageBoxButtons.OKCancel);
+
+                    if (result == DialogResult.OK)
+                    {
+                        string expiredRedirect = PdnResources.GetString("PdnInfo.ExpiredRedirectPage");
+                        PdnInfo.LaunchWebSite(expiredRedirect);
+                    }
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public static string GetApplicationDir()
         {
             string appPath = Application.ExecutablePath;
@@ -106,13 +163,39 @@ namespace PaintDotNet
             return appDir;
         }
 
-        private static string productName = null;
+        /// <summary>
+        /// For final builds, returns a string such as "Paint.NET v2.6"
+        /// For non-final builds, returns a string such as "Paint.NET v2.6 Beta 2"
+        /// </summary>
+        /// <returns></returns>
         public static string GetProductName()
         {
-            if (productName == null)
+            return GetProductName(!IsFinalBuild);
+        }
+
+        public static string GetProductName(bool withTag)
+        {
+            string bareProductName = GetBareProductName();
+            string productNameFormat = PdnResources.GetString("Application.ProductName.Format");
+            string tag;
+
+            if (withTag)
             {
-                productName = PdnResources.GetString("Application.ProductName");
+                string tagFormat = PdnResources.GetString("Application.ProductName.Tag.Format");
+                tag = string.Format(tagFormat, GetAppConfig());
             }
+            else
+            {
+                tag = string.Empty;
+            }
+
+            string version = GetVersion().ToString(2);
+
+            string productName = string.Format(
+                productNameFormat,
+                bareProductName,
+                version,
+                tag);
 
             return productName;
         }
@@ -162,7 +245,12 @@ namespace PaintDotNet
 #endif
                 
             string versionFormat = PdnResources.GetString("PdnInfo.VersionString.Format");
-            string versionText = string.Format(versionFormat, GetConfigurationString(), buildType, Application.ProductVersion);
+            string versionText = string.Format(
+                versionFormat, 
+                GetConfigurationString(), 
+                buildType, 
+                Application.ProductVersion);
+
             return versionText;
         }
 
@@ -192,13 +280,13 @@ namespace PaintDotNet
         }
 
         /// <summary>
-        /// Returns the application name, with the version string. i.e., "Paint.NET (Beta 2 Debug build 1.0.*.*)"
+        /// Returns the application name, with the version string. i.e., "Paint.NET v2.5 (Beta 2 Debug build 1.0.*.*)"
         /// </summary>
         /// <returns></returns>
         public static string GetFullAppName()
         {
             string fullAppNameFormat = PdnResources.GetString("PdnInfo.FullAppName.Format");
-            string fullAppName = string.Format(fullAppNameFormat, PdnInfo.GetProductName(), GetVersionString());
+            string fullAppName = string.Format(fullAppNameFormat, PdnInfo.GetProductName(false), GetVersionString());
             return fullAppName;
         }
 
@@ -209,9 +297,9 @@ namespace PaintDotNet
         /// <returns></returns>
         public static string GetAppName()
         {
-            if (PdnInfo.IsFinalBuild)
+            if (PdnInfo.IsFinalBuild && !PdnInfo.IsDebugBuild)
             {
-                return PdnInfo.GetProductName();
+                return PdnInfo.GetProductName(false);
             }
             else
             {
@@ -246,6 +334,27 @@ namespace PaintDotNet
             {
                 System.Diagnostics.Process.Start(url);
             }
+        }
+
+        public static string GetNgenPath()
+        {
+            string fxDir;
+
+            if (UIntPtr.Size == 8)
+            {
+                fxDir = "Framework64";
+            }
+            else
+            {
+                fxDir = "Framework";
+            }
+
+            string fxPathBase = @"%WINDIR%\Microsoft.NET\" + fxDir + @"\v";
+            string fxPath = fxPathBase + Environment.Version.ToString(3) + @"\";
+            string fxPathExp = System.Environment.ExpandEnvironmentVariables(fxPath);
+            string ngenExe = Path.Combine(fxPathExp, "ngen.exe");
+
+            return ngenExe;
         }
     }
 }

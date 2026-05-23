@@ -92,10 +92,10 @@ namespace PaintDotNet
 
         public ColorPickerTool(DocumentWorkspace parent)
             : base(parent,
-                   PdnResources.GetImage("Icons.ColorPickerToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.ColorPickerToolIcon.png"),
                    PdnResources.GetString("ColorPickerTool.Name"),
                    PdnResources.GetString("ColorPickerTool.HelpText"),
-                   'd')
+                   'p')
         {
             // initialize any state information you need
             mouseDown = false;

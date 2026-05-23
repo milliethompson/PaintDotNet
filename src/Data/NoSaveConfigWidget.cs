@@ -65,6 +65,8 @@ namespace PaintDotNet
             // NoSaveConfigWidget
             // 
             this.Controls.Add(this.label1);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Name = "NoSaveConfigWidget";
             this.Size = new System.Drawing.Size(152, 88);
             this.ResumeLayout(false);

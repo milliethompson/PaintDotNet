@@ -19,8 +19,7 @@ using System.Windows.Forms;
 namespace PaintDotNet.Effects
 {
     public class FrostedGlassEffect
-        : Effect,
-          IConfigurableEffect
+        : Effect
     {
         public static string StaticName
         {
@@ -34,7 +33,7 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return PdnResources.GetImage("Icons.FrostedGlassEffect.bmp");
+                return PdnResources.GetImage("Icons.FrostedGlassEffect.png");
             }
         }
 
@@ -43,13 +42,14 @@ namespace PaintDotNet.Effects
         public FrostedGlassEffect() 
             : base(StaticName, 
                    StaticImage,
-                   Shortcut.None,
+                   Keys.None,
                    null,
-                   EffectDirectives.None)
+                   EffectDirectives.None,
+                   true)
         {
         }
 
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             AmountEffectConfigDialog aecd = new AmountEffectConfigDialog();
             aecd.SliderMinimum = 1;
@@ -62,7 +62,8 @@ namespace PaintDotNet.Effects
             return aecd;
         }
 
-        public unsafe void Render(EffectConfigToken token, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public unsafe override void Render(EffectConfigToken token, RenderArgs dstArgs, RenderArgs srcArgs, 
+            Rectangle[] rois, int startIndex, int length)
         {
             AmountEffectConfigToken realToken = (AmountEffectConfigToken)token;
             Surface src = srcArgs.Surface;
@@ -80,8 +81,10 @@ namespace PaintDotNet.Effects
             uint[] avgAlpha = new uint[256];
             byte[] intensityChoices = new byte[(1 + (r * 2)) * (1 + (r * 2))];
 
-            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
+            for (int ri = startIndex; ri < startIndex + length; ++ri)
             {
+                Rectangle rect = rois[ri];
+
                 int rectTop = rect.Top;
                 int rectBottom = rect.Bottom;
                 int rectLeft = rect.Left;

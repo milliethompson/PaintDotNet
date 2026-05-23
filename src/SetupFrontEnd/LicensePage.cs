@@ -62,9 +62,13 @@ namespace PaintDotNet.Setup
             {
                 WizardHost.HeaderText = PdnResources.GetString("SetupWizard.LicensePage.HeaderText");
                 this.agreeButton.Font = WizardHost.NormalTextFont;
+                this.agreeButton.ForeColor = WizardHost.TextColor;
                 this.introText.Font = WizardHost.NormalTextFont;
+                this.introText.ForeColor = WizardHost.TextColor;
                 this.dontAgreeButton.Font = WizardHost.NormalTextFont;
+                this.dontAgreeButton.ForeColor = WizardHost.TextColor;
                 this.licenseAgreementText.Font = WizardHost.FixedWidthFont;
+                this.licenseAgreementText.ForeColor = WizardHost.TextColor;
                 WizardHost.SetNextEnabled(agreeButton.Checked);
             }
 
@@ -118,29 +122,26 @@ namespace PaintDotNet.Setup
             // 
             // introText
             // 
-            this.introText.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.introText.Location = new System.Drawing.Point(12, 6);
             this.introText.Name = "introText";
-            this.introText.Size = new System.Drawing.Size(464, 38);
+            this.introText.Size = new System.Drawing.Size(464, 51);
             this.introText.TabIndex = 1;
             this.introText.Text = "introText";
             // 
             // licenseAgreementText
             // 
             this.licenseAgreementText.BackColor = System.Drawing.Color.White;
-            this.licenseAgreementText.Location = new System.Drawing.Point(12, 44);
+            this.licenseAgreementText.Location = new System.Drawing.Point(15, 57);
             this.licenseAgreementText.Multiline = true;
             this.licenseAgreementText.Name = "licenseAgreementText";
             this.licenseAgreementText.ReadOnly = true;
             this.licenseAgreementText.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.licenseAgreementText.Size = new System.Drawing.Size(472, 184);
+            this.licenseAgreementText.Size = new System.Drawing.Size(469, 171);
             this.licenseAgreementText.TabIndex = 2;
-            this.licenseAgreementText.Text = "";
             // 
             // dontAgreeButton
             // 
-            this.dontAgreeButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.dontAgreeButton.Location = new System.Drawing.Point(12, 234);
+            this.dontAgreeButton.Location = new System.Drawing.Point(15, 234);
             this.dontAgreeButton.Name = "dontAgreeButton";
             this.dontAgreeButton.Size = new System.Drawing.Size(148, 24);
             this.dontAgreeButton.TabIndex = 3;
@@ -148,8 +149,7 @@ namespace PaintDotNet.Setup
             // 
             // agreeButton
             // 
-            this.agreeButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.agreeButton.Location = new System.Drawing.Point(172, 234);
+            this.agreeButton.Location = new System.Drawing.Point(175, 234);
             this.agreeButton.Name = "agreeButton";
             this.agreeButton.Size = new System.Drawing.Size(136, 24);
             this.agreeButton.TabIndex = 4;
@@ -162,8 +162,11 @@ namespace PaintDotNet.Setup
             this.Controls.Add(this.dontAgreeButton);
             this.Controls.Add(this.licenseAgreementText);
             this.Controls.Add(this.introText);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             this.Name = "LicensePage";
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
         #endregion

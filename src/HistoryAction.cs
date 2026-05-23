@@ -96,7 +96,7 @@ namespace PaintDotNet
             }
         }
 
-        private PersistedObject historyActionData = null;
+        private PersistedObject<HistoryActionData> historyActionData = null;
 
         /// <summary>
         /// Gets or sets the HistoryActionData associated with this HistoryAction.
@@ -108,12 +108,19 @@ namespace PaintDotNet
         {
             get
             {
-                return (HistoryActionData)historyActionData.Object;
+                if (historyActionData == null)
+                {
+                    return null;
+                }
+                else
+                {
+                    return (HistoryActionData)historyActionData.Object;
+                }
             }
 
             set
             {
-                this.historyActionData = new PersistedObject(value);
+                this.historyActionData = new PersistedObject<HistoryActionData>(value, false);
             }
         }
 

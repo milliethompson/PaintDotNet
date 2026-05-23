@@ -33,13 +33,18 @@ void TraceOut(const char *szFormat, ...)
     va_start(marker, szFormat);
 
     char buffer[2048];
-    _vsnprintf(buffer, sizeof(buffer), szFormat, marker);
+    _vsnprintf_s(buffer, sizeof(buffer), (sizeof(buffer) / sizeof(buffer[0])) - 1, szFormat, marker);
 
-    OutputDebugString(buffer);
+    OutputDebugStringA(buffer);
 
-    FILE *flog = fopen("C:\\log.txt", "a");
-    fprintf(flog, "%s\n", buffer);
-    fclose(flog);
+	FILE *flog = NULL;
+	errno_t err = fopen_s(&flog, "C:\\log.txt", "a");
+
+	if (0 == err && NULL != flog)
+	{
+		fprintf(flog, "%s\n", buffer);
+		fclose(flog);
+	}
 }
 #endif
 

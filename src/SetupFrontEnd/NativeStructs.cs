@@ -12,11 +12,24 @@ using System.Runtime.InteropServices;
 
 namespace PaintDotNet.Setup
 {
-    /// <summary>
-    /// Summary description for NativeStructs.
-    /// </summary>
     internal sealed class NativeStructs
     {
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct SYSTEM_INFO 
+        {
+            public ushort wProcessorArchitecture;
+            public ushort wReserved;
+            public uint dwPageSize;
+            public IntPtr lpMinimumApplicationAddress;
+            public IntPtr lpMaximumApplicationAddress;
+            public UIntPtr dwActiveProcessorMask;
+            public uint dwNumberOfProcessors;
+            public uint dwProcessorType;
+            public uint dwAllocationGranularity;
+            public ushort wProcessorLevel;
+            public ushort wProcessorRevision;
+        };
+    
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         internal struct OSVERSIONINFOEX 
         {
@@ -34,8 +47,8 @@ namespace PaintDotNet.Setup
             public uint dwBuildNumber;  
             public uint dwPlatformId;  
 
-            [MarshalAs(UnmanagedType.LPTStr, SizeConst = 128)]
-            public string szCSDVersion;  
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+            public string szCSDVersion;
 
             public ushort wServicePackMajor;  
 

@@ -58,12 +58,14 @@ namespace PaintDotNet.Effects
             // 
             // okButton
             // 
-            this.okButton.Location = new System.Drawing.Point(96, 179);
+            this.okButton.Location = new System.Drawing.Point(101, 179);
+            this.okButton.Size = new System.Drawing.Size(81, 23);
             this.okButton.Name = "okButton";
             // 
             // cancelButton
             // 
-            this.cancelButton.Location = new System.Drawing.Point(177, 179);
+            this.cancelButton.Location = new System.Drawing.Point(188, 179);
+            this.cancelButton.Size = new System.Drawing.Size(81, 23);
             this.cancelButton.Name = "cancelButton";
             // 
             // usageHintLabel
@@ -76,8 +78,9 @@ namespace PaintDotNet.Effects
             // 
             // RedEyeRemoveEffectDialog
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.ClientSize = new System.Drawing.Size(258, 208);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(275, 208);
             this.Controls.Add(this.usageHintLabel);
             this.Location = new System.Drawing.Point(0, 0);
             this.Name = "RedEyeRemoveEffectDialog";

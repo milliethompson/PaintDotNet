@@ -10,6 +10,7 @@
 using System;
 using System.Collections;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
@@ -19,14 +20,6 @@ namespace PaintDotNet.Effects
     public unsafe abstract class ConvolutionFilterEffect
         : Effect
     {
-        public void RenderConvolutionFilter(int[][] weights, int offset, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
-        {
-            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
-            {
-                RenderConvolutionFilter(weights, offset, dstArgs, srcArgs, rect);
-            }
-        }
-
         private sealed class FExtentKey
         {
             private int srcLength;
@@ -154,6 +147,7 @@ namespace PaintDotNet.Effects
             }
 
             shift = 15 - shift;
+
             //shift it so that it's less than 32768
             for (int y = 0; y < weights.Length; y++) 
             {
@@ -173,10 +167,9 @@ namespace PaintDotNet.Effects
             }
         }
 
-        public void RenderConvolutionFilter(int[][] weights, int offset, RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle roi)
+        public void RenderConvolutionFilter(int[][] weights, int offset, RenderArgs dstArgs, RenderArgs srcArgs, 
+            Rectangle[] rois, int startIndex, int length)
         {
-            base.Render (dstArgs, srcArgs, roi);
-
             int weightsWidth = weights[0].Length;
             int weightsHeight = weights.Length;
 
@@ -191,149 +184,141 @@ namespace PaintDotNet.Effects
             FExtent fxExtent = GetFExtent(srcArgs.Surface.Width, weightsWidth);
             FExtent fyExtent = GetFExtent(srcArgs.Surface.Height, weightsHeight);
 
-            for (int y = roi.Top; y < roi.Bottom; ++y)
+            for (int ri = startIndex; ri < startIndex + length; ++ri)
             {
-                ColorBgra *dstPixel = dstArgs.Surface.GetPointAddress(roi.Left, y);
-                int fyStart = fyExtent.fStarts[y];
-                int fyEnd = fyExtent.fEnds[y];
+                Rectangle roi = rois[ri];
 
-                for (int x = roi.Left; x < roi.Right; ++x)
+                for (int y = roi.Top; y < roi.Bottom; ++y)
                 {
-                    int redSum = 0;
-                    int greenSum = 0;
-                    int blueSum = 0;
-                    int alphaSum = 0;
-                    int colorFactor = 0;
-                    int alphaFactor = 0;
-                    int fxStart = fxExtent.fStarts[x];
-                    int fxEnd = fxExtent.fEnds[x];
+                    ColorBgra* dstPixel = dstArgs.Surface.GetPointAddress(roi.Left, y);
+                    int fyStart = fyExtent.fStarts[y];
+                    int fyEnd = fyExtent.fEnds[y];
 
-                    for (int fy = fyStart; fy < fyEnd; ++fy)
+                    for (int x = roi.Left; x < roi.Right; ++x)
                     {
-                        int srcY = y + fy + fYOffset;
-                        int srcX1 = x + fXOffset + fxStart;
+                        int redSum = 0;
+                        int greenSum = 0;
+                        int blueSum = 0;
+                        int alphaSum = 0;
+                        int colorFactor = 0;
+                        int alphaFactor = 0;
+                        int fxStart = fxExtent.fStarts[x];
+                        int fxEnd = fxExtent.fEnds[x];
 
-                        ColorBgra *srcPixel = srcArgs.Surface.GetPointAddress(srcX1, srcY);
-                        int[] wRow = weights[fy];
-
-                        for (int fx = fxStart; fx < fxEnd; ++fx)
+                        for (int fy = fyStart; fy < fyEnd; ++fy)
                         {
-                            int srcX = fx + srcX1;
-                            int weight = wRow[fx];
+                            int srcY = y + fy + fYOffset;
+                            int srcX1 = x + fXOffset + fxStart;
 
-                            ColorBgra c = *srcPixel;
+                            ColorBgra* srcPixel = srcArgs.Surface.GetPointAddress(srcX1, srcY);
+                            int[] wRow = weights[fy];
 
-                            alphaFactor += weight;
-                            weight = weight * (c.A + (c.A >> 7));
-                            colorFactor += weight;
-                            weight >>= 8;
+                            for (int fx = fxStart; fx < fxEnd; ++fx)
+                            {
+                                int srcX = fx + srcX1;
+                                int weight = wRow[fx];
 
-                            redSum += c.R * weight;
-                            blueSum += c.B * weight;
-                            greenSum += c.G * weight;
-                            alphaSum += c.A * weight;
+                                ColorBgra c = *srcPixel;
 
-                            ++srcPixel;
+                                alphaFactor += weight;
+                                weight = weight * (c.A + (c.A >> 7));
+                                colorFactor += weight;
+                                weight >>= 8;
+
+                                redSum += c.R * weight;
+                                blueSum += c.B * weight;
+                                greenSum += c.G * weight;
+                                alphaSum += c.A * weight;
+
+                                ++srcPixel;
+                            }
                         }
-                    }
 
-                    colorFactor /= 256;
+                        colorFactor /= 256;
 
-                    if (colorFactor != 0)
-                    {
-                        redSum /= colorFactor;
-                        greenSum /= colorFactor;
-                        blueSum /= colorFactor;
-                    }
-                    else
-                    {
-                        redSum = 0;
-                        greenSum = 0;
-                        blueSum = 0;
-                    }
+                        if (colorFactor != 0)
+                        {
+                            redSum /= colorFactor;
+                            greenSum /= colorFactor;
+                            blueSum /= colorFactor;
+                        }
+                        else
+                        {
+                            redSum = 0;
+                            greenSum = 0;
+                            blueSum = 0;
+                        }
 
-                    if (alphaFactor != 0)
-                    {
-                        alphaSum /= alphaFactor;
-                    }
-                    else
-                    {
-                        alphaSum = 0;
-                    }
+                        if (alphaFactor != 0)
+                        {
+                            alphaSum /= alphaFactor;
+                        }
+                        else
+                        {
+                            alphaSum = 0;
+                        }
 
-                    redSum += offset;
-                    greenSum += offset;
-                    blueSum += offset;
-                    alphaSum += offset;
+                        redSum += offset;
+                        greenSum += offset;
+                        blueSum += offset;
+                        alphaSum += offset;
 
-                    #region clamp values to [0,255]
-                    if (redSum < 0)
-                    {
-                        redSum = 0;
-                    }
-                    else
-                    if (redSum > 255)
-                    {
-                        redSum = 255;
-                    }
+                        #region clamp values to [0,255]
+                        if (redSum < 0)
+                        {
+                            redSum = 0;
+                        }
+                        else
+                            if (redSum > 255)
+                            {
+                                redSum = 255;
+                            }
 
-                    if (greenSum < 0)
-                    {
-                        greenSum = 0;
-                    }
-                    else
-                    if (greenSum > 255)
-                    {
-                        greenSum = 255;
-                    }
-                   
-                    if (blueSum < 0)
-                    {
-                        blueSum = 0;
-                    }
-                    else
-                    if (blueSum > 255)
-                    {
-                        blueSum = 255;
-                    }
+                        if (greenSum < 0)
+                        {
+                            greenSum = 0;
+                        }
+                        else
+                            if (greenSum > 255)
+                            {
+                                greenSum = 255;
+                            }
 
-                    if (alphaSum < 0)
-                    {
-                        alphaSum = 0;
-                    }
-                    else
-                    if (alphaSum > 255)
-                    {
-                        alphaSum = 255;
-                    }
-                    #endregion
+                        if (blueSum < 0)
+                        {
+                            blueSum = 0;
+                        }
+                        else
+                            if (blueSum > 255)
+                            {
+                                blueSum = 255;
+                            }
 
-                    *dstPixel = ColorBgra.FromRgba((byte)redSum, (byte)greenSum, (byte)blueSum, (byte)alphaSum);
-                    ++dstPixel;
+                        if (alphaSum < 0)
+                        {
+                            alphaSum = 0;
+                        }
+                        else
+                            if (alphaSum > 255)
+                            {
+                                alphaSum = 255;
+                            }
+                        #endregion
+
+                        *dstPixel = ColorBgra.FromRgba((byte)redSum, (byte)greenSum, (byte)blueSum, (byte)alphaSum);
+                        ++dstPixel;
+                    }
                 }
             }
         }
 
-
-        [Obsolete("The description property is obsolete.", true)]
-        public ConvolutionFilterEffect(string name, string description, Image image)
-            : this(name, image)
+        public ConvolutionFilterEffect(string name, Image image, bool isConfigurable)
+            : this(name, image, Keys.None, isConfigurable)
         {
         }
 
-        public ConvolutionFilterEffect(string name, Image image)
-            : this(name, image, System.Windows.Forms.Shortcut.None)
-        {
-        }
-
-        [Obsolete("The description property is obsolete.", true)]
-        public ConvolutionFilterEffect(string name, string description, Image image, System.Windows.Forms.Shortcut shortcut)
-            : base(name, image, shortcut)
-        {
-        }
-
-        public ConvolutionFilterEffect(string name, Image image, System.Windows.Forms.Shortcut shortcut)
-            : base(name, image, shortcut)
+        public ConvolutionFilterEffect(string name, Image image, System.Windows.Forms.Keys shortcutKeys, bool isConfigurable)
+            : base(name, image, shortcutKeys, isConfigurable)
         {
         }
     }

@@ -15,12 +15,6 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    using System;
-    using System.Collections;
-    using System.ComponentModel;
-    using System.Drawing;
-    using System.Windows.Forms;
-
     public class AmountEffectConfigDialog 
         : EffectConfigDialog
     {
@@ -54,7 +48,7 @@ namespace PaintDotNet.Effects
                 this.sliderInitialValue = value;
                 amountTrackBar.Value = value;
                 amountUpDown.Value = value;
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 
@@ -219,7 +213,8 @@ namespace PaintDotNet.Effects
             // AmountEffectConfigDialog
             // 
             this.AcceptButton = this.okButton;
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(177, 122);
             this.Controls.Add(this.headerLabel);
@@ -263,7 +258,7 @@ namespace PaintDotNet.Effects
             if (amountTrackBar.Value != (int)amountUpDown.Value)
             {
                 amountUpDown.Value = amountTrackBar.Value;
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 
@@ -272,7 +267,7 @@ namespace PaintDotNet.Effects
             if (amountTrackBar.Value != (int)amountUpDown.Value)
             {
                 amountTrackBar.Value = (int)amountUpDown.Value;
-                UpdateToken();
+                FinishTokenUpdate();
             }
         }
 

@@ -13,8 +13,12 @@ using System.Drawing.Imaging;
 
 namespace PaintDotNet
 {
-    public class Exif
+    public sealed class Exif
     {
+        private Exif()
+        {
+        }
+
         public static PropertyItem CreatePropertyItem(ExifTagID id, ExifTagType type, byte[] data)
         {
             return CreatePropertyItem((short)id, type, data);

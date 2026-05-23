@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -37,9 +38,9 @@ namespace PaintDotNet
             base.OnMouseUp (e);
         }
 
-        protected override ArrayList TrimShapePath(ArrayList tracePoints)
+        protected override List<Point> TrimShapePath(System.Collections.Generic.List<Point> tracePoints)
         {
-            ArrayList array = new ArrayList();
+            List<Point> array = new List<Point>();
 
             if (tracePoints.Count > 0)
             {
@@ -54,10 +55,10 @@ namespace PaintDotNet
             return array;
         }
 
-        protected override PointF[] CreateShape(Point[] tracePoints)
+        protected override List<PointF> CreateShape(List<Point> tracePoints)
         {
             Point a = tracePoints[0];
-            Point b = tracePoints[tracePoints.Length - 1];
+            Point b = tracePoints[tracePoints.Count - 1];
 
             Rectangle rect;
             if ((ModifierKeys & Keys.Shift) != 0)
@@ -71,13 +72,22 @@ namespace PaintDotNet
 
             rect.Intersect(Workspace.Document.Bounds);
 
-            PointF[] shape = new PointF[5];
+            List<PointF> shape;
 
-            shape[0] = new PointF(rect.Left, rect.Top);
-            shape[1] = new PointF(rect.Right, rect.Top);
-            shape[2] = new PointF(rect.Right, rect.Bottom);
-            shape[3] = new PointF(rect.Left, rect.Bottom);
-            shape[4] = shape[0];
+            if (rect.Width > 0 && rect.Height > 0)
+            {
+                shape = new List<PointF>(5);
+
+                shape.Add(new PointF(rect.Left, rect.Top));
+                shape.Add(new PointF(rect.Right, rect.Top));
+                shape.Add(new PointF(rect.Right, rect.Bottom));
+                shape.Add(new PointF(rect.Left, rect.Bottom));
+                shape.Add(shape[0]);
+            }
+            else
+            {
+                shape = new List<PointF>(0);
+            }
 
             return shape;
         }
@@ -109,7 +119,7 @@ namespace PaintDotNet
 
         public RectangleSelectTool(DocumentWorkspace workspace)
             : base(workspace,
-                   PdnResources.GetImage("Icons.RectangleSelectToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.RectangleSelectToolIcon.png"),
                    PdnResources.GetString("RectangleSelectTool.Name"),
                    PdnResources.GetString("RectangleSelectTool.HelpText"),
                    's')

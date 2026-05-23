@@ -154,6 +154,8 @@ namespace PaintDotNet
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
         }
         #endregion
     }

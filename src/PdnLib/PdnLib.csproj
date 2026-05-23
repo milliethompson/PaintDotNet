@@ -1,610 +1,392 @@
-<VisualStudioProject>
-    <CSHARP
-        ProjectType = "Local"
-        ProductVersion = "7.10.3077"
-        SchemaVersion = "2.0"
-        ProjectGuid = "{1EADE568-A866-4DD4-9898-0A151E3F0E26}"
-    >
-        <Build>
-            <Settings
-                ApplicationIcon = ""
-                AssemblyKeyContainerName = ""
-                AssemblyName = "PdnLib"
-                AssemblyOriginatorKeyFile = ""
-                DefaultClientScript = "JScript"
-                DefaultHTMLPageLayout = "Grid"
-                DefaultTargetSchema = "IE50"
-                DelaySign = "false"
-                OutputType = "Library"
-                PreBuildEvent = ""
-                PostBuildEvent = ""
-                RootNamespace = "PaintDotNet"
-                RunPostBuildEvent = "OnBuildSuccess"
-                StartupObject = ""
-            >
-                <Config
-                    Name = "Debug"
-                    AllowUnsafeBlocks = "true"
-                    BaseAddress = "314572800"
-                    CheckForOverflowUnderflow = "true"
-                    ConfigurationOverrideFile = ""
-                    DefineConstants = "DEBUG;TRACE"
-                    DocumentationFile = ""
-                    DebugSymbols = "true"
-                    FileAlignment = "4096"
-                    IncrementalBuild = "true"
-                    NoStdLib = "false"
-                    NoWarn = ""
-                    Optimize = "false"
-                    OutputPath = "bin\Debug\"
-                    RegisterForComInterop = "false"
-                    RemoveIntegerChecks = "false"
-                    TreatWarningsAsErrors = "true"
-                    WarningLevel = "4"
-                />
-                <Config
-                    Name = "Release"
-                    AllowUnsafeBlocks = "true"
-                    BaseAddress = "314572800"
-                    CheckForOverflowUnderflow = "false"
-                    ConfigurationOverrideFile = ""
-                    DefineConstants = "TRACE"
-                    DocumentationFile = ""
-                    DebugSymbols = "false"
-                    FileAlignment = "4096"
-                    IncrementalBuild = "false"
-                    NoStdLib = "false"
-                    NoWarn = ""
-                    Optimize = "true"
-                    OutputPath = "bin\Release\"
-                    RegisterForComInterop = "false"
-                    RemoveIntegerChecks = "false"
-                    TreatWarningsAsErrors = "true"
-                    WarningLevel = "4"
-                />
-            </Settings>
-            <References>
-                <Reference
-                    Name = "System"
-                    AssemblyName = "System"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.dll"
-                />
-                <Reference
-                    Name = "System.Drawing"
-                    AssemblyName = "System.Drawing"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Drawing.dll"
-                />
-                <Reference
-                    Name = "System.Windows.Forms"
-                    AssemblyName = "System.Windows.Forms"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Windows.Forms.dll"
-                />
-                <Reference
-                    Name = "SystemLayer"
-                    Project = "{80572820-93A5-4278-A513-D902BEA2639C}"
-                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
-                />
-                <Reference
-                    Name = "ICSharpCode.SharpZipLib"
-                    AssemblyName = "ICSharpCode.SharpZipLib"
-                    HintPath = "..\SharpZipLib\ICSharpCode.SharpZipLib.dll"
-                />
-                <Reference
-                    Name = "Resources"
-                    Project = "{0B173113-1F9B-4939-A62F-A176336F13AC}"
-                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
-                />
-                <Reference
-                    Name = "System.Data"
-                    AssemblyName = "System.Data"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Data.dll"
-                />
-                <Reference
-                    Name = "System.XML"
-                    AssemblyName = "System.Xml"
-                    HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.XML.dll"
-                />
-            </References>
-        </Build>
-        <Files>
-            <Include>
-                <File
-                    RelPath = "AngleChooserControl.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "AngleChooserControl.resx"
-                    DependentUpon = "AngleChooserControl.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "AssemblyInfo.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BinaryPixelOp.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BinaryPixelOps.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BitVector2D.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BitVector2DSurfaceAdapter.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BoolObjectDelegate.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BoolVoidDelegate.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "BoxedConstants.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorBgra.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorGradientControl.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ColorGradientControl.resx"
-                    DependentUpon = "ColorGradientControl.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "ControlShadow.cs"
-                    SubType = "Component"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ControlShadow.resx"
-                    DependentUpon = "ControlShadow.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "CursorChanger.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DeferredFormatter.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "EnumWrapper.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HeaderLabel.cs"
-                    SubType = "Component"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HeaderLabel.resx"
-                    DependentUpon = "HeaderLabel.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "Histogram.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HistogramControl.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HistogramControl.resx"
-                    DependentUpon = "HistogramControl.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "HistogramLuminosity.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HistogramRgb.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "HsvColor.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IBitVector2D.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IDeferredSerializable.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IndexEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IndexEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IOEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IOEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IOOperationType.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IPixelOp.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IrregularSurface.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ISurfaceDraw.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "List.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MaskedSurface.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MeasurementUnit.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MemoryBlock.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MenuItemWithTag.cs"
-                    SubType = "Component"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MovingEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "MovingEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PaintEventArgs2.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PaintEventHandler2.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PanelEx.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PanelEx.resx"
-                    DependentUpon = "PanelEx.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "PdnBaseDialog.cs"
-                    SubType = "Form"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PdnBaseDialog.resx"
-                    DependentUpon = "PdnBaseDialog.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "PdnBaseForm.cs"
-                    SubType = "Form"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PdnBaseForm.resx"
-                    DependentUpon = "PdnBaseForm.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "PdnException.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PdnGraphicsPath.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PdnMessageBox.cs"
-                    SubType = "Form"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PdnMessageBox.resx"
-                    DependentUpon = "PdnMessageBox.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "PdnRegion.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PersistedObject.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PersistedObjectLocker.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PixelOp.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PlacedSurface.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PointVector.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ProgressEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ProgressEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PropertyEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "PropertyEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RectangleVector.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RenderArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RenderedTileEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RenderedTileEventHandler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ResamplingAlgorithm.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "RgbColor.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Ruler.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Ruler.resx"
-                    DependentUpon = "Ruler.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "ScaleFactor.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Scanline.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Selection.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Set.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SiphonStream.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "StylusEventArgs.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Surface.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SurfaceBox.cs"
-                    SubType = "Component"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SurfaceBox.resx"
-                    DependentUpon = "SurfaceBox.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "SurfaceBoxBaseRenderer.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SurfaceBoxGridRenderer.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SurfaceBoxRenderer.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SurfaceBoxRendererList.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "UnaryPixelOp.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "UnaryPixelOps.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "UnitsComboBox.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "UnitsComboBox.resx"
-                    DependentUpon = "UnitsComboBox.cs"
-                    BuildAction = "EmbeddedResource"
-                />
-                <File
-                    RelPath = "UnitsDisplayType.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "UserControl2.cs"
-                    SubType = "UserControl"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Utility.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "VoidObjectDelegate.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "VoidVoidDelegate.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "WaitCursorChanger.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "WorkerThreadException.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Threading\ThreadPool.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Threading\WaitableCounter.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-            </Include>
-        </Files>
-    </CSHARP>
-</VisualStudioProject>
-
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{1EADE568-A866-4DD4-9898-0A151E3F0E26}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>PdnLib</AssemblyName>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>Library</OutputType>
+    <RootNamespace>PaintDotNet</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseAddress>314572800</BaseAddress>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseAddress>314572800</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>true</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>pdbonly</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <Name>ICSharpCode.SharpZipLib</Name>
+      <HintPath>..\SharpZipLib\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+    <Reference Include="System.Data">
+      <Name>System.Data</Name>
+    </Reference>
+    <Reference Include="System.Drawing">
+      <Name>System.Drawing</Name>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <Name>System.Windows.Forms</Name>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Name>System.XML</Name>
+    </Reference>
+    <ProjectReference Include="..\Resources\Resources.csproj">
+      <Name>Resources</Name>
+      <Project>{0B173113-1F9B-4939-A62F-A176336F13AC}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+    <ProjectReference Include="..\SystemLayer\SystemLayer.csproj">
+      <Name>SystemLayer</Name>
+      <Project>{80572820-93A5-4278-A513-D902BEA2639C}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AngleChooserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BinaryPixelOp.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BinaryPixelOps.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BitVector2D.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BitVector2DSurfaceAdapter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BoolObjectDelegate.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BoolVoidDelegate.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BoxedConstants.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ColorBgra.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ColorGradientControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ControlShadow.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ColorTransferMode.cs" />
+    <Compile Include="CursorChanger.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CurveControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="CurveControlLuminosity.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="CurveControlRgb.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="DeferredFormatter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EnumWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DataEventArgs.cs" />
+    <Compile Include="DataEventHandler.cs" />
+    <Compile Include="HeaderLabel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Histogram.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HistogramControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HistogramLuminosity.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HistogramRgb.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HsvColor.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IBitVector2D.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IDeferredSerializable.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IndexEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IndexEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SplineInterpolator.cs" />
+    <Compile Include="IOEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IOEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IOOperationType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IPixelOp.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IrregularSurface.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ISurfaceDraw.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IUnitsComboBox.cs" />
+    <Compile Include="List.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MaskedSurface.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MeasurementUnit.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MemoryBlock.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MovingEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MovingEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PaintEventArgs2.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PaintEventHandler2.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PanelEx.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PdnBaseDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PdnBaseForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PdnException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PdnGraphicsPath.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PdnMessageBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PdnRegion.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PersistedObject.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PersistedObjectLocker.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PixelOp.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PlacedSurface.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SurfaceBoxGraphicsRenderer.cs" />
+    <Compile Include="Vector.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ProgressEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ProgressEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PropertyEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PropertyEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RenderArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RenderedTileEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RenderedTileEventHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ResamplingAlgorithm.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RgbColor.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Ruler.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ScaleFactor.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Scanline.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Selection.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Set.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SiphonStream.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="StylusEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Surface.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SurfaceBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="SurfaceBoxBaseRenderer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SurfaceBoxGridRenderer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SurfaceBoxRenderer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SurfaceBoxRendererList.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Threading\ThreadPool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Threading\WaitableCounter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UnaryPixelOp.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UnaryPixelOps.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UnitsComboBox.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UnitsComboBoxHandler.cs" />
+    <Compile Include="UnitsComboBoxStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UnitsDisplayType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UserControl2.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Utility.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="VoidObjectDelegate.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="VoidVoidDelegate.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WaitCursorChanger.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WorkerThreadException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>@rem Sign
+call "$(SolutionDir)signfile.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)"
+call "$(SolutionDir)signfile.bat" "$(TargetPath)"
+</PostBuildEvent>
+  </PropertyGroup>
+</Project>

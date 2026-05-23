@@ -7,24 +7,176 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
-using IWshRuntimeLibrary;
+using Microsoft.Win32;
 using PaintDotNet;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for Class1.
-    /// </summary>
     class SetupNgen
     {
-        static void InstallAssembly(string name, bool delete)
+        [ComImport]
+        [Guid("0000010c-0000-0000-c000-000000000046")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IPersist
         {
-            string ourPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+            [PreserveSig]
+            void GetClassID(out Guid pClassID);
+        }
 
+        [ComImport]
+        [Guid("0000010b-0000-0000-C000-000000000046")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IPersistFile
+            : IPersist
+        {
+            new void GetClassID(out Guid pClassID);
+
+            [PreserveSig]
+            int IsDirty();
+
+            [PreserveSig]
+            void Load(
+                [MarshalAs(UnmanagedType.LPWStr)] string pszFileName,
+                uint dwMode);
+
+            [PreserveSig]
+            void Save(
+                [MarshalAs(UnmanagedType.LPWStr)] string pszFileName,
+                [MarshalAs(UnmanagedType.Bool)] bool fRemember);
+
+            [PreserveSig]
+            void SaveCompleted([MarshalAs(UnmanagedType.LPWStr)] string pszFileName);
+
+            [PreserveSig]
+            void GetCurFile([MarshalAs(UnmanagedType.LPWStr)] string ppszFileName);
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct FILETIME
+        {
+            uint dwLowDateTime;
+            uint dwHighDateTime;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct WIN32_FIND_DATA
+        {
+            public const int MAX_PATH = 260;
+
+            uint dwFileAttributes;
+            FILETIME ftCreationTime;
+            FILETIME ftLastAccessTime;
+            FILETIME ftLastWriteTime;
+            uint nFileSizeHight;
+            uint nFileSizeLow;
+            uint dwOID;
+
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_PATH)]
+            string cFileName;
+        }
+
+        [ComImport]
+        [Guid("000214F9-0000-0000-C000-000000000046")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IShellLink
+        {
+            [PreserveSig]
+            void GetPath(
+                [MarshalAs(UnmanagedType.LPWStr, SizeParamIndex = 1)] out string pszFile,
+                int cch,
+                ref WIN32_FIND_DATA pfd,
+                uint fFlags);
+
+            [PreserveSig]
+            void GetIDList(out IntPtr ppidl);
+
+            [PreserveSig]
+            void SetIDList(IntPtr ppidl);
+
+            [PreserveSig]
+            void GetDescription(
+                [MarshalAs(UnmanagedType.LPWStr, SizeParamIndex = 1)] out string pszName,
+                int cch);
+
+            [PreserveSig]
+            void SetDescription(
+                [MarshalAs(UnmanagedType.LPWStr)] string pszName);
+
+            [PreserveSig]
+            void GetWorkingDirectory(
+                [MarshalAs(UnmanagedType.LPWStr, SizeParamIndex = 1)] out string pszDir,
+                int cch);
+
+            [PreserveSig]
+            void SetWorkingDirectory(
+                [MarshalAs(UnmanagedType.LPWStr)] string pszDir);
+
+            [PreserveSig]
+            void GetArguments(
+                [MarshalAs(UnmanagedType.LPWStr, SizeParamIndex = 1)] out string pszArgs,
+                int cch);
+
+            [PreserveSig]
+            void SetArguments(
+                [MarshalAs(UnmanagedType.LPWStr)] string pszArgs);
+
+            [PreserveSig]
+            void GetHotkey(out ushort pwHotkey);
+
+            [PreserveSig]
+            void SetHotkey(ushort wHotkey);
+
+            [PreserveSig]
+            void GetShowCmd(out int piShowCmd);
+
+            [PreserveSig]
+            void SetShowCmd(int iShowCmd);
+
+            [PreserveSig]
+            void GetIconLocation(
+                [MarshalAs(UnmanagedType.LPWStr, SizeParamIndex = 1)] out string pszIconPath,
+                int cch,
+                out int piIcon);
+
+            [PreserveSig]
+            void SetIconLocation(
+                [MarshalAs(UnmanagedType.LPWStr)] string pszIconPath,
+                int iIcon);
+
+            [PreserveSig]
+            void SetRelativePath(
+                [MarshalAs(UnmanagedType.LPWStr)] string pszPathRel,
+                uint dwReserved);
+
+            [PreserveSig]
+            void Resolve(
+                IntPtr hwnd,
+                uint fFlags);
+
+            [PreserveSig]
+            void SetPath(
+                [MarshalAs(UnmanagedType.LPWStr)] string pszFile);
+        }
+
+        [GuidAttribute("00021401-0000-0000-C000-000000000046")]
+        [ClassInterfaceAttribute(ClassInterfaceType.None)]
+        [ComImportAttribute()]
+        public class CShellLink
+        {
+        }
+
+        public const int SW_SHOWNORMAL = 1;
+
+        private static readonly string ourPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+
+        static void InstallAssembly(string name, bool delete, bool queue)
+        {
             // ngen it
             if (delete)
             {
@@ -36,15 +188,106 @@ namespace PaintDotNet
                 name = Path.Combine(ourPath, name);
             }
 
-            string fxPath = @"%WINDIR%\Microsoft.NET\Framework\v1.1.4322\";
+            string actionArg = delete ? "uninstall" : "install";
+            string nameArg = "\"" + name + "\"";
 
-            string ngenExe = System.Environment.ExpandEnvironmentVariables(Path.Combine(fxPath, "ngen.exe"));
-            ProcessStartInfo psi1 = new ProcessStartInfo(ngenExe, (delete ? "/delete " : "") + "\"" + name + "\"");
+            string queueArg = (queue && !delete) ? "/queue" : "";
+            string appBaseArg = " /AppBase:\"" + ourPath + "\"";
+            string optionsArg = queueArg + appBaseArg;
+
+            string argList = actionArg + " " + nameArg + " " + optionsArg;
+
+            string ngenExe = PaintDotNet.PdnInfo.GetNgenPath();
+            ProcessStartInfo psi1 = new ProcessStartInfo(ngenExe, argList);
+
             psi1.UseShellExecute = false;
             psi1.CreateNoWindow = true;
-            Console.WriteLine("ngen: " + name);
+            Console.WriteLine("run:" + ngenExe + " " + argList);
             Process process1 = Process.Start(psi1);
             process1.WaitForExit();
+        }
+
+        private enum Platform
+        {
+            X86,
+            X64,
+            IA64,
+            Unknown
+        }
+
+        internal const ushort PROCESSOR_ARCHITECTURE_INTEL = 0;
+        internal const ushort PROCESSOR_ARCHITECTURE_IA64 = 6;
+        internal const ushort PROCESSOR_ARCHITECTURE_AMD64 = 9;
+        internal const ushort PROCESSOR_ARCHITECTURE_UNKNOWN = 0xFFFF;
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct SYSTEM_INFO
+        {
+            public ushort wProcessorArchitecture;
+            public ushort wReserved;
+            public uint dwPageSize;
+            public IntPtr lpMinimumApplicationAddress;
+            public IntPtr lpMaximumApplicationAddress;
+            public UIntPtr dwActiveProcessorMask;
+            public uint dwNumberOfProcessors;
+            public uint dwProcessorType;
+            public uint dwAllocationGranularity;
+            public ushort wProcessorLevel;
+            public ushort wProcessorRevision;
+        };
+
+        [DllImport("kernel32.dll")]
+        internal static extern void GetNativeSystemInfo(ref SYSTEM_INFO lpSystemInfo);        
+        
+        private static Platform GetPlatform()
+        {
+            SYSTEM_INFO sysInfo = new SYSTEM_INFO();
+            GetNativeSystemInfo(ref sysInfo);
+
+            switch (sysInfo.wProcessorArchitecture)
+            {
+                case PROCESSOR_ARCHITECTURE_AMD64:
+                    return Platform.X64;
+
+                case PROCESSOR_ARCHITECTURE_IA64:
+                    return Platform.IA64;
+
+                case PROCESSOR_ARCHITECTURE_INTEL:
+                    return Platform.X86;
+
+                default:
+                    return Platform.Unknown;
+            }
+        }
+
+        public static bool IsPathInDirectory(string path, string directory)
+        {
+            try
+            {
+                string pathCanon = path.ToLowerInvariant();
+                string directoryCanon = directory.ToLowerInvariant();
+
+                string fullPath = Path.GetFullPath(pathCanon);
+                string fullDirectory = Path.GetFullPath(directoryCanon);
+
+                bool a = (fullPath.Length > fullDirectory.Length);
+                bool b = (fullPath.IndexOf(fullDirectory) == 0);
+                bool c = fullPath[fullDirectory.Length] == Path.DirectorySeparatorChar;
+
+                if (a && b && c)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -53,10 +296,84 @@ namespace PaintDotNet
         [STAThread]
         public static void Main(string[] args)
         {
+            try
+            {
+                MainImpl(args);
+            }
+
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString(), string.Empty, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                throw;
+            }
+        }
+
+        public static void CreateShortcut(string shortcutPath, string targetPath, string workingDirectory, string description)
+        {
+            CShellLink cShellLink = new CShellLink();
+            IShellLink iShellLink = (IShellLink)cShellLink;
+            iShellLink.SetDescription(description);
+            iShellLink.SetShowCmd(SW_SHOWNORMAL);
+            iShellLink.SetPath(targetPath);
+            iShellLink.SetWorkingDirectory(workingDirectory);
+            IPersistFile iPersistFile = (IPersistFile)iShellLink;
+            iPersistFile.Save(shortcutPath, false);
+            Marshal.ReleaseComObject(iPersistFile);
+            iPersistFile = null;
+            Marshal.ReleaseComObject(iShellLink);
+            iShellLink = null;
+            Marshal.ReleaseComObject(cShellLink);
+            cShellLink = null;
+        }
+
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
+        internal static extern void SHGetFolderPathW(
+            IntPtr hwndOwner,
+            int nFolder,
+            IntPtr hToken,
+            uint dwFlags,
+            IntPtr pszPath);
+
+        internal static string SHGetFolderPath(int nFolder)
+        {
+            string pszPath = new string(' ', MAX_PATH);
+            IntPtr bstr = Marshal.StringToBSTR(pszPath);
+            SHGetFolderPathW(IntPtr.Zero, nFolder, IntPtr.Zero, SHGFP_TYPE_CURRENT, bstr);
+            string path = Marshal.PtrToStringBSTR(bstr);
+            int index = path.IndexOf('\0');
+            string path2 = path.Substring(0, index);
+            Marshal.FreeBSTR(bstr);
+            return path2;
+        }
+
+        internal const uint SHGFP_TYPE_CURRENT = 0;
+        internal const int MAX_PATH = 260; 
+        internal const uint CSIDL_COMMON_STARTMENU = 0x0016;              // All Users\Start Menu
+        internal const uint CSIDL_COMMON_PROGRAMS = 0x0017;               // All Users\Start Menu\Programs
+        internal const uint CSIDL_COMMON_DESKTOPDIRECTORY = 0x0019;       // All Users\Desktop
+        internal const uint CSIDL_PROGRAM_FILES = 0x0026;                 // C:\Program Files
+        internal const uint CSIDL_FLAG_CREATE = 0x8000;                   // new for Win2K, or this in to force creation of folder
+
+        public static string GetSpecialFolderPath(uint csidl)
+        {
+            string path = SHGetFolderPath((int)(csidl | CSIDL_FLAG_CREATE));
+            return path;
+        }
+
+        public static void SplitArg(string arg, out string name, out string value)
+        {
+            const char splitChar = '=';
+            string[] fields = arg.Split(splitChar);
+            name = fields[0];
+            value = fields[1];
+        }
+
+        public static void MainImpl(string[] args)
+        {
             //System.Windows.Forms.MessageBox.Show(Environment.CommandLine);
 
             // Syntax:
-            //     SetupNgen </cleanUpStaging | </install | /delete> DESKTOPSHORTCUT=<0|1> PDNUPDATING=<0|1> SKIPCLEANUP=<0|1>>
+            //     SetupNgen </cleanUpStaging | </install | /delete> DESKTOPSHORTCUT=<0|1> PDNUPDATING=<0|1> SKIPCLEANUP=<0|1> PROGRAMSGROUP=relativeName QUEUENGEN=<0|1>>
 
             if (args.Length >= 2 && args[0] == "/cleanUpStaging")
             {
@@ -64,7 +381,9 @@ namespace PaintDotNet
                 string stagingPath = args[1];
 
                 // Sanity check: staging directory must ALWAYS have the word Staging in it (capitalized that way too)
-                if (-1 != stagingPath.IndexOf("Staging"))
+                // It must exist, too.
+                if (Directory.Exists(stagingPath) &&
+                    -1 != stagingPath.IndexOf("Staging"))
                 {
                     foreach (string filePath in Directory.GetFiles(stagingPath, "*.msi"))
                     {
@@ -94,7 +413,7 @@ namespace PaintDotNet
             {
                 bool delete = false;
 
-                if (args.Length < 4)
+                if (args.Length < 5)
                 {
                     return;
                 }
@@ -106,44 +425,44 @@ namespace PaintDotNet
 
                 // otherwise we assume args[0] == "/install"
 
-                // Pre-JIT and install to GAC
+                bool queueNgen;
+
+                if (args[5] == "QUEUENGEN=1")
+                {
+                    queueNgen = true;
+                }
+                else
+                {
+                    queueNgen = false;
+                }
+
+                // Pre-JIT and install to GAC. These are in alphabetical order.
                 string[] names1 = new string[] {
-                                                   "Effects\\RotateZoom.dll",
-                                                   "FileTypes\\TgaFileType.dll",
-                                                   "DotNetWidgets.dll",
-                                                   "ICSharpCode.SharpZipLib.dll",
-                                                   "Interop.WIA.dll",
-                                                   "PaintDotNet.Data.dll",
-                                                   "PaintDotNet.Effects.dll",
                                                    "PaintDotNet.exe",
-                                                   "PaintDotNet.Resources.dll",
-                                                   "PaintDotNet.SystemLayer.dll",
-                                                   "PdnLib.dll",
-                                                   "Skybound.VisualStyles.dll"
                                                };
 
                 foreach (string name in names1)
                 {
                     try
                     {
-                        InstallAssembly(name, delete);
+                        InstallAssembly(name, delete, queueNgen);
                     }
 
-                    // Since this is essentially an optional part of setup, we don't care
-                    // if it fails.
-                    catch
+                    // We don't raise a stink if ngen fails.
+                    catch (Exception ex)
                     {
+                        Console.WriteLine(ex);
                     }
                 }
 
                 // Create desktop shortcut
-                bool createShortcut = false;
+                bool createDesktopShortcut = false;
                 bool updating = false;
                 bool skipCleanup = false;
                 
                 if (args[1] == "DESKTOPSHORTCUT=1")
                 {
-                    createShortcut = true;
+                    createDesktopShortcut = true;
                 }
 
                 if (args[2] == "PDNUPDATING=1")
@@ -156,59 +475,208 @@ namespace PaintDotNet
                     skipCleanup = true;
                 }
 
-                // Create shortcuts
-                object allUsersDesktop = "AllUsersDesktop";
-                object allUsersPrograms = "AllUsersPrograms";
+                string programsShortcutGroup = string.Empty;
+                const string programsGroup = "PROGRAMSGROUP";
+                if (args[4].StartsWith(programsGroup + "=")) // starts with "PROGRAMSGROUP="
+                {
+                    programsShortcutGroup = args[4].Substring(1 + programsGroup.Length);
+                }
 
-                WshShellClass shell = new WshShellClass();
+                // Create shortcuts
 
                 // Set up out strings
-                string desktopDir = shell.SpecialFolders.Item(ref allUsersDesktop).ToString();
-                string programsDir = shell.SpecialFolders.Item(ref allUsersPrograms).ToString();
+                string desktopDir = GetSpecialFolderPath(CSIDL_COMMON_DESKTOPDIRECTORY);
+                string programsDir = GetSpecialFolderPath(CSIDL_COMMON_PROGRAMS);
 
                 string linkName = PaintDotNet.PdnResources.GetString("Setup.DesktopShortcut.LinkName");
                 string description = PaintDotNet.PdnResources.GetString("Setup.DesktopShortcut.Description");
                 string desktopLinkPath = Path.Combine(desktopDir, linkName) + ".lnk"; // if we just use ChangeExtension it will overwrite the .NET part of Paint.NET :)
-                string programsLinkPath = Path.Combine(programsDir, linkName) + ".lnk";
+                string programsShortcutDir = Path.Combine(programsDir, programsShortcutGroup);
+                string programsLinkPath = Path.Combine(programsShortcutDir, linkName) + ".lnk";
                 string workingDirectory = PdnInfo.GetApplicationDir();
                 string targetPath = Path.Combine(workingDirectory, "PaintDotNet.exe");
 
                 // Desktop shortcut
-                if ((delete && !skipCleanup) || (!createShortcut && skipCleanup))
+                if ((delete && !skipCleanup) || (!createDesktopShortcut && skipCleanup))
                 {
                     if (System.IO.File.Exists(desktopLinkPath))
                     {
                         Console.WriteLine("delete: " + desktopLinkPath);
-                        System.IO.File.Delete(desktopLinkPath);
+
+                        try
+                        {
+                            System.IO.File.Delete(desktopLinkPath);
+                        }
+
+                        catch
+                        {
+                        }
                     }
                 }
-                else if (createShortcut && !delete && !updating)
+                else if (createDesktopShortcut && !delete && !updating)
                 {
-                    IWshShortcut link = (IWshShortcut)shell.CreateShortcut(desktopLinkPath);
-                    link.Description = description;
-                    link.WorkingDirectory = workingDirectory;
-                    link.TargetPath = targetPath;
-                    Console.WriteLine("create shortcut: " + desktopLinkPath);
-                    link.Save();
+                    CreateShortcut(desktopLinkPath, targetPath, workingDirectory, description);
                 }
-
+                
                 // Programs shortcut
+                const string programsShortcutPathKey = "ProgramsShortcutPath";
+                const string pdnKey = @"SOFTWARE\Paint.NET";
+                    
                 if (delete && !skipCleanup)
                 {
-                    if (System.IO.File.Exists(programsLinkPath))
+                    string path = programsLinkPath;
+
+                    // For the purposes of deleting the shortcut, we actually store the file's location in the registry
+                    using (RegistryKey hklmPDN = Registry.LocalMachine.OpenSubKey(pdnKey, false))
                     {
-                        Console.WriteLine("delete: " + programsLinkPath);
-                        System.IO.File.Delete(programsLinkPath);
+                        if (hklmPDN != null)
+                        {
+                            object pathObj = hklmPDN.GetValue(programsShortcutPathKey, programsLinkPath);
+
+                            if (pathObj is string)
+                            {
+                                path = (string)pathObj;
+                            }
+                        }
+                    }
+
+                    // Do some quick checks to make sure we don't delete something we don't want to
+                    bool allowDelete = true;
+
+                    // Verify that it is a .lnk file
+                    bool goodExtension = (Path.GetExtension(path) == ".lnk");
+                    allowDelete &= goodExtension;
+
+                    // Verify that it is in a subdirectory of Programs
+                    bool goodPath = IsPathInDirectory(path, programsDir);
+                    allowDelete &= goodPath;
+
+                    // Delete it
+                    if (allowDelete && System.IO.File.Exists(path))
+                    {
+                        Console.WriteLine("delete: " + path);
+
+                        try
+                        {
+                            System.IO.File.Delete(path);
+                        }
+
+                        catch
+                        {
+                        }
+
+                        // If we're the last shortcut, then delete that directory.
+                        string dir = Path.GetDirectoryName(path);
+
+                        try
+                        {
+                            System.IO.Directory.Delete(dir, false);
+                        }
+
+                        catch
+                        {
+                        }
                     }
                 }
                 else if (!delete && !updating)
                 {
-                    IWshShortcut link = (IWshShortcut)shell.CreateShortcut(programsLinkPath);
-                    link.Description = description;
-                    link.WorkingDirectory = workingDirectory;
-                    link.TargetPath = targetPath;
-                    Console.WriteLine("create shortcut: " + programsLinkPath);
-                    link.Save();
+                    // Create it
+                    if (!Directory.Exists(programsShortcutDir))
+                    {
+                        Directory.CreateDirectory(programsShortcutDir);
+                    }
+
+                    CreateShortcut(programsLinkPath, targetPath, workingDirectory, description);
+
+                    // Save the location to the registry
+                    using (RegistryKey hklmPDN = Registry.LocalMachine.CreateSubKey(pdnKey))                        
+                    {
+                        if (hklmPDN != null)
+                        {
+                            hklmPDN.SetValue(programsShortcutPathKey, programsLinkPath);
+                        }
+                    }
+                }
+
+                // Register shell extension
+                const string shellExtensionName_x86 = "ShellExtension_x86.dll";
+                const string shellExtensionName_x64 = "ShellExtension_x64.dll";
+                const string shellExtensionName_ia64 = "ShellExtension_IA64.dll";
+                const string shellExtensionGuid = "{D292F82A-50BE-4351-96CC-E86F3F8049DA}";
+                const string regKeyName = @"CLSID\" + shellExtensionGuid;
+                const string regKeyWow64Name = @"Wow6432Node\" + regKeyName;
+                const string shellExtension_regName = "Paint.NET Shell Extension";
+                const string inProcServer32 = "InProcServer32";
+                const string threadingModel = "ThreadingModel";
+                const string apartment = "Apartment";
+
+                string[] shellExtensionFileNames;
+                string[] regKeyNames;
+
+                if (UIntPtr.Size == 4)
+                {
+                    shellExtensionFileNames = new string[1] { shellExtensionName_x86 };
+                    regKeyNames = new string[1] { regKeyName };
+                }
+                else
+                {
+                    Platform platform = GetPlatform();
+                    string dll64bitName;
+
+                    if (platform == Platform.X64)
+                    {
+                        dll64bitName = shellExtensionName_x64;
+                    }
+                    else
+                    {
+                        dll64bitName = shellExtensionName_ia64;
+                    }
+
+                    shellExtensionFileNames = new string[2] { dll64bitName, shellExtensionName_x86 };
+                    regKeyNames = new string[2] { regKeyName, regKeyWow64Name };
+                }
+
+                string[] shellExtensionPaths = new string[shellExtensionFileNames.Length];
+
+                for (int i = 0; i < shellExtensionFileNames.Length; ++i)
+                {
+                    shellExtensionPaths[i] = Path.Combine(ourPath, shellExtensionFileNames[i]);
+                }
+
+                if (!delete)
+                {
+                    // Register the shell extension
+                    try
+                    {
+                        for (int i = 0; i < shellExtensionPaths.Length; ++i)
+                        {
+                            RegistryKey clsidKey = Registry.ClassesRoot.CreateSubKey(regKeyNames[i], RegistryKeyPermissionCheck.ReadWriteSubTree);
+                            RegistryKey ips32key = clsidKey.CreateSubKey(inProcServer32);
+
+                            clsidKey.SetValue(null, shellExtension_regName);
+                            ips32key.SetValue(threadingModel, apartment);
+                            ips32key.SetValue(null, shellExtensionPaths[i]);
+                        }
+                    }
+
+                    catch
+                    {
+                    }
+                }
+                else
+                {
+                    // Unregister the shell extension
+                    try
+                    {
+                        for (int i = 0; i < regKeyNames.Length; ++i)
+                        {
+                            Registry.ClassesRoot.DeleteSubKeyTree(regKeyNames[i]);
+                        }
+                    }
+
+                    catch
+                    {
+                    }
                 }
             }
         }

@@ -21,8 +21,7 @@ namespace PaintDotNet.Effects
     /// Summary description for OilPaintingEffect.
     /// </summary>
     public class OilPaintingEffect
-        : Effect,
-          IConfigurableEffect
+        : Effect
     {
         public static string StaticName
         {
@@ -34,14 +33,15 @@ namespace PaintDotNet.Effects
 
         public OilPaintingEffect()
             : base(StaticName,
-                   PdnResources.GetImage("Icons.OilPaintingEffect.bmp"),
-                   Shortcut.None,
+                   PdnResources.GetImage("Icons.OilPaintingEffect.png"),
+                   Keys.None,
                    null,
-                   EffectDirectives.None)
+                   EffectDirectives.None,
+                   true)
         {
         }
 
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             TwoAmountsConfigDialog tacg = new TwoAmountsConfigDialog();
 
@@ -57,12 +57,13 @@ namespace PaintDotNet.Effects
             tacg.Amount2Default = 50;
             tacg.Amount2Label = PdnResources.GetString("OilPaintingEffect.ConfigDialog.Amount2Label");
 
-            tacg.Icon = PdnResources.GetIconFromImage("Icons.OilPaintingEffect.bmp");
+            tacg.Icon = PdnResources.GetIconFromImage("Icons.OilPaintingEffect.png");
 
             return tacg;
         }
 
-        public unsafe void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public unsafe override void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, 
+            Rectangle[] rois, int startIndex, int length)
         {
             TwoAmountsConfigToken token = (TwoAmountsConfigToken)properties;
             int brushSize = token.Amount1;
@@ -81,8 +82,10 @@ namespace PaintDotNet.Effects
 
             byte maxIntensity = smoothness;
 
-            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
+            for (int r = startIndex; r < startIndex + length; ++r)
             {
+                Rectangle rect = rois[r];
+
                 int rectTop = rect.Top;
                 int rectBottom = rect.Bottom;
                 int rectLeft = rect.Left;

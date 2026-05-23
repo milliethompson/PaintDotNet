@@ -26,13 +26,16 @@ namespace PaintDotNet.Effects
     public unsafe abstract class ColorDifferenceEffect
         : Effect
     {            
-        public unsafe void RenderColorDifferenceEffect(double[,] weights, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public unsafe void RenderColorDifferenceEffect(double[,] weights, RenderArgs dstArgs, 
+            RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
         {
             Surface dst = dstArgs.Surface;
             Surface src = srcArgs.Surface;
 
-            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
+            for (int i = startIndex; i < startIndex + length; ++i)
             {
+                Rectangle rect = rois[i];
+
                 // loop through each line of target rectangle
                 for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
@@ -97,14 +100,8 @@ namespace PaintDotNet.Effects
             }
         }
 
-        [Obsolete("The description property has been removed.", true)]
-        public ColorDifferenceEffect(string name, string description, Image image)
-            : this(name, image)
-        {
-        }
-
-        public ColorDifferenceEffect(string name, Image image)
-            : base(name, image)
+        public ColorDifferenceEffect(string name, Image image, bool isConfigurable)
+            : base(name, image, isConfigurable)
         {
         }
     }

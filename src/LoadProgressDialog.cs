@@ -63,7 +63,7 @@ namespace PaintDotNet
             this.fileType = fileType;
             this.siphonStream = new SiphonStream(stream);
             this.siphonStream.IOFinished += new IOEventHandler(siphonStream_IOFinished);
-            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.ImageFromDiskIcon.bmp"), Color.FromArgb(192, 192, 192));
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.ImageFromDiskIcon.png"), Utility.TransparentKey);
         }
 
         /// <summary>

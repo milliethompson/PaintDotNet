@@ -106,35 +106,16 @@ namespace PaintDotNet.Effects
 
                 try
                 {
-                    IConfigurableEffect ice = ber.effect as IConfigurableEffect;
-
-                    if (ice != null)
+                    for (int tile = start; tile < max; tile += inc)
                     {
-                        for (int tile = start; tile < max; tile += inc)
+                        if (ber.threadShouldStop)
                         {
-                            if (ber.threadShouldStop)
-                            {
-                                break;
-                            }
-
-                            PdnRegion subRegion = ber.tileRegions[tile];
-                            ice.Render(this.token, ber.dstArgs, ber.srcArgs, subRegion);
-                            ber.OnRenderedTile(new RenderedTileEventArgs(subRegion, ber.tileCount, tile));
+                            break;
                         }
-                    }
-                    else
-                    {
-                        for (int tile = start; tile < max; tile += inc)
-                        {
-                            if (ber.threadShouldStop)
-                            {
-                                break;
-                            }
 
-                            PdnRegion subRegion = ber.tileRegions[tile];
-                            ber.effect.Render(ber.dstArgs, ber.srcArgs, subRegion);
-                            ber.OnRenderedTile(new RenderedTileEventArgs(subRegion, ber.tileCount, tile));
-                        }
+                        PdnRegion subRegion = ber.tileRegions[tile];
+                        ber.effect.Render(this.token, ber.dstArgs, ber.srcArgs, subRegion);
+                        ber.OnRenderedTile(new RenderedTileEventArgs(subRegion, ber.tileCount, tile));
                     }
                 }
 
@@ -166,18 +147,8 @@ namespace PaintDotNet.Effects
 
                     try
                     {
-                        IConfigurableEffect ice = this.effect as IConfigurableEffect;
                         PdnRegion subRegion = this.tileRegions[0];
-
-                        if (ice != null)
-                        {
-                            ice.Render(this.effectTokenCopy, this.dstArgs, this.srcArgs, subRegion);
-                        }
-                        else
-                        {
-                            this.effect.Render(this.dstArgs, this.srcArgs, subRegion);
-                        }
-
+                        this.effect.Render(this.effectTokenCopy, this.dstArgs, this.srcArgs, subRegion);
                         OnRenderedTile(new RenderedTileEventArgs(subRegion, this.tileCount, 0));
                     }
 

@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 namespace PaintDotNet
@@ -20,11 +21,12 @@ namespace PaintDotNet
     [Serializable]
     public class HistoryStack
     {
-        private ArrayList undoStack;
-        private ArrayList redoStack;
+        private List<HistoryAction> undoStack;
+        private List<HistoryAction> redoStack;
         private DocumentWorkspace workspace;
+        private int stepGroupDepth;
 
-        public ArrayList UndoStack
+        public List<HistoryAction> UndoStack
         {
             get
             {
@@ -32,11 +34,35 @@ namespace PaintDotNet
             }
         }
 
-        public ArrayList RedoStack
+        public List<HistoryAction> RedoStack
         {
             get
             {
                 return redoStack;
+            }
+        }
+
+        public void BeginStepGroup()
+        {
+            ++this.stepGroupDepth;
+        }
+
+        public void EndStepGroup()
+        {
+            --this.stepGroupDepth;
+
+            if (this.stepGroupDepth == 0)
+            {
+                OnFinishedStepGroup();
+            }
+        }
+
+        public event EventHandler FinishedStepGroup;
+        protected void OnFinishedStepGroup()
+        {
+            if (FinishedStepGroup != null)
+            {
+                FinishedStepGroup(this, EventArgs.Empty);
             }
         }
 
@@ -126,14 +152,16 @@ namespace PaintDotNet
         public HistoryStack(DocumentWorkspace workspace)
         {
             this.workspace = workspace;
-            undoStack = new ArrayList();
-            redoStack = new ArrayList();
+            undoStack = new List<HistoryAction>();
+            redoStack = new List<HistoryAction>();
         }
 
-        private HistoryStack(ArrayList undoStack, ArrayList redoStack)
+        private HistoryStack(
+            List<HistoryAction> undoStack,
+            List<HistoryAction> redoStack)
         {
-            this.undoStack = (ArrayList)undoStack.Clone();
-            this.redoStack = (ArrayList)redoStack.Clone();
+            this.undoStack = new List<HistoryAction>(undoStack);
+            this.redoStack = new List<HistoryAction>(redoStack);
         }
 
         /// <summary>
@@ -161,7 +189,7 @@ namespace PaintDotNet
         /// </summary>
         public void StepForward()
         {
-            HistoryAction topAction = (HistoryAction)(HistoryAction)redoStack[0];
+            HistoryAction topAction = redoStack[0];
             ToolHistoryAction asToolHistoryAction = topAction as ToolHistoryAction;
 
             if (asToolHistoryAction != null && asToolHistoryAction.ToolType != workspace.Environment.GetToolType())
@@ -189,7 +217,7 @@ namespace PaintDotNet
                     workspace.Environment.SetTool(null);
                 }
             
-                HistoryAction redoAction = (HistoryAction)redoStack[0];
+                HistoryAction redoAction = redoStack[0];
 
                 // Possibly useful invariant here:
                 //     ehaea1.HistoryAction.SeriesGuid == ehaea2.HistoryAction.SeriesGuid == ehaea3.HistoryAction.SeriesGuid
@@ -214,6 +242,11 @@ namespace PaintDotNet
                     workspace.Environment.SetTool(oldTool);
                 }       
             }
+
+            if (this.stepGroupDepth == 0)
+            {
+                OnFinishedStepGroup();
+            }
         }
 
         /// <summary>
@@ -222,7 +255,7 @@ namespace PaintDotNet
         /// </summary>
         public void StepBackward()
         {
-            HistoryAction topAction = (HistoryAction)undoStack[undoStack.Count - 1];
+            HistoryAction topAction = undoStack[undoStack.Count - 1];
             ToolHistoryAction asToolHistoryAction = topAction as ToolHistoryAction;
 
             if (asToolHistoryAction != null && asToolHistoryAction.ToolType != workspace.Environment.GetToolType())
@@ -250,12 +283,12 @@ namespace PaintDotNet
                     workspace.Environment.SetTool(null);
                 }
 
-                HistoryAction undoAction = (HistoryAction)undoStack[undoStack.Count - 1];
+                HistoryAction undoAction = undoStack[undoStack.Count - 1];
 
                 ExecutingHistoryActionEventArgs ehaea2 = new ExecutingHistoryActionEventArgs(undoAction, false, ehaea1.SuspendTool);
                 OnExecutingHistoryAction(ehaea2);
 
-                HistoryAction redoAction = ((HistoryAction)undoStack[undoStack.Count - 1]).PerformUndo();
+                HistoryAction redoAction = undoStack[undoStack.Count - 1].PerformUndo();
                 undoStack.RemoveAt(undoStack.Count - 1);
                 redoStack.Insert(0, redoAction);
 
@@ -274,6 +307,11 @@ namespace PaintDotNet
                     workspace.Environment.SetTool(oldTool);
                 }
             }
+
+            if (this.stepGroupDepth == 0)
+            {
+                OnFinishedStepGroup();
+            }
         }
 
         public void ClearAll()
@@ -290,8 +328,8 @@ namespace PaintDotNet
                 ha.Flush();
             }
 
-            undoStack = new ArrayList();
-            redoStack = new ArrayList();
+            undoStack = new List<HistoryAction>();
+            redoStack = new List<HistoryAction>();
             OnChanged();
             OnHistoryFlushed();
         }
@@ -304,7 +342,7 @@ namespace PaintDotNet
             }
 
             OnChanging();
-            redoStack = new ArrayList();
+            redoStack = new List<HistoryAction>();
             OnChanged();
         }
     }

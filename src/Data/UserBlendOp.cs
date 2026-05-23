@@ -22,6 +22,11 @@ namespace PaintDotNet
     public abstract class UserBlendOp
         : BinaryPixelOp
     {
+        public virtual UserBlendOp CreateWithOpacity(int opacity)
+        {
+            return this;
+        }
+
         public override string ToString()
         {
             return Utility.GetStaticName(this.GetType());

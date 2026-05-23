@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Drawing;
@@ -239,7 +240,7 @@ namespace PaintDotNet
         public virtual void LoadProperties(object oldState, bool suppressEvents)
         {
             LayerProperties lp = (LayerProperties)oldState;
-            ArrayList changed = new ArrayList();
+            List<string> changed = new List<String>();
 
             if (!suppressEvents)
             {
@@ -449,28 +450,19 @@ namespace PaintDotNet
             }
         }
 
-        [Obsolete]
-        public NameValueCollection UserMetaData
-        {
-            get
-            {
-                return properties.userMetaData;
-            }
-        }
-
         [NonSerialized]
-        private MetaData metaData;
+        private Metadata metadata;
 
-        public MetaData MetaData
+        public Metadata Metadata
         {
             get
             {
-                if (metaData == null)
+                if (metadata == null)
                 {
-                    metaData = new MetaData(properties.userMetaData);
+                    metadata = new Metadata(properties.userMetaData);
                 }
 
-                return metaData;
+                return metadata;
             }
         }
 
@@ -539,27 +531,48 @@ namespace PaintDotNet
         }
 
         /// <summary>
-        /// Override this method to provide your layer's rendering capabilities.
-        /// </summary>
-        /// <param name="args">Contains information about which objects to use for rendering</param>
-        /// <param name="roi">The rectangular region to be rendered.</param>
-        protected abstract void RenderImpl(RenderArgs args, Rectangle roi);
-
-        /// <summary>
         /// Causes the layer to render a given region of interest (roi) to the given destination surface.
         /// </summary>
         /// <param name="args">Contains information about which objects to use for rendering</param>
         /// <param name="roi">The region to be rendered.</param>
         public void Render(RenderArgs args, PdnRegion roi)
         {
-            Rectangle[] rects = roi.GetRegionScansReadOnlyInt();
+            Rectangle roiBounds = roi.GetBoundsInt();
 
-            foreach (Rectangle rect in rects)
+            if (!IsInBounds(roiBounds))
             {
-                Render(args, rect);
+                throw new ArgumentOutOfRangeException("roi");
             }
+
+            Rectangle[] rects = roi.GetRegionScansReadOnlyInt();
+            RenderImpl(args, rects);
         }
 
+        public void RenderUnchecked(RenderArgs args, Rectangle[] roi, int startIndex, int length)
+        {
+            RenderImpl(args, roi, startIndex, length);
+        }
+
+        /// <summary>
+        /// Override this method to provide your layer's rendering capabilities.
+        /// </summary>
+        /// <param name="args">Contains information about which objects to use for rendering</param>
+        /// <param name="roi">The rectangular region to be rendered.</param>
+        protected abstract void RenderImpl(RenderArgs args, Rectangle roi);
+
+        protected void RenderImpl(RenderArgs args, Rectangle[] roi)
+        {
+            RenderImpl(args, roi, 0, roi.Length);
+        }
+
+        protected virtual void RenderImpl(RenderArgs args, Rectangle[] roi, int startIndex, int length)
+        {
+            for (int i = startIndex; i < startIndex + length; ++i)
+            {
+                RenderImpl(args, roi[i]);
+            }
+        }
+       
         [NonSerialized]
         private InvalidateEventHandler invalidated;
         public event InvalidateEventHandler Invalidated

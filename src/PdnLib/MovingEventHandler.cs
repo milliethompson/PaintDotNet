@@ -9,7 +9,7 @@
 
 using System;
 
-namespace PaintDotNet.SystemLayer
+namespace PaintDotNet
 {
     public delegate void MovingEventHandler(object sender, MovingEventArgs e);
 }

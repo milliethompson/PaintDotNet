@@ -28,7 +28,7 @@ namespace PaintDotNet
 
         public override HistoryAction PerformAction()
         {
-            SelectionHistoryAction sha = new SelectionHistoryAction(name, PdnResources.GetImage("Icons.MenuEditSelectAllIcon.bmp"), Workspace);
+            SelectionHistoryAction sha = new SelectionHistoryAction(name, PdnResources.GetImage("Icons.MenuEditSelectAllIcon.png"), Workspace);
 
             Workspace.Environment.Selection.PerformChanging();
             Workspace.Environment.Selection.Reset();

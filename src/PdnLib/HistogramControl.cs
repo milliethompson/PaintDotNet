@@ -55,11 +55,28 @@ namespace PaintDotNet
             }
         }
 
+        public int Channels
+        {
+            get
+            {
+                return histogram.Channels;
+            }
+        }
+
+        public int Entries
+        {
+            get
+            {
+                return histogram.Entries;
+            }
+        }
+
         private bool[] selected;
 
         public void SetSelected(int channel, bool val)
         {
             selected[channel] = val;
+            Invalidate();
         }
 
         public bool GetSelected(int channel)
@@ -98,8 +115,8 @@ namespace PaintDotNet
         {
             histogramChangedDelegate = new EventHandler(Histogram_HistogramChanged);
 
-            this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | 
-                ControlStyles.DoubleBuffer | ControlStyles.ResizeRedraw, true);
+            this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
         }
 
         protected override void Dispose(bool disposing)
@@ -119,7 +136,7 @@ namespace PaintDotNet
             int r = innerRect.Right;
             int channels = histogram.Channels;
             int entries = histogram.Entries;
-            long[,] hist = Histogram.HistogramValues;
+            long[] hist = Histogram.HistogramValues[channel];
 
             ++max;
 
@@ -141,19 +158,19 @@ namespace PaintDotNet
             for (int i = 0; i < entries; i += entries - 1)
             {
                 points[i] = new PointF(
-                    Utility.Lerp(l, r, (float)hist[channel, i] / (float)max),
+                    Utility.Lerp(l, r, (float)hist[i] / (float)max),
                     Utility.Lerp(t, b, (float)i / (float)entries));
             }
 
-            long sum3 = hist[channel, 0] + hist[channel, 1];
+            long sum3 = hist[0] + hist[1];
             
             for (int i = 1; i < entries - 1; ++i)
             {
-                sum3 += hist[channel, i + 1];
+                sum3 += hist[i + 1];
                 points[i] = new PointF(
                     Utility.Lerp(l, r, (float)(sum3) / (float)(max * 3.1f)),
                     Utility.Lerp(t, b, (float)i / (float)entries));
-                sum3 -= hist[channel, i - 1];
+                sum3 -= hist[i - 1];
             }
 
             float intensity = selected[channel] ? 0.375f : 0.125f;

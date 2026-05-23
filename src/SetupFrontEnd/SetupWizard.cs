@@ -9,12 +9,17 @@
 
 using Microsoft.Win32;
 using PaintDotNet;
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Security;
@@ -38,11 +43,54 @@ namespace PaintDotNet.Setup
         private System.Windows.Forms.PictureBox headerImage;
         private System.Windows.Forms.Label headingText;
         private System.Windows.Forms.Control headingSpacer;
-        private Stack pages = new Stack(); // Stack<System.Type>
+        private System.ComponentModel.Container components = null;
+        private Hashtable msiProperties = new Hashtable();
+        private System.Windows.Forms.Label separator1;
+        private ComboBox languageBox;
+        private System.Windows.Forms.Label separator2;
+        private System.Windows.Forms.Control whiteBackground;
+        private Stack<System.Type> pages = new Stack<System.Type>();
         private WizardPage wizardPage;
         private bool finished = false;
         private bool skipConfig = false;
         private bool autoMode = false;
+        private bool languageInitDone = false;
+        private bool rebootRequired = false;
+        private float xScale;
+        private float yScale;
+
+        public int ScaleX(int x)
+        {
+            return (int)ScaleX((float)x);
+        }
+
+        public float ScaleX(float x)
+        {
+            return x * xScale;
+        }
+
+        public int ScaleY(int y)
+        {
+            return (int)ScaleY((float)y);
+        }
+
+        public float ScaleY(float y)
+        {
+            return y * yScale;
+        }
+
+        public bool RebootRequired
+        {
+            get
+            {
+                return this.rebootRequired;
+            }
+
+            set
+            {
+                this.rebootRequired = value;
+            }
+        }
 
         public bool SkipConfig
         {
@@ -83,15 +131,6 @@ namespace PaintDotNet.Setup
                 this.headingText.Text = value;
             }
         }
-
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
-        private System.ComponentModel.Container components = null;
-
-        private Hashtable msiProperties = new Hashtable();
-        private System.Windows.Forms.Label separator1;
-        private System.Windows.Forms.Label label1;
 
         public void SetNextEnabled(bool enabled)
         {
@@ -183,6 +222,14 @@ namespace PaintDotNet.Setup
             }
         }
 
+        public Hashtable MsiProperties
+        {
+            get
+            {
+                return (Hashtable)this.msiProperties.Clone();
+            }
+        }
+
         public string GetMsiProperty(string property, string defaultValue)
         {
             return GetMsiProperty(property, defaultValue, false);
@@ -241,7 +288,7 @@ namespace PaintDotNet.Setup
         {
             get
             {
-                return CreateFont("Tahoma", 13.0f, FontStyle.Regular);
+                return CreateFont("Tahoma", 12.5f, FontStyle.Regular);
             }
         }
 
@@ -249,7 +296,7 @@ namespace PaintDotNet.Setup
         {
             get
             {
-                return CreateFont("Verdana", 8.5f, FontStyle.Regular);
+                return CreateFont("Verdana", 8.0f, FontStyle.Regular);
             }
         }
 
@@ -265,7 +312,15 @@ namespace PaintDotNet.Setup
         {
             get
             {
-                return CreateFont("Verdana", 7.0f, FontStyle.Regular);
+                return CreateFont("Verdana", 6.5f, FontStyle.Regular);
+            }
+        }
+
+        public Color TextColor
+        {
+            get
+            {
+                return Color.Black;
             }
         }
 
@@ -276,13 +331,21 @@ namespace PaintDotNet.Setup
             WizardPage page = (WizardPage)obj;
             page.WizardHost = this;
             this.Controls.Remove(this.wizardPage);
-            page.Location = new Point(0, 77);
-            page.Size = new Size(ClientSize.Width, 259);
+            page.Location = new Point(0, ScaleY(77));
+            page.Size = new Size(ClientSize.Width, ScaleY(259));
             SetNextEnabled(true);
             SetBackEnabled(true);
             SetCancelEnabled(true);
             this.wizardPage = page;
             this.Controls.Add(this.wizardPage);
+            this.Controls.SetChildIndex(this.wizardPage, 0);
+
+            this.languageBox.Visible = (pageType == typeof(IntroPage));
+        }
+
+        public void ClearPageStack()
+        {
+            this.pages.Clear();
         }
 
         public void GoToPage(Type type)
@@ -299,22 +362,20 @@ namespace PaintDotNet.Setup
         {
             this.SuspendLayout();
 
+            using (Graphics g = this.CreateGraphics())
+            {
+                this.xScale = g.DpiX / 96.0f;
+                this.yScale = g.DpiY / 96.0f;
+            }
+
             //
             // Required for Windows Form Designer support
             //
             InitializeComponent();
 
-            this.Icon = PdnResources.GetIcon("Icons.PaintDotNet.ico");
-            this.Text = PdnResources.GetString("Application.ProductName.WithTag");
-            this.cancelButton.Text = PdnResources.GetString("SetupWizard.CancelButton.Text");
-            this.backButton.Text = PdnResources.GetString("SetupWizard.BackButton.Text");
-            this.nextButton.Text = PdnResources.GetString("SetupWizard.NextButton.Text");
-            this.headerImage.Image = PdnResources.GetImage("Images.Logo.png");
-            this.headerImage.BackColor = Color.White;
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.headingText.Font = this.HeadingTextFont;
 
             this.ResumeLayout(false);
+            LoadResources();
         }
 
         private string GetProgramFilesDir()
@@ -331,6 +392,97 @@ namespace PaintDotNet.Setup
             return path;
         }
 
+        private string GetCultureInfoName(CultureInfo ci)
+        {
+            if (ci.Parent.Name == "")
+            {
+                return ci.NativeName;
+            }
+            else
+            {
+                return GetCultureInfoName(ci.Parent);
+            }
+        }
+
+        private class CultureNameAndInfo
+        {
+            private CultureInfo cultureInfo;
+            private string displayName;
+
+            public CultureInfo CultureInfo
+            {
+                get
+                {
+                    return this.cultureInfo;
+                }
+            }
+
+            public string DisplayName
+            {
+                get
+                {
+                    return this.displayName;
+                }
+            }
+
+            public CultureNameAndInfo(CultureInfo cultureInfo, string displayName)
+            {
+                this.cultureInfo = cultureInfo;
+                this.displayName = displayName;
+            }
+        }
+
+        private void LoadResources()
+        {
+            this.Icon = PdnResources.GetIcon("Icons.PaintDotNet.ico");
+            this.Text = PdnInfo.GetProductName();
+            this.cancelButton.Text = PdnResources.GetString("SetupWizard.CancelButton.Text");
+            this.backButton.Text = PdnResources.GetString("SetupWizard.BackButton.Text");
+            this.nextButton.Text = PdnResources.GetString("SetupWizard.NextButton.Text");
+
+            Image pdnLogo = PdnResources.GetImage("Images.TransparentLogo.png");
+            Image gradient = PdnResources.GetImage("Images.BannerGradient.png");
+            Bitmap logoAndGradient = new Bitmap(495, 71, PixelFormat.Format24bppRgb);
+            using (Graphics g = Graphics.FromImage(logoAndGradient))
+            {
+                g.Clear(Color.White);
+                Rectangle gradientSrcBounds = new Rectangle(new Point(0, 0), gradient.Size);
+                Rectangle gradientDstBounds = new Rectangle(new Point(logoAndGradient.Width - gradient.Width, 0), gradient.Size);
+                g.DrawImage(gradient, gradientDstBounds, gradientSrcBounds, GraphicsUnit.Pixel);
+                Rectangle pdnLogoBounds = new Rectangle(new Point(0, 0), pdnLogo.Size);
+                g.DrawImage(pdnLogo, pdnLogoBounds, pdnLogoBounds, GraphicsUnit.Pixel);
+            }
+
+            Bitmap useThis;
+
+            if (this.headerImage.Size == logoAndGradient.Size)
+            {
+                useThis = logoAndGradient;
+            }
+            else
+            {
+                Bitmap highQuality = new Bitmap(this.headerImage.Width, this.headerImage.Height,
+                    PixelFormat.Format24bppRgb);
+
+                using (Graphics g = Graphics.FromImage(highQuality))
+                {
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    g.DrawImage(
+                        logoAndGradient,
+                        new Rectangle(0, 0, highQuality.Width, highQuality.Height),
+                        new Rectangle(0, 0, logoAndGradient.Width, logoAndGradient.Height),
+                        GraphicsUnit.Pixel);
+                }
+
+                useThis = highQuality;
+            }
+
+            this.headerImage.SizeMode = PictureBoxSizeMode.CenterImage;
+            this.headerImage.Image = useThis;
+            gradient.Dispose();
+            pdnLogo.Dispose();
+        }
+
         protected override void OnLoad(EventArgs e)
         {
             // Setup default install dir
@@ -343,21 +495,90 @@ namespace PaintDotNet.Setup
             string jpgPngBmpEditor = GetMsiProperty(PropertyNames.JpgPngBmpEditor, "1");
             string tgaEditor = GetMsiProperty(PropertyNames.TgaEditor, "1");
             string checkForUpdates = GetMsiProperty(PropertyNames.CheckForUpdates, "1");
-            string checkForBetas = GetMsiProperty(PropertyNames.CheckForBetas, "0");
+            string checkForBetas = GetMsiProperty(PropertyNames.CheckForBetas, PropertyNames.CheckForBetasDefault);
 
-            if (this.skipConfig)
+            this.headingText.Font = this.HeadingTextFont;
+            this.headingText.ForeColor = this.TextColor;
+
+            if (this.wizardPage == null || this.wizardPage.GetType() == typeof(IntroPage))
             {
-                GoToPage(typeof(InstallingPage));
-            }
-            else
-            {
-                GoToPage(typeof(IntroPage));
+                // Populate the language combo box
+                string[] locales = PdnResources.GetInstalledLocales();
+                CultureNameAndInfo[] cnais = new CultureNameAndInfo[locales.Length];
+
+                for (int i = 0; i < locales.Length; ++i)
+                {
+                    string locale = locales[i];
+                    CultureInfo ci = new CultureInfo(locale);
+                    CultureNameAndInfo cnai = new CultureNameAndInfo(ci, GetCultureInfoName(ci));
+                    cnais[i] = cnai;
+                }
+
+                Array.Sort(
+                    cnais,
+                    delegate(CultureNameAndInfo lhs, CultureNameAndInfo rhs)
+                    {
+                        return string.Compare(lhs.DisplayName, rhs.DisplayName,
+                            StringComparison.InvariantCultureIgnoreCase);
+                    });
+
+                this.languageBox.DataSource = cnais;
+                this.languageBox.DisplayMember = "DisplayName";
+
+                // Choose the current locale
+
+                // First find English
+                CultureNameAndInfo englishCnai;
+
+                englishCnai = Array.Find(
+                    cnais,
+                    delegate(CultureNameAndInfo cnai)
+                    {
+                        if (cnai.CultureInfo.Name.Length == 0 || cnai.CultureInfo.Name == "en-US")
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    });
+
+                // Next, figure out what culture we're currently set to
+                CultureNameAndInfo currentCnai;
+
+                currentCnai = Array.Find(
+                    cnais,
+                    delegate(CultureNameAndInfo cnai)
+                    {
+                        return (cnai.CultureInfo == PdnResources.Culture);
+                    });
+
+                if (currentCnai == null)
+                {
+                    this.languageBox.SelectedItem = englishCnai;
+                }
+                else
+                {
+                    this.languageBox.SelectedItem = currentCnai;
+                }
+
+                this.languageInitDone = true;
+
+                // Go to the appropriate page
+                if (this.skipConfig)
+                {
+                    GoToPage(typeof(InstallingPage));
+                }
+                else
+                {
+                    GoToPage(typeof(IntroPage));
+                }
             }
 
             base.OnLoad (e);
         }
-
-
+        
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
@@ -379,7 +600,7 @@ namespace PaintDotNet.Setup
         {
             if (!this.finished)
             {
-                string title = PdnResources.GetString("Application.ProductName.WithTag");
+                string title = PdnInfo.GetProductName();
                 string message = PdnResources.GetString("SetupWizard.CancelDialog.Message");
                 DialogResult result = MessageBox.Show(this, message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
@@ -406,41 +627,36 @@ namespace PaintDotNet.Setup
             this.headerImage = new System.Windows.Forms.PictureBox();
             this.headingText = new System.Windows.Forms.Label();
             this.headingSpacer = new System.Windows.Forms.Control();
-            this.label1 = new System.Windows.Forms.Label();
+            this.separator2 = new System.Windows.Forms.Label();
+            this.languageBox = new System.Windows.Forms.ComboBox();
+            this.whiteBackground = new System.Windows.Forms.Control();
+            ((System.ComponentModel.ISupportInitialize)(this.headerImage)).BeginInit();
             this.SuspendLayout();
             // 
             // nextButton
             // 
-            this.nextButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.nextButton.Location = new System.Drawing.Point(412, 350);
             this.nextButton.Name = "nextButton";
+            this.nextButton.Size = new System.Drawing.Size(75, 23);
             this.nextButton.TabIndex = 0;
             this.nextButton.Click += new System.EventHandler(this.nextButton_Click);
             // 
             // backButton
             // 
-            this.backButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.backButton.Location = new System.Drawing.Point(332, 350);
             this.backButton.Name = "backButton";
+            this.backButton.Size = new System.Drawing.Size(75, 23);
             this.backButton.TabIndex = 1;
             this.backButton.Click += new System.EventHandler(this.backButton_Click);
             // 
             // cancelButton
             // 
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.cancelButton.Location = new System.Drawing.Point(244, 350);
             this.cancelButton.Name = "cancelButton";
+            this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 2;
             this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
-            // 
-            // separator1
-            // 
-            this.separator1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.separator1.Location = new System.Drawing.Point(0, 339);
-            this.separator1.Name = "separator1";
-            this.separator1.Size = new System.Drawing.Size(503, 2);
-            this.separator1.TabIndex = 3;
             // 
             // headerImage
             // 
@@ -449,15 +665,16 @@ namespace PaintDotNet.Setup
             this.headerImage.Location = new System.Drawing.Point(0, 0);
             this.headerImage.Name = "headerImage";
             this.headerImage.Size = new System.Drawing.Size(495, 71);
+            this.headerImage.SizeMode = PictureBoxSizeMode.StretchImage;
             this.headerImage.TabIndex = 0;
             this.headerImage.TabStop = false;
+            this.headerImage.Controls.Add(this.headingText);
             // 
             // headingText
             // 
-            this.headingText.BackColor = System.Drawing.Color.White;
-            this.headingText.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.headingText.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
-            this.headingText.Location = new System.Drawing.Point(55, 47);
+            this.headingText.BackColor = System.Drawing.Color.Transparent;
+            this.headingText.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.headingText.Location = new System.Drawing.Point(52, 47);
             this.headingText.Name = "headingText";
             this.headingText.Size = new System.Drawing.Size(441, 25);
             this.headingText.TabIndex = 4;
@@ -472,34 +689,75 @@ namespace PaintDotNet.Setup
             this.headingSpacer.TabIndex = 5;
             this.headingSpacer.Text = "headingSpacer";
             // 
-            // label1
+            // separator1
             // 
-            this.label1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.label1.Location = new System.Drawing.Point(0, 71);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(503, 2);
-            this.label1.TabIndex = 6;
+            this.separator1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.separator1.Location = new System.Drawing.Point(0, 339);
+            this.separator1.Name = "separator1";
+            this.separator1.Size = new System.Drawing.Size(503, 2);
+            this.separator1.TabIndex = 3;
+            // 
+            // separator2
+            // 
+            this.separator2.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.separator2.Location = new System.Drawing.Point(0, 71);
+            this.separator2.Name = "separator2";
+            this.separator2.Size = new System.Drawing.Size(503, 2);
+            this.separator2.TabIndex = 6;
+            //
+            // whiteBackground
+            //
+            this.whiteBackground.Location = new System.Drawing.Point(0, 73);
+            this.whiteBackground.Size = new System.Drawing.Size(503, 266);
+            this.whiteBackground.BackColor = Color.FromArgb(255, 255, 255);
+            // 
+            // languageBox
+            // 
+            this.languageBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.languageBox.Location = new System.Drawing.Point(10, 350);
+            this.languageBox.Name = "languageBox";
+            this.languageBox.Size = new System.Drawing.Size(140, 21);
+            this.languageBox.TabIndex = 7;
+            this.languageBox.SelectedIndexChanged += new System.EventHandler(this.languageBox_SelectedIndexChanged);
             // 
             // SetupWizard
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(495, 382);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.headingText);
+            this.Controls.Add(this.languageBox);
+            this.Controls.Add(this.separator2);
             this.Controls.Add(this.separator1);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.backButton);
             this.Controls.Add(this.nextButton);
             this.Controls.Add(this.headerImage);
             this.Controls.Add(this.headingSpacer);
+            this.Controls.Add(this.whiteBackground);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.Name = "SetupWizard";
+            this.StartPosition = FormStartPosition.CenterScreen;
+            ((System.ComponentModel.ISupportInitialize)(this.headerImage)).EndInit();
             this.ResumeLayout(false);
 
         }
         #endregion
+
+        void languageBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            CultureNameAndInfo cnai = this.languageBox.SelectedItem as CultureNameAndInfo;
+
+            if (this.languageInitDone && cnai != null && 
+                cnai.CultureInfo != PdnResources.Culture)
+            {
+                PdnResources.Culture = cnai.CultureInfo;
+                LoadResources();
+                this.pages.Clear();
+                this.GoToPage(typeof(IntroPage));
+            }
+        }
 
         private static bool CheckOSVersion(int major, int minor, short servicePack)
         {
@@ -514,12 +772,22 @@ namespace PaintDotNet.Setup
             mask = NativeMethods.VerSetConditionMask(mask, NativeConstants.VER_MINORVERSION, NativeConstants.VER_GREATER_EQUAL);
             mask = NativeMethods.VerSetConditionMask(mask, NativeConstants.VER_SERVICEPACKMAJOR, NativeConstants.VER_GREATER_EQUAL);
 
-            bool result = NativeMethods.VerifyVersionInfo(ref osvi, NativeConstants.VER_MAJORVERSION | NativeConstants.VER_MINORVERSION |
-                NativeConstants.VER_SERVICEPACKMAJOR, mask);
+            bool result = NativeMethods.VerifyVersionInfo(
+                ref osvi, 
+                NativeConstants.VER_MAJORVERSION | 
+                    NativeConstants.VER_MINORVERSION |
+                    NativeConstants.VER_SERVICEPACKMAJOR, 
+                mask);
 
             return result;
         }
 
+        // Requires:
+        // * Windows 2000 SP3 or later
+        // * Windows XP SP1 or later
+        // * Windows Server 2003
+        // * Windows Vista
+        // * or newer
         private static bool CheckOSRequirement()
         {
             // Windows Vista or later?
@@ -528,13 +796,16 @@ namespace PaintDotNet.Setup
             // Windows 2003 or later?
             bool win2k3 = CheckOSVersion(5, 2, 0);
 
+            // Windows XP or later?
+            bool winXP = CheckOSVersion(5, 1, 0);
+
             // Windows XP SP1 or later?
             bool winXPSP1 = CheckOSVersion(5, 1, 1);
 
             // Windows 2000 SP3 or later?
-            bool win2KSP3 = CheckOSVersion(5, 0, 3);
+            bool win2KSP3 = CheckOSVersion(5, 0, 0);
 
-            return winVista | win2k3 | winXPSP1 | win2KSP3;
+            return winVista | win2k3 | (winXP && winXPSP1) | win2KSP3;
         }
 
         private static bool IsUserAdministrator()
@@ -561,7 +832,7 @@ namespace PaintDotNet.Setup
             // Show error if necessary
             if (!pass)
             {
-                string title = PdnResources.GetString("Application.ProductName.WithTag");
+                string title = PdnInfo.GetProductName();
                 string message = "internal error";
 
                 if (!osRequirement)
@@ -581,7 +852,7 @@ namespace PaintDotNet.Setup
 
         private static void ShowHelp()
         {
-            string title = PdnResources.GetString("Application.ProductName.WithTag");
+            string title = PdnInfo.GetProductName();
             string helpText = PdnResources.GetString("SetupWizard.HelpText");
             MessageBox.Show(helpText, title, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -592,24 +863,38 @@ namespace PaintDotNet.Setup
         [STAThread]
         static void Main(string[] args) 
         {
+            try
+            {
+                MainImpl(args);
+            }
+
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        static void MainImpl(string[] args)
+        {
+            if (!PdnInfo.HandleExpiration())
+            {
+                return;
+            }
+
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.EnableVisualStyles();
+
             // Uncomment to test German
             //System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("de");
                     
             bool doInstall = true;
+            bool doMsiDump = false;
             bool restartPdnOnExit = false;
+            string[] propertyDefaults = PropertyNames.Defaults;
 
             SetupWizard setupWizard = new SetupWizard();
 
-            // Load all the propreties that we always need to have
-            string[] defaults = PropertyNames.Defaults;
-
-            for (int i = 0; i < defaults.Length; i += 2)
-            {
-                setupWizard.GetMsiProperty(defaults[i], defaults[i + 1]);
-            }
-
-            setupWizard.SetMsiProperty(PropertyNames.PdnUpdating, "0");
-
+            // Parse through command-line options
             for (int i = 0; i < args.Length; ++i)
             {
                 string arg = args[i];
@@ -642,11 +927,26 @@ namespace PaintDotNet.Setup
                         setupWizard.SkipConfig = true;
                         break;
 
+                    case "-createmsi":
+                    case "/createmsi":
+                        doMsiDump = true;
+                        propertyDefaults = PropertyNames.AdGpoDefaults;
+                        break;
+
                     default:
                         setupWizard.AddPropertyFromArg(arg);
                         break;
                 }
             }
+
+            // Load all the propreties that we always need to have. Defaults will be loaded
+            // for properties that are not already set.
+            for (int i = 0; i < propertyDefaults.Length; i += 2)
+            {
+                setupWizard.GetMsiProperty(propertyDefaults[i], propertyDefaults[i + 1]);
+            }
+
+            setupWizard.SetMsiProperty(PropertyNames.PdnUpdating, "0");
 
             // Only allow 1 instance of setup wizard running at a time...
             bool createdNew;
@@ -656,11 +956,14 @@ namespace PaintDotNet.Setup
 
             if (doInstall)
             {
-                Application.EnableVisualStyles();
-                Application.DoEvents();
-
                 if (CheckRequirements())
                 {
+                    if (doMsiDump)
+                    {
+                        setupWizard.ClearPageStack();
+                        setupWizard.GoToPage(typeof(CreateMsiPage));
+                    }
+
                     setupWizard.ShowDialog();
                 }
 
@@ -676,8 +979,9 @@ namespace PaintDotNet.Setup
                 // 
                 // #2 does introduce a slight race condition, so PaintDotNet.exe will actually retry
                 // up to 3 times to delete the file with a 1 second pause between retries. This should
-                // give enough time for the setup processes to unwind.
-                if (restartPdnOnExit)
+                // give enough time for the setup processes to unwind without causing too horrible of
+                // a delay in the worst case.
+                if (restartPdnOnExit && !setupWizard.RebootRequired)
                 {
                     string targetDir = setupWizard.GetMsiProperty(PropertyNames.TargetDir, null);
 

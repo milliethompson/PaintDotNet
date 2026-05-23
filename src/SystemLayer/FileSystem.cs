@@ -7,6 +7,7 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.ComponentModel;
 using System.Globalization;
@@ -48,16 +49,16 @@ namespace PaintDotNet.SystemLayer
                 NativeMethods.ThrowOnWin32Error();
             }
 
+            SafeFileHandle sfhFile = new SafeFileHandle(hFile, true);
             FileStream stream;
             
             try
             {
-                stream = new FileStream(hFile, FileAccess.ReadWrite, true);
+                stream = new FileStream(sfhFile, FileAccess.ReadWrite);
             }
 
             catch
             {
-                SafeNativeMethods.CloseHandle(hFile);
                 hFile = IntPtr.Zero;
                 throw;
             }
@@ -66,20 +67,44 @@ namespace PaintDotNet.SystemLayer
         }
 
         /// <summary>
-        /// Opens an existing file for streaming reading. This stream should be read
-        /// contiguously for best performance. Random I/O is still permissible, but
-        /// may not perform well.
+        /// Opens an existing file for streaming. This stream should be read from or 
+        /// written to sequentially for best performance. Random I/O is still permissible, 
+        /// but may not perform as well.
         /// </summary>
         /// <param name="fileName">The file to open.</param>
-        /// <returns>A Stream object that may be used to read from the file.</returns>
-        public static FileStream OpenStreamingFileRead(string fileName)
+        /// <returns>A Stream object that may be used to read from or write to the file, depending on the fileMode parameter.</returns>
+        public static FileStream OpenStreamingFile(string fileName, FileAccess fileAccess)
         {
+            uint dwDesiredAccess;
+            uint dwCreationDisposition;
+
+            switch (fileAccess)
+            {
+                case FileAccess.Read:
+                    dwDesiredAccess = NativeConstants.GENERIC_READ;
+                    dwCreationDisposition = NativeConstants.OPEN_EXISTING;
+                    break;
+
+                case FileAccess.ReadWrite:
+                    dwDesiredAccess = NativeConstants.GENERIC_READ | NativeConstants.GENERIC_WRITE;
+                    dwCreationDisposition = NativeConstants.OPEN_ALWAYS;
+                    break;
+
+                case FileAccess.Write:
+                    dwDesiredAccess = NativeConstants.GENERIC_WRITE;
+                    dwCreationDisposition = NativeConstants.CREATE_NEW;
+                    break;
+
+                default:
+                    throw new InvalidEnumArgumentException();
+            }
+
             IntPtr hFile = SafeNativeMethods.CreateFileW(
                 fileName,
-                NativeConstants.GENERIC_READ,
+                dwDesiredAccess,
                 NativeConstants.FILE_SHARE_READ,
                 IntPtr.Zero,
-                NativeConstants.OPEN_EXISTING,
+                dwCreationDisposition,
                 NativeConstants.FILE_ATTRIBUTE_TEMPORARY | NativeConstants.FILE_FLAG_SEQUENTIAL_SCAN,
                 IntPtr.Zero);
 
@@ -92,7 +117,8 @@ namespace PaintDotNet.SystemLayer
             
             try
             {
-                stream = new FileStream(hFile, FileAccess.Read, true, 512, false);
+                SafeFileHandle sfh = new SafeFileHandle(hFile, true);
+                stream = new FileStream(sfh, fileAccess, 512, false);
             }
 
             catch
@@ -106,45 +132,6 @@ namespace PaintDotNet.SystemLayer
         }
 
         /// <summary>
-        /// Closes a file handle that was created with CreateStreamingFileHandleWrite.
-        /// </summary>
-        public static void CloseStreamingFileHandle(object fileHandle)
-        {
-            IntPtr hFile = (IntPtr)fileHandle;
-            bool result = SafeNativeMethods.CloseHandle(hFile);
-
-            if (!result)
-            {
-                NativeMethods.ThrowOnWin32Error();
-            }
-        }
-
-        /// <summary>
-        /// Creates a file with the give name that is only usable for writing with WriteToStreamingFileGather,
-        /// and must be closed with ClostStreamingFileHandle.
-        /// </summary>
-        public static object CreateStreamingFileHandleWrite(string fileName)
-        {
-            IntPtr hFile = SafeNativeMethods.CreateFileW(
-                fileName,
-                NativeConstants.GENERIC_WRITE,
-                NativeConstants.FILE_SHARE_READ,
-                IntPtr.Zero,
-                NativeConstants.CREATE_ALWAYS,
-                NativeConstants.FILE_ATTRIBUTE_TEMPORARY | NativeConstants.FILE_FLAG_SEQUENTIAL_SCAN | 
-                    NativeConstants.FILE_FLAG_OVERLAPPED,
-                IntPtr.Zero);
-
-            if (hFile == NativeConstants.INVALID_HANDLE_VALUE)
-            {
-                NativeMethods.ThrowOnWin32Error();
-            }
-
-            return (object)hFile;
-        }
-
-        /*
-        /// <summary>
         /// Writes the given bytes to a stream.
         /// </summary>
         /// <param name="output">The stream to write data to.</param>
@@ -156,15 +143,20 @@ namespace PaintDotNet.SystemLayer
         [CLSCompliant(false)]
         public unsafe static void WriteToStream(FileStream output, void *pvBuffer, uint length)
         {
-            IntPtr hFile = output.Handle;
+            IntPtr hFile = output.SafeFileHandle.DangerousGetHandle();
+            WriteToStream(hFile, pvBuffer, length);
+            GC.KeepAlive(output);
+        }
 
+        public unsafe static void WriteToStream(IntPtr hFile, void* pvBuffer, uint length)
+        {
             if (hFile == NativeConstants.INVALID_HANDLE_VALUE)
             {
                 throw new ArgumentException("output", "File is closed");
             }
 
-            void *pvWrite = pvBuffer;
-            
+            void* pvWrite = pvBuffer;
+
             while (length > 0)
             {
                 uint written;
@@ -175,20 +167,16 @@ namespace PaintDotNet.SystemLayer
                     NativeMethods.ThrowOnWin32Error("WriteFile() returned false");
                 }
 
-                pvWrite = (void *)((byte *)pvWrite + written);
+                pvWrite = (void*)((byte*)pvWrite + written);
                 length -= written;
             }
-
-            GC.KeepAlive(output);
         }
-        */
 
+        /*
         private unsafe static void WriteToStreamingFileGatherAsync(IntPtr hFile, void *[] ppvBuffers, uint[] lengths)
         {
             bool result = true;
             uint dwResult = NativeConstants.ERROR_SUCCESS;
-
-            //IntPtr hFile = (IntPtr)outputHanoutput.Handle;
 
             long totalBytes = 0;
 
@@ -319,13 +307,13 @@ namespace PaintDotNet.SystemLayer
             {
                 if (pBuffer1 != IntPtr.Zero)
                 {
-                    Memory.FreeLarge(pBuffer1, (ulong)bufferSize);
+                    Memory.FreeLarge(pBuffer1);
                     pBuffer1 = IntPtr.Zero;
                 }
 
                 if (pBuffer2 != IntPtr.Zero)
                 {
-                    Memory.FreeLarge(pBuffer2, (ulong)bufferSize);
+                    Memory.FreeLarge(pBuffer2);
                     pBuffer2 = IntPtr.Zero;
                 }
 
@@ -340,6 +328,7 @@ namespace PaintDotNet.SystemLayer
                 }
             }
         }
+         * */
 
         /// <summary>
         /// Writes data to the file. This data may be scattered throughout memory, but is written contiguously
@@ -360,14 +349,21 @@ namespace PaintDotNet.SystemLayer
         /// <remarks>
         /// ppvBuffers.Length must equal lengths.Length
         /// </remarks>
-        public unsafe static void WriteToStreamingFileGather(object outputHandle, void *[] ppvBuffers, uint[] lengths)
+        public unsafe static void WriteToStreamingFileGather(FileStream outputHandle, void *[] ppvBuffers, uint[] lengths)
         {
             if (ppvBuffers.Length != lengths.Length)
             {
                 throw new ArgumentException("ppvBuffers.Length != lengths.Length");
             }
 
-            WriteToStreamingFileGatherAsync((IntPtr)outputHandle, ppvBuffers, lengths);
+            IntPtr hFile = outputHandle.SafeFileHandle.DangerousGetHandle();
+
+            for (int i = 0; i < ppvBuffers.Length; ++i)
+            {
+                WriteToStream(hFile, ppvBuffers[i], lengths[i]);
+            }
+
+            GC.KeepAlive(outputHandle);
         }
 
         /// <summary>
@@ -388,7 +384,7 @@ namespace PaintDotNet.SystemLayer
         /// <param name="ppvBuffers"></param>
         /// <param name="lengths"></param>
         /// <remarks>This method is the counter to WriteToStreamingFileGather. ppvBuffers.Length must equal lengths.Length.</remarks>
-        public unsafe static void ReadFromStreamScatter(FileStream input, void *[] ppvBuffers, uint[] lengths)
+        public unsafe static void ReadFromStreamScatter(FileStream input, void*[] ppvBuffers, uint[] lengths)
         {
             if (ppvBuffers.Length != lengths.Length)
             {
@@ -414,25 +410,30 @@ namespace PaintDotNet.SystemLayer
         /// This method is provided for performance (memory-usage) purposes.
         /// </remarks>
         [CLSCompliant(false)]
-        public unsafe static void ReadFromStream(FileStream input, void *pvBuffer, uint length)
+        public unsafe static void ReadFromStream(FileStream input, void* pvBuffer, uint length)
         {
-            IntPtr hFile = input.Handle;
+            SafeFileHandle sfhFile = input.SafeFileHandle;
 
-            if (hFile == NativeConstants.INVALID_HANDLE_VALUE)
+            if (sfhFile.IsInvalid)
             {
                 throw new ArgumentException("input", "File is closed");
             }
 
             void *pvRead = pvBuffer;
-            
+
             while (length > 0)
             {
                 uint read;
-                bool result = SafeNativeMethods.ReadFile(hFile, pvRead, length, out read, IntPtr.Zero);
+                bool result = SafeNativeMethods.ReadFile(sfhFile, pvRead, length, out read, IntPtr.Zero);
 
                 if (!result)
                 {
                     NativeMethods.ThrowOnWin32Error("ReadFile() returned false");
+                }
+
+                if (result && read == 0)
+                {
+                    throw new EndOfStreamException();
                 }
 
                 pvRead = (void *)((byte *)pvRead + read);
@@ -487,7 +488,7 @@ namespace PaintDotNet.SystemLayer
                     {
                     }
                 }
-        
+
                 if (cleanUp)
                 {
                     string[] filesToCleanUp = Directory.GetFiles(oldDirPath, "*.");
@@ -506,8 +507,15 @@ namespace PaintDotNet.SystemLayer
                         {
                         }
                     }
-                
-                    Directory.Delete(oldDirPath, false);
+
+                    try
+                    {
+                        Directory.Delete(oldDirPath, false);
+                    }
+
+                    catch
+                    {
+                    }
                 }
             }
 
@@ -517,7 +525,7 @@ namespace PaintDotNet.SystemLayer
                 int subDirOrdinal = random.Next();
                 string subDir = Path.Combine(tempDirRoot, subDirOrdinal.ToString(CultureInfo.InvariantCulture));
                 DirectoryInfo dirInfo = new DirectoryInfo(subDir);
-                
+
                 if (!dirInfo.Exists)
                 {
                     dirInfo.Create();
@@ -543,7 +551,7 @@ namespace PaintDotNet.SystemLayer
             {
                 sessionToken.Close();
                 sessionToken = null;
-            }     
+            }
         }
 
         /// <summary>
@@ -553,7 +561,7 @@ namespace PaintDotNet.SystemLayer
         /// The full path for a temporary filename. The file does not exist at the time this method returns.
         /// </returns>
         public static string GetTempFileName()
-        {           
+        {
             string returnPath;
 
             while (true)

@@ -28,8 +28,8 @@ namespace PaintDotNet
         public override HistoryAction PerformAction()
         {
             ReplaceDocumentHistoryAction rdha = new ReplaceDocumentHistoryAction(
-                name, 
-                PdnResources.GetImage("Icons.MenuImageFlattenIcon.bmp"), 
+                name,
+                PdnResources.GetImage("Icons.MenuImageFlattenIcon.png"), 
                 Workspace);
 
             Document flat = Workspace.Document.Flatten();

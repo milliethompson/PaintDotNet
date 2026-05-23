@@ -47,7 +47,7 @@ namespace PaintDotNet
 
                 using (RenderArgs ra = new RenderArgs(surface))
                 {
-                    input.RenderFlat(ra);
+                    input.Render(ra, true);
                 }
 
                 using (Bitmap bitmap = surface.CreateAliasedBitmap())
@@ -60,11 +60,11 @@ namespace PaintDotNet
 
         public static void LoadProperties(Image dstImage, Document srcDoc)
         {
-            MetaData metaData = srcDoc.MetaData;
+            Metadata metaData = srcDoc.Metadata;
 
-            foreach (string key in metaData.GetKeys(MetaData.ExifSectionName))
+            foreach (string key in metaData.GetKeys(Metadata.ExifSectionName))
             {
-                string blob = metaData.GetValue(MetaData.ExifSectionName, key);
+                string blob = metaData.GetValue(Metadata.ExifSectionName, key);
                 PropertyItem pi = PdnGraphics.DeserializePropertyItem(blob);
 
                 try
@@ -81,24 +81,20 @@ namespace PaintDotNet
 
         protected override Document OnLoad(Stream input)
         {
-            using (Image image = LoadImage(input))
+            using (Image image = PdnResources.LoadImage(input))
             {
                 Document document = Document.FromImage(image);
-                MetaData metaData = document.MetaData;
+                Metadata metaData = document.Metadata;
 
-                object[] pis = (object[])PdnGraphics.GetPropertyItems(image);
+                PropertyItem[] pis = image.PropertyItems;
+
                 for (int i = 0; i < pis.Length; ++i)
                 {
-                    metaData.AddExifValues(new PropertyItem[] { (PropertyItem)pis[i] });
+                    metaData.AddExifValues(new PropertyItem[] { pis[i] });
                 }
 
                 return document;
             }
-        }
-
-        public static Image LoadImage(Stream input)
-        {
-            return Image.FromStream(input);
         }
         
         public static ImageCodecInfo GetImageCodecInfo(ImageFormat format)

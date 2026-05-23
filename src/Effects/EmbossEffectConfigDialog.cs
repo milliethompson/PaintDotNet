@@ -47,7 +47,7 @@ namespace PaintDotNet.Effects
             // EmbossEffectConfigDialog
             // 
             this.Name = "EmbossEffectConfigDialog";
-            //this.Icon = PdnResources.GetIconFromImage("Icons.EmbossEffect.bmp");
+            //this.Icon = PdnResources.GetIconFromImage("Icons.EmbossEffect.png");
 
         }
         #endregion

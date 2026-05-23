@@ -19,16 +19,16 @@ namespace PaintDotNet.SystemLayer
         /// <summary>
         /// The operation completed successfully.
         /// </summary>
-        Success,
+        Success = 1,
 
         /// <summary>
         /// The user cancelled the operation.
         /// </summary>
-        UserCancelled,
+        UserCancelled = 2,
 
         /// <summary>
         /// The device was busy or otherwise inaccessible.
         /// </summary>
-        DeviceBusy
+        DeviceBusy = 3
     }
 }

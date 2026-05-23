@@ -14,13 +14,9 @@ using System.Drawing;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for EmbossEffect.
-    /// </summary>
     [EffectTypeHint(EffectTypeHint.Fast)]
     public class EmbossEffect
-        : Effect, 
-          IConfigurableEffect
+        : Effect
     {
         public static string StaticName
         {
@@ -32,18 +28,18 @@ namespace PaintDotNet.Effects
 
         public EmbossEffect()
             : base(StaticName,
-                   PdnResources.GetImage("Icons.EmbossEffect.bmp"))
+                   PdnResources.GetImage("Icons.EmbossEffect.png"),
+                   true)
         {
         }
 
-        #region IConfigurableEffect Members
-
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             return new EmbossEffectConfigDialog();
         }
 
-        public unsafe void Render(EffectConfigToken configToken, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public unsafe override void Render(EffectConfigToken configToken, RenderArgs dstArgs, RenderArgs srcArgs, 
+            Rectangle[] rois, int startIndex, int length)
         {
             EmbossEffectConfigToken eect = (EmbossEffectConfigToken)configToken;
 
@@ -52,8 +48,10 @@ namespace PaintDotNet.Effects
             Surface dst = dstArgs.Surface;
             Surface src = srcArgs.Surface;
 
-            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
+            for (int i = startIndex; i < startIndex + length; ++i)
             {
+                Rectangle rect = rois[i];
+
                 // loop through each line of target rectangle
                 for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
@@ -98,7 +96,5 @@ namespace PaintDotNet.Effects
                 }
             }
         }
-
-        #endregion
     }
 }

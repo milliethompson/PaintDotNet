@@ -18,7 +18,8 @@ namespace PaintDotNet
     /// <summary>
     /// Summary description for HistoryElement.
     /// </summary>
-    public class HistoryElement : System.Windows.Forms.UserControl
+    public class HistoryElement 
+        : System.Windows.Forms.UserControl
     {
         private System.Windows.Forms.Label historyDescription;
         private IconBox historyIcon;
@@ -46,10 +47,7 @@ namespace PaintDotNet
         {
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
-
             IsUndo = true;
-            historyIcon.TransparentColor = Color.FromArgb(192, 192, 192);
-
             historyIcon.KeyUp += new KeyEventHandler(historyIcon_KeyUp);
         }
 
@@ -119,7 +117,7 @@ namespace PaintDotNet
         {
             if (isUndo)
             {
-                this.BackColor = Color.White;
+                this.BackColor = SystemColors.Window;
                 this.ForeColor = SystemColors.WindowText;
             }
             else
@@ -165,6 +163,7 @@ namespace PaintDotNet
             this.historyDescription.Size = new System.Drawing.Size(134, 24);
             this.historyDescription.TabIndex = 0;
             this.historyDescription.UseMnemonic = false;
+            this.historyDescription.TextAlign = ContentAlignment.MiddleLeft;
             this.historyDescription.Click += new System.EventHandler(this.Control_Click);
             this.historyDescription.DoubleClick += new System.EventHandler(this.Control_Click);
             this.historyDescription.MouseMove += new System.Windows.Forms.MouseEventHandler(this.Control_MouseMove);
@@ -179,7 +178,6 @@ namespace PaintDotNet
             this.historyIcon.Size = new System.Drawing.Size(16, 24);
             this.historyIcon.TabIndex = 1;
             this.historyIcon.TabStop = false;
-            this.historyIcon.TransparentColor = System.Drawing.Color.Empty;
             this.historyIcon.Click += new System.EventHandler(this.Control_Click);
             this.historyIcon.DoubleClick += new System.EventHandler(this.Control_Click);
             this.historyIcon.MouseMove += new System.Windows.Forms.MouseEventHandler(this.Control_MouseMove);
@@ -189,6 +187,8 @@ namespace PaintDotNet
             // 
             this.Controls.Add(this.historyDescription);
             this.Controls.Add(this.historyIcon);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             this.Name = "HistoryElement";
             this.Size = new System.Drawing.Size(150, 24);
             this.ResumeLayout(false);

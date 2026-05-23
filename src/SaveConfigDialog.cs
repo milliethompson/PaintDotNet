@@ -32,7 +32,6 @@ namespace PaintDotNet
         private Hashtable fileTypeToSaveToken = new Hashtable();
         private System.ComponentModel.IContainer components = null;
         private System.Windows.Forms.Label fileSizeText;
-        private System.Windows.Forms.ProgressBar fileSizeProgressBar;
         private FileType fileType;
         private System.Windows.Forms.Button defaultsButton;
         private Document document;
@@ -46,6 +45,15 @@ namespace PaintDotNet
         private int previewRightMargin = -1;
         private PaintDotNet.HeaderLabel settingsHeader;
         private int previewBottomMargin = -1;
+
+        public event ProgressEventHandler Progress;
+        protected virtual void OnProgress(int percent)
+        {
+            if (Progress != null)
+            {
+                Progress(this, new ProgressEventArgs((double)percent));
+            }
+        }
 
         /// <summary>
         /// Gets or sets the Document instance that is to be saved.
@@ -163,7 +171,7 @@ namespace PaintDotNet
             this.defaultsButton.Text = PdnResources.GetString("SaveConfigDialog.DefaultsButton.Text");
             this.previewHeader.Text = PdnResources.GetString("SaveConfigDialog.PreviewHeader.Text");
 
-            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileSaveIcon.bmp"));
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileSaveIcon.png"));
 
             if (this.renderSurface != null)
             {
@@ -247,7 +255,6 @@ namespace PaintDotNet
             this.defaultsButton = new System.Windows.Forms.Button();
             this.saveConfigWidget = new PaintDotNet.SaveConfigWidget();
             this.fileSizeText = new System.Windows.Forms.Label();
-            this.fileSizeProgressBar = new System.Windows.Forms.ProgressBar();
             this.previewHeader = new PaintDotNet.HeaderLabel();
             this.documentView = new PaintDotNet.DocumentView();
             this.settingsHeader = new PaintDotNet.HeaderLabel();
@@ -282,7 +289,8 @@ namespace PaintDotNet
             // 
             // defaultsButton
             // 
-            this.defaultsButton.Location = new System.Drawing.Point(107, 279);
+            this.defaultsButton.Location = new System.Drawing.Point(101, 279);
+            this.defaultsButton.Size = new System.Drawing.Size(81, 23);
             this.defaultsButton.Name = "defaultsButton";
             this.defaultsButton.TabIndex = 1;
             this.defaultsButton.Click += new System.EventHandler(this.defaultsButton_Click);
@@ -303,16 +311,6 @@ namespace PaintDotNet
             this.fileSizeText.Name = "fileSizeText";
             this.fileSizeText.Size = new System.Drawing.Size(160, 16);
             this.fileSizeText.TabIndex = 8;
-            //
-            // fileSizeProgressBar
-            //
-            this.fileSizeProgressBar.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.fileSizeProgressBar.Location = new System.Drawing.Point(202, 325);
-            this.fileSizeProgressBar.Name = "fileSizeProgressBar";
-            this.fileSizeProgressBar.Size = new System.Drawing.Size(192, 16);
-            this.fileSizeProgressBar.Minimum = 0;
-            this.fileSizeProgressBar.Maximum = 100;
-            this.fileSizeProgressBar.Visible = false;
             // 
             // previewHeader
             // 
@@ -351,13 +349,13 @@ namespace PaintDotNet
             // 
             // SaveConfigDialog
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(592, 351);
             this.Controls.Add(this.defaultsButton);
             this.Controls.Add(this.settingsHeader);
             this.Controls.Add(this.previewHeader);
             this.Controls.Add(this.fileSizeText);
-            this.Controls.Add(this.fileSizeProgressBar);
             this.Controls.Add(this.documentView);
             this.Controls.Add(this.saveConfigPanel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
@@ -368,7 +366,6 @@ namespace PaintDotNet
             this.Controls.SetChildIndex(this.saveConfigPanel, 0);
             this.Controls.SetChildIndex(this.documentView, 0);
             this.Controls.SetChildIndex(this.fileSizeText, 0);
-            this.Controls.SetChildIndex(this.fileSizeProgressBar, 0);
             this.Controls.SetChildIndex(this.baseOkButton, 0);
             this.Controls.SetChildIndex(this.baseCancelButton, 0);
             this.Controls.SetChildIndex(this.previewHeader, 0);
@@ -396,7 +393,7 @@ namespace PaintDotNet
             string computing = PdnResources.GetString("SaveConfigDialog.FileSizeText.Text.Computing");
             this.fileSizeText.Text = string.Format(this.fileSizeTextFormat, computing);
             this.fileSizeTimer.Change(timerDelayTime, 0);
-            this.fileSizeProgressBar.Value = 0;
+            OnProgress(0);
         }
 
         private volatile bool callbackBusy = false;
@@ -417,14 +414,12 @@ namespace PaintDotNet
             {
                 string error = PdnResources.GetString("SaveConfigDialog.FileSizeText.Text.Error");
                 this.fileSizeText.Text = string.Format(this.fileSizeTextFormat, error);
-                this.fileSizeProgressBar.Visible = false;
             }
             else
             {
                 FileInfo fi = new FileInfo(tempFileName);
                 long fileSize = fi.Length;
                 this.fileSizeText.Text = string.Format(fileSizeTextFormat, Utility.SizeStringFromBytes(fileSize));
-                this.fileSizeProgressBar.Visible = false;
                 this.documentView.Visible = true;
 
                 // note: see comments for DocumentView.SuspendRefresh() for why we do these two backwards
@@ -500,8 +495,8 @@ namespace PaintDotNet
             string computingFormat = PdnResources.GetString("SaveConfigDialog.FileSizeText.Text.Computing.Format");
             string computing = string.Format(computingFormat, percent);
             this.fileSizeText.Text = string.Format(this.fileSizeTextFormat, computing);
-            this.fileSizeProgressBar.Value = Utility.Clamp(percent, 0, 100);
-            this.fileSizeProgressBar.Visible = true;
+            int newPercent = Utility.Clamp(percent, 0, 100);
+            OnProgress(newPercent);
         }
 
         private void FileSizeProgressEventHandler(object state, ProgressEventArgs e)
@@ -511,17 +506,19 @@ namespace PaintDotNet
 
         private void FileSizeTimerCallback(object state)
         {
-            if (!this.IsHandleCreated)
+            try
             {
-                return;
-            }
+                if (!this.IsHandleCreated)
+                {
+                    return;
+                }
 
-            if (callbackBusy)
-            {
-                this.Invoke(new VoidVoidDelegate(QueueFileSizeTextUpdate));
-            }
-            else
-            {
+                if (callbackBusy)
+                {
+                    this.Invoke(new VoidVoidDelegate(QueueFileSizeTextUpdate));
+                }
+                else
+                {
 #if !DEBUG
                 try
                 {
@@ -536,6 +533,12 @@ namespace PaintDotNet
 
                 }
 #endif
+                }
+            }
+
+            catch
+            {
+                // Handle rare race condition where this method just fails because the form is gone
             }
         }
 
@@ -641,10 +644,10 @@ namespace PaintDotNet
 
                 if (delta.Width != 0 || delta.Height != 0)
                 {
-                    Point scrollPos = Point.Truncate(documentView.DocumentScrollPosition);
-                    Point newScrollPos = new Point(scrollPos.X - delta.Width, scrollPos.Y - delta.Height);
+                    PointF scrollPos = documentView.DocumentScrollPositionF;
+                    PointF newScrollPos = new PointF(scrollPos.X - delta.Width, scrollPos.Y - delta.Height);
                     
-                    documentView.DocumentScrollPosition = newScrollPos;
+                    documentView.DocumentScrollPositionF = newScrollPos;
                     documentView.Update();
 
                     lastMouseXY = mouseXY;

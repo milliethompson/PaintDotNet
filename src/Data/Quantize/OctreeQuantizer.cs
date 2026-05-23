@@ -12,6 +12,7 @@
 using PaintDotNet;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 
@@ -98,12 +99,12 @@ namespace PaintDotNet.Data.Quantize
         protected override ColorPalette GetPalette(ColorPalette original)
         {
             // First off convert the octree to _maxColors colors
-            ArrayList palette = _octree.Palletize(_maxColors - 1);
+            List<Color> palette = _octree.Palletize(_maxColors - 1);
 
             // Then convert the palette based on those colors
             for (int index = 0; index < palette.Count; index++)
             {
-                original.Entries[index] = (Color)palette[index];
+                original.Entries[index] = palette[index];
             }
 
             for (int i = palette.Count; i < original.Entries.Length; ++i)
@@ -233,8 +234,8 @@ namespace PaintDotNet.Data.Quantize
             /// Convert the nodes in the octree to a palette with a maximum of colorCount colors
             /// </summary>
             /// <param name="colorCount">The maximum number of colors</param>
-            /// <returns>An arraylist with the palettized colors</returns>
-            public ArrayList Palletize(int colorCount)
+            /// <returns>A list with the palettized colors</returns>
+            public List<Color> Palletize(int colorCount)
             {
                 while (Leaves > colorCount)
                 {
@@ -242,13 +243,13 @@ namespace PaintDotNet.Data.Quantize
                 }
 
                 // Now palettize the nodes
-                ArrayList palette = new ArrayList(Leaves);
+                List<Color> palette = new List<Color>(Leaves);
                 int paletteIndex = 0;
 
                 _root.ConstructPalette(palette, ref paletteIndex);
 
                 // And return the palette
-                _palette = (Color[])palette.ToArray(typeof(Color));
+                this._palette = palette.ToArray();
                 this.paletteTable = null;
                 
                 return palette;
@@ -454,7 +455,7 @@ namespace PaintDotNet.Data.Quantize
                 /// </summary>
                 /// <param name="palette">The palette</param>
                 /// <param name="paletteIndex">The current palette index</param>
-                public void ConstructPalette(ArrayList palette, ref int paletteIndex)
+                public void ConstructPalette(List<Color> palette, ref int paletteIndex)
                 {
                     if (_leaf)
                     {

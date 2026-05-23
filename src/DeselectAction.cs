@@ -30,7 +30,7 @@ namespace PaintDotNet
         {
             get
             {
-                return PdnResources.GetImage("Icons.MenuEditDeselectIcon.bmp");
+                return PdnResources.GetImage("Icons.MenuEditDeselectIcon.png");
             }
         }
         

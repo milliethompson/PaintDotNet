@@ -42,6 +42,14 @@ namespace PaintDotNet
             }
         }
 
+        public SurfaceBoxRenderer[][] Renderers
+        {
+            get
+            {
+                return new SurfaceBoxRenderer[][] { list, topList };
+            }
+        }
+
         private void ComputeScaleFactor()
         {
             scaleFactor = new ScaleFactor(this.DestinationSize.Width, this.SourceSize.Width);
@@ -50,6 +58,11 @@ namespace PaintDotNet
         public Point SourceToDestination(Point pt)
         {
             return this.scaleFactor.ScalePoint(pt);
+        }
+
+        public RectangleF SourceToDestination(Rectangle rect)
+        {
+            return this.scaleFactor.ScaleRectangle((RectangleF)rect);
         }
 
         public Point DestinationToSource(Point pt)
@@ -147,7 +160,7 @@ namespace PaintDotNet
                             }
                             else
                             {
-                                found = true;
+                                foundHere = true;
                             }
                         }
                         else
@@ -278,7 +291,11 @@ namespace PaintDotNet
                 {
                     Point pt = new Point(x, 0);
                     Point surfacePt = this.DestinationToSource(pt);
-                    d2SLookupX[x] = surfacePt.X;
+
+                    // Sometimes the scale factor is slightly different on one axis than
+                    // on another, simply due to accuracy. So we have to clamp this value to
+                    // be within bounds.
+                    d2SLookupX[x] = Utility.Clamp(surfacePt.X, 0, this.SourceSize.Width - 1);
                 }
             }
         }
@@ -307,7 +324,11 @@ namespace PaintDotNet
                 {
                     Point pt = new Point(0, y);
                     Point surfacePt = this.DestinationToSource(pt);
-                    d2SLookupY[y] = surfacePt.Y;
+
+                    // Sometimes the scale factor is slightly different on one axis than
+                    // on another, simply due to accuracy. So we have to clamp this value to
+                    // be within bounds.
+                    d2SLookupY[y] = Utility.Clamp(surfacePt.Y, 0, this.SourceSize.Height - 1);
                 }
             }
         }
@@ -336,7 +357,11 @@ namespace PaintDotNet
                 {
                     Point pt = new Point(x, 0);
                     Point clientPt = this.SourceToDestination(pt);
-                    s2DLookupX[x] = clientPt.X;
+
+                    // Sometimes the scale factor is slightly different on one axis than
+                    // on another, simply due to accuracy. So we have to clamp this value to
+                    // be within bounds.
+                    s2DLookupX[x] = Utility.Clamp(clientPt.X, 0, this.DestinationSize.Width - 1);
                 }
             }
         }
@@ -365,7 +390,11 @@ namespace PaintDotNet
                 {
                     Point pt = new Point(0, y);
                     Point clientPt = this.SourceToDestination(pt);
-                    s2DLookupY[y] = clientPt.Y;
+
+                    // Sometimes the scale factor is slightly different on one axis than
+                    // on another, simply due to accuracy. So we have to clamp this value to
+                    // be within bounds.
+                    s2DLookupY[y] = Utility.Clamp(clientPt.Y, 0, this.DestinationSize.Height - 1);
                 }
             }
         }
@@ -409,7 +438,7 @@ namespace PaintDotNet
 
         public void Invalidate()
         {
-            Invalidate(new Rectangle(0, 0, SourceSize.Width, SourceSize.Height));
+            Invalidate(SurfaceBoxRenderer.MaxBounds);
         }
 
         public SurfaceBoxRendererList(Size sourceSize, Size destinationSize)

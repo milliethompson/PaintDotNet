@@ -78,8 +78,8 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            Image iconImage = PdnResources.GetImage("Icons.MenuFileUpdatesIcon.bmp");
-            this.Icon = Utility.ImageToIcon(iconImage, Color.FromArgb(192, 192, 192), true);
+            Image iconImage = PdnResources.GetImage("Icons.MenuFileUpdatesIcon.png");
+            this.Icon = Utility.ImageToIcon(iconImage, Utility.TransparentKey, true);
             this.installButton.Select();
         }
 
@@ -212,7 +212,8 @@ namespace PaintDotNet
             // UpdatesDialog
             // 
             this.AcceptButton = this.installButton;
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.closeButton;
             this.ClientSize = new System.Drawing.Size(418, 192);
             this.Controls.Add(this.betaWarningLabel);
@@ -276,7 +277,7 @@ namespace PaintDotNet
             
             if (null != linkText && (linkText.StartsWith("http://") || linkText.StartsWith("https://") || linkText.StartsWith("ftp://")))
             {
-                System.Diagnostics.Process.Start(linkText);
+                SystemLayer.Shell.OpenUrl(this, linkText);
             }
 
             e.Link.Visited = true;

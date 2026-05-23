@@ -187,6 +187,81 @@ STDMETHODIMP CPdnShellExtension::SaveCompleted(LPCOLESTR pszFileName)
     return hr;
 }
 
+HRESULT DoGdiplusStartup(Status *pStatusResult, ULONG_PTR *pToken, GdiplusStartupInput *gdiplusStartupInput)
+{
+    // An exception may be thrown because we delay-load gdiplus.dll and
+    // this is not installed on Win2K systems. Even if .NET is installed,
+    // gdiplus.dll is not located in the system directory and thus is not
+    // locatable by the loader.
+	// This was moved into a separate function because of compiler error
+	// C2712: "cannot use __try in functions that require object unwinding"
+
+	Status status = Ok;
+	HRESULT hr = S_OK;
+
+	if (NULL == pStatusResult)
+	{
+		hr = E_INVALIDARG;
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		__try
+		{
+			status = GdiplusStartup(pToken, gdiplusStartupInput, NULL);
+		}
+
+		__except (EXCEPTION_EXECUTE_HANDLER)
+		{
+			hr = E_FAIL;
+			status = Win32Error;
+		}
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		*pStatusResult = status;
+	}
+
+	return hr;
+}
+
+
+// ReadFile does not guarantee that it will read all the bytes that you ask for.
+// It may decide to read fewer bytes for whatever reason. This function is a 
+// wrapper around ReadFile that loops until all the bytes you have asked for
+// are read, or there was an error, or the end of file was reached. EOF is
+// considered an error condition; when you ask for N bytes with this function
+// you either get all N bytes, or an error.
+static HRESULT ReadFileComplete(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead)
+{
+    HRESULT hr = S_OK;
+
+    while (SUCCEEDED(hr) && nNumberOfBytesToRead > 0)
+    {
+        DWORD dwBytesRead = 0;
+
+        BOOL bResult = ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, &dwBytesRead, NULL);
+
+        if (!bResult)
+        {
+            DWORD dwError = GetLastError();
+            hr = HRESULT_FROM_WIN32(dwError);
+        }
+        else if (bResult && 0 == dwBytesRead)
+        {
+            hr = HRESULT_FROM_WIN32(ERROR_HANDLE_EOF);
+        }
+        else
+        {
+            lpBuffer = (void *)((BYTE *)lpBuffer + dwBytesRead);
+            nNumberOfBytesToRead -= dwBytesRead;
+        }
+    }
+    
+    return hr;
+}
+
 STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
 {
     HRESULT hr = S_OK;
@@ -218,31 +293,27 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
 
     // Read magic numbers
     BOOL bPdn3File = FALSE;
+    BYTE bMagic[4];
+    ZeroMemory(bMagic, sizeof(bMagic));
+
     if (SUCCEEDED(hr))
     {
-        BYTE bMagic[4];
-        ZeroMemory(bMagic, sizeof(bMagic));
-        DWORD dwBytesRead = 0;
+        hr = ReadFileComplete(hFile, (LPVOID)bMagic, sizeof(bMagic));
+    }
 
-        bResult = ReadFile(hFile, (LPVOID)bMagic, sizeof(bMagic), &dwBytesRead, NULL);
-
-        if (!bResult)
+    if (SUCCEEDED(hr))
+    {
+        if ('P' == bMagic[0] &&
+            'D' == bMagic[1] &&
+            'N' == bMagic[2] &&
+            '3' == bMagic[3])
         {
-            dwError = GetLastError();
-            hr = HRESULT_FROM_WIN32(dwError);
-            TraceOut("ReadFile(1) failed, hr=0x%x", hr);
+            bPdn3File = TRUE;
         }
-        else 
-        {
-            if (dwBytesRead == sizeof(bMagic) &&
-                bMagic[0] == 'P' &&
-                bMagic[1] == 'D' &&
-                bMagic[2] == 'N' &&
-                bMagic[3] == '3')
-            {
-                bPdn3File = TRUE;
-            }
-        }
+    }
+    else
+    {
+        TraceOut("ReadFile(1) failed, hr=0x%x", hr);
     }
 
     if (SUCCEEDED(hr) && bPdn3File)
@@ -250,28 +321,28 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
         TraceOut("we have a pdn3 file");
 
         TraceOut("Read + decode length");
+
         int iLength = -1;
+        BYTE bLength[3];
+        ZeroMemory(bLength, sizeof(bLength));
+
         if (SUCCEEDED(hr))
         {
-            BYTE bLength[3];
-            DWORD dwBytesRead = 0;
+            hr = ReadFileComplete(hFile, (LPVOID)bLength, sizeof(bLength));
+        }
 
-            bResult = ReadFile(hFile, (LPVOID)bLength, sizeof(bLength), &dwBytesRead, NULL);
-
-            if (!bResult)
-            {
-                dwError = GetLastError();
-                hr = HRESULT_FROM_WIN32(dwError);
-                TraceOut("ReadFile(2) failed, hr=0x%x", hr);
-            }
-            else
-            {
-                iLength = bLength[0] + (bLength[1] << 8) + (bLength[2] << 16);
-            }
+        if (SUCCEEDED(hr))
+        {
+            iLength = bLength[0] + (bLength[1] << 8) + (bLength[2] << 16);
+        }
+        else
+        {
+            TraceOut("ReadFile(2) failed, hr=0x%x", hr);
         }
 
         TraceOut("Allocate buffer");
         BYTE *pbHeaderBytes = NULL;
+
         if (SUCCEEDED(hr))
         {
             pbHeaderBytes = new BYTE[1 + iLength];
@@ -290,24 +361,12 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
         TraceOut("Read N bytes");
         if (SUCCEEDED(hr))
         {
-            DWORD dwBytesRead = 0;
+            hr = ReadFileComplete(hFile, (LPVOID)pbHeaderBytes, iLength);
+        }
 
-            bResult = ReadFile(hFile, (LPVOID)pbHeaderBytes, iLength, &dwBytesRead, NULL);
-
-            if (!bResult)
-            {
-                dwError = GetLastError();
-                hr = HRESULT_FROM_WIN32(dwError);
-                TraceOut("ReadFile(3) failed, hr=0x%x", hr);
-            }
-            else
-            {
-                if (iLength != dwBytesRead)
-                {
-                    TraceOut("expected %d bytes, but got %u bytes", iLength, dwBytesRead);
-                    hr = E_UNEXPECTED;
-                }
-            }
+        if (FAILED(hr))
+        {
+            TraceOut("ReadFile(3) failed, hr=0x%x", hr);
         }
 
         TraceOut("Convert to UTF8 string");
@@ -316,6 +375,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
         TraceOut("Search for \"<thumb\"");
         const CHAR *szThumbTag = "<thumb ";
         __int64 iThumbTagIndex = -1;
+
         if (SUCCEEDED(hr))
         {
             CHAR *szFoundHere = strstr(szHeader, szThumbTag);
@@ -441,20 +501,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             GdiplusStartupInput gdiplusStartupInput;
             Status status;
             
-            // An exception may be thrown because we delay-load gdiplus.dll and
-            // this is not installed on Win2K systems. Even if .NET is installed,
-            // gdiplus.dll is not located in the system directory and thus is not
-            // locatable by the loader.
-            __try
-            {
-                status = GdiplusStartup(&pGdiToken, &gdiplusStartupInput, NULL);
-            }
-
-            __except (EXCEPTION_EXECUTE_HANDLER)
-            {
-                hr = E_FAIL;
-                status = Win32Error;
-            }
+			hr = DoGdiplusStartup(&status, &pGdiToken, &gdiplusStartupInput);
 
             if (status != Ok)
             {
@@ -615,7 +662,7 @@ STDMETHODIMP CPdnShellExtension::GetLocation(LPWSTR pszPathBuffer,
 
     if (SUCCEEDED(hr))
     {
-        wcscpy(pszPathBuffer, m_bstrFileName);
+        wcscpy_s(pszPathBuffer, cchMax, m_bstrFileName);
 
         *pdwPriority = 1;
 

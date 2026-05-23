@@ -33,7 +33,7 @@ namespace PaintDotNet
                    PdnResources.GetString("SaveProgressDialog.Title"), 
                    PdnResources.GetString("SaveProgressDialog.Description"))
         {
-            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileSaveIcon.bmp"), Color.FromArgb(192, 192, 192));
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileSaveIcon.png"), Utility.TransparentKey);
         }
 
         public void Save(Stream stream, Document document, FileType fileType, SaveConfigToken parameters)

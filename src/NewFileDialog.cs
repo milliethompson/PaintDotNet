@@ -43,7 +43,7 @@ namespace PaintDotNet
         public NewFileDialog()
         {
             InitializeComponent();
-            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileNewIcon.bmp"), Color.FromArgb(192, 192, 192));
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileNewIcon.png"), Utility.TransparentKey);
 
             this.Text = PdnResources.GetString("NewFileDialog.Text"); // "New";
         }
@@ -225,10 +225,13 @@ namespace PaintDotNet
             // 
             // NewFileDialog
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(279, 246);
             this.Location = new System.Drawing.Point(0, 0);
             this.Name = "NewFileDialog";
+            this.Controls.SetChildIndex(this.printWidthUpDown, 0);
+            this.Controls.SetChildIndex(this.printHeightUpDown, 0);
             ((System.ComponentModel.ISupportInitialize)(this.percentUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.resolutionUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pixelWidthUpDown)).EndInit();

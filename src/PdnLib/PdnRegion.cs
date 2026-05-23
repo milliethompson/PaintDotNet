@@ -167,12 +167,6 @@ namespace PaintDotNet
         {
         }
 
-        [Obsolete]
-        private PdnRegion(IntPtr hrgn)
-        {
-            gdiRegion = Region.FromHrgn(hrgn);
-        }
-
         public static PdnRegion CreateEmpty()
         {
             PdnRegion region = new PdnRegion();
@@ -362,12 +356,6 @@ namespace PaintDotNet
             }
         }
 
-        [Obsolete]
-        public static PdnRegion FromHrgn(IntPtr hrgn)
-        {
-            return new PdnRegion(hrgn);
-        }
-
         public RectangleF GetBounds(Graphics g)
         {
             lock (SyncRoot)
@@ -418,27 +406,12 @@ namespace PaintDotNet
             return bounds;
         }
 
-        [Obsolete]
-        public IntPtr GetHrgn(Graphics g)
-        {
-            lock (SyncRoot)
-            {
-                return gdiRegion.GetHrgn(g);
-            }
-        }
-
         public RegionData GetRegionData()
         {
             lock (SyncRoot)
             {
                 return gdiRegion.GetRegionData();
             }
-        }
-
-        [Obsolete]
-        public RectangleF[] GetRegionScans(System.Drawing.Drawing2D.Matrix matrix)
-        {
-            return GetRegionScans();
         }
 
         public RectangleF[] GetRegionScans()
@@ -474,12 +447,6 @@ namespace PaintDotNet
 
                 return this.cachedRectsF;
             }
-        }
-
-        [Obsolete]
-        public Rectangle[] GetRegionScansInt(System.Drawing.Drawing2D.Matrix matrix)
-        {
-            return GetRegionScansInt();
         }
 
         public Rectangle[] GetRegionScansInt()

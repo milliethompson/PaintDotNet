@@ -18,10 +18,63 @@ using System.Windows.Forms;
 namespace PaintDotNet.SystemLayer
 {
     /// <summary>
-    /// Containts static methods related to the user interface.
+    /// Contains static methods related to the user interface.
     /// </summary>
     public sealed class UI
     {
+        private static bool initScales = false;
+        private static float xScale;
+        private static float yScale;
+
+        private static void InitScaleFactors(Control c)
+        {
+            using (Graphics g = c.CreateGraphics())
+            {
+                xScale = g.DpiX / 96.0f;
+                yScale = g.DpiY / 96.0f;
+            }
+
+            initScales = true;
+        }
+
+        public static void InitScaling(Control c)
+        {
+            if (!initScales)
+            {
+                InitScaleFactors(c);
+            }
+        }
+
+        public static int ScaleWidth(int width)
+        {
+            return (int)Math.Round((float)width * GetXScaleFactor());
+        }
+
+        public static int ScaleHeight(int height)
+        {
+            return (int)Math.Round((float)height * GetYScaleFactor());
+        }
+
+        public static float GetXScaleFactor()
+        {
+            if (!initScales)
+            {
+                throw new InvalidOperationException("Must call InitScaling() first");
+            }
+
+            return xScale;
+        }
+
+        public static float GetYScaleFactor()
+        {
+            if (!initScales)
+            {
+                throw new InvalidOperationException("Must call InitScaling() first");
+            }
+
+            return yScale;
+        }
+
         // This is a major hack to get the .NET's OFD to show with Thumbnail view by default!
         // Luckily for us this is a covert hack, and not one where we're working around a bug
         // in the framework or OS.
@@ -32,6 +85,7 @@ namespace PaintDotNet.SystemLayer
         private delegate void EtvDelegate(FileDialog ofd);
         private static void EnableThumbnailView(FileDialog ofd)
         {
+            // HACK: Must verify this still works with each new revision of .NET
             Type ofdType = typeof(FileDialog);
             FieldInfo fi = ofdType.GetField("dialogHWnd", BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -289,6 +343,112 @@ namespace PaintDotNet.SystemLayer
 
             GC.KeepAlive(button);
             return recreate;
+        }
+
+        /// <summary>
+        /// Sets a form's opacity.
+        /// </summary>
+        /// <param name="form"></param>
+        /// <param name="opacity"></param>
+        /// <remarks>
+        /// Note to implementors: This may be implemented as just "form.Opacity = opacity".
+        /// This method works around some visual clumsiness in .NET 2.0 related to
+        /// transitioning between opacity == 1.0 and opacity != 1.0.</remarks>
+        public static void SetFormOpacity(Form form, double opacity)
+        {
+            if (opacity < 0.0 || opacity > 1.0)
+            {
+                throw new ArgumentOutOfRangeException("opacity", "must be in the range [0, 1]");
+            }
+
+            if (System.Environment.OSVersion.Version >= OS.WindowsXP)
+            {
+                uint exStyle = SafeNativeMethods.GetWindowLongW(form.Handle, NativeConstants.GWL_EXSTYLE);
+
+                byte bOldAlpha = 255;
+
+                if ((exStyle & NativeConstants.GWL_EXSTYLE) != 0)
+                {
+                    uint dwOldKey;
+                    uint dwOldFlags;
+                    bool result = SafeNativeMethods.GetLayeredWindowAttributes(form.Handle, out dwOldKey, out bOldAlpha, out dwOldFlags);
+                }
+
+                byte bNewAlpha = (byte)(opacity * 255.0);
+                uint newExStyle = exStyle;
+
+                if (bNewAlpha != 255)
+                {
+                    newExStyle |= NativeConstants.WS_EX_LAYERED;
+                }
+
+                if (newExStyle != exStyle || (newExStyle & NativeConstants.WS_EX_LAYERED) != 0)
+                {
+                    if (newExStyle != exStyle)
+                    {
+                        SafeNativeMethods.SetWindowLongW(form.Handle, NativeConstants.GWL_EXSTYLE, newExStyle);
+                    }
+
+                    if ((newExStyle & NativeConstants.WS_EX_LAYERED) != 0)
+                    {
+                        SafeNativeMethods.SetLayeredWindowAttributes(form.Handle, 0, bNewAlpha, NativeConstants.LWA_ALPHA);
+                    }
+                }
+
+                GC.KeepAlive(form);
+            }
+            else
+            {
+                form.Opacity = opacity;
+            }
+        }
+
+        /// <summary>
+        /// This WndProc implements click-through functionality. Some controls (MenuStrip, ToolStrip) will not
+        /// recognize a click unless the form they are hosted in is active. So the first click will activate the
+        /// form and then a second is required to actually make the click happen.
+        /// </summary>
+        /// <param name="m">The Message that was passed to your WndProv.</param>
+        /// <returns>true if the message was processed, false if it was not</returns>
+        /// <remarks>
+        /// You should first call base.WndProc(), and then call this method. This method is only intended to
+        /// change a return value, not to change actual processing before that.
+        /// </remarks>
+        internal static bool ClickThroughWndProc(ref Message m)
+        {
+            bool returnVal = false;
+
+            if (m.Msg == NativeConstants.WM_MOUSEACTIVATE)
+            {
+                if (m.Result == (IntPtr)NativeConstants.MA_ACTIVATEANDEAT)
+                {
+                    m.Result = (IntPtr)NativeConstants.MA_ACTIVATE;
+                    returnVal = true;
+                }
+            }
+
+            return returnVal;
+        }
+
+        public static bool IsOurAppActive
+        {
+            get
+            {
+                foreach (Form form in Application.OpenForms)
+                {
+                    if (form == Form.ActiveForm)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        public static bool HideHorizontalScrollBar(Control c)
+        {
+            return SafeNativeMethods.ShowScrollBar(c.Handle, NativeConstants.SB_HORZ, false);
         }
 
         private UI()

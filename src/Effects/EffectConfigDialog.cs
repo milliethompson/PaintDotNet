@@ -91,7 +91,8 @@ namespace PaintDotNet.Effects
             // 
             // EffectConfigDialog
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(282, 253);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
@@ -113,7 +114,7 @@ namespace PaintDotNet.Effects
         {
             base.OnLoad (e);
             InitDialogFromToken();
-            UpdateToken();
+            FinishTokenUpdate();
         }
 
         [Browsable(false)]
@@ -126,7 +127,13 @@ namespace PaintDotNet.Effects
             }
         }
 
+        [Obsolete("Use FinishTokenUpdate() instead", true)]
         public void UpdateToken()
+        {
+            FinishTokenUpdate();
+        }
+
+        public void FinishTokenUpdate()
         {
             InitTokenFromDialog();
             OnEffectTokenChanged();
@@ -156,7 +163,8 @@ namespace PaintDotNet.Effects
         }
 
         protected void InitDialogFromToken()
-        {   // If we don't check for null, we get awful errors in the designer.
+        {   
+            // If we don't check for null, we get awful errors in the designer.
             // Good idea to check for that anyway, yeah?
             if (theEffectToken != null)
             {
@@ -190,7 +198,7 @@ namespace PaintDotNet.Effects
 
                 if (effect.Image != null)
                 {
-                    this.Icon = Utility.ImageToIcon(effect.Image, Color.FromArgb(192, 192, 192));
+                    this.Icon = Utility.ImageToIcon(effect.Image, Utility.TransparentKey);
                 }
                 else
                 {

@@ -21,9 +21,12 @@ namespace PaintDotNet
         : HistoryAction
     {
         private DocumentWorkspace workspace;
+        private int layerIndex;
         private string tempFileName;
         private DeleteFileOnFree tempFileHandle;
-
+        private Guid poMaskedSurfaceRef; // if this is non-Guid.Empty, then tempFileName, tempFileHandle, and Data must be null
+        private Guid poUndoMaskedSurfaceRef;
+        
         private class DeleteFileOnFree
             : IDisposable
         {
@@ -50,6 +53,7 @@ namespace PaintDotNet
                 if (this.bstrFileName != IntPtr.Zero)
                 {
                     string fileName = Marshal.PtrToStringBSTR(this.bstrFileName);
+                    Marshal.FreeBSTR(this.bstrFileName);
                     File.Delete(fileName);
                     this.bstrFileName = IntPtr.Zero;
                 }
@@ -60,19 +64,9 @@ namespace PaintDotNet
         private sealed class BitmapHistoryActionData
             : HistoryActionData
         {
-            private int layerIndex;
-
             // only one of the following may be non-null
             private IrregularSurface undoImage;
             private PdnRegion savedRegion;
-
-            public int LayerIndex
-            {
-                get
-                {
-                    return layerIndex;
-                }
-            }
 
             public IrregularSurface UndoImage
             {
@@ -90,14 +84,13 @@ namespace PaintDotNet
                 }
             }
 
-            public BitmapHistoryActionData(int layerIndex, IrregularSurface undoImage, PdnRegion savedRegion)
+            public BitmapHistoryActionData(IrregularSurface undoImage, PdnRegion savedRegion)
             {
                 if (undoImage != null && savedRegion != null)
                 {
                     throw new ArgumentException("Only one of undoImage or savedRegion may be non-null");
                 }
 
-                this.layerIndex = layerIndex;
                 this.undoImage = undoImage;
                 this.savedRegion = savedRegion;
             }
@@ -123,33 +116,50 @@ namespace PaintDotNet
             }
         }
 
-        private static void SaveSurfaceRegion(object outputHandle, Surface surface, PdnRegion region)
+        private static unsafe void LoadOrSaveSurfaceRegion(FileStream fileHandle, Surface surface, PdnRegion region, bool trueForSave)
         {
             Rectangle[] scans = region.GetRegionScansReadOnlyInt();
-            Rectangle bounds = surface.Bounds;
+            Rectangle regionBounds = region.GetBoundsInt();
+            Rectangle surfaceBounds = surface.Bounds;
             int scanCount = 0;
 
-            for (int i = 0; i < scans.Length; ++i)
-            {
-                Rectangle rect = scans[i];
-                rect.Intersect(bounds);
+            void*[] ppvBuffers;
+            uint[] lengths;
 
-                if (rect.Width != 0 && rect.Height != 0)
-                {
-                    scanCount += rect.Height;
-                }
+            regionBounds.Intersect(surfaceBounds);
+            long length = (long)regionBounds.Width * (long)regionBounds.Height * (long)ColorBgra.SizeOf;
+
+            if (scans.Length == 1 &&
+                length <= uint.MaxValue &&
+                surface.IsContiguousMemoryRegion(regionBounds))
+            {
+                ppvBuffers = new void*[1];
+                lengths = new uint[1];
+
+                ppvBuffers[0] = surface.GetPointAddressUnchecked(regionBounds.Location);
+                lengths[0] = (uint)length;
             }
-
-            unsafe
+            else
             {
+                for (int i = 0; i < scans.Length; ++i)
+                {
+                    Rectangle rect = scans[i];
+                    rect.Intersect(surfaceBounds);
+
+                    if (rect.Width != 0 && rect.Height != 0)
+                    {
+                        scanCount += rect.Height;
+                    }
+                }
+
                 int scanIndex = 0;
-                void *[] ppvBuffers = new void *[scanCount];
-                uint[] lengths = new uint[scanCount];
+                ppvBuffers = new void*[scanCount];
+                lengths = new uint[scanCount];
 
                 for (int i = 0; i < scans.Length; ++i)
                 {
                     Rectangle rect = scans[i];
-                    rect.Intersect(bounds);
+                    rect.Intersect(surfaceBounds);
 
                     if (rect.Width != 0 && rect.Height != 0)
                     {
@@ -161,52 +171,35 @@ namespace PaintDotNet
                         }
                     }
                 }
+            }
 
-                FileSystem.WriteToStreamingFileGather(outputHandle, ppvBuffers, lengths);
+            if (trueForSave)
+            {
+                FileSystem.WriteToStreamingFileGather(fileHandle, ppvBuffers, lengths);
+            }
+            else
+            {
+                FileSystem.ReadFromStreamScatter(fileHandle, ppvBuffers, lengths);
             }
         }
 
-        private static void LoadSurfaceRegion(FileStream input, Surface surface, PdnRegion region)
+        private static unsafe void SaveSurfaceRegion(FileStream outputHandle, Surface surface, PdnRegion region)
         {
-            Rectangle[] scans = region.GetRegionScansReadOnlyInt();
-            Rectangle bounds = surface.Bounds;
-            int scanCount = 0;
+            LoadOrSaveSurfaceRegion(outputHandle, surface, region, true);
+        }
 
-            for (int i = 0; i < scans.Length; ++i)
-            {
-                Rectangle rect = scans[i];
-                rect.Intersect(bounds);
+        private static unsafe void LoadSurfaceRegion(FileStream inputHandle, Surface surface, PdnRegion region)
+        {
+            LoadOrSaveSurfaceRegion(inputHandle, surface, region, false);
+        }
 
-                if (rect.Width != 0 && rect.Height != 0)
-                {
-                    scanCount += rect.Height;
-                }
-            }
-
-            unsafe
-            {
-                int scanIndex = 0;
-                void *[] ppvBuffers = new void *[scanCount];
-                uint[] lengths = new uint[scanCount];
-
-                for (int i = 0; i < scans.Length; ++i)
-                {
-                    Rectangle rect = scans[i];
-                    rect.Intersect(bounds);
-
-                    if (rect.Width != 0 && rect.Height != 0)
-                    {
-                        for (int y = rect.Top; y < rect.Bottom; ++y)
-                        {
-                            ppvBuffers[scanIndex] = surface.GetPointAddressUnchecked(rect.Left, y);
-                            lengths[scanIndex] = (uint)(rect.Width * ColorBgra.SizeOf);
-                            ++scanIndex;
-                        }
-                    }
-                }
-
-                FileSystem.ReadFromStreamScatter(input, ppvBuffers, lengths);
-            }
+        public BitmapHistoryAction(string name, Image image, DocumentWorkspace workspace,
+            int layerIndex, Guid poMaskedSurfaceRef)
+            : base(name, image)
+        {
+            this.layerIndex = layerIndex;
+            this.workspace = workspace;
+            this.poMaskedSurfaceRef = poMaskedSurfaceRef;
         }
 
         public BitmapHistoryAction(string name, Image image, DocumentWorkspace workspace, 
@@ -221,28 +214,31 @@ namespace PaintDotNet
             : base(name, image)
         {
             this.workspace = workspace;
+            this.layerIndex = layerIndex;
 
             PdnRegion region = changedRegion.Clone();
             this.tempFileName = FileSystem.GetTempFileName();
 
-            object outputHandle = null;
+            FileStream outputStream = null;
             
             try
             {
-                outputHandle = FileSystem.CreateStreamingFileHandleWrite(this.tempFileName);
-                SaveSurfaceRegion(outputHandle, copyFromThisSurface, region);
+                outputStream = FileSystem.OpenStreamingFile(this.tempFileName, FileAccess.Write);
+                SaveSurfaceRegion(outputStream, copyFromThisSurface, region);
             }
 
             finally
             {
-                if (outputHandle != null)
+                if (outputStream != null)
                 {
-                    FileSystem.CloseStreamingFileHandle(outputHandle);
+                    outputStream.Dispose();
+                    outputStream = null;
                 }
             }
 
             this.tempFileHandle = new DeleteFileOnFree(this.tempFileName);
-            BitmapHistoryActionData data = new BitmapHistoryActionData(layerIndex, null, region);
+            BitmapHistoryActionData data = new BitmapHistoryActionData(null, region);
+
             this.Data = data;
         }
 
@@ -257,6 +253,8 @@ namespace PaintDotNet
             : base(name, image)
         {
             this.workspace = workspace;
+            this.layerIndex = layerIndex;
+
             IrregularSurface iss;
 
             if (takeOwnershipOfSaved)
@@ -268,18 +266,25 @@ namespace PaintDotNet
                 iss = (IrregularSurface)saved.Clone();
             }
 
-            BitmapHistoryActionData data = new BitmapHistoryActionData(layerIndex, iss, null);
+            BitmapHistoryActionData data = new BitmapHistoryActionData(iss, null);
             this.Data = data;
         }
 
         protected override HistoryAction OnUndo()
         {
-            BitmapHistoryActionData data = (BitmapHistoryActionData)this.Data;
-            BitmapLayer layer = (BitmapLayer)workspace.Document.Layers[data.LayerIndex];
+            BitmapHistoryActionData data = this.Data as BitmapHistoryActionData;
+            BitmapLayer layer = (BitmapLayer)workspace.Document.Layers[this.layerIndex];
             
             PdnRegion region;
+            MaskedSurface maskedSurface = null;
 
-            if (data.UndoImage == null)
+            if (this.poMaskedSurfaceRef != Guid.Empty)
+            {
+                PersistedObject<MaskedSurface> poMS = PersistedObjectLocker.Get<MaskedSurface>(this.poMaskedSurfaceRef);
+                maskedSurface = poMS.Object;
+                region = maskedSurface.CreateRegion();
+            }
+            else if (data.UndoImage == null)
             {
                 region = data.SavedRegion;
             }
@@ -288,18 +293,29 @@ namespace PaintDotNet
                 region = data.UndoImage.Region;
             }
 
-            BitmapHistoryAction redo = new BitmapHistoryAction(Name, Image, workspace, data.LayerIndex, region);
+            BitmapHistoryAction redo;
 
-            if (data.UndoImage == null)
+            if (this.poUndoMaskedSurfaceRef == Guid.Empty)
             {
-                using (FileStream input = FileSystem.OpenStreamingFileRead(this.tempFileName))
+                redo = new BitmapHistoryAction(Name, Image, workspace, this.layerIndex, region);
+                redo.poUndoMaskedSurfaceRef = this.poMaskedSurfaceRef;
+            }
+            else
+            {
+                redo = new BitmapHistoryAction(Name, Image, workspace, this.layerIndex, this.poUndoMaskedSurfaceRef);
+            }
+
+            PdnRegion simplified = Utility.SimplifyAndInflateRegion(region);
+
+            if (maskedSurface != null)
+            {
+                maskedSurface.Draw(layer.Surface);
+            }
+            else if (data.UndoImage == null)
+            {
+                using (FileStream input = FileSystem.OpenStreamingFile(this.tempFileName, FileAccess.Read))
                 {
                     LoadSurfaceRegion(input, layer.Surface, data.SavedRegion);
-                }
-
-                using (PdnRegion simple = Utility.SimplifyAndInflateRegion(data.SavedRegion))
-                {
-                    layer.Invalidate(simple);
                 }
 
                 data.SavedRegion.Dispose();
@@ -309,14 +325,11 @@ namespace PaintDotNet
             else
             {
                 data.UndoImage.Draw(layer.Surface);
-
-                using (PdnRegion simple = Utility.SimplifyAndInflateRegion(data.UndoImage.Region))
-                {
-                    layer.Invalidate(simple);
-                }
-
                 data.UndoImage.Dispose();
             }
+
+            layer.Invalidate(simplified);
+            simplified.Dispose();
 
             return redo;
         }

@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -27,7 +28,7 @@ namespace PaintDotNet
     {
         private bool mouseDown;
         private MouseButtons mouseButton;
-        private ArrayList savedSurfaces;
+        private List<Rectangle> savedRects;
         private Point lastMouseXY;
         private RenderArgs renderArgs;
         private BitmapLayer bitmapLayer;
@@ -55,16 +56,8 @@ namespace PaintDotNet
             this.cursorMouseUp = new Cursor(PdnResources.GetResourceStream("Cursors.EraserToolCursor.cur"));
             this.cursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.EraserToolCursorMouseDown.cur"));
             this.Cursor = cursorMouseUp;
-           
-            if (savedSurfaces != null)
-            {
-                foreach (PlacedSurface ps in savedSurfaces)
-                {
-                    ps.Dispose();
-                }
-            }
 
-            savedSurfaces = new ArrayList();
+            this.savedRects = new List<Rectangle>();
 
             if (Workspace.ActiveLayer != null)
             {
@@ -97,28 +90,16 @@ namespace PaintDotNet
                 cursorMouseDown = null;
             }
             
-            this.Renderers.Remove(this.previewRenderer);
-            this.previewRenderer.Dispose();
-            this.previewRenderer = null;
-
             if (mouseDown)
             {
                 OnMouseUp(new MouseEventArgs(mouseButton, 0, lastMouseXY.X, lastMouseXY.Y, 0));
             }
 
-            if (savedSurfaces != null)
-            {
-                if (savedSurfaces != null)
-                {
-                    foreach (PlacedSurface ps in savedSurfaces)
-                    {
-                        ps.Dispose();
-                    }
-                }
+            this.Renderers.Remove(this.previewRenderer);
+            this.previewRenderer.Dispose();
+            this.previewRenderer = null;
 
-                savedSurfaces.Clear();
-                savedSurfaces = null;
-            }
+            this.savedRects.Clear();
 
             Utility.Dispose(renderArgs);
             renderArgs = null;
@@ -163,37 +144,15 @@ namespace PaintDotNet
                 this.previewRenderer.Visible = true;
                 mouseDown = false;
 
-                if (savedSurfaces.Count > 0)
+                if (this.savedRects.Count > 0)
                 {
-                    PdnRegion saveMeRegion = new PdnRegion();
-                    saveMeRegion.MakeEmpty();
-
-                    foreach (PlacedSurface pi1 in savedSurfaces)
-                    {
-                        saveMeRegion.Union(pi1.Bounds);
-                    }
-
-                    using (PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(saveMeRegion, Utility.DefaultSimplificationFactor, 2))
-                    {
-                        using (IrregularSurface weDrewThis = new IrregularSurface(renderArgs.Surface, simplifiedRegion))
-                        {
-                            for (int i = savedSurfaces.Count - 1; i >= 0; --i)
-                            {
-                                PlacedSurface ps = (PlacedSurface)savedSurfaces[i];
-                                ps.Draw(renderArgs.Surface);
-                                ps.Dispose();
-                            }
-
-                            savedSurfaces.Clear();
-
-                            HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, 
-                                Workspace.ActiveLayerIndex, simplifiedRegion);
-
-                            weDrewThis.Draw(bitmapLayer.Surface);
-                            Workspace.History.PushNewAction(ha);
-                            bitmapLayer.Invalidate(simplifiedRegion);
-                        }
-                    }
+                    Rectangle[] savedScans = this.savedRects.ToArray();
+                    PdnRegion saveMeRegion = Utility.RectanglesToRegion(savedScans);
+                    HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, saveMeRegion, this.ScratchSurface);
+                    Workspace.History.PushNewAction(ha);
+                    saveMeRegion.Dispose();
+                    this.savedRects.Clear();
+                    ClearSavedMemory();
                 }
             }
         }
@@ -225,8 +184,8 @@ namespace PaintDotNet
                 // also make sure we're within the clip region
                 if (saveRect.Width > 0 && saveRect.Height > 0 && renderArgs.Graphics.IsVisible(saveRect))
                 {
-                    PlacedSurface savedPS = new PlacedSurface(renderArgs.Surface, saveRect);
-                    savedSurfaces.Add(savedPS);
+                    SaveRegion(null, saveRect);
+                    this.savedRects.Add(saveRect);
 
                     if (Workspace.Environment.AntiAliasing)
                     {
@@ -257,7 +216,7 @@ namespace PaintDotNet
                     new UnaryPixelOps.InvertWithAlpha().Apply(renderArgs.Surface, saveRect);
 
                     new BinaryPixelOps.SetColorChannels().Apply(renderArgs.Surface, saveRect.Location, 
-                        savedPS.What, new Point(0, 0), saveRect.Size);
+                        ScratchSurface, saveRect.Location, saveRect.Size);
 
                     bitmapLayer.Invalidate(saveRect);
                     Update();
@@ -275,7 +234,7 @@ namespace PaintDotNet
         
         public EraserTool(DocumentWorkspace parent) 
             : base(parent,
-                   PdnResources.GetImage("Icons.EraserToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.EraserToolIcon.png"),
                    PdnResources.GetString("EraserTool.Name"),
                    PdnResources.GetString("EraserTool.HelpText"), //"Click and drag to erase a portion of the image",
                    'e')

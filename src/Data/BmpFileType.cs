@@ -97,7 +97,7 @@ namespace PaintDotNet
 
                 using (RenderArgs ra = new RenderArgs(surface))
                 {
-                    input.RenderFlat(ra);
+                    input.Render(ra, true);
                 }
 
                 SquishSurfaceTo24Bpp(surface);

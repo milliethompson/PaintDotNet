@@ -12,6 +12,7 @@
 using PaintDotNet;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 
@@ -20,12 +21,13 @@ namespace PaintDotNet.Data.Quantize
     /// <summary>
     /// Summary description for PaletteQuantizer.
     /// </summary>
-    internal unsafe class PaletteQuantizer : Quantizer
+    internal unsafe class PaletteQuantizer 
+        : Quantizer
     {
         /// <summary>
         /// Lookup table for colors
         /// </summary>
-        private Hashtable _colorMap;
+        private Dictionary<uint, byte> _colorMap;
 
         /// <summary>
         /// List of all colors in the palette
@@ -39,10 +41,10 @@ namespace PaintDotNet.Data.Quantize
         /// <remarks>
         /// Palette quantization only requires a single quantization step
         /// </remarks>
-        public PaletteQuantizer(ArrayList palette)
+        public PaletteQuantizer(List<Color> palette)
             : base(true)
         {
-            _colorMap = new Hashtable();
+            _colorMap = new Dictionary<uint, byte>();
             _colors = new Color[palette.Count];
             palette.CopyTo(_colors);
         }
@@ -60,7 +62,7 @@ namespace PaintDotNet.Data.Quantize
             // Check if the color is in the lookup table
             if (_colorMap.ContainsKey(colorHash))
             {
-                colorIndex = (byte)_colorMap[colorHash];
+                colorIndex = _colorMap[colorHash];
             }
             else
             {
@@ -113,7 +115,7 @@ namespace PaintDotNet.Data.Quantize
                 }
 
                 // Now I have the color, pop it into the hashtable for next time
-                _colorMap.Add(colorHash , colorIndex);
+                _colorMap.Add(colorHash, colorIndex);
             }
 
             return colorIndex;

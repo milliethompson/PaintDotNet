@@ -18,7 +18,7 @@ namespace PaintDotNet
         : FileType
     {
         public PdnFileType()
-            : base(PdnResources.GetString("Application.ProductName"), true, true, true, true, true, new string[] { ".pdn" })
+            : base(PdnInfo.GetProductName(), true, true, true, true, true, new string[] { ".pdn" })
         {
         }
 

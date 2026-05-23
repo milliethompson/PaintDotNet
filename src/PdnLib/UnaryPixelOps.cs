@@ -36,14 +36,12 @@ namespace PaintDotNet
                 return color;
             }
 
-            [CLSCompliant(false)]
-            protected unsafe override void Apply(ColorBgra *dst, ColorBgra *src, int length)
+            public unsafe override void Apply(ColorBgra *dst, ColorBgra *src, int length)
             {
                 Memory.Copy(dst, src, (ulong)length * (ulong)sizeof(ColorBgra));
             }
 
-            [CLSCompliant(false)]
-            protected unsafe override void Apply(ColorBgra *ptr, int length)
+            public unsafe override void Apply(ColorBgra* ptr, int length)
             {
                 return;
             }
@@ -63,8 +61,7 @@ namespace PaintDotNet
                 return setColor;
             }
 
-            [CLSCompliant(false)]
-            protected unsafe override void Apply(ColorBgra *dst, ColorBgra *src, int length)
+            public unsafe override void Apply(ColorBgra* dst, ColorBgra* src, int length)
             {
                 while (length > 0)
                 {
@@ -74,8 +71,7 @@ namespace PaintDotNet
                 }
             }
 
-            [CLSCompliant(false)]
-            protected unsafe override void Apply(ColorBgra *ptr, int length)
+            public unsafe override void Apply(ColorBgra* ptr, int length)
             {
                 while (length > 0)
                 {
@@ -136,8 +132,7 @@ namespace PaintDotNet
                 return color;
             }
 
-            [CLSCompliant(false)]
-            protected override unsafe void Apply(ColorBgra * dst, ColorBgra * src, int length)
+            public override unsafe void Apply(ColorBgra* dst, ColorBgra* src, int length)
             {
                 while (length > 0)
                 {
@@ -149,8 +144,7 @@ namespace PaintDotNet
                 }
             }
 
-            [CLSCompliant(false)]
-            protected override unsafe void Apply(ColorBgra * ptr, int length)
+            public override unsafe void Apply(ColorBgra* ptr, int length)
             {
                 while (length > 0)
                 {
@@ -186,8 +180,7 @@ namespace PaintDotNet
                 return ColorBgra.FromUInt32((color.Bgra & 0x00ffffff) + addValue);
             }
 
-            [CLSCompliant(false)]
-            protected override unsafe void Apply(ColorBgra * dst, ColorBgra * src, int length)
+            public override unsafe void Apply(ColorBgra* dst, ColorBgra* src, int length)
             {
                 while (length > 0)
                 {
@@ -198,8 +191,7 @@ namespace PaintDotNet
                 }
             }
 
-            [CLSCompliant(false)]
-            protected override unsafe void Apply(ColorBgra * ptr, int length)
+            public override unsafe void Apply(ColorBgra* ptr, int length)
             {
                 while (length > 0)
                 {
@@ -227,8 +219,7 @@ namespace PaintDotNet
                 return ColorBgra.FromUInt32(color.Bgra | 0xff000000);
             }
 
-            [CLSCompliant(false)]
-            protected override unsafe void Apply(ColorBgra * dst, ColorBgra * src, int length)
+            public override unsafe void Apply(ColorBgra* dst, ColorBgra* src, int length)
             {
                 while (length > 0)
                 {
@@ -239,8 +230,7 @@ namespace PaintDotNet
                 }
             }
 
-            [CLSCompliant(false)]
-            protected override unsafe void Apply(ColorBgra * ptr, int length)
+            public override unsafe void Apply(ColorBgra* ptr, int length)
             {
                 while (length > 0)
                 {
@@ -372,8 +362,7 @@ namespace PaintDotNet
                 return ColorBgra.FromBgra(i, i, i, color.A);
             }
 
-            [CLSCompliant(false)]
-            protected unsafe override void Apply(ColorBgra * ptr, int length)
+            public unsafe override void Apply(ColorBgra* ptr, int length)
             {
                 while (length > 0)
                 {
@@ -388,8 +377,7 @@ namespace PaintDotNet
                 }
             }
 
-            [CLSCompliant(false)]
-            protected unsafe override void Apply(ColorBgra * dst, ColorBgra * src, int length)
+            public unsafe override void Apply(ColorBgra* dst, ColorBgra* src, int length)
             {
                 while (length > 0)
                 {
@@ -452,7 +440,7 @@ namespace PaintDotNet
                 }
             }
 
-            protected override unsafe void Apply(ColorBgra * dst, ColorBgra * src, int length)
+            public override unsafe void Apply(ColorBgra* dst, ColorBgra* src, int length)
             {
                 while (--length >= 0)
                 {
@@ -466,7 +454,7 @@ namespace PaintDotNet
                 }
             }
 
-            protected override unsafe void Apply(ColorBgra * ptr, int length)
+            public override unsafe void Apply(ColorBgra* ptr, int length)
             {
                 while (--length >= 0)
                 {
@@ -793,29 +781,29 @@ namespace PaintDotNet
                 return ret;
             }
 
-            public void UnApply(ColorBgra after, float[] before, float[] slopes) 
+            public void UnApply(ColorBgra after, float[] beforeOut, float[] slopesOut) 
             {
-                if (before.Length != 3) 
+                if (beforeOut.Length != 3) 
                 {
                     throw new ArgumentException("before must be a float[3]", "before");
                 }
 
-                if (slopes.Length != 3) 
+                if (slopesOut.Length != 3) 
                 {
                     throw new ArgumentException("slopes must be a float[3]", "slopes");
                 }
 
                 for (int i = 0; i < 3; i++) 
                 {
-                    before[i] = colorInLow[i] + (colorInHigh[i] - colorInLow[i]) *
+                    beforeOut[i] = colorInLow[i] + (colorInHigh[i] - colorInLow[i]) *
                         (float)Math.Pow((float)(after[i] - colorOutLow[i]) / (colorOutHigh[i] - colorOutLow[i]), 1 / gamma[i]);
 
-                    slopes[i] = (float)(colorInHigh[i] - colorInLow[i]) / ((colorOutHigh[i] - colorOutLow[i]) * gamma[i]) *
+                    slopesOut[i] = (float)(colorInHigh[i] - colorInLow[i]) / ((colorOutHigh[i] - colorOutLow[i]) * gamma[i]) *
                         (float)Math.Pow((float)(after[i] - colorOutLow[i]) / (colorOutHigh[i] - colorOutLow[i]), 1 / gamma[i] - 1);
 
-                    if (float.IsInfinity(slopes[i]) || float.IsNaN(slopes[i])) 
+                    if (float.IsInfinity(slopesOut[i]) || float.IsNaN(slopesOut[i])) 
                     {
-                        slopes[i] = 0;
+                        slopesOut[i] = 0;
                     }
                 }
             }

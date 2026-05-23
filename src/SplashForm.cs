@@ -7,6 +7,7 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Drawing;
 using System.Collections;
@@ -29,6 +30,8 @@ namespace PaintDotNet
 
         public SplashForm()
         {
+            SuspendLayout();
+
             //
             // Required for Windows Form Designer support
             //
@@ -48,27 +51,25 @@ namespace PaintDotNet
                 panel.Size.Height - panel.ClientSize.Height);
 
             this.panel.ClientSize = new Size(350, 
-                50 + statusLabel.Height + copyrightLabel.Height);
+                41 + statusLabel.Height + copyrightLabel.Height);
 
             this.Size = this.panel.ClientSize + padding;
-        }
 
-        protected override void OnLayout(LayoutEventArgs levent)
-        {
             this.panel.Location = new System.Drawing.Point(0, 0);
 
             this.logoPicture.Location = new System.Drawing.Point(45, 0);
-            this.logoPicture.Width = this.panel.ClientSize.Width - this.logoPicture.Left;
-            this.logoPicture.SizeMode = PictureBoxSizeMode.Normal;
-            this.logoPicture.Height = 73;
+            this.logoPicture.Width = this.logoPicture.Image.Width; // this.panel.ClientSize.Width - this.logoPicture.Left;
+            this.logoPicture.SizeMode = PictureBoxSizeMode.StretchImage;
+            this.logoPicture.Height = this.logoPicture.Image.Height;
 
             this.statusLabel.Location = new System.Drawing.Point(100, 50);
             this.statusLabel.Width = this.panel.ClientSize.Width - this.statusLabel.Left * 2;
 
             this.copyrightLabel.Location = new System.Drawing.Point(0, 64);
             this.copyrightLabel.Width = this.panel.ClientSize.Width;
-            
-            base.OnLayout (levent);
+
+            this.panel.ResumeLayout(true);
+            ResumeLayout(false);
         }
 
         #region Windows Form Designer generated code
@@ -83,7 +84,8 @@ namespace PaintDotNet
             this.statusLabel = new System.Windows.Forms.Label();
             this.logoPicture = new System.Windows.Forms.PictureBox();
             this.panel.SuspendLayout();
-            this.SuspendLayout();
+            //this.panel.SuspendLayout();
+            //this.SuspendLayout();
             // 
             // panel
             // 
@@ -110,7 +112,7 @@ namespace PaintDotNet
             this.statusLabel.BackColor = System.Drawing.Color.White;
             this.statusLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
             this.statusLabel.Name = "statusLabel";
-            this.statusLabel.Size = new System.Drawing.Size(290, 14);
+            this.statusLabel.Width = 290;
             this.statusLabel.TabIndex = 2;
             this.statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -122,7 +124,8 @@ namespace PaintDotNet
             // 
             // SplashForm
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(292, 128);
             this.ControlBox = false;
             this.Controls.Add(this.panel);
@@ -135,8 +138,8 @@ namespace PaintDotNet
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.TopMost = true;
             this.Controls.SetChildIndex(this.panel, 0);
-            this.panel.ResumeLayout(false);
-            this.ResumeLayout(false);
+            //this.panel.ResumeLayout(false);
+            //this.ResumeLayout(false);
         }
         #endregion
 

@@ -10,6 +10,7 @@
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -251,12 +252,12 @@ namespace PaintDotNet
 
         public unsafe static Point[][] PolygonSetFromStencil(IBitVector2D stencil, Rectangle bounds, int translateX, int translateY)
         {
-            ArrayList polygons = new ArrayList(10);
+            List<Point[]> polygons = new List<Point[]>();
 
             if (!stencil.IsEmpty)
             {
                 Point start = bounds.Location;
-                PointVector pts = new PointVector(64);
+                List<Point> pts = new List<Point>();
                 int count = 0;
 
                 // find all islands
@@ -342,7 +343,7 @@ namespace PaintDotNet
                         }
                     }
 
-                    Point[] points = pts.GetPointArray();
+                    Point[] points = pts.ToArray();
                     Scanline[] scans = Utility.GetScans(points);
 
                     foreach (Scanline scan in scans)
@@ -355,7 +356,8 @@ namespace PaintDotNet
                 }
             }
 
-            return (Point[][])polygons.ToArray(typeof(Point[]));
+            Point[][] returnVal = polygons.ToArray();
+            return returnVal;
         }
 
         /// <summary>
@@ -374,7 +376,7 @@ namespace PaintDotNet
 
             PdnGraphicsPath ret = new PdnGraphicsPath();
             Point start = bounds.Location;
-            PointVector pts = new PointVector(64);
+            Vector<Point> pts = new Vector<Point>();
             int count = 0;
 
             // find all islands
@@ -460,7 +462,7 @@ namespace PaintDotNet
                     }
                 }
 
-                Point[] points = pts.GetPointArray();
+                Point[] points = pts.GetArray();
                 Scanline[] scans = Utility.GetScans(points);
 
                 foreach (Scanline scan in scans)

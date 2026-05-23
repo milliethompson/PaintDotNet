@@ -35,7 +35,7 @@ namespace PaintDotNet
 
         public ZoomTool(DocumentWorkspace parent)
             : base(parent,
-                   PdnResources.GetImage("Icons.ZoomToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.ZoomToolIcon.png"),
                    PdnResources.GetString("ZoomTool.Name"),
                    PdnResources.GetString("ZoomTool.HelpText"),
                    'z')
@@ -59,13 +59,10 @@ namespace PaintDotNet
             this.cursorZoomIn = new Cursor(PdnResources.GetResourceStream("Cursors.ZoomInToolCursor.cur"));
             this.cursorZoomOut = new Cursor(PdnResources.GetResourceStream("Cursors.ZoomOutToolCursor.cur"));
             this.cursorZoomPan = new Cursor(PdnResources.GetResourceStream("Cursors.ZoomOutToolCursor.cur"));
-            //this.cursorZoomPan = new Cursor(PdnResources.GetResourceStream("Cursors.ZoomPanToolCursor.cur"));
             this.Cursor = this.cursorZoom;
 
             base.OnActivate ();
             
-            //bitmapLayer = (BitmapLayer)Workspace.ActiveLayer;
-            //renderArgs = new RenderArgs(bitmapLayer.Surface);
             this.outline = new Selection();
             this.outlineRenderer = new SelectionRenderer(this.Renderers, this.outline, this.Workspace.DocumentView);
             this.outlineRenderer.InvertedTinting = true;
@@ -139,6 +136,19 @@ namespace PaintDotNet
             }
         }
 
+        protected override void OnKeyPress(KeyPressEventArgs e)
+        {
+            if (!e.Handled)
+            {
+                if (this.mouseDown != MouseButtons.None)
+                {
+                    e.Handled = true;
+                }
+            }
+
+            base.OnKeyPress(e);
+        }
+
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove (e);
@@ -163,10 +173,10 @@ namespace PaintDotNet
             } 
             else if (e.Button == MouseButtons.Middle && mouseDown == MouseButtons.Middle)
             {
-                Point lastScrollPosition = Workspace.DocumentView.DocumentScrollPosition;
+                PointF lastScrollPosition = Workspace.DocumentView.DocumentScrollPositionF;
                 lastScrollPosition.X += thisPt.X - lastPt.X;
                 lastScrollPosition.Y += thisPt.Y - lastPt.Y;
-                Workspace.DocumentView.DocumentScrollPosition = lastScrollPosition;
+                Workspace.DocumentView.DocumentScrollPositionF = lastScrollPosition;
                 Update();
             }
             else

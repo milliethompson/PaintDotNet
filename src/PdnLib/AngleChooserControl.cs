@@ -158,8 +158,8 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | 
-                ControlStyles.DoubleBuffer | ControlStyles.ResizeRedraw, true);
+            this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
         }
 
         /// <summary> 

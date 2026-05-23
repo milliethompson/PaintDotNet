@@ -9,17 +9,22 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace PaintDotNet
 {
     /// <summary>
     /// Privates a Guid->WeakReference mapping for PersistedObject instances.
+    /// This is used by the Move Selected Pixels tool so that it can have many
+    /// instances of its history and context data that refer to the same
+    /// MaskedSurface, but only have it serializing and deserializing exactly
+    /// once (to and from the same file).
     /// </summary>
     public sealed class PersistedObjectLocker
     {
-        private static Hashtable guidToPO = new Hashtable();
+        private static Dictionary<Guid, WeakReference> guidToPO = new Dictionary<Guid, WeakReference>();
 
-        public static Guid Add(PersistedObject po)
+        public static Guid Add<T>(PersistedObject<T> po)
         {
             Guid retGuid = Guid.NewGuid();
             WeakReference wr = new WeakReference(po);
@@ -27,10 +32,11 @@ namespace PaintDotNet
             return retGuid;
         }
 
-        public static PersistedObject Get(Guid guid)
+        public static PersistedObject<T> Get<T>(Guid guid)
         {
-            WeakReference wr = (WeakReference)guidToPO[guid];
-            PersistedObject po;
+            WeakReference wr;
+            guidToPO.TryGetValue(guid, out wr);
+            PersistedObject<T> po;
 
             if (wr == null)
             {
@@ -47,7 +53,7 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    po = (PersistedObject)weakObj;
+                    po = (PersistedObject<T>)weakObj;
                 }
             }
 

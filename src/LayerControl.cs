@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -16,12 +17,71 @@ using System.Diagnostics;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for LayerControl.
-    /// </summary>
     public class LayerControl 
         : System.Windows.Forms.UserControl
-    {    
+    {
+        private class PanelWithLayout
+            : PanelEx
+        {
+            private LayerControl parentLayerControl;
+            public LayerControl ParentLayerControl
+            {
+                get
+                {
+                    return this.parentLayerControl;
+                }
+
+                set
+                {
+                    this.parentLayerControl = value;
+                }
+            }
+
+            public PanelWithLayout()
+            {
+                this.HideHScroll = true;
+            }
+
+            public void PositionLayers()
+            {
+                if (this.parentLayerControl != null &&
+                    this.parentLayerControl.layerControls != null)
+                {
+                    int cursor = this.AutoScrollPosition.Y;
+                    int newWidth = this.ClientRectangle.Width;
+
+                    for (int i = this.parentLayerControl.layerControls.Count - 1; i >= 0; --i)
+                    {
+                        LayerElement lec = this.parentLayerControl.layerControls[i];
+                        lec.Width = newWidth;
+                        lec.Top = cursor;
+                        cursor += lec.Height;
+                    }
+                }
+            }
+
+            protected override void OnResize(EventArgs eventargs)
+            {
+                SystemLayer.UI.SetControlRedraw(this, false);
+                PositionLayers();
+                this.AutoScrollPosition = new Point(0, -this.AutoScrollOffset.Y);
+                base.OnResize(eventargs);
+                SystemLayer.UI.SetControlRedraw(this, true);
+                Invalidate(true);
+            }
+
+            protected override void OnLayout(LayoutEventArgs levent)
+            {
+                PositionLayers();
+                base.OnLayout(levent);
+            }
+        }
+
+        public void PositionLayers()
+        {
+            this.layerControlPanel.PositionLayers();
+        }
+
         private EventHandler elementClickDelegate;
         private EventHandler elementDoubleClickDelegate;
         private EventHandler documentChangedDelegate;
@@ -31,13 +91,13 @@ namespace PaintDotNet
         private IndexEventHandler layerInsertedDelegate;
         private IndexEventHandler layerRemovedDelegate;
         
-        private const int elementHeight = LayerElement.ThumbSize + 2;
+        private int elementHeight = LayerElement.ThumbSize + 2;
         
         private DocumentWorkspace workspace;
         private Document document;
 
-        private ArrayList layerControls;
-        private PanelEx layerControlPanel;
+        private List<LayerElement> layerControls;
+        private PanelWithLayout layerControlPanel;
 
         [Browsable(false)]
         public LayerElement[] Layers
@@ -50,12 +110,29 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    return (LayerElement[])this.layerControls.ToArray(typeof(LayerElement));
+                    return this.layerControls.ToArray();
                 }
             }
         }
 
-        public BorderStyle BorderStyle
+        public int SelectedLayer
+        {
+            get
+            {
+                LayerElement[] layers = this.Layers;
+                for (int i = 0; i < layers.Length; ++i)
+                {
+                    if (layers[i].IsSelected)
+                    {
+                        return i;
+                    }
+                }
+
+                return -1;
+            }
+        }
+
+        public new BorderStyle BorderStyle
         {
             get
             {
@@ -78,7 +155,6 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            //currentLEC = null;
             elementClickDelegate = new EventHandler(ElementClickHandler);
             elementDoubleClickDelegate = new EventHandler(ElementDoubleClickHandler);
             documentChangedDelegate = new EventHandler(DocumentChangedHandler);
@@ -88,7 +164,7 @@ namespace PaintDotNet
             layerChangedDelegate = new EventHandler(LayerChangedHandler);
             keyUpDelegate = new KeyEventHandler(KeyUpHandler);
 
-            layerControls = new ArrayList();
+            layerControls = new List<LayerElement>();
         }
 
         private void SetupNewDocument(Document document)
@@ -98,7 +174,7 @@ namespace PaintDotNet
             this.document.Layers.Inserted += layerInsertedDelegate;
             this.document.Layers.RemovedAt += layerRemovedDelegate;
 
-            layerControlPanel.SuspendLayout();
+            SystemLayer.UI.SetControlRedraw(this.layerControlPanel, false);
 
             for (int i = 0; i < this.document.Layers.Count; ++i)
             {
@@ -120,8 +196,8 @@ namespace PaintDotNet
                 }
             }
 
-            layerControlPanel.ResumeLayout(true);
-            PerformLayout();
+            SystemLayer.UI.SetControlRedraw(this.layerControlPanel, true);
+            this.layerControlPanel.Invalidate(true);
         }
 
         private void TearDownOldDocument()
@@ -137,7 +213,7 @@ namespace PaintDotNet
             }
 
             layerControls.Clear();
-            layerControls.TrimToSize();
+            layerControls.TrimExcess();
 
             // Unsubscribe to the Events
             if (this.Document != null)
@@ -157,25 +233,9 @@ namespace PaintDotNet
             TearDownOldDocument();
         }
 
-        protected override void OnLayout(LayoutEventArgs levent)
-        {
-            base.OnLayout (levent);
-
-            if (layerControlPanel != null)
-            {
-                for (int i = 0; i < layerControls.Count; ++i)
-                {
-                    LayerElement lec = (LayerElement)layerControls[i];
-                    lec.Width = layerControlPanel.ClientRectangle.Width;
-                    lec.Location = new Point(layerControlPanel.AutoScrollPosition.X, 
-                                             layerControlPanel.AutoScrollPosition.Y + (elementHeight * i));
-                }
-            }
-        }
-
         private void LayerRemovedHandler(object sender, IndexEventArgs e)
         {
-            LayerElement lec = (LayerElement)layerControls[e.Index];
+            LayerElement lec = layerControls[e.Index];
             lec.Click -= this.elementClickDelegate;
             lec.DoubleClick -= this.elementDoubleClickDelegate;
             lec.KeyUp -= keyUpDelegate;
@@ -189,7 +249,6 @@ namespace PaintDotNet
         private void InitializeLayerElement(LayerElement lec, Layer l)
         {
             lec.Height = elementHeight;
-            lec.Width = layerControlPanel.ClientRectangle.Width;
             lec.Layer = l;
             lec.Click += elementClickDelegate;
             lec.DoubleClick += elementDoubleClickDelegate;
@@ -221,23 +280,27 @@ namespace PaintDotNet
 
         private void LayerInsertedHandler(object sender, IndexEventArgs e)
         {
+            this.SuspendLayout();
+            this.layerControlPanel.SuspendLayout();
             Layer layer = (Layer)this.document.Layers[e.Index];
             LayerElement lec = new LayerElement();
             InitializeLayerElement(lec, layer);
             layerControls.Insert(e.Index, lec);
-            PerformLayout();
             layerControlPanel.Controls.Add(lec);
-            PerformLayout();
             layerControlPanel.ScrollControlIntoView(lec);
             lec.Select();
             lec.RefreshPreview();
+            this.layerControlPanel.ResumeLayout(false);
+            this.ResumeLayout(false);
+            this.layerControlPanel.PerformLayout();
+            PerformLayout();
         }
 
         public void RefreshPreviews()
         {
             for (int i = 0; i < this.layerControls.Count; ++i)
             {
-                ((LayerElement)this.layerControls[i]).RefreshPreview();
+                this.layerControls[i].RefreshPreview();
             }
         }
 
@@ -393,7 +456,7 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            this.layerControlPanel = new PanelEx();
+            this.layerControlPanel = new PanelWithLayout();
             this.SuspendLayout();
             // 
             // layerControlPanel
@@ -402,6 +465,7 @@ namespace PaintDotNet
             this.layerControlPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.layerControlPanel.Location = new System.Drawing.Point(0, 0);
             this.layerControlPanel.Name = "layerControlPanel";
+            this.layerControlPanel.ParentLayerControl = this;
             this.layerControlPanel.Size = new System.Drawing.Size(150, 150);
             this.layerControlPanel.TabIndex = 2;
             // 

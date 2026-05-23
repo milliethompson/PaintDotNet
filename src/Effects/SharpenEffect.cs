@@ -16,8 +16,7 @@ namespace PaintDotNet.Effects
     /// Summary description for SharpenEffect.
     /// </summary>
     public unsafe class SharpenEffect
-        : ConvolutionFilterEffect,
-          IConfigurableEffect
+        : ConvolutionFilterEffect
     {
         public static string StaticName
         {
@@ -27,24 +26,18 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private int[][] sharpenWeights = new int[3][] { new int[] { -1, -1, -1 },
-                                                        new int[] { -1, 20, -1 },
-                                                        new int[] { -1, -1, -1 } };
-
-        public override void Render(RenderArgs dstArgs, RenderArgs srcArgs, Rectangle roi)
-        {
-            base.RenderConvolutionFilter (sharpenWeights, 0, dstArgs, srcArgs, roi);
-        }
+        private readonly int[][] sharpenWeights = new int[3][] { new int[] { -1, -1, -1 },
+                                                                 new int[] { -1, 20, -1 },
+                                                                 new int[] { -1, -1, -1 } };
 
         public SharpenEffect()
             : base(StaticName,
-                   PdnResources.GetImage("Icons.SharpenEffect.bmp"))
+                   PdnResources.GetImage("Icons.SharpenEffect.png"), 
+                   true)
         {
         }
 
-        #region IConfigurableEffect Members
-
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             AmountEffectConfigDialog aecg = new AmountEffectConfigDialog();
             aecg.Effect = this;
@@ -54,7 +47,7 @@ namespace PaintDotNet.Effects
             aecg.SliderMinimum = 1;
             aecg.SliderMaximum = 4;
             aecg.SliderInitialValue = 1;
-            aecg.Icon = PdnResources.GetIconFromImage("Icons.SharpenEffect.bmp");
+            aecg.Icon = PdnResources.GetIconFromImage("Icons.SharpenEffect.png");
             return aecg;
         }
 
@@ -68,35 +61,40 @@ namespace PaintDotNet.Effects
         // sharpenMatrix = -blurMatrix;
         // sharpenMatrix[center,center] = sum(blurMatrix) - blurMatrix[center,center]
 
-        void IConfigurableEffect.Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
         {
-            AmountEffectConfigToken token = (AmountEffectConfigToken)properties;
-
-            int[][] weights = BlurEffect.CreateGaussianBlurMatrix(1 << (token.Amount - 1));
-            int sum = Utility.Sum(weights);
-            int center = weights.GetLength(0) / 2;
-
-            for (int i = 0; i < weights.Length; ++i)
+            if (parameters == null)
             {
-                int[] row = weights[i];
+                base.RenderConvolutionFilter(sharpenWeights, 0, dstArgs, srcArgs, rois, startIndex, length);
+            }
+            else
+            {
+                AmountEffectConfigToken token = (AmountEffectConfigToken)parameters;
 
-                for (int j = 0; j < row.Length; ++j)
+                int[][] weights = BlurEffect.CreateGaussianBlurMatrix(1 << (token.Amount - 1));
+                int sum = Utility.Sum(weights);
+                int center = weights.GetLength(0) / 2;
+
+                for (int i = 0; i < weights.Length; ++i)
                 {
-                    if (i == center && j == center)
+                    int[] row = weights[i];
+
+                    for (int j = 0; j < row.Length; ++j)
                     {
-                        row[j] = (2 * sum) - row[j];
-                    }
-                    else
-                    {
-                        row[j] = -row[j];
+                        if (i == center && j == center)
+                        {
+                            row[j] = (2 * sum) - row[j];
+                        }
+                        else
+                        {
+                            row[j] = -row[j];
+                        }
                     }
                 }
+
+                NormalizeWeightMatrix(weights);
+                base.RenderConvolutionFilter(weights, 0, dstArgs, srcArgs, rois, startIndex, length);
             }
-
-            NormalizeWeightMatrix(weights);
-            base.RenderConvolutionFilter (weights, 0, dstArgs, srcArgs, roi);
         }
-
-        #endregion
     }
 }

@@ -7,7 +7,9 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using System.Drawing;
 using System;
+using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
@@ -19,15 +21,16 @@ namespace PaintDotNet.Effects
     public class DesaturateEffect
         : Effect
     {
-        public override void Render(RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle roi)
+        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
+            Rectangle[] rois, int startIndex, int length)
         {
-            new UnaryPixelOps.Desaturate().Apply(dstArgs.Surface, roi.Location, srcArgs.Surface, roi.Location, roi.Size);
+            new UnaryPixelOps.Desaturate().Apply(dstArgs.Surface, srcArgs.Surface, rois, startIndex, length);
         }
 
         public DesaturateEffect()
             : base(PdnResources.GetString("DesaturateEffect.Name"),
-                   PdnResources.GetImage("Icons.DesaturateEffect.bmp"), 
-                   System.Windows.Forms.Shortcut.CtrlShiftG)
+                   PdnResources.GetImage("Icons.DesaturateEffect.png"), 
+                   Keys.Control | Keys.Shift | Keys.G)
         {
         }
     }

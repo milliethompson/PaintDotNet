@@ -88,35 +88,26 @@ namespace PaintDotNet
 
             string locale = Settings.CurrentUser.GetString(PdnSettings.LanguageName, null);
 
+            if (locale == null)
+            {
+                locale = Settings.SystemWide.GetString(PdnSettings.LanguageName, null);
+            }
+
             if (locale != null)
             {
                 CultureInfo ci = new CultureInfo(locale, true);
                 Thread.CurrentThread.CurrentUICulture = ci;
             }
 
-            // If this is not a final release, then we expire after 30 days.
-            // This should cut down on the number of people that still run a beta
-            // or alpha release weeks and months after a final release is available.
-            //
-            // Debug builds also expire.
-            if (!PdnInfo.IsFinalBuild || PdnInfo.IsDebugBuild)
+            if (!PdnInfo.HandleExpiration())
             {
-                if (DateTime.Now > PdnInfo.ExpirationDate)
-                {
-                    string expiredMessage = PdnResources.GetString("ExpiredDialog.Message");
-                    DialogResult result = Utility.ErrorBoxOKCancel(null, expiredMessage);
-
-                    if (result == DialogResult.OK)
-                    {
-                        string expiredRedirect = PdnResources.GetString("PdnInfo.ExpiredRedirectPage");
-                        PdnInfo.LaunchWebSite(expiredRedirect);
-                    }
-
-                    return;
-                }
+                return;
             }
 
             // Create our self ...
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.EnableVisualStyles();
+
             MainForm mainForm = new MainForm(args);
 
             // if the display is set to a portrait mode (tall), then orient the PDN window the same way
@@ -212,10 +203,22 @@ namespace PaintDotNet
             {
                 // This text need not be localized.
                 stream.AutoFlush = true;
-                stream.WriteLine("Crash log for " + PdnInfo.GetFullAppName());
+                stream.WriteLine("This text file was created because Paint.NET crashed.");
+                stream.WriteLine("Please e-mail this file to " + InvariantStrings.FeedbackEmail + " so we can diagnose and fix the problem.");
+                stream.WriteLine();
+                stream.WriteLine("Application version: " + PdnInfo.GetFullAppName());
                 stream.WriteLine("Time of crash: " + DateTime.Now.ToString());
-                stream.WriteLine("OS version: " + System.Environment.OSVersion.Version.ToString());
-                stream.WriteLine(".NET Framework version: " + System.Environment.Version.ToString());
+
+                // Example: 5.1.2600.0 Service Pack 2 Workstation x86
+                stream.WriteLine("OS version: " + 
+                    System.Environment.OSVersion.Version.ToString() + " " + 
+                    OS.Revision + " " +
+                    OS.Type.ToString() + " " + 
+                    Processor.NativeArchitecture.ToString().ToLower());
+
+                stream.WriteLine(".NET Framework version: " + System.Environment.Version.ToString() + " " + Processor.Architecture.ToString().ToLower());
+                stream.WriteLine("Processor count: " + SystemLayer.Processor.LogicalCpuCount);
+                stream.WriteLine("Physical memory: " + ((SystemLayer.Memory.TotalPhysicalBytes / 1024) / 1024) + " MB");
                 stream.WriteLine();
 
                 stream.WriteLine("Exception details:");

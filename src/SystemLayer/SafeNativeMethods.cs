@@ -7,6 +7,7 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -24,9 +25,33 @@ namespace PaintDotNet.SystemLayer
         {
         }
 
-        [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool LockWindowUpdate(IntPtr hWndLock);
+        internal static extern bool ShowScrollBar(
+            IntPtr hWnd, 
+            int wBar, 
+            [MarshalAs(UnmanagedType.Bool)] bool bShow);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool GetVersionEx(ref NativeStructs.OSVERSIONINFOEX lpVersionInfo);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool GetLayeredWindowAttributes(
+            IntPtr hwnd,
+            out uint pcrKey,
+            out byte pbAlpha,
+            out uint pdwFlags
+        );
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool SetLayeredWindowAttributes(
+            IntPtr hwnd,
+            uint crKey,
+            byte bAlpha,
+            uint dwFlags);
 
         [DllImport("gdi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         internal static extern IntPtr CreateFontW(
@@ -130,7 +155,8 @@ namespace PaintDotNet.SystemLayer
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal unsafe static extern bool ReadFile(
-            IntPtr hFile,
+            //IntPtr hFile,
+            SafeFileHandle sfhFile,
             void *lpBuffer,
             uint nNumberOfBytesToRead,
             out uint lpNumberOfBytesRead,
@@ -228,8 +254,11 @@ namespace PaintDotNet.SystemLayer
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern bool QueryPerformanceFrequency(out ulong lpFrequency);
 
-        [DllImport("msvcrt.dll", CallingConvention=CallingConvention.Cdecl)]
-        internal static extern unsafe void memcpy(void *dst, void *src, UIntPtr length);
+        [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern unsafe void memcpy(void* dst, void* src, UIntPtr length);
+
+        [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern unsafe void memset(void* dst, int c, UIntPtr length);
 
         [DllImport("User32.dll")]
         internal static extern int GetSystemMetrics(int nIndex);
@@ -457,24 +486,6 @@ namespace PaintDotNet.SystemLayer
             void *HeapInformation,
             uint HeapInformationLength
             );
-
-        [DllImport("gdiplus.dll", CharSet = CharSet.Unicode, ExactSpelling=true)]                                        
-        internal static extern int GdipGetAllPropertyItems(IntPtr image, uint totalSize, uint count, IntPtr buffer);  
-
-        [DllImport("gdiplus.dll", CharSet = CharSet.Unicode, ExactSpelling=true)]                              
-        internal static extern int GdipGetPropertyCount(IntPtr image, out int count);                     
-                                                                                                     
-        [DllImport("gdiplus.dll", CharSet = CharSet.Unicode, ExactSpelling=true)]                              
-        internal static extern int GdipGetPropertyIdList(IntPtr image, int count, int[] list);            
-                                                                                                     
-        [DllImport("gdiplus.dll", CharSet = CharSet.Unicode, ExactSpelling=true)]                              
-        internal static extern int GdipGetPropertyItem(IntPtr image, int propid, int size, IntPtr buffer);
-                                                                                                     
-        [DllImport("gdiplus.dll", CharSet = CharSet.Unicode, ExactSpelling=true)]                              
-        internal static extern int GdipGetPropertyItemSize(IntPtr image, int propid, out int size);       
-                                                                                                     
-        [DllImport("gdiplus.dll", CharSet = CharSet.Unicode, ExactSpelling=true)]                              
-        internal static extern int GdipGetPropertySize(IntPtr image, out uint totalSize, out uint count);   
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         internal static extern IntPtr LoadLibraryW(string lpFileName);

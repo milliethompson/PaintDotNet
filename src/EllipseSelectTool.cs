@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -33,9 +34,9 @@ namespace PaintDotNet
             base.OnMouseUp (e);
         }
 
-        protected override ArrayList TrimShapePath(ArrayList tracePoints)
+        protected override List<Point> TrimShapePath(List<Point> tracePoints)
         {
-            ArrayList array = new ArrayList();
+            List<Point> array = new List<Point>();
 
             if (tracePoints.Count > 0)
             {
@@ -50,10 +51,10 @@ namespace PaintDotNet
             return array;
         }
 
-        protected override PointF[] CreateShape(Point[] tracePoints)
+        protected override List<PointF> CreateShape(List<Point> tracePoints)
         {
             Point a = tracePoints[0];
-            Point b = tracePoints[tracePoints.Length - 1];
+            Point b = tracePoints[tracePoints.Count - 1];
             Point dir = new Point(b.X - a.X, b.Y - a.Y);
             float len = (float)Math.Sqrt(dir.X * dir.X + dir.Y * dir.Y);
 
@@ -86,7 +87,8 @@ namespace PaintDotNet
 
             PointF[] pointsF = path.PathPoints;
             path.Dispose();
-            return pointsF;
+
+            return new List<PointF>(pointsF);
         }
 
         protected override void OnActivate()
@@ -116,7 +118,7 @@ namespace PaintDotNet
 
         public EllipseSelectTool(DocumentWorkspace workspace)
             : base(workspace,
-                   PdnResources.GetImage("Icons.EllipseSelectToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.EllipseSelectToolIcon.png"),
                    PdnResources.GetString("EllipseSelectTool.Name"),
                    PdnResources.GetString("EllipseSelectTool.HelpText"),
                    's')

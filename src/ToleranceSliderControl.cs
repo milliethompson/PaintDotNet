@@ -67,6 +67,7 @@ namespace PaintDotNet
         protected void UpdateBitmap() 
         {
             this.Invalidate();
+
             if (buffer == null || buffer.Width != this.ClientSize.Width || buffer.Height != this.ClientSize.Height) 
             {
                 if (buffer != null)
@@ -82,16 +83,19 @@ namespace PaintDotNet
                     bufferGraphics.Dispose();
                     bufferGraphics = null;
                 }
+
                 bufferGraphics = Graphics.FromImage(buffer);
-            }       
-            
-            using (LinearGradientBrush lgb = new LinearGradientBrush(this.ClientRectangle, Color.Black, Color.White, 0, false))
-            {
-                bufferGraphics.FillRectangle(lgb, this.ClientRectangle);
             }
 
-            bufferGraphics.FillRectangle(Brushes.DarkBlue, 0.0f, 0.0f, this.ClientRectangle.Width * tolerance, this.ClientRectangle.Height);
-            bufferGraphics.DrawRectangle(Pens.Black, 0, 0, this.ClientSize.Width - 1, this.ClientSize.Height - 1);
+            bufferGraphics.Clear(this.BackColor);
+
+            using (LinearGradientBrush lgb = new LinearGradientBrush(this.ClientRectangle, Color.Black, Color.White, 0, false))
+            {
+                bufferGraphics.FillRectangle(lgb, 2, 0, ClientSize.Width - 6, ClientSize.Height);
+            }
+
+            bufferGraphics.FillRectangle(Brushes.DarkBlue, 2.0f, 0.0f, (this.ClientRectangle.Width - 6) * tolerance, this.ClientRectangle.Height);
+            bufferGraphics.DrawRectangle(Pens.Black, 2, 0, this.ClientSize.Width - 6, this.ClientSize.Height - 1);
             bufferGraphics.SmoothingMode = SmoothingMode.HighQuality;
             bufferGraphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
 
@@ -101,11 +105,11 @@ namespace PaintDotNet
                 {
                     int number = (int)(tolerance * 100);
                     string text = string.Format(percentageFormat, number);
-                    bufferGraphics.DrawString(text, ourFont, Brushes.White, 0, 2);
+                    bufferGraphics.DrawString(text, ourFont, Brushes.White, 2, 2);
                 } 
                 else 
                 {
-                    bufferGraphics.DrawString(this.toleranceText, ourFont, Brushes.White, 0, 2);
+                    bufferGraphics.DrawString(this.toleranceText, ourFont, Brushes.White, 1, 2);
                 }
             }
 
@@ -127,7 +131,8 @@ namespace PaintDotNet
 
             if (buffer != null)
             {
-                e.Graphics.DrawImageUnscaled(buffer, this.ClientRectangle);
+                Rectangle bounds = new Rectangle(0, 0, buffer.Width, buffer.Height);
+                e.Graphics.DrawImage(buffer, bounds, bounds, GraphicsUnit.Pixel);
             }
         }
 
@@ -173,11 +178,6 @@ namespace PaintDotNet
             hovering = true;
             this.UpdateBitmap();
             this.Update();
-        }
-
-        protected override void OnMouseWheel(MouseEventArgs e)
-        {
-            base.OnMouseWheel (e);
         }
 
         protected override void OnMouseLeave(EventArgs e)
@@ -239,6 +239,10 @@ namespace PaintDotNet
         #region Component Designer generated code
         private void InitializeComponent()
         {
+            this.SuspendLayout();
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = AutoScaleMode.Dpi;
+            this.ResumeLayout(false);
         }
         #endregion
     }

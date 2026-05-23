@@ -22,10 +22,11 @@ namespace PaintDotNet.Effects
     {
         private string name;
         private Image image;
-        private Shortcut shortcut;
+        private Keys shortcutKeys;
         private EffectDirectives effectDirectives;
         private string subMenuName;
         private EffectEnvironmentParameters envParams;
+        private bool isConfigurable;
 
         /// <summary>
         /// Returns the category of the effect. If there is no EffectCategoryAttribute
@@ -57,12 +58,12 @@ namespace PaintDotNet.Effects
         {
             get 
             {
-                return envParams;
+                return this.envParams;
             }
 
             set 
             {
-                envParams = value;
+                this.envParams = value;
             }
         }
 
@@ -86,16 +87,7 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return name;
-            }
-        }
-
-        [Obsolete("This attribute was never used, and has been removed.", true)]
-        public string Description
-        {
-            get
-            {
-                return string.Empty;
+                return this.name;
             }
         }
 
@@ -103,24 +95,23 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return image;
+                return this.image;
             }
         }
 
-        public Shortcut Shortcut 
+        public Keys ShortcutKeys
         {
             get 
             {
-                return shortcut;
+                return this.shortcutKeys;
             }
         }
 
-        [Obsolete("Use EnvironmentParameters.GetSelection() instead")]
-        public PdnRegion Selection
+        public bool IsConfigurable
         {
             get
             {
-                return new PdnRegion();
+                return this.isConfigurable;
             }
         }
 
@@ -130,24 +121,38 @@ namespace PaintDotNet.Effects
         /// to be written to. However, in order to compute the destination pixels,
         /// any pixels from the source may be utilized.
         /// </summary>
+        /// <param name="parameters">The parameters to the effect. If IsConfigurable is true, then this must not be null.</param>
         /// <param name="dstArgs">Describes the destination surface.</param>
         /// <param name="srcArgs">Describes the source surface.</param>
-        /// <param name="roi">The rectangle we want rendered in dstArgs.</param>
-        public virtual void Render(RenderArgs dstArgs, RenderArgs srcArgs, Rectangle roi)
+        /// <param name="rois">The list of rectangles that describes the region of interest.</param>
+        /// <param name="startIndex">The index within roi to start enumerating from.</param>
+        /// <param name="length">The number of rectangles to enumerate from roi.</param>
+        public abstract void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length);
+
+        public void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois)
         {
-            if (dstArgs.Surface.Size != srcArgs.Surface.Size)
+            Render(parameters, dstArgs, srcArgs, rois, 0, rois.Length);
+        }
+
+        public void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        {
+            Rectangle[] scans = roi.GetRegionScansReadOnlyInt();
+            Render(parameters, dstArgs, srcArgs, scans, 0, scans.Length);
+        }
+
+        public virtual EffectConfigDialog CreateConfigDialog()
+        {
+            if (this.IsConfigurable)
             {
-                throw new ArgumentException("Destination surface and Source surface sizes do not match", "dstArgs, srcArgs");
+                throw new NotImplementedException("If IsConfigurable is true, then CreateConfigDialog() must be implemented");
             }
-
-            Rectangle checkRect = Rectangle.Intersect(dstArgs.Surface.Bounds, roi);
-
-            if (checkRect != roi)
+            else
             {
-                throw new ArgumentOutOfRangeException("roi", "Region of interest was out of bounds");
+                return null;
             }
         }
 
+        /*
         /// <summary>
         /// This is a helper function. For every rectangle that makes up the requested
         /// region, the other form of Render will be called.
@@ -164,6 +169,7 @@ namespace PaintDotNet.Effects
                 Render(dstArgs, srcArgs, rect);
             }
         }
+         * */
 
         /// <summary>
         /// This is a helper function. It allows you to render an effect "in place."
@@ -175,7 +181,8 @@ namespace PaintDotNet.Effects
             {
                 using (RenderArgs renderArgs = new RenderArgs(renderSurface))
                 {
-                    Render(renderArgs, srcAndDstArgs, roi);
+                    Rectangle[] scans = roi.GetRegionScansReadOnlyInt();
+                    Render(null, renderArgs, srcAndDstArgs, scans);
                     srcAndDstArgs.Surface.CopySurface(renderSurface, roi);
                 }
             }
@@ -183,9 +190,10 @@ namespace PaintDotNet.Effects
 
         public void RenderInPlace(RenderArgs srcAndDstArgs, Rectangle roi)
         {
-            PdnRegion region = new PdnRegion(roi);            
-            RenderInPlace(srcAndDstArgs, region);
-            region.Dispose();
+            using (PdnRegion region = new PdnRegion(roi))
+            {
+                RenderInPlace(srcAndDstArgs, region);
+            }
         }
 
         /// <summary>
@@ -197,7 +205,12 @@ namespace PaintDotNet.Effects
         /// Do not include the word 'effect' in the name parameter.
         /// </remarks>
         public Effect(string name, Image image)
-            : this(name, image, Shortcut.None)
+            : this(name, image, Keys.None)
+        {
+        }
+
+        public Effect(string name, Image image, bool isConfigurable)
+            : this(name, image, Keys.None, isConfigurable)
         {
         }
 
@@ -206,13 +219,18 @@ namespace PaintDotNet.Effects
         /// </summary>
         /// <param name="name">A unique name for the effect.</param>
         /// <param name="image">A 16x16 icon for the effect that will show up in the menu.</param>
-        /// <param name="shortcut">A shortcut key for accessing the effect.</param>
+        /// <param name="shortcutKeys">A shortcut key for accessing the effect.</param>
         /// <remarks>
         /// Do not include the word 'effect' in the name parameter.
         /// The shortcut key is only honored for effects with the [EffectCategory(EffectCategory.Adjustment)] attribute.
         /// </remarks>
-        public Effect(string name, Image image, Shortcut shortcut)
-            : this(name, image, shortcut, null)
+        public Effect(string name, Image image, Keys shortcutKeys)
+            : this(name, image, shortcutKeys, null)
+        {
+        }
+
+        public Effect(string name, Image image, Keys shortcutKeys, bool isConfigurable)
+            : this(name, image, shortcutKeys, null, isConfigurable)
         {
         }
 
@@ -221,15 +239,20 @@ namespace PaintDotNet.Effects
         /// </summary>
         /// <param name="name">A unique name for the effect.</param>
         /// <param name="image">A 16x16 icon for the effect that will show up in the menu.</param>
-        /// <param name="shortcut">A shortcut key for accessing the effect.</param>
+        /// <param name="shortcutKeys">A shortcut key for accessing the effect.</param>
         /// <param name="subMenuName">The name of a sub-menu to place the effect into. Pass null for no sub-menu.</param>
         /// <remarks>
         /// Do not include the word 'effect' in the name parameter.
         /// The shortcut key is only honored for effects with the [EffectCategory(EffectCategory.Adjustment)] attribute.
         /// The sub-menu parameter can be used to group effects. The name parameter must still be unique.
         /// </remarks>
-        public Effect(string name, Image image, Shortcut shortcut, string subMenuName)
-            : this(name, image, shortcut, null, EffectDirectives.None)
+        public Effect(string name, Image image, Keys shortcutKeys, string subMenuName)
+            : this(name, image, shortcutKeys, subMenuName, EffectDirectives.None)
+        {
+        }
+
+        public Effect(string name, Image image, Keys shortcutKeys, string subMenuName, bool isConfigurable)
+            : this(name, image, shortcutKeys, subMenuName, EffectDirectives.None, isConfigurable)
         {
         }
 
@@ -238,45 +261,44 @@ namespace PaintDotNet.Effects
         /// </summary>
         /// <param name="name">A unique name for the effect.</param>
         /// <param name="image">A 16x16 icon for the effect that will show up in the menu.</param>
-        /// <param name="shortcut">A shortcut key for accessing the effect.</param>
+        /// <param name="shortcutKeys">A shortcut key for accessing the effect.</param>
         /// <param name="subMenuName">The name of a sub-menu to place the effect into. Pass null for no sub-menu.</param>
         /// <param name="effectDirectives">A set of flags indicating important information about the effect.</param>
         /// <remarks>
         /// Do not include the word 'effect' in the name parameter.
         /// The shortcut key is only honored for effects with the [EffectCategory(EffectCategory.Adjustment)] attribute.
         /// The sub-menu parameter can be used to group effects. The name parameter must still be unique.
-        /// For performance reasons, it is recommended that you not set forceSingleThreaded to false.
         /// </remarks>
-        public Effect(string name, Image image, Shortcut shortcut, string subMenuName, 
+        public Effect(string name, Image image, Keys shortcutKeys, string subMenuName,
             EffectDirectives effectDirectives)
+            : this(name, image, shortcutKeys, subMenuName, effectDirectives, false)
+        {
+        }
+
+        /// <summary>
+        /// Base constructor for the Effect class.
+        /// </summary>
+        /// <param name="name">A unique name for the effect.</param>
+        /// <param name="image">A 16x16 icon for the effect that will show up in the menu.</param>
+        /// <param name="shortcutKeys">A shortcut key for accessing the effect.</param>
+        /// <param name="subMenuName">The name of a sub-menu to place the effect into. Pass null for no sub-menu.</param>
+        /// <param name="effectDirectives">A set of flags indicating important information about the effect.</param>
+        /// <param name="isConfigurable">A flag indicating whether the effect is configurable. If this is true, then CreateConfigDialog must be implemented.</param>
+        /// <remarks>
+        /// Do not include the word 'effect' in the name parameter.
+        /// The shortcut key is only honored for effects with the [EffectCategory(EffectCategory.Adjustment)] attribute.
+        /// The sub-menu parameter can be used to group effects. The name parameter must still be unique.
+        /// </remarks>
+        public Effect(string name, Image image, Keys shortcutKeys, string subMenuName,
+            EffectDirectives effectDirectives, bool isConfigurable)
         {
             this.name = name;
             this.image = image;
             this.subMenuName = subMenuName;
-            this.shortcut = shortcut;
+            this.shortcutKeys = shortcutKeys;
             this.effectDirectives = effectDirectives;
             this.envParams = EffectEnvironmentParameters.DefaultParameters;
-        }
-
-        /// <summary>
-        /// This constructor is obsolete.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="description"></param>
-        /// <param name="image"></param>
-        [Obsolete("The description property has been removed.", true)]
-        public Effect(string name, string description, Image image)
-            : this(name, description, image, Shortcut.None)
-        {
-        }
-
-        /// <summary>
-        /// This constructor is obsolete.
-        /// </summary>
-        [Obsolete("The description property has been removed.", true)]
-        public Effect(string name, string description, Image image, Shortcut shortcut)
-            : this(name, image, shortcut, null)
-        {
+            this.isConfigurable = isConfigurable;
         }
     }
 }

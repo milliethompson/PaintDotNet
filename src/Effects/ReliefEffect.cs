@@ -19,27 +19,24 @@ namespace PaintDotNet.Effects
     /// </summary>
     [EffectTypeHint(EffectTypeHint.Fast)]
     public class ReliefEffect
-        : ColorDifferenceEffect, IConfigurableEffect
+        : ColorDifferenceEffect
     {
         public ReliefEffect()
             : base(PdnResources.GetString("ReliefEffect.Name"),
-                   PdnResources.GetImage("Icons.ReliefEffect.bmp"))
+                   PdnResources.GetImage("Icons.ReliefEffect.png"),
+                   true)
         {
         }
 
-        #region IConfigurableEffect Members
-
-        void IConfigurableEffect.Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
         {
-            ReliefEffectConfigToken token = (ReliefEffectConfigToken)properties;
-            base.RenderColorDifferenceEffect(token.Weights, dstArgs, srcArgs, roi);
+            ReliefEffectConfigToken token = (ReliefEffectConfigToken)parameters;
+            base.RenderColorDifferenceEffect(token.Weights, dstArgs, srcArgs, rois, startIndex, length);
         }
 
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             return new ReliefEffectConfigDialog();
         }
-
-        #endregion
     }
 }

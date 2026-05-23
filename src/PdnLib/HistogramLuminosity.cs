@@ -20,8 +20,8 @@ namespace PaintDotNet
     public class HistogramLuminosity : Histogram
     {
         public HistogramLuminosity()
+            : base(1, 256)
         {
-            this.histogram = new long[1, 256];
             visualColors = new ColorBgra[]{     
                                               ColorBgra.Black
                                           };
@@ -43,12 +43,14 @@ namespace PaintDotNet
 
         protected override unsafe void AddSurfaceRectangleToHistogram(Surface surface, Rectangle rect)
         {
+            long[] histogramLuminosity = histogram[0];
             for (int y = rect.Top; y < rect.Bottom; ++y)
             {
+
                 ColorBgra* ptr = surface.GetPointAddressUnchecked(rect.Left, y);
                 for (int x = rect.Left; x < rect.Right; ++x)
                 {
-                    ++histogram[0, ptr->GetIntensityByte()];
+                    ++histogramLuminosity[ptr->GetIntensityByte()];
                     ++ptr;
                 }
             }

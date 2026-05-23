@@ -29,86 +29,6 @@ namespace PaintDotNet.SystemLayer
         {
         }
 
-        /// <summary>
-        /// Retrieves the properties stored within an Image instance.
-        /// </summary>
-        /// <param name="image"></param>
-        /// <returns>An array containing Object instances, each of which must be cast to a System.Drawing.Imaging.PropertyItem.</returns>
-        /// <remarks>
-        /// System.Drawing.Image.get_PropertyItems has a bug where it will throw a null-reference exception
-        /// if an image contains an EXIF tag with Len=0. So we reach around its back and get the property
-        /// items via GDI+ directly.
-        /// See: http://groups-beta.google.com/group/microsoft.public.dotnet.framework.drawing/browse_thread/thread/bb4f6ec70868b3c7/0a5d836c177c932c?q=PropertyItems+GDI%2B+bug&rnum=1#0a5d836c177c932c
-        /// </remarks>
-        public static object[] GetPropertyItems(Image image)
-        {
-            // Major HACK: We use reflection to sort of reach behind the Image class' back and snag its 'native' GDI+ handle
-            // If Image.get_PropertyItems worked correctly, this function would only have to do the following: return image.PropertyItems;
-            // TODO: When we upgrade to .NET 2.0, see if this bug has been regressed. If so, remove this hack.
-            Type imageType = image.GetType();
-            FieldInfo fi = imageType.GetField("nativeImage", BindingFlags.Instance | BindingFlags.NonPublic);
-            object nativeImageObject = fi.GetValue(image);
-            IntPtr nativeImage = (IntPtr)nativeImageObject;
-
-            int result;
-            int propertyCount;
-
-            result = SafeNativeMethods.GdipGetPropertyCount(nativeImage, out propertyCount);
-            if (result != 0)
-            {
-                return new object[0];
-            }
-
-            uint bytes;
-            uint count;
-            result = SafeNativeMethods.GdipGetPropertySize(nativeImage, out bytes, out count);
-            if (result != 0)
-            {
-                return new object[0];
-            }
-           
-            unsafe 
-            {
-                IntPtr buffer = IntPtr.Zero;
-
-                try
-                {
-                    buffer = Memory.Allocate(bytes);
-                    result = SafeNativeMethods.GdipGetAllPropertyItems(nativeImage, bytes, count, buffer);
-
-                    object[] properties = new object[count];
-                    NativeStructs.PropertyItem *pProperties = (NativeStructs.PropertyItem *)buffer.ToPointer();
-
-                    for (int i = 0; i < count; ++i)
-                    {
-                        NativeStructs.PropertyItem pi = pProperties[i];
-                        byte[] value = new byte[pi.length];
-
-                        for (int j = 0; j < pi.length; ++j)
-                        {
-                            value[j] = ((byte *)pi.value)[j];
-                        }
-
-                        PropertyItem2 pi2 = new PropertyItem2(pi.id, (int)pi.length, pi.type, value);
-                        properties[i] = pi2.ToPropertyItem();
-                    }
-
-                    return properties;
-                }
-
-                finally
-                {
-                    if (buffer != IntPtr.Zero)
-                    {
-                        Memory.Free(buffer);
-                        buffer = IntPtr.Zero;
-                    }
-
-                    GC.KeepAlive(image);
-                }
-            }
-        }
-
         public static void SetPropertyItems(Image image, PropertyItem[] items)
         {
             PropertyItem[] pis = image.PropertyItems;
@@ -141,7 +61,18 @@ namespace PaintDotNet.SystemLayer
         /// <returns>A copy of the given PropertyItem.</returns>
         public static PropertyItem ClonePropertyItem(PropertyItem pi)
         {
-            PropertyItem2 pi2 = new PropertyItem2(pi.Id, pi.Len, pi.Type, (byte[])pi.Value.Clone());
+            byte[] valueClone;
+
+            if (pi.Value == null)
+            {
+                valueClone = new byte[0];
+            }
+            else
+            {
+                valueClone = (byte[])pi.Value.Clone();
+            }
+
+            PropertyItem2 pi2 = new PropertyItem2(pi.Id, pi.Len, pi.Type, valueClone);
             return pi2.ToPropertyItem();
         }
 

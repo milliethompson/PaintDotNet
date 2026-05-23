@@ -8,6 +8,8 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Drawing;
+using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
@@ -16,14 +18,16 @@ namespace PaintDotNet.Effects
     public class InvertColorsEffect
         : Effect
     {
-        public override void Render(RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle roi)
+        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
+            Rectangle[] rois, int startIndex, int length)
         {
-            new UnaryPixelOps.Invert().Apply(dstArgs.Surface, roi.Location, srcArgs.Surface, roi.Location, roi.Size);
+            new UnaryPixelOps.Invert().Apply(dstArgs.Surface, srcArgs.Surface, rois, startIndex, length);
         }
 
         public InvertColorsEffect()
             : base(PdnResources.GetString("InvertColorsEffect.Name"),
-                   PdnResources.GetImage("Icons.InvertColorsEffect.bmp"), System.Windows.Forms.Shortcut.CtrlShiftI)
+                   PdnResources.GetImage("Icons.InvertColorsEffect.png"), 
+                   Keys.Control | Keys.Shift | Keys.I)
         {
         }
     }

@@ -21,7 +21,7 @@ namespace PaintDotNet
     /// It is provided mostly for batching operations: loading all the data, modifying the copy,
     /// and then saving back all the data.
     /// </summary>
-    public class MetaData
+    public class Metadata
     {
         /// <summary>
         /// This is the name of the section where EXIF tags are stored. 
@@ -103,14 +103,14 @@ namespace PaintDotNet
         public string[] GetSections()
         {
             Set sections = new Set();
-            
+
             foreach (string key in userMetaData.Keys)
             {
                 int dotIndex = key.IndexOf(sectionSeparator);
 
                 if (dotIndex != -1)
                 {
-                    string sectionName = key.Substring(0, dotIndex);                    
+                    string sectionName = key.Substring(0, dotIndex);
 
                     if (!sections.Contains(sectionName))
                     {
@@ -166,16 +166,6 @@ namespace PaintDotNet
         {
             OnChanging();
             userMetaData.Remove(section + sectionSeparator + name);
-
-            /*
-            if (section == ExifSectionName)
-            {
-                ++suppressChangeEvents;
-                ReconstructExifInfoCache();
-                --suppressChangeEvents;
-            }
-            */
-
             OnChanged();
         }
 
@@ -251,7 +241,7 @@ namespace PaintDotNet
 
         public void SetUserValue(string name, string value)
         {
-            SetValue(MetaData.UserSectionName, name, value);
+            SetValue(Metadata.UserSectionName, name, value);
         }
 
         public void AddExifValues(PropertyItem[] items)
@@ -294,14 +284,14 @@ namespace PaintDotNet
                 {
                     newItems[i] = PdnGraphics.ClonePropertyItem(items[i]);
                 }
-                
+
                 info = new ExifInfo(names, newItems);
             }
             else
             {
                 string[] names2 = new string[info.names.Length + names.Length];
                 PropertyItem[] items2 = new PropertyItem[info.items.Length + items.Length];
-                
+
                 info.names.CopyTo(names2, 0);
                 names.CopyTo(names2, info.names.Length);
 
@@ -343,7 +333,7 @@ namespace PaintDotNet
             }
         }
 
-        public void ReplaceWithDataFrom(MetaData source)
+        public void ReplaceWithDataFrom(Metadata source)
         {
             OnChanging();
             ++suppressChangeEvents;
@@ -401,7 +391,7 @@ namespace PaintDotNet
             OnChanged();
         }
 
-        internal MetaData(NameValueCollection userMetaData)
+        internal Metadata(NameValueCollection userMetaData)
         {
             this.userMetaData = userMetaData;
             ReconstructExifInfoCache();

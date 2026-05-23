@@ -11,6 +11,7 @@
 // is used while interacting with the selection via the mouse, for better performance.
 //#define ALWAYSHIGHQUALITY
 
+using PaintDotNet.Threading;
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -57,7 +58,7 @@ namespace PaintDotNet
             private MaskedSurface liftedPixels;
 
             [NonSerialized]
-            public PersistedObject poLiftedPixels;
+            public PersistedObject<MaskedSurface> poLiftedPixels;
 
             public Guid poLiftedPixelsGuid;
 
@@ -85,7 +86,7 @@ namespace PaintDotNet
                     }
                     else
                     {
-                        this.poLiftedPixels = new PersistedObject(value);
+                        this.poLiftedPixels = new PersistedObject<MaskedSurface>(value, true);
                         this.poLiftedPixelsGuid = PersistedObjectLocker.Add(this.poLiftedPixels);
                         this.liftedPixels = null;
                     }
@@ -102,15 +103,15 @@ namespace PaintDotNet
                 : base(info, context)
             {
                 this.poLiftedPixelsGuid = (Guid)info.GetValue("poLiftedPixelsGuid", typeof(Guid));
-                this.poLiftedPixels = PersistedObjectLocker.Get(this.poLiftedPixelsGuid);
+                this.poLiftedPixels = PersistedObjectLocker.Get<MaskedSurface>(this.poLiftedPixelsGuid);
             }
 
             public MoveToolContext(MoveToolContext cloneMe)
                 : base(cloneMe)
             {
                 this.poLiftedPixelsGuid = cloneMe.poLiftedPixelsGuid;
-                this.poLiftedPixels = cloneMe.poLiftedPixels;
-                this.liftedPixels = cloneMe.liftedPixels;
+                this.poLiftedPixels = cloneMe.poLiftedPixels; // do not clone
+                this.liftedPixels = cloneMe.liftedPixels; // do not clone
             }
 
             public MoveToolContext()
@@ -283,7 +284,7 @@ namespace PaintDotNet
             if (didPaste)
             {
                 name = EnumWrapper.EnumValueToLocalizedName(typeof(CommonAction), CommonAction.Paste);
-                image = PdnResources.GetImage("Icons.MenuEditPasteIcon.bmp");
+                image = PdnResources.GetImage("Icons.MenuEditPasteIcon.png");
             }
             else
             {
@@ -397,9 +398,13 @@ namespace PaintDotNet
 
             DestroyNubs();
             PositionNubs(this.context.currentMode);
+
+            // we use the value 70,000 to simulate mouse input because that's guaranteed to be out of bounds of where
+            // the mouse can actually be -- PDN is limited to 65536 x 65536 images by design
             MouseEventArgs mea1 = new MouseEventArgs(MouseButtons.Left, 0, 70000, 70000, 0);
             MouseEventArgs mea2 = new MouseEventArgs(MouseButtons.Left, 0, 70000 + offset.X, 70000 + offset.Y, 0);
             this.context.startMouseXY = new Point(70000, 70000);
+
             OnMouseDown(mea1);
             OnMouseMove(mea2);
             OnMouseUp(mea2);
@@ -407,14 +412,14 @@ namespace PaintDotNet
 
         protected override void OnLift(MouseEventArgs e)
         {
-            PdnRegion liftRegion = Workspace.Environment.Selection.CreateRegion();
             PdnGraphicsPath liftPath = Workspace.Environment.Selection.CreatePath();
+            PdnRegion liftRegion = Workspace.Environment.Selection.CreateRegion();
+
             this.ourContext.LiftedPixels = new MaskedSurface(activeLayer.Surface, liftPath);
+            HistoryAction bitmapAction = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, this.ourContext.poLiftedPixelsGuid);
 
-            PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(liftRegion);
-            HistoryAction bitmapAction = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, simplifiedRegion);
             this.currentHistoryActions.Add(bitmapAction);
-
+            
             // If the user is holding down the control key, we want to *copy* the pixels
             // and not "lift and erase"
             if ((ModifierKeys & Keys.Control) == Keys.None)
@@ -423,11 +428,7 @@ namespace PaintDotNet
                 fill.A = 0;
                 UnaryPixelOp op = new UnaryPixelOps.Constant(fill);
                 op.Apply(renderArgs.Surface, liftRegion);
-                activeLayer.Invalidate(simplifiedRegion);
             }
-
-            simplifiedRegion.Dispose();
-            simplifiedRegion = null;
 
             liftRegion.Dispose();
             liftRegion = null;
@@ -444,20 +445,28 @@ namespace PaintDotNet
 
         protected override void Render(Point newOffset, bool useNewOffset)
         {
+            Render(newOffset, useNewOffset, true);
+        }
+
+        protected void Render(Point newOffset, bool useNewOffset, bool saveRegion)
+        {
             Rectangle saveBounds = Workspace.Environment.Selection.GetBounds();
             PdnRegion selectedRegion = Workspace.Environment.Selection.CreateRegion();
             PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(selectedRegion);
 
-            SaveRegion(simplifiedRegion, saveBounds);
-
+            if (saveRegion)
+            {
+                SaveRegion(simplifiedRegion, saveBounds);
+            }
+            
             this.ourContext.LiftedPixels.Draw(
                 renderArgs.Surface, 
                 this.context.deltaTransform, 
                 this.highQuality);
-
+            
             activeLayer.Invalidate(simplifiedRegion);
             PositionNubs(this.context.currentMode);
-
+            
             simplifiedRegion.Dispose();
             selectedRegion.Dispose();
         }
@@ -525,7 +534,7 @@ namespace PaintDotNet
             if (this.currentHistoryActions.Count > 0)
             {
                 CompoundHistoryAction cha = new CompoundHistoryAction(null, null,
-                    (HistoryAction[])this.currentHistoryActions.ToArray(typeof(HistoryAction)));
+                    this.currentHistoryActions.ToArray());
 
                 string haName;
                 Image image;
@@ -533,7 +542,7 @@ namespace PaintDotNet
                 if (this.didPaste)
                 {
                     haName = PdnResources.GetString("CommonAction.Paste");
-                    image = PdnResources.GetImage("Icons.MenuEditPasteIcon.bmp");
+                    image = PdnResources.GetImage("Icons.MenuEditPasteIcon.png");
                     this.didPaste = false;
                 }
                 else
@@ -561,7 +570,7 @@ namespace PaintDotNet
 
         public MoveTool(DocumentWorkspace workspace)
             : base(workspace,
-                   PdnResources.GetImage("Icons.MoveToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.MoveToolIcon.png"),
                    MoveTool.StaticName,
                    PdnResources.GetString("MoveTool.HelpText"), // "Click and drag to move a selected region",
                    'm')
@@ -611,10 +620,10 @@ namespace PaintDotNet
             if (context.lifted)
             {
                 bool oldHQ = this.highQuality;
-                this.highQuality = true;
+                this.highQuality = false;
                 Render(context.offset, true);
                 ClearSavedMemory();
-                this.highQuality = false;
+                this.highQuality = oldHQ;
             }
             else
             {
@@ -623,6 +632,19 @@ namespace PaintDotNet
             }
 
             this.dontDrop = false;
+        }
+
+        protected override void OnFinishedHistoryStepGroup()
+        {
+            if (context.lifted)
+            {
+                bool oldHQ = this.highQuality;
+                this.highQuality = true;
+                Render(context.offset, true, false);
+                this.highQuality = oldHQ;
+            }
+
+            base.OnFinishedHistoryStepGroup();
         }
     }
 }

@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
@@ -22,11 +23,11 @@ namespace PaintDotNet
     public class ImportFromFileAction
         : DocumentAction
     {
-        private void Rollback(ArrayList historyActions)
+        private void Rollback(List<HistoryAction> historyActions)
         {
             for (int i = historyActions.Count - 1; i >= 0; i--)
             {
-                HistoryAction ha = (HistoryAction)historyActions[i];
+                HistoryAction ha = historyActions[i];
                 ha.PerformUndo();
             }
         }
@@ -105,7 +106,7 @@ namespace PaintDotNet
         private HistoryAction ImportOneLayer(BitmapLayer layer)
         {
             HistoryAction retHA;
-            ArrayList historyActions = new ArrayList();
+            List<HistoryAction> historyActions = new List<HistoryAction>();
             bool success = true;
             
             if (success)
@@ -176,7 +177,7 @@ namespace PaintDotNet
 
             if (success)
             {
-                HistoryAction[] has = (HistoryAction[])historyActions.ToArray(typeof(HistoryAction));
+                HistoryAction[] has = historyActions.ToArray();
                 retHA = new CompoundHistoryAction(string.Empty, null, has);
             }
             else
@@ -198,7 +199,7 @@ namespace PaintDotNet
         /// </remarks>
         private HistoryAction ImportDocument(Document document, out Rectangle lastLayerBounds)
         {
-            ArrayList historyActions = new ArrayList();
+            List<HistoryAction> historyActions = new List<HistoryAction>();
             bool[] selected;
 
             if (document.Layers.Count == 1)
@@ -228,13 +229,13 @@ namespace PaintDotNet
 
             if (selected != null)
             {
-                ArrayList layers = new ArrayList();
+                List<Layer> layers = new List<Layer>();
 
                 for (int i = 0; i < selected.Length; ++i)
                 {
                     if (selected[i])
                     {
-                        layers.Add(document.Layers[i]);
+                        layers.Add((Layer)document.Layers[i]);
                     }
                 }
 
@@ -272,7 +273,7 @@ namespace PaintDotNet
 
             if (historyActions.Count > 0)
             {
-                HistoryAction[] has = (HistoryAction[])historyActions.ToArray(typeof(HistoryAction));
+                HistoryAction[] has = historyActions.ToArray();
                 return new CompoundHistoryAction(string.Empty, null, has);
             }
             else
@@ -311,7 +312,7 @@ namespace PaintDotNet
         public HistoryAction ImportMultipleFiles(string[] fileNames)
         {
             HistoryAction retHA = null;
-            ArrayList historyActions = new ArrayList();
+            List<HistoryAction> historyActions = new List<HistoryAction>();
             Rectangle lastLayerBounds = Rectangle.Empty;
 
             foreach (string fileName in fileNames)
@@ -343,7 +344,7 @@ namespace PaintDotNet
 
             if (historyActions.Count > 0)
             {
-                HistoryAction[] haArray = (HistoryAction[])historyActions.ToArray(typeof(HistoryAction));
+                HistoryAction[] haArray = historyActions.ToArray();
                 retHA = new CompoundHistoryAction(this.Name, StaticImage, haArray);
             }
 
@@ -383,7 +384,7 @@ namespace PaintDotNet
         {
             get
             {
-                return PdnResources.GetImage("Icons.MenuLayersImportFromFileIcon.bmp");
+                return PdnResources.GetImage("Icons.MenuLayersImportFromFileIcon.png");
             }
         }
 

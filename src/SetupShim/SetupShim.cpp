@@ -15,37 +15,21 @@
 // .NET FX detection code from: http://blogs.msdn.com/astebner/archive/2004/09/18/231253.aspx
 //              which links to: http://astebner.sts.winisp.net/Tools/detectFX.cpp.txt
 
-const TCHAR *g_szNetfx11RegKeyName = _T("Software\\Microsoft\\NET Framework Setup\\NDP\\v1.1.4322");
 const TCHAR *g_szNetfx20RegKeyName = _T("Software\\Microsoft\\NET Framework Setup\\NDP\\v2.0.50727");
 const TCHAR *g_szNetfxRegValueName = _T("Install");
 const TCHAR *g_szNetfxSPxRegValueName = _T("SP");
 
 const TCHAR *g_szMessageBoxTitle = _T("Paint.NET");
 
-const TCHAR *g_szNetfx20ButNoNetfx11Text =
-    _T("[English] Setup has detected that the .NET Framework 2.0 is installed. "
-                 "However, Paint.NET requires the .NET Framework 1.1. "
-                 "Note that both of these may be installed at the same time without loss "
-                 "of functionality, and that they are designed to operate together in this manner. "
-                 "A future release of Paint.NET, planned for mid-January 2006, will have support "
-                 "for the .NET Framework 2.0, as well as full 64-bit support.\n"
-                 "\n"
-                 "Click OK to go to Microsoft's webpage where you may download and install the .NET Framework 1.1.\n"
+const TCHAR *g_szNetfx20FoundText = 
+    _T("[English] Paint.NET must first install the .NET Framework 2.0. On some systems this may take 10-20 minutes, during which it is safe to use your computer for other tasks.\n"
        "\n"
-       "[Deutsch] Auf ihrem Computer ist das .NET Framework 2.0 installiert. "
-	   "Paint.NET benötigt jedoch das .NET Framework 1.1. "
-	   "Bitte beachten sie, dass beide Versionen ohne Beeinträchtigung der Funktionalität "
-	   "gleichzeitig auf einem Computer installiert sein können und dies sogar ausdrücklich vorgesehen ist. "
-	   "Die für Mitte Januar 2006 geplante Version von Paint.NET wird schließlich sowohl auf "
-	   "dem .NET Framework 2.0 lauffähig sein als auch 64-bit Plattformen unterstützen.\n"
-	   "\n"
-	   "Klicken sie bitte auf \"OK\" um auf die Microsoft Website weitergeleitet zu werden, "
-	   "von der sie das .NET Framework 1.1 downloaden und installieren können.");
+       "[Deutsch] Vor Paint.NET muss zuerst das .NET Framework 2.0 installiert werden. Auf einigen Systemen kann dies 10-20 Minuten dauern. Sie können in dieser Zeit den Computer problemlos weiterverwenden.");
 
-const TCHAR *g_szNetfx11NotFoundText = 
-    _T("[English] Paint.NET requires that the .NET Framework 1.1 is installed. Click OK to go to Microsoft's webpage where you may download and install this.\n"
+const TCHAR *g_szNetfx20NotFoundText = 
+    _T("[English] Paint.NET requires that the .NET Framework 2.0 is installed. Click OK to go to Microsoft's webpage where you may download and install this.\n"
        "\n"
-       "[Deutsch] Paint.NET setzt die Installation des .NET Frameworks 1.1 voraus. Klicken sie auf OK um die Microsoft Homepage zu öffnen und das Framework zu downloaden.");
+       "[Deutsch] Paint.NET setzt die Installation des .NET Frameworks 2.0 voraus. Klicken sie auf OK um die Microsoft Homepage zu öffnen und das Framework zu downloaden.");
 
 const TCHAR *g_szNetfxInstallFailureTextFormat =
     _T("[English] Installation of the .NET Framework failed with the following error code: %d\n"
@@ -60,10 +44,14 @@ const TCHAR *g_szNetfxInstallRebootRequired =
        "\n"
        "[Deutsch] Sie müssen ihren Computer nun neu starten bevor sie mit der Installation von Paint.NET fortfahren können.");
 
-const TCHAR *g_szNetfx11DownloadUrl = _T("http://go.microsoft.com/fwlink/?LinkId=17153");
-const TCHAR *g_szNetfxInstallerFileName = _T("dotnetfx.exe");
-const TCHAR *g_szNetfxSP1InstallerFileName = _T("NDP1.1sp1-KB867460-X86.exe");
-const TCHAR *g_szNetfxSP12k3x86InstallerFileName = _T("WindowsServer2003-KB867460-x86-ENU.EXE");
+const TCHAR *g_szNetfx20x86DownloadUrl = _T("http://www.microsoft.com/downloads/details.aspx?FamilyID=0856eacb-4362-4b0d-8edd-aab15c5e04f5");
+const TCHAR *g_szNetfx20x64DownloadUrl = _T("http://www.microsoft.com/downloads/details.aspx?FamilyID=b44a0000-acf8-4fa1-affb-40e78d788b00");
+const TCHAR *g_szNetfx20IA64DownloadUrl = _T("http://www.microsoft.com/downloads/details.aspx?familyid=53C2548B-BEC7-4AB4-8CBE-33E07CFC83A7");
+const TCHAR *g_szNetfx20DispatchDownloadUrl = _T("http://msdn.microsoft.com/netframework/downloads/updates/default.aspx");
+
+const TCHAR *g_szNetfx20x86InstallerFileName = _T("x86\\install.exe");
+const TCHAR *g_szNetfx20x64InstallerFileName = _T("x64\\install.exe");
+const TCHAR *g_szNetfx20IA64InstallerFileName = _T("ia64\\install.exe");
 
 const TCHAR *g_szPdnInstallerFileName = _T("SetupFrontEnd.exe");
 
@@ -89,22 +77,6 @@ BOOL RegistryGetValue(HKEY hk, const TCHAR* pszKey, const TCHAR* pszValue,
     RegCloseKey(hkOpened);
 
     return true;
-}
-
-bool IsNetfx11Installed()
-{
-    bool bRetValue = false;
-    DWORD dwRegValue = 0;
-
-    if (RegistryGetValue(HKEY_LOCAL_MACHINE, g_szNetfx11RegKeyName, g_szNetfxRegValueName, NULL, (LPBYTE)&dwRegValue, sizeof(DWORD)))
-    {
-        if (1 == dwRegValue)
-        {
-            bRetValue = true;
-        }
-    }
-
-    return bRetValue;
 }
 
 bool IsNetfx20Installed()
@@ -185,26 +157,32 @@ DWORD OurShellExecute(const TCHAR* pszFileName, const TCHAR* pszParameters, bool
 }
 
 typedef BOOL (* IsWow64ProcessFnPtr)(HANDLE hProcess, PBOOL Wow64Process);
+typedef void (* GetSystemInfoFnPtr)(LPSYSTEM_INFO lpSystemInfo);
 
-BOOL IsWindowsX64(void)
+WORD GetProcessorArchitecture(void)
 {
     HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
 
-    IsWow64ProcessFnPtr iwpfp = NULL;
+    GetSystemInfoFnPtr gsifp = NULL;
+
     if (NULL != hKernel32)
     {
-        iwpfp = (IsWow64ProcessFnPtr)GetProcAddress(hKernel32, _T("IsWow64Process"));
+        gsifp = (GetSystemInfoFnPtr)GetProcAddress(hKernel32, _T("GetNativeSystemInfo"));
     }
 
-    BOOL bIsWow64 = FALSE;
-    if (NULL != iwpfp)
+    if (NULL == gsifp)
     {
-        BOOL bResult = iwpfp(GetCurrentProcess(), &bIsWow64);
+        gsifp = (GetSystemInfoFnPtr)GetProcAddress(hKernel32, _T("GetSystemInfo"));
+    }
 
-        if (!bResult)
-        {
-            bIsWow64 = FALSE;
-        }
+    WORD wPA = PROCESSOR_ARCHITECTURE_UNKNOWN;
+
+    if (NULL != gsifp)
+    {
+        SYSTEM_INFO sysInfo;
+        ZeroMemory(&sysInfo, sizeof(sysInfo));
+        gsifp(&sysInfo);
+        wPA = sysInfo.wProcessorArchitecture;
     }
 
     if (NULL != hKernel32)
@@ -213,22 +191,7 @@ BOOL IsWindowsX64(void)
         hKernel32 = NULL;
     }
 
-    return bIsWow64;
-}
-
-BOOL IsWindows2k3(void)
-{
-    OSVERSIONINFO ovi;
-    ZeroMemory(&ovi, sizeof(ovi));
-    ovi.dwOSVersionInfoSize = sizeof(ovi);
-    BOOL bResult = ::GetVersionEx(&ovi);
-
-    if (!bResult)
-    {
-        return FALSE;
-    }
-
-    return (5 == ovi.dwMajorVersion && 2 == ovi.dwMinorVersion);
+    return wPA;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -236,63 +199,68 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     int nReturnVal;
 
     // Stage 1: Figure out the situation with the installation of .NET
-    if (IsNetfx11Installed())
+    if (IsNetfx20Installed())
     {
         // .NET's already installed, our job is done!
         nReturnVal = 0;
     }
     else
     {
-        // .NET 1.1 is not installed.
-        if (FileExists(g_szNetfxInstallerFileName))
+        const TCHAR* szNetfxInstallerFileName;
+        const TCHAR* szNetfxDownloadUrl;
+
+        WORD wCpu = GetProcessorArchitecture();
+
+        switch (wCpu)
         {
+            case PROCESSOR_ARCHITECTURE_INTEL:
+                szNetfxInstallerFileName = g_szNetfx20x86InstallerFileName;
+                szNetfxDownloadUrl = g_szNetfx20x86DownloadUrl;
+                break;
+
+            case PROCESSOR_ARCHITECTURE_AMD64:
+                szNetfxInstallerFileName = g_szNetfx20x64InstallerFileName;
+                szNetfxDownloadUrl = g_szNetfx20x64DownloadUrl;
+                break;
+
+            case PROCESSOR_ARCHITECTURE_IA64:
+                szNetfxInstallerFileName = g_szNetfx20IA64InstallerFileName;
+                szNetfxDownloadUrl = g_szNetfx20IA64DownloadUrl;
+                break;
+
+            default:
+                szNetfxInstallerFileName = NULL;
+                szNetfxDownloadUrl = g_szNetfx20DispatchDownloadUrl;
+                break;
+        }
+
+        // .NET 2.0 is not installed. But if we have the installer in front of us,
+        // then try to install it!
+        if (NULL != szNetfxInstallerFileName && FileExists(szNetfxInstallerFileName))
+        {
+            // First, tell the user what we're about to do.
+            MessageBox(NULL, g_szNetfx20FoundText, g_szMessageBoxTitle, MB_OK | MB_ICONINFORMATION);
+
             // .NET installer is present, so let's try and install it
-            DWORD dwResult = OurShellExecute(g_szNetfxInstallerFileName, NULL, true);
+            DWORD dwResult = OurShellExecute(szNetfxInstallerFileName, NULL, true);
 
             switch (dwResult)
             {
                 // Success
                 case 0:    
                     nReturnVal = 0;
-
-                    // Now we should try to install .NET 1.1 SP1.
-                    // However, Windows Server 2003 (x86) requires a different redist, so we
-                    // must check for that and act appropriately.
-                    BOOL bIsWin2k3;
-                    bIsWin2k3 = IsWindows2k3();
-
-                    BOOL bIsX64;
-                    bIsX64 = IsWindowsX64();
-
-                    const TCHAR *szSP1InstallerName;
-                    const TCHAR *szArgs;
-
-                    if (bIsWin2k3 && !bIsX64)
-                    {
-                        szSP1InstallerName = g_szNetfxSP12k3x86InstallerFileName;
-                        szArgs = _T("/passive");
-                    }
-                    else
-                    {
-                        szSP1InstallerName = g_szNetfxSP1InstallerFileName;
-                        szArgs = _T("/I");
-                    }
-
-                    if (FileExists(szSP1InstallerName))
-                    {
-                        DWORD dwResult = OurShellExecute(szSP1InstallerName, szArgs, true);
-
-                        if (0 != dwResult)
-                        {
-                            nReturnVal = 1;
-                        }
-                    }
-
                     break;
 
                 // Reboot required
                 case 8192: 
-                    MessageBox(NULL, g_szNetfxInstallRebootRequired, g_szMessageBoxTitle, MB_OK | MB_ICONINFORMATION);
+                    MessageBox(NULL, g_szNetfxInstallRebootRequired, g_szMessageBoxTitle, 
+                        MB_OK | MB_ICONINFORMATION);
+
+                    nReturnVal = 1;
+                    break;
+
+                // They cancelled. No sense in putting up another error message.
+                case 1602:
                     nReturnVal = 1;
                     break;
 
@@ -300,6 +268,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 default:   
                     {
                         TCHAR szErrorText[1024];
+
                         HRESULT hr = StringCchPrintf(
                             szErrorText, 
                             sizeof(szErrorText) / sizeof(szErrorText[0]), 
@@ -319,19 +288,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
         else
         {
-            const TCHAR* szText = g_szNetfx11NotFoundText;
-
-            if (IsNetfx20Installed())
-            {
-                szText = g_szNetfx20ButNoNetfx11Text;
-            }
-
             // .NET not installed, and the installer isn't around. Ask them to go to a website in order to install it.
-            int nResult = MessageBox(NULL, szText, g_szMessageBoxTitle, MB_OKCANCEL | MB_ICONERROR);
+            int nResult = MessageBox(NULL, g_szNetfx20NotFoundText, g_szMessageBoxTitle, 
+                MB_OKCANCEL | MB_ICONERROR);
 
             if (IDOK == nResult)
             {
-                OurShellExecute(g_szNetfx11DownloadUrl, NULL, false);
+                OurShellExecute(szNetfxDownloadUrl, NULL, false);
             }
 
             nReturnVal = 1;

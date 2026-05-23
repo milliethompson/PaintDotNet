@@ -36,7 +36,7 @@ namespace PaintDotNet.Setup
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            string appName = PdnResources.GetString("Application.ProductName.WithTag");
+            string appName = PdnInfo.GetProductName();
             string introFormat = PdnResources.GetString("SetupWizard.InstallDirPage.IntroText.Text.Format");
             this.introText.Text = string.Format(introFormat, appName);
             this.folderLabel.Text = PdnResources.GetString("SetupWizard.InstallDirPage.FolderLabel.Text");
@@ -51,9 +51,14 @@ namespace PaintDotNet.Setup
 
                 string targetDir = WizardHost.GetMsiProperty(PropertyNames.TargetDir, null);
                 this.targetDirTextBox.Text = targetDir;
+                this.targetDirTextBox.ForeColor = WizardHost.TextColor;
 
                 this.introText.Font = WizardHost.NormalTextFont;
+                this.introText.ForeColor = WizardHost.TextColor;
+
                 this.folderLabel.Font = WizardHost.NormalTextFont;
+                this.folderLabel.ForeColor = WizardHost.TextColor;
+
                 this.browseButton.Font = WizardHost.NormalTextFont;
             }
 
@@ -77,7 +82,7 @@ namespace PaintDotNet.Setup
                 catch
                 {
                     ok = false;
-                    string title = PdnResources.GetString("Application.ProductName.WithTag");
+                    string title = PdnInfo.GetProductName();
                     string message = PdnResources.GetString("SetupWizard.InstallDirPage.BadDirError.Message");
                     MessageBox.Show(this, message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
@@ -124,7 +129,6 @@ namespace PaintDotNet.Setup
             // 
             // introText
             // 
-            this.introText.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.introText.Location = new System.Drawing.Point(12, 6);
             this.introText.Name = "introText";
             this.introText.Size = new System.Drawing.Size(468, 54);
@@ -133,7 +137,6 @@ namespace PaintDotNet.Setup
             // 
             // folderLabel
             // 
-            this.folderLabel.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.folderLabel.Location = new System.Drawing.Point(12, 84);
             this.folderLabel.Name = "folderLabel";
             this.folderLabel.Size = new System.Drawing.Size(256, 16);
@@ -142,7 +145,7 @@ namespace PaintDotNet.Setup
             // 
             // targetDirTextBox
             // 
-            this.targetDirTextBox.Location = new System.Drawing.Point(12, 102);
+            this.targetDirTextBox.Location = new System.Drawing.Point(15, 102);
             this.targetDirTextBox.Name = "targetDirTextBox";
             this.targetDirTextBox.Size = new System.Drawing.Size(344, 20);
             this.targetDirTextBox.TabIndex = 2;
@@ -150,13 +153,13 @@ namespace PaintDotNet.Setup
             // 
             // browseButton
             // 
-            this.browseButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.browseButton.Location = new System.Drawing.Point(372, 100);
             this.browseButton.Name = "browseButton";
             this.browseButton.Size = new System.Drawing.Size(108, 23);
             this.browseButton.TabIndex = 3;
             this.browseButton.Text = "button1";
             this.browseButton.Click += new System.EventHandler(this.browseButton_Click);
+            this.browseButton.FlatStyle = FlatStyle.System;
             // 
             // InstallDirPage
             // 
@@ -164,6 +167,8 @@ namespace PaintDotNet.Setup
             this.Controls.Add(this.targetDirTextBox);
             this.Controls.Add(this.folderLabel);
             this.Controls.Add(this.introText);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             this.Name = "InstallDirPage";
             this.ResumeLayout(false);
 

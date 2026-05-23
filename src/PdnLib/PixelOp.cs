@@ -20,9 +20,20 @@ namespace PaintDotNet
     public unsafe abstract class PixelOp
         : IPixelOp
     {
-        protected static byte ComputeAlpha(byte a1, byte a2)
+        /// <summary>
+        /// Computes alpha for r OVER l operation.
+        /// </summary>
+        public static byte ComputeAlpha(byte la, byte ra)
         {
-            return (byte)(255 - (((255 - a1) * (256 - a2)) / 256));
+            return (byte)(((la * (256 - (ra + (ra >> 7)))) >> 8) + ra);
+        }
+
+        public void Apply(Surface dst, Surface src, Rectangle[] rois, int startIndex, int length)
+        {
+            for (int i = startIndex; i < startIndex + length; ++i)
+            {
+                ApplyBase(dst, rois[i].Location, src, rois[i].Location, rois[i].Size);
+            }
         }
 
         public void Apply(Surface dst, Point dstOffset, Surface src, Point srcOffset, Size roiSize)
@@ -93,8 +104,7 @@ namespace PaintDotNet
             Apply(dst.GetPointAddress(dstOffset), src.GetPointAddress(srcOffset), scanLength);
         }
 
-        [CLSCompliant(false)]
-        protected virtual void Apply(ColorBgra *dst, ColorBgra *src, int length)
+        public virtual void Apply(ColorBgra *dst, ColorBgra *src, int length)
         {
             throw new System.NotImplementedException("Derived class must implement Apply(ColorBgra*,ColorBgra*,int)");
         }

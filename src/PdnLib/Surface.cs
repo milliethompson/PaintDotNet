@@ -261,7 +261,6 @@ namespace PaintDotNet
         /// <param name="y">The row</param>
         /// <returns>A pointer that references (0,y) in this surface.</returns>
         /// <remarks>Since this returns a pointer, it is potentially unsafe to use.</remarks>
-        [CLSCompliant(false)]
         public unsafe ColorBgra *GetRowAddress(int y)
         {
             return (ColorBgra *)(((byte *)scan0.VoidStar) + GetRowByteOffset(y));
@@ -276,7 +275,6 @@ namespace PaintDotNet
         /// This method does not do any bounds checking and is potentially unsafe to use,
         /// but faster than GetRowAddress().
         /// </remarks>
-        [CLSCompliant(false)]
         public unsafe ColorBgra *GetRowAddressUnchecked(int y)
         {
             return (ColorBgra *)(((byte *)scan0.VoidStar) + GetRowByteOffsetUnchecked(y));
@@ -368,7 +366,6 @@ namespace PaintDotNet
         /// This method does not do any bounds checking and is potentially unsafe to use,
         /// but faster than GetPoint().
         /// </remarks>
-        [CLSCompliant(false)]
         public unsafe ColorBgra GetPointUnchecked(int x, int y)
         {
             return *(x + (ColorBgra *)(((byte *)scan0.VoidStar) + (y * stride)));
@@ -383,7 +380,6 @@ namespace PaintDotNet
         /// This method does not do any bounds checking and is potentially unsafe to use,
         /// but faster than GetPoint().
         /// </remarks>
-        [CLSCompliant(false)]
         public unsafe ColorBgra GetPointUnchecked(Point pt)
         {
             return GetPointUnchecked(pt.X, pt.Y);
@@ -396,7 +392,6 @@ namespace PaintDotNet
         /// <param name="y">The y offset.</param>
         /// <returns>A pointer to the requested point in the surface.</returns>
         /// <remarks>Since this method returns a pointer, it is potentially unsafe to use.</remarks>
-        [CLSCompliant(false)]
         public unsafe ColorBgra *GetPointAddress(int x, int y)
         {
             if (x < 0 || x >= Width)
@@ -413,7 +408,6 @@ namespace PaintDotNet
         /// <param name="pt">The point to retrieve.</param>
         /// <returns>A pointer to the requested point in the surface.</returns>
         /// <remarks>Since this method returns a pointer, it is potentially unsafe to use.</remarks>
-        [CLSCompliant(false)]
         public unsafe ColorBgra *GetPointAddress(Point pt)
         {
             return GetPointAddress(pt.X, pt.Y);
@@ -429,7 +423,6 @@ namespace PaintDotNet
         /// This method does not do any bounds checking and is potentially unsafe to use,
         /// but faster than GetPointAddress().
         /// </remarks>
-        [CLSCompliant(false)]
         public unsafe ColorBgra *GetPointAddressUnchecked(int x, int y)
         {
             return unchecked(x + (ColorBgra *)(((byte *)scan0.VoidStar) + (y * stride)));
@@ -444,7 +437,6 @@ namespace PaintDotNet
         /// This method does not do any bounds checking and is potentially unsafe to use,
         /// but faster than GetPointAddress().
         /// </remarks>
-        [CLSCompliant(false)]
         public unsafe ColorBgra *GetPointAddressUnchecked(Point pt)
         {
             return GetPointAddressUnchecked(pt.X, pt.Y);
@@ -459,6 +451,15 @@ namespace PaintDotNet
         public MemoryBlock GetRow(int y)
         {
             return new MemoryBlock(scan0, GetRowByteOffset(y), (long)width * (long)ColorBgra.SizeOf);
+        }
+
+        public bool IsContiguousMemoryRegion(Rectangle bounds)
+        {
+            bool oneRow = (bounds.Height == 1);
+            bool manyRows = (this.Stride == (this.Width * ColorBgra.SizeOf) && 
+                this.Width == bounds.Width);
+
+            return oneRow || manyRows;
         }
 
         /// <summary>
@@ -692,36 +693,6 @@ namespace PaintDotNet
             return ColorBgra.FromUInt32(0);
         }
         */
-
-        /// <summary>
-        /// Gets a sample of the image at the requested coordinates using bilinear interpolation. You may specify
-        /// coordinates that are outside the boundaries of the image, and they will be wrapped. Requesting the
-        /// pixel at (width + m, height + n) will yield the pixel at (m, n), and requesting the pixel at (-m, -n)
-        /// will yield the pixel at (width - 1 - m, height - 1 - n).
-        /// </summary>
-        /// <param name="x">The x offset. If this value is outside of the surface's boundaries, it will be wrapped (not clamped).</param>
-        /// <param name="y">The y offset. If this value is outside of the surface's boundaries, it will be wrapped (not clamped).</param>
-        /// <returns>A color value that approximates the image's color value at the requested point.</returns>
-        /// <remarks>This method is meant for rapid prototyping or development, and is slow.</remarks>
-        [Obsolete]
-        public ColorBgra GetPointSample(double x, double y)
-        {
-            int ix = (int)x;
-            int iy = (int)y;
-            int w = this.width;
-            int h = this.height;
-            double fx = x - ix;
-            double fy = y - iy;
-
-            // take care of negative #s
-            ix = ((ix % w) + w) % w;
-            iy = ((iy % h) + h) % h;
-
-            ColorBgra top = ColorBgra.Lerp(this[ix % w, iy % h], this[(ix + 1) % w, iy % h], fx);
-            ColorBgra bot = ColorBgra.Lerp(this[ix % w, (iy + 1) % h], this[(ix + 1) % w, (iy + 1) % h], fx);
-
-            return ColorBgra.Lerp(top, bot, fy);
-        }
 
         public ColorBgra GetBilinearSample(float x, float y, bool wrap)
         {
@@ -1319,6 +1290,53 @@ namespace PaintDotNet
             }
         }
 
+        /// <summary>
+        /// Copies a region of the given surface to this surface.
+        /// </summary>
+        /// <param name="source">The surface to copy pixels from.</param>
+        /// <param name="region">The region to clip copying to.</param>
+        /// <remarks>
+        /// The upper left corner of the source surface will be mapped to the upper left of this
+        /// surface, and only those pixels that are defined by the region will be copied.
+        /// The source surface does not need to have the same dimensions as this surface. Clipping
+        /// will be handled automatically. No resizing will be done.
+        /// </remarks>
+        public void CopySurface(Surface source, Rectangle[] region, int startIndex, int length)
+        {
+            if (disposed)
+            {
+                throw new ObjectDisposedException("Surface");
+            }
+
+            for (int i = startIndex; i < startIndex + length; ++i)
+            {
+                Rectangle rect = region[i];
+
+                rect.Intersect(this.Bounds);
+                rect.Intersect(source.Bounds);
+
+                if (rect.Width == 0 || rect.Height == 0)
+                {
+                    continue;
+                }
+
+                unsafe
+                {
+                    for (int y = rect.Top; y < rect.Bottom; ++y)
+                    {
+                        ColorBgra* dst = this.GetPointAddressUnchecked(rect.Left, y);
+                        ColorBgra* src = source.GetPointAddressUnchecked(rect.Left, y);
+                        Memory.Copy(dst, src, (ulong)rect.Width * (ulong)ColorBgra.SizeOf);
+                    }
+                }
+            }
+        }
+
+        public void CopySurface(Surface source, Rectangle[] region)
+        {
+            CopySurface(source, region, 0, region.Length);
+        }
+
         object ICloneable.Clone()
         {
             return Clone();
@@ -1338,15 +1356,6 @@ namespace PaintDotNet
             Surface ret = new Surface(this.Size);
             ret.CopySurface(this);
             return ret;
-        }
-
-        /// <summary>
-        /// Provides the same functionality as Clone().
-        /// </summary>
-        [Obsolete]
-        public Surface CopyContents()
-        {
-            return Clone();
         }
 
         /// <summary>
@@ -1710,8 +1719,7 @@ namespace PaintDotNet
                     }
 
                     // Set this up so we can cache the R()'s for every row
-                    IntPtr rRowCacheIP = Memory.Allocate(4 * sizeof(float));
-                    float *rRowCache = (float *)rRowCacheIP.ToPointer();
+                    float *rRowCache = stackalloc float[4];
                 
                     for (int dstY = roi.Top; dstY < roi.Bottom; ++dstY)
                     {
@@ -1797,7 +1805,6 @@ namespace PaintDotNet
                         } // for (dstX...
                     } // for (dstY...
 
-                    Memory.Free(rRowCacheIP);
                     Memory.Free(rColCacheIP);
                 } // unsafe
             }
@@ -1839,8 +1846,7 @@ namespace PaintDotNet
                     }
 
                     // Set this up so we can cache the R()'s for every row
-                    IntPtr rRowCacheIP = Memory.Allocate(4 * sizeof(float));
-                    float *rRowCache = (float *)rRowCacheIP.ToPointer();
+                    float *rRowCache = stackalloc float[4];
                 
                     for (int dstY = roi.Top; dstY < roi.Bottom; ++dstY)
                     {
@@ -1907,7 +1913,6 @@ namespace PaintDotNet
                         } // for (dstX...
                     } // for (dstY...
 
-                    Memory.Free(rRowCacheIP);
                     Memory.Free(rColCacheIP);
                 } // unsafe
             }

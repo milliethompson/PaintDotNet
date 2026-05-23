@@ -91,18 +91,5 @@ namespace PaintDotNet
             this.hotKey = hotKey;
             this.toolType = toolType;
         }
-
-        [Obsolete]
-        public ToolInfo(DocumentWorkspace workspace, Type toolType)
-        {
-            using (Tool tool = Tool.CreateTool(toolType, workspace))
-            {
-                this.name = tool.Name;
-                this.helpText = tool.HelpText;
-                this.image = (Image)tool.Image.Clone();
-                this.hotKey = tool.HotKey;
-                this.toolType = toolType;
-            }
-        }
     }
 }

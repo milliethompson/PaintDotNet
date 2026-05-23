@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -18,16 +19,13 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for PaintBrushTool.
-    /// </summary>
     public class PaintBrushTool
         : Tool 
     {
         private bool mouseDown;
         private Brush brush;
         private MouseButtons mouseButton;
-        private ArrayList savedSurfaces;
+        private List<Rectangle> savedRects;
         private PointF lastMouseXY;
         private PointF lastNorm;
         private PointF lastDir;
@@ -61,20 +59,11 @@ namespace PaintDotNet
         {
             base.OnActivate();
 
-            // separate cursor assignements
             cursorMouseUp = new Cursor(PdnResources.GetResourceStream("Cursors.PaintBrushToolCursor.cur"));
             cursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.PaintBrushToolCursorMouseDown.cur"));
             Cursor = cursorMouseUp;
             
-            if (savedSurfaces != null)
-            {
-                foreach (PlacedSurface ps in savedSurfaces)
-                {
-                    ps.Dispose();
-                }
-            }
-
-            savedSurfaces = new ArrayList();
+            this.savedRects = new List<Rectangle>();
 
             if (Workspace.ActiveLayer != null)
             {
@@ -104,19 +93,7 @@ namespace PaintDotNet
             this.previewRenderer.Dispose();
             this.previewRenderer = null;
 
-            if (savedSurfaces != null)
-            {
-                if (savedSurfaces != null)
-                {
-                    foreach (PlacedSurface ps in savedSurfaces)
-                    {
-                        ps.Dispose();
-                    }
-                }
-
-                savedSurfaces.Clear();
-                savedSurfaces = null;
-            }
+            this.savedRects = null;
 
             if (renderArgs != null)
             {
@@ -154,6 +131,8 @@ namespace PaintDotNet
             {
                 return;
             }
+
+            ClearSavedMemory();
 
             this.previewRenderer.Visible = false;
 
@@ -206,7 +185,7 @@ namespace PaintDotNet
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            if (e.Button != MouseButtons.None) 
+            if (this.mouseDown && e.Button != MouseButtons.None) 
             {
                 // This is done so that if drawing falls behind due to a
                 // large queue of stylus inputs, it won't do any updates
@@ -270,13 +249,10 @@ namespace PaintDotNet
                 RectangleF saveRect = RectangleF.Union(
                     dotRect,
                     RectangleF.Union(
-                    Utility.PointsToRectangle(poly[0], poly[1]),
-                    Utility.PointsToRectangle(poly[2], poly[3])));
+                        Utility.PointsToRectangle(poly[0], poly[1]),
+                        Utility.PointsToRectangle(poly[2], poly[3])));
 
-                //if (renderArgs.Graphics.SmoothingMode == SmoothingMode.AntiAlias)
-                {
-                    saveRect.Inflate(2.0f, 2.0f);
-                }
+                saveRect.Inflate(2.0f, 2.0f); // account for anti-aliasing
 
                 saveRect.Intersect(Workspace.ActiveLayer.Bounds);
 
@@ -285,27 +261,31 @@ namespace PaintDotNet
                 if (saveRect.Width > 0 && saveRect.Height > 0 && renderArgs.Graphics.IsVisible(saveRect))
                 {
                     Rectangle saveRectRounded = Utility.RoundRectangle(saveRect);
+                    saveRectRounded.Intersect(Workspace.ActiveLayer.Bounds);
 
-                    PlacedSurface savedPS = new PlacedSurface(renderArgs.Surface, saveRectRounded);
-                    savedSurfaces.Add(savedPS);
-
-                    if (Workspace.Environment.AntiAliasing)
+                    if (saveRectRounded.Width > 0 && saveRectRounded.Height > 0)
                     {
-                        renderArgs.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                    }
-                    else
-                    {
-                        renderArgs.Graphics.SmoothingMode = SmoothingMode.None;
-                    }
+                        SaveRegion(null, saveRectRounded);
+                        this.savedRects.Add(saveRectRounded);
 
-                    renderArgs.Graphics.CompositingMode = Workspace.Environment.GetCompositingMode();
+                        if (Workspace.Environment.AntiAliasing)
+                        {
+                            renderArgs.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        }
+                        else
+                        {
+                            renderArgs.Graphics.SmoothingMode = SmoothingMode.None;
+                        }
 
-                    renderArgs.Graphics.FillEllipse(brush, dotRect);
+                        renderArgs.Graphics.CompositingMode = Workspace.Environment.GetCompositingMode();
 
-                    // bail out early if we haven't moved. If we don't bail out, we'll get a 0-distance move, which will result in a div-by-0
-                    if (lastMouseXY != currMouseXY)
-                    {
-                        renderArgs.Graphics.FillPolygon(brush, poly, FillMode.Winding);
+                        renderArgs.Graphics.FillEllipse(brush, dotRect);
+
+                        // bail out early if the mouse hasn't even moved. If we don't bail out, we'll get a 0-distance move, which will result in a div-by-0
+                        if (lastMouseXY != currMouseXY)
+                        {
+                            renderArgs.Graphics.FillPolygon(brush, poly, FillMode.Winding);
+                        }
                     }
 
                     bitmapLayer.Invalidate(saveRectRounded);
@@ -336,35 +316,14 @@ namespace PaintDotNet
                 this.previewRenderer.Visible = true;
                 mouseDown = false;
 
-                if (savedSurfaces.Count > 0)
+                if (this.savedRects.Count > 0)
                 {
-                    PdnRegion saveMeRegion = new PdnRegion();
-                    saveMeRegion.MakeEmpty();
-
-                    foreach (PlacedSurface pi1 in savedSurfaces)
-                    {
-                        saveMeRegion.Union(pi1.Bounds);
-                    }
-
-                    using (PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(saveMeRegion))
-                    {
-                        using (IrregularSurface weDrewThis = new IrregularSurface(renderArgs.Surface, simplifiedRegion))
-                        {
-                            for (int i = savedSurfaces.Count - 1; i >= 0; --i)
-                            {
-                                PlacedSurface ps = (PlacedSurface)savedSurfaces[i];
-                                ps.Draw(renderArgs.Surface);
-                                ps.Dispose();
-                            }
-
-                            savedSurfaces.Clear();
-
-                            HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, simplifiedRegion);
-                            weDrewThis.Draw(bitmapLayer.Surface);
-                            Workspace.History.PushNewAction(ha);
-                            bitmapLayer.Invalidate(simplifiedRegion);
-                        }
-                    }
+                    PdnRegion saveMeRegion = Utility.RectanglesToRegion(this.savedRects.ToArray());
+                    HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, saveMeRegion, this.ScratchSurface);
+                    Workspace.History.PushNewAction(ha);
+                    saveMeRegion.Dispose();
+                    this.savedRects.Clear();
+                    this.ClearSavedMemory();
                 }
 
                 this.brush.Dispose();
@@ -374,7 +333,7 @@ namespace PaintDotNet
 
         public PaintBrushTool(DocumentWorkspace parent)
             : base(parent,
-                   PdnResources.GetImage("Icons.PaintBrushToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.PaintBrushToolIcon.png"),
                    PdnResources.GetString("PaintBrushTool.Name"),
                    PdnResources.GetString("PaintBrushTool.HelpText"),
                    'b')

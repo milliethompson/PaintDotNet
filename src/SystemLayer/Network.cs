@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
 
@@ -121,7 +122,7 @@ namespace PaintDotNet.SystemLayer
         /// <returns>An array of WebProxy instances. A null value at any array location indicates to use no proxy.</returns>
         public static WebProxy[] GetProxyList()
         {
-            ArrayList proxies = new ArrayList();
+            List<WebProxy> proxies = new List<WebProxy>();
 
             // Get the IE-supplied proxy settings
             ProxyInfo info;
@@ -151,28 +152,10 @@ namespace PaintDotNet.SystemLayer
                 }
             }
 
-            // Get the .NET-supplied "default" proxy
-            WebProxy defaultProxy;
-
-            try
-            {
-                defaultProxy = WebProxy.GetDefaultProxy();
-            }
-
-            catch
-            {
-                defaultProxy = null;
-            }
-
-            if (defaultProxy != null)
-            {
-                proxies.Add(defaultProxy);
-            }
-
             // No proxy is the lowest priority
             proxies.Add(null);
 
-            return (WebProxy[])proxies.ToArray(typeof(WebProxy));
+            return proxies.ToArray();
         }
     }
 }

@@ -13,33 +13,6 @@
 #include "PdnGuid.h"
 #include "PdnShellExtension.h"
 
-// This is included so as to avoid using the C standard library
-// This reduces our DLL size and/or reduces our implicit import size
-int __cdecl memcmp(const void *b1, const void *b2, size_t length)
-{
-    char *c1 = (char *)b1;
-    char *c2 = (char *)b2;
-
-    while (length > 0)
-    {
-        if (*c1 > *c2)
-        {
-            return 1;
-        }
-        else
-        if (*c1 < *c2)
-        {
-            return -1;
-        }
-
-        c1++;
-        c2++;
-        length--;
-    }
-
-    return 0;
-}
-
 
 CClassFactory::CClassFactory(CLSID clsid)
 {
@@ -81,15 +54,14 @@ STDMETHODIMP CClassFactory::QueryInterface(REFIID riid, LPVOID *ppReturn)
     {
         *ppReturn = this;
     }
-    else
-    if (IsEqualCLSID (riid, IID_IClassFactory))
+    else if (IsEqualCLSID (riid, IID_IClassFactory))
     {
-        *ppReturn = (IClassFactory *) this;
+        *ppReturn = (IClassFactory *)this;
     }
 
     if (*ppReturn != NULL)
     {
-        (*(LPUNKNOWN *)ppReturn)->AddRef ();
+        (*(LPUNKNOWN *)ppReturn)->AddRef();
         TraceLeaveHr(S_OK);
         return S_OK;
     }
@@ -99,13 +71,13 @@ STDMETHODIMP CClassFactory::QueryInterface(REFIID riid, LPVOID *ppReturn)
 }
 
 
-STDMETHODIMP_(DWORD) CClassFactory::AddRef ()
+STDMETHODIMP_(DWORD) CClassFactory::AddRef()
 {
     return InterlockedIncrement(&m_lRefCount);
 }
 
 
-STDMETHODIMP_(DWORD) CClassFactory::Release ()
+STDMETHODIMP_(DWORD) CClassFactory::Release()
 {
     DWORD dwNewRC = InterlockedDecrement(&m_lRefCount);
 
@@ -116,7 +88,7 @@ STDMETHODIMP_(DWORD) CClassFactory::Release ()
     }
     else
     {
-    return dwNewRC;
+        return dwNewRC;
     }
 }
 
@@ -159,7 +131,7 @@ STDMETHODIMP CClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, voi
     if (SUCCEEDED(hr))
     {
         hr = pShellExtension->QueryInterface(riid, ppvObject);
-        pShellExtension->Release ();
+        pShellExtension->Release();
     }
 
     TraceLeaveHr(hr);
@@ -167,7 +139,7 @@ STDMETHODIMP CClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, voi
 }
 
 
-STDMETHODIMP CClassFactory::LockServer (BOOL fLock)
+STDMETHODIMP CClassFactory::LockServer(BOOL fLock)
 {
     return E_NOTIMPL;
 }

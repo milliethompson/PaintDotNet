@@ -7,6 +7,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Collections.Generic;
 
 namespace PaintDotNet.Effects
 {
@@ -14,14 +15,14 @@ namespace PaintDotNet.Effects
 	{
 		public Effect UserScriptObject;
 		public string UserCode;
-		public Exception LastException;
+		public List<Exception> LastExceptions;
 		public string ScriptName;
 
 		public CodeLabConfigToken() : base()
 		{
 			UserScriptObject = null;
 			UserCode = "";
-			LastException = null;
+            LastExceptions = new List<Exception>();
 			ScriptName = "MyScript";
 		}
 
@@ -30,7 +31,7 @@ namespace PaintDotNet.Effects
 			CodeLabConfigToken sect = new CodeLabConfigToken();
 			sect.UserCode = this.UserCode;
 			sect.UserScriptObject = this.UserScriptObject;
-			sect.LastException = this.LastException;
+            sect.LastExceptions = this.LastExceptions; //Reference copy INTENDED.
 			sect.ScriptName = this.ScriptName;
 			return sect;
 		}

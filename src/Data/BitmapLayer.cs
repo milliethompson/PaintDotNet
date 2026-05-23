@@ -52,109 +52,20 @@ namespace PaintDotNet
             }
         }
 
-        private IPixelOp compiledBlendOp = null;
-
-        /// <summary>
-        /// This handles the case when blendOp is null, but opacity is not equal to 255
-        /// </summary>
-        [Serializable]
-        private sealed class BlendWithOpacityOp
-            : BinaryPixelOp
-        {
-            private int opacity;
-
-            public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
-            {
-                rhs.A = (byte)(((rhs.A + (rhs.A >> 7)) * opacity) >> 8);
-                return BinaryPixelOps.AlphaBlend.ApplyStatic(lhs, rhs);
-            }
-
-            protected override unsafe void Apply(ColorBgra * dst, ColorBgra * src, int length)
-            {
-                while (length > 0)
-                {
-                    int srcA = ((src->A + (src->A >> 7)) * opacity) >> 8;
-
-                    if (srcA == 255)
-                    {
-                        *dst = *src;
-                    }
-                    else
-                    {
-                        int dstA = dst->A + (dst->A >> 7);
-                        int dstAMult = (256 - srcA) * dstA;
-                        int totalA = ((dstA * (256 - srcA)) >> 8) + srcA;
-
-                        if (totalA == 0)
-                        {
-                            dst->Bgra = 0;
-                        }
-                        else
-                        {
-                            int b = (((dstAMult * dst->B) >> 8) + (srcA * src->B)) / totalA;
-                            int g = (((dstAMult * dst->G) >> 8) + (srcA * src->G)) / totalA;
-                            int r = (((dstAMult * dst->R) >> 8) + (srcA * src->R)) / totalA;
-                            int a = ComputeAlpha(dst->A, src->A);
-                
-                            dst->Bgra = ColorBgra.BgraToUInt32(b, g, r, a);
-                        }
-                    }
-
-                    ++dst;
-                    ++src;
-                    --length;
-                }
-            }
-
-            public BlendWithOpacityOp(int opacity)
-            {
-                this.opacity = opacity;
-            }
-        }
-
-        /// <summary>
-        /// This handles the case when blendOp is not null, and opacity is not 255
-        /// </summary>
-        [Serializable]
-        private sealed class BlendWithBlendOpAndOpacityOp
-            : BinaryPixelOp
-        {
-            private int opacity;
-            private BinaryPixelOp op;
-
-            public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs)
-            {
-                ColorBgra mid = op.Apply(lhs, rhs);
-                mid.A = (byte)(((mid.A + (mid.A >> 7)) * opacity) >> 8);
-                return BinaryPixelOps.AlphaBlend.ApplyStatic(lhs, mid);
-            }
-
-            public BlendWithBlendOpAndOpacityOp(int opacity, BinaryPixelOp op)
-            {
-                this.opacity = opacity;
-                this.op = op;
-            }
-        }
+        [NonSerialized]
+        private BinaryPixelOp compiledBlendOp = null;
 
         private void CompileBlendOp()
         {
             bool isDefaultOp = (properties.blendOp.GetType() == UserBlendOps.GetDefaultBlendOp());
 
-            if (isDefaultOp && this.Opacity == 255)
+            if (this.Opacity == 255)
             {
-                compiledBlendOp = new BinaryPixelOps.AlphaBlend();
+                this.compiledBlendOp = properties.blendOp;
             }
-            else if (isDefaultOp && this.Opacity != 255)
+            else
             {
-                compiledBlendOp = new BitmapLayer.BlendWithOpacityOp(this.Opacity);
-            }
-            else if (!isDefaultOp && this.Opacity == 255)
-            {
-                compiledBlendOp = properties.blendOp;
-            }
-            else if (!isDefaultOp && this.Opacity != 255)
-            {
-                compiledBlendOp = new BitmapLayer.BlendWithBlendOpAndOpacityOp(this.Opacity, properties.blendOp);
+                this.compiledBlendOp = properties.blendOp.CreateWithOpacity(this.Opacity);
             }
         }
 
@@ -393,19 +304,7 @@ namespace PaintDotNet
             this.properties = (BitmapLayerProperties)copyMe.properties.Clone();
         }
 
-        public BitmapLayer(Image image)
-            : base(image.Width, image.Height)
-        {
-            using (Bitmap bitmap = Surface.CreateAliasedBitmap())
-            {
-                using (Graphics g = Graphics.FromImage(bitmap))
-                {
-                    g.DrawImage(image, 0, 0, image.Width, image.Height);
-                }
-            }
-        }
-
-        protected override void RenderImpl(RenderArgs args, Rectangle roi)
+        protected unsafe override void RenderImpl(RenderArgs args, Rectangle roi)
         {
             if (disposed)
             {
@@ -422,7 +321,44 @@ namespace PaintDotNet
                 CompileBlendOp();
             }
 
-            compiledBlendOp.Apply(args.Surface, roi.Location, this.Surface, roi.Location, roi.Size);
+            for (int y = roi.Top; y < roi.Bottom; ++y)
+            {
+                ColorBgra *dstPtr = args.Surface.GetPointAddressUnchecked(roi.Left, y);
+                ColorBgra *srcPtr = this.surface.GetPointAddressUnchecked(roi.Left, y);
+
+                this.compiledBlendOp.Apply(dstPtr, srcPtr, roi.Width);
+            }
+        }
+
+        protected unsafe override void  RenderImpl(RenderArgs args, Rectangle[] rois, int startIndex, int length)
+        {
+            if (disposed)
+            {
+                throw new ObjectDisposedException("BitmapLayer");
+            }
+
+            if (Opacity == 0)
+            {
+                return;
+            }
+
+            if (compiledBlendOp == null)
+            {
+                CompileBlendOp();
+            }
+
+            for (int i = startIndex; i < startIndex + length; ++i)
+            {
+                Rectangle roi = rois[i];
+
+                for (int y = roi.Top; y < roi.Bottom; ++y)
+                {
+                    ColorBgra *dstPtr = args.Surface.GetPointAddressUnchecked(roi.Left, y);
+                    ColorBgra *srcPtr = this.surface.GetPointAddressUnchecked(roi.Left, y);
+
+                    this.compiledBlendOp.Apply(dstPtr, srcPtr, roi.Width);
+                }
+            }
         }
 
         public override PdnBaseForm CreateConfigDialog()
@@ -441,6 +377,8 @@ namespace PaintDotNet
                 this.properties.opacity = -1;
                 this.PopSuppressPropertyChanged();
             }
+
+            this.compiledBlendOp = null;
         }
     }
 }

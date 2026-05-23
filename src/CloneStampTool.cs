@@ -51,7 +51,7 @@ namespace PaintDotNet
         private PdnRegion savedRegion;
         private RenderArgs ra;
         private bool mouseUp = true;
-        private RectangleVector historyRects;
+        private Vector<Rectangle> historyRects;
         private bool antialiasing;
         private PdnRegion clipRegion;
 
@@ -107,7 +107,7 @@ namespace PaintDotNet
 
         public CloneStampTool(DocumentWorkspace parent) 
             : base(parent,
-                   PdnResources.GetImage("Icons.CloneStampToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.CloneStampToolIcon.png"),
                    PdnResources.GetString("CloneStampTool.Name"),
                    PdnResources.GetString("CloneStampTool.HelpText"),
                    'c')
@@ -163,7 +163,7 @@ namespace PaintDotNet
             if (Workspace.ActiveLayer != null)
             {
                 switchedTo = true;
-                historyRects = new RectangleVector();
+                historyRects = new Vector<Rectangle>();
 
                 if (GetStaticData().wr != null && GetStaticData().wr.IsAlive)
                 {
@@ -180,6 +180,19 @@ namespace PaintDotNet
 
         protected override void OnDeactivate()
         {
+            if (!this.mouseUp)
+            {
+                StaticData sd = GetStaticData();
+                Point lastXY = Point.Empty;
+
+                if (sd != null)
+                {
+                    lastXY = sd.lastMoved;
+                }
+
+                OnMouseUp(new MouseEventArgs(MouseButtons.Left, 0, lastXY.X, lastXY.Y, 0));
+            } 
+            
             Workspace.Environment.PenInfoChanged -= new EventHandler(Environment_PenInfoChanged);
 
             this.Renderers.Remove(this.rendererDst);
@@ -269,7 +282,7 @@ namespace PaintDotNet
 
                     Rectangle[] rectsRO;
                     int rectsROLength;
-                    this.historyRects.GetRectangleArrayReadOnly(out rectsRO, out rectsROLength);
+                    this.historyRects.GetArrayReadOnly(out rectsRO, out rectsROLength);
                     saveMeRegion = Utility.RectanglesToRegion(rectsRO, 0, rectsROLength);
 
                     PdnRegion simplifiedRegion = Utility.SimplifyAndInflateRegion(saveMeRegion);
@@ -286,7 +299,7 @@ namespace PaintDotNet
                         }
                         */
 
-                        historyRects = new RectangleVector();
+                        historyRects = new Vector<Rectangle>();
 
                         //SaveRegion(simplifiedRegion, simplifiedRegion.GetBoundsInt());
                         HistoryAction ha = new BitmapHistoryAction(Name, Image, Workspace, Workspace.ActiveLayerIndex, 
@@ -372,7 +385,7 @@ namespace PaintDotNet
             float length = Utility.Magnitude(direction);
             float bw = 1 + Workspace.Environment.PenInfo.Width / 2;
                         
-            rectSelRegions = clipRegion.GetRegionScansReadOnlyInt();
+            rectSelRegions = this.clipRegion.GetRegionScansReadOnlyInt();
         
             Rectangle rect = Utility.PointsToRectangle(lastMoved, currentMouse);
             rect.Inflate(penWidth / 2 + 1, penWidth / 2 + 1);
@@ -384,8 +397,6 @@ namespace PaintDotNet
                 return;
             }
 
-            //PlacedSurface savedPS = new PlacedSurface(ra.Surface, rect);
-            //historySections.Add(savedPS);
             SaveRegion(null, rect);
             historyRects.Add(rect);
 
@@ -413,7 +424,6 @@ namespace PaintDotNet
                         SaveRegion(null, rectBrushArea);
                         SaveRegion(null, rectBrushArea2);
                         DrawACircle(p, surfaceSource, surfaceDest, difference, rectBrushArea);
-                        //ra.Graphics.DrawRectangle(Pens.Red, rectBrushArea);
                     }
                 }
             }
@@ -439,7 +449,9 @@ namespace PaintDotNet
                 this.rendererSrc.BrushSize = Workspace.Environment.PenInfo.Width / 2.0f;
             }
             
-            if ((IsMouseLeftDown(e)) && (GetStaticData().takeFrom != Point.Empty) && !IsCtrlDown())
+            if (IsMouseLeftDown(e) && 
+                (GetStaticData().takeFrom != Point.Empty) && 
+                !IsCtrlDown())
             {
                 Point currentMouse = new Point(e.X, e.Y);
                 Point lastTakeFrom = Point.Empty;
@@ -478,8 +490,6 @@ namespace PaintDotNet
 
                 if (this.savedRegion != null)
                 {
-                    //RestoreRegion(this.savedRegion);
-                    //savedSurface.Draw(ra.Surface);
                     Workspace.ActiveLayer.Invalidate(savedRegion.GetBoundsInt());
                     this.savedRegion.Dispose();
                     this.savedRegion = null;
@@ -492,7 +502,6 @@ namespace PaintDotNet
                     return;
                 }
 
-                //savedSurface = new PlacedSurface(ra.Surface, rect);
                 this.savedRegion = new PdnRegion(rect);
                 SaveRegion(this.savedRegion, rect);
 
@@ -507,6 +516,11 @@ namespace PaintDotNet
                     takeFromSurface = takeFromLayer.Surface;
                 }
 
+                if (this.clipRegion == null)
+                {
+                    this.clipRegion = Workspace.Environment.Selection.CreateRegion();
+                }
+
                 DrawCloneLine(currentMouse, GetStaticData().lastMoved, lastTakeFrom, takeFromSurface, ((BitmapLayer)Workspace.ActiveLayer).Surface);
 
                 this.rendererSrc.BrushLocation = GetStaticData().takeFrom;
@@ -516,6 +530,17 @@ namespace PaintDotNet
                 
                 GetStaticData().lastMoved = currentMouse;
             }
+        }
+
+        protected override void OnSelectionChanged()
+        {
+            if (this.clipRegion != null)
+            {
+                this.clipRegion.Dispose();
+                this.clipRegion = null;
+            }
+
+            base.OnSelectionChanged();
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -568,10 +593,9 @@ namespace PaintDotNet
                     }
                     else
                     {
-                        clipRegion = Workspace.Environment.Selection.CreateRegion();
-                        antialiasing = Workspace.Environment.AntiAliasing;
-                        ra = new RenderArgs(((BitmapLayer)Workspace.ActiveLayer).Surface);
-                        ra.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        this.antialiasing = Workspace.Environment.AntiAliasing;
+                        this.ra = new RenderArgs(((BitmapLayer)Workspace.ActiveLayer).Surface);
+                        this.ra.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                         OnMouseMove(e);
                     }
                 }

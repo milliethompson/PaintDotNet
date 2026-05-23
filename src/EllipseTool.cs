@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -28,9 +29,9 @@ namespace PaintDotNet
         private string statusTextFormat = PdnResources.GetString("EllipseTool.StatusText.Format");
         private Cursor ellipseToolCursor;
 
-        protected override ArrayList TrimShapePath(ArrayList points)
+        protected override List<PointF> TrimShapePath(List<PointF> points)
         {
-            ArrayList array = new ArrayList();
+            List<PointF> array = new List<PointF>();
 
             if (points.Count > 0)
             {
@@ -146,7 +147,7 @@ namespace PaintDotNet
 
         public EllipseTool(DocumentWorkspace parent)
             : base(parent,
-                   PdnResources.GetImage("Icons.EllipseToolIcon.bmp"),
+                   PdnResources.GetImage("Icons.EllipseToolIcon.png"),
                    PdnResources.GetString("EllipseTool.Name"),
                    PdnResources.GetString("EllipseTool.HelpText"))
         {

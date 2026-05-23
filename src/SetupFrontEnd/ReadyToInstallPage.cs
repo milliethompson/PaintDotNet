@@ -33,7 +33,7 @@ namespace PaintDotNet.Setup
             InitializeComponent();
 
             string introFormat = PdnResources.GetString("SetupWizard.ReadyToInstallPage.IntroText.Text.Format");
-            string appName = PdnResources.GetString("Application.ProductName.WithTag");
+            string appName = PdnInfo.GetProductName();
             this.introText.Text = string.Format(introFormat, appName);
         }
 
@@ -43,6 +43,7 @@ namespace PaintDotNet.Setup
             {
                 WizardHost.HeaderText = PdnResources.GetString("SetupWizard.ReadyToInstallPage.HeaderText");
                 this.introText.Font = WizardHost.NormalTextFont;
+                this.introText.ForeColor = WizardHost.TextColor;
             }
 
             base.OnLoad(e);
@@ -81,7 +82,6 @@ namespace PaintDotNet.Setup
             // 
             // introText
             // 
-            this.introText.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.introText.Location = new System.Drawing.Point(12, 6);
             this.introText.Name = "introText";
             this.introText.Size = new System.Drawing.Size(468, 54);
@@ -91,6 +91,8 @@ namespace PaintDotNet.Setup
             // ReadyToInstallPage
             // 
             this.Controls.Add(this.introText);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             this.Name = "ReadyToInstallPage";
             this.ResumeLayout(false);
 

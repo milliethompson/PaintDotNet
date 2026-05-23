@@ -7,21 +7,38 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 
 namespace PaintDotNet
 {
     public class MoveNubRenderer
-        : SurfaceBoxRenderer
+        : SurfaceBoxGraphicsRenderer
     {
         private PointF location;
         private int size;
         private Matrix transform;
         private float transformAngle;
         private int alpha;
-        private bool drawCompass;
+        private MoveNubShape shape;
+
+        public MoveNubShape Shape
+        {
+            get
+            {
+                return this.shape;
+            }
+
+            set
+            {
+                InvalidateOurself();
+                this.shape = value;
+                InvalidateOurself();
+            }
+        }
 
         public PointF Location
         {
@@ -106,39 +123,40 @@ namespace PaintDotNet
             }
         }
 
-        public bool DrawCompass
-        {
-            get
-            {
-                return this.drawCompass;
-            }
-
-            set
-            {
-                if (this.drawCompass != value)
-                {
-                    this.drawCompass = value;
-                    InvalidateOurself();
-                }
-            }
-        }
-
         private RectangleF GetOurRectangle()
         {
             PointF[] ptFs = new PointF[1] { this.location };
             this.transform.TransformPoints(ptFs);
-            float ratio = 1.0f / (float)OwnerList.ScaleFactor.Ratio;
-            RectangleF rectF = new RectangleF(ptFs[0], new SizeF(0, 0));
-            rectF.Inflate(ratio * (float)this.size, ratio * (float)this.size);
-            return rectF;
+            float ratio = (float)Math.Ceiling(1.0 / OwnerList.ScaleFactor.Ratio);
+
+            float ourSize = UI.ScaleWidth(this.size);
+
+            if (!Single.IsNaN(ratio))
+            {
+                RectangleF rectF = new RectangleF(ptFs[0], new SizeF(0, 0));
+                rectF.Inflate(ratio * ourSize, ratio * ourSize);
+                return rectF;
+            }
+            else
+            {
+                return RectangleF.Empty;
+            }
         }
 
         private void InvalidateOurself()
         {
-            RectangleF rectF = GetOurRectangle();
-            Rectangle rect = Utility.RoundRectangle(rectF);
-            rect.Inflate(1, 1);
-            Invalidate(rect);
+            InvalidateOurself(false);
+        }
+
+        private void InvalidateOurself(bool force)
+        {
+            if (this.Visible || force)
+            {
+                RectangleF rectF = GetOurRectangle();
+                Rectangle rect = Utility.RoundRectangle(rectF);
+                rect.Inflate(1, 1);
+                Invalidate(rect);
+            }
         }
 
         public bool IsPointTouching(Point pt, bool pad)
@@ -156,109 +174,117 @@ namespace PaintDotNet
 
         protected override void OnVisibleChanged()
         {
-            InvalidateOurself();
+            InvalidateOurself(true);
         }
 
-        public override void Render(Surface dst, Point offset)
+        public override void RenderToGraphics(Graphics g, Point offset)
         {
             lock (this)
             {
-                using (RenderArgs ra = new RenderArgs(dst))
+                float ourSize = UI.ScaleWidth(this.size);
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.TranslateTransform(-offset.X, -offset.Y, MatrixOrder.Append);
+
+                PointF ptF = (PointF)this.Location;
+
+                ptF = Utility.TransformOnePoint(this.transform, ptF);
+
+                ptF.X *= (float)OwnerList.ScaleFactor.Ratio;
+                ptF.Y *= (float)OwnerList.ScaleFactor.Ratio;
+
+                PointF[] pts = new PointF[8] 
+                                         { 
+                                             new PointF(-1, -1), // up+left
+                                             new PointF(+1, -1), // up+right
+                                             new PointF(+1, +1), // down+right
+                                             new PointF(-1, +1), // down+left
+
+                                             new PointF(-1, 0),  // left
+                                             new PointF(+1, 0),  // right
+                                             new PointF(0, -1),  // up
+                                             new PointF(0, +1)   // down
+                                         };
+
+                Utility.RotateVectors(pts, this.transformAngle);
+                Utility.NormalizeVectors(pts);
+
+                using (Pen white = new Pen(Color.FromArgb(this.alpha, Color.White), -1.0f),
+                           black = new Pen(Color.FromArgb(this.alpha, Color.Black), -1.0f))
                 {
-                    ra.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                    ra.Graphics.TranslateTransform(-offset.X, -offset.Y, MatrixOrder.Append);
+                    PixelOffsetMode oldPOM = g.PixelOffsetMode;
+                    g.PixelOffsetMode = PixelOffsetMode.None;
 
-                    PointF ptF = (PointF)this.Location;
-
-                    ptF = Utility.TransformOnePoint(this.transform, ptF);
-
-                    ptF.X *= (float)OwnerList.ScaleFactor.Ratio;
-                    ptF.Y *= (float)OwnerList.ScaleFactor.Ratio;
-                    
-                    float angle1 = Utility.GetAngleOfTransform(this.transform);
-                    while (angle1 > 180.0f)
+                    if (this.shape != MoveNubShape.Circle)
                     {
-                        angle1 -= 180.0f;
-                    }
-
-                    while (angle1 < 0.0f)
-                    {
-                        angle1 += 180.0f;
-                    }
-
-                    if (Math.Abs(angle1) < 0.01)
-                    {
-                        ptF = (PointF)Point.Truncate(ptF);
-                    }
-
-                    PointF[] pts = new PointF[4] { 
-                                                     new PointF(-1, -1),
-                                                     new PointF(+1, -1),
-                                                     new PointF(+1, +1),
-                                                     new PointF(-1, +1)
-                                                 };
-                      
-                    Utility.RotateVectors(pts, this.transformAngle);
-                    Utility.NormalizeVectors(pts);
-
-                    using (Pen white = new Pen(Color.FromArgb(this.alpha, Color.White), -1.0f), 
-                               black = new Pen(Color.FromArgb(this.alpha, Color.Black), -1.0f))
-                    {
-                        PixelOffsetMode oldPOM = ra.Graphics.PixelOffsetMode;
-                        ra.Graphics.PixelOffsetMode = PixelOffsetMode.None;
-
-                        ra.Graphics.DrawPolygon(white, new PointF[] {
-                                                                        Utility.AddVectors(ptF, Utility.MultiplyVector(pts[0], this.size)),
-                                                                        Utility.AddVectors(ptF, Utility.MultiplyVector(pts[1], this.size)),
-                                                                        Utility.AddVectors(ptF, Utility.MultiplyVector(pts[2], this.size)),
-                                                                        Utility.AddVectors(ptF, Utility.MultiplyVector(pts[3], this.size))
-                                                                    });
-
-                        ra.Graphics.DrawPolygon(black, new PointF[] {
-                                                                        Utility.AddVectors(ptF, Utility.MultiplyVector(pts[0], this.size - 1)),
-                                                                        Utility.AddVectors(ptF, Utility.MultiplyVector(pts[1], this.size - 1)),
-                                                                        Utility.AddVectors(ptF, Utility.MultiplyVector(pts[2], this.size - 1)),
-                                                                        Utility.AddVectors(ptF, Utility.MultiplyVector(pts[3], this.size - 1))
-                                                                    });
-
-                        ra.Graphics.DrawPolygon(white, new PointF[] {
-                                                                        Utility.AddVectors(ptF, Utility.MultiplyVector(pts[0], this.size - 2)),
-                                                                        Utility.AddVectors(ptF, Utility.MultiplyVector(pts[1], this.size - 2)),
-                                                                        Utility.AddVectors(ptF, Utility.MultiplyVector(pts[2], this.size - 2)),
-                                                                        Utility.AddVectors(ptF, Utility.MultiplyVector(pts[3], this.size - 2))
-                                                                    });
-
-                        if (this.drawCompass)
+                        PointF[] outer = new PointF[4]
                         {
-                            black.SetLineCap(LineCap.Round, LineCap.DiamondAnchor, DashCap.Flat);
-                            black.EndCap = LineCap.ArrowAnchor;
-                            black.StartCap = LineCap.ArrowAnchor;
-                            white.SetLineCap(LineCap.Round, LineCap.DiamondAnchor, DashCap.Flat);
-                            white.EndCap = LineCap.ArrowAnchor;
-                            white.StartCap = LineCap.ArrowAnchor;
+                            Utility.AddVectors(ptF, Utility.MultiplyVector(pts[0], ourSize)),
+                            Utility.AddVectors(ptF, Utility.MultiplyVector(pts[1], ourSize)),
+                            Utility.AddVectors(ptF, Utility.MultiplyVector(pts[2], ourSize)),
+                            Utility.AddVectors(ptF, Utility.MultiplyVector(pts[3], ourSize))
+                        };
 
-                            PointF ul = Utility.AddVectors(ptF, Utility.MultiplyVector(pts[0], this.size - 1));
-                            PointF ur = Utility.AddVectors(ptF, Utility.MultiplyVector(pts[1], this.size - 1));
-                            PointF lr = Utility.AddVectors(ptF, Utility.MultiplyVector(pts[2], this.size - 1));
-                            PointF ll = Utility.AddVectors(ptF, Utility.MultiplyVector(pts[3], this.size - 1));
+                        PointF[] middle = new PointF[4]
+                        {
+                            Utility.AddVectors(ptF, Utility.MultiplyVector(pts[0], ourSize - 1)),
+                            Utility.AddVectors(ptF, Utility.MultiplyVector(pts[1], ourSize - 1)),
+                            Utility.AddVectors(ptF, Utility.MultiplyVector(pts[2], ourSize - 1)),
+                            Utility.AddVectors(ptF, Utility.MultiplyVector(pts[3], ourSize - 1))
+                        };
 
-                            PointF top = Utility.MultiplyVector(Utility.AddVectors(ul, ur), 0.5f);
-                            PointF left = Utility.MultiplyVector(Utility.AddVectors(ul, ll), 0.5f);
-                            PointF right = Utility.MultiplyVector(Utility.AddVectors(ur, lr), 0.5f);
-                            PointF bottom = Utility.MultiplyVector(Utility.AddVectors(ll, lr), 0.5f);
+                        PointF[] inner = new PointF[4] 
+                        {
+                            Utility.AddVectors(ptF, Utility.MultiplyVector(pts[0], ourSize - 2)),
+                            Utility.AddVectors(ptF, Utility.MultiplyVector(pts[1], ourSize - 2)),
+                            Utility.AddVectors(ptF, Utility.MultiplyVector(pts[2], ourSize - 2)),
+                            Utility.AddVectors(ptF, Utility.MultiplyVector(pts[3], ourSize - 2))
+                        };
 
-                            using (SolidBrush whiteBrush = new SolidBrush(white.Color))
-                            {
-                                PointF[] poly = new PointF[] { ul, ur, lr, ll };
-                                ra.Graphics.FillPolygon(whiteBrush, poly, FillMode.Winding);
-                            }
+                        g.DrawPolygon(white, outer);
+                        g.DrawPolygon(black, middle);
+                        g.DrawPolygon(white, inner);
+                    }
+                    else if (this.shape == MoveNubShape.Circle)
+                    {
+                        RectangleF rect = new RectangleF(ptF, new SizeF(0, 0));
+                        rect.Inflate(ourSize - 1, ourSize - 1);
+                        g.DrawEllipse(white, rect);
+                        rect.Inflate(-1.0f, -1.0f);
+                        g.DrawEllipse(black, rect);
+                        rect.Inflate(-1.0f, -1.0f);
+                        g.DrawEllipse(white, rect);
+                    }
 
-                            ra.Graphics.DrawLine(black, top, bottom);
-                            ra.Graphics.DrawLine(black, left, right);
+                    if (this.shape == MoveNubShape.Compass)
+                    {
+                        black.SetLineCap(LineCap.Round, LineCap.DiamondAnchor, DashCap.Flat);
+                        black.EndCap = LineCap.ArrowAnchor;
+                        black.StartCap = LineCap.ArrowAnchor;
+                        white.SetLineCap(LineCap.Round, LineCap.DiamondAnchor, DashCap.Flat);
+                        white.EndCap = LineCap.ArrowAnchor;
+                        white.StartCap = LineCap.ArrowAnchor;
+
+                        PointF ul = Utility.AddVectors(ptF, Utility.MultiplyVector(pts[0], ourSize - 1));
+                        PointF ur = Utility.AddVectors(ptF, Utility.MultiplyVector(pts[1], ourSize - 1));
+                        PointF lr = Utility.AddVectors(ptF, Utility.MultiplyVector(pts[2], ourSize - 1));
+                        PointF ll = Utility.AddVectors(ptF, Utility.MultiplyVector(pts[3], ourSize - 1));
+
+                        PointF top = Utility.MultiplyVector(Utility.AddVectors(ul, ur), 0.5f);
+                        PointF left = Utility.MultiplyVector(Utility.AddVectors(ul, ll), 0.5f);
+                        PointF right = Utility.MultiplyVector(Utility.AddVectors(ur, lr), 0.5f);
+                        PointF bottom = Utility.MultiplyVector(Utility.AddVectors(ll, lr), 0.5f);
+
+                        using (SolidBrush whiteBrush = new SolidBrush(white.Color))
+                        {
+                            PointF[] poly = new PointF[] { ul, ur, lr, ll };
+                            g.FillPolygon(whiteBrush, poly, FillMode.Winding);
                         }
 
-                        ra.Graphics.PixelOffsetMode = oldPOM;
+                        g.DrawLine(black, top, bottom);
+                        g.DrawLine(black, left, right);
                     }
+
+                    g.PixelOffsetMode = oldPOM;
                 }
             }
         }
@@ -266,9 +292,9 @@ namespace PaintDotNet
         public MoveNubRenderer(SurfaceBoxRendererList ownerList)
             : base(ownerList)
         {
+            this.shape = MoveNubShape.Square;
             this.location = new Point(0, 0);
             this.size = 5;
-            this.drawCompass = false;
             this.transform = new Matrix();
             this.transform.Reset();
             this.alpha = 255;

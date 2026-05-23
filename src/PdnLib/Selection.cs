@@ -16,7 +16,23 @@ using System.Runtime.Serialization;
 namespace PaintDotNet
 {
     /// <summary>
-    /// Manages a selection for Paint.NET
+    /// Manages a selection for Paint.NET.
+    /// There are five major comonents of a selection:
+    /// * Base path
+    /// * Continuation path
+    /// * Continuation combination mode
+    /// * Cumulative transform
+    /// * Interim transform
+    /// The selection itself, as returned by e.g. CreatePath(), is (base COMBINE continuation) x interimTransform.
+    /// Whenever the interim transform is set, the continuation path is first committed, and vice versa.
+    /// Because of this, you may think of the selection as operating in two editing 'modes': editing
+    /// the path, and editing the transformation.
+    /// When the continuation path is committed, it is appended to the base path using the given combination mode. 
+    /// The continuation is then reset to empty.
+    /// When the interim transform is committed, both the base path and the cumulative transform
+    /// are multiplied by it. The interim transform is then reset to the identity matrix.
+    /// If the selection is empty, then its "clip region" is the entire canvas as set by the ClipRectangle
+    /// property.
     /// </summary>
     public sealed class Selection
     {

@@ -18,9 +18,11 @@ namespace PaintDotNet
     {
         // {0} is "All Rights Reserved"
         public const string CopyrightFormat = 
-            "Copyright © 2005 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2005 Microsoft Corporation. {0}";
+            "Copyright © 2006 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2006 Microsoft Corporation. {0}";
 
         public const string FeedbackEmail = "paint.net@hotmail.com";
+
+        public const string DonateUrl = "http://www.eecs.wsu.edu/paint.net/redirect/donate_hm.html";
 
         private InvariantStrings()
         {

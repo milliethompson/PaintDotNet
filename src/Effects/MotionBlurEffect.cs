@@ -18,25 +18,19 @@ namespace PaintDotNet.Effects
     /// Summary description for MotionBlurEffect.
     /// </summary>
     public class MotionBlurEffect
-        : Effect,
-          IConfigurableEffect
+        : Effect
     {
         public MotionBlurEffect()
             : base(PdnResources.GetString("MotionBlurEffect.Name"),
-                   PdnResources.GetImage("Icons.MotionBlurEffect.bmp"),
-                   Shortcut.None,
+                   PdnResources.GetImage("Icons.MotionBlurEffect.png"),
+                   Keys.None,
                    PdnResources.GetString("Effects.Blurring.Submenu.Name"),
-                   EffectDirectives.None)
+                   EffectDirectives.None,
+                   true)
         {
         }
 
-        public override void Render(RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle roi)
-        {
-            base.Render(dstArgs, srcArgs, roi);
-            throw new InvalidOperationException("MotionBlurEffect must be used via the other Render overload");
-        }
-
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             return new MotionBlurEffectConfigDialog();
         }
@@ -78,6 +72,7 @@ namespace PaintDotNet.Effects
 
             return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
         }
+
         private unsafe ColorBgra DoLineAverageUnclipped(Point[] points, int x, int y, Surface dst, Surface src)
         {
             long bSum = 0;
@@ -112,14 +107,16 @@ namespace PaintDotNet.Effects
             return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
         }
 
-        public unsafe void Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public override unsafe void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
         {
-            Point[] points = ((MotionBlurEffectConfigToken)properties).LinePoints;
+            Point[] points = ((MotionBlurEffectConfigToken)parameters).LinePoints;
             Surface dst = dstArgs.Surface;
             Surface src = srcArgs.Surface;
 
-            foreach (Rectangle rect in roi.GetRegionScansReadOnlyInt())
+            for (int i = startIndex; i < startIndex + length; ++i)
             {
+                Rectangle rect = rois[i];
+
                 for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
                     ColorBgra *dstPtr = dst.GetPointAddress(rect.Left, y);

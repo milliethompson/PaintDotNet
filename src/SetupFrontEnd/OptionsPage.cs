@@ -55,21 +55,27 @@ namespace PaintDotNet.Setup
                 this.launchHandlingText.Font = WizardHost.NormalTextFont;
 
                 this.jpgPngBmpCheckBox.Font = WizardHost.NormalTextFont;
+                this.jpgPngBmpCheckBox.ForeColor = WizardHost.TextColor;
                 this.jpgPngBmpCheckBox.Checked = ("1" == WizardHost.GetMsiProperty(PropertyNames.JpgPngBmpEditor, "1"));
 
                 this.tgaCheckBox.Font = WizardHost.NormalTextFont;
+                this.tgaCheckBox.ForeColor = WizardHost.TextColor;
                 this.tgaCheckBox.Checked = ("1" == WizardHost.GetMsiProperty(PropertyNames.TgaEditor, "1"));
 
                 this.desktopShortcutCheckBox.Font = WizardHost.NormalTextFont;
+                this.desktopShortcutCheckBox.ForeColor = WizardHost.TextColor;
                 this.desktopShortcutCheckBox.Checked = ("1" == WizardHost.GetMsiProperty(PropertyNames.DesktopShortcut, "1"));
 
                 this.updatesText.Font = WizardHost.NormalTextFont;
+                this.updatesText.ForeColor = WizardHost.TextColor;
 
                 this.checkForUpdatesCheckBox.Font = WizardHost.NormalTextFont;
+                this.checkForUpdatesCheckBox.ForeColor = WizardHost.TextColor;
                 this.checkForUpdatesCheckBox.Checked = ("1" == WizardHost.GetMsiProperty(PropertyNames.CheckForUpdates, "1"));
 
                 this.checkForBetasCheckBox.Font = WizardHost.NormalTextFont;
-                this.checkForBetasCheckBox.Checked = ("1" == WizardHost.GetMsiProperty(PropertyNames.CheckForBetas, "0"));
+                this.checkForBetasCheckBox.ForeColor = WizardHost.TextColor;
+                this.checkForBetasCheckBox.Checked = ("1" == WizardHost.GetMsiProperty(PropertyNames.CheckForBetas, PropertyNames.CheckForBetasDefault));
 
                 if (!checkForUpdatesCheckBox.Checked)
                 {
@@ -122,7 +128,6 @@ namespace PaintDotNet.Setup
             // 
             // jpgPngBmpCheckBox
             // 
-            this.jpgPngBmpCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.jpgPngBmpCheckBox.Location = new System.Drawing.Point(28, 40);
             this.jpgPngBmpCheckBox.Name = "jpgPngBmpCheckBox";
             this.jpgPngBmpCheckBox.Size = new System.Drawing.Size(468, 24);
@@ -132,7 +137,6 @@ namespace PaintDotNet.Setup
             // 
             // tgaCheckBox
             // 
-            this.tgaCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.tgaCheckBox.Location = new System.Drawing.Point(28, 64);
             this.tgaCheckBox.Name = "tgaCheckBox";
             this.tgaCheckBox.Size = new System.Drawing.Size(468, 24);
@@ -142,17 +146,15 @@ namespace PaintDotNet.Setup
             // 
             // updatesText
             // 
-            this.updatesText.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.updatesText.Location = new System.Drawing.Point(12, 128);
             this.updatesText.Name = "updatesText";
-            this.updatesText.Size = new System.Drawing.Size(476, 46);
+            this.updatesText.Size = new System.Drawing.Size(476, 59);
             this.updatesText.TabIndex = 3;
             this.updatesText.Text = "label1";
             // 
             // checkForUpdatesCheckBox
             // 
-            this.checkForUpdatesCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.checkForUpdatesCheckBox.Location = new System.Drawing.Point(28, 176);
+            this.checkForUpdatesCheckBox.Location = new System.Drawing.Point(28, 189);
             this.checkForUpdatesCheckBox.Name = "checkForUpdatesCheckBox";
             this.checkForUpdatesCheckBox.Size = new System.Drawing.Size(468, 24);
             this.checkForUpdatesCheckBox.TabIndex = 4;
@@ -161,8 +163,7 @@ namespace PaintDotNet.Setup
             // 
             // checkForBetasCheckBox
             // 
-            this.checkForBetasCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.checkForBetasCheckBox.Location = new System.Drawing.Point(46, 200);
+            this.checkForBetasCheckBox.Location = new System.Drawing.Point(46, 213);
             this.checkForBetasCheckBox.Name = "checkForBetasCheckBox";
             this.checkForBetasCheckBox.Size = new System.Drawing.Size(444, 24);
             this.checkForBetasCheckBox.TabIndex = 5;
@@ -171,7 +172,6 @@ namespace PaintDotNet.Setup
             // 
             // desktopShortcutCheckBox
             // 
-            this.desktopShortcutCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.desktopShortcutCheckBox.Location = new System.Drawing.Point(28, 88);
             this.desktopShortcutCheckBox.Name = "desktopShortcutCheckBox";
             this.desktopShortcutCheckBox.Size = new System.Drawing.Size(468, 24);
@@ -188,6 +188,8 @@ namespace PaintDotNet.Setup
             this.Controls.Add(this.tgaCheckBox);
             this.Controls.Add(this.jpgPngBmpCheckBox);
             this.Controls.Add(this.launchHandlingText);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             this.Name = "OptionsPage";
             this.ResumeLayout(false);
 

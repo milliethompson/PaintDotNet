@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -26,7 +27,7 @@ namespace PaintDotNet
         private Point lastXY;
         private SelectionHistoryAction undoAction;
         private CombineMode combineMode;
-        private ArrayList tracePoints = null;
+        private List<Point> tracePoints = null;
         private DateTime startTime;
         private bool hasMoved = false;
         private bool append = false;
@@ -61,7 +62,7 @@ namespace PaintDotNet
                 hasMoved = false;
                 startTime = DateTime.Now;
 
-                tracePoints = new ArrayList();
+                tracePoints = new List<Point>();
                 tracePoints.Add(new Point(e.X, e.Y));
 
                 undoAction = new SelectionHistoryAction("sentinel", this.Image, Workspace);
@@ -99,14 +100,14 @@ namespace PaintDotNet
             }
         }
 
-        protected virtual ArrayList TrimShapePath(ArrayList tracePoints)
+        protected virtual List<Point> TrimShapePath(List<Point> tracePoints)
         {
             return tracePoints;
         }
 
-        protected virtual PointF[] CreateShape(Point[] tracePoints)
+        protected virtual List<PointF> CreateShape(List<Point> tracePoints)
         {
-            return Utility.PointArrayToPointFArray(tracePoints);
+            return Utility.PointListToPointFList(tracePoints);
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
@@ -144,11 +145,27 @@ namespace PaintDotNet
 
         private PointF[] CreateSelectionPolygon()
         {
-            ArrayList trimmedTrace = this.TrimShapePath(tracePoints);
-            Point[] points = (Point[])trimmedTrace.ToArray(typeof(Point));
-            PointF[] shapePoints = CreateShape(points);
-            PointF[] polygon = Utility.SutherlandHodgman(Workspace.Document.Bounds, shapePoints);
-            return polygon;
+            List<Point> trimmedTrace = this.TrimShapePath(tracePoints);
+            List<PointF> shapePoints = CreateShape(trimmedTrace);
+            List<PointF> polygon;
+
+            switch (this.combineMode)
+            {
+                case CombineMode.Xor:
+                case CombineMode.Exclude:
+                    polygon = shapePoints;
+                    break;
+
+                default:
+                case CombineMode.Complement:
+                case CombineMode.Intersect:
+                case CombineMode.Replace:
+                case CombineMode.Union:
+                    polygon = Utility.SutherlandHodgman(Workspace.Document.Bounds, shapePoints);
+                    break;
+            }
+
+            return polygon.ToArray();
         }
 
         private void Render()
@@ -195,10 +212,12 @@ namespace PaintDotNet
                 //
                 // "Clear selection" means to result in no selected area. If the selection area was previously empty,
                 //    then no HistoryAction is emitted. Otherwise a Deselect HistoryAction is emitted.
+                //
                 // "Reset selection" means to reset the selected area to how it was before interaction with the tool,
                 //    without a HistoryAction.
 
                 PointF[] polygon = CreateSelectionPolygon();
+                this.hasMoved &= (polygon.Length > 1);
 
                 // They were "too quick" if they weren't doing a selection for more than 50ms
                 // This takes care of the case where someone wants to click to deselect, but accidentally moves
@@ -207,15 +226,17 @@ namespace PaintDotNet
 
                 // If their selection was completedly out of bounds, it will be clipped
                 bool clipped = (polygon.Length == 0);
-                WhatToDo whatToDo;
 
-                hasMoved &= (polygon.Length > 1);
+                // What the user drew had no effect on the slection, e.g. subtraction where there was nothing in the first place
+                bool noEffect = false;
+
+                WhatToDo whatToDo;
 
                 // If their selection gets completely clipped (i.e. outside the image canvas),
                 // then result in a no-op
                 if (append)
                 {
-                    if (!hasMoved || clipped)
+                    if (!hasMoved || clipped || noEffect)
                     {   
                         whatToDo = WhatToDo.Reset;
                     }
@@ -226,7 +247,7 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    if (hasMoved && !tooQuick && !clipped)
+                    if (hasMoved && !tooQuick && !clipped && !noEffect)
                     {   
                         whatToDo = WhatToDo.Emit;
                     }
@@ -265,7 +286,7 @@ namespace PaintDotNet
 
                 Workspace.ResetOutlineWhiteOpacity();
                 tracking = false;
-                Workspace.DocumentView.InvalidateSurface(Workspace.DocumentView.VisibleDocumentRectangle);
+                Workspace.DocumentView.InvalidateSurface(Utility.RoundRectangle(Workspace.DocumentView.VisibleDocumentRectangleF));
             }
         }
 

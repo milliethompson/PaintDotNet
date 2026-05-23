@@ -11,6 +11,7 @@ using Microsoft.Win32;
 using PaintDotNet.Threading;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -36,6 +37,8 @@ namespace PaintDotNet
         private Utility()
         {
         }
+
+        public static readonly Color TransparentKey = Color.FromArgb(192, 192, 192);
 
         private static DateTime startTime = DateTime.Now;
         private static DateTime lastTime = DateTime.Now;
@@ -221,44 +224,6 @@ namespace PaintDotNet
             return count;
         }
 
-        /// <summary>
-        /// Converts a string name into a more "user friendly" style. Useful for enumeration names.
-        /// Example: Converts "TopLeftCenter" to "Top Left Center"
-        /// </summary>
-        /// <param name="str1"></param>
-        /// <returns></returns>
-        [Obsolete]
-        public static string InsertSpaces(String str1)
-        {
-            string str2 = string.Copy(str1);
-            bool number = false;
-
-            for (int i = 1; i < str2.Length; i++)
-            {
-                char ch = str2[i];
-
-                if (char.IsUpper(ch))
-                {
-                    str2 = str2.Insert(i, " ");
-                    i++;
-                    number = false;
-                }
-
-                if (char.IsNumber(ch))
-                {
-                    if (!number)
-                    {
-                        str2 = str2.Insert(i, " ");
-                        i++;
-                    }
-
-                    number = true;
-                }
-            }
-
-            return str2;
-        }
-
         public static string RemoveSpaces(string s)
         {
             StringBuilder sb = new StringBuilder();
@@ -394,14 +359,6 @@ namespace PaintDotNet
             SetNumericUpDownValue(upDown, (decimal)newValue);
         }
 
-        public static Point GetPointFromMouseXY(System.Windows.Forms.MouseEventArgs e)
-        {
-            Point p = new Point();
-            p.X = e.X;
-            p.Y = e.Y;
-            return p;
-        }
-
         public static string SizeStringFromBytes(long bytes)
         {
             string returnMe;
@@ -441,47 +398,47 @@ namespace PaintDotNet
 
         public static void ErrorBox(IWin32Window parent, string message)
         {
-            MessageBox.Show(parent, message, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(parent, message, PdnInfo.GetProductName(), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         public static DialogResult ErrorBoxOKCancel(IWin32Window parent, string message)
         {
-            return MessageBox.Show(parent, message, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.OKCancel, MessageBoxIcon.Error);
+            return MessageBox.Show(parent, message, PdnInfo.GetProductName(), MessageBoxButtons.OKCancel, MessageBoxIcon.Error);
         }
 
         public static void InfoBox(IWin32Window parent, string message)
         {
-            MessageBox.Show(parent, message, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(parent, message, PdnInfo.GetProductName(), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         public static DialogResult InfoBoxOKCancel(IWin32Window parent, string message)
         {
-            return MessageBox.Show(parent, message, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.OKCancel, MessageBoxIcon.Information);
+            return MessageBox.Show(parent, message, PdnInfo.GetProductName(), MessageBoxButtons.OKCancel, MessageBoxIcon.Information);
         }
 
         public static DialogResult AskOKCancel(IWin32Window parent, string question)
         {
-            return MessageBox.Show(parent, question, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+            return MessageBox.Show(parent, question, PdnInfo.GetProductName(), MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
         }
 
         public static DialogResult AskYesNo(IWin32Window parent, string question)
         {
-            return MessageBox.Show(parent, question, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            return MessageBox.Show(parent, question, PdnInfo.GetProductName(), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         }
 
         public static DialogResult AskYesNoCancel(IWin32Window parent, string question)
         {
-            return MessageBox.Show(parent, question, PdnResources.GetString("Application.ProductName"), MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+            return MessageBox.Show(parent, question, PdnInfo.GetProductName(), MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
         }
 
         public static Icon ImageToIcon(Image image)
         {
-            return ImageToIcon(image, Color.FromArgb(192, 192, 192));
+            return ImageToIcon(image, Utility.TransparentKey);
         }
 
         public static Icon ImageToIcon(Image image, bool disposeImage)
         {
-            return ImageToIcon(image, Color.FromArgb(192, 192, 192), disposeImage);
+            return ImageToIcon(image, Utility.TransparentKey, disposeImage);
         }
 
         public static Icon ImageToIcon(Image image, Color seeThru)
@@ -549,32 +506,6 @@ namespace PaintDotNet
             return icon;
         }
 
-        [Obsolete]
-        public static Image GetImageResource(string fileName)
-        {
-            StackTrace trace = new StackTrace();
-            StackFrame parentFrame = trace.GetFrame(1);
-            MethodBase parentMethod = parentFrame.GetMethod();
-            Type parentType = parentMethod.DeclaringType;
-            Assembly parentAssembly = parentType.Assembly;
-            Stream stream = GetResourceStream(parentAssembly, parentType.Namespace, fileName);
-            Image image = Image.FromStream(stream);
-            return image;
-        }
-
-        [Obsolete]
-        public static Icon GetIconResource(string fileName) 
-        {
-            StackTrace trace = new StackTrace();
-            StackFrame parentFrame = trace.GetFrame(1);
-            MethodBase parentMethod = parentFrame.GetMethod();
-            Type parentType = parentMethod.DeclaringType;
-            Assembly parentAssembly = parentType.Assembly;
-            Stream stream = GetResourceStream(parentAssembly, parentType.Namespace, fileName);
-            Image image = Image.FromStream(stream);
-            return Icon.FromHandle(((Bitmap)image).GetHicon());
-        }
-
         private static Assembly mainAssembly;
         private static Assembly MainAssembly
         {
@@ -589,38 +520,14 @@ namespace PaintDotNet
             }
         }
 
-        [Obsolete]
-        public static Stream GetResourceStream(string fileName)
-        {
-            Stream stream = null;
-            
-            if (stream == null)
-            {
-                stream = GetResourceStream(MainAssembly, "PaintDotNet", fileName);
-            }
-
-            if (stream == null)
-            {
-                StackTrace trace = new StackTrace();
-                StackFrame parentFrame = trace.GetFrame(1);
-                MethodBase parentMethod = parentFrame.GetMethod();
-                Type parentType = parentMethod.DeclaringType;
-                Assembly parentAssembly = parentType.Assembly;
-                stream = GetResourceStream(parentAssembly, parentType.Namespace, fileName);
-            }
-
-            return stream;
-        }
-
-        [Obsolete]
-        public static Stream GetResourceStream(Assembly assembly, string namespaceName, string fileName)
-        {
-            return assembly.GetManifestResourceStream(namespaceName + "." + fileName);
-        }
-
         public static Point GetRectangleCenter(Rectangle rect)
         {
             return new Point((rect.Left + rect.Right) / 2, (rect.Top + rect.Bottom) / 2);
+        }
+
+        public static PointF GetRectangleCenter(RectangleF rect)
+        {
+            return new PointF((rect.Left + rect.Right) / 2, (rect.Top + rect.Bottom) / 2);
         }
 
         public static Scanline[] GetRectangleScans(Rectangle rect)
@@ -659,18 +566,6 @@ namespace PaintDotNet
             return scans;
         }
 
-        [Obsolete]
-        public static PdnRegion ScanlinesToRegion(Scanline[] scans)
-        {
-            return ScanlinesToRegion(scans, 0, scans.Length);
-        }
-
-        [Obsolete]
-        public static PdnRegion ScanlinesToRegion(Scanline[] scans, int startIndex, int length)
-        {
-            return RectanglesToRegion(ScanlinesToRectangles(scans, startIndex, length));
-        }
-
         public static Rectangle[] ScanlinesToRectangles(Scanline[] scans)
         {
             return ScanlinesToRectangles(scans, 0, scans.Length);
@@ -687,33 +582,6 @@ namespace PaintDotNet
             }
 
             return rects;
-        }
-
-        [Obsolete]
-        public static Scanline[] GetRegionScans(RectangleF[] region)
-        {
-            int scanCount = 0;
-
-            for (int i = 0; i < region.Length; ++i)
-            {
-                scanCount += (int)region[i].Height;
-            }
-
-            Scanline[] scans = new Scanline[scanCount];
-            int scanIndex = 0;
-
-            foreach (RectangleF rectF in region)
-            {
-                Rectangle rect = Rectangle.Truncate(rectF);
-
-                for (int y = 0; y < (int)rectF.Height; ++y)
-                {
-                    scans[scanIndex] = new Scanline(rect.X, rect.Y + y, rect.Width);
-                    ++scanIndex;
-                }
-            }
-
-            return scans;
         }
 
         /// <summary>
@@ -864,6 +732,18 @@ namespace PaintDotNet
         {
             RectangleF ret = new RectangleF(center.X, center.Y, 0, 0);
             ret.Inflate(halfSize, halfSize);
+            return ret;
+        }
+
+        public static List<PointF> PointListToPointFList(List<Point> ptList)
+        {
+            List<PointF> ret = new List<PointF>(ptList.Count);
+
+            for (int i = 0; i < ptList.Count; ++i)
+            {
+                ret.Add((PointF)ptList[i]);
+            }
+
             return ret;
         }
 
@@ -1578,34 +1458,14 @@ namespace PaintDotNet
         /// </summary>
         /// <param name="vertices"></param>
         /// <returns></returns>
-        public static Point[] SutherlandHodgman(Rectangle bounds, Point[] v)
+        public static List<PointF> SutherlandHodgman(RectangleF bounds, List<PointF> v)
         {
-            Point[] p1 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Left, v);
-            Point[] p2 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Right, p1);
-            Point[] p3 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Top, p2);
-            Point[] p4 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Bottom, p3);
+            List<PointF> p1 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Left, v);
+            List<PointF> p2 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Right, p1);
+            List<PointF> p3 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Top, p2);
+            List<PointF> p4 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Bottom, p3);
 
             return p4;
-        }
-
-        public static PointF[] SutherlandHodgman(RectangleF bounds, PointF[] v)
-        {
-            PointF[] p1 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Left, v);
-            PointF[] p2 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Right, p1);
-            PointF[] p3 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Top, p2);
-            PointF[] p4 = SutherlandHodgmanOneAxis(bounds, RectangleEdge.Bottom, p3);
-
-            return p4;
-        }
-
-        public static Point[] SutherlandHodgman(Rectangle bounds, ArrayList v)
-        {
-            return SutherlandHodgman(bounds, (Point[])v.ToArray(typeof(Point)));
-        }
-
-        public static PointF[] SutherlandHodgman(RectangleF bounds, ArrayList v)
-        {
-            return SutherlandHodgman(bounds, (PointF[])v.ToArray(typeof(PointF)));
         }
 
         private enum RectangleEdge
@@ -1616,63 +1476,18 @@ namespace PaintDotNet
             Bottom
         }
 
-        private static Point[] SutherlandHodgmanOneAxis(Rectangle bounds, RectangleEdge edge, Point[] v)
+        private static List<PointF> SutherlandHodgmanOneAxis(RectangleF bounds, RectangleEdge edge, List<PointF> v)
         {
-            if (v.Length == 0)
+            if (v.Count == 0)
             {
-                return new Point[0];
+                return new List<PointF>();
             }
 
-            ArrayList polygon = new ArrayList();
+            List<PointF> polygon = new List<PointF>();
             
-            Point s = v[v.Length - 1];
+            PointF s = v[v.Count - 1];
 
-            for (int i = 0; i < v.Length; ++i)
-            {
-                Point p = v[i];
-                bool pIn = IsInside(bounds, edge, p);
-                bool sIn = IsInside(bounds, edge, s);
-
-                if (sIn && pIn)
-                {   
-                    // case 1: inside -> inside
-                    polygon.Add(p);
-                }
-                else if (sIn && !pIn)
-                {   
-                    // case 2: inside -> outside
-                    polygon.Add(LineIntercept(bounds, edge, s, p));
-                }
-                else if (!sIn && !pIn)
-                {   
-                    // case 3: outside -> outside
-                    // emit nothing
-                }
-                else if (!sIn && pIn)
-                {   
-                    // case 4: outside -> inside
-                    polygon.Add(LineIntercept(bounds, edge, s, p));
-                    polygon.Add(p);
-                }
-
-                s = p;
-            }
-
-            return (Point[])polygon.ToArray(typeof(Point));
-        }
-
-        private static PointF[] SutherlandHodgmanOneAxis(RectangleF bounds, RectangleEdge edge, PointF[] v)
-        {
-            if (v.Length == 0)
-            {
-                return new PointF[0];
-            }
-
-            ArrayList polygon = new ArrayList();
-            
-            PointF s = v[v.Length - 1];
-
-            for (int i = 0; i < v.Length; ++i)
+            for (int i = 0; i < v.Count; ++i)
             {
                 PointF p = v[i];
                 bool pIn = IsInside(bounds, edge, p);
@@ -1703,28 +1518,7 @@ namespace PaintDotNet
                 s = p;
             }
 
-            return (PointF[])polygon.ToArray(typeof(PointF));
-        }
-
-        private static bool IsInside(Rectangle bounds, RectangleEdge edge, Point p)
-        {
-            switch (edge)
-            {
-                case RectangleEdge.Left:
-                    return !(p.X < bounds.Left);
-                        
-                case RectangleEdge.Right:
-                    return !(p.X >= bounds.Right);
-
-                case RectangleEdge.Top:
-                    return !(p.Y < bounds.Top);
-
-                case RectangleEdge.Bottom:
-                    return !(p.Y >= bounds.Bottom);
-
-                default:
-                    throw new InvalidEnumArgumentException("edge");
-            }
+            return polygon;
         }
 
         private static bool IsInside(RectangleF bounds, RectangleEdge edge, PointF p)
@@ -2106,7 +1900,7 @@ namespace PaintDotNet
 
                 if (File.Exists(indexHtmlPath))
                 {
-                    Process.Start(indexHtmlPath);
+                    SystemLayer.Shell.OpenUrl(parent, indexHtmlPath);
                     return;
                 }
             }
@@ -2114,7 +1908,7 @@ namespace PaintDotNet
             string lastChancePath = Path.Combine(helpDir, indexHtml);
             if (File.Exists(lastChancePath))
             {
-                Process.Start(lastChancePath);
+                SystemLayer.Shell.OpenUrl(parent, lastChancePath);
             }
             else
             {

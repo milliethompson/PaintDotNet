@@ -23,28 +23,6 @@ namespace PaintDotNet
     {
         private Bitmap renderSurface = null;
         private Bitmap icon = null;
-        private Color transparentColor;
-
-        public Color TransparentColor
-        {
-            get
-            {
-                return transparentColor;
-            }
-
-            set
-            {
-                transparentColor = value;
-
-                if (renderSurface != null)
-                {
-                    renderSurface.Dispose();
-                }
-
-                renderSurface = null;
-                Invalidate();
-            }
-        }
 
         public Bitmap Icon
         {
@@ -55,6 +33,16 @@ namespace PaintDotNet
 
             set
             {
+                if (value == null)
+                {
+                    value = new Bitmap(1, 1);
+
+                    using (Graphics g = Graphics.FromImage(value))
+                    {
+                        g.Clear(Color.Transparent);
+                    }
+                }
+
                 icon = value;
 
                 if (renderSurface != null)
@@ -67,86 +55,20 @@ namespace PaintDotNet
             }
         }
 
-        private void DoRenderSurface()
-        {
-            if (renderSurface != null)
-            {
-                renderSurface.Dispose();
-            }
-
-            renderSurface = new Bitmap(ClientRectangle.Width, ClientRectangle.Height);
-
-            using (Graphics g = Graphics.FromImage(renderSurface))
-            {
-                g.Clear(this.BackColor);
-            }
-
-            if (icon != null)
-            {
-                for (int y = 0; y < icon.Height; ++y)
-                {
-                    for (int x = 0; x < icon.Width; ++x)
-                    {
-                        Color c = icon.GetPixel(x, y);
-
-                        if (c != transparentColor)
-                        {
-                            renderSurface.SetPixel(x, y, c);
-                        }
-                    }
-                }
-            }
-        }
-
-        protected override void OnBackColorChanged(EventArgs e)
-        {
-            base.OnBackColorChanged (e);
-
-            if (renderSurface != null)
-            {
-                renderSurface.Dispose();
-            }
-
-            renderSurface = null;
-            Invalidate();
-        }
-
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize (e);
-
-            if (renderSurface != null)
-            {
-                renderSurface.Dispose();
-            }
-
-            renderSurface = null;
-        }
-
-        private void DoDraw(Graphics g)
-        {
-            if (renderSurface == null)
-            {
-                DoRenderSurface();
-            }
-
-            g.DrawImage(renderSurface, ClientRectangle, ClientRectangle, GraphicsUnit.Pixel);
-        }
-
         protected override void OnPaint(PaintEventArgs e)
         {
-            base.OnPaint (e);
-            DoDraw(e.Graphics);
-        }
+            e.Graphics.Clear(this.BackColor);
+            Rectangle srcBounds = new Rectangle(new Point(0, 0), this.icon.Size);
+            Rectangle dstBounds = new Rectangle(new Point(0, 0), this.ClientSize);
+            e.Graphics.DrawImage(this.Icon, dstBounds, srcBounds, GraphicsUnit.Pixel);
 
-        protected override void OnPaintBackground(PaintEventArgs pevent)
-        {
-            DoDraw(pevent.Graphics);
+            base.OnPaint(e);
         }
-
 
         public IconBox()
         {
+            this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
+
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 

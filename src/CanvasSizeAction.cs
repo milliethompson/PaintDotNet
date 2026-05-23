@@ -34,7 +34,7 @@ namespace PaintDotNet
         {
             get
             {
-                return PdnResources.GetImage("Icons.MenuImageCanvasSizeIcon.bmp");
+                return PdnResources.GetImage("Icons.MenuImageCanvasSizeIcon.png");
             }
         }
 
@@ -233,7 +233,6 @@ namespace PaintDotNet
                     return null;
                 }
 
-                // BUG: If this catch block is not here, the C# compiler does NOT seem to flag it as "not all code paths return a value"
                 catch
                 {
                     return null;

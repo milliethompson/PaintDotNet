@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -35,7 +36,6 @@ namespace PaintDotNet
         /// Lets you change B, G, R, and A at the same time.
         /// </summary>
         [FieldOffset(0)] 
-        [CLSCompliant(false)]
         public uint Bgra;
 
         public const int BlueChannel = 0;
@@ -245,7 +245,6 @@ namespace PaintDotNet
         /// <summary>
         /// Constructs a new ColorBgra instance with the given 32-bit value.
         /// </summary>
-        [CLSCompliant(false)]
         public static ColorBgra FromUInt32(UInt32 bgra)
         {
             ColorBgra color = new ColorBgra();
@@ -313,7 +312,6 @@ namespace PaintDotNet
         /// <summary>
         /// Casts a ColorBgra to a UInt32.
         /// </summary>
-        [CLSCompliant(false)]
         public static explicit operator UInt32(ColorBgra color)
         {
             return color.Bgra;
@@ -322,7 +320,6 @@ namespace PaintDotNet
         /// <summary>
         /// Casts a UInt32 to a ColorBgra.
         /// </summary>
-        [CLSCompliant(false)]
         public static explicit operator ColorBgra(UInt32 uint32)
         {
             return ColorBgra.FromUInt32(uint32);
@@ -1466,7 +1463,7 @@ namespace PaintDotNet
             }
         }
 
-        private static Hashtable predefinedColors;
+        private static Dictionary<string, ColorBgra> predefinedColors;
 
         /// <summary>
         /// Gets a hashtable that contains a list of all the predefined colors.
@@ -1474,7 +1471,7 @@ namespace PaintDotNet
         /// in System.Drawing.Color. The hashtable uses strings for the keys, and
         /// ColorBgras for the values.
         /// </summary>
-        public static Hashtable PredefinedColors
+        public static Dictionary<string, ColorBgra> PredefinedColors
         {
             get
             {
@@ -1488,12 +1485,12 @@ namespace PaintDotNet
                     {
                         if (pi.PropertyType == colorBgraType)
                         {
-                            colors.Add(pi.Name, pi.GetValue(null, null));
+                            colors.Add(pi.Name, (ColorBgra)pi.GetValue(null, null));
                         }
                     }
                 }
 
-                return (Hashtable)predefinedColors.Clone();
+                return new Dictionary<string, ColorBgra>(predefinedColors);
             }
         }
     }

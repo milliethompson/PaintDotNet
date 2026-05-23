@@ -7,6 +7,7 @@
 // See src/setup/License.rtf for complete licensing and attribution information.
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -104,10 +105,8 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            swapIconBox.Icon = new Bitmap(PdnResources.GetImage("Icons.SwapIcon.bmp"));
-            swapIconBox.TransparentColor = Color.FromArgb(192, 192, 192);
-            blackAndWhiteIconBox.Icon = new Bitmap(PdnResources.GetImage("Icons.BlackAndWhiteIcon.bmp"));
-            blackAndWhiteIconBox.TransparentColor = Color.FromArgb(192, 192, 192);
+            swapIconBox.Icon = new Bitmap(PdnResources.GetImage("Icons.SwapIcon.png"));
+            blackAndWhiteIconBox.Icon = new Bitmap(PdnResources.GetImage("Icons.BlackAndWhiteIcon.png"));
 
             toolTip.SetToolTip(swapIconBox, PdnResources.GetString("ColorDisplayWidget.SwapIconBox.ToolTipText"));
             toolTip.SetToolTip(blackAndWhiteIconBox, PdnResources.GetString("ColorDisplayWidget.BlackAndWhiteIconBox.ToolTipText"));
@@ -117,13 +116,13 @@ namespace PaintDotNet
 
         protected override void OnLayout(LayoutEventArgs levent)
         {
-            int ulX = (this.ClientRectangle.Width - this.DefaultSize.Width) / 2;
-            int ulY = (this.ClientRectangle.Height - this.DefaultSize.Height) / 2;
+            int ulX = (this.ClientRectangle.Width - UI.ScaleWidth(this.DefaultSize.Width)) / 2;
+            int ulY = (this.ClientRectangle.Height - UI.ScaleHeight(this.DefaultSize.Height)) / 2;
 
-            this.foreColorRectangle.Location = new System.Drawing.Point(ulX + 2, ulY + 2);
-            this.backColorRectangle.Location = new System.Drawing.Point(ulX + 18, ulY + 18);
-            this.swapIconBox.Location = new System.Drawing.Point(ulX + 30, ulY + 2);
-            this.blackAndWhiteIconBox.Location = new System.Drawing.Point(ulX + 2, ulY + 31);
+            this.foreColorRectangle.Location = new System.Drawing.Point(UI.ScaleWidth(ulX + 2), UI.ScaleHeight(ulY + 2));
+            this.backColorRectangle.Location = new System.Drawing.Point(UI.ScaleWidth(ulX + 18), UI.ScaleHeight(ulY + 18));
+            this.swapIconBox.Location = new System.Drawing.Point(UI.ScaleWidth(ulX + 30), UI.ScaleHeight(ulY + 2));
+            this.blackAndWhiteIconBox.Location = new System.Drawing.Point(UI.ScaleWidth(ulX + 2), UI.ScaleHeight(ulY + 31));
 
             base.OnLayout (levent);
         }
@@ -181,10 +180,9 @@ namespace PaintDotNet
             // 
             this.swapIconBox.Icon = null;
             this.swapIconBox.Name = "swapIconBox";
-            this.swapIconBox.Size = new System.Drawing.Size(16, 16);
+            this.swapIconBox.Size = new System.Drawing.Size(15, 15);
             this.swapIconBox.TabIndex = 2;
             this.swapIconBox.TabStop = false;
-            this.swapIconBox.TransparentColor = System.Drawing.Color.Empty;
             this.swapIconBox.Click += new System.EventHandler(this.swapIconBox_Click);
             this.swapIconBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.control_KeyUp);
             this.swapIconBox.DoubleClick += new System.EventHandler(this.swapIconBox_Click);
@@ -193,10 +191,9 @@ namespace PaintDotNet
             // 
             this.blackAndWhiteIconBox.Icon = null;
             this.blackAndWhiteIconBox.Name = "blackAndWhiteIconBox";
-            this.blackAndWhiteIconBox.Size = new System.Drawing.Size(16, 16);
+            this.blackAndWhiteIconBox.Size = new System.Drawing.Size(15, 15);
             this.blackAndWhiteIconBox.TabIndex = 3;
             this.blackAndWhiteIconBox.TabStop = false;
-            this.blackAndWhiteIconBox.TransparentColor = System.Drawing.Color.Empty;
             this.blackAndWhiteIconBox.Click += new System.EventHandler(this.blackAndWhiteIconBox_Click);
             this.blackAndWhiteIconBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.control_KeyUp);
             this.blackAndWhiteIconBox.DoubleClick += new System.EventHandler(this.blackAndWhiteIconBox_Click);
@@ -211,6 +208,8 @@ namespace PaintDotNet
             this.Controls.Add(this.swapIconBox);
             this.Controls.Add(this.foreColorRectangle);
             this.Controls.Add(this.backColorRectangle);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = AutoScaleMode.Dpi;
             this.Name = "ColorDisplayWidget";
             this.Size = new System.Drawing.Size(48, 48);
             this.ResumeLayout(false);

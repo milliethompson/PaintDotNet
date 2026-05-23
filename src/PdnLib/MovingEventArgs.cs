@@ -10,11 +10,8 @@
 using System;
 using System.Drawing;
 
-namespace PaintDotNet.SystemLayer
+namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for MovingEventArgs.
-    /// </summary>
     public class MovingEventArgs
         : System.EventArgs
     {

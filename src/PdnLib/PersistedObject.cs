@@ -18,14 +18,12 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security;
 using System.Security.Permissions;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for PersistedObject.
-    /// </summary>
-    public sealed class PersistedObject
+    public sealed class PersistedObject<T> 
         : IDisposable
     {
         private static ArrayList fileNames = ArrayList.Synchronized(new ArrayList());
@@ -43,7 +41,9 @@ namespace PaintDotNet
         //       that you may not reference another object. Hence, we can not use a
         //       normal .NET System.String.
         private IntPtr bstrTempFileName = IntPtr.Zero;
+        private string tempFileName;
         private WeakReference objectRef;
+        private volatile object theObject; // only non-null until the object is saved to disk, after with objectRef is our only reference
         private bool disposed = false;
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace PaintDotNet
         /// property will deserialize the object from disk before returning a new
         /// reference to it.
         /// </remarks>
-        public object Object
+        public T Object
         {
             get
             {
@@ -63,15 +63,15 @@ namespace PaintDotNet
                     throw new ObjectDisposedException("PersistedObject");
                 }
 
-                object o;
+                T o;
                 
                 if (objectRef == null)
                 {
-                    o = null;
+                    o = default(T);
                 }
                 else
                 {
-                    o = objectRef.Target;
+                    o = (T)objectRef.Target;
                 }
 
                 if (o == null)
@@ -82,10 +82,11 @@ namespace PaintDotNet
                     DeferredFormatter deferred = new DeferredFormatter();
                     StreamingContext context = new StreamingContext(formatter.Context.State, deferred);
                     formatter.Context = context;
-                    object theObject = formatter.Deserialize(stream);
+                    T theObject = (T)formatter.Deserialize(stream);
                     deferred.FinishDeserialization(stream);
                     this.objectRef = new WeakReference(theObject);
                     stream.Close();
+
                     return theObject;
                 }
                 else
@@ -102,7 +103,7 @@ namespace PaintDotNet
         /// If the object has already been finalized and freed from memory, then
         /// this property will return null.
         /// </remarks>
-        public object WeakObject
+        public T WeakObject
         {
             get
             {
@@ -113,11 +114,11 @@ namespace PaintDotNet
 
                 if (objectRef == null)
                 {
-                    return null;
+                    return default(T);
                 }
                 else
                 {
-                    return objectRef.Target;
+                    return (T)objectRef.Target;
                 }
             }
         }
@@ -128,6 +129,11 @@ namespace PaintDotNet
         /// </summary>
         public void Flush()
         {
+            while (this.theObject != null)
+            {
+                Thread.Sleep(10);
+            }
+
             // At this point we assume the object has already been serialized to disk.
             object obj = this.WeakObject;
             IDisposable disposable = obj as IDisposable;
@@ -147,26 +153,54 @@ namespace PaintDotNet
         /// <param name="theObject">
         /// The object to persist. It must be serializable.
         /// </param>
+        /// <param name="background">
+        /// Whether to serialize to disk in the background. If you specify true, then you must make
+        /// sure not to mutate or dispose theObject.</param>
         /// <remarks>
         /// Deferred serialization via IDeferredSerializable and DeferredFormatter are supported,
-        /// and the compression level will be set to none (zero).
+        /// and the compression level will be set to none (zero) if background is false. The
+        /// compression level will be one if background is true.
         /// </remarks>
-        public PersistedObject(object theObject)
+        public PersistedObject(T theObject, bool background)
         {
             this.objectRef = new WeakReference(theObject);
-            string tempFileName = FileSystem.GetTempFileName();
+            this.tempFileName = FileSystem.GetTempFileName();
             fileNames.Add(tempFileName);
             this.bstrTempFileName = Marshal.StringToBSTR(tempFileName);
+            this.theObject = theObject;
 
-            FileStream stream = new FileStream(tempFileName, FileMode.Create, FileAccess.Write, FileShare.Read);
+            if (background)
+            {
+                Thread thread = new Thread(new ThreadStart(PersistToDisk));
+                thread.Priority = ThreadPriority.BelowNormal;
+                thread.IsBackground = false;
+                thread.Start();
+            }
+            else
+            {
+                PersistToDisk();
+            }
+        }
+
+        private void PersistToDisk(object notUsed)
+        {
+            PersistToDisk();
+        }
+
+        private void PersistToDisk()
+        {
+            FileStream stream = new FileStream(this.tempFileName, FileMode.Create, FileAccess.Write, FileShare.Read);
             BinaryFormatter formatter = new BinaryFormatter();
-            DeferredFormatter deferred = new DeferredFormatter(0, null);
+            DeferredFormatter deferred = new DeferredFormatter(false, null);
             StreamingContext context = new StreamingContext(formatter.Context.State, deferred);
+
             formatter.Context = context;
-            formatter.Serialize(stream, theObject);
+            formatter.Serialize(stream, this.theObject);
             deferred.FinishSerialization(stream);
             stream.Flush();
             stream.Close();
+
+            this.theObject = null;
         }
 
         ~PersistedObject()
@@ -184,6 +218,14 @@ namespace PaintDotNet
         {
             if (!disposed)
             {
+                if (disposing)
+                {
+                    while (this.theObject != null)
+                    {
+                        Thread.Sleep(10);
+                    }
+                }
+
                 string tempFileName = Marshal.PtrToStringBSTR(this.bstrTempFileName);
 
                 FileInfo fi = new FileInfo(tempFileName);
@@ -222,7 +264,8 @@ namespace PaintDotNet
         private static void Application_ApplicationExit(object sender, EventArgs e)
         {
             // Clean-up leftover persisted objects
-            string[] fileNames = PersistedObject.FileNames;
+            string[] fileNames = PersistedObject<T>.FileNames;
+
             if (fileNames.Length != 0)
             {
                 foreach (string fileName in fileNames)

@@ -16,9 +16,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for FloatingToolForm.
-    /// </summary>
+    public delegate bool CmdKeysEventHandler(object sender, ref Message msg, Keys keyData);
+
     public class FloatingToolForm 
         : PdnBaseForm
     {
@@ -42,10 +41,22 @@ namespace PaintDotNet
         public event EventHandler RelinquishFocus;
         protected virtual void OnRelinquishFocus()
         {
+            // Only relinquish focus if we have it in the first place
+            if (MenuStripEx.IsAnyMenuActive)
+            {
+                return;
+            }
+
             if (RelinquishFocus != null)
             {
                 RelinquishFocus(this, EventArgs.Empty);
             }
+        }
+
+        protected override void OnResizeEnd(EventArgs e)
+        {
+            base.OnResizeEnd(e);
+            OnRelinquishFocus();
         }
 
         // The control that it needs to snap to
@@ -176,8 +187,12 @@ namespace PaintDotNet
             base.OnActivated (e);
         }
 
+        public event CmdKeysEventHandler ProcessCmdKeyEvent;
+
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
+            bool result = false;
+
             if (Utility.IsArrowKey(keyData))
             {
                 KeyEventArgs kea = new KeyEventArgs(keyData);
@@ -188,15 +203,27 @@ namespace PaintDotNet
                         this.OnKeyDown(kea);
                         return kea.Handled;
 
-                        /*
-                    case NativeMethods.WmConstants.WM_KEYUP:
-                        this.OnKeyUp(kea);
-                        return kea.Handled;
-                        */
+                /*
+                case NativeMethods.WmConstants.WM_KEYUP:
+                    this.OnKeyUp(kea);
+                    return kea.Handled;
+                */
+                }
+            }
+            else
+            {
+                if (ProcessCmdKeyEvent != null)
+                {
+                    result = ProcessCmdKeyEvent(this, ref msg, keyData);
                 }
             }
 
-            return base.ProcessCmdKey (ref msg, keyData);
+            if (!result)
+            {
+                result = base.ProcessCmdKey(ref msg, keyData);
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -225,7 +252,8 @@ namespace PaintDotNet
             // 
             // FloatingToolForm
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(292, 271);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
             this.MaximizeBox = false;

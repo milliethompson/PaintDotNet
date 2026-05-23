@@ -123,25 +123,10 @@ namespace PaintDotNet
             this.surface.Clear(ColorBgra.FromUInt32(0x00ffffff));
 
             Rectangle rect = boundsClipped;
-            //foreach (Rectangle rect in roiClipped.GetRegionScansReadOnlyInt())
-            {
-                Point dstOffset = new Point(rect.X - boundsClipped.X, rect.Y - boundsClipped.Y);
-                this.surface.CopySurface(source, dstOffset, rect);
-            }
+            Point dstOffset = new Point(rect.X - boundsClipped.X, rect.Y - boundsClipped.Y);
+            this.surface.CopySurface(source, dstOffset, rect);
 
             this.region = roiClipped;
-            this.path = PdnGraphicsPath.FromRegion(this.region);
-        }
-
-        private MaskedSurface(Surface source, PdnRegion roi, bool takeOwnership)
-        {
-            if (!takeOwnership)
-            {
-                throw new InvalidOperationException("only use this overload when we take ownership of surface and region");
-            }
-
-            this.surface = source;
-            this.region = roi;
             this.path = PdnGraphicsPath.FromRegion(this.region);
         }
 
@@ -277,6 +262,7 @@ namespace PaintDotNet
                 int end = (this.dstScans.Length * (cpuNumber + 1)) / Processor.LogicalCpuCount;
                 void *scan0 = src.Scan0.VoidStar;
                 int stride = src.Stride;
+                PointF[] pts = new PointF[1];
 
                 for (int i = start; i < end; ++i)
                 {
@@ -288,8 +274,6 @@ namespace PaintDotNet
                     {
                         continue;
                     }
-
-                    PointF[] pts = new PointF[1];
 
                     pts[0] = new PointF(dstRect.Left, dstRect.Top);
 
@@ -327,6 +311,7 @@ namespace PaintDotNet
                             ColorBgra *startFastPtr = dstPtr;
                             ColorBgra *endFastPtr = dstPtrEnd;
 
+                            // Left side
                             while (dstPtr < dstPtrEnd)
                             {
                                 int srcPtColX = (fp_srcPtColX + fp_RoundFactor) >> fp_ShiftFactor;
@@ -349,6 +334,7 @@ namespace PaintDotNet
                             startFastPtr = dstPtr;
                             dstPtr = dstPtrEnd - 1;
 
+                            // Right side
                             while (dstPtr > startFastPtr)
                             {
                                 int srcPtColX = (fp_srcPtColLastX + fp_RoundFactor) >> fp_ShiftFactor;
@@ -370,6 +356,7 @@ namespace PaintDotNet
 
                             endFastPtr = dstPtr;
 
+                            // Middle
                             while (startFastPtr < endFastPtr)
                             {
                                 int srcPtColX = (fp_srcPtColX + fp_RoundFactor) >> fp_ShiftFactor;
@@ -393,12 +380,12 @@ namespace PaintDotNet
                 int cpuNumber = (int)cpuNumberObj;
                 int start = (this.dstScans.Length * cpuNumber) / Processor.LogicalCpuCount;
                 int end = (this.dstScans.Length * (cpuNumber + 1)) / Processor.LogicalCpuCount;
+                PointF[] pts2 = new PointF[1];
 
                 for (int i = start; i < end; ++i)
                 {
                     Rectangle dstRect = this.dstScans[i];
                     dstRect.Intersect(dst.Bounds);
-                    PointF[] pts2 = new PointF[1];
 
                     pts2[0] = new PointF(dstRect.Left, dstRect.Top);
 
@@ -446,6 +433,11 @@ namespace PaintDotNet
                     }
                 }
             }
+        }
+
+        public void Draw(Surface dst)
+        {
+            Draw(dst, 0, 0);
         }
 
         public void Draw(Surface dst, int tX, int tY)
@@ -575,7 +567,15 @@ namespace PaintDotNet
 
             for (int i = 0; i < Processor.LogicalCpuCount; ++i)
             {
-                threadPool.QueueUserWorkItem(wc, BoxedConstants.GetInt32(i));
+                if (i == Processor.LogicalCpuCount - 1)
+                {
+                    // Don't queue the last work item into a separate thread
+                    wc(BoxedConstants.GetInt32(i));
+                }
+                else
+                {
+                    threadPool.QueueUserWorkItem(wc, BoxedConstants.GetInt32(i));
+                }
             }
 
             threadPool.Drain();

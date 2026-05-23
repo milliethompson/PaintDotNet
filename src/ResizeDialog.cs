@@ -18,9 +18,6 @@ using System.Diagnostics;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for ResizeDialog.
-    /// </summary>
     public class ResizeDialog 
         : PdnBaseForm
     {
@@ -272,6 +269,8 @@ namespace PaintDotNet
                 }
             }
 
+            public const double MinResolution = 0.01;
+
             public double Resolution
             {
                 get
@@ -281,9 +280,9 @@ namespace PaintDotNet
 
                 set
                 {
-                    if (value <= 0.0)
+                    if (value < MinResolution)
                     {
-                        throw new ArgumentOutOfRangeException("value", value, "value must be > 0.0");
+                        throw new ArgumentOutOfRangeException("value", value, "value must be >= 0.01");
                     }
 
                     if (this.resolution != value)
@@ -458,7 +457,7 @@ namespace PaintDotNet
 
             set
             {
-                this.constrainer.Resolution = value;
+                this.constrainer.Resolution = Math.Max(ResizeConstrainer.MinResolution, value);
             }
         }
 
@@ -566,7 +565,7 @@ namespace PaintDotNet
 
         private void UpdateSizeText()
         {
-            long bytes = (long)layers * (long)ColorBgra.SizeOf * (long)constrainer.NewPixelWidth * (long)constrainer.NewPixelHeight;
+            long bytes = unchecked((long)layers * (long)ColorBgra.SizeOf * (long)constrainer.NewPixelWidth * (long)constrainer.NewPixelHeight);
             string bytesText = Utility.SizeStringFromBytes(bytes);
             string textFormat = PdnResources.GetString("ResizeDialog.ResizedImageHeader.Text.Format");
             this.resizedImageHeader.Text = string.Format(textFormat, bytesText);
@@ -622,6 +621,7 @@ namespace PaintDotNet
 
         public ResizeDialog()
         {
+            this.SuspendLayout(); // ResumeLayout() called in OnLoad(). This helps with layout w.r.t. visual inheritance (CanvasSizeDialog and NewFileDialog)
             //
             // Required for Windows Form Designer support
             //
@@ -663,7 +663,7 @@ namespace PaintDotNet
 
             this.percentUpDown.Enabled = false;
 
-            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuImageResizeIcon.bmp"), Color.FromArgb(192, 192, 192));
+            this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuImageResizeIcon.png"), Utility.TransparentKey);
             PopulateAsteriskLabels();
             OnRadioButtonCheckedChanged(this, EventArgs.Empty);    
         }
@@ -687,6 +687,7 @@ namespace PaintDotNet
 
         protected override void OnLoad(EventArgs e)
         {
+            this.ResumeLayout(true); // SuspendLayout() was called in constructor
             base.OnLoad (e);
             this.pixelWidthUpDown.Select();
             this.pixelWidthUpDown.Select(0, pixelWidthUpDown.Text.Length);
@@ -756,7 +757,7 @@ namespace PaintDotNet
             // constrainCheckBox
             // 
             this.constrainCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.constrainCheckBox.Location = new System.Drawing.Point(24, 101);
+            this.constrainCheckBox.Location = new System.Drawing.Point(27, 101);
             this.constrainCheckBox.Name = "constrainCheckBox";
             this.constrainCheckBox.Size = new System.Drawing.Size(248, 16);
             this.constrainCheckBox.TabIndex = 25;
@@ -882,7 +883,7 @@ namespace PaintDotNet
             this.absoluteRB.Checked = true;
             this.absoluteRB.Location = new System.Drawing.Point(8, 78);
             this.absoluteRB.Name = "absoluteRB";
-            this.absoluteRB.Size = new System.Drawing.Size(264, 15);
+            this.absoluteRB.Width = 264;
             this.absoluteRB.TabIndex = 24;
             this.absoluteRB.TabStop = true;
             this.absoluteRB.CheckedChanged += new System.EventHandler(this.OnRadioButtonCheckedChanged);
@@ -898,7 +899,7 @@ namespace PaintDotNet
             // 
             this.pixelsLabel1.Location = new System.Drawing.Point(200, 145);
             this.pixelsLabel1.Name = "pixelsLabel1";
-            this.pixelsLabel1.Size = new System.Drawing.Size(93, 16);
+            this.pixelsLabel1.Width = 93;
             this.pixelsLabel1.TabIndex = 2;
             this.pixelsLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -1077,21 +1078,19 @@ namespace PaintDotNet
             // 
             // pixelSizeHeader
             // 
-            this.pixelSizeHeader.Location = new System.Drawing.Point(22, 125);
+            this.pixelSizeHeader.Location = new System.Drawing.Point(25, 125);
             this.pixelSizeHeader.Name = "pixelSizeHeader";
-            this.pixelSizeHeader.Size = new System.Drawing.Size(274, 14);
+            this.pixelSizeHeader.Size = new System.Drawing.Size(271, 14);
             this.pixelSizeHeader.TabIndex = 26;
             this.pixelSizeHeader.TabStop = false;
-            this.pixelSizeHeader.Text = "  ";
             // 
             // printSizeHeader
             // 
-            this.printSizeHeader.Location = new System.Drawing.Point(22, 216);
+            this.printSizeHeader.Location = new System.Drawing.Point(25, 216);
             this.printSizeHeader.Name = "printSizeHeader";
-            this.printSizeHeader.Size = new System.Drawing.Size(274, 14);
+            this.printSizeHeader.Size = new System.Drawing.Size(271, 14);
             this.printSizeHeader.TabIndex = 9;
             this.printSizeHeader.TabStop = false;
-            this.printSizeHeader.Text = "  ";
             // 
             // resamplingLabel
             // 
@@ -1115,7 +1114,8 @@ namespace PaintDotNet
             // ResizeDialog
             // 
             this.AcceptButton = this.okButton;
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(298, 344);
             this.Controls.Add(this.printSizeHeader);
@@ -1249,7 +1249,11 @@ namespace PaintDotNet
                 {
                     if (Utility.GetUpDownValueFromText(this.percentUpDown, out val))
                     {
-                        this.constrainer.SetByPercent(val / 100.0);
+                        if (val >= (double)this.percentUpDown.Minimum && 
+                            val <= (double)this.percentUpDown.Maximum)
+                        {
+                            this.constrainer.SetByPercent(val / 100.0);
+                        }
                     }
                 }
                 else
@@ -1324,7 +1328,7 @@ namespace PaintDotNet
                 {
                     if (Utility.GetUpDownValueFromText(this.resolutionUpDown, out val))
                     {
-                        if (val > 0.0)
+                        if (val >= ResizeConstrainer.MinResolution)
                         {
                             this.constrainer.Resolution = val;
                         }
@@ -1332,7 +1336,10 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    this.constrainer.Resolution = (double)this.resolutionUpDown.Value;
+                    if ((double)this.resolutionUpDown.Value >= ResizeConstrainer.MinResolution)
+                    {
+                        this.constrainer.Resolution = (double)this.resolutionUpDown.Value;
+                    }
                 }
             }
 
@@ -1469,22 +1476,19 @@ namespace PaintDotNet
         {
             ++ignoreUpDownValueChanged;
 
-            double val;
+            double val = 0.0;
+            bool result;
 
-            if (Utility.GetUpDownValueFromText(this.pixelWidthUpDown, out val))
+            result = Utility.GetUpDownValueFromText(this.pixelWidthUpDown, out val);
+            if (!result || val != this.constrainer.NewPixelWidth)
             {
-                if (val != this.constrainer.NewPixelWidth)
-                {
-                    this.pixelWidthUpDown.Value = (decimal)this.constrainer.NewPixelWidth;
-                }
+                this.pixelWidthUpDown.Value = (decimal)this.constrainer.NewPixelWidth;
             }
 
-            if (Utility.GetUpDownValueFromText(this.printWidthUpDown, out val))
+            result = Utility.GetUpDownValueFromText(this.printWidthUpDown, out val);
+            if (!result || val != this.constrainer.NewWidth)
             {
-                if (val != this.constrainer.NewWidth)
-                {
-                    this.printWidthUpDown.Value = (decimal)this.constrainer.NewWidth;
-                }
+                this.printWidthUpDown.Value = (decimal)this.constrainer.NewWidth;
             }
 
             --ignoreUpDownValueChanged;
@@ -1553,20 +1557,23 @@ namespace PaintDotNet
             double printWidth;
             double printHeight;
             double resolution;
+            double percent;
 
             bool b1 = Utility.GetUpDownValueFromText(this.pixelWidthUpDown, out pixelWidth);
             bool b2 = Utility.GetUpDownValueFromText(this.pixelHeightUpDown, out pixelHeight);
             bool b3 = Utility.GetUpDownValueFromText(this.printWidthUpDown, out printWidth);
             bool b4 = Utility.GetUpDownValueFromText(this.printHeightUpDown, out printHeight);
             bool b5 = Utility.GetUpDownValueFromText(this.resolutionUpDown, out resolution);
+            bool b6 = Utility.GetUpDownValueFromText(this.percentUpDown, out percent);
 
-            bool b6 = pixelWidth >= 1.0 && pixelWidth <= 65535.0;
-            bool b7 = pixelHeight >= 1.0 && pixelHeight <= 65535.0;
-            bool b8 = printWidth > 0.0;
-            bool b9 = printHeight > 0.0;
-            bool b10 = resolution > 0.0 && resolution < 2000000.0;
-
-            bool enable = b1 && b2 && b3 && b4 && b5 && b6 && b7 && b8 && b9 && b10;
+            bool b7 = (pixelWidth >= 1.0 && pixelWidth <= 65535.0);
+            bool b8 = (pixelHeight >= 1.0 && pixelHeight <= 65535.0);
+            bool b9 = (printWidth > 0.0);
+            bool b10 = (printHeight > 0.0);
+            bool b11 = (resolution >= ResizeConstrainer.MinResolution && resolution < 2000000.0);
+            bool b12 = (percent >= (double)this.percentUpDown.Minimum && percent <= (double)this.percentUpDown.Maximum);
+            
+            bool enable = b1 && b2 && b3 && b4 && b5 && b6 && b7 && b8 && b9 && b10 && b11 && b12;
             okButton.Enabled = enable;
         }
     }

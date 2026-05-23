@@ -28,7 +28,7 @@ namespace PaintDotNet
         public FlipLayerVerticalAction(DocumentWorkspace workspace)
             : base(workspace, 
                    StaticName,
-                   PdnResources.GetImage("Icons.MenuLayersFlipVerticalIcon.bmp"), 
+                   PdnResources.GetImage("Icons.MenuLayersFlipVerticalIcon.png"), 
                    FlipType.Vertical)
         {
         }

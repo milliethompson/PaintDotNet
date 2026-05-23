@@ -20,8 +20,7 @@ namespace PaintDotNet.Effects
     /// </summary>
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
     public class AddNoiseEffect
-        : Effect, 
-          IConfigurableEffect
+        : Effect
     {
         public static string StaticName
         {
@@ -35,20 +34,21 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                return PdnResources.GetImage("Icons.AddNoiseEffect.bmp");
+                return PdnResources.GetImage("Icons.AddNoiseEffect.png");
             }
+        }
+
+        static AddNoiseEffect()
+        {
+            InitLookup();
         }
 
         public AddNoiseEffect()
-            : base(StaticName, StaticImage)
+            : base(StaticName, StaticImage, true)
         {
-            if (lookup == null)
-            {
-                InitLookup();
-            }
         }
 
-        public EffectConfigDialog CreateConfigDialog()
+        public override EffectConfigDialog CreateConfigDialog()
         {
             TwoAmountsConfigDialog tacd = new TwoAmountsConfigDialog();
 
@@ -72,12 +72,13 @@ namespace PaintDotNet.Effects
 
         private const int tableSize = 16384;
         private static int[] lookup;
-        double NormalCurve(double x, double scale)
+
+        private static double NormalCurve(double x, double scale)
         {
             return scale * Math.Exp(-x * x / 2);
         }
 
-        void InitLookup()
+        private static void InitLookup()
         {
             int[] curve = new int[tableSize];
             int[] integral = new int[tableSize];
@@ -136,12 +137,12 @@ namespace PaintDotNet.Effects
         [ThreadStatic]
         private static Random threadRand = new Random();
         
-        unsafe void PaintDotNet.Effects.IConfigurableEffect.Render(EffectConfigToken properties, RenderArgs dstArgs, RenderArgs srcArgs, PdnRegion roi)
+        public override unsafe void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
+            Rectangle[] rois, int startIndex, int length)
         {
-            TwoAmountsConfigToken tact = (TwoAmountsConfigToken)properties;
+            TwoAmountsConfigToken tact = (TwoAmountsConfigToken)parameters;
             int dev = tact.Amount1 * tact.Amount1 / 64; //dev = target stddev / 16
             int sat = tact.Amount2 * 4096 / 100;
-            Rectangle[] rects = roi.GetRegionScansReadOnlyInt();;
 
             if (threadRand == null)
             {
@@ -151,8 +152,10 @@ namespace PaintDotNet.Effects
 
             Random localRand = threadRand;
 
-            foreach (Rectangle rect in rects)
+            for (int ri = startIndex; ri < startIndex + length; ++ri)
             {
+                Rectangle rect = rois[ri];
+
                 for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
                     ColorBgra *srcPtr = srcArgs.Surface.GetPointAddress(rect.Left, y);

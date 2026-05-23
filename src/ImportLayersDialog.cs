@@ -105,7 +105,7 @@ namespace PaintDotNet
             //
             InitializeComponent();
 
-            Image icon = PdnResources.GetImage("Icons.MenuLayersImportFromFileIcon.bmp");
+            Image icon = PdnResources.GetImage("Icons.MenuLayersImportFromFileIcon.png");
             this.Icon = Utility.ImageToIcon(icon);
 
             this.layerControlInitialSize = layerControl.Size;
@@ -233,7 +233,8 @@ namespace PaintDotNet
             // 
             // ImportLayersDialog
             // 
-            this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.AutoScaleDimensions = new SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(608, 320);
             this.Controls.Add(this.previewHeader);
             this.Controls.Add(this.layersToInsertHeader);
