@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -12,11 +12,8 @@ using System.Drawing;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for SharpenEffect.
-    /// </summary>
-    public unsafe class SharpenEffect
-        : ConvolutionFilterEffect
+    public sealed class SharpenEffect
+        : LocalHistogramEffect
     {
         public static string StaticName
         {
@@ -26,74 +23,53 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private readonly int[][] sharpenWeights = new int[3][] { new int[] { -1, -1, -1 },
-                                                                 new int[] { -1, 20, -1 },
-                                                                 new int[] { -1, -1, -1 } };
+        public static ImageResource StaticImage
+        {
+            get
+            {
+                return ImageResource.Get("Icons.SharpenEffect.png");
+            }
+        }
 
         public SharpenEffect()
-            : base(StaticName,
-                   PdnResources.GetImage("Icons.SharpenEffect.png"), 
-                   true)
+            : base(StaticName, StaticImage.Reference, true)
         {
         }
 
         public override EffectConfigDialog CreateConfigDialog()
         {
-            AmountEffectConfigDialog aecg = new AmountEffectConfigDialog();
-            aecg.Effect = this;
-            aecg.Text = StaticName;
-            aecg.SliderLabel = PdnResources.GetString("SharpenEffect.ConfigDialog.SliderLabel");
-            aecg.SliderUnitsName = string.Empty;
-            aecg.SliderMinimum = 1;
-            aecg.SliderMaximum = 4;
-            aecg.SliderInitialValue = 1;
-            aecg.Icon = PdnResources.GetIconFromImage("Icons.SharpenEffect.png");
-            return aecg;
+            AmountEffectConfigDialog acd = new AmountEffectConfigDialog();
+
+            acd.Text = this.Name;
+
+            acd.SliderLabel = PdnResources.GetString("SharpenEffect.ConfigDialog.SliderLabel");
+            acd.SliderInitialValue = 2;
+            acd.SliderMinimum = 1;
+            acd.SliderMaximum = 20;
+            acd.SliderUnitsName = string.Empty;
+
+            return acd;
         }
 
-        // http://www.photo.net/bboard/q-and-a-fetch-msg.tcl?msg_id=000Qi5
-        // This guy (Alan Gibson) stated that sharpening is best done as "2*original - blur"
-
-        // So I create a gaussian blur matrix, then negate all the elements except the center one
-        // for the center one I compute this as the sum of all the elements in the matrix minus the
-        // value at the center. So:
-        // blurMatrix = ...;
-        // sharpenMatrix = -blurMatrix;
-        // sharpenMatrix[center,center] = sum(blurMatrix) - blurMatrix[center,center]
-
-        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, Rectangle[] rois, int startIndex, int length)
+        public unsafe override ColorBgra Apply(ColorBgra src, int area, int* hb, int* hg, int* hr, int* ha)
         {
-            if (parameters == null)
+            ColorBgra median = GetPercentile(50, area, hb, hg, hr, ha);
+            return ColorBgra.Lerp(src, median, -0.5f);
+        }
+
+        public unsafe override void Render(
+            EffectConfigToken parameters,
+            RenderArgs dstArgs,
+            RenderArgs srcArgs,
+            Rectangle[] rois,
+            int startIndex,
+            int length)
+        {
+            AmountEffectConfigToken token = (AmountEffectConfigToken)parameters;
+
+            foreach (Rectangle rect in rois)
             {
-                base.RenderConvolutionFilter(sharpenWeights, 0, dstArgs, srcArgs, rois, startIndex, length);
-            }
-            else
-            {
-                AmountEffectConfigToken token = (AmountEffectConfigToken)parameters;
-
-                int[][] weights = BlurEffect.CreateGaussianBlurMatrix(1 << (token.Amount - 1));
-                int sum = Utility.Sum(weights);
-                int center = weights.GetLength(0) / 2;
-
-                for (int i = 0; i < weights.Length; ++i)
-                {
-                    int[] row = weights[i];
-
-                    for (int j = 0; j < row.Length; ++j)
-                    {
-                        if (i == center && j == center)
-                        {
-                            row[j] = (2 * sum) - row[j];
-                        }
-                        else
-                        {
-                            row[j] = -row[j];
-                        }
-                    }
-                }
-
-                NormalizeWeightMatrix(weights);
-                base.RenderConvolutionFilter(weights, 0, dstArgs, srcArgs, rois, startIndex, length);
+                RenderRect(token.Amount, srcArgs.Surface, dstArgs.Surface, rect);
             }
         }
     }

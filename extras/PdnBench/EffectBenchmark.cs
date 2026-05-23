@@ -17,42 +17,65 @@ namespace PdnBench
         private Surface image;
 
         private Surface dst;
-        private RenderArgs srcArgs;
-        private RenderArgs dstArgs;
         private PdnRegion region;
-        private BackgroundEffectRenderer ber;
+
+        private int iterations;
+        public int Iterations
+        {
+            get
+            {
+                return this.iterations;
+            }
+        }
 
         protected override void OnBeforeExecute()
         {
-            srcArgs = new RenderArgs(image);
-            dst = image.Clone();
-            dstArgs = new RenderArgs(dst);
-            region = new PdnRegion(dst.Bounds);
-            ber = new BackgroundEffectRenderer(effect, token, dstArgs, srcArgs, region, 
-                25 * Processor.LogicalCpuCount, Processor.LogicalCpuCount);
+            this.dst = image.Clone();
+            this.region = new PdnRegion(dst.Bounds);
         }
 
         protected sealed override void OnExecute()
         {
-            ber.Start();
-            ber.Join();
+            for (int i = 0; i < this.iterations; ++i)
+            {
+                EffectConfigToken localToken;
+
+                if (this.token == null)
+                {
+                    localToken = null;
+                }
+                else
+                {
+                    localToken = (EffectConfigToken)this.token.Clone();
+                }
+
+                RenderArgs srcArgs = new RenderArgs(image);
+                RenderArgs dstArgs = new RenderArgs(dst);
+
+                BackgroundEffectRenderer ber = new BackgroundEffectRenderer(effect, localToken, dstArgs, srcArgs, region,
+                    25 * Processor.LogicalCpuCount, Processor.LogicalCpuCount);
+
+                ber.Start();
+                ber.Join();
+
+                ber.Dispose();
+                ber = null;
+            }
         }
 
         protected override void OnAfterExecute()
         {
-            ber.Dispose();
             region.Dispose();
-            dstArgs.Dispose();
             dst.Dispose();
-            srcArgs.Dispose();
         }
 
-        public EffectBenchmark(string name, Effect effect, EffectConfigToken token, Surface image)
-            : base(name)
+        public EffectBenchmark(string name, int iterations, Effect effect, EffectConfigToken token, Surface image)
+            : base(name + " (" + iterations + "x)")
 		{
             this.effect = effect;
             this.token = token;
             this.image = image;
+            this.iterations = iterations;
 		}
 	}
 }

@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -268,12 +268,12 @@ namespace PaintDotNet.Effects
 
             if (dist != 0)
             {
-                double angle = Math.Atan2(ry, rx);
-                double sinangle = Math.Sin(angle);
-                double cosangle = Math.Cos(angle);
+                double rAngle = Math.Atan2(ry, rx);
+                double sinAngle = Math.Sin(rAngle);
+                double cosAngle = Math.Cos(rAngle);
 
-                Transform(sinangle, cosangle, dist, Math.Cos(Math.Asin(dist)), ref xs, ref ys, ref zs);
-                Transform(sinangle, cosangle, dist, Math.Cos(Math.Asin(dist)), ref xe, ref ye, ref ze);
+                Transform(sinAngle, cosAngle, dist, Math.Cos(Math.Asin(dist)), ref xs, ref ys, ref zs);
+                Transform(sinAngle, cosAngle, dist, Math.Cos(Math.Asin(dist)), ref xe, ref ye, ref ze);
             }
 
             xs *= scale;
@@ -474,9 +474,6 @@ namespace PaintDotNet.Effects
                     {
                         this.Angle = (theta * 360) / (2 * Math.PI);
                     }
-
-                    // TODO: is this line of code necessary?
-                    //this.rollDirection = -(this.Angle - startAngle) * Math.PI / 180 + startTheta;
 
                     Update();
                 }

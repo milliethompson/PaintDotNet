@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Setup/License.txt for full licensing and attribution details.       //
+// 2                                                                           //
+// 1                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 #include "GeneratedCodeWarning.h"
@@ -48,14 +48,18 @@ using System;
 #define INT_SCALE(a, b, r) { r = INT_SCALE_MULT(a, b); r = INT_SCALE_DIV(r); }
 
 #define COMPUTE_ALPHA(a, b, r) { INT_SCALE(a, 255 - (b), r); r += (b); }
-#define ADJ(z) ((uint)(((z) + 1) >> 8))
 
-#define BLEND(lhs, rhs, F, H, h, J, j) \
+// F(A,B) = blending function for the pixel values
+// h(a) = function for loading lhs.A, usually just ID
+// j(a) = function for loading rhs.A, usually just ID
+
+#define BLEND(lhs, rhs, F, h, j) \
+                int lhsA; \
+                h((lhs).A, lhsA); \
                 int rhsA; \
-                h((rhs).A, rhsA); \
-                int lhsA = (lhs).A; \
-                int lhsAMult = INT_SCALE_MULT(lhsA, 255 - rhsA); \
-                int y = INT_SCALE_DIV(lhsAMult); \
+                j((rhs).A, rhsA); \
+                int y; \
+                INT_SCALE(lhsA, 255 - rhsA, y); \
                 int totalA = y + rhsA; \
                 uint ret; \
  \
@@ -91,10 +95,10 @@ using System;
                     ret = b + (g << 8) + (r << 16) + ((uint)a << 24); \
                 } \
 
-#define IMPLEMENT_INSTANCE_FUNCTIONS(F, H, h, J, j) \
+#define IMPLEMENT_INSTANCE_FUNCTIONS(F, h, j) \
             public override ColorBgra Apply(ColorBgra lhs, ColorBgra rhs) \
             { \
-                BLEND(lhs, rhs, F, H, h, J, j); \
+                BLEND(lhs, rhs, F, h, j); \
                 return ColorBgra.FromUInt32(ret); \
             } \
  \
@@ -102,7 +106,7 @@ using System;
             { \
                 while (length > 0) \
                 { \
-                    BLEND(*dst, *src, F, H, h, J, j); \
+                    BLEND(*dst, *src, F, h, j); \
                     dst->Bgra = ret; \
                     ++dst; \
                     ++src; \
@@ -114,7 +118,7 @@ using System;
             { \
                 while (length > 0) \
                 { \
-                    BLEND(*lhs, *rhs, F, H, h, J, j); \
+                    BLEND(*lhs, *rhs, F, h, j); \
                     dst->Bgra = ret; \
                     ++dst; \
                     ++lhs; \
@@ -123,10 +127,10 @@ using System;
                 } \
             }
 
-#define IMPLEMENT_STATIC_FUNCTIONS(F, H, h, J, j) \
+#define IMPLEMENT_STATIC_FUNCTIONS(F, h, j) \
             public static ColorBgra ApplyStatic(ColorBgra lhs, ColorBgra rhs) \
             { \
-                BLEND(lhs, rhs, F, H, h, J, j); \
+                BLEND(lhs, rhs, F, h, j); \
                 return ColorBgra.FromUInt32(ret); \
             }
 
@@ -141,15 +145,16 @@ using System;
 
 #define ID(x, r) { r = (x); }
 #define ALPHA_WITH_OPACITY(a, r) INT_SCALE(a, this.opacity, r)
+#define APPLY_OPACITY_ADAPTER(a, r) { r = ApplyOpacity(a); }
 
-#define DEFINE_OP(NAME, PROTECTION, F, H, J, j) \
+#define DEFINE_OP(NAME, PROTECTION, F, h, j) \
         [Serializable] \
         PROTECTION sealed class NAME##BlendOp \
             : UserBlendOp \
         { \
             IMPLEMENT_OP_STATICNAME(NAME) \
-            IMPLEMENT_INSTANCE_FUNCTIONS(F, H, ID, J, j) \
-            IMPLEMENT_STATIC_FUNCTIONS(F, H, ID, J, j) \
+            IMPLEMENT_INSTANCE_FUNCTIONS(F, h, j) \
+            IMPLEMENT_STATIC_FUNCTIONS(F, h, j) \
  \
             public override UserBlendOp CreateWithOpacity(int opacity) \
             { \
@@ -161,9 +166,17 @@ using System;
             { \
                 private int opacity; \
  \
+                private byte ApplyOpacity(byte a) \
+                { \
+                    int r; \
+                    j(a, r); \
+                    ALPHA_WITH_OPACITY(r, r); \
+                    return (byte)r; \
+                } \
+ \
                 IMPLEMENT_OP_STATICNAME(NAME) \
  \
-                IMPLEMENT_INSTANCE_FUNCTIONS(F, H, ALPHA_WITH_OPACITY, J, j) \
+                IMPLEMENT_INSTANCE_FUNCTIONS(F, h, APPLY_OPACITY_ADAPTER) \
  \
                 public NAME##BlendOpWithOpacity(int opacity) \
                 { \
@@ -177,7 +190,7 @@ using System;
             } \
         }
 
-#define DEFINE_STANDARD_OP(NAME, F) DEFINE_OP(NAME, public, F, ID, ID, ID)
+#define DEFINE_STANDARD_OP(NAME, F) DEFINE_OP(NAME, public, F, ID, ID)
 
 #define OVER(A, B, r) \
 { \
@@ -298,7 +311,7 @@ namespace PaintDotNet
 {
     partial class UserBlendOps
     {
-         // i = z * 3;
+        // i = z * 3;
         // (x / z) = ((x * masTable[i]) + masTable[i + 1]) >> masTable[i + 2)
         private static readonly uint[] masTable = 
         {

@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -17,19 +17,19 @@ namespace PaintDotNet
     /// and then when this class is Disposed it will reset the cursor
     /// to the original cursor.
     /// </summary>
-    public class CursorChanger
+    public sealed class CursorChanger
         : IDisposable
     {
         private Control control;
         private Cursor oldCursor;
 
-        private Control FindTopParent(Control control)
+        private Control FindTopParent(Control childControl)
         {
-            Control parent = control.Parent;
+            Control parent = childControl.Parent;
 
             if (parent == null)
             {
-                return control;
+                return childControl;
             }
             else
             {
@@ -56,7 +56,7 @@ namespace PaintDotNet
         }
 
         private bool disposed = false;
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (!disposed)
             {

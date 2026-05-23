@@ -1,32 +1,34 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
 using System.Reflection;
+using System.Resources;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-[assembly: ComVisible(false)]
 [assembly: CLSCompliant(true)]
+[assembly: ComVisible(false)]
 
 //
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-[assembly: AssemblyTitle("Paint.NET v2.72 Resources")]
+[assembly: AssemblyTitle("Paint.NET Resources")]
 [assembly: AssemblyDescription("Image and photo editing software written in C#.")]
 [assembly: AssemblyCompany("Paint.NET Team")]
-[assembly: AssemblyProduct("Paint.NET v2.72")]
-[assembly: AssemblyCopyright("Copyright © 2006 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2006 Microsoft Corporation. All Rights Reserved.")]
+[assembly: AssemblyProduct("Paint.NET")]
+[assembly: AssemblyCopyright("Copyright © 2007 Rick Brewster, Tom Jackson, and past contributors. Portions Copyright © 2007 Microsoft Corporation. All Rights Reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
+
 //
 // Version information for an assembly consists of the following four values:
 //
@@ -37,7 +39,7 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("2.72.*")]
+[assembly: AssemblyVersion("3.01.*")]
 
 // Change this to say "Final" for final builds. Otherwise the titlebar will contain
 // a long version string. Final versions should just say the ApplicationProduct
@@ -78,3 +80,4 @@ using System.Runtime.InteropServices;
 [assembly: Dependency("System.Windows.Forms", LoadHint.Always)]
 [assembly: Dependency("System.Drawing", LoadHint.Always)]
 [assembly: DefaultDependency(LoadHint.Always)]
+[assembly: NeutralResourcesLanguage("en-US", UltimateResourceFallbackLocation.Satellite)]

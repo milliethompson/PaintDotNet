@@ -1,4 +1,4 @@
-for %%f in (. CpuCount PdnLib Effects Effects\RotateZoom PdnLib PdnLib\Threading SystemLayer StylusReader Data Data\TgaFileType Setup) do (
+for %%f in (. Data Effects PdnLib PdnLib\Threading Resources SystemLayer StylusReader Setup) do (
     rmdir /s /q "%%f\bin"
     rmdir /s /q "%%f\obj"
     rmdir /s /q "%%f\Release"

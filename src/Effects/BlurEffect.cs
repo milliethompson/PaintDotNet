@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    public class BlurEffect
+    public sealed class BlurEffect
         : Effect
     {
         public static string StaticName
@@ -27,7 +27,6 @@ namespace PaintDotNet.Effects
         public BlurEffect()
             : base(StaticName,
                    PdnResources.GetImage("Icons.BlurEffect.png"),
-                   Keys.None,
                    PdnResources.GetString("Effects.Blurring.Submenu.Name"),
                    EffectDirectives.None,
                    true)
@@ -40,7 +39,7 @@ namespace PaintDotNet.Effects
             aecg.Effect = this;
             aecg.Text = StaticName;
             aecg.SliderMinimum = 1;
-            aecg.SliderMaximum = 100;
+            aecg.SliderMaximum = 200;
             aecg.SliderLabel = PdnResources.GetString("BlurEffect.ConfigDialog.SliderLabel");
             aecg.SliderUnitsName = PdnResources.GetString("BlurEffect.ConfigDialog.SliderUnitsName");
 
@@ -121,12 +120,12 @@ namespace PaintDotNet.Effects
                 {
                     for (int y = rect.Top; y < rect.Bottom; ++y)
                     {
-                        long[] waSums = new long[wlen];
-                        long[] wcSums = new long[wlen];
-                        long[] aSums = new long[wlen];
-                        long[] bSums = new long[wlen];
-                        long[] gSums = new long[wlen];
-                        long[] rSums = new long[wlen];
+                        long* waSums = stackalloc long[wlen];
+                        long* wcSums = stackalloc long[wlen];
+                        long* aSums = stackalloc long[wlen];
+                        long* bSums = stackalloc long[wlen];
+                        long* gSums = stackalloc long[wlen];
+                        long* rSums = stackalloc long[wlen];
                         long waSum = 0;
                         long wcSum = 0;
                         long aSum = 0;
@@ -153,7 +152,7 @@ namespace PaintDotNet.Effects
 
                                     if (srcY >= 0 && srcY < src.Height)
                                     {
-                                        ColorBgra c = src[srcX, srcY];
+                                        ColorBgra c = src.GetPointUnchecked(srcX, srcY);
                                         int wp = w[wy];
 
                                         waSums[wx] += wp;
@@ -246,7 +245,7 @@ namespace PaintDotNet.Effects
 
                                     if (srcY >= 0 && srcY < src.Height)
                                     {
-                                        ColorBgra c = src[srcX, srcY];
+                                        ColorBgra c = src.GetPointUnchecked(srcX, srcY);
                                         int wp = w[wy];
 
                                         waSums[wx] += wp;

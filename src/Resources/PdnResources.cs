@@ -1,12 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public sealed class PdnResources
+    public static class PdnResources
     {
         private static ResourceManager resourceManager;
         private const string ourNamespace = "PaintDotNet";
@@ -29,10 +30,6 @@ namespace PaintDotNet
         private static string[] localeDirs;
         private static CultureInfo pdnCulture;
         private static string resourcesDir;
-
-        private PdnResources()
-        {
-        }
 
         public static string ResourcesDir
         {
@@ -80,14 +77,63 @@ namespace PaintDotNet
             Initialize();
         }
 
+        public static void SetNewCulture(IWin32Window owner, string newLocaleName)
+        {
+            // TODO, HACK: post-3.0 we must refactor and have an actual user data manager that can handle all this renaming
+            string oldUserDataPath = PdnInfo.UserDataPath;
+            string oldPaletteDirName = PdnResources.GetString("ColorPalettes.UserDataSubDirName");
+            // END HACK
+
+            CultureInfo newCI = new CultureInfo(newLocaleName);
+            Settings.CurrentUser.SetString("LanguageName", newLocaleName);
+            Culture = newCI;
+
+            // TODO, HACK: finish up renaming
+            string newUserDataPath = PdnInfo.UserDataPath;
+            string newPaletteDirName = PdnResources.GetString("ColorPalettes.UserDataSubDirName");
+
+            // 1. rename user data dir from old localized name to new localized name
+            if (oldUserDataPath != newUserDataPath)
+            {
+                try
+                {
+                    Directory.Move(oldUserDataPath, newUserDataPath);
+                }
+
+                catch (Exception)
+                {
+                }
+            }
+
+            // 2. rename palette dir from old localized name (in new localized user data path) to new localized name
+            string oldPalettePath = Path.Combine(newUserDataPath, oldPaletteDirName);
+            string newPalettePath = Path.Combine(newUserDataPath, newPaletteDirName);
+
+            if (oldPalettePath != newPalettePath)
+            {
+                try
+                {
+                    Directory.Move(oldPalettePath, newPalettePath);
+                }
+
+                catch (Exception)
+                {
+                }
+            }
+            // END HACK
+
+            string message = PdnResources.GetString("SetLanguage.PleaseRestartApplication");
+            MessageBox.Show(owner, message, PdnInfo.GetBareProductName(), MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        
         public static string[] GetInstalledLocales()
         {
-            const string left = "PaintDotNet.Strings";
+            const string left = "PaintDotNet.Strings.3";
             const string right = ".resources";
-            string ourDir = ResourcesDir; //PdnInfo.GetApplicationDir();
+            string ourDir = ResourcesDir;
             string fileSpec = left + "*" + right;
             string[] pathNames = Directory.GetFiles(ourDir, fileSpec);
-            string[] locales = new string[pathNames.Length];
+            List<String> locales = new List<string>();
 
             for (int i = 0; i < pathNames.Length; ++i)
             {
@@ -112,10 +158,22 @@ namespace PaintDotNet
                     locale = sansLeft;
                 }
 
-                locales[i] = locale;
+                try
+                {
+                    // Ensure this locale can create a valid CultureInfo object.
+                    CultureInfo ci = new CultureInfo(locale);
+                }
+
+                catch (Exception)
+                {
+                    // Skip past invalid locales -- don't let them crash us
+                    continue;
+                }
+
+                locales.Add(locale);
             }
 
-            return locales;
+            return locales.ToArray();
         }
 
         public static string[] GetLocaleNameChain()
@@ -123,7 +181,7 @@ namespace PaintDotNet
             List<string> names = new List<string>();
             CultureInfo ci = pdnCulture;
 
-            while (ci.Name != "")
+            while (ci.Name != string.Empty)
             {
                 names.Add(ci.Name);
                 ci = ci.Parent;
@@ -135,13 +193,13 @@ namespace PaintDotNet
         private static string[] GetLocaleDirs()
         {
             const string rootDirName = "Resources";
-            string appDir = ResourcesDir; // PdnInfo.GetApplicationDir();
+            string appDir = ResourcesDir;
             string rootDir = Path.Combine(appDir, rootDirName);
             List<string> dirs = new List<string>();
 
             CultureInfo ci = pdnCulture;
 
-            while (ci.Name != "")
+            while (ci.Name != string.Empty)
             {
                 string localeDir = Path.Combine(rootDir, ci.Name);
 
@@ -158,8 +216,8 @@ namespace PaintDotNet
 
         private static ResourceManager CreateResourceManager()
         {
-            const string stringsFileName = "PaintDotNet.Strings";
-            ResourceManager rm = ResourceManager.CreateFileBasedResourceManager(stringsFileName, ResourcesDir /*PdnInfo.GetApplicationDir()*/, null);
+            const string stringsFileName = "PaintDotNet.Strings.3";
+            ResourceManager rm = ResourceManager.CreateFileBasedResourceManager(stringsFileName, ResourcesDir, null);
             return rm;
         }
 
@@ -229,7 +287,7 @@ namespace PaintDotNet
             Image image = null;
             if (stream != null)
             {
-                image = LoadImage(stream); //Image.FromStream(stream);
+                image = LoadImage(stream);
             }
 
             return image;
@@ -256,7 +314,7 @@ namespace PaintDotNet
 
             if (stream != null)
             {
-                Image image = LoadImage(stream); // Image.FromStream(stream);
+                Image image = LoadImage(stream);
                 icon = Icon.FromHandle(((Bitmap)image).GetHicon());
                 image.Dispose();
                 stream.Close();

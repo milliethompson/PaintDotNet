@@ -1,7 +1,7 @@
 Paint.NET Source Code
 ---------------------
 If you're just trying to install and use Paint.NET, then you've downloaded
-the wrong pacakage. Just thought we'd let you know.
+the wrong package. Just thought we'd let you know.
 
 For information on building Paint.NET, refer to src/readme.txt
 

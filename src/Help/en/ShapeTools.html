@@ -3,7 +3,7 @@
 <!-- #BeginTemplate "pdn_help.dwt" -->
 
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <!-- #BeginEditable "title" -->
 <title>Paint.NET Help - Shape Tools</title>
 <!-- #EndEditable -->
@@ -13,47 +13,53 @@
 <body>
 
 <div id="banner">
-	<img border="0" src="../images/logo.png" width="229" height="73" align="left"><p><b><br>
-	&nbsp;</b></p>
-</div>
+	<a href="http://www.getpaint.net/">
+	<img border="0" src="../images/logo.png"></a><p>
+	&nbsp;</div>
 <div id="leftnav">
 	<ul class="toc" style="margin-left: 0; padding-left: 0;">
 		<li><a href="index.html">Overview</a><br>
 		</li>
 		<li><a href="Features.html">Features</a><br>
 		<a href="Tutorials.html">Tutorials</a><br>
+		<a href="WhatsNew.html">What&#39;s New?</a><br>
 		</li>
+	</ul>
+	<h3>Concepts</h3>
+	<ul class="toc" style="margin-left: 0; padding-left: 0;">
+		<li><a href="LayersAndBlendModes.html">Layers and Blend Modes</a></li>
 	</ul>
 	<h3>User Interface</h3>
 	<ul class="toc" style="margin-left: 0; padding-left: 0;">
 		<li><a href="KeyboardMouseCommands.html">Keyboard &amp; Mouse Commands</a></li>
 		<li><a href="MainWindow.html">Main Window</a></li>
+		<li><a href="ImageList.html">Image List</a></li>
 		<li><a href="MenuBar.html">Menu Bar</a>
 		<ul class="toc">
-			<li><a href="File.html">File</a></li>
-			<li><a href="Edit.html">Edit</a></li>
-			<li><a href="View.html">View</a></li>
-			<li><a href="Image.html">Image</a></li>
-			<li><a href="Layers.html">Layers</a>
+			<li><a href="FileMenu.html">File</a></li>
+			<li><a href="EditMenu.html">Edit</a></li>
+			<li><a href="ViewMenu.html">View</a></li>
+			<li><a href="ImageMenu.html">Image</a></li>
+			<li><a href="LayersMenu.html">Layers</a>
 			<ul class="toc">
 				<li class="comment"><a href="RotateZoom.html">Rotate / Zoom</a></li>
-				<li><a href="Adjustments.html">Adjustments</a>
+			</ul></li>
+			<li><a href="AdjustmentsMenu.html">Adjustments</a>&nbsp;
 				<ul class="toc">
 				    <li><a href="Curves.html">Curves</a></li>
 					<li><a href="Levels.html">Levels</a></li>
 				</ul></li>
-			</ul></li>
-			<li><a href="Effects.html">Effects</a></li>
-			<li><a href="Tools.html">Tools</a></li>
-			<li><a href="Window.html">Window</a></li>
-			<li><a href="Help.html">Help</a></li>
-			<li><a href="Toolbar.html">Toolbar</a></li>
+			<li><a href="EffectsMenu.html">Effects</a></li>
+			<li><a href="WindowMenu.html">Window</a></li>
+			<li><a href="HelpMenu.html">Help</a></li>
 		</ul>
 		</li>
+		<li><a href="Toolbar.html">Toolbar</a></li>
 		<li><a href="ToolsWindow.html">Tools Window</a><ul class="toc">
 			<li><a href="SelectionTools.html">Selection Tools</a></li>
 			<li><a href="MoveTools.html">Move Tools</a><br>
-			<a href="MagicWand.html">Magic Wand</a><br>
+			<a href="MagicWand.html">Magic Wand</a></li>
+			<li><a href="GradientTool.html">Gradient Tool</a><br>
 			<a href="Paintbrush.html">Paintbrush</a></li>
 			<li><a href="EraserTool.html">Eraser Tool</a></li>
 			<li><a href="PixelTools.html">Pixel Tools</a></li>
@@ -93,12 +99,13 @@
 		<li>Freeform Shape</li>
 	</ul>
 	<p>Each of these tools may be configured using the
-	<a href="Toolbar.html#DrawingControls">controls in the Toolbar</a>. To draw 
-	a shape, click and drag with the left mouse button. The primary color will 
-	be used for the outline (if applicable), and the secondary color will be 
-	used to fill the interior of the shape (if applicable). If you draw with the 
-	right mouse button, the roles of the primary and secondary colors will be 
-	reversed.</p>
+	<a href="Toolbar.html#ShapesBrushesFill">controls in the Toolbar</a>. To 
+	draw a shape, click and drag with the left mouse button. The primary color 
+	will be used for the outline (if applicable), and the secondary color will 
+	be used to fill the interior of the shape (if applicable). If &quot;Draw Filled 
+	Shape&quot; is selected, then the shape will be filled with the primary color. If 
+	you draw with the right mouse button, the roles of the primary and secondary 
+	colors will be reversed.</p>
 	<p>For the first three tools, you may hold down the Shift key to constrain 
 	the shape to be a square, rounded square, or a circle, respectively.</p>
 	<p>The following images show how shapes look when the appropriate 
@@ -107,7 +114,7 @@
 	<ul>
 		<li class="nobullet">
 		<h3>
-		<img border="0" src="../images/OutlineOnly.png"></h3>
+		<img border="0" src="Images/ShapeType_Outline.png" width="238" height="93"></h3>
 		</li>
 		<li class="nobullet">
 		<h3>
@@ -118,7 +125,7 @@
 	<ul>
 		<li class="nobullet">
 		<h3>
-		<img border="0" src="../images/InteriorOnly.png"></h3>
+		<img border="0" src="Images/ShapeType_Interior.png" width="238" height="93"></h3>
 		</li>
 		<li class="nobullet">
 		<h3>
@@ -129,7 +136,7 @@
 	<ul>
 		<li class="nobullet">
 		<h3>
-		<img border="0" src="../images/InteriorAndOutline.png"></h3>
+		<img border="0" src="Images/ShapeType_InteriorAndOutline.png" width="238" height="93"></h3>
 		</li>
 		<li class="nobullet">
 		<h3>
@@ -142,10 +149,10 @@
 	<br>
 	</h4>
 	<p align="center">
-	<font color="#808080" size="1">Copyright <font face="Times New Roman">© 2006 </font>
-	Rick Brewster, Tom 
-	Jackson, and past contributors. Portions Copyright
-	<font face="Times New Roman">© 2006 </font>Microsoft Corporation. All Rights Reserved.</font><font size="1"> <br>
+	<font color="#808080" size="1">Copyright <font face="Times New Roman">Â© 2007 </font>
+	Rick Brewster, Tom Jackson, and past contributors. Portions Copyright
+	<font face="Times New Roman">Â© 2007 </font>Microsoft Corporation. All Rights 
+	Reserved.</font><font size="1"> <br>
 	</font>
 </div>
 </b>

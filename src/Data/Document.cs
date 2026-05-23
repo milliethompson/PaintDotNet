@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -29,9 +29,6 @@ using System.Xml;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for Document.
-    /// </summary>
     [Serializable]
     public sealed class Document
         : IDeserializationCallback,
@@ -49,6 +46,7 @@ namespace PaintDotNet
         [NonSerialized]
         private InvalidateEventHandler layerInvalidatedDelegate;
 
+        // TODO: the document class should not manage its own update region, its owner should
         [NonSerialized]
         private Vector<Rectangle> updateRegion;
 
@@ -69,7 +67,7 @@ namespace PaintDotNet
         {
             get
             {
-                if (disposed)
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException("Document");
                 }
@@ -88,7 +86,7 @@ namespace PaintDotNet
         {
             get
             {
-                if (disposed)
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException("Document");
                 }
@@ -101,7 +99,7 @@ namespace PaintDotNet
         {
             get
             {
-                if (disposed)
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException("Document");
                 }
@@ -111,12 +109,13 @@ namespace PaintDotNet
 
             set
             {
-                if (disposed)
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException("Document");
                 }
 
                 this.HeaderXml.SelectSingleNode("/pdnImage/custom").InnerXml = value;
+                Dirty = true;
             }
         }
 
@@ -138,9 +137,8 @@ namespace PaintDotNet
 
                 if (pis.Length == 0)
                 {
-                    MeasurementUnit defaultDpuUnit = GetDefaultDpuUnit();
-                    this.DpuUnit = defaultDpuUnit;
-                    return defaultDpuUnit;
+                    this.DpuUnit = DefaultDpuUnit;
+                    return DefaultDpuUnit;
                 }
                 else
                 {
@@ -148,6 +146,7 @@ namespace PaintDotNet
                     {
                         ushort unit = Exif.DecodeShortValue(pis[0]);
 
+                        // Guard against bad data in the EXIF store
                         switch ((MeasurementUnit)unit)
                         {
                             case MeasurementUnit.Centimeter:
@@ -179,12 +178,23 @@ namespace PaintDotNet
                     this.DpuX = 1.0;
                     this.DpuY = 1.0;
                 }
+
+                Dirty = true;
             }
         }
 
+        public static MeasurementUnit DefaultDpuUnit
+        {
+            get
+            {
+                return MeasurementUnit.Inch;
+            }
+        }
+
+        [Obsolete("Use DefaultDpuUnit property instead.")]
         public static MeasurementUnit GetDefaultDpuUnit()
         {
-            return MeasurementUnit.Inch;
+            return DefaultDpuUnit;
         }
 
         private const double defaultDpi = 96.0;
@@ -201,6 +211,16 @@ namespace PaintDotNet
         public static double CentimetersToInches(double centimeters)
         {
             return centimeters / CmPerInch;
+        }
+
+        public static double DotsPerInchToDotsPerCm(double dpi)
+        {
+            return dpi / CmPerInch;
+        }
+
+        public static double DotsPerCmToDotsPerInch(double dpcm)
+        {
+            return dpcm * CmPerInch;
         }
 
         public static double GetDefaultDpu(MeasurementUnit units)
@@ -300,7 +320,7 @@ namespace PaintDotNet
                         }
                     }
 
-                    catch (Exception)
+                    catch
                     {
                         this.Metadata.RemoveExifValues(ExifTagID.XResolution);
                         return this.DpuX; // recursive call;
@@ -324,6 +344,7 @@ namespace PaintDotNet
                
                 PropertyItem pi = Exif.CreatePropertyItem(ExifTagID.XResolution, ExifTagType.Rational, data);
                 this.Metadata.ReplaceExifValues(ExifTagID.XResolution, new PropertyItem[1] { pi });
+                Dirty = true;
             }
         }
 
@@ -369,7 +390,7 @@ namespace PaintDotNet
                         }
                     }
 
-                    catch (Exception)
+                    catch
                     {
                         this.Metadata.RemoveExifValues(ExifTagID.YResolution);
                         return this.DpuY; // recursive call;
@@ -393,6 +414,7 @@ namespace PaintDotNet
                
                 PropertyItem pi = Exif.CreatePropertyItem(ExifTagID.YResolution, ExifTagType.Rational, data);
                 this.Metadata.ReplaceExifValues(ExifTagID.YResolution, new PropertyItem[1] { pi });
+                Dirty = true;
             }
         }
 
@@ -543,6 +565,52 @@ namespace PaintDotNet
             return area * xScale * yScale;
         }
 
+        private static string GetUnitsAbbreviation(MeasurementUnit units)
+        {
+            string result;
+
+            switch (units)
+            {
+                case MeasurementUnit.Pixel:
+                    result = string.Empty;
+                    break;
+
+                case MeasurementUnit.Centimeter:
+                    result = PdnResources.GetString("MeasurementUnit.Centimeter.Abbreviation");
+                    break;
+
+                case MeasurementUnit.Inch:
+                    result = PdnResources.GetString("MeasurementUnit.Inch.Abbreviation");
+                    break;
+
+                default:
+                    throw new InvalidEnumArgumentException("MeasurementUnit was invalid");
+            }
+
+            return result;
+        }
+
+        public void CoordinatesToStrings(MeasurementUnit units, int x, int y, out string xString, out string yString, out string unitsString)
+        {
+            string unitsAbbreviation = GetUnitsAbbreviation(units);
+
+            unitsString = GetUnitsAbbreviation(units);
+
+            if (units == MeasurementUnit.Pixel)
+            {
+                xString = x.ToString();
+                yString = y.ToString();
+            }
+            else
+            {
+                double physicalX = PixelToPhysicalX(x, units);
+                xString = physicalX.ToString("F2");
+
+                double physicalY = PixelToPhysicalY(y, units);
+                yString = physicalY.ToString("F2");
+            }
+        }
+
         /// <summary>
         /// This is provided for future use.
         /// If you want to add new stuff that must be serialized, create a new class,
@@ -589,22 +657,22 @@ namespace PaintDotNet
         {
             get
             {
-                if (disposed)
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException("Document");
                 }
 
-                return dirty;
+                return this.dirty;
             }
 
             set
             {
-                if (disposed)
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException("Document");
                 }
-                
-                dirty = value;
+
+                this.dirty = value;
             }
         }
 
@@ -873,7 +941,8 @@ namespace PaintDotNet
         /// the last call to this function.
         /// </summary>
         /// <param name="args">Contains information used to control where rendering occurs.</param>
-        public void Update(RenderArgs dst)
+        /// <returns>true if any rendering was done (the update list was non-empty), false otherwise</returns>
+        public bool Update(RenderArgs dst)
         {
             if (disposed)
             {
@@ -883,8 +952,13 @@ namespace PaintDotNet
             Rectangle[] updateRects;
             int updateRectsLength;
             updateRegion.GetArrayReadOnly(out updateRects, out updateRectsLength);
-            PdnRegion region = Utility.RectanglesToRegion(updateRects, 0, updateRectsLength);
 
+            if (updateRectsLength == 0)
+            {
+                return false;
+            }
+
+            PdnRegion region = Utility.RectanglesToRegion(updateRects, 0, updateRectsLength);
             Rectangle[] rectsOriginal = region.GetRegionScansReadOnlyInt();
             Rectangle[] rectsToUse;
 
@@ -921,8 +995,9 @@ namespace PaintDotNet
                 }
             }
 
-            threadPool.Drain();
+            this.threadPool.Drain();
             Validate();
+            return true;
         }
 
         /// <summary>
@@ -956,9 +1031,9 @@ namespace PaintDotNet
             layers.Changing += new EventHandler(LayerListChangingHandler);
             layerInvalidatedDelegate = new InvalidateEventHandler(LayerInvalidatedHandler);
 
-            foreach (Layer l in layers)
+            foreach (Layer layer in layers)
             {
-                l.Invalidated += layerInvalidatedDelegate;
+                layer.Invalidated += layerInvalidatedDelegate;
             }
         }
 
@@ -976,24 +1051,8 @@ namespace PaintDotNet
             Dirty = true;
         }
 
-        [NonSerialized]
-        private InvalidateEventHandler invalidated;
-
-        /// <summary>
-        /// Occurs when a part of the document has changed.
-        /// </summary>
-        public event InvalidateEventHandler Invalidated
-        {
-            add
-            {
-                invalidated += value;
-            }
-
-            remove
-            {
-                invalidated -= value;
-            }
-        }
+        [field: NonSerialized]
+        public event InvalidateEventHandler Invalidated;
 
         /// <summary>
         /// Raises the Invalidated event.
@@ -1001,9 +1060,9 @@ namespace PaintDotNet
         /// <param name="e"></param>
         private void OnInvalidated(InvalidateEventArgs e)
         {
-            if (invalidated != null)
+            if (Invalidated != null)
             {
-                invalidated(this, e);
+                Invalidated(this, e);
             }
         }
 
@@ -1134,6 +1193,11 @@ namespace PaintDotNet
         /// <param name="image">The Image to make a copy of that will be the first layer ("Background") in the document.</param>
         public static Document FromImage(Image image)
         {
+            if (image == null)
+            {
+                throw new ArgumentNullException("image");
+            }
+
             Document document = new Document(image.Width, image.Height);
             BitmapLayer layer = Layer.CreateBackgroundLayer(image.Width, image.Height);
             layer.Surface.Clear(ColorBgra.FromBgra(0, 0, 0, 0));
@@ -1152,11 +1216,13 @@ namespace PaintDotNet
                         for (int y = 0; y < bData.Height; ++y)
                         {
                             uint* srcPtr = (uint*)((byte*)bData.Scan0.ToPointer() + (y * bData.Stride));
+                            ColorBgra* dstPtr = layer.Surface.GetRowAddress(y);
 
                             for (int x = 0; x < bData.Width; ++x)
                             {
-                                layer.Surface[x, y] = ColorBgra.FromUInt32(*srcPtr);
+                                dstPtr->Bgra = *srcPtr;
                                 ++srcPtr;
+                                ++dstPtr;
                             }
                         }
                     }
@@ -1179,6 +1245,7 @@ namespace PaintDotNet
                         for (int y = 0; y < bData.Height; ++y)
                         {
                             byte* srcPtr = (byte*)bData.Scan0.ToPointer() + (y * bData.Stride);
+                            ColorBgra* dstPtr = layer.Surface.GetRowAddress(y);
 
                             for (int x = 0; x < bData.Width; ++x)
                             {
@@ -1187,9 +1254,10 @@ namespace PaintDotNet
                                 byte r = *(srcPtr + 2);
                                 byte a = 255;
 
-                                layer.Surface[x, y] = ColorBgra.FromBgra(b, g, r, a);
+                                *dstPtr = ColorBgra.FromBgra(b, g, r, a);
 
                                 srcPtr += 3;
+                                ++dstPtr;
                             }
                         }
                     }
@@ -1212,15 +1280,33 @@ namespace PaintDotNet
             }
 
             // Transfer metadata
+
+            // Sometimes GDI+ does not honor the resolution tags that we
+            // put in manually via the EXIF properties.
             document.DpuUnit = MeasurementUnit.Inch;
             document.DpuX = image.HorizontalResolution;
             document.DpuY = image.VerticalResolution;
 
-            PropertyItem[] pis = image.PropertyItems;
+            PropertyItem[] pis;
 
-            for (int i = 0; i < pis.Length; ++i)
+            try
             {
-                document.Metadata.AddExifValues(new PropertyItem[] { pis[i] });
+                pis = image.PropertyItems;
+            }
+
+            catch (Exception ex)
+            {
+                Tracing.Ping("Exception while retreiving image's PropertyItems: " + ex.ToString());
+                pis = null;
+                // ignore the error and continue on
+            }
+
+            if (pis != null)
+            {
+                for (int i = 0; i < pis.Length; ++i)
+                {
+                    document.Metadata.AddExifValues(new PropertyItem[] { pis[i] });
+                }
             }
 
             // Finish up
@@ -1254,8 +1340,8 @@ namespace PaintDotNet
             //   Starts with bytes as defined by MagicBytes 
             //   Next three bytes are 24-bit unsigned int 'N' (first byte is low-word, second byte is middle-word, third byte is high word)
             //   The next N bytes are a string, this is the document header (it is XML, UTF-8 encoded)
-            //     Important: 'N' indicates a byte count, not a character count. 'N' bytes may result in less than 'N' characters,
-            //                depending on how the characters decode as per UTF8
+            //       Important: 'N' indicates a byte count, not a character count. 'N' bytes may result in less than 'N' characters,
+            //                  depending on how the characters decode as per UTF8
             //   If the next 2 bytes are 0x00, 0x01: This signifies that non-compressed .NET serialized data follows.
             //   If the next 2 bytes are 0x1f, 0x8b: This signifies the start of the gzip compressed .NET serialized data
             //
@@ -1343,6 +1429,7 @@ namespace PaintDotNet
             object docObject;
             BinaryFormatter formatter = new BinaryFormatter();
             SerializationFallbackBinder sfb = new SerializationFallbackBinder();
+
             sfb.AddAssembly(Assembly.GetExecutingAssembly());     // first try PaintDotNet.Data.dll
             sfb.AddAssembly(typeof(Utility).Assembly);            // second, try PdnLib.dll
             sfb.AddAssembly(typeof(SystemLayer.Memory).Assembly); // third, try PaintDotNet.SystemLayer.dll
@@ -1442,10 +1529,10 @@ namespace PaintDotNet
             {
                 this.formatter = formatter;
                 this.ioCallback = ioCallback;
-                this.formatter.ReportedBytesChanged += new EventHandler(formatter_ReportedBytesChanged);
+                this.formatter.ReportedBytesChanged += new EventHandler(Formatter_ReportedBytesChanged);
             }
 
-            private void formatter_ReportedBytesChanged(object sender, EventArgs e)
+            private void Formatter_ReportedBytesChanged(object sender, EventArgs e)
             {
                 long reportedBytes = formatter.ReportedBytes;
                 bool raiseEvent;

@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
@@ -15,7 +15,7 @@ using System.Drawing;
 namespace PaintDotNet.Effects
 {
     [EffectTypeHint(EffectTypeHint.Fast)]
-    public class EmbossEffect
+    public sealed class EmbossEffect
         : Effect
     {
         public static string StaticName
@@ -79,8 +79,8 @@ namespace PaintDotNet.Effects
                             for (int fx = fxStart; fx < fxEnd; ++fx)
                             {
                                 double weight = weights[fy, fx];
-                                ColorBgra c = src[x - 1 + fx, y - 1 + fy];
-                                double intensity = 255.0 * c.GetIntensity();
+                                ColorBgra c = src.GetPointUnchecked(x - 1 + fx, y - 1 + fy);
+                                double intensity = (double)c.GetIntensityByte();
                                 sum += weight * intensity;
                             }
                         }

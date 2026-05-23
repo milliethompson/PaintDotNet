@@ -3,7 +3,7 @@
 <!-- #BeginTemplate "pdn_help.dwt" -->
 
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <!-- #BeginEditable "title" -->
 <title>Paint.NET Help - Main Window</title>
 <!-- #EndEditable -->
@@ -13,47 +13,53 @@
 <body>
 
 <div id="banner">
-	<img border="0" src="../images/logo.png" width="229" height="73" align="left"><p><b><br>
-	&nbsp;</b></p>
-</div>
+	<a href="http://www.getpaint.net/">
+	<img border="0" src="../images/logo.png"></a><p>
+	&nbsp;</div>
 <div id="leftnav">
 	<ul class="toc" style="margin-left: 0; padding-left: 0;">
 		<li><a href="index.html">Overview</a><br>
 		</li>
 		<li><a href="Features.html">Features</a><br>
 		<a href="Tutorials.html">Tutorials</a><br>
+		<a href="WhatsNew.html">What&#39;s New?</a><br>
 		</li>
+	</ul>
+	<h3>Concepts</h3>
+	<ul class="toc" style="margin-left: 0; padding-left: 0;">
+		<li><a href="LayersAndBlendModes.html">Layers and Blend Modes</a></li>
 	</ul>
 	<h3>User Interface</h3>
 	<ul class="toc" style="margin-left: 0; padding-left: 0;">
 		<li><a href="KeyboardMouseCommands.html">Keyboard &amp; Mouse Commands</a></li>
 		<li><a href="MainWindow.html">Main Window</a></li>
+		<li><a href="ImageList.html">Image List</a></li>
 		<li><a href="MenuBar.html">Menu Bar</a>
 		<ul class="toc">
-			<li><a href="File.html">File</a></li>
-			<li><a href="Edit.html">Edit</a></li>
-			<li><a href="View.html">View</a></li>
-			<li><a href="Image.html">Image</a></li>
-			<li><a href="Layers.html">Layers</a>
+			<li><a href="FileMenu.html">File</a></li>
+			<li><a href="EditMenu.html">Edit</a></li>
+			<li><a href="ViewMenu.html">View</a></li>
+			<li><a href="ImageMenu.html">Image</a></li>
+			<li><a href="LayersMenu.html">Layers</a>
 			<ul class="toc">
 				<li class="comment"><a href="RotateZoom.html">Rotate / Zoom</a></li>
-				<li><a href="Adjustments.html">Adjustments</a>
+			</ul></li>
+			<li><a href="AdjustmentsMenu.html">Adjustments</a>&nbsp;
 				<ul class="toc">
 				    <li><a href="Curves.html">Curves</a></li>
 					<li><a href="Levels.html">Levels</a></li>
 				</ul></li>
-			</ul></li>
-			<li><a href="Effects.html">Effects</a></li>
-			<li><a href="Tools.html">Tools</a></li>
-			<li><a href="Window.html">Window</a></li>
-			<li><a href="Help.html">Help</a></li>
-			<li><a href="Toolbar.html">Toolbar</a></li>
+			<li><a href="EffectsMenu.html">Effects</a></li>
+			<li><a href="WindowMenu.html">Window</a></li>
+			<li><a href="HelpMenu.html">Help</a></li>
 		</ul>
 		</li>
+		<li><a href="Toolbar.html">Toolbar</a></li>
 		<li><a href="ToolsWindow.html">Tools Window</a><ul class="toc">
 			<li><a href="SelectionTools.html">Selection Tools</a></li>
 			<li><a href="MoveTools.html">Move Tools</a><br>
-			<a href="MagicWand.html">Magic Wand</a><br>
+			<a href="MagicWand.html">Magic Wand</a></li>
+			<li><a href="GradientTool.html">Gradient Tool</a><br>
 			<a href="Paintbrush.html">Paintbrush</a></li>
 			<li><a href="EraserTool.html">Eraser Tool</a></li>
 			<li><a href="PixelTools.html">Pixel Tools</a></li>
@@ -84,54 +90,73 @@
 	<!-- #BeginEditable "content" -->
 	<div id="content0">
 		<h2>Main Window</h2>
-		<p>The Paint.NET user interface is broken up in to 9 major areas:</p>
-		<p><img border="0" src="Images/MainWindow.png"></p>
+		<p>The Paint.NET user interface is broken up in to 10 major areas:</p>
+		<p><img border="0" src="Images/MainWindow.jpg" width="700" height="655"></p>
 		<ol>
 			<li>
-			<h3>Title Bar </h3>
-			<p>This tells you the name of the image you are working with, as well as the current zoom level and the version 
-			of Paint.NET you are using.</p>
+			<h3><a name="TitleBar"></a>Title Bar </h3>
+			<p>This tells you the name of the image you are working with, as 
+			well as the current zoom level and the version of Paint.NET you are 
+			using.</p>
 			</li>
 			<li>
-			<h3><a href="MenuBar.html">Menu Bar</a></h3>
-			<p>This is where you can access the various menu items. Quite often, commands accessible from this location 
-			will be referenced using <b>Menu &#8594; Command</b> notation. For example, <b>File &#8594; Exit</b>&nbsp; means to clicking 
-			on the File menu, and then click on the Exit command.</p>
+			<h3><a name="MenuBar"></a><a href="MenuBar.html">Menu Bar</a> </h3>
+			<p>This is where you can access the various menu items. Quite often, 
+			commands accessible from this location will be referenced using <b>
+			Menu → Command</b> notation. For example, <b>File → Exit</b>&nbsp;means 
+			to click on the File menu, and then click on the Exit command.</p>
 			</li>
 			<li>
-			<h3><a href="Toolbar.html">Toolbar</a> </h3>
-			<p>Right below the menus there are several icons and controls for executing various commands or adjusting certain 
-			global drawing options.</p>
+			<h3><a name="Toolbar"></a><a href="Toolbar.html">Toolbar</a> </h3>
+			<p>Right below the menus is the toolbar which contains several 
+			buttons and controls for executing various commands and adjusting 
+			parameters for the active tool.</p>
 			</li>
 			<li>
-			<h3>Image canvas </h3>
-			<p>This is where the image is visible, and is the area where you may draw 
-			and perform other actions.</p>
+			<h3><a name="ImageList"></a><a href="ImageList.html">Image List</a> </h3>
+			<p>Each image that has been opened has a thumbnail displayed in the 
+			image list. This works much like a tabbed web browser: just click on 
+			an image to switch to it.</p>
 			</li>
 			<li>
-			<h3><a href="ToolsWindow.html">Tools Window</a> </h3>
-			<p>This where the active tool is highlighted, and where you may choose from other tools. It is also where 
-			the selected primary and secondary colors are displayed.</p>
+			<h3><a name="ImageCanvas"></a>Image canvas </h3>
+			<p>This is where the image is visible, and is the area where you may 
+			draw and perform other actions.</p>
 			</li>
 			<li>
-			<h3><a href="HistoryWindow.html">History Window</a> </h3>
-			<p>Everything you've done to an image since you opened it is listed in this window.</p>
+			<h3><a name="ToolsWindow"></a><a href="ToolsWindow.html">Tools 
+			Window</a> </h3>
+			<p>This where the active tool is highlighted, and where you may 
+			choose from other tools. It is also where the selected primary and 
+			secondary colors are displayed.</p>
 			</li>
 			<li>
-			<h3><a href="LayersWindow.html">Layers Window</a> </h3>
-			<p>Every image contains at least one layer, and this window is your primary area for managing them.</p>
+			<h3><a name="HistoryWindow"></a><a href="HistoryWindow.html">History 
+			Window</a> </h3>
+			<p>Everything you&#39;ve done to an image since you opened it is listed 
+			in this window.</p>
 			</li>
 			<li>
-			<h3><a href="ColorsWindow.html">Colors Window</a></h3>
-			<p>This is the primary area for selecting colors to draw with. It consists 
-			of a color wheel and a brightness slider. If you have expanded the window with the &quot;More&quot; button then it will also contain several controls 
-			for fine tuning and exactly specifying color values.</p>
+			<h3><a name="LayersWindow"></a><a href="LayersWindow.html">Layers 
+			Window</a> </h3>
+			<p>Every image contains at least one layer, and this window is your 
+			primary area for managing them.</p>
 			</li>
 			<li>
-			<h3><a href="StatusBar.html">Status Bar</a> </h3>
-			<p>This area is divided into several sections. The first, on the left, displays quick help and status information. 
-			The next sections display rendering progress (if pertinent), image size, and the cursor location within the 
-			image.</p>
+			<h3><a name="ColorsWindow"></a><a href="ColorsWindow.html">Colors 
+			Window</a> </h3>
+			<p>This is the primary area for selecting colors to draw with. It 
+			consists of a color wheel and a brightness slider. If you have 
+			expanded the window with the &quot;More&quot; button then it will also contain 
+			several controls for fine tuning and exactly specifying color 
+			values.</p>
+			</li>
+			<li>
+			<h3><a name="Status Bar"></a><a href="StatusBar.html">Status Bar</a> </h3>
+			<p>This area is divided into several sections. The first, on the 
+			left, displays quick help and status information. The next sections 
+			display rendering progress (if pertinent), image size, and the 
+			cursor location within the image.</p>
 			</li>
 		</ol>
 	</div>
@@ -140,10 +165,10 @@
 	<br>
 	</h4>
 	<p align="center">
-	<font color="#808080" size="1">Copyright <font face="Times New Roman">� 2006 </font>
-	Rick Brewster, Tom 
-	Jackson, and past contributors. Portions Copyright
-	<font face="Times New Roman">� 2006 </font>Microsoft Corporation. All Rights Reserved.</font><font size="1"> <br>
+	<font color="#808080" size="1">Copyright <font face="Times New Roman">© 2007 </font>
+	Rick Brewster, Tom Jackson, and past contributors. Portions Copyright
+	<font face="Times New Roman">© 2007 </font>Microsoft Corporation. All Rights 
+	Reserved.</font><font size="1"> <br>
 	</font>
 </div>
 </b>

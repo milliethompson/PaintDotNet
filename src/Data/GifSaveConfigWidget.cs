@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -15,8 +15,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class GifSaveConfigWidget 
-        : PaintDotNet.SaveConfigWidget
+    public sealed class GifSaveConfigWidget 
+        : SaveConfigWidget
     {
         private System.Windows.Forms.TrackBar thresholdSlider;
         private System.Windows.Forms.Label thresholdLabel;
@@ -25,6 +25,7 @@ namespace PaintDotNet
         private System.Windows.Forms.NumericUpDown ditherUpDown;
         private System.Windows.Forms.Label ditherLabel;
         private System.Windows.Forms.TrackBar ditherSlider;
+        private Label thresholdInfoLabel;
         private System.ComponentModel.IContainer components = null;
 
         public GifSaveConfigWidget()
@@ -35,6 +36,7 @@ namespace PaintDotNet
             this.thresholdLabel.Text = PdnResources.GetString("GifSaveConfigWidget.ThresholdLabel.Text");
             this.ditherLabel.Text = PdnResources.GetString("GifSaveConfigWidget.DitherLabel.Text");
             this.preMultiplyAlphaCheckBox.Text = PdnResources.GetString("GifSaveConfigWidget.PreMultiplyAlphaCheckBox.Text");
+            this.thresholdInfoLabel.Text = PdnResources.GetString("GifSaveConfigWidget.ThresholdInfoLabel.Text");
         }
 
         protected override void InitFileType()
@@ -87,6 +89,7 @@ namespace PaintDotNet
             this.ditherUpDown = new System.Windows.Forms.NumericUpDown();
             this.ditherLabel = new System.Windows.Forms.Label();
             this.ditherSlider = new System.Windows.Forms.TrackBar();
+            this.thresholdInfoLabel = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.thresholdSlider)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.thresholdUpDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ditherUpDown)).BeginInit();
@@ -102,7 +105,7 @@ namespace PaintDotNet
             this.thresholdSlider.TabIndex = 2;
             this.thresholdSlider.TickFrequency = 32;
             this.thresholdSlider.Value = 1;
-            this.thresholdSlider.ValueChanged += new System.EventHandler(this.thresholdSlider_ValueChanged);
+            this.thresholdSlider.ValueChanged += new System.EventHandler(this.ThresholdSlider_ValueChanged);
             // 
             // thresholdLabel
             // 
@@ -114,56 +117,56 @@ namespace PaintDotNet
             // thresholdUpDown
             // 
             this.thresholdUpDown.Location = new System.Drawing.Point(115, 14);
-            this.thresholdUpDown.Maximum = new System.Decimal(new int[] {
-                                                                            255,
-                                                                            0,
-                                                                            0,
-                                                                            0});
+            this.thresholdUpDown.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
             this.thresholdUpDown.Name = "thresholdUpDown";
             this.thresholdUpDown.Size = new System.Drawing.Size(56, 20);
             this.thresholdUpDown.TabIndex = 1;
             this.thresholdUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.thresholdUpDown.Value = new System.Decimal(new int[] {
-                                                                          1,
-                                                                          0,
-                                                                          0,
-                                                                          0});
-            this.thresholdUpDown.Enter += new System.EventHandler(this.thresholdUpDown_Enter);
-            this.thresholdUpDown.ValueChanged += new System.EventHandler(this.thresholdUpDown_ValueChanged);
-            this.thresholdUpDown.Leave += new System.EventHandler(this.thresholdUpDown_Leave);
+            this.thresholdUpDown.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.thresholdUpDown.Enter += new System.EventHandler(this.ThresholdUpDown_Enter);
+            this.thresholdUpDown.ValueChanged += new System.EventHandler(this.ThresholdUpDown_ValueChanged);
+            this.thresholdUpDown.Leave += new System.EventHandler(this.ThresholdUpDown_Leave);
             // 
             // preMultiplyAlphaCheckBox
             // 
-            this.preMultiplyAlphaCheckBox.Location = new System.Drawing.Point(8, 171);
+            this.preMultiplyAlphaCheckBox.Location = new System.Drawing.Point(8, 203);
             this.preMultiplyAlphaCheckBox.Name = "preMultiplyAlphaCheckBox";
-            this.preMultiplyAlphaCheckBox.Width = 168;
+            this.preMultiplyAlphaCheckBox.Size = new System.Drawing.Size(168, 24);
             this.preMultiplyAlphaCheckBox.TabIndex = 6;
-            this.preMultiplyAlphaCheckBox.CheckedChanged += new System.EventHandler(this.preMultiplyAlphaCheckBox_CheckedChanged);
+            this.preMultiplyAlphaCheckBox.CheckedChanged += new System.EventHandler(this.PreMultiplyAlphaCheckBox_CheckedChanged);
             // 
             // ditherUpDown
             // 
-            this.ditherUpDown.Location = new System.Drawing.Point(115, 96);
-            this.ditherUpDown.Maximum = new System.Decimal(new int[] {
-                                                                         8,
-                                                                         0,
-                                                                         0,
-                                                                         0});
+            this.ditherUpDown.Location = new System.Drawing.Point(115, 128);
+            this.ditherUpDown.Maximum = new decimal(new int[] {
+            8,
+            0,
+            0,
+            0});
             this.ditherUpDown.Name = "ditherUpDown";
             this.ditherUpDown.Size = new System.Drawing.Size(56, 20);
             this.ditherUpDown.TabIndex = 4;
             this.ditherUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.ditherUpDown.Value = new System.Decimal(new int[] {
-                                                                       1,
-                                                                       0,
-                                                                       0,
-                                                                       0});
-            this.ditherUpDown.Enter += new System.EventHandler(this.ditherUpDown_Enter);
-            this.ditherUpDown.ValueChanged += new System.EventHandler(this.ditherUpDown_ValueChanged);
-            this.ditherUpDown.Leave += new System.EventHandler(this.ditherUpDown_Leave);
+            this.ditherUpDown.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.ditherUpDown.Enter += new System.EventHandler(this.DitherUpDown_Enter);
+            this.ditherUpDown.ValueChanged += new System.EventHandler(this.DitherUpDown_ValueChanged);
+            this.ditherUpDown.Leave += new System.EventHandler(this.DitherUpDown_Leave);
             // 
             // ditherLabel
             // 
-            this.ditherLabel.Location = new System.Drawing.Point(6, 98);
+            this.ditherLabel.Location = new System.Drawing.Point(6, 130);
             this.ditherLabel.Name = "ditherLabel";
             this.ditherLabel.Size = new System.Drawing.Size(106, 20);
             this.ditherLabel.TabIndex = 3;
@@ -171,16 +174,27 @@ namespace PaintDotNet
             // ditherSlider
             // 
             this.ditherSlider.LargeChange = 2;
-            this.ditherSlider.Location = new System.Drawing.Point(0, 120);
+            this.ditherSlider.Location = new System.Drawing.Point(0, 152);
             this.ditherSlider.Maximum = 8;
             this.ditherSlider.Name = "ditherSlider";
             this.ditherSlider.Size = new System.Drawing.Size(180, 42);
             this.ditherSlider.TabIndex = 5;
             this.ditherSlider.Value = 1;
-            this.ditherSlider.ValueChanged += new System.EventHandler(this.ditherSlider_ValueChanged);
+            this.ditherSlider.ValueChanged += new System.EventHandler(this.DitherSlider_ValueChanged);
+            // 
+            // thresholdInfoLabel
+            // 
+            this.thresholdInfoLabel.Location = new System.Drawing.Point(6, 79);
+            this.thresholdInfoLabel.Name = "thresholdInfoLabel";
+            this.thresholdInfoLabel.Size = new System.Drawing.Size(168, 42);
+            this.thresholdInfoLabel.TabIndex = 7;
+            this.thresholdInfoLabel.Text = "label1";
             // 
             // GifSaveConfigWidget
             // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.Controls.Add(this.thresholdInfoLabel);
             this.Controls.Add(this.preMultiplyAlphaCheckBox);
             this.Controls.Add(this.thresholdUpDown);
             this.Controls.Add(this.thresholdLabel);
@@ -188,20 +202,19 @@ namespace PaintDotNet
             this.Controls.Add(this.ditherUpDown);
             this.Controls.Add(this.ditherLabel);
             this.Controls.Add(this.ditherSlider);
-            this.AutoScaleDimensions = new SizeF(96F, 96F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Name = "GifSaveConfigWidget";
-            this.Size = new System.Drawing.Size(180, 200);
+            this.Size = new System.Drawing.Size(180, 236);
             ((System.ComponentModel.ISupportInitialize)(this.thresholdSlider)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.thresholdUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.ditherUpDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.ditherSlider)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
         #endregion
 
-        private void thresholdSlider_ValueChanged(object sender, System.EventArgs e)
+        private void ThresholdSlider_ValueChanged(object sender, System.EventArgs e)
         {
             if (this.thresholdUpDown.Value != (decimal)this.thresholdSlider.Value)
             {
@@ -211,7 +224,7 @@ namespace PaintDotNet
             UpdateToken();
         }
 
-        private void thresholdUpDown_ValueChanged(object sender, System.EventArgs e)
+        private void ThresholdUpDown_ValueChanged(object sender, System.EventArgs e)
         {
             if (this.thresholdSlider.Value != (int)this.thresholdUpDown.Value)
             {
@@ -219,22 +232,22 @@ namespace PaintDotNet
             }
         }
 
-        private void thresholdUpDown_Leave(object sender, System.EventArgs e)
+        private void ThresholdUpDown_Leave(object sender, System.EventArgs e)
         {
-            thresholdUpDown_ValueChanged(sender, e);
+            ThresholdUpDown_ValueChanged(sender, e);
         }
 
-        private void thresholdUpDown_Enter(object sender, System.EventArgs e)
+        private void ThresholdUpDown_Enter(object sender, System.EventArgs e)
         {
             thresholdUpDown.Select(0, thresholdUpDown.Text.Length);
         }
 
-        private void preMultiplyAlphaCheckBox_CheckedChanged(object sender, System.EventArgs e)
+        private void PreMultiplyAlphaCheckBox_CheckedChanged(object sender, System.EventArgs e)
         {
             UpdateToken();
         }
 
-        private void ditherSlider_ValueChanged(object sender, EventArgs e)
+        private void DitherSlider_ValueChanged(object sender, EventArgs e)
         {
             if (this.ditherUpDown.Value != (decimal)this.ditherSlider.Value)
             {
@@ -244,12 +257,12 @@ namespace PaintDotNet
             UpdateToken();
         }
 
-        private void ditherUpDown_Enter(object sender, EventArgs e)
+        private void DitherUpDown_Enter(object sender, EventArgs e)
         {
             ditherUpDown.Select(0, thresholdUpDown.Text.Length);
         }
 
-        private void ditherUpDown_ValueChanged(object sender, EventArgs e)
+        private void DitherUpDown_ValueChanged(object sender, EventArgs e)
         {
             if (this.ditherSlider.Value != (int)this.ditherUpDown.Value)
             {
@@ -257,9 +270,9 @@ namespace PaintDotNet
             }
         }
 
-        private void ditherUpDown_Leave(object sender, EventArgs e)
+        private void DitherUpDown_Leave(object sender, EventArgs e)
         {
-            ditherUpDown_ValueChanged(sender, e);
+            DitherUpDown_ValueChanged(sender, e);
         }
     }
 }

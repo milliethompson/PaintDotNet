@@ -1,12 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,340 +18,590 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class HistoryControl : System.Windows.Forms.UserControl
+    public sealed class HistoryControl 
+        : Control
     {
-        private System.ComponentModel.Container components = null;
-        private HistoryStack historyStack;
-        private PanelWithLayout historyControlPanel;
-        private List<HistoryElement> undoActions;
-        private List<HistoryElement> redoActions;
-        private EventHandler elementClickedDelegate;
-        private EventHandler historyChangedDelegate;
-        private EventHandler historySteppedBackwardDelegate;
-        private EventHandler historySteppedForwardDelegate;
-        private EventHandler historyNewActionDelegate;
-        private EventHandler historyFlushedDelegate;
-        private bool scrollIntoView = true; // we use this flag for when the user clicks on a HistoryElement and we don't want to do lots of crazy scrolling and confuse the user
-
-        private sealed class PanelWithLayout
-            : PanelEx
+        private enum ItemType
         {
-            private HistoryControl parentHistoryControl;
-            public HistoryControl ParentHistoryControl
-            {
-                get
-                {
-                    return parentHistoryControl;
-                }
+            Undo,
+            Redo
+        }
 
-                set
-                {
-                    this.parentHistoryControl = value;
-                    Invalidate();
-                }
+        private bool managedFocus = false;
+        private VScrollBar vScrollBar;
+        private HistoryStack historyStack = null;
+        private int itemHeight;
+        private int undoItemHighlight = -1;
+        private int redoItemHighlight = -1;
+        private int scrollOffset = 0;
+        private Point lastMouseClientPt = new Point(-1, -1);
+        private int ignoreScrollOffsetSet = 0;
+
+        private void SuspendScrollOffsetSet()
+        {
+            ++this.ignoreScrollOffsetSet;
+        }
+
+        private void ResumeScrollOffsetSet()
+        {
+            --this.ignoreScrollOffsetSet;
+        }
+
+        public bool ManagedFocus
+        {
+            get
+            {
+                return this.managedFocus;
             }
 
-            public PanelWithLayout()
+            set
             {
-            }
-
-            protected override void OnLayout(LayoutEventArgs levent)
-            {
-                if (this.parentHistoryControl != null)
-                {
-                    int cursor = this.AutoScrollPosition.Y;
-                    int newWidth = this.ClientRectangle.Width;
-
-                    foreach (Control c in parentHistoryControl.undoActions)
-                    {
-                        if (c.Width != newWidth)
-                        {
-                            c.Width = newWidth;
-                        }
-
-                        if (c.Top != cursor)
-                        {
-                            c.Top = cursor;
-                        }
-
-                        cursor += c.Height;
-                    } // foreach
-
-                    foreach (Control c in parentHistoryControl.redoActions)
-                    {
-                        if (c.Width != newWidth)
-                        {
-                            c.Width = newWidth;
-                        }
-
-                        if (c.Top != cursor)
-                        {
-                            c.Top = cursor;
-                        }
-
-                        cursor += c.Height;
-                    } // foreach
-                } // if
-
-                base.OnLayout(levent);
+                this.managedFocus = value;
             }
         }
 
-        private int elementHeight;
+        public event EventHandler RelinquishFocus;
+        private void OnRelinquishFocus()
+        {
+            if (RelinquishFocus != null)
+            {
+                RelinquishFocus(this, EventArgs.Empty);
+            }
+        }
+
+        private int ItemCount
+        {
+            get
+            {
+                if (this.historyStack == null)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return this.historyStack.UndoStack.Count + this.historyStack.RedoStack.Count;
+                }
+            }
+        }
+
+        public event EventHandler ScrollOffsetChanged;
+        private void OnScrollOffsetChanged()
+        {
+            this.vScrollBar.Value = this.scrollOffset;
+
+            if (ScrollOffsetChanged != null)
+            {
+                ScrollOffsetChanged(this, EventArgs.Empty);
+            }
+        }
+
+        public int MinScrollOffset
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
+        public int MaxScrollOffset
+        {
+            get
+            {
+                return Math.Max(0, ViewHeight - ClientSize.Height);
+            }
+        }
+
+        public int ScrollOffset
+        {
+            get
+            {
+                return this.scrollOffset;
+            }
+
+            set
+            {
+                if (this.ignoreScrollOffsetSet <= 0)
+                {
+                    int clampedOffset = Utility.Clamp(value, MinScrollOffset, MaxScrollOffset);
+
+                    if (this.scrollOffset != clampedOffset)
+                    {
+                        this.scrollOffset = clampedOffset;
+                        OnScrollOffsetChanged();
+                        Invalidate(false);
+                    }
+                }
+            }
+        }
+
+        public Rectangle ViewRectangle
+        {
+            get
+            {
+                return new Rectangle(0, 0, ViewWidth, ViewHeight);
+            }
+        }
+
+        public Rectangle ClientRectangleToViewRectangle(Rectangle clientRect)
+        {
+            Point clientPt = ClientPointToViewPoint(clientRect.Location);
+            return new Rectangle(clientPt, clientRect.Size);
+        }
+
+        public int ViewWidth
+        {
+            get
+            {
+                int width;
+
+                if (this.vScrollBar.Visible)
+                {
+                    width = ClientSize.Width - this.vScrollBar.Width;
+                }
+                else
+                {
+                    width = ClientSize.Width;
+                }
+
+                return width;
+            }
+        }
+
+        private int ViewHeight
+        {
+            get
+            {
+                return ItemCount * this.itemHeight;
+            }
+        }
+
+        private void EnsureItemIsFullyVisible(ItemType itemType, int itemIndex)
+        {
+            Point itemPt = StackIndexToViewPoint(itemType, itemIndex);
+            Rectangle itemRect = new Rectangle(itemPt, new Size(ViewWidth, this.itemHeight));
+
+            int minOffset = itemRect.Bottom - ClientSize.Height;
+            int maxOffset = itemRect.Top;
+
+            ScrollOffset = Utility.Clamp(ScrollOffset, minOffset, maxOffset);
+        }
+
+        private Point ClientPointToViewPoint(Point pt)
+        {
+            return new Point(pt.X, pt.Y + ScrollOffset);
+        }
+
+        private void ViewPointToStackIndex(Point viewPt, out ItemType itemType, out int itemIndex)
+        {
+            Rectangle undoRect = UndoViewRectangle;
+
+            if (viewPt.Y >= undoRect.Top && viewPt.Y < undoRect.Bottom)
+            {
+                itemType = ItemType.Undo;
+                itemIndex = (viewPt.Y - undoRect.Top) / this.itemHeight;
+            }
+            else
+            {
+                Rectangle redoRect = RedoViewRectangle;
+
+                itemType = ItemType.Redo;
+                itemIndex = (viewPt.Y - redoRect.Top) / this.itemHeight;
+            }
+        }
+
+        private Point StackIndexToViewPoint(ItemType itemType, int itemIndex)
+        {
+            int y;
+            Rectangle typeRect;
+
+            if (itemType == ItemType.Undo)
+            {
+                typeRect = UndoViewRectangle;
+            }
+            else // if (itemTYpe == ItemType.Redo)
+            {
+                typeRect = RedoViewRectangle;
+            }
+
+            y = (itemIndex * this.itemHeight) + typeRect.Top;
+            return new Point(0, y);
+        }
 
         public event EventHandler HistoryChanged;
-        protected virtual void OnHistoryChanged()
+        private void OnHistoryChanged()
         {
+            this.vScrollBar.Maximum = ViewHeight;
+
             if (HistoryChanged != null)
             {
                 HistoryChanged(this, EventArgs.Empty);
             }
         }
 
+        protected override void OnLayout(LayoutEventArgs levent)
+        {
+            int totalItems;
+
+            if (this.historyStack == null)
+            {
+                totalItems = 0;
+            }
+            else
+            {
+                totalItems = this.historyStack.UndoStack.Count + this.historyStack.RedoStack.Count;
+            }
+
+            int totalHeight = totalItems * this.itemHeight;
+
+            if (totalHeight > ClientSize.Height)
+            {
+                this.vScrollBar.Visible = true;
+                this.vScrollBar.Location = new Point(ClientSize.Width - this.vScrollBar.Width, 0);
+                this.vScrollBar.Height = ClientSize.Height;
+                this.vScrollBar.Minimum = 0;
+                this.vScrollBar.Maximum = totalHeight;
+                this.vScrollBar.LargeChange = ClientSize.Height;
+                this.vScrollBar.SmallChange = this.itemHeight;
+            }
+            else
+            {
+                this.vScrollBar.Visible = false;
+            }
+
+            if (this.historyStack != null)
+            {
+                ScrollOffset = Utility.Clamp(ScrollOffset, MinScrollOffset, MaxScrollOffset);
+            }
+
+            base.OnLayout(levent);
+        }
+
+        private Rectangle UndoViewRectangle
+        {
+            get
+            {
+                return new Rectangle(0, 0, ViewWidth, this.itemHeight * this.historyStack.UndoStack.Count);
+            }
+        }
+
+        private Rectangle RedoViewRectangle
+        {
+            get
+            {
+                int undoRectBottom = this.itemHeight * this.historyStack.UndoStack.Count;
+                return new Rectangle(0, undoRectBottom, ViewWidth, this.itemHeight * this.historyStack.RedoStack.Count);
+            }
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            if (this.historyStack != null)
+            {
+                using (SolidBrush backBrush = new SolidBrush(BackColor))
+                {
+                    e.Graphics.FillRectangle(backBrush, e.ClipRectangle);
+                }
+
+                e.Graphics.TranslateTransform(0, -this.scrollOffset);
+
+                int afterImageHMargin = UI.ScaleWidth(1);
+
+                StringFormat stringFormat = (StringFormat)StringFormat.GenericTypographic.Clone();
+                stringFormat.LineAlignment = StringAlignment.Center;
+                stringFormat.Trimming = StringTrimming.EllipsisCharacter;
+
+                Rectangle visibleViewRectangle = ClientRectangleToViewRectangle(ClientRectangle);
+
+                // Fill in the background for the undo items
+                Rectangle undoRect = UndoViewRectangle;
+                e.Graphics.FillRectangle(SystemBrushes.Window, undoRect);
+
+                // We only want to draw what's visible, so figure out the first and last
+                // undo items that are actually visible and only draw them.
+                Rectangle visibleUndoRect = Rectangle.Intersect(visibleViewRectangle, undoRect);
+
+                int beginUndoIndex;
+                int endUndoIndex;
+                if (visibleUndoRect.Width > 0 && visibleUndoRect.Height > 0)
+                {
+                    ItemType itemType;
+                    ViewPointToStackIndex(visibleUndoRect.Location, out itemType, out beginUndoIndex);
+                    ViewPointToStackIndex(new Point(visibleUndoRect.Left, visibleUndoRect.Bottom - 1), out itemType, out endUndoIndex);
+                }
+                else
+                {
+                    beginUndoIndex = 0;
+                    endUndoIndex = -1;
+                }
+
+                // Draw undo items
+                for (int i = beginUndoIndex; i <= endUndoIndex; ++i)
+                {
+                    Image image;
+                    ImageResource imageResource = this.historyStack.UndoStack[i].Image;
+
+                    if (imageResource != null)
+                    {
+                        image = imageResource.Reference;
+                    }
+                    else
+                    {
+                        image = null;
+                    }
+
+                    int drawWidth;
+                    if (image != null)
+                    {
+                        drawWidth = (image.Width * this.itemHeight) / image.Height;
+                    }
+                    else
+                    {
+                        drawWidth = this.itemHeight;
+                    }
+
+                    Brush textBrush;
+
+                    if (i == this.undoItemHighlight)
+                    {
+                        Rectangle itemRect = new Rectangle(
+                            0,
+                            i * this.itemHeight,
+                            ViewWidth,
+                            this.itemHeight);
+
+                        e.Graphics.FillRectangle(SystemBrushes.Highlight, itemRect);
+                        textBrush = SystemBrushes.HighlightText;
+                    }
+                    else
+                    {
+                        textBrush = SystemBrushes.WindowText;
+                    }
+
+                    if (image != null)
+                    {
+                        e.Graphics.DrawImage(
+                            image,
+                            new Rectangle(0, i * this.itemHeight, drawWidth, this.itemHeight),
+                            new Rectangle(0, 0, image.Width, image.Height),
+                            GraphicsUnit.Pixel);
+                    }
+
+                    int textX = drawWidth + afterImageHMargin;
+
+                    Rectangle textRect = new Rectangle(
+                        textX,
+                        i * this.itemHeight,
+                        ViewWidth - textX,
+                        this.itemHeight);
+
+                    e.Graphics.DrawString(
+                        this.historyStack.UndoStack[i].Name, 
+                        Font,
+                        textBrush, 
+                        textRect, 
+                        stringFormat);
+                }
+
+                // Fill in the background for the redo items
+                Rectangle redoRect = RedoViewRectangle;
+                e.Graphics.FillRectangle(Brushes.SlateGray, redoRect);
+
+                Font redoFont = new Font(Font, Font.Style | FontStyle.Italic);
+
+                // We only want to draw what's visible, so figure out the first and last
+                // redo items that are actually visible and only draw them.
+                Rectangle visibleRedoRect = Rectangle.Intersect(visibleViewRectangle, redoRect);
+
+                int beginRedoIndex;
+                int endRedoIndex;
+                if (visibleRedoRect.Width > 0 && visibleRedoRect.Height > 0)
+                {
+                    ItemType itemType;
+                    ViewPointToStackIndex(visibleRedoRect.Location, out itemType, out beginRedoIndex);
+                    ViewPointToStackIndex(new Point(visibleRedoRect.Left, visibleRedoRect.Bottom - 1), out itemType, out endRedoIndex);
+                }
+                else
+                {
+                    beginRedoIndex = 0;
+                    endRedoIndex = -1;
+                } 
+
+                // Draw redo items
+                for (int i = beginRedoIndex; i <= endRedoIndex; ++i)
+                {
+                    Image image;
+                    ImageResource imageResource = this.historyStack.RedoStack[i].Image;
+
+                    if (imageResource != null)
+                    {
+                        image = imageResource.Reference;
+                    }
+                    else
+                    {
+                        image = null;
+                    }
+
+                    int drawWidth;
+
+                    if (image != null)
+                    {
+                        drawWidth = (image.Width * this.itemHeight) / image.Height;
+                    }
+                    else
+                    {
+                        drawWidth = this.itemHeight;
+                    }
+
+                    int y = redoRect.Top + i * this.itemHeight;
+
+                    Brush textBrush;
+                    if (i == this.redoItemHighlight)
+                    {
+                        Rectangle itemRect = new Rectangle(
+                            0,
+                            y,
+                            ViewWidth,
+                            this.itemHeight);
+
+                        e.Graphics.FillRectangle(SystemBrushes.Highlight, itemRect);
+                        textBrush = SystemBrushes.HighlightText;
+                    }
+                    else
+                    {
+                        textBrush = SystemBrushes.InactiveCaptionText;
+                    }
+
+                    if (image != null)
+                    {
+                        e.Graphics.DrawImage(
+                            image,
+                            new Rectangle(0, y, drawWidth, this.itemHeight),
+                            new Rectangle(0, 0, image.Width, image.Height),
+                            GraphicsUnit.Pixel);
+                    }
+
+                    int textX = drawWidth + afterImageHMargin;
+
+                    Rectangle textRect = new Rectangle(
+                        textX,
+                        y,
+                        ViewWidth - textX,
+                        this.itemHeight);
+
+                    e.Graphics.DrawString(
+                        this.historyStack.RedoStack[i].Name,
+                        redoFont,
+                        textBrush,
+                        textRect,
+                        stringFormat);
+                }
+
+                redoFont.Dispose();
+                redoFont = null;
+
+                stringFormat.Dispose();
+                stringFormat = null;
+
+                e.Graphics.TranslateTransform(0, this.scrollOffset);
+            }
+
+            base.OnPaint(e);
+        }
+
         public HistoryStack HistoryStack
         {
             get
             {
-                return historyStack;
+                return this.historyStack;
             }
 
             set
             {
-                if (historyStack != null )
+                if (this.historyStack != null)
                 {
-                    historyStack.NewHistoryAction -= historyNewActionDelegate;
-                    historyStack.SteppedForward -= historySteppedForwardDelegate;
-                    historyStack.SteppedBackward -= historySteppedBackwardDelegate;
-                    historyStack.HistoryFlushed -= historyFlushedDelegate;
-                    historyStack.Changed -= historyChangedDelegate;
+                    this.historyStack.Changed -= History_Changed;
+                    this.historyStack.SteppedForward -= History_SteppedForward;
+                    this.historyStack.SteppedBackward -= History_SteppedBackward;
+                    this.historyStack.HistoryFlushed -= History_HistoryFlushed;
+                    this.historyStack.NewHistoryMemento -= History_NewHistoryMemento;
                 }
 
-                historyStack = value;
-
-                if (historyStack != null)
-                {
-                    historyStack.NewHistoryAction += historyNewActionDelegate;
-                    historyStack.SteppedForward += historySteppedForwardDelegate;
-                    historyStack.SteppedBackward += historySteppedBackwardDelegate;
-                    historyStack.HistoryFlushed += historyFlushedDelegate;
-                    historyStack.Changed += historyChangedDelegate;
-
-                    DrawHistory();
-                }
-
+                this.historyStack = value;
                 PerformLayout();
-            }
-        }
-        
-        private void DrawHistory()
-        {
-            Point spt = historyControlPanel.AutoScrollPosition;
-            this.historyControlPanel.SuspendLayout();
 
-            int cursor = 0;
-
-            foreach (HistoryAction ha in historyStack.UndoStack)
-            {
-                HistoryElement hec = new HistoryElement();
-                
-                InitializeHistoryElement(hec, ha, true);
-                hec.Location = new Point(0, elementHeight * cursor);
-                undoActions.Add(hec);
-                historyControlPanel.Controls.Add(hec);
-                cursor++;
-            }
-            
-            foreach (HistoryAction ha in historyStack.RedoStack)
-            {
-                HistoryElement hec = new HistoryElement();
-
-                InitializeHistoryElement(hec, ha, false);
-                hec.Location = new Point(0, elementHeight * cursor);
-                redoActions.Add(hec);
-                historyControlPanel.Controls.Add(hec);
-                cursor++;
-            }
-
-            historyControlPanel.ResumeLayout(true);
-        }
-
-        public void DrawHistoryElement(HistoryElement hec)
-        {
-            int cursor = historyStack.UndoStack.Count - 1;
-            hec.Location = new Point(0, this.historyControlPanel.AutoScrollPosition.Y + elementHeight * cursor);
-            historyControlPanel.Controls.Add(hec);          
-        }
-
-        private void ClearRedoHistoryControl()
-        {
-            foreach (HistoryElement hec in redoActions)
-            {
-                hec.Click -= elementClickedDelegate;
-                historyControlPanel.Controls.Remove(hec);
-                hec.Dispose();
-            }
-
-            redoActions = new List<HistoryElement>();
-        }
-
-        private void RefreshHistoryControl()
-        {
-            if ((undoActions.Count - historyStack.UndoStack.Count) > 0)
-            {
-                for (int i = 0; i < (undoActions.Count - historyStack.UndoStack.Count); i++)
+                if (this.historyStack != null)
                 {
-                    undoActions[i].Click -= elementClickedDelegate;
-                    historyControlPanel.Controls.Remove(undoActions[i]);
+                    this.historyStack.Changed += History_Changed;
+                    this.historyStack.SteppedForward += History_SteppedForward;
+                    this.historyStack.SteppedBackward += History_SteppedBackward;
+                    this.historyStack.HistoryFlushed += History_HistoryFlushed;
+                    this.historyStack.NewHistoryMemento += History_NewHistoryMemento;
+                    EnsureLastUndoItemIsFullyVisible();
                 }
 
-                undoActions.RemoveRange(0, undoActions.Count - historyStack.UndoStack.Count);
-            }
-
-            if ((redoActions.Count - historyStack.RedoStack.Count) > 0)
-            {
-                for (int i = 0; i < (redoActions.Count - historyStack.RedoStack.Count); i++)
-                {
-                    redoActions[i].Click -= elementClickedDelegate;
-                    historyControlPanel.Controls.Remove(redoActions[i]);
-                }
-
-                redoActions.RemoveRange(0, redoActions.Count - historyStack.RedoStack.Count);
-            }
-
-            this.PerformLayout();
-        }
-
-        private void ClearHistoryControl()
-        {
-            foreach (HistoryElement hec in undoActions)
-            {
-                hec.Click -= elementClickedDelegate;
-                historyControlPanel.Controls.Remove(hec);
-                hec.Dispose();
-            }
-
-            undoActions = new List<HistoryElement>();
-
-            foreach (HistoryElement hec in redoActions)
-            {
-                hec.Click -= elementClickedDelegate;
-                historyControlPanel.Controls.Remove(hec);
-                hec.Dispose();
-            }
-
-            redoActions = new List<HistoryElement>();
-        }
-
-        private void InitializeHistoryElement(HistoryElement hec, HistoryAction ha, bool isUndo)
-        {
-            hec.Height = elementHeight;
-            hec.Width = historyControlPanel.ClientRectangle.Width;
-            hec.Description = ha.Name;
-            hec.Click += elementClickedDelegate;
-            hec.Tag = ha.ID;
-            hec.Image = ha.Image;
-            hec.IsUndo = isUndo;
-        }
-
-        private void HistorySteppedForwardHandler(object sender, EventArgs e)
-        {
-            // Pull first redo action, make it last undo action
-            if (redoActions.Count > 0)
-            {
-                HistoryElement hec = redoActions[0];
-                hec.IsUndo = true;
-                undoActions.Add(hec);
-                redoActions.Remove(hec);
-
-                if (scrollIntoView)
-                {
-                    if (redoActions.Count > 0)
-                    {
-                        historyControlPanel.ScrollControlIntoView(redoActions[0]);
-                        redoActions[0].Select();
-                    }
-                    else
-                    {
-                        historyControlPanel.ScrollControlIntoView(hec);
-                        hec.Select();
-                    }
-                }
+                Refresh();
+                OnHistoryChanged();
             }
         }
 
-        private void HistorySteppedBackwardHandler(object sender, EventArgs e)
+        private void EnsureLastUndoItemIsFullyVisible()
         {
-            // Pull last undo action, make it first redo action
-            if (undoActions.Count > 0)
-            {
-                HistoryElement hec = undoActions[undoActions.Count - 1];
-                undoActions.Remove(hec);
-                hec.IsUndo = false;
-                redoActions.Insert(0, hec);
-
-                if (scrollIntoView)
-                {
-                    if (undoActions.Count > 0)
-                    {
-                        historyControlPanel.ScrollControlIntoView(undoActions[undoActions.Count - 1]);
-                        undoActions[undoActions.Count - 1].Select();
-                    }
-                    else
-                    {
-                        historyControlPanel.ScrollControlIntoView(hec);
-                        hec.Select();
-                    }
-                }
-
-            }
+            int index = this.historyStack.UndoStack.Count - 1;
+            EnsureItemIsFullyVisible(ItemType.Undo, index);
         }
 
-        private void HistoryFlushedHandler(object sender, EventArgs e)
+        private void History_HistoryFlushed(object sender, EventArgs e)
         {
-            ClearHistoryControl();
+            EnsureLastUndoItemIsFullyVisible();
+            PerformMouseMove();
+            PerformLayout();
+            Refresh();
         }
 
-        private void HistoryNewActionHandler(object sender, EventArgs e)
+        private void History_SteppedForward(object sender, EventArgs e)
         {
-            HistoryElement hec = new HistoryElement();
-            HistoryAction ha = (HistoryAction)this.historyStack.UndoStack[this.historyStack.UndoStack.Count - 1];
-            InitializeHistoryElement(hec, ha, true);
-
-            // Clear the Redo Stack and Control
-            ClearRedoHistoryControl();
-
-            DrawHistoryElement(hec);
-            undoActions.Add(hec);
-
-            historyControlPanel.ScrollControlIntoView(hec);
-            hec.Select();
-
-            this.PerformLayout();
-            historyControlPanel.PerformLayout();
+            this.undoItemHighlight = -1;
+            this.redoItemHighlight = -1;
+            EnsureLastUndoItemIsFullyVisible();
+            PerformMouseMove();
+            PerformLayout();
+            Refresh();
         }
-    
-        private void HistoryChangedHandler(object sender, EventArgs e)
+
+        private void History_SteppedBackward(object sender, EventArgs e)
         {
+            this.undoItemHighlight = -1;
+            this.redoItemHighlight = -1;
+            EnsureLastUndoItemIsFullyVisible();
+            PerformMouseMove();
+            PerformLayout();
+            Refresh();
+        }
+
+        private void History_NewHistoryMemento(object sender, EventArgs e)
+        {
+            EnsureLastUndoItemIsFullyVisible();
+            PerformMouseMove();
+            PerformLayout();
+            Invalidate();
+        }
+
+        private void History_Changed(object sender, EventArgs e)
+        {
+            PerformMouseMove();
+            PerformLayout();
+            Refresh();
             OnHistoryChanged();
-            Update();
         }
 
         public HistoryControl()
         {
-            this.elementHeight = SystemLayer.UI.ScaleHeight(16);
-            
-            // This call is required by the Windows.Forms Form Designer.
-            InitializeComponent();
+            UI.InitScaling(this);
+            this.itemHeight = UI.ScaleHeight(16);
 
-            historyStack = null;
-            undoActions = new List<HistoryElement>();
-            redoActions = new List<HistoryElement>();
-            historySteppedForwardDelegate = new EventHandler(HistorySteppedForwardHandler);
-            historySteppedBackwardDelegate = new EventHandler(HistorySteppedBackwardHandler);
-            historyNewActionDelegate = new EventHandler(HistoryNewActionHandler);
-            elementClickedDelegate = new EventHandler(ElementClickedHandler);
-            historyFlushedDelegate = new EventHandler(HistoryFlushedHandler);
-            historyChangedDelegate = new EventHandler(HistoryChangedHandler);
+            SetStyle(ControlStyles.StandardDoubleClick, false);
+
+            InitializeComponent();
         }
 
         private void KeyUpHandler(object sender, KeyEventArgs e)
@@ -358,99 +609,226 @@ namespace PaintDotNet
             this.OnKeyUp(e);
         }
 
-        private void ElementClickedHandler(object sender, EventArgs e)
+        private void OnItemClicked(ItemType itemType, int itemIndex)
         {
-            HistoryElement hec = (HistoryElement)sender;
-            int haId = (int)hec.Tag;
+            HistoryMemento hm;
 
-            scrollIntoView = false;
+            if (itemType == ItemType.Undo)
+            {
+                if (itemIndex >= 0 && itemIndex < this.historyStack.UndoStack.Count)
+                {
+                    hm = this.historyStack.UndoStack[itemIndex];
+                }
+                else
+                {
+                    hm = null;
+                }
+            }
+            else
+            {
+                if (itemIndex >= 0 && itemIndex < this.historyStack.RedoStack.Count)
+                {
+                    hm = this.historyStack.RedoStack[itemIndex];
+                }
+                else
+                {
+                    hm = null;
+                }
+            }
 
-            if (hec.IsUndo)
-            {   
-                // Step back to undo
-                if (haId == ((HistoryAction)historyStack.UndoStack[historyStack.UndoStack.Count - 1]).ID)
+            if (hm != null)
+            {
+                EnsureItemIsFullyVisible(itemType, itemIndex);
+                OnItemClicked(itemType, hm);
+            }
+        }
+
+        private void OnItemClicked(ItemType itemType, HistoryMemento hm)
+        {
+            int hmID = hm.ID;
+
+            if (itemType == ItemType.Undo)
+            {
+                if (hmID == this.historyStack.UndoStack[historyStack.UndoStack.Count - 1].ID)
                 {
                     if (historyStack.UndoStack.Count > 1)
                     {
-                        using (new WaitCursorChanger(this))
-                        {
-                            try
-                            {
-                                historyStack.StepBackward();
-                            }
-
-                            catch (InvalidOperationException)
-                            {
-                                // ignore
-                            }
-                        }
+                        this.historyStack.StepBackward();
                     }
                 }
                 else
                 {
-                    historyStack.BeginStepGroup();
+                    SuspendScrollOffsetSet();
 
-                    while (((HistoryAction)historyStack.UndoStack[historyStack.UndoStack.Count - 1]).ID != haId)
-                    {
-                        using (new WaitCursorChanger(this))
-                        {
-                            try
-                            {
-                                historyStack.StepBackward();
-                            }
+                    this.historyStack.BeginStepGroup();
 
-                            catch (InvalidOperationException)
-                            {
-                                break;
-                            }
-                        }
-                    }
-
-                    historyStack.EndStepGroup();
-                }
-            }
-            else 
-            {   
-                // Step forward to redo
-                historyStack.BeginStepGroup();
-
-                while (((HistoryAction)historyStack.UndoStack[historyStack.UndoStack.Count - 1]).ID != haId)
-                {
                     using (new WaitCursorChanger(this))
                     {
-                        try
+                        while (this.historyStack.UndoStack[this.historyStack.UndoStack.Count - 1].ID != hmID)
                         {
-                            historyStack.StepForward();
+                            this.historyStack.StepBackward();
                         }
+                    }
 
-                        catch (InvalidOperationException)
-                        {
-                            break;
-                        }
+                    this.historyStack.EndStepGroup();
+
+                    ResumeScrollOffsetSet();
+                }
+            }
+            else // if (itemType == ItemType.Redo)
+            {
+                SuspendScrollOffsetSet();
+
+                // Step forward to redo
+                this.historyStack.BeginStepGroup();
+
+                using (new WaitCursorChanger(this))
+                {
+                    while (this.historyStack.UndoStack[this.historyStack.UndoStack.Count - 1].ID != hmID)
+                    {
+                        this.historyStack.StepForward();
                     }
                 }
 
-                historyStack.EndStepGroup();
-            }            
+                this.historyStack.EndStepGroup();
 
-            scrollIntoView = true;
+                ResumeScrollOffsetSet();
+            }
+
+            Focus();
         }
 
-        /// <summary> 
-        /// Clean up any resources being used.
-        /// </summary>
-        protected override void Dispose(bool disposing)
+        protected override void OnResize(EventArgs e)
         {
-            if (disposing)
+            PerformLayout();
+            base.OnResize(e);
+        }
+
+        protected override void OnSizeChanged(EventArgs e)
+        {
+            PerformLayout();
+            base.OnSizeChanged(e);
+        }
+
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            if (this.historyStack != null)
             {
-                if (components != null)
+                if (this.managedFocus && !MenuStripEx.IsAnyMenuActive && UI.IsOurAppActive)
                 {
-                    components.Dispose();
-                    components = null;
+                    Focus();
                 }
             }
 
-            base.Dispose(disposing);
+            base.OnMouseEnter(e);
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            if (this.historyStack != null)
+            {
+                Point clientPt = new Point(e.X, e.Y);
+                Point viewPt = ClientPointToViewPoint(clientPt);
+
+                ItemType itemType;
+                int itemIndex;
+                ViewPointToStackIndex(viewPt, out itemType, out itemIndex);
+
+                switch (itemType)
+                {
+                    case ItemType.Undo:
+                        if (itemIndex >= 0 && itemIndex < this.historyStack.UndoStack.Count)
+                        {
+                            this.undoItemHighlight = itemIndex;
+                        }
+                        else
+                        {
+                            this.undoItemHighlight = -1;
+                        }
+
+                        this.redoItemHighlight = -1;
+                        break;
+
+                    case ItemType.Redo:
+                        this.undoItemHighlight = -1;
+
+                        if (itemIndex >= 0 && itemIndex < this.historyStack.RedoStack.Count)
+                        {
+                            this.redoItemHighlight = itemIndex;
+                        }
+                        else
+                        {
+                            this.redoItemHighlight = -1;
+                        } 
+                        break;
+
+                    default:
+                        throw new InvalidEnumArgumentException();
+                }
+
+                Refresh();
+                this.lastMouseClientPt = clientPt;
+            }
+
+            base.OnMouseMove(e);
+        }
+
+        protected override void OnClick(EventArgs e)
+        {
+            if (this.historyStack != null)
+            {
+                Point viewPt = ClientPointToViewPoint(this.lastMouseClientPt);
+
+                ItemType itemType;
+                int itemIndex;
+                ViewPointToStackIndex(viewPt, out itemType, out itemIndex);
+
+                OnItemClicked(itemType, itemIndex);
+            }
+
+            base.OnClick(e);
+        }
+
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            if (this.historyStack != null)
+            {
+                int items = (e.Delta * SystemInformation.MouseWheelScrollLines) / SystemInformation.MouseWheelScrollDelta;
+                int pixels = items * this.itemHeight;
+                ScrollOffset -= pixels;
+
+                PerformMouseMove();
+            }
+
+            base.OnMouseWheel(e);
+        }
+
+        private void PerformMouseMove()
+        {
+            Point clientPt = PointToClient(Control.MousePosition);
+
+            if (ClientRectangle.Contains(clientPt))
+            {
+                MouseEventArgs me = new MouseEventArgs(MouseButtons.None, 0, clientPt.X, clientPt.Y, 0);
+                OnMouseMove(me);
+            }
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            if (this.historyStack != null)
+            {
+                this.undoItemHighlight = -1;
+                this.redoItemHighlight = -1;
+                Refresh();
+
+                if (this.Focused && this.managedFocus)
+                {
+                    OnRelinquishFocus();
+                }
+            }
+
+            base.OnMouseLeave(e);
         }
 
         #region Component Designer generated code
@@ -460,28 +838,29 @@ namespace PaintDotNet
         /// </summary>
         private void InitializeComponent()
         {
-            this.historyControlPanel = new PanelWithLayout(); //new PaintDotNet.PanelEx();
-            this.SuspendLayout();
-            // 
-            // historyControlPanel
-            // 
-            this.historyControlPanel.AutoScroll = true;
-            this.historyControlPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.historyControlPanel.Location = new System.Drawing.Point(0, 0);
-            this.historyControlPanel.Name = "historyControlPanel";
-            this.historyControlPanel.ScrollPosition = new System.Drawing.Point(0, 0);
-            this.historyControlPanel.Size = new System.Drawing.Size(248, 152);
-            this.historyControlPanel.TabIndex = 0;
-            this.historyControlPanel.ParentHistoryControl = this;
-            // 
+            this.vScrollBar = new VScrollBar();
+            SuspendLayout();
+            //
+            // vScrollBar
+            //
+            this.vScrollBar.Name = "vScrollBar";
+            this.vScrollBar.ValueChanged += new EventHandler(VScrollBar_ValueChanged);
+            //
             // HistoryControl
-            // 
-            this.Controls.Add(this.historyControlPanel);
+            //
             this.Name = "HistoryControl";
-            this.Size = new System.Drawing.Size(248, 152);
-            this.ResumeLayout(false);
-
+            this.TabStop = false;
+            this.Controls.Add(this.vScrollBar);
+            this.ResizeRedraw = true;
+            this.DoubleBuffered = true;
+            ResumeLayout();
+            PerformLayout();
         }
         #endregion
+
+        private void VScrollBar_ValueChanged(object sender, EventArgs e)
+        {
+            ScrollOffset = this.vScrollBar.Value;
+        }
     }
 }

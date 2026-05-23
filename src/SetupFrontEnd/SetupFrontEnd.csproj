@@ -73,6 +73,7 @@
     <DebugType>pdbonly</DebugType>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System">
@@ -86,6 +87,10 @@
       <Name>System.Windows.Forms</Name>
     </Reference>
     <Reference Include="System.Xml" />
+    <ProjectReference Include="..\PdnLib\PdnLib.csproj">
+      <Project>{1EADE568-A866-4DD4-9898-0A151E3F0E26}</Project>
+      <Name>PdnLib</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Resources\Resources.csproj">
       <Name>Resources</Name>
       <Project>{0B173113-1F9B-4939-A62F-A176336F13AC}</Project>
@@ -123,9 +128,6 @@
     <Compile Include="NativeMethods.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="NativeStructs.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="OptionsPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -142,12 +144,6 @@
       <SubType>UserControl</SubType>
     </Compile>
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="DonateAd_en.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="DonateAd_de.png" />
-  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>
@@ -157,10 +153,7 @@ call "$(SolutionDir)Manifests\embedManifest.bat" "$(TargetPath)" "$(SolutionDir)
 call "$(SolutionDir)Manifests\embedManifest.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)" "$(SolutionDir)Manifests\requireAdministrator.xml"
 
 @rem copy English strings over
-copy "$(SolutionDir)\Strings\$(ConfigurationName)\PaintDotNet.Strings.resources" "$(TargetDir)"
-
-@rem copy German strings over
-copy "$(SolutionDir)\Strings.de\$(ConfigurationName)\PaintDotNet.Strings.de.resources" "$(TargetDir)"
+copy "$(SolutionDir)\Strings\$(ConfigurationName)\PaintDotNet.Strings.3.resources" "$(TargetDir)"
 
 @rem Sign
 rem call "$(SolutionDir)signfile.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)"

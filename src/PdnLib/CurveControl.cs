@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -23,7 +23,7 @@ namespace PaintDotNet
     /// It is intended for curve adjustment
     /// </summary>
     public abstract class CurveControl 
-        : System.Windows.Forms.UserControl
+        : UserControl
     {
         private System.ComponentModel.Container components = null;
         private int[] curvesInvalidRange = new int[] { int.MaxValue, int.MinValue };
@@ -103,7 +103,7 @@ namespace PaintDotNet
             return mask[channel];
         }
 
-        public CurveControl(int channels, int entries)
+        protected internal CurveControl(int channels, int entries)
         {
             this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
                 ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
@@ -158,12 +158,12 @@ namespace PaintDotNet
             }
         }
 
-        public event DataEventHandler<Point> CoordinatesChanged;
+        public event EventHandler<Point> CoordinatesChanged;
         protected virtual void OnCoordinatesChanged()
         {
             if (CoordinatesChanged != null)
             {
-                CoordinatesChanged(this, new DataEventArgs<Point>(new Point(lastKey, lastValue)));
+                CoordinatesChanged(this, new EventArgs<Point>(new Point(lastKey, lastValue)));
             }
         }
 
@@ -241,7 +241,7 @@ namespace PaintDotNet
                 int points = channelControlPoints.Count;
 
                 ColorBgra color = GetVisualColor(c);
-                ColorBgra colorSelected = ColorBgra.Lerp(color, ColorBgra.White, 0.5);
+                ColorBgra colorSelected = ColorBgra.Blend(color, ColorBgra.White, 128);
 
                 const float penWidthNonSelected = 1;
                 const float penWidthSelected = 2;

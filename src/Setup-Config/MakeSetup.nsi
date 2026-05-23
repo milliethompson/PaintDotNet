@@ -1,10 +1,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Paint.NET
-;; Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-;;               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-;;               and Luke Walker
-;; Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-;; See src;setup;License.rtf for complete licensing and attribution information.
+;; Paint.NET                                                                   ;;
+;; Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            ;;
+;; Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          ;;
+;; See src/Resources/Files/License.txt for full licensing and attribution      ;;
+;; details.                                                                    ;;
+;; 1                                                                           ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; MakeSetup.nsi
@@ -15,11 +15,13 @@
 ;--------------------------------
 
 !ifdef Compress
-  SetCompressor /SOLID lzma
   !ifdef FullInstaller
+    SetCompressor /SOLID lzma
     SetCompressorDictSize 32
+    ;SetCompress off
   !else
-    SetCompressorDictSize 8
+    SetCompressor /SOLID lzma
+    SetCompressorDictSize 9
   !endif
 !else
   SetCompress off
@@ -36,20 +38,20 @@ InstallDir $TEMP\PdnSetup
   SilentInstall silent
 !endif
 
-Icon ..\Setup\SetupIcon.ico
+Icon ..\Resources\Icons\PaintDotNet.ico
 
 VIAddVersionKey ProductName "Paint.NET Setup"
-VIAddVersionKey ProductVersion "2.72.0.0"
-VIAddVersionKey FileVersion "2.72.0.0"
-VIAddVersionKey LegalCopyright "Copyright © 2006 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. Portions Copyright © 2006 Microsoft Corporation. All Rights Reserved."
+VIAddVersionKey ProductVersion "3.0.0.0"
+VIAddVersionKey FileVersion "3.0.0.0"
+VIAddVersionKey LegalCopyright "Copyright © 2007 Rick Brewster, Tom Jackson, and past contributors. Portions Copyright © 2007 Microsoft Corporation. All Rights Reserved."
 VIAddVersionKey FileDescription "Installs Paint.NET."
-VIProductVersion "2.72.0.0"
+VIProductVersion "3.0.0.0"
 
 ; The file to write
 !ifdef Debug
 
 !ifdef FullInstaller
-  OutFile "..\Setup\Debug\PaintDotNetFullSetup.exe"
+  OutFile "..\Setup\Debug\PaintDotNetWithDotNetSetup.exe"
 !else
   OutFile "..\Setup\Debug\PaintDotNetSetup.exe"
 !endif
@@ -57,7 +59,7 @@ VIProductVersion "2.72.0.0"
 !else
 
 !ifdef FullInstaller
-  OutFile "..\Setup\Release\PaintDotNetFullSetup.exe"
+  OutFile "..\Setup\Release\PaintDotNetWithDotNetSetup.exe"
 !else
   OutFile "..\Setup\Release\PaintDotNetSetup.exe"
 !endif 
@@ -89,8 +91,12 @@ Section "" ;No components page, name is not important
   File ..\Setup\Release\PaintDotNet.msi
   File ..\SetupFrontEnd\bin\Release\PaintDotNet.Resources.dll
   File ..\SetupFrontEnd\bin\Release\PaintDotNet.SystemLayer.dll
-  File ..\SetupFrontEnd\bin\Release\PaintDotNet.Strings.*.resources
-  File ..\SetupFrontEnd\bin\Release\PaintDotNet.Strings.resources
+  File ..\SetupFrontEnd\bin\Release\PdnLib.dll
+  File /nonfatal ..\Resources.mui\*.resources
+  File /nonfatal /r /x CVS ..\Resources.mui\*.rtf
+  File /nonfatal /r /x CVS ..\Resources.mui\*.png
+  File /nonfatal /r /x CVS ..\Resources.mui\*.gif
+  File ..\SetupFrontEnd\bin\Release\PaintDotNet.Strings.3.resources
   File ..\SetupFrontEnd\bin\Release\SetupFrontEnd.exe
   File ..\SetupShim\Release\SetupShim.exe
 
@@ -116,10 +122,11 @@ Section "" ;No components page, name is not important
 
   Delete $INSTDIR\SetupShim.exe
   Delete $INSTDIR\SetupFrontEnd.exe
-  Delete $INSTDIR\PaintDotNet.Strings.resources
-  Delete $INSTDIR\PaintDotNet.Strings.*.resources
+  Delete $INSTDIR\PaintDotNet.Strings.3.resources
+  Delete $INSTDIR\*.resources
   Delete $INSTDIR\PaintDotNet.Resources.dll
   Delete $INSTDIR\PaintDotNet.SystemLayer.dll
+  Delete $INSTDIR\PdnLib.dll
   Delete $INSTDIR\PaintDotNet.msi
   
   RMDir /r $INSTDIR

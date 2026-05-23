@@ -1,12 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -355,7 +356,7 @@ namespace PaintDotNet
             {
                 this.constrainToAspect = false;
                 this.originalPixelSize = originalPixelSize;
-                this.units = Document.GetDefaultDpuUnit();
+                this.units = Document.DefaultDpuUnit;
                 this.resolution = Document.GetDefaultDpu(this.units);
                 this.newWidth = (double)this.originalPixelSize.Width / this.resolution;
                 this.newHeight = (double)this.originalPixelSize.Height / this.resolution;
@@ -410,7 +411,7 @@ namespace PaintDotNet
         {
             get
             {
-                return (int)Math.Round(constrainer.NewPixelWidth);
+                return (int)Utility.Clamp(Math.Round(constrainer.NewPixelWidth), (double)int.MinValue, (double)int.MaxValue);
             }
 
             set
@@ -426,7 +427,7 @@ namespace PaintDotNet
         {
             get
             {
-                return (int)Math.Round(constrainer.NewPixelHeight);
+                return (int)Utility.Clamp(Math.Round(constrainer.NewPixelHeight), (double)int.MinValue, (double)int.MaxValue);
             }
 
             set
@@ -461,8 +462,8 @@ namespace PaintDotNet
             }
         }
 
-        private double originalDpu = Document.GetDefaultDpu(Document.GetDefaultDpuUnit());
-        private MeasurementUnit originalDpuUnit = Document.GetDefaultDpuUnit();
+        private double originalDpu = Document.GetDefaultDpu(Document.DefaultDpuUnit);
+        private MeasurementUnit originalDpuUnit = Document.DefaultDpuUnit;
 
         /// <summary>
         /// Gets or sets the original image width, in units of pixels.
@@ -677,11 +678,11 @@ namespace PaintDotNet
             this.constrainer.UnitsChanged += new EventHandler(OnConstrainerUnitsChanged);
 
             constrainCheckBox.Checked = constrainer.ConstrainToAspect;
-            pixelWidthUpDown.Value = (decimal)constrainer.NewPixelWidth;
-            pixelHeightUpDown.Value = (decimal)constrainer.NewPixelHeight;
-            printWidthUpDown.Value = (decimal)constrainer.NewWidth;
-            printHeightUpDown.Value = (decimal)constrainer.NewHeight;
-            resolutionUpDown.Value = (decimal)constrainer.Resolution;
+            SafeSetNudValue(this.pixelWidthUpDown, this.constrainer.NewPixelWidth);
+            SafeSetNudValue(this.pixelHeightUpDown, this.constrainer.NewPixelHeight);
+            SafeSetNudValue(this.printWidthUpDown, this.constrainer.NewWidth);
+            SafeSetNudValue(this.printHeightUpDown, this.constrainer.NewHeight);
+            SafeSetNudValue(this.resolutionUpDown, this.constrainer.Resolution);
             unitsComboBox1.Units = constrainer.Units;
         }
 
@@ -884,6 +885,7 @@ namespace PaintDotNet
             this.absoluteRB.Location = new System.Drawing.Point(8, 78);
             this.absoluteRB.Name = "absoluteRB";
             this.absoluteRB.Width = 264;
+            this.absoluteRB.AutoSize = true;
             this.absoluteRB.TabIndex = 24;
             this.absoluteRB.TabStop = true;
             this.absoluteRB.CheckedChanged += new System.EventHandler(this.OnRadioButtonCheckedChanged);
@@ -893,6 +895,8 @@ namespace PaintDotNet
             this.percentRB.Location = new System.Drawing.Point(8, 51);
             this.percentRB.Name = "percentRB";
             this.percentRB.TabIndex = 22;
+            this.percentRB.AutoSize = true;
+            this.percentRB.Width = 10;
             this.percentRB.CheckedChanged += new System.EventHandler(this.OnRadioButtonCheckedChanged);
             // 
             // pixelsLabel1
@@ -1096,6 +1100,7 @@ namespace PaintDotNet
             // 
             this.resamplingLabel.Location = new System.Drawing.Point(6, 30);
             this.resamplingLabel.Name = "resamplingLabel";
+            this.resamplingLabel.AutoSize = true;
             this.resamplingLabel.Size = new System.Drawing.Size(88, 16);
             this.resamplingLabel.TabIndex = 20;
             this.resamplingLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -1482,13 +1487,13 @@ namespace PaintDotNet
             result = Utility.GetUpDownValueFromText(this.pixelWidthUpDown, out val);
             if (!result || val != this.constrainer.NewPixelWidth)
             {
-                this.pixelWidthUpDown.Value = (decimal)this.constrainer.NewPixelWidth;
+                SafeSetNudValue(this.pixelWidthUpDown, this.constrainer.NewPixelWidth);
             }
 
             result = Utility.GetUpDownValueFromText(this.printWidthUpDown, out val);
             if (!result || val != this.constrainer.NewWidth)
             {
-                this.printWidthUpDown.Value = (decimal)this.constrainer.NewWidth;
+                SafeSetNudValue(this.printWidthUpDown, this.constrainer.NewWidth);
             }
 
             --ignoreUpDownValueChanged;
@@ -1506,7 +1511,7 @@ namespace PaintDotNet
             {
                 if (val != this.constrainer.NewPixelHeight)
                 {
-                    this.pixelHeightUpDown.Value = (decimal)this.constrainer.NewPixelHeight;
+                    SafeSetNudValue(this.pixelHeightUpDown, this.constrainer.NewPixelHeight);
                 }
             }
 
@@ -1514,7 +1519,7 @@ namespace PaintDotNet
             {
                 if (val != this.constrainer.NewHeight)
                 {
-                    this.printHeightUpDown.Value = (decimal)this.constrainer.NewHeight;
+                    SafeSetNudValue(this.printHeightUpDown, this.constrainer.NewHeight);
                 }
             }
 
@@ -1533,7 +1538,7 @@ namespace PaintDotNet
             {
                 if (val != this.constrainer.Resolution)
                 {
-                    this.resolutionUpDown.Value = (decimal)this.constrainer.Resolution;
+                    SafeSetNudValue(this.resolutionUpDown, this.constrainer.Resolution);
                 }
             }
 
@@ -1575,6 +1580,24 @@ namespace PaintDotNet
             
             bool enable = b1 && b2 && b3 && b4 && b5 && b6 && b7 && b8 && b9 && b10 && b11 && b12;
             okButton.Enabled = enable;
+        }
+
+        private void SafeSetNudValue(NumericUpDown nud, double value)
+        {
+            try
+            {
+                decimal newValue = (decimal)value;
+
+                if (newValue >= nud.Minimum && newValue <= nud.Maximum)
+                {
+                    nud.Value = newValue;
+                }
+            }
+
+            catch (OverflowException ex)
+            {
+                Tracing.Ping("Exception: " + ex.ToString());
+            }
         }
     }
 }

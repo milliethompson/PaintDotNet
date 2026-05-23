@@ -20,7 +20,7 @@ namespace PdnBench
         {
             for (int i = 0; i < Iterations; ++i)
             {
-                this.src.Draw(this.dst, this.transform, this.highQuality);
+                this.src.Draw(this.dst, this.transform, this.highQuality ? ResamplingAlgorithm.Bilinear : ResamplingAlgorithm.NearestNeighbor);
             }
         }
 

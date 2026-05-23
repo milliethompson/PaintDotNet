@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 #define _WIN32_WINNT 0x0501
@@ -22,9 +22,9 @@ const TCHAR *g_szNetfxSPxRegValueName = _T("SP");
 const TCHAR *g_szMessageBoxTitle = _T("Paint.NET");
 
 const TCHAR *g_szNetfx20FoundText = 
-    _T("[English] Paint.NET must first install the .NET Framework 2.0. On some systems this may take 10-20 minutes, during which it is safe to use your computer for other tasks.\n"
+    _T("[English] Paint.NET must first install the .NET Framework 2.0. On some systems this may take 5-10 minutes, during which it is safe to use your computer for other tasks.\n"
        "\n"
-       "[Deutsch] Vor Paint.NET muss zuerst das .NET Framework 2.0 installiert werden. Auf einigen Systemen kann dies 10-20 Minuten dauern. Sie können in dieser Zeit den Computer problemlos weiterverwenden.");
+       "[Deutsch] Vor Paint.NET muss zuerst das .NET Framework 2.0 installiert werden. Auf einigen Systemen kann dies 5-10 Minuten dauern. Sie können in dieser Zeit den Computer problemlos weiterverwenden.");
 
 const TCHAR *g_szNetfx20NotFoundText = 
     _T("[English] Paint.NET requires that the .NET Framework 2.0 is installed. Click OK to go to Microsoft's webpage where you may download and install this.\n"
@@ -46,12 +46,10 @@ const TCHAR *g_szNetfxInstallRebootRequired =
 
 const TCHAR *g_szNetfx20x86DownloadUrl = _T("http://www.microsoft.com/downloads/details.aspx?FamilyID=0856eacb-4362-4b0d-8edd-aab15c5e04f5");
 const TCHAR *g_szNetfx20x64DownloadUrl = _T("http://www.microsoft.com/downloads/details.aspx?FamilyID=b44a0000-acf8-4fa1-affb-40e78d788b00");
-const TCHAR *g_szNetfx20IA64DownloadUrl = _T("http://www.microsoft.com/downloads/details.aspx?familyid=53C2548B-BEC7-4AB4-8CBE-33E07CFC83A7");
 const TCHAR *g_szNetfx20DispatchDownloadUrl = _T("http://msdn.microsoft.com/netframework/downloads/updates/default.aspx");
 
 const TCHAR *g_szNetfx20x86InstallerFileName = _T("x86\\install.exe");
 const TCHAR *g_szNetfx20x64InstallerFileName = _T("x64\\install.exe");
-const TCHAR *g_szNetfx20IA64InstallerFileName = _T("ia64\\install.exe");
 
 const TCHAR *g_szPdnInstallerFileName = _T("SetupFrontEnd.exe");
 
@@ -221,11 +219,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             case PROCESSOR_ARCHITECTURE_AMD64:
                 szNetfxInstallerFileName = g_szNetfx20x64InstallerFileName;
                 szNetfxDownloadUrl = g_szNetfx20x64DownloadUrl;
-                break;
-
-            case PROCESSOR_ARCHITECTURE_IA64:
-                szNetfxInstallerFileName = g_szNetfx20IA64InstallerFileName;
-                szNetfxDownloadUrl = g_szNetfx20IA64DownloadUrl;
                 break;
 
             default:

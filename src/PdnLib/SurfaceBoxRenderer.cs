@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -18,6 +18,7 @@ namespace PaintDotNet
     public abstract class SurfaceBoxRenderer
         : IDisposable
     {
+        private bool disposed = false;
         private SurfaceBoxRendererList ownerList;
         private bool visible;
 
@@ -25,6 +26,14 @@ namespace PaintDotNet
         public const int MaxXCoordinate = +131072;
         public const int MinYCoordinate = -131072;
         public const int MaxYCoordinate = +131072;
+
+        public bool IsDisposed
+        {
+            get
+            {
+                return this.disposed;
+            }
+        }
 
         public static Rectangle MaxBounds
         {
@@ -155,6 +164,7 @@ namespace PaintDotNet
 
         protected virtual void Dispose(bool disposing)
         {
+            this.disposed = true;
         }
     }
 }

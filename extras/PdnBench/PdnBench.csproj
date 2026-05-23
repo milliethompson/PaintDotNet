@@ -152,7 +152,6 @@
     <Reference Include="System.Drawing">
       <Name>System.Drawing</Name>
     </Reference>
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -168,6 +167,7 @@
     <Compile Include="EffectBenchmark.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="GradientBenchmark.cs" />
     <Compile Include="ResizeBenchmark.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -182,7 +182,6 @@
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>copy $(TargetPath) $(ProjectDir)\..\..\src\$(OutDir)</PostBuildEvent>
   </PropertyGroup>
 </Project>

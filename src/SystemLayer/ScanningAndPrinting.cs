@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -18,15 +18,8 @@ namespace PaintDotNet.SystemLayer
     /// <summary>
     /// Provides methods and properties related to scanning and printing.
     /// </summary>
-    /// <remarks>
-    /// Originally adapted from http://www.codeproject.com/dotnet/wiascriptingdotnet.asp
-    /// </remarks>
-    public sealed class ScanningAndPrinting
+    public static class ScanningAndPrinting
     {
-        private ScanningAndPrinting()
-        {
-        }
-
         private const string wiaProxy32ExeName = "WiaProxy32.exe";
 
         private static int CallWiaProxy32(string args, bool spinEvents)
@@ -113,15 +106,20 @@ namespace PaintDotNet.SystemLayer
         /// <param name="fileName">The name of a file containing a bitmap (.BMP) to print.</param>
         public static void Print(Control owner, string fileName)
         {
+            if (fileName == null)
+            {
+                throw new ArgumentNullException("fileName");
+            }
+
             if (!CanPrint)
             {
                 throw new InvalidOperationException("Printing is not available");
             }
 
             string fileNameExt = Path.GetExtension(fileName);
-            if (string.Compare(fileNameExt, ".bmp", StringComparison.InvariantCultureIgnoreCase) != 0)
+            if (string.Compare(fileNameExt, ".bmp", true) != 0)
             {
-                throw new ArgumentOutOfRangeException("fileName", fileName, "can only print .bmp files");
+                throw new ArgumentException("fileName must have a .bmp extension");
             }
 
             // Disable the entire UI, otherwise it's possible to close PDN while the
@@ -139,7 +137,7 @@ namespace PaintDotNet.SystemLayer
                     ownedForm.OwnedForms[i].Enabled = false;
                 }
 
-                owner.FindForm().Enabled = false;
+                ownedForm.Enabled = false;
             } 
             
             CallWiaProxy32("Print \"" + fileName + "\"", true);
@@ -151,10 +149,9 @@ namespace PaintDotNet.SystemLayer
                     ownedForm.OwnedForms[i].Enabled = ownedFormsEnabled[i];
                 }
 
-                owner.FindForm().Enabled = true;
+                ownedForm.Enabled = true;
+                ownedForm.Activate();
             }
-
-            owner.FindForm().Activate();
         }
 
         /// <summary>

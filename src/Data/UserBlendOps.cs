@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -19,20 +19,9 @@ namespace PaintDotNet
     /// to configure a layer's blending mode. It also contains helper
     /// functions to aid in enumerating and using these blend ops.
     /// 
-    /// Each class should inherit from BinaryPixelOp, require no parameters
-    /// for construction, and provide a static property called StaticName
-    /// that provides a friendly name for UI purposes.
-    /// 
-    /// Each op should be marked with the [Serializable] attribute.
-    /// 
-    /// Also, all 3 overrides for Apply() should be implemented, for 
-    /// performance reasons. All ops should also be sealed.
-    /// 
-    /// The default blend op for any layer is NormalBlendOp.
-    /// 
     /// Credit for mathematical descriptions of many of the blend modes goes to
     /// a page on Pegtop Software's website called, "Blend Modes"
-    /// http://www.pegtop.net/delphi/blendmodes/
+    /// http://www.pegtop.net/delphi/articles/blendmodes/
     /// </summary>
     public sealed partial class UserBlendOps
     {
@@ -78,6 +67,5 @@ namespace PaintDotNet
         {
             return typeof(NormalBlendOp);
         }
-
     }
 }

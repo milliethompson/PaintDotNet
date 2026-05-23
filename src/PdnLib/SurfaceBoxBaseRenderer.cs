@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -13,7 +13,7 @@ using System.Drawing;
 
 namespace PaintDotNet
 {
-    public class SurfaceBoxBaseRenderer
+    public sealed class SurfaceBoxBaseRenderer
         : SurfaceBoxRenderer
     {
         private Surface source;
@@ -100,7 +100,7 @@ namespace PaintDotNet
                         int a = srcRowPtr->A;
 
                         // Blend it over the checkerboard background
-                        int v = (((dstCol ^ checkerY) & 8) << 3) + 128;
+                        int v = (((dstCol ^ checkerY) & 8) << 3) + 191;
                         a = a + (a >> 7);
                         int vmia = v * (256 - a);
 
@@ -148,7 +148,7 @@ namespace PaintDotNet
                         int a = src.A;
 
                         // Blend it over the checkerboard background
-                        int v = (((dstCol + offset.X) ^ (dstRow + offset.Y)) & 8) * 8 + 128;
+                        int v = (((dstCol + offset.X) ^ (dstRow + offset.Y)) & 8) * 8 + 191;
                         a = a + (a >> 7);
                         int vmia = v * (256 - a);
 
@@ -236,7 +236,7 @@ namespace PaintDotNet
                         int a = (2 + p1->A + p2->A + p3->A + p4->A) >> 2;
 
                         // Blend it over the checkerboard background
-                        int v = ((checkerX ^ checkerY) & 8) * 8 + 128;
+                        int v = ((checkerX ^ checkerY) & 8) * 8 + 191;
                         a = a + (a >> 7);
                         int vmia = v * (256 - a);
 

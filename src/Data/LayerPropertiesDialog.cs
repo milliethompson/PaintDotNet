@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -15,9 +15,6 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for LayerPropertiesDialog.
-    /// </summary>
     public class LayerPropertiesDialog 
         : PdnBaseForm
     {
@@ -131,7 +128,7 @@ namespace PaintDotNet
             this.visibleCheckBox.Size = new System.Drawing.Size(90, 16);
             this.visibleCheckBox.TabIndex = 3;
             this.visibleCheckBox.TextAlign = System.Drawing.ContentAlignment.TopLeft;
-            this.visibleCheckBox.CheckedChanged += new System.EventHandler(this.visibleCheckBox_CheckedChanged);
+            this.visibleCheckBox.CheckedChanged += new System.EventHandler(this.VisibleCheckBox_CheckedChanged);
             // 
             // nameBox
             // 
@@ -140,7 +137,7 @@ namespace PaintDotNet
             this.nameBox.Size = new System.Drawing.Size(200, 20);
             this.nameBox.TabIndex = 2;
             this.nameBox.Text = "";
-            this.nameBox.Enter += new System.EventHandler(this.nameBox_Enter);
+            this.nameBox.Enter += new System.EventHandler(this.NameBox_Enter);
             // 
             // nameLabel
             // 
@@ -157,7 +154,7 @@ namespace PaintDotNet
             this.cancelButton.Location = new System.Drawing.Point(194, 69);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.TabIndex = 1;
-            this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
+            this.cancelButton.Click += new System.EventHandler(this.CancelButton_Click);
             // 
             // okButton
             // 
@@ -165,7 +162,7 @@ namespace PaintDotNet
             this.okButton.Location = new System.Drawing.Point(114, 69);
             this.okButton.Name = "okButton";
             this.okButton.TabIndex = 0;
-            this.okButton.Click += new System.EventHandler(this.okButton_Click);
+            this.okButton.Click += new System.EventHandler(this.OkButton_Click);
             // 
             // generalHeader
             // 
@@ -205,12 +202,12 @@ namespace PaintDotNet
         }
         #endregion
 
-        private void nameBox_Enter(object sender, System.EventArgs e)
+        private void NameBox_Enter(object sender, System.EventArgs e)
         {
             nameBox.Select(0, nameBox.Text.Length);
         }
 
-        private void okButton_Click(object sender, System.EventArgs e)
+        private void OkButton_Click(object sender, System.EventArgs e)
         {
             DialogResult = DialogResult.OK;
 
@@ -230,7 +227,7 @@ namespace PaintDotNet
             Close();
         }
 
-        private void cancelButton_Click(object sender, System.EventArgs e)
+        private void CancelButton_Click(object sender, System.EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
 
@@ -245,7 +242,7 @@ namespace PaintDotNet
             Close();
         }
 
-        private void visibleCheckBox_CheckedChanged(object sender, System.EventArgs e)
+        private void VisibleCheckBox_CheckedChanged(object sender, System.EventArgs e)
         {
             Layer.PushSuppressPropertyChanged();
             Layer.Visible = visibleCheckBox.Checked;

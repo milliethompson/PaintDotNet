@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
@@ -15,11 +15,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for DesaturateEffect.
-    /// </summary>
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
-    public class AddNoiseEffect
+    public sealed class AddNoiseEffect
         : Effect
     {
         public static string StaticName
@@ -151,6 +148,7 @@ namespace PaintDotNet.Effects
             }
 
             Random localRand = threadRand;
+            int[] localLookup = lookup;
 
             for (int ri = startIndex; ri < startIndex + length; ++ri)
             {
@@ -158,8 +156,8 @@ namespace PaintDotNet.Effects
 
                 for (int y = rect.Top; y < rect.Bottom; ++y)
                 {
-                    ColorBgra *srcPtr = srcArgs.Surface.GetPointAddress(rect.Left, y);
-                    ColorBgra *dstPtr = dstArgs.Surface.GetPointAddress(rect.Left, y);
+                    ColorBgra *srcPtr = srcArgs.Surface.GetPointAddressUnchecked(rect.Left, y);
+                    ColorBgra *dstPtr = dstArgs.Surface.GetPointAddressUnchecked(rect.Left, y);
 
                     for (int x = 0; x < rect.Width; ++x)
                     {
@@ -168,9 +166,9 @@ namespace PaintDotNet.Effects
                         int b;
                         int i;
 
-                        r = lookup[localRand.Next(tableSize)];
-                        g = lookup[localRand.Next(tableSize)];
-                        b = lookup[localRand.Next(tableSize)];
+                        r = localLookup[localRand.Next(tableSize)];
+                        g = localLookup[localRand.Next(tableSize)];
+                        b = localLookup[localRand.Next(tableSize)];
 
                         i = (1867 * r + 9618 * g + 4899 * b) >> 14;
 

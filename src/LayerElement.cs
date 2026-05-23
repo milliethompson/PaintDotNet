@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -12,36 +12,59 @@ using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Threading;
 using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for LayerElement.
-    /// </summary>
     public class LayerElement 
         : System.Windows.Forms.UserControl
     {
-        private static bool allowRefreshPreview = true; // when non-zero, RefreshPreview() will not do anything (and will then decrement this) -- used as startup perf optimization
-
-        public static void SetAllowRefreshPreview(bool flag)
-        {
-            allowRefreshPreview = flag;
-        }
+        public static int ThumbSizePreScaling = 40;
 
         private Layer layer;
         private bool isSelected;
-        public static int ThumbSize = UI.ScaleWidth(40);
-
         private PropertyEventHandler layerPropertyChangedDelegate;
         private System.Windows.Forms.Label layerDescription;
         private System.Windows.Forms.PictureBox icon;
         private System.Windows.Forms.CheckBox layerVisible;
-
+        private ThumbnailManager thumbnailManager;
+        private int thumbnailSize = 16;
         private int suspendPreviewUpdates = 0;
 
-        public System.Windows.Forms.CheckBox LayerVisible
+        public ThumbnailManager ThumbnailManager
+        {
+            get
+            {
+                return this.thumbnailManager;
+            }
+
+            set
+            {
+                this.thumbnailManager = value;
+            }
+        }
+
+        public int ThumbnailSize
+        {
+            get
+            {
+                return this.thumbnailSize;
+            }
+
+            set
+            {
+                if (this.thumbnailSize != value)
+                {
+                    this.thumbnailSize = value;
+                    RefreshPreview();
+                }
+            }
+        }
+
+        public CheckBox LayerVisible
         {
             get
             {
@@ -120,7 +143,7 @@ namespace PaintDotNet
                 if (this.layer != null)
                 {
                     this.layer.PropertyChanged -= this.layerPropertyChangedDelegate;
-                    this.layer.Invalidated -= new InvalidateEventHandler(layer_Invalidated);
+                    this.layer.Invalidated -= new InvalidateEventHandler(Layer_Invalidated);
                 }
                 
                 this.layer = value;
@@ -128,7 +151,7 @@ namespace PaintDotNet
                 if (this.layer != null)
                 {
                     this.layer.PropertyChanged += this.layerPropertyChangedDelegate;
-                    this.layer.Invalidated += new InvalidateEventHandler(layer_Invalidated);
+                    this.layer.Invalidated += new InvalidateEventHandler(Layer_Invalidated);
                     this.layerPropertyChangedDelegate(layer, new PropertyEventArgs("")); // sync up
 
                     // Add italics if it's the background layer
@@ -137,6 +160,8 @@ namespace PaintDotNet
                         this.layerDescription.Font = new Font(this.layerDescription.Font.FontFamily, this.layerDescription.Font.Size, 
                             this.layerDescription.Font.Style | FontStyle.Italic);
                     }
+
+                    RefreshPreview();
                 }
 
                 Update();
@@ -182,9 +207,9 @@ namespace PaintDotNet
             this.layerVisible.Checked = layer.Visible;
         }
 
-        void InitializeComponent2()
+        private void InitializeComponent2()
         {
-            this.Size = new System.Drawing.Size(200, 2 + LayerElement.ThumbSize);
+            this.Size = new System.Drawing.Size(200, 2 + SystemLayer.UI.ScaleWidth(LayerElement.ThumbSizePreScaling));
             this.layerDescription.Location = new System.Drawing.Point(this.Height, 0);
             this.icon.Size = new System.Drawing.Size(this.Height, this.Height);
             this.layerVisible.Size = new System.Drawing.Size(16, this.Height);
@@ -204,7 +229,7 @@ namespace PaintDotNet
             // 
             // layerDescription
             // 
-            this.layerDescription.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.layerDescription.BackColor = SystemColors.Window;
             this.layerDescription.Dock = System.Windows.Forms.DockStyle.Fill;
             this.layerDescription.Name = "layerDescription";
             this.layerDescription.Size = new System.Drawing.Size(150, 50);
@@ -227,7 +252,7 @@ namespace PaintDotNet
             // 
             // layerVisible
             // 
-            this.layerVisible.BackColor = System.Drawing.SystemColors.Window;
+            this.layerVisible.BackColor = SystemColors.Window;
             this.layerVisible.Checked = true;
             this.layerVisible.CheckState = System.Windows.Forms.CheckState.Checked;
             this.layerVisible.Dock = System.Windows.Forms.DockStyle.Right;
@@ -235,9 +260,9 @@ namespace PaintDotNet
             this.layerVisible.Location = new System.Drawing.Point(184, 0);
             this.layerVisible.Name = "layerVisible";
             this.layerVisible.TabIndex = 7;
-            this.layerVisible.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.layerVisible_KeyPress);
-            this.layerVisible.CheckStateChanged += new System.EventHandler(this.layerVisible_CheckStateChanged);
-            this.layerVisible.KeyUp += new System.Windows.Forms.KeyEventHandler(this.layerVisible_KeyUp);
+            this.layerVisible.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.LayerVisible_KeyPress);
+            this.layerVisible.CheckStateChanged += new System.EventHandler(this.LayerVisible_CheckStateChanged);
+            this.layerVisible.KeyUp += new System.Windows.Forms.KeyEventHandler(this.LayerVisible_KeyUp);
             // 
             // LayerElement
             // 
@@ -260,23 +285,23 @@ namespace PaintDotNet
             OnDoubleClick(e);
         }
 
-        private void layerVisible_CheckStateChanged(object sender, System.EventArgs e)
+        private void LayerVisible_CheckStateChanged(object sender, System.EventArgs e)
         {
             this.layer.Visible = this.layerVisible.Checked;
             Update();
         }
 
-        private void layerVisible_KeyPress(object sender, System.Windows.Forms.KeyPressEventArgs e)
+        private void LayerVisible_KeyPress(object sender, System.Windows.Forms.KeyPressEventArgs e)
         {
             this.OnKeyPress(e);
         }
 
-        private void layerVisible_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
+        private void LayerVisible_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
         {
             this.OnKeyUp(e);
         }
 
-        private void layer_Invalidated(object sender, InvalidateEventArgs e)
+        private void Layer_Invalidated(object sender, InvalidateEventArgs e)
         {
             RefreshPreview();
         }
@@ -299,10 +324,33 @@ namespace PaintDotNet
 
         public void RefreshPreview()
         {
+            /*
             if (!allowRefreshPreview)
             {
+                if (this.Image == null)
+                {
+                    Size thumbSize = Utility.ComputeThumbnailSize(this.layer.Size, this.thumbnailManager.ThumbSideLength);
+                    Bitmap thumb = new Bitmap(this.thumbnailManager.ThumbSideLength, this.thumbnailManager.ThumbSideLength, PixelFormat.Format24bppRgb);
+
+                    using (Graphics g = Graphics.FromImage(thumb))
+                    {
+                        g.Clear(this.BackColor);
+
+                        Rectangle thumbRect = new Rectangle(
+                            (thumb.Width - thumbSize.Width) / 2,
+                            (thumb.Height - thumbSize.Height) / 2,
+                            thumbSize.Width,
+                            thumbSize.Height);
+
+                        g.FillRectangle(Brushes.White, thumbRect);
+                    }
+
+                    this.Image = thumb;
+                }
+
                 return;
             }
+             * */
 
             if (this.suspendPreviewUpdates > 0)
             {
@@ -314,165 +362,37 @@ namespace PaintDotNet
                 return;
             }
 
-            lock (refreshLock)
-            {
-                if (layersToRefresh.Count == 0 ||
-                    !object.ReferenceEquals(layersToRefresh.Peek(), this))
-                {
-                    layersToRefresh.Push(this);
-                }
-
-                Monitor.Pulse(refreshLock);
-            }
+            this.thumbnailManager.QueueThumbnailUpdate(this.layer, this.thumbnailSize, OnThumbnailRendered);
         }
 
-        private static object refreshLock = new object();
-        private static Stack layersToRefresh = new Stack();
-        private static bool quitPreviewThread = false;
-        private static Thread previewThread;
-
-        private static void PreviewThread()
+        private void OnThumbnailRendered(object sender, EventArgs<Pair<IThumbnailProvider, Surface>> e)
         {
-            while (true)
+            if (!IsDisposed)
             {
-                LayerElement layerElement;
+                Bitmap thumbBitmap = e.Data.Second.CreateAliasedBitmap();
+                Bitmap bitmap = new Bitmap(this.thumbnailSize, this.thumbnailSize, thumbBitmap.PixelFormat);
 
-                lock (refreshLock)
+                using (Graphics g = Graphics.FromImage(bitmap))
                 {
-                    while (layersToRefresh.Count == 0)
-                    {
-                        Monitor.Wait(refreshLock);
+                    g.CompositingMode = CompositingMode.SourceCopy;
+                    g.Clear(this.BackColor);
 
-                        if (quitPreviewThread)
-                        {
-                            return;
-                        }
-                    }
+                    Rectangle thumbRect = new Rectangle(
+                        (bitmap.Width - thumbBitmap.Width) / 2,
+                        (bitmap.Height - thumbBitmap.Height) / 2,
+                        thumbBitmap.Width,
+                        thumbBitmap.Height);
 
-                    layerElement = (LayerElement)layersToRefresh.Pop();
-                }
-            
-                Thread.Sleep(100);
-
-                bool doRefresh = true;
-
-                // Make sure that the next queued update is not ourself. Otherwise, we will be wasting our time
-                lock (refreshLock)
-                {
-                    if (layersToRefresh.Count > 0 &&
-                        object.ReferenceEquals(layerElement, layersToRefresh.Peek()))
-                    {
-                        doRefresh = false;
-                    }
+                    g.DrawImage(
+                        thumbBitmap,
+                        thumbRect,
+                        new Rectangle(new Point(0, 0), thumbBitmap.Size),
+                        GraphicsUnit.Pixel);
                 }
 
-                doRefresh &= layerElement.IsHandleCreated;
-
-                if (doRefresh)
-                {
-                    try
-                    {
-                        layerElement.UpdatePreview();
-                    }
-
-                    catch (Exception ex)
-                    {
-                        try
-                        {
-                            Tracing.Ping("Exception in PreviewThread after calling UpdatePreview: " + ex);
-                        }
-
-                        catch
-                        {
-                        }
-                    }
-                }
+                thumbBitmap.Dispose();
+                this.Image = bitmap;
             }
-        }
-
-        static LayerElement()
-        {
-            previewThread = new Thread(new ThreadStart(PreviewThread));
-            previewThread.Priority = ThreadPriority.Lowest;
-            previewThread.IsBackground = true;
-            previewThread.Start();
-        }
-
-        private void UpdatePreview()
-        {
-            int previewSide = LayerElement.ThumbSize;
-            Size previewSize;
-
-            // decide size ... are we 'tall' or 'wide' ?
-            if (layer.Width > layer.Height)
-            {   
-                // wide
-                previewSize = new Size(previewSide, Math.Max(1, (layer.Height * previewSide) / layer.Width));
-            }
-            else
-            {   
-                // tall
-                previewSize = new Size(Math.Max(1, (layer.Width * previewSide) / layer.Height), previewSide);
-            }
-
-            Surface surface = new Surface(previewSide, previewSide);
-            surface.Clear(ColorBgra.White);
-            Surface previewWindow = surface.CreateWindow(new Rectangle(new Point((previewSide - previewSize.Width) / 2, (previewSide - previewSize.Height) / 2), previewSize));
-
-            if (layer is BitmapLayer)
-            {
-                previewWindow.SuperSamplingFitSurface(((BitmapLayer)layer).Surface);
-            }
-            else
-            {
-                // TODO: once we get double-dispatch in place (v3.0) for pairing actions and layer types, use that for this
-                // see bug #996
-                // (IResize x IBitmapLayerAction).Resize(dstRA, srcLayer)
-            }
-
-            previewWindow.Dispose();
-
-            Bitmap bitmap = new Bitmap(surface.Width, surface.Height);
-
-            for (int y = 0; y < bitmap.Height; ++y)
-            {
-                for (int x = 0; x < bitmap.Width; ++x)
-                {
-                    bitmap.SetPixel(x, y, surface[x,y].ToColor());
-                }
-            }
-
-            surface.Dispose();
-
-            DateTime start = DateTime.Now;
-            while (!this.IsHandleCreated)
-            {
-                Thread.Sleep(20);
-
-                if ((DateTime.Now - start) > new TimeSpan(0, 0, 0, 0, 250))
-                {
-                    return;
-                }
-            }
-
-            // Make sure the next queued layer refresh isn't ourself. If it is, throw away our work
-            // to avoid ugly thumbnail flickering
-            lock (refreshLock)
-            {
-                if (layersToRefresh.Count > 0 && object.ReferenceEquals(this, layersToRefresh.Peek()))
-                {
-                    bitmap.Dispose();
-                }
-                else
-                {
-                    this.BeginInvoke(new VoidObjectDelegate(SetImageProperty), new object[] { bitmap });
-                }
-            }
-        }
-
-        private void SetImageProperty(object newValue)
-        {
-            this.Image = (Image)newValue;
         }
     }
 }

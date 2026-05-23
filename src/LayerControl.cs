@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -18,7 +18,7 @@ using System.Diagnostics;
 namespace PaintDotNet
 {
     public class LayerControl 
-        : System.Windows.Forms.UserControl
+        : UserControl
     {
         private class PanelWithLayout
             : PanelEx
@@ -62,11 +62,11 @@ namespace PaintDotNet
 
             protected override void OnResize(EventArgs eventargs)
             {
-                SystemLayer.UI.SetControlRedraw(this, false);
+                SystemLayer.UI.SuspendControlPainting(this);
                 PositionLayers();
                 this.AutoScrollPosition = new Point(0, -this.AutoScrollOffset.Y);
                 base.OnResize(eventargs);
-                SystemLayer.UI.SetControlRedraw(this, true);
+                SystemLayer.UI.ResumeControlPainting(this);
                 Invalidate(true);
             }
 
@@ -85,19 +85,22 @@ namespace PaintDotNet
         private EventHandler elementClickDelegate;
         private EventHandler elementDoubleClickDelegate;
         private EventHandler documentChangedDelegate;
-        private EventHandler documentChangingDelegate;
+        private EventHandler<Document> documentChangingDelegate;
         private EventHandler layerChangedDelegate;
         private KeyEventHandler keyUpDelegate;
         private IndexEventHandler layerInsertedDelegate;
         private IndexEventHandler layerRemovedDelegate;
         
-        private int elementHeight = LayerElement.ThumbSize + 2;
+        private int elementHeight;
+        private int thumbnailSize;
         
-        private DocumentWorkspace workspace;
+        private AppWorkspace appWorkspace;
         private Document document;
 
         private List<LayerElement> layerControls;
         private PanelWithLayout layerControlPanel;
+
+        private ThumbnailManager thumbnailManager;
 
         [Browsable(false)]
         public LayerElement[] Layers
@@ -115,20 +118,66 @@ namespace PaintDotNet
             }
         }
 
-        public int SelectedLayer
+        public Layer ActiveLayer
+        {
+            get
+            {
+                int[] selected = SelectedLayerIndexes;
+
+                if (selected.Length == 1)
+                {
+                    return this.Layers[selected[0]].Layer;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
+        public int ActiveLayerIndex
+        {
+            get
+            {
+                int[] selected = SelectedLayerIndexes;
+
+                if (selected.Length == 1)
+                {
+                    return selected[0];
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+        }
+
+        private int[] SelectedLayerIndexes
         {
             get
             {
                 LayerElement[] layers = this.Layers;
+                List<int> layerIndexes = new List<int>();
+
                 for (int i = 0; i < layers.Length; ++i)
                 {
                     if (layers[i].IsSelected)
                     {
-                        return i;
+                        layerIndexes.Add(i);
                     }
                 }
 
-                return -1;
+                return layerIndexes.ToArray();
+            }
+        }
+
+        public void ClearLayerSelection()
+        {
+            LayerElement[] layers = this.Layers;
+
+            for (int i = 0; i < layers.Length; ++i)
+            {
+                layers[i].IsSelected = false;
             }
         }
 
@@ -152,40 +201,46 @@ namespace PaintDotNet
 
         public LayerControl()
         {
+            this.elementHeight = 2 + SystemLayer.UI.ScaleWidth(LayerElement.ThumbSizePreScaling);
+
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
             elementClickDelegate = new EventHandler(ElementClickHandler);
             elementDoubleClickDelegate = new EventHandler(ElementDoubleClickHandler);
             documentChangedDelegate = new EventHandler(DocumentChangedHandler);
-            documentChangingDelegate = new EventHandler(DocumentChangingHandler);
+            documentChangingDelegate = new EventHandler<Document>(DocumentChangingHandler);
             layerInsertedDelegate = new IndexEventHandler(LayerInsertedHandler);
             layerRemovedDelegate = new IndexEventHandler(LayerRemovedHandler);
             layerChangedDelegate = new EventHandler(LayerChangedHandler);
             keyUpDelegate = new KeyEventHandler(KeyUpHandler);
 
+            this.thumbnailManager = new ThumbnailManager(this);
+            this.thumbnailSize = SystemLayer.UI.ScaleWidth(LayerElement.ThumbSizePreScaling);
             layerControls = new List<LayerElement>();
         }
 
-        private void SetupNewDocument(Document document)
+        private void SetupNewDocument(Document newDocument)
         {
+            this.thumbnailManager.ClearQueue();
+
             // Subscribe to the eevents
-            this.document = document;
+            this.document = newDocument;
             this.document.Layers.Inserted += layerInsertedDelegate;
             this.document.Layers.RemovedAt += layerRemovedDelegate;
 
-            SystemLayer.UI.SetControlRedraw(this.layerControlPanel, false);
+            SystemLayer.UI.SuspendControlPainting(this.layerControlPanel);
 
             for (int i = 0; i < this.document.Layers.Count; ++i)
             {
                 this.LayerInsertedHandler(this, new IndexEventArgs(i));
             }
 
-            if (workspace != null)
+            if (this.appWorkspace != null)
             {
                 foreach (LayerElement lec in layerControls)
                 {
-                    if (lec.Layer == workspace.ActiveLayer)
+                    if (lec.Layer == appWorkspace.ActiveDocumentWorkspace.ActiveLayer)
                     {
                         lec.IsSelected = true;
                     }
@@ -196,8 +251,10 @@ namespace PaintDotNet
                 }
             }
 
-            SystemLayer.UI.SetControlRedraw(this.layerControlPanel, true);
+            SystemLayer.UI.ResumeControlPainting(this.layerControlPanel);
             this.layerControlPanel.Invalidate(true);
+
+            OnActiveLayerChanged(ActiveLayer);
         }
 
         private void TearDownOldDocument()
@@ -215,27 +272,31 @@ namespace PaintDotNet
             layerControls.Clear();
             layerControls.TrimExcess();
 
+            this.thumbnailManager.ClearQueue();
+
             // Unsubscribe to the Events
-            if (this.Document != null)
+            if (this.document != null)
             {
                 this.document.Layers.Inserted -= layerInsertedDelegate;
                 this.document.Layers.RemovedAt -= layerRemovedDelegate;
+                this.document = null;
             }
+        }
+        
+        private void DocumentChangingHandler(object sender, EventArgs<Document> e)
+        {
+            TearDownOldDocument();
         }
 
         private void DocumentChangedHandler(object sender, EventArgs e)
         {
-            SetupNewDocument(workspace.Document);
-        }
-
-        private void DocumentChangingHandler(object sender, EventArgs e)
-        {
-            TearDownOldDocument();
+            SetupNewDocument(appWorkspace.ActiveDocumentWorkspace.Document);
         }
 
         private void LayerRemovedHandler(object sender, IndexEventArgs e)
         {
             LayerElement lec = layerControls[e.Index];
+            this.thumbnailManager.RemoveFromQueue(lec.Layer);
             lec.Click -= this.elementClickDelegate;
             lec.DoubleClick -= this.elementDoubleClickDelegate;
             lec.KeyUp -= keyUpDelegate;
@@ -256,21 +317,21 @@ namespace PaintDotNet
             lec.IsSelected = false;
         }
 
-        private void Select(LayerElement lec)
+        private void SetActive(LayerElement lec)
         {
-            Select(lec.Layer);
+            SetActive(lec.Layer);
         }
 
-        private void Select(Layer layer)
+        private void SetActive(Layer layer)
         {
             foreach (LayerElement lec in layerControls)
             {
-                bool select = (lec.Layer == layer);
-                lec.IsSelected = select;
+                bool active = (lec.Layer == layer);
+                lec.IsSelected = active;
 
-                if (select)
+                if (active)
                 {
-                    OnSelectedLayerChanged(lec.Layer);
+                    OnActiveLayerChanged(lec.Layer);
                     layerControlPanel.ScrollControlIntoView(lec);
                     lec.Select();
                     Update();
@@ -284,11 +345,14 @@ namespace PaintDotNet
             this.layerControlPanel.SuspendLayout();
             Layer layer = (Layer)this.document.Layers[e.Index];
             LayerElement lec = new LayerElement();
+            lec.ThumbnailManager = this.thumbnailManager;
+            lec.ThumbnailSize = this.thumbnailSize;
             InitializeLayerElement(lec, layer);
             layerControls.Insert(e.Index, lec);
             layerControlPanel.Controls.Add(lec);
             layerControlPanel.ScrollControlIntoView(lec);
             lec.Select();
+            SetActive(lec);
             lec.RefreshPreview();
             this.layerControlPanel.ResumeLayout(false);
             this.ResumeLayout(false);
@@ -304,16 +368,31 @@ namespace PaintDotNet
             }
         }
 
+        public event EventHandler RelinquishFocus;
+        protected void OnRelinquishFocus()
+        {
+            if (RelinquishFocus != null)
+            {
+                RelinquishFocus(this, EventArgs.Empty);
+            }
+        }
+
+        protected override void OnClick(EventArgs e)
+        {
+            OnRelinquishFocus();
+            base.OnClick(e);
+        }
+
         /// <summary>
         /// This event is raised whenever the user clicks on a layer within the
-        /// LayerControl to select it.
+        /// LayerControl to activate it.
         /// </summary>
-        public event LayerEventHandler ClickedOnLayer;
+        public event EventHandler<Layer> ClickedOnLayer;
         private void OnClickedOnLayer(Layer layer)
         {
             if (ClickedOnLayer != null)
             {
-                ClickedOnLayer(this, new LayerEventArgs(layer));
+                ClickedOnLayer(this, new EventArgs<Layer>(layer));
             }
         }
 
@@ -322,29 +401,40 @@ namespace PaintDotNet
         /// this can occur without user intervention, which distinguishes this event
         /// from ClickedOnLayer.
         /// </summary>
-        public event LayerEventHandler SelectedLayerChanged;
-        private void OnSelectedLayerChanged(Layer layer)
+        public event EventHandler<Layer> ActiveLayerChanged;
+        private void OnActiveLayerChanged(Layer layer)
         {
-            if (SelectedLayerChanged != null)
+            if (ActiveLayerChanged != null)
             {
-                SelectedLayerChanged(this, new LayerEventArgs(layer));
+                ActiveLayerChanged(this, new EventArgs<Layer>(layer));
             }
         }
 
-        public event LayerEventHandler DoubleClickedOnLayer;
+        public event EventHandler<Layer> DoubleClickedOnLayer;
         private void OnDoubleClickedOnLayer(Layer layer)
         {
             if (DoubleClickedOnLayer != null)
             {
-                DoubleClickedOnLayer(this, new LayerEventArgs(layer));
+                DoubleClickedOnLayer(this, new EventArgs<Layer>(layer));
             }
         }
 
         private void ElementClickHandler(object sender, EventArgs e)
         {
-            LayerElement lec = (LayerElement) sender;
-            Select(lec);
-            OnClickedOnLayer(lec.Layer);    
+            LayerElement lec = (LayerElement)sender;
+
+            if (Control.ModifierKeys == Keys.Control)
+            {
+                lec.IsSelected = !lec.IsSelected;
+            }
+            else
+            {
+                ClearLayerSelection();
+                lec.IsSelected = true;
+            }
+
+            SetActive(lec);
+            OnClickedOnLayer(lec.Layer);
         }
 
         private void ElementDoubleClickHandler(object sender, EventArgs e)
@@ -354,7 +444,7 @@ namespace PaintDotNet
     
         private void LayerChangedHandler(object sender, EventArgs e)
         {
-            Select(workspace.ActiveLayer);
+            SetActive(appWorkspace.ActiveDocumentWorkspace.ActiveLayer);
         }
 
         public void SuspendLayerPreviewUpdates()
@@ -379,28 +469,64 @@ namespace PaintDotNet
         }
     
         [Browsable(false)]
-        public DocumentWorkspace Workspace
+        public AppWorkspace AppWorkspace
         {
             get
             {
-                return workspace;
+                return this.appWorkspace;
             }
+
             set
             {
-                if (workspace != null)
+                if (this.appWorkspace != value)
                 {
-                    workspace.DocumentChanged -= documentChangedDelegate;
-                    workspace.DocumentChanging -= documentChangingDelegate;
-                    workspace.ActiveLayerChanged -= layerChangedDelegate;
+                    if (this.appWorkspace != null)
+                    {
+                        TearDownOldDocument();
+
+                        this.appWorkspace.ActiveDocumentWorkspaceChanging -= Workspace_ActiveDocumentWorkspaceChanging;
+                        this.appWorkspace.ActiveDocumentWorkspaceChanged -= Workspace_ActiveDocumentWorkspaceChanged;
+                    }
+
+                    this.appWorkspace = value;
+
+                    if (this.appWorkspace != null)
+                    {
+                        this.appWorkspace.ActiveDocumentWorkspaceChanging += Workspace_ActiveDocumentWorkspaceChanging;
+                        this.appWorkspace.ActiveDocumentWorkspaceChanged += Workspace_ActiveDocumentWorkspaceChanged;
+
+                        if (this.appWorkspace.ActiveDocumentWorkspace != null)
+                        {
+                            SetupNewDocument(this.appWorkspace.ActiveDocumentWorkspace.Document);
+                        }
+                    }
                 }
+            }
+        }
 
-                workspace = value;
+        private void Workspace_ActiveDocumentWorkspaceChanging(object sender, EventArgs e)
+        {
+            TearDownOldDocument();
 
-                if (workspace != null)
+            if (this.appWorkspace.ActiveDocumentWorkspace != null)
+            {
+                this.appWorkspace.ActiveDocumentWorkspace.DocumentChanging -= documentChangingDelegate;
+                this.appWorkspace.ActiveDocumentWorkspace.DocumentChanged -= documentChangedDelegate;
+                this.appWorkspace.ActiveDocumentWorkspace.ActiveLayerChanged -= layerChangedDelegate;
+            }
+        }
+
+        private void Workspace_ActiveDocumentWorkspaceChanged(object sender, EventArgs e)
+        {
+            if (this.appWorkspace.ActiveDocumentWorkspace != null)
+            {
+                appWorkspace.ActiveDocumentWorkspace.DocumentChanging += documentChangingDelegate;
+                appWorkspace.ActiveDocumentWorkspace.DocumentChanged += documentChangedDelegate;
+                appWorkspace.ActiveDocumentWorkspace.ActiveLayerChanged += layerChangedDelegate;
+
+                if (appWorkspace.ActiveDocumentWorkspace.Document != null)
                 {
-                    workspace.DocumentChanged += documentChangedDelegate;
-                    workspace.DocumentChanging += documentChangingDelegate;
-                    workspace.ActiveLayerChanged += layerChangedDelegate;
+                    SetupNewDocument(appWorkspace.ActiveDocumentWorkspace.Document);
                 }
             }
         }
@@ -415,7 +541,7 @@ namespace PaintDotNet
 
             set
             {
-                if (this.workspace != null)
+                if (this.appWorkspace != null)
                 {
                     throw new InvalidOperationException("Workspace property is already set");
                 }
@@ -444,9 +570,20 @@ namespace PaintDotNet
                     components.Dispose();
                     components = null;
                 }
+
+                if (this.thumbnailManager != null)
+                {
+                    this.thumbnailManager.Dispose();
+                    this.thumbnailManager = null;
+                }
             }
 
             base.Dispose(disposing);
+        }
+
+        private void LayerControlPanel_Click(object sender, EventArgs e)
+        {
+            OnRelinquishFocus();
         }
 
         #region Component Designer generated code
@@ -468,6 +605,7 @@ namespace PaintDotNet
             this.layerControlPanel.ParentLayerControl = this;
             this.layerControlPanel.Size = new System.Drawing.Size(150, 150);
             this.layerControlPanel.TabIndex = 2;
+            this.layerControlPanel.Click += new EventHandler(LayerControlPanel_Click);
             // 
             // LayerControl
             // 
@@ -476,6 +614,7 @@ namespace PaintDotNet
             this.ResumeLayout(false);
 
         }
+
         #endregion
     }
 }

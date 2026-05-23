@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -16,10 +16,8 @@ using System.Drawing.Drawing2D;
 namespace PaintDotNet
 {
     public class MoveNubRenderer
-        : SurfaceBoxGraphicsRenderer
+        : CanvasControl
     {
-        private PointF location;
-        private int size;
         private Matrix transform;
         private float transformAngle;
         private int alpha;
@@ -40,37 +38,28 @@ namespace PaintDotNet
             }
         }
 
-        public PointF Location
+        protected override void OnLocationChanging()
         {
-            get
-            {
-                return this.location;
-            }
-
-            set
-            {
-                InvalidateOurself();
-                this.location = value;
-                InvalidateOurself();
-            }
+            InvalidateOurself();
+            base.OnLocationChanging();
         }
 
-        public int Size
+        protected override void OnLocationChanged()
         {
-            get
-            {
-                return this.size;
-            }
+            InvalidateOurself();
+            base.OnLocationChanged();
+        }
 
-            set
-            {
-                if (value != this.size)
-                {
-                    InvalidateOurself();
-                    this.size = value;
-                    InvalidateOurself();
-                }
-            }
+        protected override void OnSizeChanging()
+        {
+            InvalidateOurself();
+            base.OnSizeChanging();
+        }
+
+        protected override void OnSizeChanged()
+        {
+            InvalidateOurself();
+            base.OnSizeChanged();
         }
 
         public Matrix Transform
@@ -125,16 +114,17 @@ namespace PaintDotNet
 
         private RectangleF GetOurRectangle()
         {
-            PointF[] ptFs = new PointF[1] { this.location };
+            PointF[] ptFs = new PointF[1] { this.Location };
             this.transform.TransformPoints(ptFs);
             float ratio = (float)Math.Ceiling(1.0 / OwnerList.ScaleFactor.Ratio);
 
-            float ourSize = UI.ScaleWidth(this.size);
+            float ourWidth = UI.ScaleWidth(this.Size.Width);
+            float ourHeight = UI.ScaleHeight(this.Size.Height);
 
             if (!Single.IsNaN(ratio))
             {
                 RectangleF rectF = new RectangleF(ptFs[0], new SizeF(0, 0));
-                rectF.Inflate(ratio * ourSize, ratio * ourSize);
+                rectF.Inflate(ratio * ourWidth, ratio * ourHeight);
                 return rectF;
             }
             else
@@ -159,6 +149,19 @@ namespace PaintDotNet
             }
         }
 
+        public bool IsPointTouching(PointF ptF, bool pad)
+        {
+            RectangleF rectF = GetOurRectangle();
+
+            if (pad)
+            {
+                float padding = 2.0f * 1.0f / (float)this.OwnerList.ScaleFactor.Ratio;
+                rectF.Inflate(padding + 1.0f, padding + 1.0f);
+            }
+
+            return rectF.Contains(ptF);
+        }
+
         public bool IsPointTouching(Point pt, bool pad)
         {
             RectangleF rectF = GetOurRectangle();
@@ -177,11 +180,11 @@ namespace PaintDotNet
             InvalidateOurself(true);
         }
 
-        public override void RenderToGraphics(Graphics g, Point offset)
+        protected override void OnRender(Graphics g, Point offset)
         {
             lock (this)
             {
-                float ourSize = UI.ScaleWidth(this.size);
+                float ourSize = UI.ScaleWidth(Math.Min(Width, Height));
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.TranslateTransform(-offset.X, -offset.Y, MatrixOrder.Append);
 
@@ -293,11 +296,10 @@ namespace PaintDotNet
             : base(ownerList)
         {
             this.shape = MoveNubShape.Square;
-            this.location = new Point(0, 0);
-            this.size = 5;
             this.transform = new Matrix();
             this.transform.Reset();
             this.alpha = 255;
+            Size = new SizeF(5, 5);
         }
     }
 }

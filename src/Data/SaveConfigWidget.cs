@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -15,9 +15,6 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for SaveConfigWidget.
-    /// </summary>
     public class SaveConfigWidget : System.Windows.Forms.UserControl
     {
         /// <summary> 
@@ -91,7 +88,7 @@ namespace PaintDotNet
         /// In this method you must take the values from the given EffectToken
         /// and use them to properly initialize the dialog's user interface elements.
         /// </summary>
-        protected virtual void InitWidgetFromToken(SaveConfigToken token)
+        protected virtual void InitWidgetFromToken(SaveConfigToken sourceToken)
         {
             //throw new InvalidOperationException("InitWidgetFromToken was not implemented, or the derived method called the base method");
         }

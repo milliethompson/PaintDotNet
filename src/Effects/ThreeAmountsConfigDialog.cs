@@ -1,21 +1,26 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for ThreeAmountsConfigDialog.
-    /// </summary>
-    public class ThreeAmountsConfigDialog
-        : TwoAmountsConfigDialog
+    public sealed class ThreeAmountsConfigDialog
+        : ThreeAmountsConfigDialogBase
+    {
+        public ThreeAmountsConfigDialog()
+        {
+        }
+    }
+
+    public abstract class ThreeAmountsConfigDialogBase
+        : TwoAmountsConfigDialogBase
     {
         private System.Windows.Forms.Button amount3Reset;
         private System.Windows.Forms.NumericUpDown amount3UpDown;
@@ -95,7 +100,7 @@ namespace PaintDotNet.Effects
 
         protected override void InitTokenFromDialog()
         {
-            base.InitTokenFromDialog ();
+            base.InitTokenFromDialog();
             ((ThreeAmountsConfigToken)theEffectToken).Amount3 = amount3Slider.Value;
         }
 
@@ -191,9 +196,8 @@ namespace PaintDotNet.Effects
             this.ResumeLayout(false);
 
         }
-    
-        public ThreeAmountsConfigDialog()
-            : base()
+
+        protected internal ThreeAmountsConfigDialogBase()
         {
             InitializeComponent();
             this.amount3Reset.Text = PdnResources.GetString("TwoAmountsConfigDialog.Reset.Text");

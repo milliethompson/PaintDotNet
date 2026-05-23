@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -21,7 +21,7 @@ namespace PaintDotNet.SystemLayer
     /// sets focus to the form but does NOT click the button. This makes sense in many situations, but 
     /// definitely not for Paint.NET.
     /// </remarks>
-    public sealed class MenuStripEx
+    public class MenuStripEx
         : MenuStrip
     {
         private bool clickThrough = true;
@@ -75,6 +75,16 @@ namespace PaintDotNet.SystemLayer
             {
                 return openCount > 0;
             }
+        }
+
+        public static void PushMenuActivate()
+        {
+            ++openCount;
+        }
+
+        public static void PopMenuActivate()
+        {
+            --openCount;
         }
 
         protected override void OnMenuActivate(EventArgs e)

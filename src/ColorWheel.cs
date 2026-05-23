@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -17,13 +17,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Portions adapted from: 
-    /// "A Primer on Building a Color Picker User Control with GDI+ in Visual Basic .NET or C#"
-    /// http://www.msdnaa.net/Resources/display.aspx?ResID=2460
-    /// </summary>
     public class ColorWheel 
-        : System.Windows.Forms.UserControl
+        : UserControl
     {
         /// <summary> 
         /// Required designer variable.
@@ -34,9 +29,9 @@ namespace PaintDotNet
         private Point lastMouseXY;
 
         // this number controls what you might call the tesselation of the color wheel. higher #'s = slower, lower #'s = looks worse
-        private const int colorCount = 64;
+        private const int colorTesselation = 60;
 
-        private System.Windows.Forms.PictureBox wheelPictureBox; 
+        private PictureBox wheelPictureBox; 
 
         private HsvColor hsvColor;
         public HsvColor HsvColor
@@ -53,7 +48,7 @@ namespace PaintDotNet
                     HsvColor oldColor = hsvColor;
                     hsvColor = value;
                     this.OnColorChanged();
-                    Invalidate(true);
+                    Refresh();
                 }
             }
         }
@@ -80,11 +75,11 @@ namespace PaintDotNet
 
         private static PointF[] GetCirclePoints(float r, PointF center)
         {
-            PointF[] points = new PointF[colorCount];
+            PointF[] points = new PointF[colorTesselation];
             
-            for (int i = 0; i < colorCount; i++)
+            for (int i = 0; i < colorTesselation; i++)
             {
-                float theta = ((float)i / (float)colorCount) * 2 * (float)Math.PI;
+                float theta = ((float)i / (float)colorTesselation) * 2 * (float)Math.PI;
                 points[i] = SphericalToCartesian(r, theta);
                 points[i].X += center.X;
                 points[i].Y += center.Y;
@@ -95,11 +90,11 @@ namespace PaintDotNet
 
         private Color[] GetColors()
         {
-            Color[] colors = new Color[colorCount];
+            Color[] colors = new Color[colorTesselation];
 
-            for (int i = 0; i < colorCount; i++)
+            for (int i = 0; i < colorTesselation; i++)
             {
-                int hue = (i * 360) / colorCount;
+                int hue = (i * 360) / colorTesselation;
                 colors[i] = new HsvColor(hue, 100, 100).ToColor();
             }
 
@@ -131,19 +126,22 @@ namespace PaintDotNet
             }
         }
 
-        private void wheelPictureBox_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
+        private void WheelPictureBox_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
         {
             float radius = ComputeRadius(Size);
             float theta = ((float)HsvColor.Hue / 360.0f) * 2.0f * (float)Math.PI;
             float alpha = ((float)HsvColor.Saturation / 100.0f);
             float x = (alpha * (radius - 1) * (float)Math.Cos(theta)) + radius;
             float y = (alpha * (radius - 1) * (float)Math.Sin(theta)) + radius;
+            int ix = (int)x;
+            int iy = (int)y;
 
+            // Draw the 'target rectangle'
             GraphicsContainer container = e.Graphics.BeginContainer();
-            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.None;
             e.Graphics.SmoothingMode = SmoothingMode.HighQuality;
-            e.Graphics.DrawRectangle(Pens.Black, x - 1, y - 1, 3, 3);
-            e.Graphics.DrawRectangle(Pens.White, x, y, 1, 1);
+            e.Graphics.DrawRectangle(Pens.Black, ix - 1, iy - 1, 3, 3);
+            e.Graphics.DrawRectangle(Pens.White, ix, iy, 1, 1);
             e.Graphics.EndContainer(container);
         }
 
@@ -305,7 +303,7 @@ namespace PaintDotNet
             this.wheelPictureBox.TabIndex = 0;
             this.wheelPictureBox.TabStop = false;
             this.wheelPictureBox.Click += new System.EventHandler(this.wheelPictureBox_Click);
-            this.wheelPictureBox.Paint += new System.Windows.Forms.PaintEventHandler(this.wheelPictureBox_Paint);
+            this.wheelPictureBox.Paint += new System.Windows.Forms.PaintEventHandler(this.WheelPictureBox_Paint);
             this.wheelPictureBox.MouseUp += new System.Windows.Forms.MouseEventHandler(this.wheelPictureBox_MouseUp);
             this.wheelPictureBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.wheelPictureBox_MouseMove);
             this.wheelPictureBox.MouseDown += new System.Windows.Forms.MouseEventHandler(this.wheelPictureBox_MouseDown);

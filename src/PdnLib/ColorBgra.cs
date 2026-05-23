@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -24,17 +24,26 @@ namespace PaintDotNet
     /// always laid out in BGRA order.
     /// Generally used with the Surface class.
     /// </summary>
+    [Serializable]
     [StructLayout(LayoutKind.Explicit)]
     public struct ColorBgra
     {
-        [FieldOffset(0)] public byte B;
-        [FieldOffset(1)] public byte G;
-        [FieldOffset(2)] public byte R;
-        [FieldOffset(3)] public byte A;
+        [FieldOffset(0)] 
+        public byte B;
+
+        [FieldOffset(1)] 
+        public byte G;
+
+        [FieldOffset(2)] 
+        public byte R;
+
+        [FieldOffset(3)] 
+        public byte A;
 
         /// <summary>
         /// Lets you change B, G, R, and A at the same time.
         /// </summary>
+        [NonSerialized]
         [FieldOffset(0)] 
         public uint Bgra;
 
@@ -44,6 +53,34 @@ namespace PaintDotNet
         public const int AlphaChannel = 3;
 
         public const int SizeOf = 4;
+
+        public static ColorBgra ParseHexString(string hexString)
+        {
+            uint value = Convert.ToUInt32(hexString, 16);
+            return ColorBgra.FromUInt32(value);
+        }
+
+        public string ToHexString()
+        {
+            int rgbNumber = (this.R << 16) | (this.G << 8) | this.B;
+            string colorString = Convert.ToString(rgbNumber, 16);
+
+            while (colorString.Length < 6)
+            {
+                colorString = "0" + colorString;
+            }
+
+            string alphaString = System.Convert.ToString(this.A, 16);
+
+            while (alphaString.Length < 2)
+            {
+                alphaString = "0" + alphaString;
+            }
+
+            colorString = alphaString + colorString;
+
+            return colorString.ToUpper();
+        }
 
         /// <summary>
         /// Gets or sets the byte value of the specified color channel.
@@ -93,6 +130,24 @@ namespace PaintDotNet
         public byte GetIntensityByte()
         {
             return (byte)((7471 * B + 38470 * G + 19595 * R) >> 16);
+        }
+
+        /// <summary>
+        /// Returns the maximum value out of the B, G, and R values. Alpha is ignored.
+        /// </summary>
+        /// <returns></returns>
+        public byte GetMaxColorChannelValue()
+        {
+            return Math.Max(this.B, Math.Max(this.G, this.R));
+        }
+
+        /// <summary>
+        /// Returns the average of the B, G, and R values. Alpha is ignored.
+        /// </summary>
+        /// <returns></returns>
+        public byte GetAverageColorChannelValue()
+        {
+            return (byte)((this.B + this.G + this.R) / 3);
         }
 
         /// <summary>
@@ -164,24 +219,19 @@ namespace PaintDotNet
         /// <summary>
         /// Creates a new ColorBgra instance with the given color and alpha values.
         /// </summary>
+        [Obsolete ("Use FromBgra() instead (make sure to swap the order of your b and r parameters)")]
         public static ColorBgra FromRgba(byte r, byte g, byte b, byte a)
         {
-            ColorBgra color = new ColorBgra();
-
-            color.R = r;
-            color.G = g;
-            color.B = b;
-            color.A = a;
-
-            return color;
+            return FromBgra(b, g, r, a);
         }
 
         /// <summary>
         /// Creates a new ColorBgra instance with the given color values, and 255 for alpha.
         /// </summary>
+        [Obsolete ("Use FromBgr() instead (make sure to swap the order of your b and r parameters)")]
         public static ColorBgra FromRgb(byte r, byte g, byte b)
         {
-            return FromRgba(r, g, b, 255);
+            return FromBgr(b, g, r);
         }
 
         /// <summary>
@@ -239,7 +289,7 @@ namespace PaintDotNet
         /// </summary>
         public static ColorBgra FromBgr(byte b, byte g, byte r)
         {
-            return FromRgb(r, g, b);
+            return FromBgra(b, g, r, 255);
         }
 
         /// <summary>
@@ -257,7 +307,7 @@ namespace PaintDotNet
         /// </summary>
         public static ColorBgra FromColor(Color c)
         {
-            return FromRgba(c.R, c.G, c.B, c.A);
+            return FromBgra(c.B, c.G, c.R, c.A);
         }
 
         /// <summary>
@@ -269,11 +319,44 @@ namespace PaintDotNet
         }
 
         /// <summary>
+        /// Smoothly blends between two colors.
+        /// </summary>
+        public static ColorBgra Blend(ColorBgra ca, ColorBgra cb, byte cbAlpha)
+        {
+            uint caA = (uint)Utility.FastScaleByteByByte((byte)(255 - cbAlpha), ca.A);
+            uint cbA = (uint)Utility.FastScaleByteByByte(cbAlpha, cb.A);
+            uint cbAT = caA + cbA;
+
+            uint r;
+            uint g;
+            uint b;
+
+            if (cbAT == 0)
+            {
+                r = 0;
+                g = 0;
+                b = 0;
+            }
+            else
+            {
+                r = ((ca.R * caA) + (cb.R * cbA)) / cbAT;
+                g = ((ca.G * caA) + (cb.G * cbA)) / cbAT;
+                b = ((ca.B * caA) + (cb.B * cbA)) / cbAT;
+            }
+
+            return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)cbAT);
+        }
+
+        /// <summary>
         /// Linearly interpolates between two color values.
         /// </summary>
         /// <param name="from">The color value that represents 0 on the lerp number line.</param>
         /// <param name="to">The color value that represents 1 on the lerp number line.</param>
         /// <param name="frac">A value in the range [0, 1].</param>
+        /// <remarks>
+        /// This method does a simple lerp on each color value and on the alpha channel. It does
+        /// not properly take into account the alpha channel's effect on color blending.
+        /// </remarks>
         public static ColorBgra Lerp(ColorBgra from, ColorBgra to, float frac) 
         {
             ColorBgra ret = new ColorBgra();
@@ -292,6 +375,10 @@ namespace PaintDotNet
         /// <param name="from">The color value that represents 0 on the lerp number line.</param>
         /// <param name="to">The color value that represents 1 on the lerp number line.</param>
         /// <param name="frac">A value in the range [0, 1].</param>
+        /// <remarks>
+        /// This method does a simple lerp on each color value and on the alpha channel. It does
+        /// not properly take into account the alpha channel's effect on color blending.
+        /// </remarks>
         public static ColorBgra Lerp(ColorBgra from, ColorBgra to, double frac) 
         {
             ColorBgra ret = new ColorBgra();
@@ -302,6 +389,180 @@ namespace PaintDotNet
             ret.A = (byte)Utility.ClampToByte(Utility.Lerp(from.A, to.A, frac));
 
             return ret;
+        }
+
+        /// <summary>
+        /// Blends four colors together based on the given weight values.
+        /// </summary>
+        /// <returns>The blended color.</returns>
+        /// <remarks>
+        /// The weights should be 16-bit fixed point numbers that add up to 65536 ("1.0").
+        /// 4W16IP means "4 colors, weights, 16-bit integer precision"
+        /// </remarks>
+        public static ColorBgra BlendColors4W16IP(ColorBgra c1, uint w1, ColorBgra c2, uint w2, ColorBgra c3, uint w3, ColorBgra c4, uint w4)
+        {
+#if DEBUG
+            if ((w1 + w2 + w3 + w4) != 65536)
+            {
+                throw new ArgumentOutOfRangeException("w1 + w2 + w3 + w4 must equal 65536!");
+            }
+#endif
+
+            const uint ww = 32768;
+            uint af = (c1.A * w1) + (c2.A * w2) + (c3.A * w3) + (c4.A * w4);
+            uint a = (af + ww) >> 16;
+
+            uint b;
+            uint g;
+            uint r;
+
+            if (a == 0)
+            {
+                b = 0;
+                g = 0;
+                r = 0;
+            }
+            else
+            {
+                b = (uint)((((long)c1.A * c1.B * w1) + ((long)c2.A * c2.B * w2) + ((long)c3.A * c3.B * w3) + ((long)c4.A * c4.B * w4)) / af);
+                g = (uint)((((long)c1.A * c1.G * w1) + ((long)c2.A * c2.G * w2) + ((long)c3.A * c3.G * w3) + ((long)c4.A * c4.G * w4)) / af);
+                r = (uint)((((long)c1.A * c1.R * w1) + ((long)c2.A * c2.R * w2) + ((long)c3.A * c3.R * w3) + ((long)c4.A * c4.R * w4)) / af);
+            }
+
+            return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
+        }
+
+        /// <summary>
+        /// Blends the colors based on the given weight values.
+        /// </summary>
+        /// <param name="c">The array of color values.</param>
+        /// <param name="w">The array of weight values.</param>
+        /// <returns>
+        /// The weights should be fixed point numbers. 
+        /// The total summation of the weight values will be treated as "1.0".
+        /// Each color will be blended in proportionally to its weight value respective to 
+        /// the total summation of the weight values.
+        /// </returns>
+        /// <remarks>
+        /// "WAIP" stands for "weights, arbitrary integer precision"</remarks>
+        public static ColorBgra BlendColorsWAIP(ColorBgra[] c, uint[] w)
+        {
+            if (c.Length != w.Length)
+            {
+                throw new ArgumentException("c.Length != w.Length");
+            }
+
+            if (c.Length == 0)
+            {
+                return ColorBgra.FromUInt32(0);
+            }
+
+            long wsum = 0;
+            long asum = 0;
+
+            for (int i = 0; i < w.Length; ++i)
+            {
+                wsum += w[i];
+                asum += c[i].A * w[i];
+            }
+
+            uint a = (uint)((asum + (wsum >> 1)) / wsum);
+
+            long b;
+            long g;
+            long r;
+
+            if (a == 0)
+            {
+                b = 0;
+                g = 0;
+                r = 0;
+            }
+            else
+            {
+                b = 0;
+                g = 0;
+                r = 0;
+
+                for (int i = 0; i < c.Length; ++i)
+                {
+                    b += (long)c[i].A * c[i].B * w[i];
+                    g += (long)c[i].A * c[i].G * w[i];
+                    r += (long)c[i].A * c[i].R * w[i];
+                }
+
+                b /= asum;
+                g /= asum;
+                r /= asum;
+            }
+
+            return ColorBgra.FromUInt32((uint)b + ((uint)g << 8) + ((uint)r << 16) + ((uint)a << 24));
+        }        
+        
+        /// <summary>
+        /// Blends the colors based on the given weight values.
+        /// </summary>
+        /// <param name="c">The array of color values.</param>
+        /// <param name="w">The array of weight values.</param>
+        /// <returns>
+        /// Each color will be blended in proportionally to its weight value respective to 
+        /// the total summation of the weight values.
+        /// </returns>
+        /// <remarks>
+        /// "WAIP" stands for "weights, floating-point"</remarks>
+        public static ColorBgra BlendColorsWFP(ColorBgra[] c, double[] w)
+        {
+            if (c.Length != w.Length)
+            {
+                throw new ArgumentException("c.Length != w.Length");
+            }
+
+            if (c.Length == 0)
+            {
+                return ColorBgra.FromUInt32(0);
+            }
+
+            double wsum = 0;
+            double asum = 0;
+
+            for (int i = 0; i < w.Length; ++i)
+            {
+                wsum += w[i];
+                asum += (double)c[i].A * w[i];
+            }
+
+            double a = asum / wsum;
+            double aMultWsum = a * wsum;
+
+            double b;
+            double g;
+            double r;
+
+            if (asum == 0)
+            {
+                b = 0;
+                g = 0;
+                r = 0;
+            }
+            else
+            {
+                b = 0;
+                g = 0;
+                r = 0;
+
+                for (int i = 0; i < c.Length; ++i)
+                {
+                    b += (double)c[i].A * c[i].B * w[i];
+                    g += (double)c[i].A * c[i].G * w[i];
+                    r += (double)c[i].A * c[i].R * w[i];
+                }
+
+                b /= aMultWsum;
+                g /= aMultWsum;
+                r /= aMultWsum;
+            }
+
+            return ColorBgra.FromBgra((byte)b, (byte)g, (byte)r, (byte)a);
         }
 
         public override string ToString()
@@ -326,7 +587,8 @@ namespace PaintDotNet
         }
 
         // Colors: copied from System.Drawing.Color's list (don't worry I didn't type it in 
-        // manually, I used a code generation w/ reflection ...)
+        // manually, I used a code generator w/ reflection ...)
+
         public static ColorBgra Transparent
         {
             get

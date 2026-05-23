@@ -1,12 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using Microsoft.Win32;
 using System;
 using System.Security.Principal;
 using System.Threading;
@@ -17,12 +18,8 @@ namespace PaintDotNet.SystemLayer
     /// <summary>
     /// Security related static methods and properties.
     /// </summary>
-    public sealed class Security
+    public static class Security
     {
-        private Security()
-        {
-        }
-
         private static bool isAdmin = GetIsAdministrator();
 
         private static bool GetIsAdministrator()
@@ -47,6 +44,57 @@ namespace PaintDotNet.SystemLayer
             get
             {
                 return isAdmin;
+            }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating whether the current user is able to elevate to obtain
+        /// administrator-level privileges.
+        /// </summary>
+        /// <remarks>
+        /// This flag has no meaning if IsAdministrator returns true.
+        /// This flag indicates whether a new process may be spawned which has administrator
+        /// privilege. It does not indicate the ability to elevate the current process to
+        /// administrator privilege. For Windows this indicates that the user is running
+        /// Vista and has UAC enabled. This property should be used instead of checking
+        /// the OS version anytime this check must be performed.
+        /// Note to implementors: This may be written to simply return false.
+        /// </remarks>
+        public static bool CanElevateToAdministrator
+        {
+            get
+            {
+                bool returnVal = false;
+                const string keyName = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System";
+                const string valueName = "EnableLUA";
+                
+                try
+                {
+                    if (Environment.OSVersion.Version >= OS.WindowsVista)
+                    {
+                        using (RegistryKey key = Registry.LocalMachine.OpenSubKey(keyName, false))
+                        {
+                            if (key != null)
+                            {
+                                RegistryValueKind valueKind = key.GetValueKind(valueName);
+
+                                if (valueKind == RegistryValueKind.DWord)
+                                {
+                                    int value = unchecked((int)key.GetValue(valueName));
+                                    returnVal = (value == 1);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                catch (Exception ex)
+                {
+                    Tracing.Ping(ex.ToString());
+                    returnVal = false;
+                }
+
+                return returnVal;
             }
         }
 

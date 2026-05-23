@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 #include "MemoryStream.h"
@@ -16,6 +16,8 @@ CMemoryStream::CMemoryStream(BYTE *pbBuffer, int nSize)
       m_nSize(nSize),
       m_nPos(0)
 {
+    TraceEnter();
+    TraceOut("m_nSize=%d", m_nSize);
     m_lRefCount = 1;
 
     SYSTEMTIME st;
@@ -23,6 +25,7 @@ CMemoryStream::CMemoryStream(BYTE *pbBuffer, int nSize)
     SystemTimeToFileTime(&st, &m_ftCreation);
     SystemTimeToFileTime(&st, &m_ftModified);
     SystemTimeToFileTime(&st, &m_ftAccessed);
+    TraceLeave();
 }
 
 CMemoryStream::~CMemoryStream()
@@ -33,6 +36,8 @@ CMemoryStream::~CMemoryStream()
 STDMETHODIMP CMemoryStream::QueryInterface(REFIID iid, void **ppvObject)
 {
     TraceEnter();
+
+    TraceOut("%S", GuidToString(iid));
 
     if (NULL == ppvObject)
     {
@@ -151,7 +156,7 @@ STDMETHODIMP CMemoryStream::Read(void *pv,
     BYTE *pbEnd = m_pbBuffer + m_nSize;
     BYTE *pbReqStart = m_pbBuffer + m_nPos;
     BYTE *pbReqEnd = pbReqStart + cb;
-    ULONG nBytesToGet = (ULONG)(min(pbEnd, pbReqEnd) - pbReqStart);
+    ULONG nBytesToGet = (ULONG)(min(pbEnd - pbReqStart, pbReqEnd - pbReqStart));
 
     memcpy(pv, pbReqStart, nBytesToGet);
    
@@ -241,6 +246,7 @@ STDMETHODIMP CMemoryStream::Seek(LARGE_INTEGER dlibMove,
     else
     {
         int nMove = (int)dlibMove.QuadPart;
+        TraceOut("nMove = %d", nMove);
         int nNewPos = 0;
 
         switch (dwOrigin)
@@ -271,7 +277,7 @@ STDMETHODIMP CMemoryStream::Seek(LARGE_INTEGER dlibMove,
 
                     if (NULL != plibNewPosition)
                     {
-                        plibNewPosition->QuadPart = (__int64)nMove;
+                        plibNewPosition->QuadPart = (__int64)m_nPos;
                     }
                 }
                 else
@@ -290,7 +296,7 @@ STDMETHODIMP CMemoryStream::Seek(LARGE_INTEGER dlibMove,
 
                     if (NULL != plibNewPosition)
                     {
-                        plibNewPosition->QuadPart = (__int64)nMove;
+                        plibNewPosition->QuadPart = (__int64)m_nPos;
                     }
                 }
                 else
@@ -302,6 +308,7 @@ STDMETHODIMP CMemoryStream::Seek(LARGE_INTEGER dlibMove,
 
             default:
                 hr = STG_E_INVALIDFUNCTION;
+                break;
         }
     }
 
@@ -319,6 +326,8 @@ STDMETHODIMP CMemoryStream::Stat(STATSTG *pstatstg,
 {
     TraceEnter();
 
+    TraceOut("grfStatFlag=%u", grfStatFlag);
+
     if (NULL == pstatstg)
     {
         return STG_E_INVALIDPOINTER;
@@ -335,6 +344,7 @@ STDMETHODIMP CMemoryStream::Stat(STATSTG *pstatstg,
         wcscpy_s(pstatstg->pwcsName, nSize, wszName);
     }
 
+    pstatstg->cbSize.QuadPart = (ULONGLONG)m_nSize;
     pstatstg->type = STGTY_STREAM;
     pstatstg->ctime = m_ftCreation;
     pstatstg->mtime = m_ftModified;

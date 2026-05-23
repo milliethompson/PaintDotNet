@@ -1,12 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.HistoryFunctions;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
@@ -20,10 +21,10 @@ namespace PaintDotNet
     /// <summary>
     /// Encapsulates the functionality for a tool that goes in the main window's toolbar
     /// and that affects the Document.
-    /// A Tool should only emit a HistoryAction when it actually modifies the canvas.
+    /// A Tool should only emit a HistoryMemento when it actually modifies the canvas.
     /// So, for instance, if the user draws a line but that line doesn't fall within
     /// the canvas (like if the seleciton region excludes it), then since the user
-    /// hasn't really done anything there should be no HistoryAction emitted.
+    /// hasn't really done anything there should be no HistoryMemento emitted.
     /// </summary>
     /// <remarks>
     /// A bit about the eventing model:
@@ -37,9 +38,12 @@ namespace PaintDotNet
     ///   default, overridable behavior for an event.
     /// </remarks>
     public class Tool
-        : IDisposable
+        : IDisposable,
+          IHotKeyTarget
     {
-        private Image toolBarImage;
+        public static readonly Type DefaultToolType = typeof(Tools.PaintBrushTool);
+
+        private ImageResource toolBarImage;
         private Cursor cursor;
         private ToolInfo toolInfo;
         private int mouseDown = 0; // incremented for every MouseDown, decremented for every MouseUp
@@ -55,7 +59,8 @@ namespace PaintDotNet
         private bool panTracking = false; // 'true' when panMode is true, and when the mouse is down (which is when MouseMove should do panning)
         private MoveNubRenderer trackingNub = null; // when we are in pan-tracking mode, we draw this in the center of the screen
 
-        private DocumentWorkspace workspace;
+        private DocumentWorkspace documentWorkspace;
+
         private bool active = false;
         protected bool autoScroll = true;
         private Hashtable keysThatAreDown = new Hashtable();
@@ -84,6 +89,75 @@ namespace PaintDotNet
             }
         }
 
+        protected Document Document
+        {
+            get
+            {
+                return DocumentWorkspace.Document;
+            }
+        }
+
+        public DocumentWorkspace DocumentWorkspace
+        {
+            get
+            {
+                return this.documentWorkspace;
+            }
+        }
+
+        public AppWorkspace AppWorkspace
+        {
+            get
+            {
+                return DocumentWorkspace.AppWorkspace;
+            }
+        }
+
+        protected HistoryStack HistoryStack
+        {
+            get
+            {
+                return DocumentWorkspace.History;
+            }
+        }
+
+        protected AppEnvironment AppEnvironment
+        {
+            get
+            {
+                return this.documentWorkspace.AppWorkspace.AppEnvironment;
+            }
+        }
+
+        protected Selection Selection
+        {
+            get
+            {
+                return DocumentWorkspace.Selection;
+            }
+        }
+
+        protected Layer ActiveLayer
+        {
+            get
+            {
+                return DocumentWorkspace.ActiveLayer;
+            }
+        }
+
+        protected int ActiveLayerIndex
+        {
+            get
+            {
+                return DocumentWorkspace.ActiveLayerIndex;
+            }
+
+            set
+            {
+                DocumentWorkspace.ActiveLayerIndex = value;
+            }
+        }
+
         public void ClearSavedMemory()
         {
             this.savedTiles = null;
@@ -102,7 +176,7 @@ namespace PaintDotNet
         {
             if (region != null)
             {
-                BitmapLayer activeLayer = (BitmapLayer)Workspace.ActiveLayer;
+                BitmapLayer activeLayer = (BitmapLayer)ActiveLayer;
                 activeLayer.Surface.CopySurface(this.ScratchSurface, region);
                 activeLayer.Invalidate(region);
             }
@@ -112,7 +186,7 @@ namespace PaintDotNet
         {
             if (this.saveRegion != null)
             {
-                BitmapLayer activeLayer = (BitmapLayer)Workspace.ActiveLayer;
+                BitmapLayer activeLayer = (BitmapLayer)ActiveLayer;
                 activeLayer.Surface.CopySurface(this.ScratchSurface, this.saveRegion);
                 activeLayer.Invalidate(this.saveRegion);
                 this.saveRegion.Dispose();
@@ -125,7 +199,7 @@ namespace PaintDotNet
 
         public void SaveRegion(PdnRegion saveMeRegion, Rectangle saveMeBounds)
         {
-            BitmapLayer activeLayer = (BitmapLayer)Workspace.ActiveLayer;
+            BitmapLayer activeLayer = (BitmapLayer)ActiveLayer;
 
             if (savedTiles == null)
             {
@@ -252,7 +326,7 @@ namespace PaintDotNet
         {
             get
             {
-                return active;
+                return this.active;
             }
         }
 
@@ -268,7 +342,7 @@ namespace PaintDotNet
         {
             get
             {
-                return Workspace.DocumentView.Focused;
+                return DocumentWorkspace.Focused;
             }
         }
 
@@ -311,20 +385,11 @@ namespace PaintDotNet
         /// <summary>
         /// Represents the Image that is displayed in the toolbar.
         /// </summary>
-        public Image Image
+        public ImageResource Image
         {
             get
             {
-                return toolBarImage;
-            }
-        }
-
-        protected void DisposeImage()
-        {
-            if (this.toolBarImage != null)
-            {
-                this.toolBarImage.Dispose();
-                this.toolBarImage = null;
+                return this.toolBarImage;
             }
         }
 
@@ -354,13 +419,13 @@ namespace PaintDotNet
         {
             get
             {
-                return cursor;
+                return this.cursor;
             }
 
             set
             {
                 OnCursorChanging();
-                cursor = value;
+                this.cursor = value;
                 OnCursorChanged();
             }
         }
@@ -372,7 +437,7 @@ namespace PaintDotNet
         {
             get
             {
-                return toolInfo.Name;
+                return this.toolInfo.Name;
             }
         }
 
@@ -383,7 +448,7 @@ namespace PaintDotNet
         {
             get
             {
-                return toolInfo.HelpText;
+                return this.toolInfo.HelpText;
             }
         }
 
@@ -391,7 +456,15 @@ namespace PaintDotNet
         {
             get
             {
-                return toolInfo;
+                return this.toolInfo;
+            }
+        }
+
+        public ToolBarConfigItems ToolBarConfigItems
+        {
+            get
+            {
+                return this.toolInfo.ToolBarConfigItems;
             }
         }
 
@@ -410,18 +483,7 @@ namespace PaintDotNet
         {
             get
             {
-                return toolInfo.HotKey;
-            }
-        }
-
-        /// <summary>
-        /// A reference to the workspace that contains this Tool.
-        /// </summary>
-        public DocumentWorkspace Workspace
-        {
-            get
-            {
-                return workspace;
+                return this.toolInfo.HotKey;
             }
         }
 
@@ -438,8 +500,16 @@ namespace PaintDotNet
 
         private bool IsOverflow(MouseEventArgs e) 
         {
-            PointF clientPt = workspace.DocumentView.DocumentToClient(new PointF(e.X, e.Y));
+            PointF clientPt = DocumentWorkspace.DocumentToClient(new PointF(e.X, e.Y));
             return clientPt.X < -16384 || clientPt.Y < -16384;
+        }
+
+        public bool IsMouseEntered
+        {
+            get
+            {
+                return this.mouseEnter > 0;
+            }
         }
 
         public void PerformMouseEnter()
@@ -468,11 +538,14 @@ namespace PaintDotNet
 
         private void MouseLeave()
         {
-            --this.mouseEnter;
-
-            if (this.mouseEnter == 0)
+            if (this.mouseEnter == 1)
             {
+                this.mouseEnter = 0;
                 OnMouseLeave();
+            }
+            else
+            {
+                this.mouseEnter = Math.Max(0, this.mouseEnter - 1);
             }
         }
 
@@ -522,7 +595,7 @@ namespace PaintDotNet
             {
                 if (this.SupportsInk) 
                 {
-                    Workspace.DocumentView.Focus();
+                    DocumentWorkspace.Focus();
                 } 
 
                 MouseDown(e);
@@ -593,8 +666,12 @@ namespace PaintDotNet
 
         private void Activate()
         {
-            Debug.Assert(active != true, "already active!");
-            active = true;
+            Debug.Assert(this.active != true, "already active!");
+            this.active = true;
+
+            this.handCursor = new Cursor(PdnResources.GetResourceStream("Cursors.PanToolCursor.cur"));
+            this.handCursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.PanToolCursorMouseDown.cur"));
+            this.handCursorInvalid = new Cursor(PdnResources.GetResourceStream("Cursors.PanToolCursorInvalid.cur"));
 
             this.panTracking = false;
             this.panMode = false;
@@ -602,23 +679,22 @@ namespace PaintDotNet
             this.savedTiles = null;
             this.saveRegion = null;
 
-            this.scratchSurface = Workspace.ScratchSurface;
+            this.scratchSurface = DocumentWorkspace.BorrowScratchSurface(this.GetType().Name + ": Tool.Activate()");
 #if DEBUG
             this.haveClearedScratch = false;
 #endif
-            Workspace.ScratchSurface = null;
 
-            Workspace.Environment.Selection.Changing += new EventHandler(SelectionChangingHandler);
-            Workspace.Environment.Selection.Changed += new EventHandler(SelectionChangedHandler);
-            Workspace.History.ExecutingHistoryAction += new ExecutingHistoryActionEventHandler(ExecutingHistoryAction);
-            Workspace.History.ExecutedHistoryAction += new ExecutedHistoryActionEventHandler(ExecutedHistoryAction);
-            Workspace.History.FinishedStepGroup += new EventHandler(FinishedHistoryStepGroup);
+            Selection.Changing += new EventHandler(SelectionChangingHandler);
+            Selection.Changed += new EventHandler(SelectionChangedHandler);
+            HistoryStack.ExecutingHistoryMemento += new ExecutingHistoryMementoEventHandler(ExecutingHistoryMemento);
+            HistoryStack.ExecutedHistoryMemento += new ExecutedHistoryMementoEventHandler(ExecutedHistoryMemento);
+            HistoryStack.FinishedStepGroup += new EventHandler(FinishedHistoryStepGroup);
 
-            this.trackingNub = new MoveNubRenderer(this.Renderers);
+            this.trackingNub = new MoveNubRenderer(this.RendererList);
             this.trackingNub.Visible = false;
-            this.trackingNub.Size = 10;
+            this.trackingNub.Size = new SizeF(10, 10);
             this.trackingNub.Shape = MoveNubShape.Compass;
-            this.Renderers.Add(this.trackingNub, false);
+            this.RendererList.Add(this.trackingNub, false);
 
             OnActivate();
         }
@@ -642,22 +718,24 @@ namespace PaintDotNet
 
         private void Deactivate()
         {
-            Debug.Assert(active != false, "not active!");
+            Debug.Assert(this.active != false, "not active!");
 
-            active = false;
-            Workspace.Environment.Selection.Changing -= new EventHandler(SelectionChangingHandler);
-            Workspace.Environment.Selection.Changed -= new EventHandler(SelectionChangedHandler);
-            Workspace.History.ExecutingHistoryAction -= new ExecutingHistoryActionEventHandler(ExecutingHistoryAction);
-            Workspace.History.ExecutedHistoryAction -= new ExecutedHistoryActionEventHandler(ExecutedHistoryAction);
-            Workspace.History.FinishedStepGroup -= new EventHandler(FinishedHistoryStepGroup);
+            this.active = false;
+
+            Selection.Changing -= new EventHandler(SelectionChangingHandler);
+            Selection.Changed -= new EventHandler(SelectionChangedHandler);
+
+            HistoryStack.ExecutingHistoryMemento -= new ExecutingHistoryMementoEventHandler(ExecutingHistoryMemento);
+            HistoryStack.ExecutedHistoryMemento -= new ExecutedHistoryMementoEventHandler(ExecutedHistoryMemento);
+            HistoryStack.FinishedStepGroup -= new EventHandler(FinishedHistoryStepGroup);
 
             OnDeactivate();
 
-            this.Renderers.Remove(this.trackingNub);
+            this.RendererList.Remove(this.trackingNub);
             this.trackingNub.Dispose();
             this.trackingNub = null;
 
-            Workspace.ScratchSurface = this.scratchSurface;
+            DocumentWorkspace.ReturnScratchSurface(this.scratchSurface);
             this.scratchSurface = null;
 
             if (this.saveRegion != null)
@@ -667,6 +745,24 @@ namespace PaintDotNet
             }
 
             this.savedTiles = null;
+
+            if (this.handCursor != null)
+            {
+                this.handCursor.Dispose();
+                this.handCursor = null;
+            }
+
+            if (this.handCursorMouseDown != null)
+            {
+                this.handCursorMouseDown.Dispose();
+                this.handCursorMouseDown = null;
+            }
+
+            if (this.handCursorInvalid != null)
+            {
+                this.handCursorInvalid.Dispose();
+                this.handCursorInvalid = null;
+            }
         }
 
         /// <summary>
@@ -738,10 +834,10 @@ namespace PaintDotNet
                 // stack up)
 
                 Point position = new Point(e.X, e.Y);
-                RectangleF visibleRect = Workspace.VisibleDocumentRectangleF;
+                RectangleF visibleRect = DocumentWorkspace.VisibleDocumentRectangleF;
                 PointF visibleCenterPt = Utility.GetRectangleCenter(visibleRect);
                 PointF delta = new PointF(e.X - lastPanMouseXY.X, e.Y - lastPanMouseXY.Y);
-                PointF newScroll = Workspace.DocumentView.DocumentScrollPositionF;
+                PointF newScroll = DocumentWorkspace.DocumentScrollPositionF;
 
                 if (delta.X != 0 || delta.Y != 0)
                 {
@@ -753,7 +849,7 @@ namespace PaintDotNet
                     lastPanMouseXY.Y -= (int)Math.Truncate(delta.Y);
 
                     ++this.ignoreMouseMove; // setting DocumentScrollPosition incurs a MouseMove event. ignore it prevents 'jittering' at non-integral zoom levels (like, say, 743%)
-                    Workspace.DocumentView.DocumentScrollPositionF = newScroll;
+                    DocumentWorkspace.DocumentScrollPositionF = newScroll;
                     Update();
                 }
 
@@ -862,73 +958,125 @@ namespace PaintDotNet
         // tool. 'awhile' is defined by this variable.
         private static readonly TimeSpan toolSwitchReset = new TimeSpan(0, 0, 0, 2, 0);
 
+        private const char decPenSizeShortcut = '[';
+        private const char decPenSizeBy5Shortcut = (char)27; // Ctrl [ but must also test that Ctrl is down
+        private const char incPenSizeShortcut = ']';
+        private const char incPenSizeBy5Shortcut = (char)29; // Ctrl ] but must also test that Ctrl is down
+        private const char swapColorsShortcut = 'x';
+        private const char swapPrimarySecondaryChoice = 'c';
+
         /// <summary>
         /// This method is called when the tool is active and a keyboard key is pressed
         /// and released. If you respond to the keyboard key, set e.Handled to true.
         /// </summary>
         protected virtual void OnKeyPress(KeyPressEventArgs e)
         {
-            if (!e.Handled && workspace.DocumentView.Focused) 
+            if (!e.Handled && DocumentWorkspace.Focused)
             {
-                ToolInfo[] toolInfos = Workspace.ToolInfos;
-                Type currentToolType = Workspace.Environment.Tool.GetType();
-                int currentTool = 0;
-
-                if (0 != (ModifierKeys & Keys.Shift))
+                if (e.KeyChar == swapColorsShortcut)
                 {
-                    Array.Reverse(toolInfos);
+                    AppWorkspace.Widgets.ColorsForm.SwapUserColors();
+                    e.Handled = true;
                 }
-
-                if (char.ToLower(this.HotKey) != char.ToLower(e.KeyChar) ||
-                    (DateTime.Now - lastToolSwitch) > toolSwitchReset)
+                else if (e.KeyChar == swapPrimarySecondaryChoice)
                 {
-                    currentTool = -1;
+                    AppWorkspace.Widgets.ColorsForm.ToggleWhichUserColor();
+                    e.Handled = true;
+                }
+                else if (e.KeyChar == decPenSizeShortcut)
+                {
+                    AppWorkspace.Widgets.ToolConfigStrip.AddToPenSize(-1.0f);
+                    e.Handled = true;
+                }
+                else if (e.KeyChar == decPenSizeBy5Shortcut && (ModifierKeys & Keys.Control) != 0)
+                {
+                    AppWorkspace.Widgets.ToolConfigStrip.AddToPenSize(-5.0f);
+                    e.Handled = true;
+                }
+                else if (e.KeyChar == incPenSizeShortcut)
+                {
+                    AppWorkspace.Widgets.ToolConfigStrip.AddToPenSize(+1.0f);
+                    e.Handled = true;
+                }
+                else if (e.KeyChar == incPenSizeBy5Shortcut && (ModifierKeys & Keys.Control) != 0)
+                {
+                    AppWorkspace.Widgets.ToolConfigStrip.AddToPenSize(+5.0f);
+                    e.Handled = true;
                 }
                 else
                 {
-                    for (int t = 0; t < toolInfos.Length; ++t) 
+                    ToolInfo[] toolInfos = DocumentWorkspace.ToolInfos;
+                    Type currentToolType = DocumentWorkspace.GetToolType();
+                    int currentTool = 0;
+
+                    if (0 != (ModifierKeys & Keys.Shift))
                     {
-                        if (toolInfos[t].ToolType == currentToolType)
-                        {
-                            currentTool = t;
-                            break;
-                        }
+                        Array.Reverse(toolInfos);
                     }
-                }
 
-                for (int t = 0; t < toolInfos.Length; ++t) 
-                {
-                    int newTool = (t + currentTool + 1) % toolInfos.Length;
-                    ToolInfo toolInfo = toolInfos[newTool];
-
-                    if (char.ToLower(toolInfo.HotKey) == char.ToLower(e.KeyChar))
+                    if (char.ToLower(this.HotKey) != char.ToLower(e.KeyChar) ||
+                        (DateTime.Now - lastToolSwitch) > toolSwitchReset)
                     {
-                        if (!this.IsMouseDown)
-                        {
-                            Workspace.Widgets.MainToolBar.SelectTool(toolInfo.ToolType);
-                        }
-
-                        e.Handled = true;
-                        lastToolSwitch = DateTime.Now;
-                        break;
+                        // If it's been a short time since they pressed a tool switching hotkey,
+                        // we will start from the beginning of this list. This helps to enable two things:
+                        // 1) If multiple tools have the same hotkey, the user may press that hotkey
+                        //    to cycle through them
+                        // 2) After a period of time, pressing the hotkey will revert to always
+                        //    choosing the first tool in that list of tools which have the same hotkey.
+                        currentTool = -1;
                     }
-                }
-
-                // If the keypress is still not handled ...
-                if (!e.Handled)
-                {
-                    switch (e.KeyChar)
+                    else
                     {
-                        // By default, Esc/Enter clear the current selection if there is any
-                        case (char)13: // Enter
-                        case (char)27: // Escape
-                            if (this.mouseDown == 0 && !Workspace.Environment.Selection.IsEmpty)
+                        for (int t = 0; t < toolInfos.Length; ++t)
+                        {
+                            if (toolInfos[t].ToolType == currentToolType)
                             {
-                                e.Handled = true;
-                                Workspace.PerformAction(typeof(DeselectAction));
+                                currentTool = t;
+                                break;
+                            }
+                        }
+                    }
+
+                    for (int t = 0; t < toolInfos.Length; ++t)
+                    {
+                        int newTool = (t + currentTool + 1) % toolInfos.Length;
+                        ToolInfo localToolInfo = toolInfos[newTool];
+
+                        if (localToolInfo.ToolType == DocumentWorkspace.GetToolType() &&
+                            localToolInfo.SkipIfActiveOnHotKey)
+                        {
+                            continue;
+                        }
+
+                        if (char.ToLower(localToolInfo.HotKey) == char.ToLower(e.KeyChar))
+                        {
+                            if (!this.IsMouseDown)
+                            {
+                                AppWorkspace.Widgets.ToolsControl.SelectTool(localToolInfo.ToolType);
                             }
 
+                            e.Handled = true;
+                            lastToolSwitch = DateTime.Now;
                             break;
+                        }
+                    }
+
+                    // If the keypress is still not handled ...
+                    if (!e.Handled)
+                    {
+                        switch (e.KeyChar)
+                        {
+                            // By default, Esc/Enter clear the current selection if there is any
+                            case (char)13: // Enter
+                            case (char)27: // Escape
+                                if (this.mouseDown == 0 && !Selection.IsEmpty)
+                                {
+                                    e.Handled = true;
+                                    DocumentWorkspace.ExecuteFunction(new DeselectFunction());
+                                }
+
+                                break;
+                        }
                     }
                 }
             }
@@ -1000,28 +1148,28 @@ namespace PaintDotNet
 
                 lastKeyboardMove = DateTime.Now;
                 
-                int offset = (int)(Math.Ceiling(workspace.DocumentView.ScaleFactor.Ratio) * (double)keyboardMoveSpeed);
+                int offset = (int)(Math.Ceiling(DocumentWorkspace.ScaleFactor.Ratio) * (double)keyboardMoveSpeed);
                 Cursor.Position = new Point(Cursor.Position.X + offset * dir.X, Cursor.Position.Y + offset * dir.Y);
                 
-                Point location = workspace.DocumentView.PointToScreen(Point.Truncate(workspace.DocumentView.DocumentToClient(PointF.Empty)));
+                Point location = DocumentWorkspace.PointToScreen(Point.Truncate(DocumentWorkspace.DocumentToClient(PointF.Empty)));
 
                 PointF stylusLocF = new PointF((float)Cursor.Position.X - (float)location.X, (float)Cursor.Position.Y - (float)location.Y);
                 Point stylusLoc = new Point(Cursor.Position.X - location.X, Cursor.Position.Y - location.Y);
 
-                stylusLoc = workspace.DocumentView.ScaleFactor.UnscalePoint(stylusLoc);
-                stylusLocF = workspace.DocumentView.ScaleFactor.UnscalePoint(stylusLocF);
+                stylusLoc = DocumentWorkspace.ScaleFactor.UnscalePoint(stylusLoc);
+                stylusLocF = DocumentWorkspace.ScaleFactor.UnscalePoint(stylusLocF);
 
-                workspace.DocumentView.PerformDocumentMouseMove(new StylusEventArgs(lastButton, 1, stylusLocF.X, stylusLocF.Y, 0, 1.0f));
-                workspace.DocumentView.PerformDocumentMouseMove(new MouseEventArgs(lastButton, 1, stylusLoc.X, stylusLoc.Y, 0));
+                DocumentWorkspace.PerformDocumentMouseMove(new StylusEventArgs(lastButton, 1, stylusLocF.X, stylusLocF.Y, 0, 1.0f));
+                DocumentWorkspace.PerformDocumentMouseMove(new MouseEventArgs(lastButton, 1, stylusLoc.X, stylusLoc.Y, 0));
             }
         }
 
         private bool CanPan()
         {
-            Rectangle vis = Utility.RoundRectangle(Workspace.DocumentView.VisibleDocumentRectangleF);
-            vis.Intersect(Workspace.Document.Bounds);
+            Rectangle vis = Utility.RoundRectangle(DocumentWorkspace.VisibleDocumentRectangleF);
+            vis.Intersect(Document.Bounds);
 
-            if (vis == Workspace.Document.Bounds)
+            if (vis == Document.Bounds)
             {
                 return false;
             }
@@ -1125,21 +1273,21 @@ namespace PaintDotNet
         {
         }
 
-        private void ExecutingHistoryAction(object sender, ExecutingHistoryActionEventArgs e)
+        private void ExecutingHistoryMemento(object sender, ExecutingHistoryMementoEventArgs e)
         {
-            OnExecutingHistoryAction(e);
+            OnExecutingHistoryMemento(e);
         }
 
-        protected virtual void OnExecutingHistoryAction(ExecutingHistoryActionEventArgs e)
+        protected virtual void OnExecutingHistoryMemento(ExecutingHistoryMementoEventArgs e)
         {
         }
 
-        private void ExecutedHistoryAction(object sender, ExecutedHistoryActionEventArgs e)
+        private void ExecutedHistoryMemento(object sender, ExecutedHistoryMementoEventArgs e)
         {
-            OnExecutedHistoryAction(e);
+            OnExecutedHistoryMemento(e);
         }
 
-        protected virtual void OnExecutedHistoryAction(ExecutedHistoryActionEventArgs e)
+        protected virtual void OnExecutedHistoryMemento(ExecutedHistoryMementoEventArgs e)
         {
         }
 
@@ -1200,7 +1348,7 @@ namespace PaintDotNet
         {
             get
             {
-                return (object.ReferenceEquals(Form.ActiveForm, Workspace.FindForm()));
+                return (object.ReferenceEquals(Form.ActiveForm, DocumentWorkspace.FindForm()));
             }
         }
 
@@ -1211,11 +1359,11 @@ namespace PaintDotNet
         {
             if (this.panTracking && this.lastButton == MouseButtons.Right)
             {
-                Point position = this.lastMouseXY; //new Point(e.X, e.Y);
-                RectangleF visibleRect = Workspace.VisibleDocumentRectangleF;
+                Point position = this.lastMouseXY;
+                RectangleF visibleRect = DocumentWorkspace.VisibleDocumentRectangleF;
                 PointF visibleCenterPt = Utility.GetRectangleCenter(visibleRect);
                 PointF delta = new PointF(position.X - visibleCenterPt.X, position.Y - visibleCenterPt.Y);
-                PointF newScroll = Workspace.DocumentView.DocumentScrollPositionF;
+                PointF newScroll = DocumentWorkspace.DocumentScrollPositionF;
 
                 this.trackingNub.Visible = true;
 
@@ -1225,12 +1373,12 @@ namespace PaintDotNet
                     newScroll.Y += delta.Y;
 
                     ++this.ignoreMouseMove; // setting DocumentScrollPosition incurs a MouseMove event. ignore it prevents 'jittering' at non-integral zoom levels (like, say, 743%)
-                    UI.SetControlRedraw(Workspace.DocumentView, false);
-                    Workspace.DocumentView.DocumentScrollPositionF = newScroll;
+                    UI.SuspendControlPainting(DocumentWorkspace);
+                    DocumentWorkspace.DocumentScrollPositionF = newScroll;
                     this.trackingNub.Visible = true;
-                    this.trackingNub.Location = Utility.GetRectangleCenter(Workspace.VisibleDocumentRectangleF);
-                    UI.SetControlRedraw(Workspace.DocumentView, true);
-                    Workspace.DocumentView.Invalidate(true);
+                    this.trackingNub.Location = Utility.GetRectangleCenter(DocumentWorkspace.VisibleDocumentRectangleF);
+                    UI.ResumeControlPainting(DocumentWorkspace);
+                    DocumentWorkspace.Invalidate(true);
                     Update();
                 }
             }
@@ -1243,8 +1391,8 @@ namespace PaintDotNet
                 return false;
             }
 
-            RectangleF visible = Workspace.DocumentView.VisibleDocumentRectangleF;
-            PointF lastScrollPosition = Workspace.DocumentView.DocumentScrollPositionF;
+            RectangleF visible = DocumentWorkspace.VisibleDocumentRectangleF;
+            PointF lastScrollPosition = DocumentWorkspace.DocumentScrollPositionF;
             PointF delta = PointF.Empty;
             PointF zoomedPoint = PointF.Empty;
 
@@ -1272,7 +1420,7 @@ namespace PaintDotNet
             if (!delta.IsEmpty) 
             {
                 PointF newScrollPosition = new PointF(lastScrollPosition.X + delta.X, lastScrollPosition.Y + delta.Y);
-                Workspace.DocumentView.DocumentScrollPositionF = newScrollPosition;
+                DocumentWorkspace.DocumentScrollPositionF = newScrollPosition;
                 Update();
                 return true;
             }
@@ -1292,90 +1440,59 @@ namespace PaintDotNet
             OnSelectionChanged();
         }
 
-        public event EventHandler StatusChanged;
-        protected virtual void OnStatusChanged()
-        {
-            if (StatusChanged != null)
-            {
-                StatusChanged(this, EventArgs.Empty);
-            }
-        }
-
-        private Icon statusIcon;
-        public Icon StatusIcon
-        {
-            get
-            {
-                return this.statusIcon;
-            }
-        }
-
-        private string statusText;
-        public string StatusText
-        {
-            get
-            {
-                return this.statusText;
-            }
-        }
-
-        protected void SetStatus(Icon statusIcon, string statusText)
+        protected void SetStatus(ImageResource statusIcon, string statusText)
         {
             if (statusIcon == null && statusText != null)
             {
-                this.statusIcon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuHelpHelpTopicsIcon.png"), true);
-            }
-            else
-            {
-                this.statusIcon = statusIcon;
+                statusIcon = ImageResource.Get("Icons.MenuHelpHelpTopicsIcon.png");
             }
 
-            this.statusText = statusText;
-            OnStatusChanged();
+            DocumentWorkspace.SetStatus(statusText, statusIcon);
         }
 
-        protected SurfaceBoxRendererList Renderers
+        protected SurfaceBoxRendererList RendererList
         {
             get
             {
-                return this.workspace.DocumentView.Renderers;
+                return this.DocumentWorkspace.RendererList;
             }
         }
 
         protected void Update()
         {
-            Workspace.Update();
+            DocumentWorkspace.Update();
         }
 
         protected object GetStaticData()
         {
-            return Workspace.Environment.GetStaticToolData(this.GetType());
+            return DocumentWorkspace.GetStaticToolData(this.GetType());
         }
 
         protected void SetStaticData(object data)
         {
-            Workspace.Environment.SetStaticToolData(this.GetType(), data);
+            DocumentWorkspace.SetStaticToolData(this.GetType(), data);
         }
 
-        public Tool(DocumentWorkspace workspace,
-                    Image toolBarImage,
+        // NOTE: Your constructor must be able to run successfully with a documentWorkspace
+        //       of null. This is sent in while the DocumentControl static constructor 
+        //       class is building a list of ToolInfo instances, so that it may construct
+        //       the list without having to also construct a DocumentControl.
+        public Tool(DocumentWorkspace documentWorkspace,
+                    ImageResource toolBarImage,
                     string name,
                     string helpText,
-                    char hotKey)
+                    char hotKey,
+                    bool skipIfActiveOnHotKey,
+                    ToolBarConfigItems toolBarConfigItems)
         {
-            this.workspace = workspace;
+            this.documentWorkspace = documentWorkspace;
             this.toolBarImage = toolBarImage;
-            this.toolInfo = new ToolInfo(name, helpText, toolBarImage, hotKey, this.GetType());
-            this.handCursor = new Cursor(PdnResources.GetResourceStream("Cursors.PanToolCursor.cur"));
-            this.handCursorMouseDown = new Cursor(PdnResources.GetResourceStream("Cursors.PanToolCursorMouseDown.cur"));
-            this.handCursorInvalid = new Cursor(PdnResources.GetResourceStream("Cursors.PanToolCursorInvalid.cur"));
-        }
+            this.toolInfo = new ToolInfo(name, helpText, toolBarImage, hotKey, skipIfActiveOnHotKey, toolBarConfigItems, this.GetType());
 
-        public static Tool CreateTool(Type toolType, DocumentWorkspace workspace)
-        {
-            ConstructorInfo ci = toolType.GetConstructor(new Type[] { typeof(DocumentWorkspace) });
-            Tool tool = (Tool)ci.Invoke(new object[] { workspace });
-            return tool;
+            if (this.documentWorkspace != null)
+            {
+                this.documentWorkspace.UpdateStatusBarToToolHelpText(this);
+            }
         }
 
         ~Tool()
@@ -1395,29 +1512,30 @@ namespace PaintDotNet
 
             if (disposing)
             {
-                if (this.handCursor != null)
-                {
-                    this.handCursor.Dispose();
-                    this.handCursor = null;
-                }
-
-                if (this.handCursorMouseDown != null)
-                {
-                    this.handCursorMouseDown.Dispose();
-                    this.handCursorMouseDown = null;
-                }
-
-                if (this.handCursorInvalid != null)
-                {
-                    this.handCursorInvalid.Dispose();
-                    this.handCursorInvalid = null;
-                }
-
                 if (this.saveRegion != null)
                 {
                     this.saveRegion.Dispose();
                     this.saveRegion = null;
                 }
+
+                OnDisposed();
+            }
+        }
+
+        public event EventHandler Disposed;
+        private void OnDisposed()
+        {
+            if (Disposed != null)
+            {
+                Disposed(this, EventArgs.Empty);
+            }
+        }
+
+        public Form AssociatedForm
+        {
+            get
+            {
+                return AppWorkspace.FindForm();
             }
         }
     }

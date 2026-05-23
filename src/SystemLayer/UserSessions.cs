@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -18,18 +18,13 @@ namespace PaintDotNet.SystemLayer
     /// Encapsulates information and events about the current user session.
     /// This relates to Terminal Services in Windows.
     /// </summary>
-    public sealed class UserSessions
+    public static class UserSessions
     {
         private static OurControl messageControl;
-        private static System.Windows.Forms.Timer win2kTsDetectionTimer; // this timer is used in Win2K so we can poll every few seconds to see if we are running in a remote session
         private static bool lastRemoteSessionValue;
         private static EventHandler sessionChanged;
         private static int sessionChangedCount;
         private static object lockObject = new object();
-
-        private UserSessions()
-        {
-        }
 
         private sealed class OurControl
             : Control
@@ -92,26 +87,7 @@ namespace PaintDotNet.SystemLayer
                         messageControl.CreateControl(); // force the HWND to be created
                         messageControl.WmWtSessionChange += new EventHandler(SessionStrobeHandler);
 
-                        // Our preferred way of detection remote<->console session transitions is via a window message.
-                        // But if that can't be done, we'll settle for a timer that pulses every 5 seconds.
-                        // It's called the Win2K Timer because generally this code path is only required on Win2K.
-                        try
-                        {
-                            SafeNativeMethods.WTSRegisterSessionNotification(messageControl.Handle, NativeConstants.NOTIFY_FOR_ALL_SESSIONS);
-                        }
-
-                        catch (EntryPointNotFoundException)
-                        {
-                            messageControl.WmWtSessionChange -= new EventHandler(SessionStrobeHandler);
-                            messageControl.Dispose();
-                            messageControl = null;
-
-                            win2kTsDetectionTimer = new System.Windows.Forms.Timer();
-                            win2kTsDetectionTimer.Interval = 5000;
-                            win2kTsDetectionTimer.Tick += new System.EventHandler(SessionStrobeHandler);
-                            win2kTsDetectionTimer.Enabled = true;
-                        }
-
+                        SafeNativeMethods.WTSRegisterSessionNotification(messageControl.Handle, NativeConstants.NOTIFY_FOR_ALL_SESSIONS);
                         lastRemoteSessionValue = IsRemote();
                     }
                 }
@@ -126,27 +102,17 @@ namespace PaintDotNet.SystemLayer
 
                     if (decremented == 0)
                     {
-                        if (win2kTsDetectionTimer != null)
+                        try
                         {
-                            win2kTsDetectionTimer.Tick -= new System.EventHandler(SessionStrobeHandler);
-                            win2kTsDetectionTimer.Enabled = false;
-                            win2kTsDetectionTimer.Dispose();
-                            win2kTsDetectionTimer = null;
+                            SafeNativeMethods.WTSUnRegisterSessionNotification(messageControl.Handle);
                         }
-                        else
+
+                        catch (EntryPointNotFoundException)
                         {
-                            try
-                            {
-                                SafeNativeMethods.WTSUnRegisterSessionNotification(messageControl.Handle);
-                            }
-
-                            catch (EntryPointNotFoundException)
-                            {
-                            }
-
-                            messageControl.Dispose();
-                            messageControl = null;
                         }
+
+                        messageControl.Dispose();
+                        messageControl = null;
                     }
                 }
             }

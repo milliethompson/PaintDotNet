@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -16,12 +16,42 @@ namespace PaintDotNet
     /// Simply sets a control's Cursor to the WaitCursor (hourglass) on creation,
     /// and sets it back to its original setting upon disposal.
     /// </summary>
-    public class WaitCursorChanger
-        : CursorChanger
+    public sealed class WaitCursorChanger
+        : IDisposable
     {
+        private Control control;
+        private Cursor oldCursor;
+        private static int nextID = 0;
+        private int id = System.Threading.Interlocked.Increment(ref nextID);
+
         public WaitCursorChanger(Control control)
-            : base(control, Cursors.WaitCursor)
         {
+            this.control = control;
+            this.oldCursor = Cursor.Current;
+            Cursor.Current = Cursors.WaitCursor;
+        }
+
+        ~WaitCursorChanger()
+        {
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (this.oldCursor != null)
+                {
+                    Cursor.Current = this.oldCursor;
+                    this.oldCursor = null;
+                }
+            }
         }
     }
 }

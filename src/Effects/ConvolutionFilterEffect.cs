@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -14,10 +14,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for ConvolutionFilterEffect.
-    /// </summary>
-    public unsafe abstract class ConvolutionFilterEffect
+    public abstract class ConvolutionFilterEffect
         : Effect
     {
         private sealed class FExtentKey
@@ -167,7 +164,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        public void RenderConvolutionFilter(int[][] weights, int offset, RenderArgs dstArgs, RenderArgs srcArgs, 
+        public unsafe void RenderConvolutionFilter(int[][] weights, int offset, RenderArgs dstArgs, RenderArgs srcArgs, 
             Rectangle[] rois, int startIndex, int length)
         {
             int weightsWidth = weights[0].Length;
@@ -210,7 +207,7 @@ namespace PaintDotNet.Effects
                             int srcY = y + fy + fYOffset;
                             int srcX1 = x + fXOffset + fxStart;
 
-                            ColorBgra* srcPixel = srcArgs.Surface.GetPointAddress(srcX1, srcY);
+                            ColorBgra* srcPixel = srcArgs.Surface.GetPointAddressUnchecked(srcX1, srcY);
                             int[] wRow = weights[fy];
 
                             for (int fx = fxStart; fx < fxEnd; ++fx)
@@ -268,57 +265,48 @@ namespace PaintDotNet.Effects
                         {
                             redSum = 0;
                         }
-                        else
-                            if (redSum > 255)
-                            {
-                                redSum = 255;
-                            }
+                        else if (redSum > 255)
+                        {
+                            redSum = 255;
+                        }
 
                         if (greenSum < 0)
                         {
                             greenSum = 0;
                         }
-                        else
-                            if (greenSum > 255)
-                            {
-                                greenSum = 255;
-                            }
+                        else if (greenSum > 255)
+                        {
+                            greenSum = 255;
+                        }
 
                         if (blueSum < 0)
                         {
                             blueSum = 0;
                         }
-                        else
-                            if (blueSum > 255)
-                            {
-                                blueSum = 255;
-                            }
+                        else if (blueSum > 255)
+                        {
+                            blueSum = 255;
+                        }
 
                         if (alphaSum < 0)
                         {
                             alphaSum = 0;
                         }
-                        else
-                            if (alphaSum > 255)
-                            {
-                                alphaSum = 255;
-                            }
+                        else if (alphaSum > 255)
+                        {
+                            alphaSum = 255;
+                        }
                         #endregion
 
-                        *dstPixel = ColorBgra.FromRgba((byte)redSum, (byte)greenSum, (byte)blueSum, (byte)alphaSum);
+                        *dstPixel = ColorBgra.FromBgra((byte)blueSum, (byte)greenSum, (byte)redSum, (byte)alphaSum);
                         ++dstPixel;
                     }
                 }
             }
         }
 
-        public ConvolutionFilterEffect(string name, Image image, bool isConfigurable)
-            : this(name, image, Keys.None, isConfigurable)
-        {
-        }
-
-        public ConvolutionFilterEffect(string name, Image image, System.Windows.Forms.Keys shortcutKeys, bool isConfigurable)
-            : base(name, image, shortcutKeys, isConfigurable)
+        protected internal ConvolutionFilterEffect(string name, Image image, bool isConfigurable)
+            : base(name, image, isConfigurable)
         {
         }
     }

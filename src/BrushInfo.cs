@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -17,9 +17,13 @@ namespace PaintDotNet
     /// Carries information about the subset of Brush configuration details that we support.
     /// Does not carry color information.
     /// </summary>
-    public struct BrushInfo
+    [Serializable]
+    public class BrushInfo
+        : ICloneable
     {
         private BrushType brushType;
+        private HatchStyle hatchStyle;
+
         public BrushType BrushType
         {
             get
@@ -36,7 +40,6 @@ namespace PaintDotNet
         /// <summary>
         /// If BrushType is equal to BrushType.Hatch, then this info is pertinent.
         /// </summary>
-        private HatchStyle hatchStyle;
         public HatchStyle HatchStyle
         {
             get
@@ -68,6 +71,16 @@ namespace PaintDotNet
         {
             this.brushType = brushType;
             this.hatchStyle = hatchStyle;
+        }
+
+        public BrushInfo Clone()
+        {
+            return new BrushInfo(this.brushType, this.hatchStyle);
+        }
+
+        object ICloneable.Clone()
+        {
+            return Clone();
         }
     }
 }

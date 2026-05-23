@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -15,6 +15,9 @@ namespace PaintDotNet
     /// <summary>
     /// Adapts a Surface class so it can be used as a two dimensional boolean array.
     /// Elements are stored compactly, such that each pixel stores 32 boolean values.
+    /// However, the usable width is the same as that of the adapted surface.
+    /// (in other words, a surface that is 100 pixels wide can still only store 100
+    /// booleans per row)
     /// </summary>
     public sealed class BitVector2DSurfaceAdapter
         : IBitVector2D

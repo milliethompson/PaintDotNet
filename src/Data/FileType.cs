@@ -1,17 +1,19 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Data.Quantize;
 using PaintDotNet.SystemLayer;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Reflection;
 using System.Runtime;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Soap;
@@ -24,14 +26,22 @@ namespace PaintDotNet
     /// </summary>
     public abstract class FileType
     {
+        private string[] extensions;
+        private string name;
+        private bool supportsLayers;
+        private bool supportsCustomHeaders;
+        private bool supportsSaving;
+        private bool supportsLoading;
+        private bool savesWithProgress;
+
         // should be of the format ".ext" ... like ".bmp" or ".jpg"
-        // The first extension in this list is the default extension (".jpg" for JPEG, for instance, as ".jfif" etc. are not seen very often)
-        private string[] extensions; 
+        // The first extension in this list is the default extension (".jpg" for JPEG, 
+        // for instance, as ".jfif" etc. are not seen very often)
         public string[] Extensions
         {
             get
             {
-                return (string[])extensions.Clone();
+                return (string[])this.extensions.Clone();
             }
         }
 
@@ -45,23 +55,20 @@ namespace PaintDotNet
         {
             get
             {
-                return extensions[0];
+                return this.extensions[0];
             }
         }
 
         /// <summary>
         /// Returns the friendly name of the file type, such as "Bitmap" or "JPEG".
         /// </summary>
-        private string name; 
         public string Name
         {
             get
             {
-                return name;
+                return this.name;
             }
         }
-
-        private bool supportsLayers;
 
         /// <summary>
         /// Gets a flag indicating whether this FileType supports layers.
@@ -74,11 +81,9 @@ namespace PaintDotNet
         {
             get
             {
-                return supportsLayers;
+                return this.supportsLayers;
             }
         }
-
-        private bool supportsCustomHeaders;
 
         /// <summary>
         /// Gets a flag indicating whether this FileType supports custom headers.
@@ -91,11 +96,9 @@ namespace PaintDotNet
         {
             get
             {
-                return supportsCustomHeaders;
+                return this.supportsCustomHeaders;
             }
         }
-
-        private bool supportsSaving;
 
         /// <summary>
         /// Gets a flag indicating whether this FileType supports the Save() method.
@@ -111,8 +114,6 @@ namespace PaintDotNet
             }
         }
 
-        private bool supportsLoading;
-
         /// <summary>
         /// Gets a flag indicating whether this FileType supports the Load() method.
         /// </summary>
@@ -126,8 +127,6 @@ namespace PaintDotNet
                 return this.supportsLoading;
             }
         }
-
-        private bool savesWithProgress;
 
         /// <summary>
         /// Gets a flag indicating whether this FileType reports progress while saving.
@@ -164,7 +163,7 @@ namespace PaintDotNet
         {
             foreach (string ext2 in extensions)
             {
-                if (ext2.ToLower() == ext.ToLower())
+                if (0 == string.Compare(ext2, ext, StringComparison.InvariantCultureIgnoreCase))
                 {
                     return true;
                 }
@@ -173,14 +172,76 @@ namespace PaintDotNet
             return false;
         }
 
+        /// <summary>
+        /// Takes a Surface and quantizes it down to an 8-bit bitmap.
+        /// </summary>
+        /// <param name="quantizeMe">The Surface to quantize.</param>
+        /// <param name="ditherAmount">How strong should dithering be applied. 0 for no dithering, 8 for full dithering.</param>
+        /// <param name="maxColors">The maximum number of colors to use. This may range from 2 to 255.</param>
+        /// <param name="progressCallback">The progress callback delegate.</param>
+        /// <returns>An 8-bit Bitmap that is the same size as quantizeMe.</returns>
+        protected Bitmap Quantize(Surface quantizeMe, int ditherAmount, int maxColors, ProgressEventHandler progressCallback)
+        {
+            if (ditherAmount < 0 || ditherAmount > 8)
+            {
+                throw new ArgumentOutOfRangeException(
+                    "ditherAmount",
+                    ditherAmount,
+                    "Out of bounds. Must be in the range [0, 8]");
+            }
+
+            if (maxColors < 2 || maxColors > 255)
+            {
+                throw new ArgumentOutOfRangeException(
+                    "maxColors",
+                    maxColors,
+                    "Out of bounds. Must be in the range [2, 255]");
+            }
+
+            using (Bitmap bitmap = quantizeMe.CreateAliasedBitmap(quantizeMe.Bounds, true))
+            {
+                OctreeQuantizer quantizer = new OctreeQuantizer(maxColors, 8);
+                quantizer.DitherLevel = ditherAmount;
+                Bitmap quantized = quantizer.Quantize(bitmap, progressCallback);
+                return quantized;
+            }
+        }
+
+        [Obsolete("Use the other Save() overload instead", true)]
         public void Save(Document input, Stream output, SaveConfigToken token, ProgressEventHandler callback, bool rememberToken)
+        {
+            using (Surface scratch = new Surface(input.Width, input.Height))
+            {
+                Save(input, output, token, callback, rememberToken);
+            }
+        }
+
+        public void Save(
+            Document input, 
+            Stream output, 
+            SaveConfigToken token, 
+            Surface scratchSurface, 
+            ProgressEventHandler callback, 
+            bool rememberToken)
         {
             if (!this.SupportsSaving)
             {
-                throw new NotImplementedException("Saving not supported by this FileType");
+                throw new NotImplementedException("Saving is not supported by this FileType");
             }
             else
             {
+                Surface disposeMe = null;
+
+                if (scratchSurface == null)
+                {
+                    disposeMe = new Surface(input.Size);
+                    scratchSurface = disposeMe;
+                }
+                else if (scratchSurface.Size != input.Size)
+                {
+                    throw new ArgumentException("scratchSurface.Size must equal input.Size");
+                }
+
                 if (rememberToken)
                 {
                     Type ourType = this.GetType();
@@ -195,16 +256,86 @@ namespace PaintDotNet
 
                 if (!this.SavesWithProgress)
                 {
-                    OnSave(input, output, token, null);
+                    try
+                    {
+                        OnSave(input, output, token, scratchSurface, null);
+                    }
+
+                    catch (OnSaveNotImplementedException)
+                    {
+                        OldOnSaveTrampoline(input, output, token, null);
+                    }
                 }
                 else
                 {
-                    OnSave(input, output, token, callback);
+                    try
+                    {
+                        OnSave(input, output, token, scratchSurface, callback);
+                    }
+
+                    catch (OnSaveNotImplementedException)
+                    {
+                        OldOnSaveTrampoline(input, output, token, callback);
+                    }
+                }
+
+                if (disposeMe != null)
+                {
+                    disposeMe.Dispose();
+                    disposeMe = null;
                 }
             }
         }
 
-        protected abstract void OnSave(Document input, Stream output, SaveConfigToken token, ProgressEventHandler callback);
+        private sealed class OnSaveNotImplementedException
+            : Exception
+        {
+            public OnSaveNotImplementedException(string message)
+                : base(message)
+            {
+            }
+        }
+
+        /// <summary>
+        /// Because the old OnSave() method is obsolete, we must use reflection to call it.
+        /// This is important for legacy FileType plugins. It allows us to ensure that no
+        /// new plugins can be compiled using the old OnSave() overload.
+        /// </summary>
+        private void OldOnSaveTrampoline(Document input, Stream output, SaveConfigToken token, ProgressEventHandler callback)
+        {
+            MethodInfo onSave = GetType().GetMethod(
+                "OnSave",
+                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy,
+                Type.DefaultBinder,
+                new Type[] 
+                { 
+                    typeof(Document), 
+                    typeof(Stream), 
+                    typeof(SaveConfigToken), 
+                    typeof(ProgressEventHandler)
+                },
+                null);
+
+            onSave.Invoke(
+                this,
+                new object[]
+                {
+                    input,
+                    output,
+                    token,
+                    callback
+                });
+        }
+
+        [Obsolete("Use the other OnSave() overload. It provides a scratch rendering surface that may enable your plugin to conserve memory usage.")]
+        protected virtual void OnSave(Document input, Stream output, SaveConfigToken token, ProgressEventHandler callback)
+        {
+        }
+
+        protected virtual void OnSave(Document input, Stream output, SaveConfigToken token, Surface scratchSurface, ProgressEventHandler callback)
+        {
+            throw new OnSaveNotImplementedException("Derived classes must implement this method. It is virtual instead of abstract in order to maintain compatibility with legacy plugins.");
+        }
 
         /// <summary>
         /// Determines if saving with a given SaveConfigToken would alter the image
@@ -213,7 +344,7 @@ namespace PaintDotNet
         /// Any lossy codec should return 'false'.
         /// This value is used to optimizing preview rendering memory usage, and as such
         /// flattening should not be taken in to consideration. For example, the codec
-        /// for PNG returns true.
+        /// for PNG returns true, even though it flattens the image.
         /// </summary>
         /// <param name="token">The SaveConfigToken to determine reflexiveness for.</param>
         /// <returns>true if the save would be reflexive, false if not</returns>
@@ -297,8 +428,7 @@ namespace PaintDotNet
         }
 
         /// <summary>
-        /// Creates a SaveConfigToken for this FileType populated with defaults appropriate
-        /// for the given Document.
+        /// Creates a SaveConfigToken for this FileType with the default values.
         /// </summary>
         protected virtual SaveConfigToken OnCreateDefaultSaveConfigToken()
         {
@@ -326,12 +456,12 @@ namespace PaintDotNet
                 return false;
             }
 
-            return this.Name.Equals(((FileType)obj).Name);
+            return this.name.Equals(((FileType)obj).Name);
         }
 
         public override int GetHashCode()
         {
-            return this.Name.GetHashCode();
+            return this.name.GetHashCode();
         }
 
         /// <summary>

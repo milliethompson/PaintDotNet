@@ -1,1 +1,1 @@
-See: setup/License.rtf
+See: Resources/Files/License.txt

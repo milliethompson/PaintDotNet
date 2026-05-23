@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -82,6 +82,11 @@ namespace PaintDotNet.SystemLayer
             else
             {
                 this.value = (byte[])value.Clone();
+            }
+
+            if (len != this.value.Length)
+            {
+                Tracing.Ping("len != value.Length: id=" + id + ", type=" + type);
             }
         }
 
@@ -169,7 +174,7 @@ namespace PaintDotNet.SystemLayer
             if (propertyItemImage == null)
             {
                 Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("PaintDotNet.SystemLayer.PropertyItem.png");
-                propertyItemImage = PdnResources.LoadImage(stream); //Image.FromStream(stream);
+                propertyItemImage = Image.FromStream(stream);
             }
 
             PropertyItem pi = propertyItemImage.PropertyItems[0];

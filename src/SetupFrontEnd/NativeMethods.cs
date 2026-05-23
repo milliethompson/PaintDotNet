@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -12,9 +12,6 @@ using System.Runtime.InteropServices;
 
 namespace PaintDotNet.Setup
 {
-    /// <summary>
-    /// Summary description for NativeMethods.
-    /// </summary>
     internal sealed class NativeMethods
     {
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -57,11 +54,6 @@ namespace PaintDotNet.Setup
 
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern IntPtr LocalFree(IntPtr hMem);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern void GetNativeSystemInfo(
-          ref NativeStructs.SYSTEM_INFO lpSystemInfo
-        );
 
         [DllImport("msi.dll", CharSet = CharSet.Unicode)]
         internal static extern uint MsiDatabaseOpenViewW(
@@ -193,19 +185,6 @@ namespace PaintDotNet.Setup
             Marshal.FreeBSTR(bstr);
             return path2;
         }
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool VerifyVersionInfo(
-            ref NativeStructs.OSVERSIONINFOEX lpVersionInfo,
-            uint dwTypeMask,
-            ulong dwlConditionMask);
-
-        [DllImport("kernel32.dll")]
-        internal static extern ulong VerSetConditionMask(
-            ulong dwlConditionMask,
-            uint dwTypeBitMask,
-            byte dwConditionMask);
 
         private NativeMethods()
         {

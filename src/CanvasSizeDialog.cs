@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -16,9 +16,9 @@ using System.Windows.Forms;
 namespace PaintDotNet
 {
     public class CanvasSizeDialog 
-        : PaintDotNet.ResizeDialog
+        : ResizeDialog
     {
-        private EnumWrapper anchorEdgeNames = EnumWrapper.Create(typeof(AnchorEdge));
+        private EnumLocalizer anchorEdgeNames = EnumLocalizer.Create(typeof(AnchorEdge));
         private AnchorChooserControl anchorChooserControl;
         private System.Windows.Forms.Label newSpaceLabel;
         private PaintDotNet.HeaderLabel anchorHeader;
@@ -328,11 +328,11 @@ namespace PaintDotNet
             this.Controls.SetChildIndex(this.pixelHeightUpDown, 0);
             this.Controls.SetChildIndex(this.pixelWidthUpDown, 0);
             this.Controls.SetChildIndex(this.anchorChooserControl, 0);
-            this.Controls.SetChildIndex(this.percentUpDown, 0);
             this.Controls.SetChildIndex(this.constrainCheckBox, 0);
             this.Controls.SetChildIndex(this.resamplingAlgorithmComboBox, 0);
             this.Controls.SetChildIndex(this.percentRB, 0);
             this.Controls.SetChildIndex(this.absoluteRB, 0);
+            this.Controls.SetChildIndex(this.percentUpDown, 0);
             this.Controls.SetChildIndex(this.anchorHeader, 0);
             this.Controls.SetChildIndex(this.anchorEdgeCB, 0);
             this.Controls.SetChildIndex(this.okButton, 0);

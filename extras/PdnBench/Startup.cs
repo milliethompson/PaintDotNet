@@ -1,9 +1,11 @@
 #define EFFECTS
 #define RESIZE
+#define GRADIENT
 #define COMPOSITION
 #define TRANSFORM
 #define BLIT
 
+using Microsoft.Win32;
 using PaintDotNet;
 using PaintDotNet.Effects;
 using PaintDotNet.SystemLayer;
@@ -14,7 +16,6 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
 
 namespace PdnBench
 {
@@ -33,6 +34,32 @@ namespace PdnBench
             Console.WriteLine("    /proc <N>      : set number of 'logical' processors to use");
             Console.WriteLine("    /tsv           : output in tab-separated-value format, easy to import into excel");
             Console.WriteLine();
+        }
+
+        static int GetCpuSpeed()
+        {
+            int mhz = -1;
+            string keyName = @"HARDWARE\DESCRIPTION\System\CentralProcessor\0";
+            string valueName = @"~MHz";
+
+            try
+            {
+                using (RegistryKey key = Registry.LocalMachine.OpenSubKey(keyName, false))
+                {
+                    if (key != null)
+                    {
+                        object value = key.GetValue(valueName);
+                        mhz = (int)value;
+                    }
+                }
+            }
+
+            catch (Exception)
+            {
+                mhz = -1;
+            }
+
+            return mhz;
         }
 
         /// <summary>
@@ -98,14 +125,18 @@ namespace PdnBench
                 }
             }
 
-            Console.WriteLine("PdnBench v" + Application.ProductVersion);
-            Console.WriteLine("Running in " + (8 * Marshal.SizeOf(typeof(IntPtr))) + "-bit mode on " + 
-                Processor.NativeArchitecture.ToString().ToLower() + " OS");
-            Console.WriteLine("Processor: " + Processor.LogicalCpuCount + "x " + Processor.CpuName);
+            //Processor.LogicalCpuCount = 1;
+            Console.WriteLine("PdnBench v" + PdnInfo.GetVersion());
+            Console.WriteLine("Running in " + (8 * Marshal.SizeOf(typeof(IntPtr))) + "-bit mode on Windows " +
+                Environment.OSVersion.Version.ToString() + " " +
+                OS.Revision + (OS.Revision.Length > 0 ? " " : string.Empty) +
+                OS.Type + " " +
+                Processor.NativeArchitecture.ToString().ToLower());
+
+            Console.WriteLine("Processor: " + Processor.LogicalCpuCount + "x \"" + Processor.CpuName + "\" @ ~" + GetCpuSpeed() + " MHz");
             Console.WriteLine("Memory: " + ((Memory.TotalPhysicalBytes / 1024) / 1024) + " MB");
             Console.WriteLine();
 
-            //Processor.LogicalCpuCount = 1;
             Console.WriteLine("Using " + Processor.LogicalCpuCount + " threads.");
 
             ArrayList benchmarks = new ArrayList();
@@ -135,8 +166,6 @@ namespace PdnBench
 
             Console.WriteLine("(" + document.Width + " x " + document.Height + ") done");
 
-            Console.Write("Generating benchmarks ... ");
-
             Surface surface = ((BitmapLayer)document.Layers[0]).Surface;
 
 #if EFFECTS
@@ -144,6 +173,7 @@ namespace PdnBench
             {
                 benchmarks.Add(
                     new EffectBenchmark("Rotate/Zoom at " + ((i * 180.0) / Math.PI).ToString("F2") + " degrees",
+                    3,
                     new PaintDotNet.Effects.RotateZoomEffect(),
                     new PaintDotNet.Effects.RotateZoomEffectConfigToken(
                         true,
@@ -162,7 +192,9 @@ namespace PdnBench
                 for (int j = 10; j < 100; j += 75)
                 {
                     benchmarks.Add(
-                        new EffectBenchmark("Oil Painting, brush size = " + i + ", coarseness = " + j,
+                        new EffectBenchmark(
+                            "Oil Painting, brush size = " + i + ", coarseness = " + j,
+                            1,
                             new OilPaintingEffect(),
                             new TwoAmountsConfigToken(i, j),
                             surface));
@@ -172,7 +204,9 @@ namespace PdnBench
             for (int i = 2; i <= 50; i += i)
             {
                 benchmarks.Add(
-                    new EffectBenchmark("Blur with radius of " + i,
+                    new EffectBenchmark(
+                        "Blur with radius of " + i,
+                        1,
                         new BlurEffect(),
                         new AmountEffectConfigToken(i),
                         surface));
@@ -181,17 +215,71 @@ namespace PdnBench
             for (int i = 1; i <= 4; i += 3)
             {
                 benchmarks.Add(
-                    new EffectBenchmark("Sharpen with value of " + i,
+                    new EffectBenchmark(
+                        "Sharpen with value of " + i,
+                        1,
                         new SharpenEffect(),
                         new AmountEffectConfigToken(i),
                         surface));
             }
 
             benchmarks.Add(
-                new EffectBenchmark("Auto-Levels",
-                    new AutoLevel(),
+                new EffectBenchmark(
+                    "Auto-Levels",
+                    50,
+                    new AutoLevelEffect(),
                     null,
                     surface));
+
+            for (int i = 81; i >= 5; i /= 3)
+            {
+                benchmarks.Add(
+                    new EffectBenchmark(
+                        "Clouds, roughness = " + i,
+                        2,
+                        new CloudsEffect(),
+                        new CloudsEffectConfigToken(50, i, 12345, new UserBlendOps.NormalBlendOp()),
+                        surface));
+            }
+
+            for (int i = 4; i <= 64; i *= 4)
+            {
+                benchmarks.Add(
+                    new EffectBenchmark(
+                        "Median, radius " + i,
+                        1,
+                        new MedianEffect(),
+                        new TwoAmountsConfigToken(/*radius*/i, /*roughness*/50),
+                        surface));
+            }
+
+            for (int i = 4; i <= 64; i *= 4)
+            {
+                benchmarks.Add(
+                   new EffectBenchmark(
+                       "Unfocus, radius " + i,
+                       1,
+                       new UnfocusEffect(),
+                       new AmountEffectConfigToken(i),
+                        surface));
+            }
+
+            benchmarks.Add(
+                new EffectBenchmark(
+                    "Motion Blur, Horizontal",
+                    1,
+                    new MotionBlurEffect(),
+                    new MotionBlurEffectConfigToken(0, 100, true),
+                        surface));
+
+            benchmarks.Add(
+                new EffectBenchmark(
+                    "Motion Blur, Vertical",
+                    1,
+                    new MotionBlurEffect(),
+                    new MotionBlurEffectConfigToken(90, 100, true),
+                        surface));
+
 #endif
 
             Surface dst = new Surface(surface.Width * 4, surface.Height * 4);
@@ -207,6 +295,27 @@ namespace PdnBench
                 benchmarks.Add(new ResizeBenchmark("Resize from " + surface.Width + "x" + surface.Height + " to " + newWidth + "x" + newHeight, surface, dstWindow));
                 benchmarks.Add(new ResizeBenchmark("Resize from " + newWidth + "x" + newHeight + " to " + surface.Width + "x" + surface.Height, dstWindow, surface));
             }
+#endif
+
+#if GRADIENT
+            // Gradient benchmarks
+            benchmarks.Add(new GradientBenchmark(
+                "Linear reflected gradient @ " + dst.Width + "x" + dst.Height + " (5x)",
+                dst,
+                new GradientRenderers.LinearReflected(false, new UserBlendOps.NormalBlendOp()),
+                2));
+
+            benchmarks.Add(new GradientBenchmark(
+                "Conical gradient @ " + dst.Width + "x" + dst.Height + " (5x)",
+                dst,
+                new GradientRenderers.Conical(false, new UserBlendOps.NormalBlendOp()),
+                2));
+
+            benchmarks.Add(new GradientBenchmark(
+                "Radial gradient @ " + dst.Width + "x" + dst.Height + " (5x)",
+                dst,
+                new GradientRenderers.Radial(false, new UserBlendOps.NormalBlendOp()),
+                2));
 #endif
 
 #if COMPOSITION
@@ -407,16 +516,8 @@ namespace PdnBench
                 dst.CreateWindow(new Rectangle(0, 0, surface.Width, surface.Height))));
 #endif
 
-            Console.WriteLine("done");
-
             // Run benchmarks!
             Timing timing = new Timing();
-            ((Benchmark)benchmarks[0]).Execute(); // warm up the thread pool
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-
             ulong start = timing.GetTickCount();
 
             foreach (Benchmark benchmark in benchmarks)

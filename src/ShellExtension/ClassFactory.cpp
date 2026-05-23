@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 #pragma warning (disable: 4530)
@@ -13,13 +13,11 @@
 #include "PdnGuid.h"
 #include "PdnShellExtension.h"
 
-
 CClassFactory::CClassFactory(CLSID clsid)
 {
     Constructor(clsid);
     return;
 }
-
 
 void CClassFactory::Constructor(CLSID clsid)
 {
@@ -29,20 +27,17 @@ void CClassFactory::Constructor(CLSID clsid)
     return;
 }
 
-
 CClassFactory::~CClassFactory(void)
 {
     Destructor();
     return;
 }
 
-
 void CClassFactory::Destructor(void)
 {
     InterlockedDecrement (&g_lRefCount);
     return;
 }
-
 
 STDMETHODIMP CClassFactory::QueryInterface(REFIID riid, LPVOID *ppReturn)
 {
@@ -70,12 +65,10 @@ STDMETHODIMP CClassFactory::QueryInterface(REFIID riid, LPVOID *ppReturn)
     return E_NOINTERFACE;
 }
 
-
 STDMETHODIMP_(DWORD) CClassFactory::AddRef()
 {
     return InterlockedIncrement(&m_lRefCount);
 }
-
 
 STDMETHODIMP_(DWORD) CClassFactory::Release()
 {
@@ -91,7 +84,6 @@ STDMETHODIMP_(DWORD) CClassFactory::Release()
         return dwNewRC;
     }
 }
-
 
 STDMETHODIMP CClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppvObject)
 {
@@ -137,7 +129,6 @@ STDMETHODIMP CClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, voi
     TraceLeaveHr(hr);
     return hr;
 }
-
 
 STDMETHODIMP CClassFactory::LockServer(BOOL fLock)
 {

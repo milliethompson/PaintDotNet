@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 #pragma warning (disable: 4530)
@@ -87,19 +87,16 @@ STDMETHODIMP CPdnShellExtension::QueryInterface(REFIID iid, void **ppvObject)
         {
             *ppvObject = this;
         }
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        if (NULL != *ppvObject)
-        {
-            (*(IUnknown **)ppvObject)->AddRef();
-            hr = S_OK;
-        }
         else
         {
             hr = E_NOINTERFACE;
         }
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        (*(IUnknown **)ppvObject)->AddRef();
+        hr = S_OK;
     }
 
     TraceLeaveHr(hr);
@@ -155,11 +152,11 @@ STDMETHODIMP CPdnShellExtension::Load(LPCOLESTR pszFileName,
 
         if (NULL == m_bstrFileName)
         {
-            return E_OUTOFMEMORY;
+            hr = E_OUTOFMEMORY;
         }
         else
         {
-            return S_OK;
+            hr = S_OK;
         }
     }
 
@@ -262,6 +259,34 @@ static HRESULT ReadFileComplete(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBy
     return hr;
 }
 
+
+static SIZE ComputeThumbnailSize(int originalWidth, int originalHeight, int maxEdgeLength)
+{
+    SIZE thumbSize;
+    ZeroMemory(&thumbSize, sizeof(thumbSize));
+
+    if (originalWidth > originalHeight)
+    {
+        int longSide = min(originalWidth, maxEdgeLength);
+        thumbSize.cx = longSide;
+        thumbSize.cy = max(1, (originalHeight * longSide) / originalWidth);
+    }
+    else if (originalHeight > originalWidth)
+    {
+        int longSide = min(originalHeight, maxEdgeLength);
+        thumbSize.cx = max(1, (originalWidth * longSide) / originalHeight);
+        thumbSize.cy = longSide;
+    }
+    else // if (docSize.Width == docSize.Height)
+    {
+        int longSide = min(originalWidth, maxEdgeLength);
+        thumbSize.cx = longSide;
+        thumbSize.cy = longSide;
+    }
+
+    return thumbSize;
+}
+
 STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
 {
     HRESULT hr = S_OK;
@@ -281,7 +306,14 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
         DWORD dwFlagsAndAttributes = FILE_FLAG_SEQUENTIAL_SCAN;
         HANDLE hTemplateFile = NULL;
 
-        hFile = CreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+        hFile = CreateFileW(
+            lpFileName, 
+            dwDesiredAccess, 
+            dwShareMode, 
+            lpSecurityAttributes, 
+            dwCreationDisposition, 
+            dwFlagsAndAttributes, 
+            hTemplateFile);
 
         if (INVALID_HANDLE_VALUE == hFile)
         {
@@ -391,21 +423,37 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        TraceOut("Search for \"gif=\"");
+        TraceOut("Search for \"png=\" or \"gif=\"");
+        const char *szPngTag = "png=\"";
         const char *szGifTag = "gif=\"";
-        __int64 iGifTagIndex = -1;
+        const char *szImgTag = NULL; // the tag that we found
+
+        __int64 iImgTagIndex = -1;
         if (SUCCEEDED(hr))
         {
-            CHAR *szFoundHere = strstr(szHeader + iThumbTagIndex + strlen(szThumbTag), szGifTag);
+            CHAR *szPngFoundHere = strstr(szHeader + iThumbTagIndex + strlen(szThumbTag), szPngTag);
 
-            if (NULL == szFoundHere)
+            if (NULL == szPngFoundHere)
             {
-                TraceOut("Did not find gif tag, \"%s\"", szGifTag);
-                hr = E_UNEXPECTED;
+                TraceOut("Did not find png tag, \"%s\"", szPngTag);
+
+                CHAR *szGifFoundHere = strstr(szHeader + iThumbTagIndex + strlen(szThumbTag), szGifTag);
+
+                if (NULL == szGifFoundHere)
+                {
+                    TraceOut("Did not find gif tag, \"%s\"", szGifTag);
+                    hr = E_UNEXPECTED;
+                }
+                else
+                {
+                    szImgTag = szGifTag;
+                    iImgTagIndex = szGifFoundHere - szHeader;
+                }
             }
             else
             {
-                iGifTagIndex = szFoundHere - szHeader;
+                szImgTag = szPngTag;
+                iImgTagIndex = szPngFoundHere - szHeader;
             }
         }
 
@@ -414,7 +462,7 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
         __int64 iQuoteEndIndex = -1;
         if (SUCCEEDED(hr))
         {
-            CHAR *szFoundHere = strstr(szHeader + iGifTagIndex + strlen(szGifTag), szQuoteEnd);
+            CHAR *szFoundHere = strstr(szHeader + iImgTagIndex + strlen(szImgTag), szQuoteEnd);
 
             if (NULL == szFoundHere)
             {
@@ -427,47 +475,49 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        TraceOut("Stomp out the portion of the string that is the GIF in base64 format");
-        CHAR *szGifBase64 = NULL;
-        int iGifBase64Len = -1;
+        TraceOut("Stomp out the portion of the string that is the image in base64 format");
+        CHAR *szImgBase64 = NULL;
+        int iImgBase64Len = -1;
         if (SUCCEEDED(hr))
         {
-            szGifBase64 = szHeader + iGifTagIndex + strlen(szGifTag);
+            szImgBase64 = szHeader + iImgTagIndex + strlen(szImgTag);
             szHeader[iQuoteEndIndex] = '\0';
-            iGifBase64Len = (int)strlen(szGifBase64);
+            iImgBase64Len = (int)strlen(szImgBase64);
+            TraceOut("iImgBase64Len=%d", iImgBase64Len);
         }
 
         TraceOut("Get required length of byte[] array for base64->byte[] conversion");
-        int nGifBytes = -1;
+        int nImgBytes = -1;
         if (SUCCEEDED(hr))
         {
-            nGifBytes = Base64DecodeGetRequiredLength(iGifBase64Len);
+            nImgBytes = Base64DecodeGetRequiredLength(iImgBase64Len);
+            TraceOut("nImgBytes=%d", nImgBytes);
         }
 
-        TraceOut("Allocate byte buffer for base64->byte[] conversion");
-        BYTE *pbGifBytes = NULL;
+        TraceOut("Allocate %d byte buffer for base64->byte[] conversion", nImgBytes);
+        BYTE *pbImgBytes = NULL;
         if (SUCCEEDED(hr))
         {
-            pbGifBytes = new BYTE[nGifBytes];
+            pbImgBytes = new BYTE[nImgBytes];
 
-            if (NULL == pbGifBytes)
+            if (NULL == pbImgBytes)
             {
                 hr = E_OUTOFMEMORY;
-                TraceOut("pbGifBytes alloc failed");
+                TraceOut("pbImgBytes alloc failed");
             }
             else
             {
-                ZeroMemory(pbGifBytes, nGifBytes);
+                ZeroMemory(pbImgBytes, nImgBytes);
             }
         }
 
         TraceOut("Convert from base64 to byte[]");
-        int iGifLen = -1;
+        int iImgLen = -1;
         if (SUCCEEDED(hr))
         {
-            int nDestLen = iGifBase64Len;
+            int nDestLen = iImgBase64Len;
 
-            bResult = Base64Decode(szGifBase64, iGifBase64Len, pbGifBytes, &nDestLen);
+            bResult = Base64Decode(szImgBase64, iImgBase64Len, pbImgBytes, &nDestLen);
 
             if (!bResult)
             {
@@ -476,15 +526,16 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
             else
             {
-                iGifLen = nDestLen;
+                iImgLen = nDestLen;
             }
         }
 
+        TraceOut("iImgLen = %d", iImgLen);
         TraceOut("Wrap a memory stream around it");
         CMemoryStream *pMemoryStream = NULL;
         if (SUCCEEDED(hr))
         {
-            pMemoryStream = new CMemoryStream(pbGifBytes, iGifLen + 1);
+            pMemoryStream = new CMemoryStream(pbImgBytes, iImgLen);
 
             if (NULL == pMemoryStream)
             {
@@ -511,11 +562,11 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
-        TraceOut("Load GIF");
+        TraceOut("Load image");
         Bitmap *pBitmap = NULL;        
         if (SUCCEEDED(hr))
         {
-            pBitmap = Bitmap::FromStream((IStream *)pMemoryStream);
+            pBitmap = Bitmap::FromStream(pMemoryStream, FALSE);
 
             if (NULL == pBitmap)
             {
@@ -524,20 +575,84 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             }
         }
 
+        Bitmap *pResizedBitmap = NULL;
+        if (SUCCEEDED(hr))
+        {
+            if (m_size.cx > 0 && m_size.cy > 0)
+            {
+                UINT nMaxEdge = min(m_size.cx, m_size.cy);
+                SIZE newSize = ComputeThumbnailSize(pBitmap->GetWidth(), pBitmap->GetHeight(), nMaxEdge);
+                UINT nNewWidth = newSize.cx;
+                UINT nNewHeight = newSize.cy;
+
+                if (SUCCEEDED(hr))
+                {
+                    pResizedBitmap = new Bitmap(nNewWidth, nNewHeight, PixelFormat32bppARGB);
+
+                    if (NULL == pResizedBitmap)
+                    {
+                        hr = E_OUTOFMEMORY;
+                    }
+                }
+
+                Graphics *pG = NULL;
+                if (SUCCEEDED(hr))
+                {
+                    pG = Graphics::FromImage(pResizedBitmap);
+
+                    if (NULL == pG)
+                    {
+                        hr = E_OUTOFMEMORY;
+                    }
+                }
+
+                if (SUCCEEDED(hr))
+                {
+                    pG->SetInterpolationMode(InterpolationModeBicubic);
+
+                    pG->SetPixelOffsetMode(PixelOffsetModeHalf);
+
+                    pG->Clear(Color::Transparent);
+
+                    pG->DrawImage(
+                        pBitmap, 
+                        RectF((REAL)0, (REAL)0, (REAL)pResizedBitmap->GetWidth(), (REAL)pResizedBitmap->GetHeight()),
+                        (REAL)0,
+                        (REAL)0,
+                        (REAL)pBitmap->GetWidth(),
+                        (REAL)pBitmap->GetHeight(),
+                        UnitPixel);
+                }
+
+                if (NULL != pG)
+                {
+                    delete pG;
+                    pG = NULL;
+                }
+            }
+            else
+            {
+                pResizedBitmap = pBitmap->Clone(Rect(0, 0, pBitmap->GetWidth(), pBitmap->GetHeight()), pBitmap->GetPixelFormat());
+
+                if (NULL == pResizedBitmap)
+                {
+                    hr = E_OUTOFMEMORY;
+                }
+            }
+        }
+
+        if (NULL != pBitmap)
+        {
+            delete pBitmap;
+            pBitmap = NULL;
+        }
+
         TraceOut("Get HBITMAP from it");
         HBITMAP hBitmap = NULL;
         if (SUCCEEDED(hr))
         {
-            UINT width = pBitmap->GetWidth();
-            UINT height = pBitmap->GetHeight();
-            PixelFormat pf = pBitmap->GetPixelFormat();
-
-            TraceOut("HACK: if we don't do this, we get a Win32Error when we do GetHBITMAP ...");
-            TraceOut("       ... which is odd because this call returns Win32Error.");
-            Color color;
-            Status status1 = pBitmap->GetPixel(width - 1, height - 1, &color);
-
-            Status status = pBitmap->GetHBITMAP(Color(0), &hBitmap);
+            Status status = pResizedBitmap->GetHBITMAP(Color(0), &hBitmap);
+            TraceOut("status=%d", status);
 
             if (Ok != status)
             {
@@ -545,10 +660,11 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
                 {
                     dwError = GetLastError();
                     hr = HRESULT_FROM_WIN32(dwError);
-                    TraceOut("pBitmap->GetHBITMAP failed, hr=0x%x", hr);
+                    TraceOut("pResizedBitmap->GetHBITMAP failed, hr=0x%x", hr);
                 }
                 else
                 {
+                    TraceOut("pResizedBitmap->GetHBITMAP failed, not Win32Error, hr is now = E_FAIL");
                     hr = E_FAIL;
                 }
             }
@@ -561,10 +677,10 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
         }
 
         TraceOut("Cleanup");
-        if (NULL != pBitmap)
+        if (NULL != pResizedBitmap)
         {
-            delete pBitmap;
-            pBitmap = NULL;
+            delete pResizedBitmap;
+            pResizedBitmap = NULL;
         }
 
         if (NULL != pGdiToken)
@@ -585,10 +701,10 @@ STDMETHODIMP CPdnShellExtension::Extract(HBITMAP *phBmpImage)
             pbHeaderBytes = NULL;
         }
 
-        if (NULL != pbGifBytes)
+        if (NULL != pbImgBytes)
         {
-            delete [] pbGifBytes;
-            pbGifBytes = NULL;
+            delete [] pbImgBytes;
+            pbImgBytes = NULL;
         }
     }
 
@@ -658,17 +774,20 @@ STDMETHODIMP CPdnShellExtension::GetLocation(LPWSTR pszPathBuffer,
         }
     }
 
+    TraceOut("*pdwFlags = %u", *pdwFlags);
     TraceOut("prgSize=%d x %d", prgSize->cx, prgSize->cy);
 
     if (SUCCEEDED(hr))
     {
         wcscpy_s(pszPathBuffer, cchMax, m_bstrFileName);
 
-        *pdwPriority = 1;
+        *pdwPriority = IEIT_PRIORITY_NORMAL;
 
-        if (*pdwFlags & IEIFLAG_ASPECT)
+        if ((*pdwFlags & IEIFLAG_ASPECT) ||
+            (*pdwFlags & IEIFLAG_ORIGSIZE))
         {
             m_size = *prgSize;
+            TraceOut("m_size = %d x %d", m_size.cx, m_size.cy);
         }
         else
         {

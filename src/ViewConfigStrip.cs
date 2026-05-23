@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -20,11 +20,11 @@ namespace PaintDotNet
         : ToolStripEx
     {
         private string windowText;
-        private string selectionText;
         private string percentageFormat;
+        private ToolStripSeparator separator0;
         private ScaleFactor scaleFactor;
-        private ToolStripButton zoomInButton;
         private ToolStripButton zoomOutButton;
+        private ToolStripButton zoomInButton;
         private ToolStripComboBox zoomComboBox;
         private ToolStripSeparator separator1;
         private ToolStripButton gridButton;
@@ -63,14 +63,14 @@ namespace PaintDotNet
             {
                 return this.zoomBasis;
             }
+
             set
             {
-                this.zoomBasis = value;
-
-                // Call OnZoomBasisChanged regardless of whether or not this is actually
-                // a new value. If this is not done, the document will not be re-fitted
-                // when this is assigned, as expected (Such as in MainForm's DoOpenFile)
-                OnZoomBasisChanged();
+                if (this.zoomBasis != value)
+                {
+                    this.zoomBasis = value;
+                    OnZoomBasisChanged();
+                }
             }
         }
 
@@ -153,10 +153,8 @@ namespace PaintDotNet
         {
             this.SuspendLayout();
             InitializeComponent();
-            this.ResumeLayout(false);
 
-            this.windowText = EnumWrapper.EnumValueToLocalizedName(typeof(ZoomBasis), ZoomBasis.Window);
-            this.selectionText = EnumWrapper.EnumValueToLocalizedName(typeof(ZoomBasis), ZoomBasis.Selection);
+            this.windowText = EnumLocalizer.EnumValueToLocalizedName(typeof(ZoomBasis), ZoomBasis.FitToWindow);
             this.percentageFormat = PdnResources.GetString("ZoomConfigWidget.Percentage.Format");
 
             double[] zoomValues = ScaleFactor.PresetValues;
@@ -186,27 +184,30 @@ namespace PaintDotNet
             this.zoomComboBox.Text = percent100;
             this.ScaleFactor = ScaleFactor.OneToOne;
 
-            this.zoomInButton.Image = PdnResources.GetImage("Icons.MenuViewZoomInIcon.png");
             this.zoomOutButton.Image = PdnResources.GetImage("Icons.MenuViewZoomOutIcon.png");
+            this.zoomInButton.Image = PdnResources.GetImage("Icons.MenuViewZoomInIcon.png");
             this.gridButton.Image = PdnResources.GetImage("Icons.MenuViewGridIcon.png");
             this.rulersButton.Image = PdnResources.GetImage("Icons.MenuViewRulersIcon.png");
 
-            this.zoomInButton.ToolTipText = PdnResources.GetString("ZoomConfigWidget.ZoomInButton.ToolTipText");
             this.zoomOutButton.ToolTipText = PdnResources.GetString("ZoomConfigWidget.ZoomOutButton.ToolTipText");
+            this.zoomInButton.ToolTipText = PdnResources.GetString("ZoomConfigWidget.ZoomInButton.ToolTipText");
             this.gridButton.ToolTipText = PdnResources.GetString("WorkspaceOptionsConfigWidget.DrawGridToggleButton.ToolTipText");
             this.rulersButton.ToolTipText = PdnResources.GetString("WorkspaceOptionsConfigWidget.RulersToggleButton.ToolTipText");
 
             this.unitsComboBox.Size = new Size(UI.ScaleWidth(this.unitsComboBox.Width), unitsComboBox.Height);
 
-            this.zoomBasis = ZoomBasis.Factor;
+            this.zoomBasis = ZoomBasis.ScaleFactor;
             ScaleFactor = ScaleFactor.OneToOne;
+
+            this.ResumeLayout(false);
         }
 
         private void InitializeComponent()
         {
-            this.zoomInButton = new ToolStripButton();
+            this.separator0 = new ToolStripSeparator();
             this.zoomOutButton = new ToolStripButton();
             this.zoomComboBox = new ToolStripComboBox();
+            this.zoomInButton = new ToolStripButton();
             this.separator1 = new ToolStripSeparator();
             this.gridButton = new ToolStripButton();
             this.rulersButton = new ToolStripButton();
@@ -214,27 +215,32 @@ namespace PaintDotNet
             this.unitsComboBox = new UnitsComboBoxStrip();
             this.SuspendLayout();
             //
+            // separator0
+            //
+            this.separator0.Name = "separator0";
+            //
             // zoomComboBox
             //
-            this.zoomComboBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.zoomComboBox_KeyPress);
-            this.zoomComboBox.Validating += new System.ComponentModel.CancelEventHandler(this.zoomComboBox_Validating);
-            this.zoomComboBox.SelectedIndexChanged += new System.EventHandler(this.zoomComboBox_SelectedIndexChanged);
+            this.zoomComboBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.ZoomComboBox_KeyPress);
+            this.zoomComboBox.Validating += new System.ComponentModel.CancelEventHandler(this.ZoomComboBox_Validating);
+            this.zoomComboBox.SelectedIndexChanged += new System.EventHandler(this.ZoomComboBox_SelectedIndexChanged);
             this.zoomComboBox.Size = new Size(75, this.zoomComboBox.Height);
             this.zoomComboBox.MaxDropDownItems = 99;
             //
             // unitsComboBox
             //
-            this.unitsComboBox.UnitsChanged += new EventHandler(unitsComboBox_UnitsChanged);
+            this.unitsComboBox.UnitsChanged += new EventHandler(UnitsComboBox_UnitsChanged);
             this.unitsComboBox.LowercaseStrings = false;
             this.unitsComboBox.UnitsDisplayType = UnitsDisplayType.Plural;
             this.unitsComboBox.Units = MeasurementUnit.Pixel;
-            this.unitsComboBox.Size = new Size(85, this.unitsComboBox.Height);
+            this.unitsComboBox.Size = new Size(90, this.unitsComboBox.Height);
             //
             // ViewConfigStrip
             //
-            this.Items.Add(this.zoomInButton);
+            this.Items.Add(this.separator0);
             this.Items.Add(this.zoomOutButton);
             this.Items.Add(this.zoomComboBox);
+            this.Items.Add(this.zoomInButton);
             this.Items.Add(this.separator1);
             this.Items.Add(this.gridButton);
             this.Items.Add(this.rulersButton);
@@ -243,7 +249,7 @@ namespace PaintDotNet
             this.ResumeLayout(false);
         }
 
-        void unitsComboBox_UnitsChanged(object sender, EventArgs e)
+        private void UnitsComboBox_UnitsChanged(object sender, EventArgs e)
         {
             this.OnUnitsChanged();
         }
@@ -257,15 +263,11 @@ namespace PaintDotNet
 
                 switch (zoomBasis)
                 {
-                    case ZoomBasis.Window:
+                    case ZoomBasis.FitToWindow:
                         newText = this.windowText;
                         break;
 
-                    case ZoomBasis.Selection:
-                        newText = this.selectionText;
-                        break;
-
-                    case ZoomBasis.Factor:
+                    case ZoomBasis.ScaleFactor:
                         newText = scaleFactor.ToString();
                         break;
                 }
@@ -308,7 +310,7 @@ namespace PaintDotNet
         public event EventHandler ZoomScaleChanged;
         private void OnZoomScaleChanged()
         {
-            if (zoomBasis == ZoomBasis.Factor)
+            if (zoomBasis == ZoomBasis.ScaleFactor)
             {
                 SetZoomText();
 
@@ -358,7 +360,7 @@ namespace PaintDotNet
             OnZoomScaleChanged();
         }
 
-        private void zoomComboBox_Validating(object sender, System.ComponentModel.CancelEventArgs e)
+        private void ZoomComboBox_Validating(object sender, System.ComponentModel.CancelEventArgs e)
         {
             try
             {
@@ -367,11 +369,7 @@ namespace PaintDotNet
 
                 if (zoomComboBox.Text == this.windowText)
                 {
-                    ZoomBasis = ZoomBasis.Window;
-                }
-                else if (zoomComboBox.Text == this.selectionText)
-                {
-                    ZoomBasis = ZoomBasis.Selection;
+                    ZoomBasis = ZoomBasis.FitToWindow;
                 }
                 else
                 {
@@ -395,7 +393,7 @@ namespace PaintDotNet
                             }
 
                             val = (int)Math.Round(double.Parse(text));
-                            ZoomBasis = ZoomBasis.Factor;
+                            ZoomBasis = ZoomBasis.ScaleFactor;
                         }
                     }
 
@@ -435,6 +433,9 @@ namespace PaintDotNet
                             this.zoomComboBox.ToolTipText = string.Empty;
                             this.zoomComboBox.BackColor = SystemColors.Window;
                             ScaleFactor = new ScaleFactor(val, 100);
+                            SuspendEvents();
+                            ZoomBasis = ZoomBasis.ScaleFactor;
+                            ResumeEvents();
                         }
                     }
                 }
@@ -445,19 +446,19 @@ namespace PaintDotNet
             }
         }
 
-        private void zoomComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        private void ZoomComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (this.suspendEvents == 0)
             {
-                zoomComboBox_Validating(sender, new CancelEventArgs(false));
+                ZoomComboBox_Validating(sender, new CancelEventArgs(false));
             }
         }
 
-        private void zoomComboBox_KeyPress(object sender, System.Windows.Forms.KeyPressEventArgs e)
+        private void ZoomComboBox_KeyPress(object sender, System.Windows.Forms.KeyPressEventArgs e)
         {
             if (e.KeyChar == '\n' || e.KeyChar == '\r')
             {
-                zoomComboBox_Validating(sender, new CancelEventArgs(false));
+                ZoomComboBox_Validating(sender, new CancelEventArgs(false));
                 zoomComboBox.Select(0, zoomComboBox.Text.Length);
             }
         }

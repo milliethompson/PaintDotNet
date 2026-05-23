@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -17,33 +17,31 @@ namespace PaintDotNet
     /// if desired). This can then be used to retrieve percentile, average, peak,
     /// and distribution information.
     /// </summary>
-    public class HistogramLuminosity : Histogram
+    public sealed class HistogramLuminosity 
+        : Histogram
     {
         public HistogramLuminosity()
             : base(1, 256)
         {
-            visualColors = new ColorBgra[]{     
-                                              ColorBgra.Black
-                                          };
+            this.visualColors = new ColorBgra[] { ColorBgra.Black };
         }
 
         public override ColorBgra GetMeanColor() 
         {
             float[] mean = GetMean();
-
             return ColorBgra.FromBgr((byte)(mean[0] + 0.5f), (byte)(mean[0] + 0.5f), (byte)(mean[0] + 0.5f));
         }
 
         public override ColorBgra GetPercentileColor(float fraction) 
         {
             int[] perc = GetPercentile(fraction);
-
             return ColorBgra.FromBgr((byte)(perc[0]), (byte)(perc[0]), (byte)(perc[0]));
         }
 
         protected override unsafe void AddSurfaceRectangleToHistogram(Surface surface, Rectangle rect)
         {
             long[] histogramLuminosity = histogram[0];
+
             for (int y = rect.Top; y < rect.Bottom; ++y)
             {
 

@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -13,41 +13,55 @@ using System.Runtime.InteropServices;
 
 namespace PaintDotNet.SystemLayer
 {
-    /// <summary>
-    /// Summary description for NativeMethods.
-    /// </summary>
-    internal sealed class NativeMethods
+    internal static class NativeMethods
     {
-        private NativeMethods()
-        {
-        }
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool VerifyVersionInfo(
+            ref NativeStructs.OSVERSIONINFOEX lpVersionInfo,
+            uint dwTypeMask,
+            ulong dwlConditionMask);
+
+        [DllImport("kernel32.dll")]
+        internal static extern ulong VerSetConditionMask(
+            ulong dwlConditionMask,
+            uint dwTypeBitMask,
+            byte dwConditionMask);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool DeviceIoControl(
+            IntPtr hDevice,
+            uint dwIoControlCode,
+            IntPtr lpInBuffer,
+            uint nInBufferSize,
+            IntPtr lpOutBuffer,
+            uint nOutBufferSize,
+            ref uint lpBytesReturned,
+            IntPtr lpOverlapped);
+
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool ShellExecuteExW(ref NativeStructs.SHELLEXECUTEINFO lpExecInfo);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool GlobalMemoryStatusEx(ref NativeStructs.MEMORYSTATUSEX lpBuffer);
 
-        [DllImport("shell32.dll")]
+        [DllImport("shell32.dll", SetLastError = false)]
         internal static extern void SHAddToRecentDocs(uint uFlags, IntPtr pv);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = false)]
         internal static extern void GetSystemInfo(ref NativeStructs.SYSTEM_INFO lpSystemInfo);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = false)]
         internal static extern void GetNativeSystemInfo(ref NativeStructs.SYSTEM_INFO lpSystemInfo);
 
-        [DllImport("Wintrust.dll", PreserveSig = true)]
+        [DllImport("Wintrust.dll", PreserveSig = true, SetLastError = false)]
         internal extern static unsafe int WinVerifyTrust(
             IntPtr hWnd,
             ref Guid pgActionID,
             ref NativeStructs.WINTRUST_DATA pWinTrustData
-            );
-
-        [DllImport("User32.dll")]
-        internal extern static unsafe uint SystemParametersInfo(
-            uint uiAction,
-            uint uiParam,
-            void *pvParam,
-            uint fWinIni
             );
 
         [DllImport("SetupApi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -76,11 +90,6 @@ namespace PaintDotNet.SystemLayer
             IntPtr DeviceInstanceId,
             uint DeviceInstanceIdSize,
             out uint RequiredSize);
-
-        internal static void ThrowOnWin32Error()
-        {
-            ThrowOnWin32Error(string.Empty);
-        }
 
         internal static void ThrowOnWin32Error(string message)
         {

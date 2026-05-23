@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -16,10 +16,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for AnchorChooserControl.
-    /// </summary>
-    public class AnchorChooserControl : System.Windows.Forms.UserControl
+    public class AnchorChooserControl 
+        : System.Windows.Forms.UserControl
     {
         /// <summary> 
         /// Required designer variable.
@@ -267,7 +265,7 @@ namespace PaintDotNet
             }
 
             linePen.Dispose();
-            base.OnPaint (e);
+            base.OnPaint(e);
         }
     }
 }

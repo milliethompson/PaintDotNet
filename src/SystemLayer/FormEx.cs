@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
@@ -22,7 +22,7 @@ namespace PaintDotNet.SystemLayer
     /// by the PdnBaseForm class. This way there is no inheritance hierarchy 
     /// extending into the SystemLayer assembly.
     /// </summary>
-    public class FormEx
+    public sealed class FormEx
         : Control
     {
         private Form host;
@@ -57,7 +57,56 @@ namespace PaintDotNet.SystemLayer
             this.realParentWndProc = realParentWndProc;
         }
 
-        private FormEx FindFormEx(Form host)
+        public class ProcessCmdKeyEventArgs
+            : EventArgs
+        {
+            private bool handled;
+            public bool Handled
+            {
+                get
+                {
+                    return this.handled;
+                }
+
+                set
+                {
+                    this.handled = value;
+                }
+            }
+
+            private Keys keyData;
+            public Keys KeyData
+            {
+                get
+                {
+                    return this.keyData;
+                }
+            }
+
+            public ProcessCmdKeyEventArgs(Keys keyData, bool handled)
+            {
+                this.keyData = keyData;
+                this.handled = handled;
+            }
+        }
+
+        public event EventHandler<ProcessCmdKeyEventArgs> ProcessCmdKeyRelay;
+
+        public bool RelayProcessCmdKey(Keys keyData)
+        {
+            bool handled = false;
+
+            if (ProcessCmdKeyRelay != null)
+            {
+                ProcessCmdKeyEventArgs e = new ProcessCmdKeyEventArgs(keyData, false);
+                ProcessCmdKeyRelay(this, e);
+                handled = e.Handled;
+            }
+
+            return handled;
+        }
+
+        internal static FormEx FindFormEx(Form host)
         {
             if (host != null)
             {
@@ -76,77 +125,6 @@ namespace PaintDotNet.SystemLayer
 
             return null;
         }
-
-        /*
-        /// <summary>
-        /// This method is called to recursively enable visual style support on the form.
-        /// Normally this is called during OnLoad but you can override this method to
-        /// disable that and defer style support initialization until later.
-        /// All this method does is call EnableStyles(this).
-        /// </summary>
-        public virtual void EnableStyles()
-        {
-            EnableStyles(this.host);
-        }
-
-        /// <summary>
-        /// This method is used to make sure everything is rendered using XP Themes.
-        /// Important when running with .NET 1.1.
-        /// </summary>
-        /// <param name="control"></param>
-        public void EnableStyles(Control control)
-        {
-            // This terrible nesting is necessary to limit ourself to 1 typecast per test
-            ButtonBase buttonBase = control as ButtonBase;
-
-            if (buttonBase != null)
-            {
-                buttonBase.FlatStyle = FlatStyle.System;
-                UI.SetMultilineStyle(buttonBase, false);
-            }
-            else
-            {
-                GroupBox groupBox = control as GroupBox;
-
-                if (groupBox != null)
-                {
-                    groupBox.FlatStyle = FlatStyle.System;
-                }
-                else
-                {
-                    NumericUpDown numericUpDown = control as NumericUpDown;
-
-                    if (numericUpDown != null)
-                    {
-                        EnableVisualStyleSupport(numericUpDown);
-                    }
-                }
-            }
-
-            foreach (Control c in control.Controls)
-            {
-                EnableStyles(c);
-            }
-        }
-
-        private void EnableVisualStyleSupport(Control control)
-        {
-            VisualStyleProvider.SetVisualStyleSupport(control, true);
-        }
-        
-        private Skybound.VisualStyles.VisualStyleProvider VisualStyleProvider
-        {
-            get
-            {
-                if (visualStyleProvider == null)
-                {
-                    visualStyleProvider = new Skybound.VisualStyles.VisualStyleProvider();
-                }
-
-                return (Skybound.VisualStyles.VisualStyleProvider)visualStyleProvider;
-            }
-        }
-         * */
 
         private int ignoreNcActivate = 0;
 

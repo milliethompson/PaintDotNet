@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 // Original C++ implementation by Jason Waltman as part of "Filter Explorer," 
@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    public class FrostedGlassEffect
+    public sealed class FrostedGlassEffect
         : Effect
     {
         public static string StaticName
@@ -42,7 +42,6 @@ namespace PaintDotNet.Effects
         public FrostedGlassEffect() 
             : base(StaticName, 
                    StaticImage,
-                   Keys.None,
                    null,
                    EffectDirectives.None,
                    true)
@@ -72,14 +71,14 @@ namespace PaintDotNet.Effects
             int width = src.Width;
             int height = src.Height;
             int r = realToken.Amount;
-            Random random = this.random;
+            Random localRandom = this.random;
 
-            int[] intensityCount = new int[256];
-            uint[] avgRed = new uint[256];
-            uint[] avgGreen = new uint[256];
-            uint[] avgBlue = new uint[256];
-            uint[] avgAlpha = new uint[256];
-            byte[] intensityChoices = new byte[(1 + (r * 2)) * (1 + (r * 2))];
+            int* intensityCount = stackalloc int[256];
+            uint* avgRed = stackalloc uint[256];
+            uint* avgGreen = stackalloc uint[256];
+            uint* avgBlue = stackalloc uint[256];
+            uint* avgAlpha = stackalloc uint[256];
+            byte* intensityChoices = stackalloc byte[(1 + (r * 2)) * (1 + (r * 2))];
 
             for (int ri = startIndex; ri < startIndex + length; ++ri)
             {
@@ -139,7 +138,7 @@ namespace PaintDotNet.Effects
                                 continue;
                             }
 
-                            ColorBgra *srcPtr = src.GetPointAddress(left, j);
+                            ColorBgra *srcPtr = src.GetPointAddressUnchecked(left, j);
 
                             for (int i = left; i < right; ++i)
                             {
@@ -161,9 +160,9 @@ namespace PaintDotNet.Effects
 
                         int randNum;
 
-                        lock (random)
+                        lock (localRandom)
                         {
-                            randNum = random.Next(intensityChoicesIndex);
+                            randNum = localRandom.Next(intensityChoicesIndex);
                         }
 
                         byte chosenIntensity = intensityChoices[randNum];

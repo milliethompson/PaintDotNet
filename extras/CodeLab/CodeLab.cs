@@ -1,9 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Tom Jackson, Michael Kelsey, Brandon Ortiz,
-//               Craig Taylor, Chris Trevino, and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Setup/License.txt for full licensing and attribution details.       //
+// 2                                                                           //
+// 1                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -21,7 +22,7 @@ namespace PaintDotNet.Effects
         {
             get
             {
-                Assembly ourAssembly = Assembly.GetExecutingAssembly();
+                Assembly ourAssembly = Assembly.GetCallingAssembly();
                 Stream imageStream = ourAssembly.GetManifestResourceStream("PaintDotNet.Effects.Icons.CodeLab.png");
                 Image image = Image.FromStream(imageStream);
                 return image;

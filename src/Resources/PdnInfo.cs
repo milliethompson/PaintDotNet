@@ -1,16 +1,18 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Drawing;
 using System.IO;
 using System.Globalization;
 using System.Reflection;
+using System.Text;
 using System.Windows.Forms;
 
 namespace PaintDotNet
@@ -18,17 +20,40 @@ namespace PaintDotNet
     /// <summary>
     /// A few utility functions specific to PaintDotNet.exe
     /// </summary>
-    public sealed class PdnInfo
+    public static class PdnInfo
     {
-        private PdnInfo()
+        private static Icon appIcon;
+        public static Icon AppIcon
         {
+            get
+            {
+                if (appIcon == null)
+                {
+                    Stream stream = PdnResources.GetResourceStream("Icons.PaintDotNet.ico");
+                    appIcon = new Icon(stream);
+                    stream.Close();
+                }
+
+                return appIcon;
+            }
         }
 
-        public enum StartupTestType
+        /// <summary>
+        /// Gets the full path to where user customization files should be stored.
+        /// </summary>
+        /// <returns>
+        /// User data files should include settings or customizations that don't go into data files such as *.PDN.
+        /// An example of a user data file is a color palette.
+        /// </returns>
+        public static string UserDataPath
         {
-            None,
-            Timed,
-            WorkingSet,
+            get
+            {
+                string myDocsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string userDataDirName = PdnResources.GetString("SystemLayer.UserDataDirName");
+                string userDataPath = Path.Combine(myDocsPath, userDataDirName);
+                return userDataPath;
+            }
         }
 
         private static StartupTestType startupTest = StartupTestType.None;
@@ -72,8 +97,6 @@ namespace PaintDotNet
                 return time;
             }
         }
-
-        private static readonly string appConfig = GetAppConfig();
 
         private static string GetAppConfig()
         {
@@ -127,30 +150,43 @@ namespace PaintDotNet
             }
         }
 
+        public static bool IsExpired
+        {
+            get
+            {
+                if (!PdnInfo.IsFinalBuild || PdnInfo.IsDebugBuild)
+                {
+                    if (DateTime.Now > PdnInfo.ExpirationDate)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
         /// <summary>
         /// Checks if the build is expired, and displays a dialog box that takes the user to
         /// the Paint.NET website if necessary.
         /// </summary>
         /// <returns>true if the user should be allowed to continue, false if the build has expired</returns>
-        public static bool HandleExpiration()
+        public static bool HandleExpiration(IWin32Window owner)
         {
-            if (!PdnInfo.IsFinalBuild || PdnInfo.IsDebugBuild)
+            if (IsExpired)
             {
-                if (DateTime.Now > PdnInfo.ExpirationDate)
+                string expiredMessage = PdnResources.GetString("ExpiredDialog.Message");
+
+                DialogResult result = MessageBox.Show(expiredMessage, PdnInfo.GetProductName(true),
+                    MessageBoxButtons.OKCancel);
+
+                if (result == DialogResult.OK)
                 {
-                    string expiredMessage = PdnResources.GetString("ExpiredDialog.Message");
-
-                    DialogResult result = MessageBox.Show(expiredMessage, PdnInfo.GetProductName(true),
-                        MessageBoxButtons.OKCancel);
-
-                    if (result == DialogResult.OK)
-                    {
-                        string expiredRedirect = PdnResources.GetString("PdnInfo.ExpiredRedirectPage");
-                        PdnInfo.LaunchWebSite(expiredRedirect);
-                    }
-
-                    return false;
+                    string expiredRedirect = InvariantStrings.ExpiredPage;
+                    PdnInfo.LaunchWebSite(owner, expiredRedirect);
                 }
+
+                return false;
             }
 
             return true;
@@ -158,9 +194,8 @@ namespace PaintDotNet
 
         public static string GetApplicationDir()
         {
-            string appPath = Application.ExecutablePath;
-            string appDir = Path.GetDirectoryName(appPath);
-            return appDir;
+            string appPath = Application.StartupPath;
+            return appPath;
         }
 
         /// <summary>
@@ -189,7 +224,7 @@ namespace PaintDotNet
                 tag = string.Empty;
             }
 
-            string version = GetVersion().ToString(2);
+            string version = GetVersionNumberString(GetVersion(), 2);
 
             string productName = string.Format(
                 productNameFormat,
@@ -200,6 +235,9 @@ namespace PaintDotNet
             return productName;
         }
 
+        /// <summary>
+        /// Returns the bare product name, e.g. "Paint.NET"
+        /// </summary>
         public static string GetBareProductName()
         {
             return PdnResources.GetString("Application.ProductName.Bare");
@@ -245,13 +283,47 @@ namespace PaintDotNet
 #endif
                 
             string versionFormat = PdnResources.GetString("PdnInfo.VersionString.Format");
+
             string versionText = string.Format(
                 versionFormat, 
                 GetConfigurationString(), 
                 buildType, 
-                Application.ProductVersion);
+                GetVersionNumberString(GetVersion(), 4));
 
             return versionText;
+        }
+
+        /// <summary>
+        /// Returns a string for just the version number, i.e. "3.01"
+        /// </summary>
+        /// <returns></returns>
+        public static string GetVersionNumberString(Version version, int fieldCount)
+        {
+            if (fieldCount < 1 || fieldCount > 4)
+            {
+                throw new ArgumentOutOfRangeException("fieldCount", "must be in the range [1, 4]");
+            }
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append(version.Major.ToString());
+
+            if (fieldCount >= 2)
+            {
+                sb.AppendFormat(".{0}", version.Minor.ToString("D2"));
+            }
+
+            if (fieldCount >= 3)
+            {
+                sb.AppendFormat(".{0}", version.Build.ToString());
+            }
+
+            if (fieldCount == 4)
+            {
+                sb.AppendFormat(".{0}", version.Revision.ToString());
+            }
+
+            return sb.ToString();
         }
 
         /// <summary>
@@ -275,7 +347,7 @@ namespace PaintDotNet
                 configText = config;
             }
 
-            string versionText = string.Format(versionFormat, version.ToString(2), configText);
+            string versionText = string.Format(versionFormat, GetVersionNumberString(version, 2), configText);
             return versionText;
         }
 
@@ -307,14 +379,14 @@ namespace PaintDotNet
             }
         }
 
-        public static void LaunchWebSite()
+        public static void LaunchWebSite(IWin32Window owner)
         {
-            LaunchWebSite(null);
+            LaunchWebSite(owner, null);
         }
 
-        public static void LaunchWebSite(string page)
+        public static void LaunchWebSite(IWin32Window owner, string page)
         {
-            string webSite = PdnResources.GetString("PdnInfo.WebSiteUrl");
+            string webSite = SystemLayer.Branding.WebsiteUrl;
 
             Uri baseUri = new Uri(webSite);
             Uri uri;
@@ -332,15 +404,33 @@ namespace PaintDotNet
 
             if (url.IndexOf("@") == -1)
             {
-                System.Diagnostics.Process.Start(url);
+                OpenUrl(owner, url);
             }
         }
 
-        public static string GetNgenPath(bool forceX86)
+        public static bool OpenUrl(IWin32Window owner, string url)
+        {
+            bool result = SystemLayer.Shell.LaunchUrl(owner, url);
+
+            if (!result)
+            {
+                string message = PdnResources.GetString("LaunchLink.Error");
+                MessageBox.Show(owner, message, PdnInfo.GetBareProductName(), MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            return result;
+        }
+
+        public static string GetNgenPath()
+        {
+            return GetNgenPath(false);
+        }
+
+        public static string GetNgenPath(bool force32bit)
         {
             string fxDir;
 
-            if (UIntPtr.Size == 8 && !forceX86)
+            if (UIntPtr.Size == 8 && !force32bit)
             {
                 fxDir = "Framework64";
             }

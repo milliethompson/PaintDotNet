@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    public class CurvesEffectConfigDialog 
+    public sealed class CurvesEffectConfigDialog 
         : EffectConfigDialog
     {
         private System.Windows.Forms.Button cancelButton;
@@ -28,10 +28,10 @@ namespace PaintDotNet.Effects
         private System.Windows.Forms.Button resetButton;
         private System.Windows.Forms.ComboBox modeComboBox;
         private System.EventHandler curveControlValueChangedDelegate;
-        private DataEventHandler<Point> curveControlCoordinatesChangedDelegate;
+        private EventHandler<Point> curveControlCoordinatesChangedDelegate;
         private TableLayoutPanel tableLayoutMain;
         private TableLayoutPanel tableLayoutPanelMask;
-        private EnumWrapper colorTransferNames;
+        private EnumLocalizer colorTransferNames;
         private CheckBox[] maskCheckBoxes;
         private EventHandler maskCheckChanged;
         private Label labelCoordinates;
@@ -44,7 +44,7 @@ namespace PaintDotNet.Effects
 
             curveControlValueChangedDelegate = this.curveControl_ValueChanged;
             curveControlCoordinatesChangedDelegate = this.curveControl_CoordinatesChanged;
-            colorTransferNames = EnumWrapper.Create(typeof(ColorTransferMode));
+            colorTransferNames = EnumLocalizer.Create(typeof(ColorTransferMode));
 
             this.Text = PdnResources.GetString("CurvesEffectConfigDialog.Text");
             this.cancelButton.Text = PdnResources.GetString("Form.CancelButton.Text");
@@ -276,7 +276,7 @@ namespace PaintDotNet.Effects
             this.FinishTokenUpdate();
         }
         
-        private void curveControl_CoordinatesChanged(object sender, DataEventArgs<Point> e)
+        private void curveControl_CoordinatesChanged(object sender, EventArgs<Point> e)
         {
             Point pt = e.Data;
             string newText;

@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 // Based on: http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnaspp/html/colorquant.asp
@@ -17,30 +17,13 @@ using System.Runtime.InteropServices;
 
 namespace PaintDotNet.Data.Quantize
 {
-    /// <summary>
-    /// Summary description for Class1.
-    /// </summary>
     internal unsafe abstract class Quantizer
     {
         /// <summary>
         /// Flag used to indicate whether a single pass or two passes are needed for quantization.
         /// </summary>
-        private bool _singlePass;
+        private bool singlePass;
         
-        protected bool highquality;
-        public bool HighQuality 
-        {
-            get 
-            {
-                return highquality;
-            }
-
-            set 
-            {
-                highquality = value;
-            }
-        }
-
         protected int ditherLevel;
         public int DitherLevel
         {
@@ -66,7 +49,7 @@ namespace PaintDotNet.Data.Quantize
         /// </remarks>
         public Quantizer(bool singlePass)
         {
-            _singlePass = singlePass;
+            this.singlePass = singlePass;
         }
 
         /// <summary>
@@ -119,7 +102,7 @@ namespace PaintDotNet.Data.Quantize
                 // Call the FirstPass function if not a single pass algorithm.
                 // For something like an octree quantizer, this will run through
                 // all image pixels, build a data structure, and create a palette.
-                if (!_singlePass)
+                if (!singlePass)
                 {
                     FirstPass(sourceData, width, height, progressCallback);
                 }
@@ -141,6 +124,7 @@ namespace PaintDotNet.Data.Quantize
             if (copy != source)
             {
                 copy.Dispose();
+                copy = null;
             }
 
             // Last but not least, return the output bitmap

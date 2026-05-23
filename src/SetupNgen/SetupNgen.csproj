@@ -100,7 +100,7 @@
     <PreBuildEvent>
     </PreBuildEvent>
     <PostBuildEvent>@rem Embed manifest
-call "$(SolutionDir)Manifests\embedManifest.bat" "$(TargetPath)" "$(SolutionDir)Manifests\asInvoker.xml"
+call "$(SolutionDir)Manifests\embedManifest.bat" "$(TargetPath)" "$(SolutionDir)Manifests\requireAdministrator.xml"
 call "$(SolutionDir)Manifests\embedManifest.bat" "$(ProjectDir)obj\$(ConfigurationName)\$(TargetFileName)" "$(SolutionDir)Manifests\requireAdministrator.xml"
 
 @rem Sign

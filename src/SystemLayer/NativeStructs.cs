@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -12,27 +12,22 @@ using System.Runtime.InteropServices;
 
 namespace PaintDotNet.SystemLayer
 {
-    /// <summary>
-    /// Summary description for NativeStructs.
-    /// </summary>
-    internal sealed class NativeStructs
+    internal static class NativeStructs
     {
-        private NativeStructs()
-        {
-        }
-
         [StructLayout(LayoutKind.Sequential)]
-        internal struct MEMORYSTATUSEX 
-        {  
-            internal uint dwLength;
-            internal uint dwMemoryLoad;
-            internal ulong ullTotalPhys;
-            internal ulong ullAvailPhys;
-            internal ulong ullTotalPageFile;
-            internal ulong ullAvailPageFile;
-            internal ulong ullTotalVirtual;
-            internal ulong ullAvailVirtual;
-            internal ulong ullAvailExtendedVirtual;
+        internal struct SYSTEM_INFO
+        {
+            public ushort wProcessorArchitecture;
+            public ushort wReserved;
+            public uint dwPageSize;
+            public IntPtr lpMinimumApplicationAddress;
+            public IntPtr lpMaximumApplicationAddress;
+            public UIntPtr dwActiveProcessorMask;
+            public uint dwNumberOfProcessors;
+            public uint dwProcessorType;
+            public uint dwAllocationGranularity;
+            public ushort wProcessorLevel;
+            public ushort wProcessorRevision;
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -61,7 +56,49 @@ namespace PaintDotNet.SystemLayer
             public ushort wSuiteMask;
             public byte wProductType;
             public byte wReserved;
-        };
+        }
+        
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct COPYDATASTRUCT
+        {
+            internal UIntPtr dwData;
+            internal uint cbData;
+            internal IntPtr lpData;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct SHELLEXECUTEINFO
+        {
+            internal uint cbSize;
+            internal uint fMask;
+            internal IntPtr hwnd;
+            [MarshalAs(UnmanagedType.LPTStr)] internal string lpVerb;
+            [MarshalAs(UnmanagedType.LPTStr)] internal string lpFile;
+            [MarshalAs(UnmanagedType.LPTStr)] internal string lpParameters;
+            [MarshalAs(UnmanagedType.LPTStr)] internal string lpDirectory;
+            internal int nShow;
+            internal IntPtr hInstApp;
+            internal IntPtr lpIDList;
+            [MarshalAs(UnmanagedType.LPTStr)] internal string lpClass;
+            internal IntPtr hkeyClass;
+            internal uint dwHotKey;
+            internal IntPtr hIcon_or_hMonitor;
+            internal IntPtr hProcess;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct MEMORYSTATUSEX 
+        {  
+            internal uint dwLength;
+            internal uint dwMemoryLoad;
+            internal ulong ullTotalPhys;
+            internal ulong ullAvailPhys;
+            internal ulong ullTotalPageFile;
+            internal ulong ullAvailPageFile;
+            internal ulong ullTotalVirtual;
+            internal ulong ullAvailVirtual;
+            internal ulong ullAvailExtendedVirtual;
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         internal struct OVERLAPPED 
@@ -116,22 +153,6 @@ namespace PaintDotNet.SystemLayer
             internal uint Protect;  
             internal uint Type;
         };
-
-        [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
-        internal struct SYSTEM_INFO
-        {
-            internal ushort wProcessorArchitecture;
-            internal ushort wReserved;
-            internal uint dwPageSize;
-            internal UIntPtr lpMinimumApplicationAddress;
-            internal UIntPtr lpMaximumApplicationAddress;
-            internal UIntPtr dwActiveProcessorMask;
-            internal uint dwNumberOfProcessors;
-            internal uint dwProcessorType;
-            internal uint dwAllocationGranularity;
-            internal ushort wProcessorLevel;
-            internal ushort wProcessorRevision;
-        }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         internal class LOGFONT
@@ -220,6 +241,9 @@ namespace PaintDotNet.SystemLayer
             internal void *pInfo; // pFile, pCatalog, pBlob, pSgnr, or pCert
             internal uint dwStateAction;
             internal IntPtr hWVTStateData;
+            internal IntPtr pwszURLReference;
+            internal uint dwProvFlags;
+            internal uint dwUIContext;
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

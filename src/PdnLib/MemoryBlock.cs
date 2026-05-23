@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -35,7 +35,6 @@ namespace PaintDotNet
     {
         // serialize 1MB at a time: this enables us to serialize very large blocks, and to conserve memory while doing so
         private const int serializationChunkSize = 1048576; 
-        private const string chunkPrefix = "chunk";
 
         // blocks this size or larger are allocated with AllocateLarge (VirtualAlloc) instead of Allocate (HeapAlloc)
         private const long largeBlockThreshold = 65536;
@@ -442,7 +441,7 @@ namespace PaintDotNet
             return ToByteArray(0, this.length);
         }
 
-        public byte[] ToByteArray(long startOffset, long length)
+        public byte[] ToByteArray(long startOffset, long lengthDesired)
         {
             if (disposed)
             {
@@ -454,22 +453,22 @@ namespace PaintDotNet
                 throw new ArgumentOutOfRangeException("startOffset", "must be greater than or equal to zero");
             }
 
-            if (length < 0)
+            if (lengthDesired < 0)
             {
                 throw new ArgumentOutOfRangeException("length", "must be greater than or equal to zero");
             }
 
-            if (startOffset + length > this.length)
+            if (startOffset + lengthDesired > this.length)
             {
                 throw new ArgumentOutOfRangeException("startOffset, length", "startOffset + length must be less than Length");
             }
 
-            byte[] dstArray = new byte[length];
+            byte[] dstArray = new byte[lengthDesired];
             byte *pbSrcArray = (byte *)this.VoidStar;
 
             fixed (byte *pbDstArray = dstArray)
             {
-                Memory.Copy(pbDstArray, pbSrcArray + startOffset, (ulong)length);
+                Memory.Copy(pbDstArray, pbSrcArray + startOffset, (ulong)lengthDesired);
             }
 
             return dstArray;
@@ -621,7 +620,7 @@ namespace PaintDotNet
             }
         }
 
-        private void WriteUInt(Stream output, UInt32 theUInt)
+        private static void WriteUInt(Stream output, UInt32 theUInt)
         {
             output.WriteByte((byte)((theUInt >> 24) & 0xff));
             output.WriteByte((byte)((theUInt >> 16) & 0xff));
@@ -629,7 +628,7 @@ namespace PaintDotNet
             output.WriteByte((byte)(theUInt & 0xff));
         }
 
-        private uint ReadUInt(Stream output)
+        private static uint ReadUInt(Stream output)
         {
             uint theUInt = 0;
 

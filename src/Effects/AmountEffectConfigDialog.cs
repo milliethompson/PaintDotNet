@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -15,7 +15,15 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    public class AmountEffectConfigDialog 
+    public sealed class AmountEffectConfigDialog
+        : AmountEffectConfigDialogBase
+    {
+        public AmountEffectConfigDialog()
+        {
+        }
+    }
+
+    public abstract class AmountEffectConfigDialogBase
         : EffectConfigDialog
     {
         private System.Windows.Forms.Button cancelButton;
@@ -27,7 +35,7 @@ namespace PaintDotNet.Effects
         private PaintDotNet.HeaderLabel headerLabel;
         public int sliderInitialValue = 2;
 
-        public AmountEffectConfigDialog()
+        protected internal AmountEffectConfigDialogBase()
         {
             // This call is required by the Windows Form Designer.
             InitializeComponent();

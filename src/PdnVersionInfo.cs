@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -20,10 +20,8 @@ namespace PaintDotNet
         private string friendlyName;
         private Version netFxVersion;
         private string infoUrl;
-        private string downloadUrl;
-        private int downloadSize;
-        private string fullDownloadUrl;
-        private int fullDownloadSize;
+        private string[] downloadUrls;
+        private string[] fullDownloadUrls;
         private bool isFinal;
 
         public Version Version
@@ -58,35 +56,19 @@ namespace PaintDotNet
             }
         }
         
-        public string DownloadUrl
+        public string[] DownloadUrls
         {
             get
             {
-                return this.downloadUrl;
+                return (string[])this.downloadUrls.Clone();
             }
         }
 
-        public int DownloadSize
+        public string[] FullDownloadUrls
         {
             get
             {
-                return this.downloadSize;
-            }
-        }
-
-        public string FullDownloadUrl
-        {
-            get
-            {
-                return this.fullDownloadUrl;
-            }
-        }
-
-        public int FullDownloadSize
-        {
-            get
-            {
-                return this.fullDownloadSize;
+                return (string[])this.fullDownloadUrls.Clone();
             }
         }
 
@@ -98,17 +80,33 @@ namespace PaintDotNet
             }
         }
 
+        public string ChooseDownloadUrl(bool full)
+        {
+            DateTime now = DateTime.Now;
+            string[] urls;
+
+            if (full)
+            {
+                urls = FullDownloadUrls;
+            }
+            else
+            {
+                urls = DownloadUrls;
+            }
+
+            int index = Math.Abs(now.Second % urls.Length);
+            return urls[index];
+        }
+
         public PdnVersionInfo(Version version, string friendlyName, Version netFxVersion, string infoUrl, 
-            string downloadUrl, int downloadSize, string fullDownloadUrl, int fullDownloadSize, bool isFinal)
+            string[] downloadUrls, string[] fullDownloadUrls, bool isFinal)
         {
             this.version = version;
             this.friendlyName = friendlyName;
             this.netFxVersion = netFxVersion;
             this.infoUrl = infoUrl;
-            this.downloadUrl = downloadUrl;
-            this.downloadSize = downloadSize;
-            this.fullDownloadUrl = fullDownloadUrl;
-            this.fullDownloadSize = fullDownloadSize;
+            this.downloadUrls = (string[])downloadUrls.Clone();
+            this.fullDownloadUrls = (string[])fullDownloadUrls.Clone();
             this.isFinal = isFinal;
         }
     }

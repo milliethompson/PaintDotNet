@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -29,7 +29,8 @@ namespace PaintDotNet
     [Serializable]
     public abstract class Layer
         : ICloneable,
-          IDisposable
+          IDisposable,
+          IThumbnailProvider
     {
         private int width;
         private int height;
@@ -325,32 +326,14 @@ namespace PaintDotNet
             }
         }
 
-        [NonSerialized]
-        private EventHandler previewChanged;
-
-        /// <summary>
-        /// Signifies that the layer's preview has changed. Note that this event
-        /// is not guaranteed to be on the main thread, so you should not assume
-        /// that, and use Invoke as necessary.
-        /// </summary>
-        public event EventHandler PreviewChanged
-        {
-            add
-            {
-                previewChanged += value;
-            }
-
-            remove
-            {
-                previewChanged -= value;
-            }
-        }
+        [field: NonSerialized]
+        public event EventHandler PreviewChanged;
 
         protected virtual void OnPreviewChanged()
         {
-            if (previewChanged != null)
+            if (PreviewChanged != null)
             {
-                previewChanged(this, EventArgs.Empty);
+                PreviewChanged(this, EventArgs.Empty);
             }
         }
 
@@ -358,30 +341,18 @@ namespace PaintDotNet
         /// This event is raised before a property is changed. Note that the name given
         /// in the PropertyEventArgs is for descriptive (UI) purposes only and serves no
         /// programmatic purpose. When this event is raised you should not make any
-        /// assumptions about which property was changed based on this description/
+        /// assumptions about which property was changed based on this description.
         /// </summary>
-        [NonSerialized]
-        private PropertyEventHandler propertyChanging;
-        public event PropertyEventHandler PropertyChanging
-        {
-            add
-            {
-                propertyChanging += value;
-            }
-
-            remove
-            {
-                propertyChanging -= value;
-            }
-        }
+        [field: NonSerialized]
+        public event PropertyEventHandler PropertyChanging;
 
         protected virtual void OnPropertyChanging(string propertyName)
         {
             if (this.suppressPropertyChanges == 0)
             {
-                if (propertyChanging != null)
+                if (PropertyChanging != null)
                 {
-                    propertyChanging(this, new PropertyEventArgs(propertyName));
+                    PropertyChanging(this, new PropertyEventArgs(propertyName));
                 }
             }
         }
@@ -392,28 +363,16 @@ namespace PaintDotNet
         /// programmatic purpose. When this event is raised you should not make any
         /// assumptions about which property was changed based on this description.
         /// </summary>
-        [NonSerialized]
-        private PropertyEventHandler propertyChanged;
-        public event PropertyEventHandler PropertyChanged
-        {
-            add
-            {
-                propertyChanged += value;
-            }
-
-            remove
-            {
-                propertyChanged -= value;
-            }
-        }
+        [field: NonSerialized]
+        public event PropertyEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)
         {
             if (this.suppressPropertyChanges == 0)
             {
-                if (propertyChanged != null)
+                if (PropertyChanged != null)
                 {
-                    propertyChanged(this, new PropertyEventArgs(propertyName));
+                    PropertyChanged(this, new PropertyEventArgs(propertyName));
                 }
             }
         }
@@ -509,6 +468,11 @@ namespace PaintDotNet
         }
 
         /// <summary>
+        /// Implements IThumbnailProvider.RenderThumbnail().
+        /// </summary>
+        public abstract Surface RenderThumbnail(int maxEdgeLength);
+
+        /// <summary>
         /// Causes the layer to render a given rectangle of interest (roi) to the given destination surface.
         /// </summary>
         /// <param name="args">Contains information about which objects to use for rendering</param>
@@ -573,26 +537,14 @@ namespace PaintDotNet
             }
         }
        
-        [NonSerialized]
-        private InvalidateEventHandler invalidated;
-        public event InvalidateEventHandler Invalidated
-        {
-            add
-            {
-                invalidated += value;
-            }
-
-            remove
-            {
-                invalidated -= value;
-            }
-        }
+        [field: NonSerialized]
+        public event InvalidateEventHandler Invalidated;
 
         protected virtual void OnInvalidated(InvalidateEventArgs e)
         {
-            if (invalidated != null)
+            if (Invalidated != null)
             {
-                invalidated(this, e);
+                Invalidated(this, e);
             }
         }
 
@@ -636,6 +588,8 @@ namespace PaintDotNet
         public void Invalidate(Rectangle roi)
         {
             Rectangle rect = Rectangle.Intersect(roi, this.Bounds);
+            // TODO: this is horrible for performance w.r.t. complex invalidation regions. Lots of heap pollution.
+            //       fix that!
             OnInvalidated(new InvalidateEventArgs(rect));
         }
 
@@ -653,6 +607,8 @@ namespace PaintDotNet
             this.properties = (LayerProperties)copyMe.properties.Clone();
         }
 
+        // TODO: add "name" parameter, keep this for legacy and fill it in with "Background"
+        //       goal is to put complete burden of loc on the client
         public static BitmapLayer CreateBackgroundLayer(int width, int height)
         {
             // set colors to 0xffffffff

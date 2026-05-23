@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using Microsoft.Win32;
@@ -175,7 +175,12 @@ namespace PaintDotNet
 
         private static readonly string ourPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
-        static void InstallAssembly(string name, bool delete, bool queue, bool forceX86)
+        static void InstallAssembly(string name, bool delete, bool queue)
+        {
+            InstallAssembly(name, delete, queue, false);
+        }
+
+        static void InstallAssembly(string name, bool delete, bool queue, bool force32bit)
         {
             // ngen it
             if (delete)
@@ -197,7 +202,7 @@ namespace PaintDotNet
 
             string argList = actionArg + " " + nameArg + " " + optionsArg;
 
-            string ngenExe = PaintDotNet.PdnInfo.GetNgenPath(forceX86);
+            string ngenExe = PaintDotNet.PdnInfo.GetNgenPath(force32bit);
             ProcessStartInfo psi1 = new ProcessStartInfo(ngenExe, argList);
 
             psi1.UseShellExecute = false;
@@ -211,7 +216,6 @@ namespace PaintDotNet
         {
             X86,
             X64,
-            IA64,
             Unknown
         }
 
@@ -248,9 +252,6 @@ namespace PaintDotNet
             {
                 case PROCESSOR_ARCHITECTURE_AMD64:
                     return Platform.X64;
-
-                case PROCESSOR_ARCHITECTURE_IA64:
-                    return Platform.IA64;
 
                 case PROCESSOR_ARCHITECTURE_INTEL:
                     return Platform.X86;
@@ -436,11 +437,25 @@ namespace PaintDotNet
                     queueNgen = false;
                 }
 
-                // Pre-JIT and install to GAC. These are in alphabetical order.
+                // Pre-JIT via ngen. These are in alphabetical order.
                 string[] names = 
                     new string[] 
                     {
+                        "ICSharpCode.SharpZipLib.dll",
+                        "PaintDotNet.Data.dll",
+                        "PaintDotNet.Effects.dll",
                         "PaintDotNet.exe",
+                        "PaintDotNet.Resources.dll",
+                        "PaintDotNet.StylusReader.dll",
+                        "PaintDotNet.SystemLayer.dll",
+                        "PdnLib.dll"
+                    };
+
+                string[] names32 =
+                    new string[]
+                    {
+                        "Interop.WIA.dll",
+                        "WiaProxy32.exe"
                     };
 
                 foreach (string name in names)
@@ -457,19 +472,14 @@ namespace PaintDotNet
                     }
                 }
 
-                string[] names_x86 =
-                    new string[] 
-                    {
-                        "WiaProxy32.exe",
-                    };
-
-                foreach (string name in names_x86)
+                foreach (string name in names32)
                 {
                     try
                     {
                         InstallAssembly(name, delete, queueNgen, true);
                     }
 
+                    // We don't raise a stink if ngen fails.
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex);
@@ -565,26 +575,16 @@ namespace PaintDotNet
                     bool allowDelete = true;
 
                     // Verify that it is a .lnk file
-                    bool goodExtension = (Path.GetExtension(path) == ".lnk");
-                    allowDelete &= goodExtension;
+                    allowDelete &= (Path.GetExtension(path) == ".lnk");
 
                     // Verify that it is in a subdirectory of Programs
-                    bool goodPath = IsPathInDirectory(path, programsDir);
-                    allowDelete &= goodPath;
+                    allowDelete &= IsPathInDirectory(path, programsDir);
 
                     // Delete it
                     if (allowDelete && System.IO.File.Exists(path))
                     {
                         Console.WriteLine("delete: " + path);
-
-                        try
-                        {
-                            System.IO.File.Delete(path);
-                        }
-
-                        catch
-                        {
-                        }
+                        System.IO.File.Delete(path);
 
                         // If we're the last shortcut, then delete that directory.
                         string dir = Path.GetDirectoryName(path);
@@ -622,7 +622,6 @@ namespace PaintDotNet
                 // Register shell extension
                 const string shellExtensionName_x86 = "ShellExtension_x86.dll";
                 const string shellExtensionName_x64 = "ShellExtension_x64.dll";
-                const string shellExtensionName_ia64 = "ShellExtension_IA64.dll";
                 const string shellExtensionGuid = "{D292F82A-50BE-4351-96CC-E86F3F8049DA}";
                 const string regKeyName = @"CLSID\" + shellExtensionGuid;
                 const string regKeyWow64Name = @"Wow6432Node\" + regKeyName;
@@ -642,16 +641,7 @@ namespace PaintDotNet
                 else
                 {
                     Platform platform = GetPlatform();
-                    string dll64bitName;
-
-                    if (platform == Platform.X64)
-                    {
-                        dll64bitName = shellExtensionName_x64;
-                    }
-                    else
-                    {
-                        dll64bitName = shellExtensionName_ia64;
-                    }
+                    string dll64bitName = shellExtensionName_x64;
 
                     shellExtensionFileNames = new string[2] { dll64bitName, shellExtensionName_x86 };
                     regKeyNames = new string[2] { regKeyName, regKeyWow64Name };

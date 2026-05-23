@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -38,10 +38,6 @@ namespace PaintDotNet
         private bool disposed = false;
         private Surface surface;
 
-        // the difference between the region/path requested, and the path/region we actually saved away
-        private float errorX;
-        private float errorY; 
-
         // Use one of these
         private PdnRegion region;
 
@@ -70,6 +66,25 @@ namespace PaintDotNet
 
         [NonSerialized]
         private static PaintDotNet.Threading.ThreadPool threadPool = new PaintDotNet.Threading.ThreadPool();
+
+        /// <summary>
+        /// Do not modify the surface. Treat it as immutable.
+        /// </summary>
+        public Surface SurfaceReadOnly
+        {
+            get
+            {
+                return this.surface;
+            }
+        }
+
+        public bool IsDisposed
+        {
+            get
+            {
+                return this.disposed;
+            }
+        }
 
         private PdnRegion GetRegion()
         {
@@ -110,7 +125,7 @@ namespace PaintDotNet
 
             return GetPath().Clone();
         }
-        
+
         private MaskedSurface()
         {
         }
@@ -121,7 +136,7 @@ namespace PaintDotNet
         /// <param name="source">The Surface to copy pixels from.</param>
         /// <param name="roi">Defines the Region from which to copy pixels from the Image.</param>
         public MaskedSurface(Surface source, PdnRegion roi)
-        {   
+        {
             PdnRegion roiClipped = (PdnRegion)roi.Clone();
             roiClipped.Intersect(source.Bounds);
 
@@ -141,9 +156,6 @@ namespace PaintDotNet
         {
             RectangleF boundsF = path.GetBounds();
             Rectangle bounds = Utility.RoundRectangle(boundsF);
-
-            this.errorX = boundsF.Top - (float)bounds.Top;
-            this.errorY = boundsF.Left - (float)bounds.Left;
 
             Rectangle boundsClipped = Rectangle.Intersect(bounds, source.Bounds);
             Rectangle boundsRead;
@@ -192,7 +204,7 @@ namespace PaintDotNet
             }
 
             MaskedSurface ms = new MaskedSurface();
-            
+
             if (this.region != null)
             {
                 ms.region = this.region.Clone();
@@ -207,9 +219,6 @@ namespace PaintDotNet
             {
                 ms.surface = this.surface.Clone();
             }
-
-            ms.errorX = this.errorX;
-            ms.errorY = this.errorY;
 
             return ms;
         }
@@ -238,14 +247,10 @@ namespace PaintDotNet
             public float dsyddx;
             public float dsxddy;
             public float dsyddy;
-            public float errorX;
-            public float errorY;
             public int fp_dsxddx;
             public int fp_dsyddx;
             public int fp_dsxddy;
             public int fp_dsyddy;
-            public int fp_errorX;
-            public int fp_errorY;
             public Rectangle[] dstScans;
             public Matrix[] inverses;
             public int boundsX;
@@ -272,7 +277,7 @@ namespace PaintDotNet
                 int cpuNumber = (int)cpuNumberObj;
                 int start = (this.dstScans.Length * cpuNumber) / Processor.LogicalCpuCount;
                 int end = (this.dstScans.Length * (cpuNumber + 1)) / Processor.LogicalCpuCount;
-                void *scan0 = src.Scan0.VoidStar;
+                void* scan0 = src.Scan0.VoidStar;
                 int stride = src.Stride;
                 PointF[] pts = new PointF[1];
 
@@ -293,7 +298,7 @@ namespace PaintDotNet
 
                     pts[0].X -= this.boundsX;
                     pts[0].Y -= this.boundsY;
-                    
+
                     int fp_srcPtRowX = (int)(pts[0].X * fp_MultFactor);
                     int fp_srcPtRowY = (int)(pts[0].Y * fp_MultFactor);
 
@@ -316,12 +321,10 @@ namespace PaintDotNet
                             // without the expensive clamping operation.
 
                             int dstX = dstRect.Left;
-                            ColorBgra *dstPtr = dst.GetPointAddress(dstX, dstY);
-                            ColorBgra *dstPtrEnd = dstPtr + dstRect.Width;
+                            ColorBgra* dstPtr = dst.GetPointAddress(dstX, dstY);
+                            ColorBgra* dstPtrEnd = dstPtr + dstRect.Width;
                             int fp_srcPtColLastX = fp_srcPtColX + (this.fp_dsxddx * (dstRect.Width - 1));
                             int fp_srcPtColLastY = fp_srcPtColY + (this.fp_dsyddx * (dstRect.Width - 1));
-                            ColorBgra *startFastPtr = dstPtr;
-                            ColorBgra *endFastPtr = dstPtrEnd;
 
                             // Left side
                             while (dstPtr < dstPtrEnd)
@@ -332,7 +335,7 @@ namespace PaintDotNet
                                 int srcX = Clamp(srcPtColX, 0, src.Width - 1);
                                 int srcY = Clamp(srcPtColY, 0, src.Height - 1);
                                 *dstPtr = this.src.GetPointUnchecked(srcX, srcY);
-                                
+
                                 ++dstPtr;
                                 fp_srcPtColX += this.fp_dsxddx;
                                 fp_srcPtColY += this.fp_dsyddx;
@@ -343,11 +346,11 @@ namespace PaintDotNet
                                 }
                             }
 
-                            startFastPtr = dstPtr;
+                            ColorBgra* startFastPtr = dstPtr;
                             dstPtr = dstPtrEnd - 1;
 
                             // Right side
-                            while (dstPtr > startFastPtr)
+                            while (dstPtr >= startFastPtr)
                             {
                                 int srcPtColX = (fp_srcPtColLastX + fp_RoundFactor) >> fp_ShiftFactor;
                                 int srcPtColY = (fp_srcPtColLastY + fp_RoundFactor) >> fp_ShiftFactor;
@@ -359,14 +362,14 @@ namespace PaintDotNet
                                 if (srcX == srcPtColX && srcY == srcPtColY)
                                 {
                                     break;
-                                }   
+                                }
 
                                 --dstPtr;
                                 fp_srcPtColLastX -= this.fp_dsxddx;
                                 fp_srcPtColLastY -= this.fp_dsyddx;
                             }
 
-                            endFastPtr = dstPtr;
+                            ColorBgra* endFastPtr = dstPtr;
 
                             // Middle
                             while (startFastPtr < endFastPtr)
@@ -433,8 +436,8 @@ namespace PaintDotNet
 
                             while (dstX < dstRect.Right)
                             {
-                                ColorBgra srcPixel = this.src.GetBilinearSample2(srcPtCol.X, srcPtCol.Y);
-                                ColorBgra *dstPtr = dst.GetPointAddressUnchecked(dstX, dstY);
+                                ColorBgra srcPixel = this.src.GetBilinearSample(srcPtCol.X, srcPtCol.Y);
+                                ColorBgra* dstPtr = dst.GetPointAddressUnchecked(dstX, dstY);
                                 *dstPtr = srcPixel;
 
                                 srcPtCol.X += this.dsxddx;
@@ -463,11 +466,11 @@ namespace PaintDotNet
             {
                 m.Reset();
                 m.Translate(tX, tY, MatrixOrder.Append);
-                Draw(dst, m, true);
+                Draw(dst, m, ResamplingAlgorithm.Bilinear);
             }
         }
 
-        public unsafe void Draw(Surface dst, Matrix transform, bool highQuality)
+        public unsafe void Draw(Surface dst, Matrix transform, ResamplingAlgorithm sampling)
         {
             if (this.disposed)
             {
@@ -555,11 +558,6 @@ namespace PaintDotNet
             dc.fp_dsxddy = (int)(dc.dsxddy * fp_MultFactor);
             dc.fp_dsyddy = (int)(dc.dsyddy * fp_MultFactor);
 
-            dc.errorX = this.errorX;
-            dc.errorY = this.errorY;
-            dc.fp_errorX = (int)(this.errorX * fp_MultFactor);
-            dc.fp_errorY = (int)(this.errorY * fp_MultFactor);
-
             dc.dst = dst;
             dc.src = this.surface;
             Rectangle[] scans = theRegion.GetRegionScansReadOnlyInt();
@@ -574,8 +572,21 @@ namespace PaintDotNet
                 dc.dstScans = scans;
             }
 
-            WaitCallback wc = highQuality ? new WaitCallback(dc.DrawScansBilinear) : 
-                new WaitCallback(dc.DrawScansNearestNeighbor);
+            WaitCallback wc;
+
+            switch (sampling)
+            {
+                case ResamplingAlgorithm.NearestNeighbor:
+                    wc = new WaitCallback(dc.DrawScansNearestNeighbor);
+                    break;
+
+                case ResamplingAlgorithm.Bilinear:
+                    wc = new WaitCallback(dc.DrawScansBilinear);
+                    break;
+
+                default:
+                    throw new System.ComponentModel.InvalidEnumArgumentException();
+            }
 
             for (int i = 0; i < Processor.LogicalCpuCount; ++i)
             {

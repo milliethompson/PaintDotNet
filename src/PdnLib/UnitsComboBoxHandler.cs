@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -15,10 +15,10 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class UnitsComboBoxHandler
+    public sealed class UnitsComboBoxHandler
         : IUnitsComboBox
     {
-        private System.Windows.Forms.ComboBox comboBox;
+        private ComboBox comboBox;
 
         [Browsable(false)]
         public ComboBox ComboBox
@@ -284,7 +284,7 @@ namespace PaintDotNet
         }
 
         public event EventHandler UnitsChanged;
-        protected virtual void OnUnitsChanged()
+        private void OnUnitsChanged()
         {
             if (UnitsChanged != null)
             {

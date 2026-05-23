@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -16,11 +16,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for HeaderLabel.
-    /// </summary>
-    public class HeaderLabel : 
-        System.Windows.Forms.Control
+    public sealed class HeaderLabel 
+        : Control
     {
         private Control leftMask;
         private Control rightMask;
@@ -37,8 +34,15 @@ namespace PaintDotNet
                     return string.Empty;
                 }
                 else
-                {           
-                    return this.groupBox.Text;
+                {
+                    string text = this.groupBox.Text;
+
+                    if (text.Length > 2)
+                    {
+                        text = text.Substring(0, text.Length - 2);
+                    }
+
+                    return text;
                 }
             }
 
@@ -46,7 +50,18 @@ namespace PaintDotNet
             {
                 if (this.groupBox != null)
                 {
-                    this.groupBox.Text = value + "  ";
+                    if (value == null)
+                    {
+                        this.groupBox.Text = string.Empty;
+                    }
+                    else if (value.Length >= 1)
+                    {
+                        this.groupBox.Text = value + "  ";
+                    }
+                    else
+                    {
+                        this.groupBox.Text = string.Empty;
+                    }
                 }
             }
         }
@@ -73,6 +88,8 @@ namespace PaintDotNet
 
         public HeaderLabel()
         {
+            UI.InitScaling(null);
+
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
             PerformLayout();
@@ -150,26 +167,6 @@ namespace PaintDotNet
             this.leftMask.Visible = false;
 
             base.OnLayout(levent);
-        }
-
-        private void textLabel_TextChanged(object sender, System.EventArgs e)
-        {
-            PerformLayout();
-        }
-
-        private void textLabel_FontChanged(object sender, System.EventArgs e)
-        {
-            PerformLayout();
-        }
-
-        protected override void OnPaintBackground(PaintEventArgs pevent)
-        {
-            base.OnPaintBackground(pevent);
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
         }
     }
 }

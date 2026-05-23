@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -13,9 +13,6 @@ using System.Drawing.Drawing2D;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for EffectEnvironmentParameters.
-    /// </summary>
     public class EffectEnvironmentParameters
         : IDisposable
     {
@@ -30,35 +27,53 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private ColorBgra foreColor = ColorBgra.FromBgra(0, 0, 0, 0);
+        private ColorBgra primaryColor = ColorBgra.FromBgra(0, 0, 0, 0);
+        private ColorBgra secondaryColor = ColorBgra.FromBgra(0, 0, 0, 0);
+        private float brushWidth = 0.0f;
+        private PdnRegion selection;
+        private bool haveIntersectedSelection = false;
+
+        [Obsolete("This property has been renamed. Use PrimaryColor instead.", true)]
         public ColorBgra ForeColor 
         {
             get
             {
-                return foreColor;
+                return PrimaryColor;
             }
         }
 
-        private ColorBgra backColor = ColorBgra.FromBgra(0, 0, 0, 0);
+        public ColorBgra PrimaryColor
+        {
+            get
+            {
+                return this.primaryColor;
+            }
+        }
+
+        [Obsolete("This property has been renamed. Use SecondaryColor instead.")]
         public ColorBgra BackColor
         {
             get 
             {
-                return backColor;
+                return SecondaryColor;
             }
         }
 
-        private float brushWidth = 0.0f;
+        public ColorBgra SecondaryColor
+        {
+            get
+            {
+                return this.secondaryColor;
+            }
+        }
+
         public float BrushWidth 
         {
             get 
             {
-                return brushWidth;
+                return this.brushWidth;
             }
         }
-
-        private PdnRegion selection;
-        private bool haveIntersectedSelection = false;
 
         /// <summary>
         /// Gets the user's currently selected area.
@@ -70,25 +85,24 @@ namespace PaintDotNet.Effects
         /// <remarks>
         /// Note that calls to Render() will already be clipped to this selection area. 
         /// This data is only useful when an effect wants to change its rendering based
-        /// on what the user has selected. This is used by Auto-Levels to only calculate
-        /// new levels based on what the user has selected, and also by Rotate/Zoom to
-        /// set the center point of rotation.
+        /// on what the user has selected. For instance, This is used by Auto-Levels to
+        /// only calculate new levels based on what the user has selected
         /// </remarks>
         public PdnRegion GetSelection(Rectangle boundingRect)
         {
-            if (!haveIntersectedSelection)
+            if (!this.haveIntersectedSelection)
             {
-                selection.Intersect(boundingRect);
-                haveIntersectedSelection = true;
+                this.selection.Intersect(boundingRect);
+                this.haveIntersectedSelection = true;
             }
 
-            return selection;
+            return this.selection;
         }
 
-        public EffectEnvironmentParameters(ColorBgra fore, ColorBgra back, float brushWidth, PdnRegion selection)
+        public EffectEnvironmentParameters(ColorBgra primaryColor, ColorBgra secondaryColor, float brushWidth, PdnRegion selection)
         {
-            this.foreColor = fore;
-            this.backColor = back;
+            this.primaryColor = primaryColor;
+            this.secondaryColor = secondaryColor;
             this.brushWidth = brushWidth;
             this.selection = (PdnRegion)selection.Clone();
         }

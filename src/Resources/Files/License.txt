@@ -1,6 +1,10 @@
 Paint.NET
-Copyright (c) 2006 Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. 
-Portions Copyright (c) 2006 Microsoft Corporation. All Rights Reserved.
+Copyright (C) 2007 Rick Brewster, Chris Crosetto, Tom Jackson, Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, and Luke Walker. 
+Portions Copyright (C) 2007 Microsoft Corporation. All Rights Reserved.
+
+This software is licensed as per the MIT License below, but with one exception:
+
+* The Paint.NET logo and icon artwork are Copyright (C) Rick Brewster. They are covered by the Creative Commons Attribution-NonCommercial-NoDerivs 2.5 license which is detailed here: http://creativecommons.org/licenses/by-nc-nd/2.5/ . Permission is granted to use the logo and icon artwork in ways that discuss or promote Paint.NET (e.g. blog and news posts about Paint.NET, "Made with Paint.NET" watermarks or insets).
 
 MIT License: http://www.opensource.org/licenses/mit-license.php
 

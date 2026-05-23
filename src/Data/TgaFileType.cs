@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -556,10 +556,10 @@ namespace PaintDotNet.Data
                         throw new EndOfStreamException();
                     }
 
-                    color = ColorBgra.FromRgba(
-                        (byte)((colorWord & 0x1f) * 8),
-                        (byte)((colorWord >> 2) & 0xf8),
+                    color = ColorBgra.FromBgra(
                         (byte)((colorWord >> 7) & 0xf8),
+                        (byte)((colorWord >> 2) & 0xf8),
+                        (byte)((colorWord & 0x1f) * 8),
                         255);
 
                     break;
@@ -590,23 +590,19 @@ namespace PaintDotNet.Data
             return color;
         }
 
-        protected override void OnSave(Document input, Stream output, SaveConfigToken token, ProgressEventHandler callback)
+        protected override void OnSave(Document input, Stream output, SaveConfigToken token, Surface scratchSurface, ProgressEventHandler callback)
         {
-            using (Surface surface = new Surface(input.Width, input.Height))
+            scratchSurface.Clear(ColorBgra.FromBgra(255, 255, 255, 0));
+
+            using (RenderArgs ra = new RenderArgs(scratchSurface))
             {
-                surface.Clear(ColorBgra.FromBgra(255, 255, 255, 0));
+                input.Render(ra, true);
+            }
 
-                using (RenderArgs ra = new RenderArgs(surface))
-                {
-                    input.Render(ra, true);
-                }
-
-                SaveTga(surface, output, token, callback);
-            }        
+            SaveTga(scratchSurface, output, token, callback);
         }
 
-        private void SaveTga(Surface input, System.IO.Stream output, SaveConfigToken token,
-            PaintDotNet.ProgressEventHandler progressCallback)
+        private void SaveTga(Surface input, Stream output, SaveConfigToken token, ProgressEventHandler progressCallback)
         {
             TgaSaveConfigToken tgaToken = (TgaSaveConfigToken)token;
 

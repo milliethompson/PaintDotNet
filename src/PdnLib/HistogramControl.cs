@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -16,15 +16,10 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for HistogramControl.
-    /// </summary>
-    public class HistogramControl : System.Windows.Forms.UserControl
+    public sealed class HistogramControl 
+        : UserControl
     {
-        /// <summary> 
-        /// Required designer variable.
-        /// </summary>
-        protected Histogram histogram;
+        private Histogram histogram;
         public Histogram Histogram
         {
             get
@@ -167,17 +162,19 @@ namespace PaintDotNet
             for (int i = 1; i < entries - 1; ++i)
             {
                 sum3 += hist[i + 1];
+
                 points[i] = new PointF(
                     Utility.Lerp(l, r, (float)(sum3) / (float)(max * 3.1f)),
                     Utility.Lerp(t, b, (float)i / (float)entries));
+
                 sum3 -= hist[i - 1];
             }
 
-            float intensity = selected[channel] ? 0.375f : 0.125f;
-            ColorBgra colorPen = ColorBgra.Lerp(ColorBgra.Black, color, intensity);
+            byte intensity = selected[channel] ? (byte)96 : (byte)32;
+            ColorBgra colorPen = ColorBgra.Blend(ColorBgra.Black, color, intensity);
             ColorBgra colorBrush = color;
-            
-            colorBrush.A = (byte)(255 * intensity);
+
+            colorBrush.A = intensity;
 
             Pen pen = new Pen(colorPen.ToColor(), 1.3f);
             SolidBrush brush = new SolidBrush(colorBrush.ToColor());
@@ -194,6 +191,7 @@ namespace PaintDotNet
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.Clear(BackColor);
             int channels = histogram.Channels;
+
             for (int i = 0; i < channels; ++i)
             {
                 RenderChannel(g, histogram.GetVisualColor(i), i, max, mean[i]);

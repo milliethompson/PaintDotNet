@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -13,10 +13,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for LevelsEffectConfigDialog.
-    /// </summary>
-    public class LevelsEffectConfigDialog 
+    public sealed class LevelsEffectConfigDialog 
         : EffectConfigDialog
     {
         private bool[] mask = new bool[3];
@@ -411,14 +408,14 @@ namespace PaintDotNet.Effects
             // 
             // gradientInput
             // 
-            this.gradientInput.BottomColor = System.Drawing.Color.Black;
+            this.gradientInput.MinColor = System.Drawing.Color.Black;
             this.gradientInput.Count = 2;
             this.gradientInput.Dock = System.Windows.Forms.DockStyle.Fill;
             this.gradientInput.Location = new System.Drawing.Point(189, 23);
             this.gradientInput.Name = "gradientInput";
             this.tableMain.SetRowSpan(this.gradientInput, 8);
             this.gradientInput.Size = new System.Drawing.Size(34, 150);
-            this.gradientInput.TopColor = System.Drawing.Color.White;
+            this.gradientInput.MaxColor = System.Drawing.Color.White;
             this.gradientInput.Value = 0;
             this.gradientInput.ValueChanged += new PaintDotNet.IndexEventHandler(this.gradientInput_ValueChanged);
             this.swatchOutLow.TabStop = false;
@@ -435,14 +432,14 @@ namespace PaintDotNet.Effects
             // 
             // gradientOutput
             // 
-            this.gradientOutput.BottomColor = System.Drawing.Color.Black;
+            this.gradientOutput.MinColor = System.Drawing.Color.Black;
             this.gradientOutput.Count = 3;
             this.gradientOutput.Dock = System.Windows.Forms.DockStyle.Fill;
             this.gradientOutput.Location = new System.Drawing.Point(229, 23);
             this.gradientOutput.Name = "gradientOutput";
             this.tableMain.SetRowSpan(this.gradientOutput, 8);
             this.gradientOutput.Size = new System.Drawing.Size(34, 150);
-            this.gradientOutput.TopColor = System.Drawing.Color.White;
+            this.gradientOutput.MaxColor = System.Drawing.Color.White;
             this.gradientOutput.Value = 0;
             this.gradientOutput.ValueChanged += new PaintDotNet.IndexEventHandler(this.gradientOutput_ValueChanged);
             this.gradientOutput.TabStop = false;
@@ -562,8 +559,8 @@ namespace PaintDotNet.Effects
             top.Bgra |= mask[1] ? (uint)0xFF00 : 0;
             top.Bgra |= mask[2] ? (uint)0xFF0000 : 0;
 
-            gradientInput.TopColor = top.ToColor();
-            gradientOutput.TopColor = top.ToColor();
+            gradientInput.MaxColor = top.ToColor();
+            gradientOutput.MaxColor = top.ToColor();
 
             for (int i = 0; i < 3; ++i)
             {

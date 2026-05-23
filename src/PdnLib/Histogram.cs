@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -24,13 +24,14 @@ namespace PaintDotNet
         {
             get
             {
-                return histogram;
+                return this.histogram;
             }
+
             set
             {
-                if (value.Length == histogram.Length && value[0].Length == histogram[0].Length)
+                if (value.Length == this.histogram.Length && value[0].Length == this.histogram[0].Length)
                 {
-                    histogram = value;
+                    this.histogram = value;
                     OnHistogramUpdated();
                 }
                 else
@@ -44,7 +45,7 @@ namespace PaintDotNet
         {
             get
             {
-                return histogram.Length;
+                return this.histogram.Length;
             }
         }
      
@@ -52,17 +53,17 @@ namespace PaintDotNet
         {
             get
             {
-                return histogram[0].Length;
+                return this.histogram[0].Length;
             }
         }
 
-        protected Histogram(int channels, int entries)
+        protected internal Histogram(int channels, int entries)
         {
-            histogram = new long[channels][];
+            this.histogram = new long[channels][];
 
             for (int channel = 0; channel < channels; ++channel)
             {
-                histogram[channel] = new long[entries];
+                this.histogram[channel] = new long[entries];
             }
         }
 

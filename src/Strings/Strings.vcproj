@@ -24,10 +24,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="@rem compiling English strings&#x0D;&#x0A;&quot;$(SolutionDir)\tools\resgen.exe&quot; &quot;$(ProjectDir)\Strings.resx&quot; &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
-				ReBuildCommandLine="@rem compiling English strings&#x0D;&#x0A;&quot;$(SolutionDir)\tools\resgen.exe&quot; &quot;$(ProjectDir)\Strings.resx&quot; &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
+				BuildCommandLine="@rem compiling English strings&#x0D;&#x0A;&quot;$(SolutionDir)\BuildTools\resgen.exe&quot; &quot;$(ProjectDir)\Strings.resx&quot; &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
+				ReBuildCommandLine="@rem compiling English strings&#x0D;&#x0A;&quot;$(SolutionDir)\BuildTools\resgen.exe&quot; &quot;$(ProjectDir)\Strings.resx&quot; &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
 				CleanCommandLine="del &quot;$(TargetPath)&quot;"
-				Output="$(OutDir)/PaintDotNet.Strings.resources"
+				Output="$(OutDir)/PaintDotNet.Strings.3.resources"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -45,10 +45,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="@rem compiling English strings&#x0D;&#x0A;&quot;$(SolutionDir)\tools\resgen.exe&quot; &quot;$(ProjectDir)\Strings.resx&quot; &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
-				ReBuildCommandLine="@rem compiling English strings&#x0D;&#x0A;&quot;$(SolutionDir)\tools\resgen.exe&quot; &quot;$(ProjectDir)\Strings.resx&quot; &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
+				BuildCommandLine="@rem compiling English strings&#x0D;&#x0A;&quot;$(SolutionDir)\BuildTools\resgen.exe&quot; &quot;$(ProjectDir)\Strings.resx&quot; &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
+				ReBuildCommandLine="@rem compiling English strings&#x0D;&#x0A;&quot;$(SolutionDir)\BuildTools\resgen.exe&quot; &quot;$(ProjectDir)\Strings.resx&quot; &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
 				CleanCommandLine="del &quot;$(TargetPath)&quot;"
-				Output="$(OutDir)/PaintDotNet.Strings.resources"
+				Output="$(OutDir)/PaintDotNet.Strings.3.resources"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
 				ForcedIncludes=""

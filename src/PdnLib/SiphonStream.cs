@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -21,7 +21,7 @@ namespace PaintDotNet
     /// I can keep tabs on a serialization or deserialization operation and have a
     /// dialog box with a progress bar.
     /// </summary>
-    public class SiphonStream
+    public sealed class SiphonStream
         : Stream
     {
         private Exception throwMe;
@@ -34,12 +34,12 @@ namespace PaintDotNet
         {
             get
             {
-                return tag;
+                return this.tag;
             }
 
             set
             {
-                tag = value;
+                this.tag = value;
             }
         }
 
@@ -48,18 +48,18 @@ namespace PaintDotNet
         /// exception passed to this method will be used as the InnerException.
         /// </summary>
         /// <param name="throwMe"></param>
-        public void Abort(Exception throwMe)
+        public void Abort(Exception newThrowMe)
         {
-            if (throwMe == null)
+            if (newThrowMe == null)
             {
                 throw new ArgumentException("throwMe may not be null", "throwMe");
             }
 
-            this.throwMe = throwMe;
+            this.throwMe = newThrowMe;
         }
 
         public event IOEventHandler IOFinished;
-        protected void OnIOFinished(IOEventArgs e)
+        private void OnIOFinished(IOEventArgs e)
         {
             if (IOFinished != null)
             {
@@ -124,38 +124,44 @@ namespace PaintDotNet
             }
 
             int countLeft = count;
-            int amountRead = 0;
+            int cursor = offset;
+            int totalAmountRead = 0;
 
-            for (int cursor = 0; cursor < count; cursor += siphonSize)
+            while (cursor < offset + count)
             {
-                int count2 = Math.Min(siphonSize, countLeft);    
+                int count2 = Math.Min(this.siphonSize, countLeft);
+                int amountRead = stream.Read(buffer, cursor, count2);
+                ReadAccumulate(amountRead);
+                countLeft -= amountRead;
+                cursor += amountRead;
+                totalAmountRead += amountRead;
 
-                amountRead += stream.Read(buffer, cursor, count2);
-                ReadAccumulate(count2);
-
-                countLeft -= siphonSize;
+                if (amountRead == 0)
+                {
+                    break;
+                }
             }
 
-            return amountRead;
+            return totalAmountRead;
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            if (throwMe != null)
+            if (this.throwMe != null)
             {
                 throw new IOException("Aborted", this.throwMe);
             }
 
             int countLeft = count;
+            int cursor = offset;
 
-            for (int cursor = 0; cursor < count; cursor += siphonSize)
+            while (cursor < offset + count)
             {
-                int count2 = Math.Min(siphonSize, countLeft);               
-
+                int count2 = Math.Min(this.siphonSize, countLeft);
                 stream.Write(buffer, cursor, count2);
                 WriteAccumulate(count2);
-
-                countLeft -= siphonSize;
+                countLeft -= count2;
+                cursor += count2;
             }
         }
 
@@ -163,7 +169,7 @@ namespace PaintDotNet
         {
             get
             {
-                return stream.CanRead;
+                return this.stream.CanRead;
             }
         }
 
@@ -171,7 +177,7 @@ namespace PaintDotNet
         {
             get
             {
-                return stream.CanWrite;
+                return this.stream.CanWrite;
             }
         }
 
@@ -179,20 +185,20 @@ namespace PaintDotNet
         {
             get
             {
-                return stream.CanSeek;
+                return this.stream.CanSeek;
             }
         }
 
         public override void Flush()
         {
-            stream.Flush();
+            this.stream.Flush();
         }
 
         public override long Length
         {
             get
             {
-                return stream.Length;
+                return this.stream.Length;
             }
         }
 
@@ -200,22 +206,22 @@ namespace PaintDotNet
         {
             get
             {
-                return stream.Position;
+                return this.stream.Position;
             }
             set
             {
-                stream.Position = value;
+                this.stream.Position = value;
             }
         }
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            return stream.Seek(offset, origin);
+            return this.stream.Seek(offset, origin);
         }
 
         public override void SetLength(long value)
         {
-            stream.SetLength(value);
+            this.stream.SetLength(value);
         }
 
         public SiphonStream(Stream underlyingStream)

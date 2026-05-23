@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -16,9 +16,6 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Setup
 {
-    /// <summary>
-    /// Summary description for IntroPage.
-    /// </summary>
     public class IntroPage 
         : WizardPage
     {
@@ -54,7 +51,7 @@ namespace PaintDotNet.Setup
             }
 
             string introFormat = PdnResources.GetString("SetupWizard.IntroPage.IntroText.Text.Format");
-            string appNameWithTag = PdnInfo.GetProductName();
+            string appNameWithTag = PdnInfo.GetBareProductName();
             string intro = string.Format(introFormat, appNameWithTag);
             this.introText.Text = intro;
 
@@ -86,7 +83,7 @@ namespace PaintDotNet.Setup
                 this.introText.Font = WizardHost.NormalTextFont;
                 this.introText.ForeColor = WizardHost.TextColor;
                 Font normalFont = WizardHost.NormalTextFont;
-                Font rbFont = new Font(normalFont, normalFont.Style | FontStyle.Bold);
+                Font rbFont = Utility.CreateFont(normalFont.Name, normalFont.Size, normalFont.Style | FontStyle.Bold);
                 this.quickRB.Font = rbFont;
                 this.quickRB.ForeColor = WizardHost.TextColor;
                 this.quickDescription.Font = WizardHost.NormalTextFont;
@@ -108,7 +105,7 @@ namespace PaintDotNet.Setup
             IntroPage.UserChoseQuickSetup = this.quickRB.Checked; // license page uses this to determine where to go for 'Next' button press
 
             WizardHost.GoToPage(typeof(LicensePage));
-            base.OnNextClicked ();
+            base.OnNextClicked();
         }
 
         /// <summary> 
@@ -151,7 +148,7 @@ namespace PaintDotNet.Setup
             // 
             // copyrightLabel
             // 
-            this.copyrightLabel.Location = new System.Drawing.Point(12, 208);
+            this.copyrightLabel.Location = new System.Drawing.Point(12, 224);
             this.copyrightLabel.Name = "copyrightLabel";
             this.copyrightLabel.Size = new System.Drawing.Size(472, 48);
             this.copyrightLabel.TabIndex = 5;

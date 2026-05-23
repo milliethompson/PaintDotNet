@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 // Original C++ implementation by Jason Waltman as part of "Filter Explorer," http://www.jasonwaltman.com/thesis/index.html
@@ -17,10 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for OilPaintingEffect.
-    /// </summary>
-    public class OilPaintingEffect
+    public sealed class OilPaintingEffect
         : Effect
     {
         public static string StaticName
@@ -34,7 +31,6 @@ namespace PaintDotNet.Effects
         public OilPaintingEffect()
             : base(StaticName,
                    PdnResources.GetImage("Icons.OilPaintingEffect.png"),
-                   Keys.None,
                    null,
                    EffectDirectives.None,
                    true)
@@ -74,11 +70,11 @@ namespace PaintDotNet.Effects
             int height = src.Height;
 
             int arrayLens = 1 + smoothness;
-            int[] intensityCount = new int[arrayLens];
-            uint[] avgRed = new uint[arrayLens];
-            uint[] avgGreen = new uint[arrayLens];
-            uint[] avgBlue = new uint[arrayLens];
-            uint[] avgAlpha = new uint[arrayLens];
+            int* intensityCount = stackalloc int[arrayLens];
+            uint* avgRed = stackalloc uint[arrayLens];
+            uint* avgGreen = stackalloc uint[arrayLens];
+            uint* avgBlue = stackalloc uint[arrayLens];
+            uint* avgAlpha = stackalloc uint[arrayLens];
 
             byte maxIntensity = smoothness;
 

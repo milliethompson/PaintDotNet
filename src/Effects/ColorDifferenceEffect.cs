@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
@@ -23,7 +23,7 @@ namespace PaintDotNet.Effects
     /// It is also limited to 3x3 kernels.
     /// (Chris Crosetto)
     /// </summary>
-    public unsafe abstract class ColorDifferenceEffect
+    public abstract class ColorDifferenceEffect
         : Effect
     {            
         public unsafe void RenderColorDifferenceEffect(double[,] weights, RenderArgs dstArgs, 
@@ -73,7 +73,7 @@ namespace PaintDotNet.Effects
                             for (int fx = fxStart; fx < fxEnd; ++fx)
                             {
                                 double weight = weights[fy, fx];
-                                ColorBgra c = src[x - 1 + fx, y - 1 + fy];
+                                ColorBgra c = src.GetPointUnchecked(x - 1 + fx, y - 1 + fy);
 
                                 rSum += weight * (double)c.R;
                                 gSum += weight * (double)c.G;
@@ -100,10 +100,9 @@ namespace PaintDotNet.Effects
             }
         }
 
-        public ColorDifferenceEffect(string name, Image image, bool isConfigurable)
+        protected internal ColorDifferenceEffect(string name, Image image, bool isConfigurable)
             : base(name, image, isConfigurable)
         {
         }
-    }
-    
+    }    
 }   

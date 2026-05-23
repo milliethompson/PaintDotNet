@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -12,7 +12,7 @@ using System;
 namespace PaintDotNet.Effects
 {
     [EffectTypeHint(EffectTypeHint.Unary | EffectTypeHint.Fast)]
-    public class RedEyeRemoveEffect
+    public sealed class RedEyeRemoveEffect
         : Effect
     {
         public override EffectConfigDialog CreateConfigDialog()
@@ -39,7 +39,7 @@ namespace PaintDotNet.Effects
         public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, System.Drawing.Rectangle[] rois, int startIndex, int length)
         {
             TwoAmountsConfigToken tact = (TwoAmountsConfigToken)parameters;
-            PixelOp redEyeRemove = new UnaryPixelOps.RedEyeRemove(tact.Amount1,tact.Amount2);
+            PixelOp redEyeRemove = new UnaryPixelOps.RedEyeRemove(tact.Amount1, tact.Amount2);
 
             redEyeRemove.Apply(dstArgs.Surface, srcArgs.Surface, rois, startIndex, length);
         }

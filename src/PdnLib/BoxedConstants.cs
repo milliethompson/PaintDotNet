@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -12,7 +12,10 @@ using System;
 namespace PaintDotNet
 {
     /// <summary>
-    /// Summary description for BoxedConstants.
+    /// Provides access to a cached group of boxed, commonly used constants.
+    /// This helps to avoid boxing overhead, much of which consists of transferring
+    /// the item to the heap. Unboxing, on the other hand, is quite cheap.
+    /// This is commonly used to pass index values to worker threads.
     /// </summary>
     public sealed class BoxedConstants
     {

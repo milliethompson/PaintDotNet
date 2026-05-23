@@ -58,7 +58,7 @@ namespace PdnBench
                 }
             }
 
-            public event VoidVoidDelegate RenderedRect;
+            public event Procedure RenderedRect;
             private void OnRenderedRect()
             {
                 if (RenderedRect != null)
@@ -87,7 +87,7 @@ namespace PdnBench
             this.threadPool = new PaintDotNet.Threading.ThreadPool();
             rects = new Rectangle[Processor.LogicalCpuCount];
             Utility.SplitRectangle(this.dst.Bounds, rects);
-            base.OnBeforeExecute ();
+            base.OnBeforeExecute();
 		}
 
 		protected override void OnExecute()

@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -14,10 +14,7 @@ using System.IO;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for BmpFileType.
-    /// </summary>
-    public class BmpFileType
+    public sealed class BmpFileType
         : GdiPlusFileType
     {
         public BmpFileType()
@@ -84,30 +81,29 @@ namespace PaintDotNet
             return new Bitmap(surface.Width, surface.Height, realStride, PixelFormat.Format24bppRgb, new IntPtr(surface.Scan0.VoidStar));
         }
 
-        protected override void OnSave(Document input, Stream output, SaveConfigToken token, ProgressEventHandler callback)
+        protected override void OnSave(Document input, Stream output, SaveConfigToken token, Surface scratchSurface, ProgressEventHandler callback)
         {
             ImageCodecInfo icf = GdiPlusFileType.GetImageCodecInfo(ImageFormat.Bmp);
             EncoderParameters parms = new EncoderParameters(1);
             EncoderParameter parm = new EncoderParameter(System.Drawing.Imaging.Encoder.ColorDepth, 24); // BMP's should always save as 24-bit
             parms.Param[0] = parm;
 
-            using (Surface surface = new Surface(input.Width, input.Height))
+            scratchSurface.Clear(ColorBgra.White);
+
+            using (RenderArgs ra = new RenderArgs(scratchSurface))
             {
-                surface.Clear(ColorBgra.White);
+                input.Render(ra, true);
+            }
 
-                using (RenderArgs ra = new RenderArgs(surface))
-                {
-                    input.Render(ra, true);
-                }
+            // In order to save memory, we 'squish' the 32-bit bitmap down to 24-bit in-place
+            // instead of allocating a new bitmap and copying it over.
+            SquishSurfaceTo24Bpp(scratchSurface);
 
-                SquishSurfaceTo24Bpp(surface);
-               
-                using (Bitmap bitmap = CreateAliased24BppBitmap(surface))
-                {
-                    GdiPlusFileType.LoadProperties(bitmap, input);
-                    bitmap.Save(output, icf, parms);
-                }
-            }                
+            using (Bitmap bitmap = CreateAliased24BppBitmap(scratchSurface))
+            {
+                GdiPlusFileType.LoadProperties(bitmap, input);
+                bitmap.Save(output, icf, parms);
+            }
         }
     }
 }

@@ -1,19 +1,16 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
 
 namespace PaintDotNet.Setup
 {
-    /// <summary>
-    /// Summary description for NativeConstants.
-    /// </summary>
     internal sealed class NativeConstants
     {
         internal const ushort PROCESSOR_ARCHITECTURE_INTEL = 0;
@@ -139,36 +136,6 @@ namespace PaintDotNet.Setup
 
         internal const uint CSIDL_PROGRAM_FILES = 0x0026;  // C:\Program Files
         internal const uint CSIDL_FLAG_CREATE = 0x8000;    // new for Win2K, or this in to force creation of folder
-
-
-        internal const byte VER_EQUAL = 1;
-        internal const byte VER_GREATER = 2;
-        internal const byte VER_GREATER_EQUAL = 3;
-        internal const byte VER_LESS = 4;
-        internal const byte VER_LESS_EQUAL = 5;
-        internal const byte VER_AND = 6;
-        internal const byte VER_OR = 7;
-
-        internal const uint VER_CONDITION_MASK = 7;
-        internal const uint VER_NUM_BITS_PER_CONDITION_MASK = 3;
-
-        internal const uint VER_MINORVERSION = 0x0000001;
-        internal const uint VER_MAJORVERSION = 0x0000002;
-        internal const uint VER_BUILDNUMBER = 0x0000004;
-        internal const uint VER_PLATFORMID = 0x0000008;
-        internal const uint VER_SERVICEPACKMINOR = 0x0000010;
-        internal const uint VER_SERVICEPACKMAJOR = 0x0000020;
-        internal const uint VER_SUITENAME = 0x0000040;
-        internal const uint VER_PRODUCT_TYPE = 0x0000080;
-
-        internal const uint VER_NT_WORKSTATION = 0x0000001;
-        internal const uint VER_NT_DOMAIN_CONTROLLER = 0x0000002;
-        internal const uint VER_NT_SERVER = 0x0000003;
-
-        internal const uint VER_PLATFORM_WIN32s = 0;
-        internal const uint VER_PLATFORM_WIN32_WINDOWS = 1;
-        internal const uint VER_PLATFORM_WIN32_NT = 2;
-
 
         private NativeConstants()
         {

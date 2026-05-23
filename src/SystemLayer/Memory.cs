@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 //#define REPORTLEAKS
@@ -24,13 +24,9 @@ namespace PaintDotNet.SystemLayer
     /// that is fixed (pinned) in memory.
     /// </summary>
     [CLSCompliant(false)]
-    public unsafe sealed class Memory
+    public unsafe static class Memory
     {
         private static IntPtr hHeap;
-
-        private Memory()
-        {
-        }
 
         static Memory()
         {
@@ -47,7 +43,7 @@ namespace PaintDotNet.SystemLayer
                     sizeof(uint));
             } 
 
-            catch
+            catch (Exception)
             {
                 // If that method isn't available, like on Win2K, don't worry about it.
             }                    
@@ -55,6 +51,9 @@ namespace PaintDotNet.SystemLayer
             Application.ApplicationExit += new EventHandler(Application_ApplicationExit);
         }
 
+        /// <summary>
+        /// Gets the total amount of physical memory (RAM) in the system.
+        /// </summary>
         public static ulong TotalPhysicalBytes
         {
             get
@@ -144,7 +143,8 @@ namespace PaintDotNet.SystemLayer
         }
 
         /// <summary>
-        /// Allocates a bitmap of the given height and width.
+        /// Allocates a bitmap of the given height and width. Pixel data may be read/written directly, 
+        /// and it may be drawn to the screen using PdnGraphics.DrawBitmap().
         /// </summary>
         /// <param name="width">The width of the bitmap to allocate.</param>
         /// <param name="height">The height of the bitmap to allocate.</param>
@@ -286,7 +286,7 @@ namespace PaintDotNet.SystemLayer
         /// <param name="writeAccess">Whether to allow write access.</param>
         /// <remarks>
         /// You may not specify false for read access without also specifying false for write access.
-        /// Note to implementors:  This method is not guaranteed to actually set read/write-ability 
+        /// Note to implementors: This method is not guaranteed to actually set read/write-ability 
         /// on a block of memory, and may instead be implemented as a no-op after parameter validation.
         /// </remarks>
         public static void ProtectBlockLarge(IntPtr block, ulong size, bool readAccess, bool writeAccess)
@@ -312,7 +312,7 @@ namespace PaintDotNet.SystemLayer
             }
 
 #if DEBUGSPEW
-            Debug.WriteLine("ProtectBlockLarge: block #" + block.ToString() + ", read: " + readAccess + ", write: " + writeAccess);
+            Tracing.Ping("ProtectBlockLarge: block #" + block.ToString() + ", read: " + readAccess + ", write: " + writeAccess);
 #endif
 
             SafeNativeMethods.VirtualProtect(block, new UIntPtr(size), flNewProtect, out flOldProtect);
@@ -347,7 +347,7 @@ namespace PaintDotNet.SystemLayer
             SetToZero(dst.ToPointer(), length);
         }
 
-        public static void SetToZero(void* dst, ulong length)
+        public static void SetToZero(void *dst, ulong length)
         {
             SafeNativeMethods.memset(dst, 0, new UIntPtr(length));
         }

@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -15,8 +15,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    public class BitmapLayerPropertiesDialog 
-        : PaintDotNet.LayerPropertiesDialog
+    public sealed class BitmapLayerPropertiesDialog 
+        : LayerPropertiesDialog
     {
         private System.Windows.Forms.Label opacityLabel;
         private System.Windows.Forms.Label blendModeLabel;
@@ -63,7 +63,7 @@ namespace PaintDotNet
         {
             opacityUpDown.Value = Layer.Opacity;
             SelectOp(((BitmapLayer)Layer).BlendOp);
-            base.InitDialogFromLayer ();
+            base.InitDialogFromLayer();
         }
 
         protected override void InitLayerFromDialog()
@@ -141,6 +141,7 @@ namespace PaintDotNet
             // 
             this.blendModeLabel.Location = new System.Drawing.Point(6, 92);
             this.blendModeLabel.Name = "blendModeLabel";
+            this.blendModeLabel.AutoSize = true;
             this.blendModeLabel.Size = new System.Drawing.Size(50, 23);
             this.blendModeLabel.TabIndex = 4;
             // 
@@ -186,6 +187,7 @@ namespace PaintDotNet
             // opacityLabel
             // 
             this.opacityLabel.Location = new System.Drawing.Point(6, 118);
+            this.opacityLabel.AutoSize = true;
             this.opacityLabel.Name = "opacityLabel";
             this.opacityLabel.Size = new System.Drawing.Size(48, 16);
             this.opacityLabel.TabIndex = 0;

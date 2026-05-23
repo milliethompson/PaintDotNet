@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -13,9 +13,6 @@ using System.IO;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for DeferredSerializer.
-    /// </summary>
     public sealed class DeferredFormatter
     {
         private ArrayList objects = ArrayList.Synchronized(new ArrayList());
@@ -84,6 +81,10 @@ namespace PaintDotNet
             }
         }
 
+        /// <summary>
+        /// Reports that bytes have been successfully been written.
+        /// </summary>
+        /// <param name="bytes"></param>
         public void ReportBytes(long bytes)
         {
             lock (lockObject)

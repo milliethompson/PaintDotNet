@@ -1,4 +1,0 @@
-LIBRARY ShellExtension_IA64
-EXPORTS
-DllCanUnloadNow PRIVATE
-DllGetClassObject PRIVATE

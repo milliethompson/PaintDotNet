@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -30,14 +30,29 @@ namespace PaintDotNet.SystemLayer
 
         public ToolStripEx()
         {
-            System.Windows.Forms.ToolStripProfessionalRenderer tspr = this.Renderer as ToolStripProfessionalRenderer;
+            ToolStripProfessionalRenderer tspr = this.Renderer as ToolStripProfessionalRenderer;
 
             if (tspr != null)
             {
                 tspr.ColorTable.UseSystemColors = true;
+                tspr.RoundedEdges = false;
             }
 
             this.ImageScalingSize = new System.Drawing.Size(UI.ScaleWidth(16), UI.ScaleHeight(16));
+        }
+
+        protected override bool ProcessCmdKey(ref Message m, Keys keyData)
+        {
+            bool processed = false;
+            Form form = this.FindForm();
+            FormEx formEx = FormEx.FindFormEx(form);
+
+            if (formEx != null)
+            {
+                processed = formEx.RelayProcessCmdKey(keyData);
+            }
+
+            return processed;
         }
 
         /// <summary>
@@ -72,15 +87,15 @@ namespace PaintDotNet.SystemLayer
         }
 
         /// <summary>
-        /// This event is raised when this toolstrip instance wishes to relinquish focuses.
+        /// This event is raised when this toolstrip instance wishes to relinquish focus.
         /// </summary>
-        public event EventHandler RelinquishFocusRequest;
+        public event EventHandler RelinquishFocus;
 
-        private void OnRelinquishFocusRequest()
+        private void OnRelinquishFocus()
         {
-            if (RelinquishFocusRequest != null)
+            if (RelinquishFocus != null)
             {
-                RelinquishFocusRequest(this, EventArgs.Empty);
+                RelinquishFocus(this, EventArgs.Empty);
             }
         }
 
@@ -89,7 +104,7 @@ namespace PaintDotNet.SystemLayer
         /// </summary>
         /// <remarks>
         /// If this is true, the toolstrip will capture focus when the mouse enters its client area. It will then
-        /// relinquish focus (via the RelinquishFocusRequest event) when the mouse leaves. It will not capture or
+        /// relinquish focus (via the RelinquishFocus event) when the mouse leaves. It will not capture or
         /// attempt to relinquish focus if MenuStripEx.IsAnyMenuActive returns true.
         /// </remarks>
         public bool ManagedFocus
@@ -105,26 +120,6 @@ namespace PaintDotNet.SystemLayer
             }
         }
 
-        private void OnAdded(Control c)
-        {
-            c.MouseEnter += OnItemMouseEnter;
-
-            foreach (Control child in c.Controls)
-            {
-                OnAdded(child);
-            }
-        }
-
-        private void OnRemoved(Control c)
-        {
-            c.MouseLeave -= OnItemMouseEnter;
-
-            foreach (Control child in c.Controls)
-            {
-                OnRemoved(child);
-            }
-        }
-
         protected override void OnItemAdded(ToolStripItemEventArgs e)
         {
             ToolStripComboBox tscb = e.Item as ToolStripComboBox;
@@ -135,42 +130,27 @@ namespace PaintDotNet.SystemLayer
             }
             else
             {
-                tscb.DropDown += new EventHandler(tscb_DropDown);
-                tscb.DropDownClosed += new EventHandler(tscb_DropDownClosed);
-                tscb.SelectedIndexChanged += new EventHandler(tscb_SelectedIndexChanged);
-                tscb.ComboBox.SelectedValueChanged += new EventHandler(ComboBox_SelectedValueChanged);
-                tscb.Enter += new EventHandler(tscb_Enter);
-                tscb.Leave += new EventHandler(tscb_Leave);
+                tscb.DropDownClosed += new EventHandler(ComboBox_DropDownClosed);
+                tscb.Enter += new EventHandler(ComboBox_Enter);
+                tscb.Leave += new EventHandler(ComboBox_Leave);
             }
 
             base.OnItemAdded(e);
         }
 
-        void tscb_Leave(object sender, EventArgs e)
+        private void ComboBox_Leave(object sender, EventArgs e)
         {
             --enteredComboBox;
         }
 
-        void tscb_Enter(object sender, EventArgs e)
+        private void ComboBox_Enter(object sender, EventArgs e)
         {
             ++enteredComboBox;
         }
 
-        void ComboBox_SelectedValueChanged(object sender, EventArgs e)
+        private void ComboBox_DropDownClosed(object sender, EventArgs e)
         {
-        }
-
-        void tscb_SelectedIndexChanged(object sender, EventArgs e)
-        {
-        }
-
-        void tscb_DropDownClosed(object sender, EventArgs e)
-        {
-            OnRelinquishFocusRequest();
-        }
-
-        void tscb_DropDown(object sender, EventArgs e)
-        {
+            OnRelinquishFocus();
         }
 
         protected override void OnItemRemoved(ToolStripItemEventArgs e)
@@ -183,18 +163,15 @@ namespace PaintDotNet.SystemLayer
             }
             else
             {
-                tscb.DropDown -= new EventHandler(tscb_DropDown);
-                tscb.DropDownClosed -= new EventHandler(tscb_DropDownClosed);
-                tscb.SelectedIndexChanged -= new EventHandler(tscb_SelectedIndexChanged);
-                tscb.ComboBox.SelectedValueChanged -= new EventHandler(ComboBox_SelectedValueChanged);
-                tscb.Enter -= new EventHandler(tscb_Enter);
-                tscb.Leave -= new EventHandler(tscb_Leave);
+                tscb.DropDownClosed -= new EventHandler(ComboBox_DropDownClosed);
+                tscb.Enter -= new EventHandler(ComboBox_Enter);
+                tscb.Leave -= new EventHandler(ComboBox_Leave);
             }
 
             base.OnItemRemoved(e);
         }
 
-        void OnItemMouseEnter(object sender, EventArgs e)
+        private void OnItemMouseEnter(object sender, EventArgs e)
         {
             if (this.managedFocus && !MenuStripEx.IsAnyMenuActive && UI.IsOurAppActive && enteredComboBox == 0)
             {
@@ -206,7 +183,7 @@ namespace PaintDotNet.SystemLayer
         {
             if (this.managedFocus && !MenuStripEx.IsAnyMenuActive && UI.IsOurAppActive && enteredComboBox == 0)
             {
-                OnRelinquishFocusRequest();
+                OnRelinquishFocus();
             }
 
             base.OnMouseLeave(e);

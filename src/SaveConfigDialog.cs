@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -17,11 +17,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for SaveConfigDialog.
-    /// </summary>
     public class SaveConfigDialog 
-        : PaintDotNet.PdnBaseDialog
+        : PdnBaseDialog
     {
         private string fileSizeTextFormat;
         private System.Threading.Timer fileSizeTimer;
@@ -40,11 +37,24 @@ namespace PaintDotNet
         private PaintDotNet.DocumentView documentView;
         private PaintDotNet.SaveConfigWidget saveConfigWidget;
         private System.Windows.Forms.Panel saveConfigPanel;
-        private Surface renderSurface;
 
         private int previewRightMargin = -1;
         private PaintDotNet.HeaderLabel settingsHeader;
         private int previewBottomMargin = -1;
+
+        private Surface scratchSurface;
+        public Surface ScratchSurface
+        {
+            set
+            {
+                if (this.scratchSurface != null)
+                {
+                    throw new InvalidOperationException("May only set ScratchSurface once, and only before the dialog is shown");
+                }
+
+                this.scratchSurface = value;
+            }
+        }
 
         public event ProgressEventHandler Progress;
         protected virtual void OnProgress(int percent)
@@ -73,24 +83,6 @@ namespace PaintDotNet
             }
         }
 
-        /// <summary>
-        /// Gets or sets the Surface that is used for rendering the preview.
-        /// This can be used to optimize memory use if you already have allocated
-        /// a Surface that is the same dimensions as the Document.
-        /// </summary>
-        [Browsable(false)]
-        public Surface RenderSurface
-        {
-            get
-            {
-                return renderSurface;
-            }
-
-            set
-            {
-                this.renderSurface = value;
-            }
-        }
 
         [Browsable(false)]
         public FileType FileType
@@ -155,6 +147,16 @@ namespace PaintDotNet
             }
         }
 
+        protected override void OnShown(EventArgs e)
+        {
+            if (this.scratchSurface == null)
+            {
+                throw new InvalidOperationException("ScratchSurface was never set: it is null");
+            }
+
+            base.OnShown(e);
+        }
+
         public SaveConfigDialog()
         {
             this.fileSizeTimer = new System.Threading.Timer(new System.Threading.TimerCallback(FileSizeTimerCallback), 
@@ -172,11 +174,6 @@ namespace PaintDotNet
             this.previewHeader.Text = PdnResources.GetString("SaveConfigDialog.PreviewHeader.Text");
 
             this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileSaveIcon.png"));
-
-            if (this.renderSurface != null)
-            {
-                this.documentView.SetRenderSurface(this.renderSurface);
-            }
 
             this.documentView.Cursor = handIcon;
 
@@ -203,7 +200,22 @@ namespace PaintDotNet
             this.previewHeader.Width = 1 + this.documentView.Width;
 
             int h2 = Math.Min(this.saveConfigWidget.Height, this.saveConfigPanel.Height);
-            this.defaultsButton.Location = new Point(defaultsButton.Left, 8 + saveConfigPanel.Top + h2);
+            this.defaultsButton.Size = this.defaultsButton.GetPreferredSize(new Size(81, 23));
+
+            int defaultsRight;
+
+            if (this.saveConfigWidget == null)
+            {
+                defaultsRight = 182;
+            }
+            else
+            {
+                defaultsRight = this.saveConfigWidget.Right;
+            }
+
+            this.defaultsButton.Location = new Point(
+                defaultsRight - defaultsButton.Width, //defaultsButton.Left, 
+                8 + saveConfigPanel.Top + h2);
         }
 
         /// <summary>
@@ -267,7 +279,7 @@ namespace PaintDotNet
             this.baseOkButton.Location = new System.Drawing.Point(431, 319);
             this.baseOkButton.Name = "baseOkButton";
             this.baseOkButton.TabIndex = 2;
-            this.baseOkButton.Click += new System.EventHandler(this.baseOkButton_Click);
+            this.baseOkButton.Click += new System.EventHandler(this.BaseOkButton_Click);
             // 
             // baseCancelButton
             // 
@@ -276,7 +288,7 @@ namespace PaintDotNet
             this.baseCancelButton.Location = new System.Drawing.Point(511, 319);
             this.baseCancelButton.Name = "baseCancelButton";
             this.baseCancelButton.TabIndex = 3;
-            this.baseCancelButton.Click += new System.EventHandler(this.baseCancelButton_Click);
+            this.baseCancelButton.Click += new System.EventHandler(this.BaseCancelButton_Click);
             // 
             // saveConfigPanel
             // 
@@ -326,16 +338,15 @@ namespace PaintDotNet
             // 
             this.documentView.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.documentView.Document = null;
-            this.documentView.DrawGrid = false;
             this.documentView.Location = new System.Drawing.Point(200, 29);
             this.documentView.Name = "documentView";
             this.documentView.PanelAutoScroll = true;
             this.documentView.RulersEnabled = false;
             this.documentView.Size = new System.Drawing.Size(385, 272);
             this.documentView.TabIndex = 12;
-            this.documentView.DocumentMouseMove += new System.Windows.Forms.MouseEventHandler(this.documentView_DocumentMouseMove);
-            this.documentView.DocumentMouseDown += new System.Windows.Forms.MouseEventHandler(this.documentView_DocumentMouseDown);
-            this.documentView.DocumentMouseUp += new System.Windows.Forms.MouseEventHandler(this.documentView_DocumentMouseUp);
+            this.documentView.DocumentMouseMove += new System.Windows.Forms.MouseEventHandler(this.DocumentView_DocumentMouseMove);
+            this.documentView.DocumentMouseDown += new System.Windows.Forms.MouseEventHandler(this.DocumentView_DocumentMouseDown);
+            this.documentView.DocumentMouseUp += new System.Windows.Forms.MouseEventHandler(this.DocumentView_DocumentMouseUp);
             this.documentView.Visible = false;
             // 
             // settingsHeader
@@ -398,10 +409,6 @@ namespace PaintDotNet
 
         private volatile bool callbackBusy = false;
         private ManualResetEvent callbackDoneEvent = new ManualResetEvent(true);
-
-        private delegate void VoidLongDelegate(long longValue);
-        private delegate void VoidStringDelegate(string stringValue);
-        private delegate void VoidIntDelegate(int intValue);
 
         private void UpdateFileSizeAndPreview(string tempFileName)
         {
@@ -501,7 +508,7 @@ namespace PaintDotNet
 
         private void FileSizeProgressEventHandler(object state, ProgressEventArgs e)
         {
-            this.BeginInvoke(new VoidIntDelegate(SetFileSizeProgress), new object[] { (int)e.Percent });
+            this.BeginInvoke(new Procedure<int>(SetFileSizeProgress), new object[] { (int)e.Percent });
         }
 
         private void FileSizeTimerCallback(object state)
@@ -515,7 +522,7 @@ namespace PaintDotNet
 
                 if (callbackBusy)
                 {
-                    this.Invoke(new VoidVoidDelegate(QueueFileSizeTextUpdate));
+                    this.Invoke(new Procedure(QueueFileSizeTextUpdate));
                 }
                 else
                 {
@@ -555,20 +562,25 @@ namespace PaintDotNet
                     string tempName = Path.GetTempFileName();
                     FileStream stream = new FileStream(tempName, FileMode.Create, FileAccess.Write, FileShare.Read);
 
-                    this.FileType.Save(this.Document, stream, this.SaveConfigToken, 
-                        new ProgressEventHandler(FileSizeProgressEventHandler), true);
+                    this.FileType.Save(
+                        this.Document, 
+                        stream, 
+                        this.SaveConfigToken, 
+                        this.scratchSurface,
+                        new ProgressEventHandler(FileSizeProgressEventHandler), 
+                        true);
 
                     stream.Flush();
                     stream.Close();
 
-                    this.BeginInvoke(new VoidStringDelegate(UpdateFileSizeAndPreview), new object[] { tempName });
+                    this.BeginInvoke(new Procedure<string>(UpdateFileSizeAndPreview), new object[] { tempName });
                 }
 #if !DEBUG
             }
 
             catch
             {
-                this.BeginInvoke(new VoidStringDelegate(UpdateFileSizeAndPreview), new object[] { null } );
+                this.BeginInvoke(new Procedure<string>(UpdateFileSizeAndPreview), new object[] { null } );
             }
 
             finally
@@ -591,19 +603,19 @@ namespace PaintDotNet
             }
         }
 
-        private void baseOkButton_Click(object sender, System.EventArgs e)
+        private void BaseOkButton_Click(object sender, System.EventArgs e)
         {
             // TODO: if this takes too long, put up a dialog box saying "waiting for background task to finish ..."
             //       and with progress if ISaveWithProgress!
             using (new WaitCursorChanger(this))
             {
-                callbackDoneEvent.WaitOne();
+                this.callbackDoneEvent.WaitOne();
             }
 
             CleanupTimer();
         }
 
-        private void baseCancelButton_Click(object sender, System.EventArgs e)
+        private void BaseCancelButton_Click(object sender, EventArgs e)
         {
             using (new WaitCursorChanger(this))
             {
@@ -615,13 +627,13 @@ namespace PaintDotNet
 
         private bool documentMouseDown = false;
         private Point lastMouseXY;
-        private void documentView_DocumentMouseDown(object sender, System.Windows.Forms.MouseEventArgs e)
+        private void DocumentView_DocumentMouseDown(object sender, MouseEventArgs e)
         {
             if (e is StylusEventArgs)
             {
                 return;
             }
-                    
+
             if (e.Button == MouseButtons.Left)
             {
                 documentMouseDown = true;
@@ -630,7 +642,7 @@ namespace PaintDotNet
             }
         }
 
-        private void documentView_DocumentMouseMove(object sender, System.Windows.Forms.MouseEventArgs e)
+        private void DocumentView_DocumentMouseMove(object sender, MouseEventArgs e)
         {
             if (e is StylusEventArgs)
             {
@@ -657,7 +669,7 @@ namespace PaintDotNet
             }        
         }
 
-        private void documentView_DocumentMouseUp(object sender, System.Windows.Forms.MouseEventArgs e)
+        private void DocumentView_DocumentMouseUp(object sender, MouseEventArgs e)
         {
             if (e is StylusEventArgs)
             {

@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
@@ -17,10 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    /// <summary>
-    /// Summary description for RotateZoomEffectConfigDialog.
-    /// </summary>
-    public class RotateZoomEffectConfigDialog 
+    public sealed class RotateZoomEffectConfigDialog 
         : EffectConfigDialog
     {
         private System.Windows.Forms.Button okButton;
@@ -61,7 +58,7 @@ namespace PaintDotNet.Effects
         {
             InitializeComponent();
 
-            this.Icon = Utility.ImageToIcon(RotateZoomEffect.StaticImage);
+            this.Icon = Utility.ImageToIcon(RotateZoomEffect.StaticImage.Reference);
             this.Text = RotateZoomEffect.StaticName;
             this.okButton.Text = PdnResources.GetString("Form.OkButton.Text");
             this.cancelButton.Text = PdnResources.GetString("Form.CancelButton.Text");
@@ -107,7 +104,7 @@ namespace PaintDotNet.Effects
             tileSourceCheckBox.Checked = token.Tile;
             trackBarZoom.Value = (int)Math.Round(512 + 128 * Math.Log(token.Zoom, 2.0));
 
-            trackBarZoom_ValueChanged(this, EventArgs.Empty);
+            TrackBarZoom_ValueChanged(this, EventArgs.Empty);
         }
 
         protected override void InitTokenFromDialog()
@@ -200,7 +197,7 @@ namespace PaintDotNet.Effects
             this.okButton.Name = "okButton";
             this.okButton.Size = new System.Drawing.Size(72, 23);
             this.okButton.TabIndex = 26;
-            this.okButton.Click += new System.EventHandler(this.okButton_Click);
+            this.okButton.Click += new System.EventHandler(this.OkButton_Click);
             // 
             // cancelButton
             // 
@@ -211,7 +208,7 @@ namespace PaintDotNet.Effects
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(72, 23);
             this.cancelButton.TabIndex = 27;
-            this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
+            this.cancelButton.Click += new System.EventHandler(this.CancelButton_Click);
             // 
             // keepBackgroundCheckBox
             // 
@@ -220,7 +217,7 @@ namespace PaintDotNet.Effects
             this.keepBackgroundCheckBox.Name = "keepBackgroundCheckBox";
             this.keepBackgroundCheckBox.Width = 175;
             this.keepBackgroundCheckBox.TabIndex = 24;
-            this.keepBackgroundCheckBox.CheckedChanged += new System.EventHandler(this.keepBackgroundCheckBox_CheckedChanged);
+            this.keepBackgroundCheckBox.CheckedChanged += new System.EventHandler(this.KeepBackgroundCheckBox_CheckedChanged);
             // 
             // tileSourceCheckBox
             // 
@@ -229,7 +226,7 @@ namespace PaintDotNet.Effects
             this.tileSourceCheckBox.Name = "tileSourceCheckBox";
             this.tileSourceCheckBox.Width = 175;
             this.tileSourceCheckBox.TabIndex = 23;
-            this.tileSourceCheckBox.CheckedChanged += new System.EventHandler(this.tileSource_CheckedChanged);
+            this.tileSourceCheckBox.CheckedChanged += new System.EventHandler(this.TileSource_CheckedChanged);
             // 
             // rollControl
             // 
@@ -241,7 +238,7 @@ namespace PaintDotNet.Effects
             this.rollControl.Size = new System.Drawing.Size(112, 120);
             this.rollControl.TabIndex = 3;
             this.rollControl.TabStop = false;
-            this.rollControl.ValueChanged += new System.EventHandler(this.rollControl_ValueChanged);
+            this.rollControl.ValueChanged += new System.EventHandler(this.RollControl_ValueChanged);
             // 
             // headerRoll
             // 
@@ -278,7 +275,7 @@ namespace PaintDotNet.Effects
             this.panControl.Size = new System.Drawing.Size(124, 116);
             this.panControl.TabIndex = 0;
             this.panControl.TabStop = false;
-            this.panControl.PositionChanged += new System.EventHandler(this.panControl_PositionChanged);
+            this.panControl.PositionChanged += new System.EventHandler(this.PanControl_PositionChanged);
             // 
             // headerZoom
             // 
@@ -299,12 +296,13 @@ namespace PaintDotNet.Effects
             this.trackBarZoom.TabIndex = 8;
             this.trackBarZoom.TickFrequency = 64;
             this.trackBarZoom.Value = 512;
-            this.trackBarZoom.ValueChanged += new System.EventHandler(this.trackBarZoom_ValueChanged);
+            this.trackBarZoom.ValueChanged += new System.EventHandler(this.TrackBarZoom_ValueChanged);
             // 
             // zoomLabel
             // 
             this.zoomLabel.Location = new System.Drawing.Point(400, 32);
             this.zoomLabel.Name = "zoomLabel";
+            this.zoomLabel.AutoSize = true;
             this.zoomLabel.Width = 48;
             this.zoomLabel.TabIndex = 9;
             // 
@@ -312,6 +310,7 @@ namespace PaintDotNet.Effects
             // 
             this.panXLabel.Location = new System.Drawing.Point(200, 208);
             this.panXLabel.Name = "panXLabel";
+            this.panXLabel.AutoSize = true;
             this.panXLabel.Width = 56;
             this.panXLabel.TabIndex = 18;
             // 
@@ -319,6 +318,7 @@ namespace PaintDotNet.Effects
             // 
             this.panYLabel.Location = new System.Drawing.Point(200, 232);
             this.panYLabel.Name = "panYLabel";
+            this.panYLabel.AutoSize = true;
             this.panYLabel.Width = 56;
             this.panYLabel.TabIndex = 19;
             // 
@@ -345,9 +345,9 @@ namespace PaintDotNet.Effects
             this.panXUpDown.Size = new System.Drawing.Size(68, 20);
             this.panXUpDown.TabIndex = 20;
             this.panXUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.panXUpDown.Enter += new System.EventHandler(this.numericUpDown_Enter);
-            this.panXUpDown.ValueChanged += new System.EventHandler(this.panXUpDown_ValueChanged);
-            this.panXUpDown.Leave += new System.EventHandler(this.numericUpDown_Leave);
+            this.panXUpDown.Enter += new System.EventHandler(this.NumericUpDown_Enter);
+            this.panXUpDown.ValueChanged += new System.EventHandler(this.PanXUpDown_ValueChanged);
+            this.panXUpDown.Leave += new System.EventHandler(this.NumericUpDown_Leave);
             // 
             // panYUpDown
             // 
@@ -372,9 +372,9 @@ namespace PaintDotNet.Effects
             this.panYUpDown.Size = new System.Drawing.Size(68, 20);
             this.panYUpDown.TabIndex = 21;
             this.panYUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.panYUpDown.Enter += new System.EventHandler(this.numericUpDown_Enter);
-            this.panYUpDown.ValueChanged += new System.EventHandler(this.panYUpDown_ValueChanged);
-            this.panYUpDown.Leave += new System.EventHandler(this.numericUpDown_Leave);
+            this.panYUpDown.Enter += new System.EventHandler(this.NumericUpDown_Enter);
+            this.panYUpDown.ValueChanged += new System.EventHandler(this.PanYUpDown_ValueChanged);
+            this.panYUpDown.Leave += new System.EventHandler(this.NumericUpDown_Leave);
             // 
             // panResetButton
             // 
@@ -382,12 +382,13 @@ namespace PaintDotNet.Effects
             this.panResetButton.Name = "panResetButton";
             this.panResetButton.Size = new System.Drawing.Size(80, 23);
             this.panResetButton.TabIndex = 6;
-            this.panResetButton.Click += new System.EventHandler(this.panResetButton_Click);
+            this.panResetButton.Click += new System.EventHandler(this.PanResetButton_Click);
             // 
             // angleLabel
             // 
             this.angleLabel.Location = new System.Drawing.Point(8, 208);
             this.angleLabel.Name = "angleLabel";
+            this.angleLabel.AutoSize = true;
             this.angleLabel.Width = 88;
             this.angleLabel.TabIndex = 12;
             // 
@@ -409,9 +410,9 @@ namespace PaintDotNet.Effects
             this.angleUpDown.Size = new System.Drawing.Size(68, 20);
             this.angleUpDown.TabIndex = 13;
             this.angleUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.angleUpDown.Enter += new System.EventHandler(this.numericUpDown_Enter);
-            this.angleUpDown.ValueChanged += new System.EventHandler(this.angleUpDown_ValueChanged);
-            this.angleUpDown.Leave += new System.EventHandler(this.numericUpDown_Leave);
+            this.angleUpDown.Enter += new System.EventHandler(this.NumericUpDown_Enter);
+            this.angleUpDown.ValueChanged += new System.EventHandler(this.AngleUpDown_ValueChanged);
+            this.angleUpDown.Leave += new System.EventHandler(this.NumericUpDown_Leave);
             // 
             // zoomResetButton
             // 
@@ -419,12 +420,13 @@ namespace PaintDotNet.Effects
             this.zoomResetButton.Name = "zoomResetButton";
             this.zoomResetButton.Size = new System.Drawing.Size(80, 23);
             this.zoomResetButton.TabIndex = 10;
-            this.zoomResetButton.Click += new System.EventHandler(this.zoomResetButton_Click);
+            this.zoomResetButton.Click += new System.EventHandler(this.ZoomResetButton_Click);
             // 
             // twistAngleLabel
             // 
             this.twistAngleLabel.Location = new System.Drawing.Point(8, 232);
             this.twistAngleLabel.Name = "twistAngleLabel";
+            this.twistAngleLabel.AutoSize = true;
             this.twistAngleLabel.Width = 88;
             this.twistAngleLabel.TabIndex = 14;
             // 
@@ -432,6 +434,7 @@ namespace PaintDotNet.Effects
             // 
             this.twistRadiusLabel.Location = new System.Drawing.Point(8, 256);
             this.twistRadiusLabel.Name = "twistRadiusLabel";
+            this.twistRadiusLabel.AutoSize = true;
             this.twistRadiusLabel.Width = 88;
             this.twistRadiusLabel.TabIndex = 16;
             // 
@@ -453,9 +456,9 @@ namespace PaintDotNet.Effects
             this.twistAngleUpDown.Size = new System.Drawing.Size(68, 20);
             this.twistAngleUpDown.TabIndex = 15;
             this.twistAngleUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.twistAngleUpDown.Enter += new System.EventHandler(this.numericUpDown_Enter);
-            this.twistAngleUpDown.ValueChanged += new System.EventHandler(this.twistAngleUpDown_ValueChanged);
-            this.twistAngleUpDown.Leave += new System.EventHandler(this.numericUpDown_Leave);
+            this.twistAngleUpDown.Enter += new System.EventHandler(this.NumericUpDown_Enter);
+            this.twistAngleUpDown.ValueChanged += new System.EventHandler(this.TwistAngleUpDown_ValueChanged);
+            this.twistAngleUpDown.Leave += new System.EventHandler(this.NumericUpDown_Leave);
             // 
             // twistRadiusUpDown
             // 
@@ -470,9 +473,9 @@ namespace PaintDotNet.Effects
             this.twistRadiusUpDown.Size = new System.Drawing.Size(68, 20);
             this.twistRadiusUpDown.TabIndex = 17;
             this.twistRadiusUpDown.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.twistRadiusUpDown.Enter += new System.EventHandler(this.numericUpDown_Enter);
-            this.twistRadiusUpDown.ValueChanged += new System.EventHandler(this.twistRadiusUpDown_ValueChanged);
-            this.twistRadiusUpDown.Leave += new System.EventHandler(this.numericUpDown_Leave);
+            this.twistRadiusUpDown.Enter += new System.EventHandler(this.NumericUpDown_Enter);
+            this.twistRadiusUpDown.ValueChanged += new System.EventHandler(this.TwistRadiusUpDown_ValueChanged);
+            this.twistRadiusUpDown.Leave += new System.EventHandler(this.NumericUpDown_Leave);
             // 
             // rollResetButton
             // 
@@ -480,7 +483,7 @@ namespace PaintDotNet.Effects
             this.rollResetButton.Name = "rollResetButton";
             this.rollResetButton.Size = new System.Drawing.Size(80, 23);
             this.rollResetButton.TabIndex = 4;
-            this.rollResetButton.Click += new System.EventHandler(this.rollResetButton_Click);
+            this.rollResetButton.Click += new System.EventHandler(this.RollResetButton_Click);
             // 
             // resetAllButton
             // 
@@ -489,7 +492,7 @@ namespace PaintDotNet.Effects
             this.resetAllButton.Name = "resetAllButton";
             this.resetAllButton.Size = new System.Drawing.Size(104, 23);
             this.resetAllButton.TabIndex = 25;
-            this.resetAllButton.Click += new System.EventHandler(this.resetAllButton_Click);
+            this.resetAllButton.Click += new System.EventHandler(this.ResetAllButton_Click);
             // 
             // fineTuningHeader
             // 
@@ -543,7 +546,6 @@ namespace PaintDotNet.Effects
             this.Controls.Add(this.headerZoom);
             this.Location = new System.Drawing.Point(0, 0);
             this.Name = "RotateZoomEffectConfigDialog";
-            this.Load += new System.EventHandler(this.RotateZoomEffectConfigDialog_Load);
             this.Controls.SetChildIndex(this.headerZoom, 0);
             this.Controls.SetChildIndex(this.rollControl, 0);
             this.Controls.SetChildIndex(this.tileSourceCheckBox, 0);
@@ -584,24 +586,24 @@ namespace PaintDotNet.Effects
         #endregion
 
 
-        private void okButton_Click(object sender, System.EventArgs e)
+        private void OkButton_Click(object sender, System.EventArgs e)
         {
             DialogResult = DialogResult.OK;
             Close();
         }
 
-        private void cancelButton_Click(object sender, System.EventArgs e)
+        private void CancelButton_Click(object sender, System.EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
             Close();
         }
 
-        private void keepBackgroundCheckBox_CheckedChanged(object sender, System.EventArgs e)
+        private void KeepBackgroundCheckBox_CheckedChanged(object sender, System.EventArgs e)
         {
             FinishTokenUpdate();
         }
 
-        private void rollControl_ValueChanged(object sender, System.EventArgs e)
+        private void RollControl_ValueChanged(object sender, System.EventArgs e)
         {
             if (this.angleUpDown.Value != (decimal)this.rollControl.Angle)
             {
@@ -622,7 +624,7 @@ namespace PaintDotNet.Effects
             FinishTokenUpdate();
         }
 
-        private void panControl_PositionChanged(object sender, System.EventArgs e)
+        private void PanControl_PositionChanged(object sender, System.EventArgs e)
         {
             if (panXUpDown.Value != (decimal)panControl.Position.X)
             {
@@ -638,7 +640,7 @@ namespace PaintDotNet.Effects
             FinishTokenUpdate();
         }
 
-        private void trackBarZoom_ValueChanged(object sender, System.EventArgs e)
+        private void TrackBarZoom_ValueChanged(object sender, System.EventArgs e)
         {
             FinishTokenUpdate();
             string zoomTextFormat = PdnResources.GetString("RotateZoomEffectConfigDialog.ZoomLabel.Text.Format");
@@ -647,18 +649,18 @@ namespace PaintDotNet.Effects
             UpdateUpDowns();
         }
 
-        private void tileSource_CheckedChanged(object sender, System.EventArgs e)
+        private void TileSource_CheckedChanged(object sender, System.EventArgs e)
         {
             FinishTokenUpdate();
         }
 
-        private void numericUpDown_Enter(object sender, System.EventArgs e)
+        private void NumericUpDown_Enter(object sender, System.EventArgs e)
         {
             NumericUpDown nud = (NumericUpDown)sender;
             nud.Select(0, nud.Text.Length);
         }
 
-        private void numericUpDown_Leave(object sender, System.EventArgs e)
+        private void NumericUpDown_Leave(object sender, System.EventArgs e)
         {
             NumericUpDown nud = (NumericUpDown)sender;
             Utility.ClipNumericUpDown(nud);
@@ -669,7 +671,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private void panXUpDown_ValueChanged(object sender, System.EventArgs e)
+        private void PanXUpDown_ValueChanged(object sender, System.EventArgs e)
         {
             if (this.panControl.Position.X != (float)panXUpDown.Value)
             {
@@ -678,7 +680,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private void panYUpDown_ValueChanged(object sender, System.EventArgs e)
+        private void PanYUpDown_ValueChanged(object sender, System.EventArgs e)
         {
             if (this.panControl.Position.Y != (float)panYUpDown.Value)
             {
@@ -687,13 +689,13 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private void panResetButton_Click(object sender, System.EventArgs e)
+        private void PanResetButton_Click(object sender, System.EventArgs e)
         {
             panXUpDown.Value = 0;
             panYUpDown.Value = 0;
         }
 
-        private void angleUpDown_ValueChanged(object sender, System.EventArgs e)
+        private void AngleUpDown_ValueChanged(object sender, System.EventArgs e)
         {
             if (this.rollControl.Angle != (double)angleUpDown.Value)
             {
@@ -703,12 +705,12 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private void zoomResetButton_Click(object sender, System.EventArgs e)
+        private void ZoomResetButton_Click(object sender, System.EventArgs e)
         {
             this.trackBarZoom.Value = 512; // 1.00
         }
 
-        private void twistAngleUpDown_ValueChanged(object sender, System.EventArgs e)
+        private void TwistAngleUpDown_ValueChanged(object sender, System.EventArgs e)
         {
             if (this.rollControl.RollDirection != -(float)this.twistAngleUpDown.Value)
             {
@@ -717,7 +719,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private void twistRadiusUpDown_ValueChanged(object sender, System.EventArgs e)
+        private void TwistRadiusUpDown_ValueChanged(object sender, System.EventArgs e)
         {
             if (this.rollControl.RollAmount != (float)this.twistRadiusUpDown.Value)
             {
@@ -726,7 +728,7 @@ namespace PaintDotNet.Effects
             }
         }
 
-        private void rollResetButton_Click(object sender, System.EventArgs e)
+        private void RollResetButton_Click(object sender, System.EventArgs e)
         {
             this.rollControl.Angle = 0.0;
             this.rollControl.RollAmount = 0;
@@ -742,16 +744,11 @@ namespace PaintDotNet.Effects
             this.panYUpDown.Update();
         }
 
-        private void resetAllButton_Click(object sender, System.EventArgs e)
+        private void ResetAllButton_Click(object sender, System.EventArgs e)
         {
             this.panResetButton.PerformClick();
             this.zoomResetButton.PerformClick();
             this.rollResetButton.PerformClick();
-        }
-
-        private void RotateZoomEffectConfigDialog_Load(object sender, System.EventArgs e)
-        {
-        
         }
     }
 }

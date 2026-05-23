@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -34,6 +34,9 @@ namespace PaintDotNet
         private PdnGraphicsPath zoomInSelectedPath;
         private int dancingAntsT = 0;
         private int whiteOpacity = 255;
+        private int lastTickMod = 0;
+        private Rectangle[] simplifiedRegionForTimer = null;
+        private double coolOffTimeTickCount = 0.0;
 
         /// <summary>
         /// This variable is used to accumulate an invalidation region. It is initialized
@@ -319,7 +322,7 @@ namespace PaintDotNet
             this.selectionTimer = new System.Windows.Forms.Timer(this.components);
             this.selectionTimer.Enabled = true;
             this.selectionTimer.Interval = dancingAntsInterval / 2;
-            this.selectionTimer.Tick += new System.EventHandler(this.selectionTimer_Tick);
+            this.selectionTimer.Tick += new System.EventHandler(this.SelectionTimer_Tick);
         }
 
         protected override void Dispose(bool disposing)
@@ -362,8 +365,6 @@ namespace PaintDotNet
             }
         }
 
-        // MK 26OCT2004 added property to draw selection without the Marching Ants
-        // when selection is in motion with a MoveTool class object
         private bool enableSelectionOutline = true;
         public bool EnableSelectionOutline
         {
@@ -550,29 +551,36 @@ namespace PaintDotNet
             gdiG.ScaleTransform(1 / ratio, 1 / ratio);
         }
 
-        private int lastTickMod = 0;
-        private Rectangle[] simplifiedRegionForTimer = null;
-        private double coolOffTimeTickCount = 0.0;
-
-        private void selectionTimer_Tick(object sender, System.EventArgs e)
+        private void SelectionTimer_Tick(object sender, System.EventArgs e)
         {
-            if (selectedPath == null || selectedPath.IsEmpty)
+            if (this.IsDisposed || this.ownerControl.IsDisposed)
+            {
+                return;
+            }
+
+            if (this.selectedPath == null || this.selectedPath.IsEmpty)
             {
                 this.selectionTimer.Enabled = false;
                 return;
             }
 
-            if (!enableOutlineAnimation)
+            if (!this.enableOutlineAnimation)
             {
                 return;
             }
 
-            if (timer.GetTickCountDouble() < coolOffTimeTickCount)
+            if (this.timer.GetTickCountDouble() < this.coolOffTimeTickCount)
             {
                 return;
             }
 
             if (this.ownerControl != null && this.ownerControl.IsMouseCaptured())
+            {
+                return;
+            }
+
+            Form form = this.ownerControl.FindForm();
+            if (form != null && form.WindowState == FormWindowState.Minimized)
             {
                 return;
             }
@@ -598,9 +606,25 @@ namespace PaintDotNet
                     }
                 }
 
-                foreach (Rectangle rect in this.simplifiedRegionForTimer)
+                try
                 {
-                    Invalidate(rect);
+                    foreach (Rectangle rect in this.simplifiedRegionForTimer)
+                    {
+                        Invalidate(rect);
+                    }
+                }
+
+                catch (ObjectDisposedException)
+                {
+                    try
+                    {
+                        this.selectionTimer.Enabled = false;
+                    }
+
+                    catch (Exception)
+                    {
+                        // Ignore error
+                    }
                 }
 
                 if (this.ownerControl == null || (this.ownerControl != null && !this.ownerControl.IsMouseCaptured()))

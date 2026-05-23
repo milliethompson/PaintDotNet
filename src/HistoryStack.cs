@@ -1,12 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.HistoryMementos;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,24 +22,43 @@ namespace PaintDotNet
     [Serializable]
     public class HistoryStack
     {
-        private List<HistoryAction> undoStack;
-        private List<HistoryAction> redoStack;
-        private DocumentWorkspace workspace;
+        private List<HistoryMemento> undoStack;
+        private List<HistoryMemento> redoStack;
+        private DocumentWorkspace documentWorkspace;
         private int stepGroupDepth;
+        private int isExecutingMemento = 0; // 0 -> false, >0 -> true
 
-        public List<HistoryAction> UndoStack
+        public bool IsExecutingMemento
         {
             get
             {
-                return undoStack;
+                return this.isExecutingMemento > 0;
             }
         }
 
-        public List<HistoryAction> RedoStack
+        private void PushExecutingMemento()
+        {
+            ++this.isExecutingMemento;
+        }
+
+        private void PopExecutingMemento()
+        {
+            --this.isExecutingMemento;
+        }
+
+        public List<HistoryMemento> UndoStack
         {
             get
             {
-                return redoStack;
+                return this.undoStack;
+            }
+        }
+
+        public List<HistoryMemento> RedoStack
+        {
+            get
+            {
+                return this.redoStack;
             }
         }
 
@@ -85,14 +105,14 @@ namespace PaintDotNet
         }
 
         /// <summary>
-        /// Event handler for when a new history action has been added.
+        /// Event handler for when a new history memento has been added.
         /// </summary>
-        public event EventHandler NewHistoryAction;
-        protected void OnNewHistoryAction()
+        public event EventHandler NewHistoryMemento;
+        protected void OnNewHistoryMemento()
         {
-            if (NewHistoryAction != null)
+            if (NewHistoryMemento != null)
             {
-                NewHistoryAction(this, EventArgs.Empty);
+                NewHistoryMemento(this, EventArgs.Empty);
             }
         }
                 
@@ -126,21 +146,21 @@ namespace PaintDotNet
             }
         }
 
-        public event ExecutingHistoryActionEventHandler ExecutingHistoryAction;
-        protected void OnExecutingHistoryAction(ExecutingHistoryActionEventArgs e)
+        public event ExecutingHistoryMementoEventHandler ExecutingHistoryMemento;
+        protected void OnExecutingHistoryMemento(ExecutingHistoryMementoEventArgs e)
         {
-            if (ExecutingHistoryAction != null)
+            if (ExecutingHistoryMemento != null)
             {
-                ExecutingHistoryAction(this, e);
+                ExecutingHistoryMemento(this, e);
             }
         }
 
-        public event ExecutedHistoryActionEventHandler ExecutedHistoryAction;
-        protected void OnExecutedHistoryAction(ExecutedHistoryActionEventArgs e)
+        public event ExecutedHistoryMementoEventHandler ExecutedHistoryMemento;
+        protected void OnExecutedHistoryMemento(ExecutedHistoryMementoEventArgs e)
         {
-            if (ExecutedHistoryAction != null)
+            if (ExecutedHistoryMemento != null)
             {
-                ExecutedHistoryAction(this, e);
+                ExecutedHistoryMemento(this, e);
             }
         }
 
@@ -149,25 +169,25 @@ namespace PaintDotNet
             OnChanged();
         }
 
-        public HistoryStack(DocumentWorkspace workspace)
+        public HistoryStack(DocumentWorkspace documentWorkspace)
         {
-            this.workspace = workspace;
-            undoStack = new List<HistoryAction>();
-            redoStack = new List<HistoryAction>();
+            this.documentWorkspace = documentWorkspace;
+            undoStack = new List<HistoryMemento>();
+            redoStack = new List<HistoryMemento>();
         }
 
         private HistoryStack(
-            List<HistoryAction> undoStack,
-            List<HistoryAction> redoStack)
+            List<HistoryMemento> undoStack,
+            List<HistoryMemento> redoStack)
         {
-            this.undoStack = new List<HistoryAction>(undoStack);
-            this.redoStack = new List<HistoryAction>(redoStack);
+            this.undoStack = new List<HistoryMemento>(undoStack);
+            this.redoStack = new List<HistoryMemento>(redoStack);
         }
 
         /// <summary>
         /// When the user does something new, it will clear out the redo stack.
         /// </summary>
-        public void PushNewAction(HistoryAction value)
+        public void PushNewMemento(HistoryMemento value)
         {
             Utility.GCFullCollect();
 
@@ -175,7 +195,7 @@ namespace PaintDotNet
 
             ClearRedoStack();
             undoStack.Add(value);
-            OnNewHistoryAction();
+            OnNewHistoryMemento();
 
             OnChanged();
 
@@ -185,167 +205,158 @@ namespace PaintDotNet
 
         /// <summary>
         /// Takes one item from the redo stack, "redoes" it, then places the redo
-        /// action object to the top of the undo stack.
+        /// memento object to the top of the undo stack.
         /// </summary>
         public void StepForward()
         {
-            if (redoStack.Count == 0)
-            {
-                throw new InvalidOperationException("nothing to redo! redo stack is empty");
-            }
+            PushExecutingMemento();
 
             try
             {
-                HistoryAction topAction = redoStack[0];
-                ToolHistoryAction asToolHistoryAction = topAction as ToolHistoryAction;
-
-                if (asToolHistoryAction != null && asToolHistoryAction.ToolType != workspace.Environment.GetToolType())
-                {
-                    workspace.Environment.SetTool(asToolHistoryAction.ToolType, this.workspace);
-                    StepForward();
-                }
-                else
-                {
-                    OnChanging();
-
-                    ExecutingHistoryActionEventArgs ehaea1 = new ExecutingHistoryActionEventArgs(topAction, true, false);
-
-                    if (asToolHistoryAction == null && (!(topAction is SentinelHistoryAction) || topAction.SeriesGuid != Guid.Empty))
-                    {
-                        ehaea1.SuspendTool = true;
-                    }
-
-                    Tool oldTool = null;
-                    OnExecutingHistoryAction(ehaea1);
-
-                    if (ehaea1.SuspendTool)
-                    {
-                        oldTool = workspace.Environment.Tool;
-                        workspace.Environment.SetTool(null);
-                    }
-
-                    HistoryAction redoAction = redoStack[0];
-
-                    // Possibly useful invariant here:
-                    //     ehaea1.HistoryAction.SeriesGuid == ehaea2.HistoryAction.SeriesGuid == ehaea3.HistoryAction.SeriesGuid
-                    ExecutingHistoryActionEventArgs ehaea2 = new ExecutingHistoryActionEventArgs(redoAction, false, ehaea1.SuspendTool);
-                    OnExecutingHistoryAction(ehaea2);
-
-                    HistoryAction undoAction = redoAction.PerformUndo();
-
-                    redoStack.RemoveAt(0);
-                    undoStack.Add(undoAction);
-
-                    ExecutedHistoryActionEventArgs ehaea3 = new ExecutedHistoryActionEventArgs(undoAction);
-                    OnExecutedHistoryAction(ehaea3);
-
-                    OnChanged();
-                    OnSteppedForward();
-
-                    undoAction.Flush();
-
-                    if (oldTool != null)
-                    {
-                        workspace.Environment.SetTool(oldTool);
-                    }
-                }
-
-                if (this.stepGroupDepth == 0)
-                {
-                    OnFinishedStepGroup();
-                }
+                StepForwardImpl();
             }
 
-            catch (InvalidOperationException ex)
+            finally
             {
-                // Need to distinguish non-fatal InvalidOperationException from a fatal one
-                // (the fatal one is at the top of this method)
-                throw new PdnException("Unexpected exception while redoing", ex);
+                PopExecutingMemento();
+            }
+        }
+
+        private void StepForwardImpl()
+        {
+            HistoryMemento topMemento = redoStack[0];
+            ToolHistoryMemento asToolHistoryMemento = topMemento as ToolHistoryMemento;
+
+            if (asToolHistoryMemento != null && asToolHistoryMemento.ToolType != this.documentWorkspace.GetToolType())
+            {
+                this.documentWorkspace.SetToolFromType(asToolHistoryMemento.ToolType);
+                StepForward();
+            }
+            else
+            {
+                OnChanging();
+
+                ExecutingHistoryMementoEventArgs ehaea1 = new ExecutingHistoryMementoEventArgs(topMemento, true, false);
+
+                if (asToolHistoryMemento == null && topMemento.SeriesGuid != Guid.Empty)
+                {
+                    ehaea1.SuspendTool = true;
+                }
+
+                OnExecutingHistoryMemento(ehaea1);
+
+                if (ehaea1.SuspendTool)
+                {
+                    this.documentWorkspace.PushNullTool();
+                }
+            
+                HistoryMemento redoMemento = redoStack[0];
+
+                // Possibly useful invariant here:
+                //     ehaea1.HistoryMemento.SeriesGuid == ehaea2.HistoryMemento.SeriesGuid == ehaea3.HistoryMemento.SeriesGuid
+                ExecutingHistoryMementoEventArgs ehaea2 = new ExecutingHistoryMementoEventArgs(redoMemento, false, ehaea1.SuspendTool);
+                OnExecutingHistoryMemento(ehaea2);
+
+                HistoryMemento undoMemento = redoMemento.PerformUndo();
+            
+                redoStack.RemoveAt(0);
+                undoStack.Add(undoMemento);
+
+                ExecutedHistoryMementoEventArgs ehaea3 = new ExecutedHistoryMementoEventArgs(undoMemento);
+                OnExecutedHistoryMemento(ehaea3);
+
+                OnChanged();
+                OnSteppedForward();
+
+                undoMemento.Flush();
+
+                if (ehaea1.SuspendTool)
+                {
+                    this.documentWorkspace.PopNullTool();
+                }       
+            }
+
+            if (this.stepGroupDepth == 0)
+            {
+                OnFinishedStepGroup();
             }
         }
 
         /// <summary>
-        /// Undoes the top of the undo stack, then places the redo action object to the
+        /// Undoes the top of the undo stack, then places the redo memento object to the
         /// top of the redo stack.
         /// </summary>
         public void StepBackward()
         {
-            if (undoStack.Count == 0)
-            {
-                throw new InvalidOperationException("nothing to undo! undo stack is empty");
-            }
-
-            if (undoStack[undoStack.Count - 1] is NullHistoryAction)
-            {
-                throw new InvalidOperationException("nothing to undo! undoStack[last] is NullHistoryAction");
-            }
+            PushExecutingMemento();
 
             try
             {
-                HistoryAction topAction = undoStack[undoStack.Count - 1];
-                ToolHistoryAction asToolHistoryAction = topAction as ToolHistoryAction;
+                StepBackwardImpl();
+            }
 
-                if (asToolHistoryAction != null && asToolHistoryAction.ToolType != workspace.Environment.GetToolType())
+            finally
+            {
+                PopExecutingMemento();
+            }
+        }
+
+        private void StepBackwardImpl()
+        {
+            HistoryMemento topMemento = undoStack[undoStack.Count - 1];
+            ToolHistoryMemento asToolHistoryMemento = topMemento as ToolHistoryMemento;
+
+            if (asToolHistoryMemento != null && asToolHistoryMemento.ToolType != this.documentWorkspace.GetToolType())
+            {
+                this.documentWorkspace.SetToolFromType(asToolHistoryMemento.ToolType);
+                StepBackward();
+            }
+            else
+            {
+                OnChanging();
+
+                ExecutingHistoryMementoEventArgs ehaea1 = new ExecutingHistoryMementoEventArgs(topMemento, true, false);
+
+                if (asToolHistoryMemento == null && topMemento.SeriesGuid == Guid.Empty)
                 {
-                    workspace.Environment.SetTool(asToolHistoryAction.ToolType, this.workspace);
-                    StepBackward();
-                }
-                else
-                {
-                    OnChanging();
-
-                    ExecutingHistoryActionEventArgs ehaea1 = new ExecutingHistoryActionEventArgs(topAction, true, false);
-
-                    if (asToolHistoryAction == null && (topAction.SeriesGuid == Guid.Empty && !(topAction is SentinelHistoryAction)))
-                    {
-                        ehaea1.SuspendTool = true;
-                    }
-
-                    OnExecutingHistoryAction(ehaea1);
-
-                    Tool oldTool = null;
-                    if (ehaea1.SuspendTool)
-                    {
-                        oldTool = workspace.Environment.Tool;
-                        workspace.Environment.SetTool(null);
-                    }
-
-                    HistoryAction undoAction = undoStack[undoStack.Count - 1];
-
-                    ExecutingHistoryActionEventArgs ehaea2 = new ExecutingHistoryActionEventArgs(undoAction, false, ehaea1.SuspendTool);
-                    OnExecutingHistoryAction(ehaea2);
-
-                    HistoryAction redoAction = undoStack[undoStack.Count - 1].PerformUndo();
-                    undoStack.RemoveAt(undoStack.Count - 1);
-                    redoStack.Insert(0, redoAction);
-
-                    // Possibly useful invariant here:
-                    //     ehaea1.HistoryAction.SeriesGuid == ehaea2.HistoryAction.SeriesGuid == ehaea3.HistoryAction.SeriesGuid
-                    ExecutedHistoryActionEventArgs ehaea3 = new ExecutedHistoryActionEventArgs(redoAction);
-                    OnExecutedHistoryAction(ehaea3);
-
-                    OnChanged();
-                    OnSteppedBackward();
-
-                    redoAction.Flush();
-
-                    if (oldTool != null)
-                    {
-                        workspace.Environment.SetTool(oldTool);
-                    }
+                    ehaea1.SuspendTool = true;
                 }
 
-                if (this.stepGroupDepth == 0)
+                OnExecutingHistoryMemento(ehaea1);
+
+                if (ehaea1.SuspendTool)
                 {
-                    OnFinishedStepGroup();
+                    this.documentWorkspace.PushNullTool();
+                }
+
+                HistoryMemento undoMemento = undoStack[undoStack.Count - 1];
+
+                ExecutingHistoryMementoEventArgs ehaea2 = new ExecutingHistoryMementoEventArgs(undoMemento, false, ehaea1.SuspendTool);
+                OnExecutingHistoryMemento(ehaea2);
+
+                HistoryMemento redoMemento = undoStack[undoStack.Count - 1].PerformUndo();
+                undoStack.RemoveAt(undoStack.Count - 1);
+                redoStack.Insert(0, redoMemento);
+
+                // Possibly useful invariant here:
+                //     ehaea1.HistoryMemento.SeriesGuid == ehaea2.HistoryMemento.SeriesGuid == ehaea3.HistoryMemento.SeriesGuid
+                ExecutedHistoryMementoEventArgs ehaea3 = new ExecutedHistoryMementoEventArgs(redoMemento);
+                OnExecutedHistoryMemento(ehaea3);
+
+                OnChanged();
+                OnSteppedBackward();
+
+                redoMemento.Flush();
+
+                if (ehaea1.SuspendTool)
+                {
+                    this.documentWorkspace.PopNullTool();
                 }
             }
 
-            catch (InvalidOperationException ex)
+            if (this.stepGroupDepth == 0)
             {
-                // Need to distinguish non-fatal InvalidOperationException from a fatal one
-                // (the fatal one is at the top of this method)
-                throw new PdnException("Unexpected exception while undoing", ex);
+                OnFinishedStepGroup();
             }
         }
 
@@ -353,31 +364,31 @@ namespace PaintDotNet
         {
             OnChanging();
 
-            foreach (HistoryAction ha in undoStack)
+            foreach (HistoryMemento ha in undoStack)
             {
                 ha.Flush();
             }
 
-            foreach (HistoryAction ha in redoStack)
+            foreach (HistoryMemento ha in redoStack)
             {
                 ha.Flush();
             }
 
-            undoStack = new List<HistoryAction>();
-            redoStack = new List<HistoryAction>();
+            undoStack = new List<HistoryMemento>();
+            redoStack = new List<HistoryMemento>();
             OnChanged();
             OnHistoryFlushed();
         }
 
         public void ClearRedoStack()
         {
-            foreach (HistoryAction ha in redoStack)
+            foreach (HistoryMemento ha in redoStack)
             {
                 ha.Flush();
             }
 
             OnChanging();
-            redoStack = new List<HistoryAction>();
+            redoStack = new List<HistoryMemento>();
             OnChanged();
         }
     }

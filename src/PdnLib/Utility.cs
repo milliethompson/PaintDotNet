@@ -1,14 +1,15 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using Microsoft.Win32;
 using PaintDotNet.Threading;
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
@@ -32,36 +34,226 @@ namespace PaintDotNet
     /// <summary>
     /// Defines miscellaneous constants and static functions.
     /// </summary>
+    /// // TODO: refactor into mini static classes
     public sealed class Utility
     {
         private Utility()
         {
         }
 
+        public static void DrawDropShadow1px(Graphics g, Rectangle rect)
+        {
+            Brush b0 = new SolidBrush(Color.FromArgb(15, Color.Black));
+            Brush b1 = new SolidBrush(Color.FromArgb(47, Color.Black));
+            Pen p2 = new Pen(Color.FromArgb(63, Color.Black));
+
+            g.FillRectangle(b0, rect.Left, rect.Top, 1, 1);
+            g.FillRectangle(b1, rect.Left + 1, rect.Top, 1, 1);
+            g.FillRectangle(b1, rect.Left, rect.Top + 1, 1, 1);
+
+            g.FillRectangle(b0, rect.Right - 1, rect.Top, 1, 1);
+            g.FillRectangle(b1, rect.Right - 2, rect.Top, 1, 1);
+            g.FillRectangle(b1, rect.Right - 1, rect.Top + 1, 1, 1);
+
+            g.FillRectangle(b0, rect.Left, rect.Bottom - 1, 1, 1);
+            g.FillRectangle(b1, rect.Left + 1, rect.Bottom - 1, 1, 1);
+            g.FillRectangle(b1, rect.Left, rect.Bottom - 2, 1, 1);
+
+            g.FillRectangle(b0, rect.Right - 1, rect.Bottom - 1, 1, 1);
+            g.FillRectangle(b1, rect.Right - 2, rect.Bottom - 1, 1, 1);
+            g.FillRectangle(b1, rect.Right - 1, rect.Bottom - 2, 1, 1);
+
+            g.DrawLine(p2, rect.Left + 2, rect.Top, rect.Right - 3, rect.Top);
+            g.DrawLine(p2, rect.Left, rect.Top + 2, rect.Left, rect.Bottom - 3);
+            g.DrawLine(p2, rect.Left + 2, rect.Bottom - 1, rect.Right - 3, rect.Bottom - 1);
+            g.DrawLine(p2, rect.Right - 1, rect.Top + 2, rect.Right - 1, rect.Bottom - 3);
+
+            b0.Dispose();
+            b0 = null;
+            b1.Dispose();
+            b1 = null;
+            p2.Dispose();
+            p2 = null;
+        }
+
+        public static Keys LetterOrDigitCharToKeys(char c)
+        {
+            if (c >= 'a' && c <= 'z')
+            {
+                return (Keys)((int)(c - 'a') + (int)Keys.A);
+            }
+            else if (c >= 'A' && c <= 'Z')
+            {
+                return (Keys)((int)(c - 'A') + (int)Keys.A);
+            }
+            else if (c >= '0' && c <= '9')
+            {
+                return (Keys)((int)(c - '0') + (int)Keys.D0);
+            }
+            else
+            {
+                return Keys.None;
+            }
+        }
+
+        public static Control FindFocus()
+        {
+            foreach (Form form in Application.OpenForms)
+            {
+                Control focused = FindFocus(form);
+
+                if (focused != null)
+                {
+                    return focused;
+                }
+            }
+
+            return null;
+        }
+
+        private static Control FindFocus(Control c)
+        {
+            if (c.Focused)
+            {
+                return c;
+            }
+
+            foreach (Control child in c.Controls)
+            {
+                Control f = FindFocus(child);
+
+                if (f != null)
+                {
+                    return f;
+                }
+            }
+
+            return null;
+        }
+
+        public static void DrawColorRectangle(Graphics g, Rectangle rect, Color color, bool drawBorder)
+        {
+            int inflateAmt = drawBorder ? -2 : 0;
+            Rectangle colorRectangle = Rectangle.Inflate(rect, inflateAmt, inflateAmt);
+            Brush colorBrush = new LinearGradientBrush(colorRectangle, Color.FromArgb(255, color), color, 90.0f, false);
+            HatchBrush backgroundBrush = new HatchBrush(HatchStyle.LargeCheckerBoard, Color.FromArgb(191, 191, 191), Color.FromArgb(255, 255, 255));
+
+            if (drawBorder)
+            {
+                g.DrawRectangle(Pens.Black, rect.Left, rect.Top, rect.Width - 1, rect.Height - 1);
+                g.DrawRectangle(Pens.White, rect.Left + 1, rect.Top + 1, rect.Width - 3, rect.Height - 3);
+            }
+
+            PixelOffsetMode oldPOM = g.PixelOffsetMode;
+            g.PixelOffsetMode = PixelOffsetMode.Half;
+            g.FillRectangle(backgroundBrush, colorRectangle);
+            g.FillRectangle(colorBrush, colorRectangle);
+            g.PixelOffsetMode = oldPOM;
+
+            backgroundBrush.Dispose();
+            colorBrush.Dispose();
+        }
+
+        public static Size ComputeThumbnailSize(Size originalSize, int maxEdgeLength)
+        {
+            Size thumbSize;
+
+            if (originalSize.Width > originalSize.Height)
+            {
+                int longSide = Math.Min(originalSize.Width, maxEdgeLength);
+                thumbSize = new Size(longSide, Math.Max(1, (originalSize.Height * longSide) / originalSize.Width));
+            }
+            else if (originalSize.Height > originalSize.Width)
+            {
+                int longSide = Math.Min(originalSize.Height, maxEdgeLength);
+                thumbSize = new Size(Math.Max(1, (originalSize.Width * longSide) / originalSize.Height), longSide);
+            }
+            else // if (docSize.Width == docSize.Height)
+            {
+                int longSide = Math.Min(originalSize.Width, maxEdgeLength);
+                thumbSize = new Size(longSide, longSide);
+            }
+
+            return thumbSize;
+        }
+
+        public static bool IsClipboardImageAvailable()
+        {
+            try
+            {
+                return Clipboard.ContainsImage();
+            }
+
+            catch (ExternalException)
+            {
+                return false;
+            }
+        }
+
+        public static Font CreateFont(string name, float size, FontStyle style)
+        {
+            Font returnFont;
+
+            try
+            {
+                returnFont = new Font(name, size, style);
+            }
+
+            catch
+            {
+                returnFont = new Font(FontFamily.GenericSansSerif, size);
+            }
+
+            return returnFont;
+        }
+
+        public static Font CreateFont(string name, float size, string backupName, float backupSize, FontStyle style)
+        {
+            Font returnFont;
+
+            try
+            {
+                returnFont = new Font(name, size, style);
+            }
+
+            catch
+            {
+                returnFont = CreateFont(backupName, backupSize, style);
+            }
+
+            return returnFont;
+        }
+        
         public static readonly Color TransparentKey = Color.FromArgb(192, 192, 192);
 
         private static DateTime startTime = DateTime.Now;
         private static DateTime lastTime = DateTime.Now;
 
+        [Obsolete("Use SystemLayer.OS.IsDotNetVersionInstalled() instead")]
         public static bool IsDotNetVersionInstalled(int major, int minor, int build)
         {
-            const string regKeyNameFormat = "Software\\Microsoft\\NET Framework Setup\\NDP\\v{0}.{1}.{2}";
-            const string regValueName = "Install";
+            return SystemLayer.OS.IsDotNetVersionInstalled(major, minor, build);
+        }
 
-            string regKeyName = string.Format(regKeyNameFormat, major.ToString(CultureInfo.InvariantCulture),
-                minor.ToString(CultureInfo.InvariantCulture), build.ToString(CultureInfo.InvariantCulture));
+        public static string WebExceptionToErrorMessage(WebException wex)
+        {
+            string errorMessage;
 
-            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(regKeyName, false))
+            switch (wex.Status)
             {
-                object value = null;
+                case WebExceptionStatus.ProtocolError:
+                    string format = PdnResources.GetString("WebExceptionStatus.ProtocolError.Format");
+                    HttpStatusCode statusCode = ((HttpWebResponse)wex.Response).StatusCode;
+                    errorMessage = string.Format(format, statusCode.ToString(), (int)statusCode);
+                    break;
 
-                if (key != null)
-                {
-                    value = key.GetValue(regValueName);
-                }
-
-                return (value != null && value is int && (int)value == 1);
+                default:
+                    string stringName = "WebExceptionStatus." + wex.Status.ToString();
+                    errorMessage = PdnResources.GetString(stringName);
+                    break;
             }
+
+            return errorMessage;
         }
 
         public static void GCFullCollect()
@@ -320,26 +512,12 @@ namespace PaintDotNet
         public static bool CheckNumericUpDown(NumericUpDown upDown)
         {
             int a;
-        
-            try
-            {
-                a = int.Parse(upDown.Text);
-            }
+            bool result = int.TryParse(upDown.Text, out a);
 
-            catch (FormatException)
-            {
-                return false;
-            }
-
-            catch (OverflowException)
-            {
-                return false;
-            }
-
-            if ((a <= (int)upDown.Maximum) && (a >= (int)upDown.Minimum))
+            if (result && (a <= (int)upDown.Maximum) && (a >= (int)upDown.Minimum))
             {
                 return true;
-            }   
+            }
             else
             {
                 return false;
@@ -391,6 +569,22 @@ namespace PaintDotNet
             return returnMe;
         }
 
+        public static void ShowWiaError(IWin32Window owner)
+        {
+            // WIA requires Windows XP SP1 or later, or Windows Server 2003
+            // So if we know they're on WS2k3, we tell them to enable WIA.
+            // If they're on XP or later, tell them that WIA isn't available.
+            // Otherwise we tell them they need XP SP1 (for the Win2K folks).
+            if (OS.Type == OSType.Server)
+            {
+                Utility.ErrorBox(owner, PdnResources.GetString("WIA.Error.EnableMe"));
+            }
+            else
+            {
+                Utility.ErrorBox(owner, PdnResources.GetString("WIA.Error.UnableToLoad"));
+            }
+        }
+
         public static void ShowNonAdminErrorBox(IWin32Window parent)
         {
             ErrorBox(parent, PdnResources.GetString("NonAdminErrorBox.Message"));
@@ -398,37 +592,37 @@ namespace PaintDotNet
 
         public static void ErrorBox(IWin32Window parent, string message)
         {
-            MessageBox.Show(parent, message, PdnInfo.GetProductName(), MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(parent, message, PdnInfo.GetBareProductName(), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         public static DialogResult ErrorBoxOKCancel(IWin32Window parent, string message)
         {
-            return MessageBox.Show(parent, message, PdnInfo.GetProductName(), MessageBoxButtons.OKCancel, MessageBoxIcon.Error);
+            return MessageBox.Show(parent, message, PdnInfo.GetBareProductName(), MessageBoxButtons.OKCancel, MessageBoxIcon.Error);
         }
 
         public static void InfoBox(IWin32Window parent, string message)
         {
-            MessageBox.Show(parent, message, PdnInfo.GetProductName(), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(parent, message, PdnInfo.GetBareProductName(), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         public static DialogResult InfoBoxOKCancel(IWin32Window parent, string message)
         {
-            return MessageBox.Show(parent, message, PdnInfo.GetProductName(), MessageBoxButtons.OKCancel, MessageBoxIcon.Information);
+            return MessageBox.Show(parent, message, PdnInfo.GetBareProductName(), MessageBoxButtons.OKCancel, MessageBoxIcon.Information);
         }
 
         public static DialogResult AskOKCancel(IWin32Window parent, string question)
         {
-            return MessageBox.Show(parent, question, PdnInfo.GetProductName(), MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+            return MessageBox.Show(parent, question, PdnInfo.GetBareProductName(), MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
         }
 
         public static DialogResult AskYesNo(IWin32Window parent, string question)
         {
-            return MessageBox.Show(parent, question, PdnInfo.GetProductName(), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            return MessageBox.Show(parent, question, PdnInfo.GetBareProductName(), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         }
 
         public static DialogResult AskYesNoCancel(IWin32Window parent, string question)
         {
-            return MessageBox.Show(parent, question, PdnInfo.GetProductName(), MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+            return MessageBox.Show(parent, question, PdnInfo.GetBareProductName(), MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
         }
 
         public static Icon ImageToIcon(Image image)
@@ -504,20 +698,6 @@ namespace PaintDotNet
             }
 
             return icon;
-        }
-
-        private static Assembly mainAssembly;
-        private static Assembly MainAssembly
-        {
-            get
-            {
-                if (mainAssembly == null)
-                {
-                    mainAssembly = Assembly.GetEntryAssembly();
-                }
-
-                return mainAssembly;
-            }
         }
 
         public static Point GetRectangleCenter(Rectangle rect)
@@ -967,21 +1147,16 @@ namespace PaintDotNet
             return new BinaryFormatter().Deserialize(stream);
         }
 
+        [Obsolete("Use rect.Contains() instead", true)]
         public static bool IsPointInRectangle(Point pt, Rectangle rect)
         {
-            return IsPointInRectangle(pt.X, pt.Y, rect);
+            return rect.Contains(pt);
         }
         
+        [Obsolete("Use rect.Contains() instead", true)]
         public static bool IsPointInRectangle(int x, int y, Rectangle rect)
         {
-            if ((x < rect.X) || (y < rect.Y) || (x >= rect.Right) || (y >= rect.Bottom))
-            {
-                return false;
-            }
-            else
-            {
-                return true;
-            }
+            return rect.Contains(x, y);
         }
 
         /// <summary>
@@ -991,7 +1166,8 @@ namespace PaintDotNet
         /// </summary>
         /// <param name="obj">A reference to the object to dispose.</param>
         /// <returns>true is the object was disposed, false if it wasn't (if obj was null)</returns>
-        public static bool Dispose (IDisposable obj)
+        [Obsolete]
+        public static bool Dispose(IDisposable obj)
         {
             if (obj != null)
             {
@@ -1823,12 +1999,12 @@ namespace PaintDotNet
 
         public static float Lerp(float from, float to, float frac) 
         {
-            return (from * (1 - frac) + to * frac);
+            return (from + frac * (to - from));
         }
 
         public static double Lerp(double from, double to, double frac) 
         {
-            return (from * (1 - frac) + to * frac);
+            return (from + frac * (to - from));
         }
 
         public static PointF Lerp(PointF from, PointF to, float frac)
@@ -1900,7 +2076,7 @@ namespace PaintDotNet
 
                 if (File.Exists(indexHtmlPath))
                 {
-                    SystemLayer.Shell.OpenUrl(parent, indexHtmlPath);
+                    PdnInfo.OpenUrl(parent, indexHtmlPath);
                     return;
                 }
             }
@@ -1908,7 +2084,7 @@ namespace PaintDotNet
             string lastChancePath = Path.Combine(helpDir, indexHtml);
             if (File.Exists(lastChancePath))
             {
-                SystemLayer.Shell.OpenUrl(parent, lastChancePath);
+                PdnInfo.OpenUrl(parent, lastChancePath);
             }
             else
             {
@@ -2092,7 +2268,6 @@ namespace PaintDotNet
         {
             return CopyStream(input, output, -1);
         }
-
 
         private struct Edge
         {
@@ -2448,6 +2623,9 @@ namespace PaintDotNet
         /// <param name="yhat">The orthogonal projection of y onto u</param>
         /// <param name="yhatLen">The length of yhat such that yhat = yhatLen * u</param>
         /// <param name="z">The component of y orthogonal to u</param>
+        /// <remarks>
+        /// As a special case, if u=(0,0) the results are all zero.
+        /// </remarks>
         public static void GetProjection(PointF y, PointF u, out PointF yhat, out float yhatLen, out PointF z)
         {
             if (u.X == 0 && u.Y == 0)
@@ -2482,8 +2660,7 @@ namespace PaintDotNet
                 r = a % b;
                 a = b;
                 b = r;
-            }
-            while (r != 0);
+            } while (r != 0);
 
             return a;
         }
@@ -2496,5 +2673,523 @@ namespace PaintDotNet
             a = b;
             b = t;
         }
+
+        public static void Swap<T>(ref T a, ref T b)
+        {
+            T t;
+
+            t = a;
+            a = b;
+            b = t;
+        }
+
+        private static byte[] DownloadSmallFile(Uri uri, WebProxy proxy)
+        {
+            WebRequest request = WebRequest.Create(uri);
+
+            if (proxy != null)
+            {
+                request.Proxy = proxy;
+            }
+
+            request.Timeout = 5000;
+            WebResponse response = request.GetResponse();
+            Stream stream = response.GetResponseStream();
+
+            try
+            {
+                byte[] buffer = new byte[8192];
+                int offset = 0;
+
+                while (offset < buffer.Length)
+                {
+                    int bytesRead = stream.Read(buffer, offset, buffer.Length - offset);
+
+                    if (bytesRead == 0)
+                    {
+                        byte[] smallerBuffer = new byte[offset + bytesRead];
+
+                        for (int i = 0; i < offset + bytesRead; ++i)
+                        {
+                            smallerBuffer[i] = buffer[i];
+                        }
+
+                        buffer = smallerBuffer;
+                    }
+
+                    offset += bytesRead;
+                }
+
+                return buffer;
+            }
+
+            finally
+            {
+                if (stream != null)
+                {
+                    stream.Close();
+                    stream = null;
+                }
+
+                if (response != null)
+                {
+                    response.Close();
+                    response = null;
+                }
+            }
+        }
+
+        public static T[] RepeatArray<T>(T[] array, int repeatCount)
+        {
+            T[] returnArray = new T[repeatCount * array.Length];
+
+            for (int i = 0; i < repeatCount; ++i)
+            {
+                for (int j = 0; j < array.Length; ++j)
+                {
+                    int index = (i * array.Length) + j;
+                    returnArray[index] = array[j];
+                }
+            }
+
+            return returnArray;
+        }
+
+        /// <summary>
+        /// Downloads a small file (max 8192 bytes) and returns it as a byte array.
+        /// </summary>
+        /// <returns>The contents of the file if downloaded successfully.</returns>
+        public static byte[] DownloadSmallFile(Uri uri)
+        {
+            byte[] bytes = null;
+            Exception exception = null;
+            WebProxy[] proxiesPre = Network.GetProxyList();
+            WebProxy[] proxies = RepeatArray(proxiesPre, 2); // see bug #1942
+
+            foreach (WebProxy proxy in proxies)
+            {
+                try
+                {
+                    bytes = DownloadSmallFile(uri, proxy);
+                    exception = null;
+                }
+
+                catch (Exception ex)
+                {
+                    exception = ex;
+                    bytes = null;
+                }
+
+                if (bytes != null)
+                {
+                    break;
+                }
+            }
+
+            if (exception != null)
+            {
+                WebException we = exception as WebException;
+
+                if (we != null)
+                {
+                    throw new WebException(null, we, we.Status, we.Response);
+                }
+                else
+                {
+                    throw new ApplicationException("An exception occurred while trying to download '" + uri.ToString() + "'", exception);
+                }
+            }
+
+            return bytes;
+        }
+
+        private static void DownloadFile(Uri uri, Stream output, WebProxy proxy, ProgressEventHandler progressCallback)
+        {
+            WebRequest request = WebRequest.Create(uri);
+
+            if (proxy != null)
+            {
+                request.Proxy = proxy;
+            }
+
+            request.Timeout = 5000;
+            WebResponse response = request.GetResponse();
+            Stream stream = null;
+            SiphonStream siphonOutputStream = null;
+
+            try
+            {
+                stream = response.GetResponseStream();
+                siphonOutputStream = new SiphonStream(output, 1024); // monitor the completion of writes to 'output'
+
+                siphonOutputStream.IOFinished +=
+                    delegate(object sender, IOEventArgs e)
+                    {
+                        if (progressCallback != null)
+                        {
+                            double percent = 100.0 * Utility.Clamp(((double)e.Position / (double)response.ContentLength), 0, 100);
+                            progressCallback(uri, new ProgressEventArgs(percent));
+                        }
+                    };
+
+                Utility.CopyStream(stream, siphonOutputStream, 128 * 1024 * 1024); // cap at 128mb
+                siphonOutputStream.Flush();
+            }
+
+            finally
+            {
+                if (siphonOutputStream != null)
+                {
+                    siphonOutputStream.Close();
+                    siphonOutputStream = null;
+                }
+
+                if (stream != null)
+                {
+                    stream.Close();
+                    stream = null;
+                }
+
+                if (response != null)
+                {
+                    response.Close();
+                    response = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Download a file (max 128MB) and saves it to the given Stream.
+        /// </summary>
+        public static void DownloadFile(Uri uri, Stream output, ProgressEventHandler progressCallback)
+        {
+            long startPosition = output.Position;
+            Exception exception = null;
+            WebProxy[] proxies = Network.GetProxyList();
+
+            foreach (WebProxy proxy in proxies)
+            {
+                bool success = false;
+
+                try
+                {
+                    DownloadFile(uri, output, proxy, progressCallback);
+                    exception = null;
+                    success = true;
+                }
+
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
+
+                // If the output stream was written to, then we know
+                // that we were either successful in downloading the
+                // file, or there was an error unrelated to using the
+                // proxy (maybe they unplugged the network cable, who
+                // knows!)
+                if (output.Position != startPosition || success)
+                {
+                    break;
+                }
+            }
+
+            if (exception != null)
+            {
+                WebException we = exception as WebException;
+
+                if (we != null)
+                {
+                    throw new WebException(null, we, we.Status, we.Response);
+                }
+                else
+                {
+                    throw new ApplicationException("An exception occurred while trying to download '" + uri.ToString() + "'", exception);
+                }
+            }
+        }
+
+        public static int FastScaleByteByByte(byte a, byte b)
+        {
+            int r1 = a * b + 0x80;
+            int r2 = ((r1 >> 8) + r1) >> 8;
+            return (byte)r2;
+        }
+
+        public static int FastDivideShortByByte(ushort n, byte d)
+        {
+            int i = d * 3;
+            uint m = masTable[i];
+            uint a = masTable[i + 1];
+            uint s = masTable[i + 2];
+
+            uint nTimesMPlusA = unchecked((n * m) + a);
+            uint shifted = nTimesMPlusA >> (int)s;
+            int r = (int)shifted;
+
+            return r;
+        }
+
+        // i = z * 3;
+        // (x / z) = ((x * masTable[i]) + masTable[i + 1]) >> masTable[i + 2)
+        private static readonly uint[] masTable = 
+        {
+            0x00000000, 0x00000000, 0,  // 0
+            0x00000001, 0x00000000, 0,  // 1
+            0x00000001, 0x00000000, 1,  // 2
+            0xAAAAAAAB, 0x00000000, 33, // 3
+            0x00000001, 0x00000000, 2,  // 4
+            0xCCCCCCCD, 0x00000000, 34, // 5
+            0xAAAAAAAB, 0x00000000, 34, // 6
+            0x49249249, 0x49249249, 33, // 7
+            0x00000001, 0x00000000, 3,  // 8
+            0x38E38E39, 0x00000000, 33, // 9
+            0xCCCCCCCD, 0x00000000, 35, // 10
+            0xBA2E8BA3, 0x00000000, 35, // 11
+            0xAAAAAAAB, 0x00000000, 35, // 12
+            0x4EC4EC4F, 0x00000000, 34, // 13
+            0x49249249, 0x49249249, 34, // 14
+            0x88888889, 0x00000000, 35, // 15
+            0x00000001, 0x00000000, 4,  // 16
+            0xF0F0F0F1, 0x00000000, 36, // 17
+            0x38E38E39, 0x00000000, 34, // 18
+            0xD79435E5, 0xD79435E5, 36, // 19
+            0xCCCCCCCD, 0x00000000, 36, // 20
+            0xC30C30C3, 0xC30C30C3, 36, // 21
+            0xBA2E8BA3, 0x00000000, 36, // 22
+            0xB21642C9, 0x00000000, 36, // 23
+            0xAAAAAAAB, 0x00000000, 36, // 24
+            0x51EB851F, 0x00000000, 35, // 25
+            0x4EC4EC4F, 0x00000000, 35, // 26
+            0x97B425ED, 0x97B425ED, 36, // 27
+            0x49249249, 0x49249249, 35, // 28
+            0x8D3DCB09, 0x00000000, 36, // 29
+            0x88888889, 0x00000000, 36, // 30
+            0x42108421, 0x42108421, 35, // 31
+            0x00000001, 0x00000000, 5,  // 32
+            0x3E0F83E1, 0x00000000, 35, // 33
+            0xF0F0F0F1, 0x00000000, 37, // 34
+            0x75075075, 0x75075075, 36, // 35
+            0x38E38E39, 0x00000000, 35, // 36
+            0x6EB3E453, 0x6EB3E453, 36, // 37
+            0xD79435E5, 0xD79435E5, 37, // 38
+            0x69069069, 0x69069069, 36, // 39
+            0xCCCCCCCD, 0x00000000, 37, // 40
+            0xC7CE0C7D, 0x00000000, 37, // 41
+            0xC30C30C3, 0xC30C30C3, 37, // 42
+            0x2FA0BE83, 0x00000000, 35, // 43
+            0xBA2E8BA3, 0x00000000, 37, // 44
+            0x5B05B05B, 0x5B05B05B, 36, // 45
+            0xB21642C9, 0x00000000, 37, // 46
+            0xAE4C415D, 0x00000000, 37, // 47
+            0xAAAAAAAB, 0x00000000, 37, // 48
+            0x5397829D, 0x00000000, 36, // 49
+            0x51EB851F, 0x00000000, 36, // 50
+            0xA0A0A0A1, 0x00000000, 37, // 51
+            0x4EC4EC4F, 0x00000000, 36, // 52
+            0x9A90E7D9, 0x9A90E7D9, 37, // 53
+            0x97B425ED, 0x97B425ED, 37, // 54
+            0x94F2094F, 0x94F2094F, 37, // 55
+            0x49249249, 0x49249249, 36, // 56
+            0x47DC11F7, 0x47DC11F7, 36, // 57
+            0x8D3DCB09, 0x00000000, 37, // 58
+            0x22B63CBF, 0x00000000, 35, // 59
+            0x88888889, 0x00000000, 37, // 60
+            0x4325C53F, 0x00000000, 36, // 61
+            0x42108421, 0x42108421, 36, // 62
+            0x41041041, 0x41041041, 36, // 63
+            0x00000001, 0x00000000, 6,  // 64
+            0xFC0FC0FD, 0x00000000, 38, // 65
+            0x3E0F83E1, 0x00000000, 36, // 66
+            0x07A44C6B, 0x00000000, 33, // 67
+            0xF0F0F0F1, 0x00000000, 38, // 68
+            0x76B981DB, 0x00000000, 37, // 69
+            0x75075075, 0x75075075, 37, // 70
+            0xE6C2B449, 0x00000000, 38, // 71
+            0x38E38E39, 0x00000000, 36, // 72
+            0x381C0E07, 0x381C0E07, 36, // 73
+            0x6EB3E453, 0x6EB3E453, 37, // 74
+            0x1B4E81B5, 0x00000000, 35, // 75
+            0xD79435E5, 0xD79435E5, 38, // 76
+            0x3531DEC1, 0x00000000, 36, // 77
+            0x69069069, 0x69069069, 37, // 78
+            0xCF6474A9, 0x00000000, 38, // 79
+            0xCCCCCCCD, 0x00000000, 38, // 80
+            0xCA4587E7, 0x00000000, 38, // 81
+            0xC7CE0C7D, 0x00000000, 38, // 82
+            0x3159721F, 0x00000000, 36, // 83
+            0xC30C30C3, 0xC30C30C3, 38, // 84
+            0xC0C0C0C1, 0x00000000, 38, // 85
+            0x2FA0BE83, 0x00000000, 36, // 86
+            0x2F149903, 0x00000000, 36, // 87
+            0xBA2E8BA3, 0x00000000, 38, // 88
+            0xB81702E1, 0x00000000, 38, // 89
+            0x5B05B05B, 0x5B05B05B, 37, // 90
+            0x2D02D02D, 0x2D02D02D, 36, // 91
+            0xB21642C9, 0x00000000, 38, // 92
+            0xB02C0B03, 0x00000000, 38, // 93
+            0xAE4C415D, 0x00000000, 38, // 94
+            0x2B1DA461, 0x2B1DA461, 36, // 95
+            0xAAAAAAAB, 0x00000000, 38, // 96
+            0xA8E83F57, 0xA8E83F57, 38, // 97
+            0x5397829D, 0x00000000, 37, // 98
+            0xA57EB503, 0x00000000, 38, // 99
+            0x51EB851F, 0x00000000, 37, // 100
+            0xA237C32B, 0xA237C32B, 38, // 101
+            0xA0A0A0A1, 0x00000000, 38, // 102
+            0x9F1165E7, 0x9F1165E7, 38, // 103
+            0x4EC4EC4F, 0x00000000, 37, // 104
+            0x27027027, 0x27027027, 36, // 105
+            0x9A90E7D9, 0x9A90E7D9, 38, // 106
+            0x991F1A51, 0x991F1A51, 38, // 107
+            0x97B425ED, 0x97B425ED, 38, // 108
+            0x2593F69B, 0x2593F69B, 36, // 109
+            0x94F2094F, 0x94F2094F, 38, // 110
+            0x24E6A171, 0x24E6A171, 36, // 111
+            0x49249249, 0x49249249, 37, // 112
+            0x90FDBC09, 0x90FDBC09, 38, // 113
+            0x47DC11F7, 0x47DC11F7, 37, // 114
+            0x8E78356D, 0x8E78356D, 38, // 115
+            0x8D3DCB09, 0x00000000, 38, // 116
+            0x23023023, 0x23023023, 36, // 117
+            0x22B63CBF, 0x00000000, 36, // 118
+            0x44D72045, 0x00000000, 37, // 119
+            0x88888889, 0x00000000, 38, // 120
+            0x8767AB5F, 0x8767AB5F, 38, // 121
+            0x4325C53F, 0x00000000, 37, // 122
+            0x85340853, 0x85340853, 38, // 123
+            0x42108421, 0x42108421, 37, // 124
+            0x10624DD3, 0x00000000, 35, // 125
+            0x41041041, 0x41041041, 37, // 126
+            0x10204081, 0x10204081, 35, // 127
+            0x00000001, 0x00000000, 7,  // 128
+            0x0FE03F81, 0x00000000, 35, // 129
+            0xFC0FC0FD, 0x00000000, 39, // 130
+            0xFA232CF3, 0x00000000, 39, // 131
+            0x3E0F83E1, 0x00000000, 37, // 132
+            0xF6603D99, 0x00000000, 39, // 133
+            0x07A44C6B, 0x00000000, 34, // 134
+            0xF2B9D649, 0x00000000, 39, // 135
+            0xF0F0F0F1, 0x00000000, 39, // 136
+            0x077975B9, 0x00000000, 34, // 137
+            0x76B981DB, 0x00000000, 38, // 138
+            0x75DED953, 0x00000000, 38, // 139
+            0x75075075, 0x75075075, 38, // 140
+            0x3A196B1F, 0x00000000, 37, // 141
+            0xE6C2B449, 0x00000000, 39, // 142
+            0xE525982B, 0x00000000, 39, // 143
+            0x38E38E39, 0x00000000, 37, // 144
+            0xE1FC780F, 0x00000000, 39, // 145
+            0x381C0E07, 0x381C0E07, 37, // 146
+            0xDEE95C4D, 0x00000000, 39, // 147
+            0x6EB3E453, 0x6EB3E453, 38, // 148
+            0xDBEB61EF, 0x00000000, 39, // 149
+            0x1B4E81B5, 0x00000000, 36, // 150
+            0x36406C81, 0x00000000, 37, // 151
+            0xD79435E5, 0xD79435E5, 39, // 152
+            0xD62B80D7, 0x00000000, 39, // 153
+            0x3531DEC1, 0x00000000, 37, // 154
+            0xD3680D37, 0x00000000, 39, // 155
+            0x69069069, 0x69069069, 38, // 156
+            0x342DA7F3, 0x00000000, 37, // 157
+            0xCF6474A9, 0x00000000, 39, // 158
+            0xCE168A77, 0xCE168A77, 39, // 159
+            0xCCCCCCCD, 0x00000000, 39, // 160
+            0xCB8727C1, 0x00000000, 39, // 161
+            0xCA4587E7, 0x00000000, 39, // 162
+            0xC907DA4F, 0x00000000, 39, // 163
+            0xC7CE0C7D, 0x00000000, 39, // 164
+            0x634C0635, 0x00000000, 38, // 165
+            0x3159721F, 0x00000000, 37, // 166
+            0x621B97C3, 0x00000000, 38, // 167
+            0xC30C30C3, 0xC30C30C3, 39, // 168
+            0x60F25DEB, 0x00000000, 38, // 169
+            0xC0C0C0C1, 0x00000000, 39, // 170
+            0x17F405FD, 0x17F405FD, 36, // 171
+            0x2FA0BE83, 0x00000000, 37, // 172
+            0xBD691047, 0xBD691047, 39, // 173
+            0x2F149903, 0x00000000, 37, // 174
+            0x5D9F7391, 0x00000000, 38, // 175
+            0xBA2E8BA3, 0x00000000, 39, // 176
+            0x5C90A1FD, 0x5C90A1FD, 38, // 177
+            0xB81702E1, 0x00000000, 39, // 178
+            0x5B87DDAD, 0x5B87DDAD, 38, // 179
+            0x5B05B05B, 0x5B05B05B, 38, // 180
+            0xB509E68B, 0x00000000, 39, // 181
+            0x2D02D02D, 0x2D02D02D, 37, // 182
+            0xB30F6353, 0x00000000, 39, // 183
+            0xB21642C9, 0x00000000, 39, // 184
+            0x1623FA77, 0x1623FA77, 36, // 185
+            0xB02C0B03, 0x00000000, 39, // 186
+            0xAF3ADDC7, 0x00000000, 39, // 187
+            0xAE4C415D, 0x00000000, 39, // 188
+            0x15AC056B, 0x15AC056B, 36, // 189
+            0x2B1DA461, 0x2B1DA461, 37, // 190
+            0xAB8F69E3, 0x00000000, 39, // 191
+            0xAAAAAAAB, 0x00000000, 39, // 192
+            0x15390949, 0x00000000, 36, // 193
+            0xA8E83F57, 0xA8E83F57, 39, // 194
+            0x15015015, 0x15015015, 36, // 195
+            0x5397829D, 0x00000000, 38, // 196
+            0xA655C439, 0xA655C439, 39, // 197
+            0xA57EB503, 0x00000000, 39, // 198
+            0x5254E78F, 0x00000000, 38, // 199
+            0x51EB851F, 0x00000000, 38, // 200
+            0x028C1979, 0x00000000, 33, // 201
+            0xA237C32B, 0xA237C32B, 39, // 202
+            0xA16B312F, 0x00000000, 39, // 203
+            0xA0A0A0A1, 0x00000000, 39, // 204
+            0x4FEC04FF, 0x00000000, 38, // 205
+            0x9F1165E7, 0x9F1165E7, 39, // 206
+            0x27932B49, 0x00000000, 37, // 207
+            0x4EC4EC4F, 0x00000000, 38, // 208
+            0x9CC8E161, 0x00000000, 39, // 209
+            0x27027027, 0x27027027, 37, // 210
+            0x9B4C6F9F, 0x00000000, 39, // 211
+            0x9A90E7D9, 0x9A90E7D9, 39, // 212
+            0x99D722DB, 0x00000000, 39, // 213
+            0x991F1A51, 0x991F1A51, 39, // 214
+            0x4C346405, 0x00000000, 38, // 215
+            0x97B425ED, 0x97B425ED, 39, // 216
+            0x4B809701, 0x4B809701, 38, // 217
+            0x2593F69B, 0x2593F69B, 37, // 218
+            0x12B404AD, 0x12B404AD, 36, // 219
+            0x94F2094F, 0x94F2094F, 39, // 220
+            0x25116025, 0x25116025, 37, // 221
+            0x24E6A171, 0x24E6A171, 37, // 222
+            0x24BC44E1, 0x24BC44E1, 37, // 223
+            0x49249249, 0x49249249, 38, // 224
+            0x91A2B3C5, 0x00000000, 39, // 225
+            0x90FDBC09, 0x90FDBC09, 39, // 226
+            0x905A3863, 0x905A3863, 39, // 227
+            0x47DC11F7, 0x47DC11F7, 38, // 228
+            0x478BBCED, 0x00000000, 38, // 229
+            0x8E78356D, 0x8E78356D, 39, // 230
+            0x46ED2901, 0x46ED2901, 38, // 231
+            0x8D3DCB09, 0x00000000, 39, // 232
+            0x2328A701, 0x2328A701, 37, // 233
+            0x23023023, 0x23023023, 37, // 234
+            0x45B81A25, 0x45B81A25, 38, // 235
+            0x22B63CBF, 0x00000000, 37, // 236
+            0x08A42F87, 0x08A42F87, 35, // 237
+            0x44D72045, 0x00000000, 38, // 238
+            0x891AC73B, 0x00000000, 39, // 239
+            0x88888889, 0x00000000, 39, // 240
+            0x10FEF011, 0x00000000, 36, // 241
+            0x8767AB5F, 0x8767AB5F, 39, // 242
+            0x86D90545, 0x00000000, 39, // 243
+            0x4325C53F, 0x00000000, 38, // 244
+            0x85BF3761, 0x85BF3761, 39, // 245
+            0x85340853, 0x85340853, 39, // 246
+            0x10953F39, 0x10953F39, 36, // 247
+            0x42108421, 0x42108421, 38, // 248
+            0x41CC9829, 0x41CC9829, 38, // 249
+            0x10624DD3, 0x00000000, 36, // 250
+            0x828CBFBF, 0x00000000, 39, // 251
+            0x41041041, 0x41041041, 38, // 252
+            0x81848DA9, 0x00000000, 39, // 253
+            0x10204081, 0x10204081, 36, // 254
+            0x80808081, 0x00000000, 39  // 255
+        };
     }
 }

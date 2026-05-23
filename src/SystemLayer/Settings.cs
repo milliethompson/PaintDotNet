@@ -1,28 +1,32 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Security;
+using System.Security.AccessControl;
 
 namespace PaintDotNet.SystemLayer
 {
     /// <summary>
-    /// Stores non-volatile name/value settings. These persist between sessions
-    /// of the application.
+    /// Stores non-volatile name/value settings. These persist between sessions of the application.
     /// </summary>
     /// <remarks>
     /// On Windows, this class uses the registry.
     /// </remarks>
     public sealed class Settings
+        : ISimpleCollection<string, string>
     {
         private const string hkcuKey = @"SOFTWARE\Paint.NET";
 
@@ -39,7 +43,7 @@ namespace PaintDotNet.SystemLayer
             this.rootKey = rootKey;
         }
 
-        public RegistryKey CreateSettingsKey(bool writable)
+        private RegistryKey CreateSettingsKey(bool writable)
         {
             RegistryKey softwareKey = null;
 
@@ -117,9 +121,17 @@ namespace PaintDotNet.SystemLayer
         /// <returns>The value of the key, or defaultValue if it didn't exist.</returns>
         public object GetObject(string key, object defaultValue)
         {
-            using (RegistryKey pdnKey = CreateSettingsKey(false))
+            try
             {
-                return pdnKey.GetValue(key, defaultValue);
+                using (RegistryKey pdnKey = CreateSettingsKey(false))
+                {
+                    return pdnKey.GetValue(key, defaultValue);
+                }
+            }
+
+            catch (Exception)
+            {
+                return defaultValue;
             }
         }
 
@@ -165,6 +177,18 @@ namespace PaintDotNet.SystemLayer
         public void SetString(string key, string value)
         {
             SetObject(key, value);
+        }
+
+        /// <summary>
+        /// Saves the given strings.
+        /// </summary>
+        public void SetStrings(NameValueCollection nvc)
+        {
+            foreach (string key in nvc.Keys)
+            {
+                string value = nvc[key];
+                SetString("Test\\" + key, value);
+            }
         }
 
         /// <summary>
@@ -307,7 +331,7 @@ namespace PaintDotNet.SystemLayer
             string imageB64 = GetString(key);
             byte[] pngBytes = Convert.FromBase64String(imageB64);
             MemoryStream ms = new MemoryStream(pngBytes);
-            Image image = PdnResources.LoadImage(ms); //Image.FromStream(ms);
+            Image image = Image.FromStream(ms);
             ms.Close();
             return image;
         }
@@ -326,6 +350,16 @@ namespace PaintDotNet.SystemLayer
             string base64 = Convert.ToBase64String(buffer);
             SetString(key, base64);
             ms.Close();
+        }
+
+        public string Get(string key)
+        {
+            return GetString(key);
+        }
+
+        public void Set(string key, string value)
+        {
+            SetString(key, value);
         }
     }
 }

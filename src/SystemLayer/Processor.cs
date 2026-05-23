@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using Microsoft.Win32;
@@ -17,14 +17,10 @@ namespace PaintDotNet.SystemLayer
     /// <summary>
     /// Provides static methods and properties related to the CPU.
     /// </summary>
-    public sealed class Processor
+    public static class Processor
     {
         private static int logicalCpuCount;
         private static string cpuName;
-
-        private Processor()
-        {
-        }
 
         static Processor()
         {
@@ -39,10 +35,6 @@ namespace PaintDotNet.SystemLayer
             {
                 case NativeConstants.PROCESSOR_ARCHITECTURE_AMD64:
                     platform = ProcessorArchitecture.X64;
-                    break;
-
-                case NativeConstants.PROCESSOR_ARCHITECTURE_IA64:
-                    platform = ProcessorArchitecture.IA64;
                     break;
 
                 case NativeConstants.PROCESSOR_ARCHITECTURE_INTEL:
@@ -63,7 +55,7 @@ namespace PaintDotNet.SystemLayer
         /// </summary>
         /// <remarks>
         /// Note that if the current process is 32-bit, but the OS is 64-bit, this
-        /// property will still return X86 and not X64 (or IA64).
+        /// property will still return X86 and not X64.
         /// </remarks>
         public static ProcessorArchitecture Architecture
         {
@@ -87,17 +79,10 @@ namespace PaintDotNet.SystemLayer
         {
             get
             {
-                if (Environment.OSVersion.Version >= OS.WindowsXP)
-                {
-                    NativeStructs.SYSTEM_INFO sysInfo = new NativeStructs.SYSTEM_INFO();
-                    NativeMethods.GetNativeSystemInfo(ref sysInfo);
-                    ProcessorArchitecture architecture = Convert(sysInfo.wProcessorArchitecture);
-                    return architecture;
-                }
-                else
-                {
-                    return Architecture;
-                }
+                NativeStructs.SYSTEM_INFO sysInfo = new NativeStructs.SYSTEM_INFO();
+                NativeMethods.GetNativeSystemInfo(ref sysInfo);
+                ProcessorArchitecture architecture = Convert(sysInfo.wProcessorArchitecture);
+                return architecture;
             }
         }
 
@@ -106,7 +91,7 @@ namespace PaintDotNet.SystemLayer
             Guid processorClassGuid = new Guid("{50127DC3-0F36-415E-A6CC-4CB3BE910B65}");
             IntPtr hDiSet = IntPtr.Zero;
             string cpuName = null;
-            
+
             try
             {
                 hDiSet = NativeMethods.SetupDiGetClassDevsW(ref processorClassGuid, null, IntPtr.Zero, NativeConstants.DIGCF_PRESENT);
@@ -224,7 +209,8 @@ namespace PaintDotNet.SystemLayer
         /// then the name of the first one is retrieved.
         /// </summary>
         /// <remarks>
-        /// This is the name that shows up in Device Manager in the "Processors" node.
+        /// This is the name that shows up in Windows Device Manager in the "Processors" node.
+        /// Note to implementors: This is only ever used for diagnostics (e.g., crash log).
         /// </remarks>
         public static string CpuName
         {
@@ -283,6 +269,42 @@ namespace PaintDotNet.SystemLayer
             get
             {
                 return Environment.ProcessorCount;
+            }
+        }
+
+        /// <summary>
+        /// Gets the approximate speed of the processor, in megahurtz.
+        /// </summary>
+        /// <remarks>
+        /// No accuracy is guaranteed, and precision is dependent on the operating system.
+        /// If there is an error determining the CPU speed, then 0 will be returned.
+        /// </remarks>
+        public static int ApproximateSpeedMhz
+        {
+            get
+            {
+                const string keyName = @"HARDWARE\DESCRIPTION\System\CentralProcessor\0";
+                const string valueName = @"~MHz";
+                int mhz = 0;
+
+                try
+                {
+                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(keyName, false))
+                    {
+                        if (key != null)
+                        {
+                            object value = key.GetValue(valueName);
+                            mhz = (int)value;
+                        }
+                    }
+                }
+
+                catch (Exception)
+                {
+                    mhz = 0;
+                }
+
+                return mhz;
             }
         }
     }

@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -16,9 +16,6 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Setup
 {
-    /// <summary>
-    /// Summary description for InstallDirPage.
-    /// </summary>
     public class InstallDirPage 
         : WizardPage
     {
@@ -26,6 +23,7 @@ namespace PaintDotNet.Setup
         private System.Windows.Forms.Label folderLabel;
         private System.Windows.Forms.TextBox targetDirTextBox;
         private System.Windows.Forms.Button browseButton;
+
         /// <summary> 
         /// Required designer variable.
         /// </summary>
@@ -36,7 +34,7 @@ namespace PaintDotNet.Setup
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            string appName = PdnInfo.GetProductName();
+            string appName = PdnInfo.GetBareProductName();
             string introFormat = PdnResources.GetString("SetupWizard.InstallDirPage.IntroText.Text.Format");
             this.introText.Text = string.Format(introFormat, appName);
             this.folderLabel.Text = PdnResources.GetString("SetupWizard.InstallDirPage.FolderLabel.Text");
@@ -82,7 +80,7 @@ namespace PaintDotNet.Setup
                 catch
                 {
                     ok = false;
-                    string title = PdnInfo.GetProductName();
+                    string title = PdnInfo.GetBareProductName();
                     string message = PdnResources.GetString("SetupWizard.InstallDirPage.BadDirError.Message");
                     MessageBox.Show(this, message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
@@ -131,7 +129,7 @@ namespace PaintDotNet.Setup
             // 
             this.introText.Location = new System.Drawing.Point(12, 6);
             this.introText.Name = "introText";
-            this.introText.Size = new System.Drawing.Size(468, 54);
+            this.introText.Size = new System.Drawing.Size(468, 82);
             this.introText.TabIndex = 0;
             this.introText.Text = "label1";
             // 

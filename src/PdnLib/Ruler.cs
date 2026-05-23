@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -18,11 +18,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for Ruler.
-    /// </summary>
-    public class Ruler 
-        : System.Windows.Forms.UserControl
+    public sealed class Ruler 
+        : UserControl
     {
         /// <summary>
         /// Required designer variable.
@@ -127,22 +124,22 @@ namespace PaintDotNet
             }
         }
 
-        private float value = 0.0f;
+        private float rulerValue = 0.0f;
 
         [DefaultValue(0)]
         public float Value
         {
             get
             {
-                return value;
+                return rulerValue;
             }
 
             set
             {
-                if (this.value != value)
+                if (this.rulerValue != value)
                 {
-                    float oldStart = this.scaleFactor.ScaleScalar(this.value - offset) - 1;
-                    float oldEnd = this.scaleFactor.ScaleScalar(this.value + 1 - offset) + 1;
+                    float oldStart = this.scaleFactor.ScaleScalar(this.rulerValue - offset) - 1;
+                    float oldEnd = this.scaleFactor.ScaleScalar(this.rulerValue + 1 - offset) + 1;
                     RectangleF oldRect;
 
                     if (this.orientation == Orientation.Horizontal)
@@ -167,7 +164,7 @@ namespace PaintDotNet
                         newRect = new RectangleF(this.ClientRectangle.Left, newStart, this.ClientRectangle.Width, newEnd - newStart);
                     }
                     
-                    this.value = value;
+                    this.rulerValue = value;
 
                     Invalidate(Utility.RoundRectangle(oldRect));
                     Invalidate(Utility.RoundRectangle(newRect));
@@ -239,10 +236,10 @@ namespace PaintDotNet
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            float valueStart = this.scaleFactor.ScaleScalar(this.value - offset);
-            float valueEnd = this.scaleFactor.ScaleScalar(this.value + 1.0f - offset);
-            float highlightStart = this.scaleFactor.ScaleScalar(this.highlightStart - offset);
-            float highlightEnd = this.scaleFactor.ScaleScalar(this.highlightStart + this.highlightLength - offset);
+            float valueStart = this.scaleFactor.ScaleScalar(this.rulerValue - offset);
+            float valueEnd = this.scaleFactor.ScaleScalar(this.rulerValue + 1.0f - offset);
+            float highlightStartPx = this.scaleFactor.ScaleScalar(this.highlightStart - offset);
+            float highlightEndPx = this.scaleFactor.ScaleScalar(this.highlightStart + this.highlightLength - offset);
 
             RectangleF highlightRect;
             RectangleF valueRect;
@@ -250,12 +247,12 @@ namespace PaintDotNet
             if (this.orientation == Orientation.Horizontal)
             {
                 valueRect = new RectangleF(valueStart, this.ClientRectangle.Top, valueEnd - valueStart, this.ClientRectangle.Height);
-                highlightRect = new RectangleF(highlightStart, this.ClientRectangle.Top, highlightEnd - highlightStart, this.ClientRectangle.Height);
+                highlightRect = new RectangleF(highlightStartPx, this.ClientRectangle.Top, highlightEndPx - highlightStartPx, this.ClientRectangle.Height);
             }
             else // if (this.orientation == Orientation.Vertical)
             {
                 valueRect = new RectangleF(this.ClientRectangle.Left, valueStart, this.ClientRectangle.Width, valueEnd - valueStart);
-                highlightRect = new RectangleF(this.ClientRectangle.Left, highlightStart, this.ClientRectangle.Width, highlightEnd - highlightStart);
+                highlightRect = new RectangleF(this.ClientRectangle.Left, highlightStartPx, this.ClientRectangle.Width, highlightEndPx - highlightStartPx);
             }
 
             if (!this.highlightEnabled)
@@ -265,10 +262,16 @@ namespace PaintDotNet
 
             if (this.orientation == Orientation.Horizontal)
             {
-                e.Graphics.DrawLine(SystemPens.WindowText, 15, ClientRectangle.Top, 15, ClientRectangle.Bottom);
+                e.Graphics.DrawLine(
+                    SystemPens.WindowText, 
+                    UI.ScaleWidth(15), 
+                    ClientRectangle.Top, 
+                    UI.ScaleWidth(15), 
+                    ClientRectangle.Bottom);
+
                 string abbStringName = "MeasurementUnit." + this.MeasurementUnit.ToString() + ".Abbreviation";
                 string abbString = PdnResources.GetString(abbStringName);
-                e.Graphics.DrawString(abbString, Font, SystemBrushes.WindowText, -2, 0);
+                e.Graphics.DrawString(abbString, Font, SystemBrushes.WindowText, UI.ScaleWidth(-2), 0);
             }
 
             Region clipRegion = new Region(highlightRect);
@@ -276,7 +279,7 @@ namespace PaintDotNet
 
             if (this.orientation == Orientation.Horizontal)
             {
-                clipRegion.Exclude(new Rectangle(0, 0, 16, ClientRectangle.Height));
+                clipRegion.Exclude(new Rectangle(0, 0, UI.ScaleWidth(16), ClientRectangle.Height));
             }
 
             e.Graphics.SetClip(clipRegion, CombineMode.Replace);
@@ -286,20 +289,22 @@ namespace PaintDotNet
 
             if (this.orientation == Orientation.Horizontal)
             {
-                clipRegion.Exclude(new Rectangle(0, 0, 16, ClientRectangle.Height - 1));
+                clipRegion.Exclude(new Rectangle(0, 0, UI.ScaleWidth(16), ClientRectangle.Height - 1));
             }
 
             e.Graphics.SetClip(clipRegion, CombineMode.Replace);
             DrawRuler(e, false);
         }
 
-        static readonly float[] majorDivisors = new float[] {
-                                                                2.0f, 
-                                                                2.5f, 
-                                                                2.0f
-                                                            };
+        private static readonly float[] majorDivisors = 
+            new float[] 
+            {
+                2.0f, 
+                2.5f, 
+                2.0f
+            };
 
-        protected int[] GetSubdivs(MeasurementUnit unit)
+        private int[] GetSubdivs(MeasurementUnit unit)
         {
             switch (unit)
             {
@@ -402,7 +407,7 @@ namespace PaintDotNet
             }   
         }
 
-        protected void DrawRuler(PaintEventArgs e, bool highlighted)
+        private void DrawRuler(PaintEventArgs e, bool highlighted)
         {
             Pen pen;
             Brush cursorBrush;

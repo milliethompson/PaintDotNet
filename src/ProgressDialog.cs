@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -16,9 +16,6 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for ProgressDialog.
-    /// </summary>
     public class ProgressDialog 
         : PdnBaseForm
     {
@@ -27,13 +24,12 @@ namespace PaintDotNet
         private System.Windows.Forms.Button cancelButton;
         private System.Windows.Forms.Label descriptionLabel;
         private System.ComponentModel.IContainer components;
-        private CursorChanger cursorChanger;
+        private WaitCursorChanger waitCursorChanger;
         private bool cancelled;
 
         private int normalHeight;
         private int noButtonHeight;
         private bool cancellable = true;
-        private System.Windows.Forms.Timer marqueeTimer;
         private bool done = false;
 
         public ProgressDialog()
@@ -77,8 +73,7 @@ namespace PaintDotNet
             set
             {
                 this.marquee = value;
-                SystemLayer.UI.SetMarqueeMode(this.progressBar, value);
-                this.marqueeTimer.Enabled = value;
+                this.progressBar.Style = this.marquee ? ProgressBarStyle.Marquee : ProgressBarStyle.Blocks;
             }
         }
 
@@ -162,7 +157,7 @@ namespace PaintDotNet
 
         public void ExternalFinish()
         {
-            done = true;
+            this.done = true;
             DialogResult = DialogResult.OK;
             Close();
         }
@@ -191,7 +186,7 @@ namespace PaintDotNet
         {
             if (this.IsHandleCreated)
             {
-                BeginInvoke(new VoidVoidDelegate(ExternalFinish), null);
+                BeginInvoke(new Procedure(ExternalFinish), null);
             }
         }
 
@@ -233,7 +228,6 @@ namespace PaintDotNet
             this.descriptionLabel = new System.Windows.Forms.Label();
             this.percentText = new System.Windows.Forms.Label();
             this.cancelButton = new System.Windows.Forms.Button();
-            this.marqueeTimer = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // progressBar
@@ -267,12 +261,7 @@ namespace PaintDotNet
             this.cancelButton.Location = new System.Drawing.Point(72, 80);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.TabIndex = 3;
-            this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
-            // 
-            // marqueeTimer
-            // 
-            this.marqueeTimer.Interval = 35;
-            this.marqueeTimer.Tick += new System.EventHandler(this.marqueeTimer_Tick);
+            this.cancelButton.Click += new System.EventHandler(this.CancelButton_Click);
             // 
             // ProgressDialog
             // 
@@ -295,7 +284,6 @@ namespace PaintDotNet
             this.Controls.SetChildIndex(this.percentText, 0);
             this.Controls.SetChildIndex(this.cancelButton, 0);
             this.ResumeLayout(false);
-
         }
         #endregion
 
@@ -308,7 +296,7 @@ namespace PaintDotNet
             }
         }
 
-        private void cancelButton_Click(object sender, System.EventArgs e)
+        private void CancelButton_Click(object sender, System.EventArgs e)
         {
             this.cancelled = true;
             OnCancelClick();
@@ -318,24 +306,19 @@ namespace PaintDotNet
 
         protected override void OnLoad(EventArgs e)
         {
-            base.OnLoad (e);
-            this.cursorChanger = new CursorChanger(this.Owner, this.Cursor);
+            base.OnLoad(e);
+            this.waitCursorChanger = new WaitCursorChanger(this.Owner);
         }
 
         protected override void OnClosed(EventArgs e)
         {
-            base.OnClosed (e);
+            base.OnClosed(e);
 
-            if (this.cursorChanger != null)
+            if (this.waitCursorChanger != null)
             {
-                this.cursorChanger.Dispose();
-                this.cursorChanger = null;
+                this.waitCursorChanger.Dispose();
+                this.waitCursorChanger = null;
             }
-        }
-
-        private void marqueeTimer_Tick(object sender, System.EventArgs e)
-        {
-            this.progressBar.PerformStep();
         }
     }
 }

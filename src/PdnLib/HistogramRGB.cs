@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -17,7 +17,8 @@ namespace PaintDotNet
     /// if desired). This can then be used to retrieve percentile, average, peak,
     /// and distribution information.
     /// </summary>
-    public class HistogramRgb : Histogram
+    public sealed class HistogramRgb 
+        : Histogram
     {
         public HistogramRgb()
             : base(3, 256)
@@ -32,7 +33,6 @@ namespace PaintDotNet
         public override ColorBgra GetMeanColor() 
         {
             float[] mean = GetMean();
-
             return ColorBgra.FromBgr((byte)(mean[0] + 0.5f), (byte)(mean[1] + 0.5f), (byte)(mean[2] + 0.5f));
         }
 
@@ -71,7 +71,6 @@ namespace PaintDotNet
 
             Clear();
 
-
             float[] before = new float[3];
             float[] slopes = new float[3];
 
@@ -82,7 +81,7 @@ namespace PaintDotNet
 
                 for (int v = 0; v <= 255; v++)
                 {
-                    ColorBgra after = ColorBgra.FromRgb((byte)v, (byte)v, (byte)v);
+                    ColorBgra after = ColorBgra.FromBgr((byte)v, (byte)v, (byte)v);
 
                     upo.UnApply(after, before, slopes);
 
@@ -127,11 +126,9 @@ namespace PaintDotNet
 
         public UnaryPixelOps.Level MakeLevelsAuto() 
         {
-            ColorBgra lo, md, hi;
-
-            lo = GetPercentileColor(0.005f);
-            md = GetMeanColor();
-            hi = GetPercentileColor(0.995f);
+            ColorBgra lo = GetPercentileColor(0.005f);
+            ColorBgra md = GetMeanColor();
+            ColorBgra hi = GetPercentileColor(0.995f);
 
             return UnaryPixelOps.Level.AutoFromLoMdHi(lo, md, hi);
         }

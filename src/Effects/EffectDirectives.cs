@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -25,10 +25,15 @@ namespace PaintDotNet.Effects
         None = 0,
 
         /// <summary>
-        /// Specifies that the effect must only execute in one thread at once.
+        /// Specifies that the effect must only execute in one thread at a time.
         /// Normally multiple threads are used in order to increase performance
         /// (esp. on dual processor / dual core systems).
         /// </summary>
-        SingleThreaded = 1
+        /// <remarks>
+        /// This does not prevent multiple threads from being used to execute the effect,
+        /// but guarantees that only one rendering thread will be active at any given
+        /// time.
+        /// </remarks>
+        SingleThreaded = 1,
     }
 }

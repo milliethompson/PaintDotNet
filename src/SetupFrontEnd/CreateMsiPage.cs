@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -69,7 +69,7 @@ namespace PaintDotNet.Setup
         private void CreateMSIs()
         {
             Hashtable msiProperties = WizardHost.MsiProperties;
-            this.progressBar.Maximum = 3 * (3 + msiProperties.Count);
+            this.progressBar.Maximum = 2 * (3 + msiProperties.Count);
 
             const string msiPath = "PaintDotNet.msi";
             string desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
@@ -77,7 +77,6 @@ namespace PaintDotNet.Setup
 
             PrepMsi(msiPath, dstDir, PaintDotNet.SystemLayer.ProcessorArchitecture.X86, msiProperties);
             PrepMsi(msiPath, dstDir, PaintDotNet.SystemLayer.ProcessorArchitecture.X64, msiProperties);
-            PrepMsi(msiPath, dstDir, PaintDotNet.SystemLayer.ProcessorArchitecture.IA64, msiProperties); 
             
             string finishedTextFormat = PdnResources.GetString("SetupWizard.CreateMsiPage.IntroText.Text.Finished");
             string finishedText = string.Format(finishedTextFormat, dstDir);
@@ -86,8 +85,6 @@ namespace PaintDotNet.Setup
 
             WizardHost.SetFinished(true);
         }
-
-        private delegate void VoidVoidDelegate();
 
         protected override void OnLoad(EventArgs e)
         {
@@ -107,7 +104,7 @@ namespace PaintDotNet.Setup
                 WizardHost.SetBackEnabled(false);
                 WizardHost.SetCancelEnabled(false);
 
-                this.BeginInvoke(new VoidVoidDelegate(CreateMSIs));
+                this.BeginInvoke(new Procedure(CreateMSIs));
             }
 
             base.OnLoad(e);

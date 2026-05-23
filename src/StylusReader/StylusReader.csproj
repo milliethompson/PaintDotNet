@@ -74,10 +74,9 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Ink">
-      <Name>Microsoft.Ink</Name>
-      <HintPath>..\..\..\..\..\Program Files\Microsoft Tablet PC Platform SDK\Include\Microsoft.Ink.dll</HintPath>
-      <AssemblyFolderKey>hklm\dn\tablet pc assemblies</AssemblyFolderKey>
+    <Reference Include="Microsoft.Ink, Version=1.7.2600.2180, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Microsoft.Ink\Microsoft.Ink.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>

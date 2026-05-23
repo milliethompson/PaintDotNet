@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -14,6 +14,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Windows.Forms;
 
 namespace PaintDotNet
@@ -22,14 +23,48 @@ namespace PaintDotNet
     /// Carries information about the Font details that we support.
     /// Does not carry text alignment information.
     /// </summary>
+    [Serializable]
     public class FontInfo
-        : IDisposable
+        : IDisposable,
+          ISerializable,
+          ICloneable
     {
         private FontFamily family;
         private float size;
         private FontStyle style;
 
-        public static bool operator== (FontInfo lhs, FontInfo rhs)
+        private const string fontFamilyNameTag = "family.Name";
+        private const string sizeTag = "size";
+        private const string styleTag = "style";
+
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            info.AddValue(fontFamilyNameTag, this.family.Name);
+            info.AddValue(sizeTag, this.size);
+            info.AddValue(styleTag, (int)this.style);
+        }
+
+        protected FontInfo(SerializationInfo info, StreamingContext context)
+        {
+            string familyName = info.GetString(fontFamilyNameTag);
+
+            try
+            {
+                this.family = new FontFamily(familyName);
+            }
+
+            catch (ArgumentException)
+            {
+                this.family = FontFamily.GenericSansSerif;
+            }
+
+            this.size = info.GetSingle(sizeTag);
+
+            int styleInt = info.GetInt32(styleTag);
+            this.style = (FontStyle)styleInt;
+        }
+
+        public static bool operator ==(FontInfo lhs, FontInfo rhs)
         {
             if ((lhs.family == rhs.family) && (lhs.size == rhs.size) && (lhs.style == rhs. style))
             {
@@ -97,12 +132,12 @@ namespace PaintDotNet
         {
             get
             {
-                return size;
+                return this.size;
             }
 
             set
             {
-                size = value;
+                this.size = value;
             }
         }
 
@@ -113,12 +148,12 @@ namespace PaintDotNet
         {
             get 
             {
-                return style;
+                return this.style;
             }
 
             set
             {
-                style = value;
+                this.style = value;
             }
         }
 
@@ -208,6 +243,16 @@ namespace PaintDotNet
                     this.family = null;
                 }
             }
+        }
+
+        public FontInfo Clone()
+        {
+            return new FontInfo(this.family, this.size, this.style);
+        }
+
+        object ICloneable.Clone()
+        {
+            return Clone();
         }
     }
 }

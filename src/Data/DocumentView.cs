@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -30,34 +30,34 @@ namespace PaintDotNet
         : UserControl2,
           IInkHooks
     {
-        //rulers really are on by default, so 'true' was set to show this.
+        // rulers really are on by default, so 'true' was set to show this.
         private bool rulersEnabled = true;
 
+        private bool raiseFirstInputAfterGotFocus = false;
         private bool inkAvailable = true;
         private int refreshSuspended = 0;
+        private bool hookedMouseEvents = false;
 
         private Document document;
-        private Surface renderSurface;
-        private PaintDotNet.Ruler leftRuler;
-        private PaintDotNet.PanelEx panel;
-        private PaintDotNet.Ruler topRuler;
-        private InvalidateEventHandler documentInvalidatedDelegate;
-        private EventHandler documentMetaDataChangedDelegate;
-        private PaintDotNet.SurfaceBox surfaceBox;
-        private System.ComponentModel.IContainer components = null;
+        private Surface compositionSurface;
+        private Ruler leftRuler;
+        private PanelEx panel;
+        private Ruler topRuler;
+        private SurfaceBox surfaceBox;
+        private SurfaceBoxGridRenderer gridRenderer;
+        private IContainer components = null;
         private ControlShadow controlShadow;
-        private bool freeRenderSurface = true;
 
         Graphics IInkHooks.CreateGraphics()
         {
             return this.CreateGraphics();
         }
 
-        public SurfaceBoxRendererList Renderers
+        public SurfaceBoxRendererList RendererList
         {
             get
             {
-                return this.surfaceBox.Renderers;
+                return this.surfaceBox.RendererList;
             }
         }
 
@@ -66,53 +66,75 @@ namespace PaintDotNet
             this.surfaceBox.IncrementJustPaintWhite();
         }
 
-        /// <summary>
-        /// You may use this to optimize memory usage in some cases where you already have
-        /// a Surface allocated that is the same size as the Document. You may only set
-        /// this before the control is shown, and before the Document property is set.
-        /// </summary>
-        /// <param name="newRenderSurface"></param>
-        public void SetRenderSurface(Surface newRenderSurface)
+        protected void RenderCompositionTo(Surface dst, bool highQuality, bool forceUpToDate)
         {
-            if (document != null)
+            if (forceUpToDate)
             {
-                if (document.Size != newRenderSurface.Size)
-                {
-                    throw new ArgumentException("Document != null, and newRenderSurface.Size != Document.Size");
-                }
+                UpdateComposition(false);
             }
 
-            if (this.renderSurface != null)
+            if (dst.Width == this.compositionSurface.Width && 
+                dst.Height == this.compositionSurface.Height)
             {
-                this.renderSurface.Dispose();
-                this.renderSurface = null;
+                dst.ClearWithCheckboardPattern();
+                new UserBlendOps.NormalBlendOp().Apply(dst, this.compositionSurface);
             }
+            else if (highQuality)
+            {
+                Surface thumb = new Surface(dst.Size);
+                thumb.SuperSamplingFitSurface(this.compositionSurface);
 
-            this.renderSurface = newRenderSurface;
-            this.freeRenderSurface = false;
+                dst.ClearWithCheckboardPattern();
+
+                new UserBlendOps.NormalBlendOp().Apply(dst, thumb);
+
+                thumb.Dispose();
+            }
+            else
+            {
+                this.surfaceBox.RenderTo(dst);
+            }
+        }
+
+        public event EventHandler CompositionUpdated;
+        private void OnCompositionUpdated()
+        {
+            if (CompositionUpdated != null)
+            {
+                CompositionUpdated(this, EventArgs.Empty);
+            }
         }
 
         public MeasurementUnit Units
         {
             get
             {
-                return leftRuler.MeasurementUnit;
+                return this.leftRuler.MeasurementUnit;
             }
 
             set
             {
-                leftRuler.MeasurementUnit = value;
-                topRuler.MeasurementUnit = value;
+                OnUnitsChanging();
+                this.leftRuler.MeasurementUnit = value;
+                this.topRuler.MeasurementUnit = value;
                 DocumentMetaDataChangedHandler(this, EventArgs.Empty);
+                OnUnitsChanged();
             }
-        } 
+        }
+
+        protected virtual void OnUnitsChanging()
+        {
+        }
+
+        protected virtual void OnUnitsChanged()
+        {
+        }
 
         private void InitRenderSurface()
         {
-            if (this.renderSurface == null && Document != null)
+            if (this.compositionSurface == null && Document != null)
             {
-                this.renderSurface = new Surface(Document.Size);
-                this.freeRenderSurface = true;
+                this.compositionSurface = new Surface(Document.Size);
             }
         }
 
@@ -120,14 +142,14 @@ namespace PaintDotNet
         {
             get 
             {
-                return surfaceBox.DrawGrid;
+                return this.gridRenderer.Visible;
             }
 
             set 
             {
-                if (surfaceBox.DrawGrid != value) 
+                if (this.gridRenderer.Visible != value)
                 {
-                    surfaceBox.DrawGrid = value;
+                    this.gridRenderer.Visible = value;
                     OnDrawGridChanged();
                 }
             }
@@ -161,58 +183,36 @@ namespace PaintDotNet
         public DocumentView()
         {
             InitializeComponent();
-            document = null;
-            renderSurface = null;
-            documentInvalidatedDelegate = new InvalidateEventHandler(DocumentInvalidatedHandler);
-            documentMetaDataChangedDelegate = new EventHandler(DocumentMetaDataChangedHandler);
 
-            controlShadow = new ControlShadow();
-            controlShadow.OccludingControl = surfaceBox;
-            controlShadow.Paint += new PaintEventHandler(controlShadow_Paint);
-            controlShadow.Resize += new EventHandler(controlShadow_Resize);
-            panel.Controls.Add(controlShadow);
-            panel.Controls.SetChildIndex(controlShadow, panel.Controls.Count - 1);
+            this.document = null;
+            this.compositionSurface = null;
 
-            surfaceBox.Renderers.Invalidated += new InvalidateEventHandler(Renderers_Invalidated);
+            this.controlShadow = new ControlShadow();
+            this.controlShadow.OccludingControl = surfaceBox;
+            this.controlShadow.Paint += new PaintEventHandler(ControlShadow_Paint);
+            this.panel.Controls.Add(controlShadow);
+            this.panel.Controls.SetChildIndex(controlShadow, panel.Controls.Count - 1);
+
+            this.gridRenderer = new SurfaceBoxGridRenderer(this.surfaceBox.RendererList);
+            this.gridRenderer.Visible = false;
+            this.surfaceBox.RendererList.Add(this.gridRenderer, true);
+
+            this.surfaceBox.RendererList.Invalidated += new InvalidateEventHandler(Renderers_Invalidated);
         }
 
-        void controlShadow_Resize(object sender, EventArgs e)
-        {
-            // We only want the control shadow to render double buffered if we have a SBGR that 
-            // wants to render itself. Otherwise, non-double buffered rendering is faster.
-            SurfaceBoxRenderer[][] renderers = this.surfaceBox.Renderers.Renderers;
-
-            foreach (SurfaceBoxRenderer[] renderList in renderers)
-            {
-                foreach (SurfaceBoxRenderer renderer in renderList)
-                {
-                    if (renderer.Visible)
-                    {
-                        SurfaceBoxGraphicsRenderer sbgr = renderer as SurfaceBoxGraphicsRenderer;
-
-                        if (sbgr != null && sbgr.ShouldRender())
-                        {
-                            this.controlShadow.EnableDoubleBuffer = true;
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
-        void Renderers_Invalidated(object sender, InvalidateEventArgs e)
+        private void Renderers_Invalidated(object sender, InvalidateEventArgs e)
         {
             if (this.document != null)
             {
-                RectangleF rectF = this.surfaceBox.Renderers.SourceToDestination(e.InvalidRect);
+                RectangleF rectF = this.surfaceBox.RendererList.SourceToDestination(e.InvalidRect);
                 Rectangle rect = Utility.RoundRectangle(rectF);
                 InvalidateControlShadow(rect);
             }
         }
 
-        void controlShadow_Paint(object sender, PaintEventArgs e)
+        private void ControlShadow_Paint(object sender, PaintEventArgs e)
         {
-            SurfaceBoxRenderer[][] renderers = this.surfaceBox.Renderers.Renderers;
+            SurfaceBoxRenderer[][] renderers = this.surfaceBox.RendererList.Renderers;
 
             Rectangle csScreenRect = this.RectangleToScreen(this.controlShadow.Bounds);
             Rectangle sbScreenRect = this.RectangleToScreen(this.surfaceBox.Bounds);
@@ -229,19 +229,14 @@ namespace PaintDotNet
                         if (sbgr != null)
                         {
                             Matrix oldMatrix = e.Graphics.Transform;
-                            //e.Graphics.TranslateTransform(offset.X, offset.Y, MatrixOrder.Append);
-                            //e.Graphics.TranslateTransform(offset.X, offset.Y, MatrixOrder.Append);
                             sbgr.RenderToGraphics(e.Graphics, new Point(-offset.X, -offset.Y));
                             e.Graphics.Transform = oldMatrix;
                         }
                     }
                 }
             }
-
-            this.controlShadow.EnableDoubleBuffer = false;
         }
 
-        private bool hookedMouseEvents = false;
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad (e);
@@ -263,18 +258,18 @@ namespace PaintDotNet
             this.panel.Select();
         }
 
-        public void PerformMouseWheel(MouseEventArgs e)
+        public void PerformMouseWheel(Control sender, MouseEventArgs e)
         {
-            HandleMouseWheel(e);
+            HandleMouseWheel(sender, e);
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
         {
-            HandleMouseWheel(e);
+            HandleMouseWheel(this, e);
             base.OnMouseWheel(e);
         }
 
-        private void HandleMouseWheel(MouseEventArgs e)
+        protected virtual void HandleMouseWheel(Control sender, MouseEventArgs e)
         {
             // scroll by e.Delta pixels, in screen coordinates
             double docDelta = (double)e.Delta / this.ScaleFactor.Ratio;
@@ -285,16 +280,19 @@ namespace PaintDotNet
 
             if (Control.ModifierKeys == Keys.Shift)
             {
+                // scroll horizontally
                 newX = this.DocumentScrollPositionF.X - docDelta;
                 newY = this.DocumentScrollPositionF.Y;
             }
             else if (Control.ModifierKeys == Keys.None)
             {
+                // scroll vertically
                 newX = this.DocumentScrollPositionF.X;
                 newY = this.DocumentScrollPositionF.Y - docDelta;
             }
             else
             {
+                // no change
                 newX = this.DocumentScrollPositionF.X;
                 newY = this.DocumentScrollPositionF.Y;
             }
@@ -319,7 +317,7 @@ namespace PaintDotNet
         {
             get
             {
-                if (panel == null || surfaceBox == null)
+                if (this.panel == null || this.surfaceBox == null)
                 {
                     return PointF.Empty;
                 }
@@ -336,15 +334,15 @@ namespace PaintDotNet
                     return;
                 }
 
-                PointF sbClientF = surfaceBox.SurfaceToClient(value);
+                PointF sbClientF = this.surfaceBox.SurfaceToClient(value);
                 Point sbClient = Point.Round(sbClientF);
 
-                if (panel.AutoScrollPosition != new Point(-sbClient.X, -sbClient.Y))
+                if (this.panel.AutoScrollPosition != new Point(-sbClient.X, -sbClient.Y))
                 {
-                    panel.AutoScrollPosition = sbClient;
+                    this.panel.AutoScrollPosition = sbClient;
                     UpdateRulerOffsets();
-                    topRuler.Invalidate();
-                    leftRuler.Invalidate();
+                    this.topRuler.Invalidate();
+                    this.leftRuler.Invalidate();
                 }
             }
         }
@@ -380,10 +378,10 @@ namespace PaintDotNet
                     this.components = null;
                 }
 
-                if (this.renderSurface != null && this.freeRenderSurface)
+                if (this.compositionSurface != null)
                 {
-                    this.renderSurface.Dispose();
-                    this.renderSurface = null;
+                    this.compositionSurface.Dispose();
+                    this.compositionSurface = null;
                 }
             }
 
@@ -406,11 +404,6 @@ namespace PaintDotNet
             {
                 DrawGridChanged(this, EventArgs.Empty);
             }
-        }
-
-        protected virtual bool QueryNewZoomCenterPoint(ref PointF newCenterPoint)
-        {
-            return false;
         }
 
         public void ZoomToWindow()
@@ -453,7 +446,7 @@ namespace PaintDotNet
             return (ratio - 0.01) / ratio;
         }
 
-        public void ZoomIn(double factor)
+        public virtual void ZoomIn(double factor)
         {
             PointF centerPt = this.DocumentCenterPointF;
 
@@ -481,7 +474,7 @@ namespace PaintDotNet
             this.DocumentCenterPointF = centerPt;
         }
 
-        public void ZoomIn()
+        public virtual void ZoomIn()
         {
             PointF centerPt = this.DocumentCenterPointF;
 
@@ -502,7 +495,7 @@ namespace PaintDotNet
             this.DocumentCenterPointF = centerPt;
         }
 
-        public void ZoomOut(double factor)
+        public virtual void ZoomOut(double factor)
         {
             PointF centerPt = this.DocumentCenterPointF;
 
@@ -531,7 +524,7 @@ namespace PaintDotNet
             this.DocumentCenterPointF = centerPt;
         }
 
-        public void ZoomOut()
+        public virtual void ZoomOut()
         {
             PointF centerPt = this.DocumentCenterPointF;
 
@@ -584,12 +577,12 @@ namespace PaintDotNet
         {
             get
             {
-                return scaleFactor;
+                return this.scaleFactor;
             }
 
             set
             {
-                UI.SetControlRedraw(this, false);
+                UI.SuspendControlPainting(this);
 
                 ScaleFactor newValue = ScaleFactor.Min(value, MaxScaleFactor);
 
@@ -608,9 +601,9 @@ namespace PaintDotNet
                     PointF centerPt = new PointF(visibleRect.X + visibleRect.Width / 2, 
                         visibleRect.Y + visibleRect.Height / 2);
 
-                    if (surfaceBox != null && renderSurface != null)
+                    if (surfaceBox != null && compositionSurface != null)
                     {
-                        surfaceBox.Size = Size.Truncate((SizeF)scaleFactor.ScaleSize(renderSurface.Bounds.Size));
+                        surfaceBox.Size = Size.Truncate((SizeF)scaleFactor.ScaleSize(compositionSurface.Bounds.Size));
                         scaleFactor = surfaceBox.ScaleFactor;
 
                         if (leftRuler != null)
@@ -626,31 +619,13 @@ namespace PaintDotNet
 
                     // re center ourself
                     RectangleF visibleRect2 = this.VisibleDocumentRectangleF;
-
-                    // zoom towards the selection -- DocumentWorkspace implements QueryNewZoomCenterPoint
-                    PointF newCenterPt = Point.Empty;
-                    bool useNewCenterPt = QueryNewZoomCenterPoint(ref newCenterPt);
-
-                    if (useNewCenterPt)
-                    {
-                        PointF centerDifference = new PointF(centerPt.X - newCenterPt.X,
-                            centerPt.Y - newCenterPt.Y);
-
-                        centerDifference = oldSF.ScalePoint(centerDifference);
-                        centerDifference = scaleFactor.UnscalePoint(centerDifference);
-                        centerDifference = scaleFactor.UnscalePoint(centerDifference);
-
-                        centerPt = new PointF(newCenterPt.X + centerDifference.X,
-                            newCenterPt.Y + centerDifference.Y);
-                    }
-
                     RecenterView(centerPt);
                 }
 
                 this.OnResize(EventArgs.Empty);
                 this.OnScaleFactorChanged();
 
-                UI.SetControlRedraw(this, true);
+                UI.ResumeControlPainting(this);
                 Invalidate(true);
             }
         }
@@ -687,6 +662,22 @@ namespace PaintDotNet
             }
         }
 
+        /// <summary>
+        /// Returns a rectangle in client coordinates that denotes the space that the document
+        /// may take up. This is essentially the ClientRectangle converted to screen coordinates
+        /// and then with the rulers and scrollbars subtracted out.
+        /// </summary>
+        public Rectangle VisibleViewRectangle
+        {
+            get
+            {
+                Rectangle clientRect = this.panel.ClientRectangle;
+                Rectangle screenRect = this.panel.RectangleToScreen(clientRect);
+                Rectangle ourClientRect = RectangleToClient(screenRect);
+                return ourClientRect;
+            }
+        }
+
         public bool ScrollBarsVisible
         {
             get
@@ -695,29 +686,15 @@ namespace PaintDotNet
             }
         }
         
-        /// <summary>
-        /// Returns a rectangle in client coordinates that represents the space that
-        /// this control has left over to display the document in. That is, the size of
-        /// this control minus rulers and scrollbars, if present
-        /// </summary>
-        [Browsable(false)]
-        public Rectangle ClientRectangle2
-        {
-            get
-            {
-                return RectangleToClient(panel.RectangleToScreen(panel.ClientRectangle));
-            }
-        }
-
         public Rectangle ClientRectangleMax 
         {
             get 
             {
-                return RectangleToClient(panel.RectangleToScreen(panel.Bounds));
+                return RectangleToClient(this.panel.RectangleToScreen(this.panel.Bounds));
             }
         }
 
-        public Rectangle ClientRectantangleMin 
+        public Rectangle ClientRectangleMin
         {
             get 
             {
@@ -753,6 +730,32 @@ namespace PaintDotNet
             }
         }
 
+        public event EventHandler<Document> DocumentChanging;
+        protected virtual void OnDocumentChanging(Document newDocument)
+        {
+            if (DocumentChanging != null)
+            {
+                DocumentChanging(this, new EventArgs<Document>(newDocument));
+            }
+        }
+
+        public event EventHandler DocumentChanged;
+        protected virtual void OnDocumentChanged()
+        {
+            if (DocumentChanged != null)
+            {
+                DocumentChanged(this, EventArgs.Empty);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the Document that is shown through this instance of DocumentView.
+        /// </summary>
+        /// <remarks>
+        /// This property is thread safe and may be called from a non-UI thread. However,
+        /// if the setter is called from a non-UI thread, then that thread will block as
+        /// the call is marshaled to the UI thread.
+        /// </remarks>
         [Browsable(false)]
         public Document Document
         {
@@ -763,66 +766,78 @@ namespace PaintDotNet
 
             set
             {
-                SuspendRefresh();
-
-                try
+                if (InvokeRequired)
                 {
-                    if (document != null)
-                    {
-                        document.Invalidated -= documentInvalidatedDelegate;
-                        document.Metadata.Changed -= this.documentMetaDataChangedDelegate;
-                    }
-
-                    document = value;
-
-                    if (document != null)
-                    {
-                        if (this.renderSurface != null && 
-                            this.renderSurface.Size != document.Size)
-                        {
-                            if (this.freeRenderSurface)
-                            {
-                                this.renderSurface.Dispose();
-                            }
-
-                            this.renderSurface = null;
-                        }
-
-                        if (this.renderSurface == null)
-                        {
-                            this.renderSurface = new Surface(Document.Size);
-                            this.freeRenderSurface = true;
-                        }
-
-                        this.renderSurface.Clear(ColorBgra.White);
-
-                        if (this.surfaceBox.Surface != this.renderSurface)
-                        {
-                            this.surfaceBox.Surface = this.renderSurface;
-                        }
-
-                        if (this.ScaleFactor != this.surfaceBox.ScaleFactor)
-                        {
-                            this.ScaleFactor = this.surfaceBox.ScaleFactor;
-                        }
-
-                        this.document.Invalidated += this.documentInvalidatedDelegate;
-                        this.document.Metadata.Changed += this.documentMetaDataChangedDelegate;
-                    }
-
-                    Invalidate(true);
-                    DocumentMetaDataChangedHandler(this, EventArgs.Empty);
-                    this.OnResize(EventArgs.Empty);
+                    this.Invoke(new Procedure<Document>(DocumentSetImpl), new object[1] { value });
                 }
-
-                finally
+                else
                 {
-                    ResumeRefresh();
+                    DocumentSetImpl(value);
                 }
             }
         }
 
-        #region Component Designer generated code
+        private void DocumentSetImpl(Document value)
+        {
+            PointF dspf = DocumentScrollPositionF;
+
+            OnDocumentChanging(value);
+            SuspendRefresh();
+
+            try
+            {
+                if (this.document != null)
+                {
+                    this.document.Invalidated -= Document_Invalidated;
+                    this.document.Metadata.Changed -= DocumentMetaDataChangedHandler;
+                }
+
+                this.document = value;
+
+                if (document != null)
+                {
+                    if (this.compositionSurface != null &&
+                        this.compositionSurface.Size != document.Size)
+                    {
+                        this.compositionSurface.Dispose();
+                        this.compositionSurface = null;
+                    }
+
+                    if (this.compositionSurface == null)
+                    {
+                        this.compositionSurface = new Surface(Document.Size);
+                    }
+
+                    this.compositionSurface.Clear(ColorBgra.White);
+
+                    if (this.surfaceBox.Surface != this.compositionSurface)
+                    {
+                        this.surfaceBox.Surface = this.compositionSurface;
+                    }
+
+                    if (this.ScaleFactor != this.surfaceBox.ScaleFactor)
+                    {
+                        this.ScaleFactor = this.surfaceBox.ScaleFactor;
+                    }
+
+                    this.document.Invalidated += Document_Invalidated;
+                    this.document.Metadata.Changed += DocumentMetaDataChangedHandler;
+                }
+
+                Invalidate(true);
+                DocumentMetaDataChangedHandler(this, EventArgs.Empty);
+                this.OnResize(EventArgs.Empty);
+                OnDocumentChanged();
+            }
+
+            finally
+            {
+                ResumeRefresh();
+            }
+
+            DocumentScrollPositionF = dspf;
+        }
+        
         /// <summary> 
         /// Required method for Designer support - do not modify 
         /// the contents of this method with the code editor.
@@ -844,7 +859,7 @@ namespace PaintDotNet
             this.topRuler.Location = new System.Drawing.Point(0, 0);
             this.topRuler.Name = "topRuler";
             this.topRuler.Offset = -16;
-            this.topRuler.Size = new System.Drawing.Size(384, 16);
+            this.topRuler.Size = UI.ScaleSize(new Size(384, 16));
             this.topRuler.TabIndex = 3;
             // 
             // leftRuler
@@ -854,7 +869,7 @@ namespace PaintDotNet
             this.leftRuler.Location = new System.Drawing.Point(0, 16);
             this.leftRuler.Name = "leftRuler";
             this.leftRuler.Orientation = System.Windows.Forms.Orientation.Vertical;
-            this.leftRuler.Size = new System.Drawing.Size(16, 304);
+            this.leftRuler.Size = UI.ScaleSize(new Size(16, 304));
             this.leftRuler.TabIndex = 4;
             // 
             // panel
@@ -867,10 +882,12 @@ namespace PaintDotNet
             this.panel.ScrollPosition = new System.Drawing.Point(0, 0);
             this.panel.Size = new System.Drawing.Size(368, 304);
             this.panel.TabIndex = 5;
-            this.panel.Scroll += new System.Windows.Forms.ScrollEventHandler(this.panel_Scroll);
-            this.panel.KeyDown += new KeyEventHandler(panel_KeyDown);
-            this.panel.KeyUp += new KeyEventHandler(panel_KeyUp);
-            this.panel.KeyPress += new KeyPressEventHandler(panel_KeyPress);
+            this.panel.Scroll += new System.Windows.Forms.ScrollEventHandler(this.Panel_Scroll);
+            this.panel.KeyDown += new KeyEventHandler(Panel_KeyDown);
+            this.panel.KeyUp += new KeyEventHandler(Panel_KeyUp);
+            this.panel.KeyPress += new KeyPressEventHandler(Panel_KeyPress);
+            this.panel.GotFocus += new EventHandler(Panel_GotFocus);
+            this.panel.LostFocus += new EventHandler(Panel_LostFocus);
             // 
             // surfaceBox
             // 
@@ -878,7 +895,7 @@ namespace PaintDotNet
             this.surfaceBox.Name = "surfaceBox";
             this.surfaceBox.Surface = null;
             this.surfaceBox.TabIndex = 0;
-            this.surfaceBox.PrePaint += new PaintDotNet.PaintEventHandler2(this.surfaceBox_PrePaint);
+            this.surfaceBox.PrePaint += new PaintDotNet.PaintEventHandler2(this.SurfaceBox_PrePaint);
             // 
             // DocumentView
             // 
@@ -891,7 +908,16 @@ namespace PaintDotNet
             this.ResumeLayout(false);
 
         }
-        #endregion
+
+        private void Panel_LostFocus(object sender, EventArgs e)
+        {
+            this.raiseFirstInputAfterGotFocus = false;
+        }
+
+        private void Panel_GotFocus(object sender, EventArgs e)
+        {
+            this.raiseFirstInputAfterGotFocus = true;
+        }
 
         /// <summary>
         /// Used to enable or disable the rulers.
@@ -1037,19 +1063,29 @@ namespace PaintDotNet
 
         private void HookMouseEvents(Control c)
         {
-            if (inkAvailable)
+            if (this.inkAvailable)
             {
                 // This must be in a separate function, otherwise we will throw an exception when JITting
                 // because MS.Ink.dll won't be available
                 // This is to support systems that don't have ink installed
-                Ink.HookInk(this, c);
+
+                try
+                {
+                    Ink.HookInk(this, c);
+                }
+
+                catch (InvalidOperationException ioex)
+                {
+                    Tracing.Ping("Exception while initializing ink hooks: " + ioex.ToString());
+                    this.inkAvailable = false;
+                }
             }
 
             c.MouseEnter += new EventHandler(this.MouseEnterHandler);
             c.MouseLeave += new EventHandler(this.MouseLeaveHandler);
-            c.MouseUp += new System.Windows.Forms.MouseEventHandler(this.MouseUpHandler);
-            c.MouseMove += new System.Windows.Forms.MouseEventHandler(this.MouseMoveHandler);
-            c.MouseDown += new System.Windows.Forms.MouseEventHandler(this.MouseDownHandler);
+            c.MouseUp += new MouseEventHandler(this.MouseUpHandler);
+            c.MouseMove += new MouseEventHandler(this.MouseMoveHandler);
+            c.MouseDown += new MouseEventHandler(this.MouseDownHandler);
             c.Click += new EventHandler(this.ClickHandler);
 
             foreach (Control c2 in c.Controls)
@@ -1144,6 +1180,8 @@ namespace PaintDotNet
 
         protected virtual void OnDocumentMouseUp(MouseEventArgs e)
         {
+            CheckForFirstInputAfterGotFocus();
+            
             if (!inkAvailable)
             {
                 if (DocumentMouseUp != null)
@@ -1182,6 +1220,8 @@ namespace PaintDotNet
 
         protected virtual void OnDocumentMouseDown(MouseEventArgs e)
         {
+            CheckForFirstInputAfterGotFocus();
+
             if (!inkAvailable)
             {
                 if (DocumentMouseDown != null)
@@ -1209,6 +1249,8 @@ namespace PaintDotNet
         public event EventHandler DocumentClick;
         protected void OnDocumentClick()
         {
+            CheckForFirstInputAfterGotFocus();
+
             if (DocumentClick != null)
             {
                 DocumentClick(this, EventArgs.Empty);
@@ -1218,13 +1260,15 @@ namespace PaintDotNet
         public event KeyPressEventHandler DocumentKeyPress;
         protected void OnDocumentKeyPress(KeyPressEventArgs e)
         {
+            CheckForFirstInputAfterGotFocus();
+
             if (DocumentKeyPress != null)
             {
                 DocumentKeyPress(this, e);
             }
         }
 
-        private void panel_KeyPress(object sender, KeyPressEventArgs e)
+        private void Panel_KeyPress(object sender, KeyPressEventArgs e)
         {
             OnDocumentKeyPress(e);
         }
@@ -1232,14 +1276,18 @@ namespace PaintDotNet
         public event KeyEventHandler DocumentKeyDown;
         protected void OnDocumentKeyDown(KeyEventArgs e)
         {
+            CheckForFirstInputAfterGotFocus();
+
             if (DocumentKeyDown != null)
             {
                 DocumentKeyDown(this, e);
             }
         }
 
-        private void panel_KeyDown(object sender, KeyEventArgs e)
+        private void Panel_KeyDown(object sender, KeyEventArgs e)
         {
+            CheckForFirstInputAfterGotFocus();
+
             OnDocumentKeyDown(e);
 
             if (!e.Handled)
@@ -1303,13 +1351,15 @@ namespace PaintDotNet
         public event KeyEventHandler DocumentKeyUp;
         protected void OnDocumentKeyUp(KeyEventArgs e)
         {
+            CheckForFirstInputAfterGotFocus();
+
             if (DocumentKeyUp != null)
             {
                 DocumentKeyUp(this, e);
             }
         }
 
-        private void panel_KeyUp(object sender, KeyEventArgs e)
+        private void Panel_KeyUp(object sender, KeyEventArgs e)
         {
             OnDocumentKeyUp(e);
         }
@@ -1363,8 +1413,11 @@ namespace PaintDotNet
 
         private void UpdateRulerOffsets()
         {
-            topRuler.Offset = ScaleFactor.UnscaleScalar(-16.0f - surfaceBox.Location.X);
-            leftRuler.Offset = ScaleFactor.UnscaleScalar(0.0f - surfaceBox.Location.Y);
+            // TODO: cleanse magic numbers
+            this.topRuler.Offset = ScaleFactor.UnscaleScalar(UI.ScaleWidth(-16.0f) - surfaceBox.Location.X);
+            this.topRuler.Update();
+            this.leftRuler.Offset = ScaleFactor.UnscaleScalar(0.0f - surfaceBox.Location.Y);
+            this.leftRuler.Update();
         }
 
         public void InvalidateSurface(Rectangle rect)
@@ -1383,7 +1436,6 @@ namespace PaintDotNet
         {
             if (rect.Width > 0 && rect.Height > 0)
             {
-                this.controlShadow.EnableDoubleBuffer = true;
                 Rectangle csRect = SurfaceBoxToControlShadow(rect);
                 this.controlShadow.Invalidate(csRect);
             }
@@ -1430,6 +1482,7 @@ namespace PaintDotNet
 
         private void DoLayout()
         {
+            // Ensure that the document is centered.
             if (panel.ClientRectangle != new Rectangle(0, 0, 0, 0))
             {
                 // If the client area is bigger than the area used to display the image, center it
@@ -1461,34 +1514,25 @@ namespace PaintDotNet
         protected override void OnResize(EventArgs e)
         {
             // enable or disable timer: no sense drawing selection if we're minimized
-            if (ParentForm == null)
-            {   
-                // but we can't make that decision if we have no parent yet ...
-                // ... which can and does happen during first time init/setup
-            }
-            else 
+            Form parentForm = ParentForm;
+
+            if (parentForm != null)
             {
-                if (ParentForm.WindowState != oldWindowState)
+                if (parentForm.WindowState != this.oldWindowState)
                 {
                     PerformLayout();
                 }
 
-                oldWindowState = ParentForm.WindowState;
+                this.oldWindowState = parentForm.WindowState;
             }
 
             base.OnResize(e);
             DoLayout();
         }       
 
-        public Point MouseToDocument(object sender, Point mouse) 
+        public Point MouseToDocument(Control sender, Point mouse) 
         {
-            if (!(sender is Control))
-            {
-                throw new ArgumentException("sender must reference a valid control", "sender");
-            }
-
-            Control control = (Control)sender;
-            Point screenPoint = control.PointToScreen(mouse);
+            Point screenPoint = sender.PointToScreen(mouse);
             Point sbClient = surfaceBox.PointToClient(screenPoint);
 
             // Note: We're intentionally making this truncate instead of rounding so that
@@ -1510,7 +1554,7 @@ namespace PaintDotNet
 
         private void MouseMoveHandler(object sender, MouseEventArgs e)
         {
-            Point docPoint = MouseToDocument(sender, new Point(e.X, e.Y));
+            Point docPoint = MouseToDocument((Control)sender, new Point(e.X, e.Y));
 
             if (RulersEnabled)
             {
@@ -1530,7 +1574,7 @@ namespace PaintDotNet
                 return;
             }
 
-            Point docPoint = MouseToDocument(sender, new Point(e.X, e.Y));
+            Point docPoint = MouseToDocument((Control)sender, new Point(e.X, e.Y));
             Point pt = panel.AutoScrollPosition;
             panel.Focus();
 
@@ -1544,7 +1588,7 @@ namespace PaintDotNet
                 return;
             }
 
-            Point docPoint = MouseToDocument(sender, new Point(e.X, e.Y));
+            Point docPoint = MouseToDocument((Control)sender, new Point(e.X, e.Y));
             Point pt = panel.AutoScrollPosition;
             panel.Focus();
 
@@ -1558,7 +1602,25 @@ namespace PaintDotNet
             OnDocumentClick();
         }
 
-        private void DocumentInvalidatedHandler(object sender, InvalidateEventArgs e)
+        public event EventHandler FirstInputAfterGotFocus;
+        protected virtual void OnFirstInputAfterGotFocus()
+        {
+            if (FirstInputAfterGotFocus != null)
+            {
+                FirstInputAfterGotFocus(this, EventArgs.Empty);
+            }
+        }
+
+        private void CheckForFirstInputAfterGotFocus()
+        {
+            if (this.raiseFirstInputAfterGotFocus)
+            {
+                this.raiseFirstInputAfterGotFocus = false;
+                OnFirstInputAfterGotFocus();
+            }
+        }
+
+        private void Document_Invalidated(object sender, InvalidateEventArgs e)
         {
             // Note: We don't need to convert this rectangle to controlShadow coordinates and invalidate it
             // because, by definition, any invalidation on the document should be within the document's
@@ -1567,18 +1629,18 @@ namespace PaintDotNet
 
             if (this.ScaleFactor == ScaleFactor.OneToOne)
             {
-                surfaceBox.Invalidate(e.InvalidRect);
+                this.surfaceBox.Invalidate(e.InvalidRect);
             }
             else
             {
                 Rectangle inflatedInvalidRect = Rectangle.Inflate(e.InvalidRect, 1, 1);
                 Rectangle clientRect = surfaceBox.SurfaceToClient(inflatedInvalidRect);
                 Rectangle inflatedClientRect = Rectangle.Inflate(clientRect, 1, 1);
-                surfaceBox.Invalidate(inflatedClientRect);
+                this.surfaceBox.Invalidate(inflatedClientRect);
             }
         }
 
-        private void panel_Scroll(object sender, System.Windows.Forms.ScrollEventArgs e)
+        private void Panel_Scroll(object sender, System.Windows.Forms.ScrollEventArgs e)
         {
             OnScroll(e);
             UpdateRulerOffsets();
@@ -1589,36 +1651,68 @@ namespace PaintDotNet
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void surfaceBox_PrePaint(object sender, PaintEventArgs2 e)
+        private void SurfaceBox_PrePaint(object sender, PaintEventArgs2 e)
         {
-            // e.ClipRectangle is in SurfaceBox's client coordinates
-            // Rectangle docClipRect = Utility.RoundRectangle(surfaceBox.ClientToSurface(e.ClipRectangle));
-
-            // render the document
-            using (RenderArgs ra = new RenderArgs(renderSurface))
+            try
             {
-                document.Update(ra);
+                UpdateComposition(true);
+            }
+
+            catch (ObjectDisposedException ex)
+            {
+                Tracing.Ping(ex.ToString());
+            }
+        }
+
+        private int withheldCompositionUpdatedCount = 0;
+        protected void UpdateComposition(bool raiseEvent)
+        {
+            lock (this)
+            {
+                using (RenderArgs ra = new RenderArgs(this.compositionSurface))
+                {
+                    bool result = this.document.Update(ra);
+
+                    if (raiseEvent && (result || this.withheldCompositionUpdatedCount > 0))
+                    {
+                        OnCompositionUpdated();
+
+                        if (!result && this.withheldCompositionUpdatedCount > 0)
+                        {
+                            --this.withheldCompositionUpdatedCount;
+                        }
+                    }
+                    else if (!raiseEvent && result)
+                    {
+                        // If they want to not raise the event, we must keep track so that
+                        // the next time UpdateComposition() is called we still raise this
+                        // event even if Update() returned false (which indicates there
+                        // was nothing to update)
+                        ++this.withheldCompositionUpdatedCount;
+                    }
+
+                }
             }
         }
 
         // Note: You use the Suspend/Resume pattern to suspend and resume refreshing (it hides the controls for a brief moment)
         //       This is used by set_Document to avoid twitching/flickering in certain cases.
-        //       However, you should use Resume followed by Suspend to bypass the SetDocument()'s use of that.
+        //       However, you should use Resume followed by Suspend to bypass the set_Document's use of that.
         //       Interestingly, SaveConfigDialog does this to avoid 'blinking' when the save parameters are changed.
         public void SuspendRefresh()
         {
-            ++refreshSuspended;
+            ++this.refreshSuspended;
 
-            surfaceBox.Visible 
-                = controlShadow.Visible = (refreshSuspended <= 0);
+            this.surfaceBox.Visible
+                = this.controlShadow.Visible = (refreshSuspended <= 0);
         }
 
         public void ResumeRefresh()
         {
-            --refreshSuspended;
+            --this.refreshSuspended;
 
-            surfaceBox.Visible 
-                = controlShadow.Visible = (refreshSuspended <= 0);
+            this.surfaceBox.Visible
+                = this.controlShadow.Visible = (refreshSuspended <= 0);
         }
 
         public void RecenterView(PointF newCenter) 
@@ -1634,12 +1728,12 @@ namespace PaintDotNet
 
         public new void Focus()
         {
-            panel.Focus();
+            this.panel.Focus();
         }
 
         private void DocumentMetaDataChangedHandler(object sender, EventArgs e)
         {
-            if (document != null)
+            if (this.document != null)
             {
                 this.leftRuler.Dpu = 1 / document.PixelToPhysicalY(1, this.leftRuler.MeasurementUnit);
                 this.topRuler.Dpu = 1 / document.PixelToPhysicalY(1, this.topRuler.MeasurementUnit);

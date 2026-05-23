@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -15,12 +15,8 @@ using System.Runtime.InteropServices;
 
 namespace PaintDotNet.SystemLayer
 {
-    public sealed class Network
+    public static class Network
     {
-        private Network()
-        {
-        }
-
         internal class ProxyInfo
         {
             private bool autoDetect;
@@ -28,6 +24,7 @@ namespace PaintDotNet.SystemLayer
             private string proxy;
             private string proxyBypass;
 
+            /*
             public bool AutoDetect
             {
                 get
@@ -43,6 +40,7 @@ namespace PaintDotNet.SystemLayer
                     return this.autoConfigUrl;
                 }
             }
+             * */
 
             public string Proxy
             {
@@ -52,6 +50,7 @@ namespace PaintDotNet.SystemLayer
                 }
             }
 
+            /*
             public string ProxyBypass
             {
                 get
@@ -59,6 +58,7 @@ namespace PaintDotNet.SystemLayer
                     return this.proxyBypass;
                 }
             }
+             * */
 
             internal ProxyInfo(bool autoDetect, string autoConfigUrl, string proxy, string proxyBypass)
             {
@@ -137,7 +137,7 @@ namespace PaintDotNet.SystemLayer
                     proxy = new WebProxy(info.Proxy);
                 }
 
-                catch
+                catch (Exception)
                 {
                     proxy = null;
                 }

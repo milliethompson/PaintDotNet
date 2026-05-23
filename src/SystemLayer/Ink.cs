@@ -1,11 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
+
+//#define ENABLE_INK_IN_DEBUG_BUILDS
 
 //#if WIN64
 //#define NOINK
@@ -19,14 +21,10 @@ using PaintDotNet;
 
 namespace PaintDotNet.SystemLayer
 {
-    public sealed class Ink
+    public static class Ink
     {
         private static bool isInkAvailable = false;
         private static bool isInkAvailableInit = false;
-
-        private Ink()
-        {
-        }
 
         /// <summary>
         /// Adapts an IInkHook instance to work with the IStylusReaderHooks interface.
@@ -77,12 +75,7 @@ namespace PaintDotNet.SystemLayer
         /// </remarks>
         public static bool IsAvailable()
         {
-            if (Processor.NativeArchitecture != ProcessorArchitecture.X86)
-            {
-                isInkAvailableInit = true;
-                isInkAvailable = false;
-            }
-            else if (!isInkAvailableInit)
+            if (!isInkAvailableInit)
             {
                 // For debug builds we try to load the assembly. This enables us to work with ink
                 // if we have the Tablet PC SDK installed. 
@@ -91,6 +84,7 @@ namespace PaintDotNet.SystemLayer
 #if NOINK
                 isInkAvailable = false;
 #elif DEBUG
+    #if ENABLE_INK_IN_DEBUG_BUILDS
                 try
                 {
                     Assembly inkAssembly = Assembly.Load("Microsoft.Ink, Version=1.7.2600.2180, Culture=\"\", PublicKeyToken=31bf3856ad364e35");
@@ -101,17 +95,16 @@ namespace PaintDotNet.SystemLayer
                 {
                     isInkAvailable = false;
                 }
+    #else
+                isInkAvailable = false;
+    #endif
 #else
-                if (Environment.OSVersion.Version >= new Version(5, 2))
+                if (SafeNativeMethods.GetSystemMetrics(NativeConstants.SM_TABLETPC) != 0)
                 {
-                    // Ink appears to be causing crashes on Vista at this time,
-                    // and there's no Tablet PC Edition of either Windows Server 2003
-                    // or Windows XP x64 (both are NT 5.2)
-                    // TODO: proper fix
-                    isInkAvailable = false;
-                }
-                else if (SafeNativeMethods.GetSystemMetrics(NativeConstants.SM_TABLETPC) != 0)
-                {
+                    // Only enable ink if the system states it is a Tablet PC.
+                    // In other words, don't incur the performance penalty and a few other
+                    // weird things for regular PC's that just happen to have the SDK
+                    // installed, or that have something like Vista Ultimate.
                     try
                     {
                         Assembly inkAssembly = Assembly.Load("Microsoft.Ink, Version=1.7.2600.2180, Culture=\"\", PublicKeyToken=31bf3856ad364e35");

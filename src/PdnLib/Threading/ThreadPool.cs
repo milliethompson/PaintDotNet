@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -95,6 +95,31 @@ namespace PaintDotNet.Threading
             this.counter = new WaitableCounter(maxThreads);
             this.useFXTheadPool = useFXThreadPool;
         }
+
+        /*
+        private sealed class FunctionCallTrampoline
+        {
+            private Delegate theDelegate;
+            private object[] parameters;
+
+            public void WaitCallback(object ignored)
+            {
+                theDelegate.DynamicInvoke(this.parameters);
+            }
+
+            public FunctionCallTrampoline(Delegate theDelegate, object[] parameters)
+            {
+                this.theDelegate = theDelegate;
+                this.parameters = parameters;
+            }
+        }
+
+        public void QueueFunctionCall(Delegate theDelegate, params object[] parameters)
+        {
+            FunctionCallTrampoline fct = new FunctionCallTrampoline(theDelegate, parameters);
+            QueueUserWorkItem(fct.WaitCallback, null);
+        }           
+        */
 
         public void QueueUserWorkItem(WaitCallback callback)
         {

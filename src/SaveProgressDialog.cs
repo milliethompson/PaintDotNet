@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -22,10 +22,17 @@ namespace PaintDotNet
         private Document document;
         private Stream stream;
         private SaveConfigToken saveConfigToken;
+        private Surface scratchSurface;
 
         private void SaveCallback()
         {
-            fileType.Save(document, stream, saveConfigToken, new ProgressEventHandler(ProgressHandler), true);
+            fileType.Save(
+                this.document, 
+                this.stream, 
+                this.saveConfigToken, 
+                this.scratchSurface,
+                new ProgressEventHandler(ProgressHandler), 
+                true);
         }
 
         public SaveProgressDialog(Control owner)
@@ -36,13 +43,14 @@ namespace PaintDotNet
             this.Icon = Utility.ImageToIcon(PdnResources.GetImage("Icons.MenuFileSaveIcon.png"), Utility.TransparentKey);
         }
 
-        public void Save(Stream stream, Document document, FileType fileType, SaveConfigToken parameters)
+        public void Save(Stream dstStream, Document srcDocument, FileType dstFileType, SaveConfigToken parameters, Surface saveScratchSurface)
         {
-            this.document = document;
-            this.fileType = fileType;
-            this.stream = stream;
+            this.document = srcDocument;
+            this.fileType = dstFileType;
+            this.stream = dstStream;
             this.saveConfigToken = parameters;
-            DialogResult dr = this.ShowDialog(false, !fileType.SavesWithProgress, new ThreadStart(SaveCallback));
+            this.scratchSurface = saveScratchSurface;
+            DialogResult dr = this.ShowDialog(false, !dstFileType.SavesWithProgress, new ThreadStart(SaveCallback));
         }
 
         private void ProgressHandler(object sender, ProgressEventArgs e)

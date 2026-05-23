@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -16,17 +16,15 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for ColorDisplayWidget.
-    /// </summary>
-    public class ColorDisplayWidget : System.Windows.Forms.UserControl
+    public class ColorDisplayWidget 
+        : System.Windows.Forms.UserControl
     {
         private System.ComponentModel.IContainer components;
 
-        private PaintDotNet.ColorRectangleControl foreColorRectangle;
-        private PaintDotNet.ColorRectangleControl backColorRectangle;
+        private ColorRectangleControl primaryColorRectangle;
+        private ColorRectangleControl secondaryColorRectangle;
         private IconBox blackAndWhiteIconBox;
-        private System.Windows.Forms.ToolTip toolTip;
+        private ToolTip toolTip;
         private IconBox swapIconBox;
     
         protected override Size DefaultSize
@@ -37,64 +35,55 @@ namespace PaintDotNet
             }
         }
 
-        public event EventHandler UserForeAndBackColorsChanged;
-        protected virtual void OnUserForeAndBackColorsChanged()
+        public event EventHandler UserPrimaryColorChanged;
+        protected virtual void OnUserPrimaryColorChanged()
         {
-            if (UserForeAndBackColorsChanged != null)
+            if (UserPrimaryColorChanged != null)
             {
-                UserForeAndBackColorsChanged(this, EventArgs.Empty);
+                UserPrimaryColorChanged(this, EventArgs.Empty);
             }
         }
 
-        public event EventHandler UserForeColorChanged;
-        protected virtual void OnUserForeColorChanged()
-        {
-            if (UserForeColorChanged != null)
-            {
-                UserForeColorChanged(this, EventArgs.Empty);
-            }
-        }
-
-        private ColorBgra userForeColor;
-        public ColorBgra UserForeColor
+        private ColorBgra userPrimaryColor;
+        public ColorBgra UserPrimaryColor
         {
             get
             {
-                return userForeColor;
+                return this.userPrimaryColor;
             }
 
             set
             {
-                ColorBgra oldColor = userForeColor;
-                userForeColor = value;
-                foreColorRectangle.RectangleColor = value.ToColor();
+                ColorBgra oldColor = this.userPrimaryColor;
+                this.userPrimaryColor = value;
+                this.primaryColorRectangle.RectangleColor = value.ToColor();
                 Invalidate();
                 Update();
             }
         }
 
-        public event EventHandler UserBackColorChanged;
-        protected virtual void OnUserBackColorChanged()
+        public event EventHandler UserSecondaryColorChanged;
+        protected virtual void OnUserSecondaryColorChanged()
         {
-            if (UserBackColorChanged != null)
+            if (UserSecondaryColorChanged != null)
             {
-                UserBackColorChanged(this, EventArgs.Empty);
+                UserSecondaryColorChanged(this, EventArgs.Empty);
             }
         }
 
-        private ColorBgra userBackColor;
-        public ColorBgra UserBackColor
+        private ColorBgra userSecondaryColor;
+        public ColorBgra UserSecondaryColor
         {
             get
             {
-                return userBackColor;
+                return userSecondaryColor;
             }
 
             set
             {
-                ColorBgra oldColor = userBackColor;
-                userBackColor = value;
-                backColorRectangle.RectangleColor = value.ToColor();
+                ColorBgra oldColor = this.userSecondaryColor;
+                this.userSecondaryColor = value;
+                this.secondaryColorRectangle.RectangleColor = value.ToColor();
                 Invalidate();
                 Update();
             }
@@ -105,13 +94,16 @@ namespace PaintDotNet
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
 
-            swapIconBox.Icon = new Bitmap(PdnResources.GetImage("Icons.SwapIcon.png"));
-            blackAndWhiteIconBox.Icon = new Bitmap(PdnResources.GetImage("Icons.BlackAndWhiteIcon.png"));
+            this.swapIconBox.Icon = new Bitmap(PdnResources.GetImage("Icons.SwapIcon.png"));
+            this.blackAndWhiteIconBox.Icon = new Bitmap(PdnResources.GetImage("Icons.BlackAndWhiteIcon.png"));
 
-            toolTip.SetToolTip(swapIconBox, PdnResources.GetString("ColorDisplayWidget.SwapIconBox.ToolTipText"));
-            toolTip.SetToolTip(blackAndWhiteIconBox, PdnResources.GetString("ColorDisplayWidget.BlackAndWhiteIconBox.ToolTipText"));
-            toolTip.SetToolTip(foreColorRectangle, PdnResources.GetString("ColorDisplayWidget.ForeColorRectangle.ToolTipText"));
-            toolTip.SetToolTip(backColorRectangle, PdnResources.GetString("ColorDisplayWidget.BackColorRectangle.ToolTipText"));
+            if (!DesignMode)
+            {
+                this.toolTip.SetToolTip(swapIconBox, PdnResources.GetString("ColorDisplayWidget.SwapIconBox.ToolTipText"));
+                this.toolTip.SetToolTip(blackAndWhiteIconBox, PdnResources.GetString("ColorDisplayWidget.BlackAndWhiteIconBox.ToolTipText"));
+                this.toolTip.SetToolTip(primaryColorRectangle, PdnResources.GetString("ColorDisplayWidget.ForeColorRectangle.ToolTipText"));
+                this.toolTip.SetToolTip(secondaryColorRectangle, PdnResources.GetString("ColorDisplayWidget.BackColorRectangle.ToolTipText"));
+            }
         }
 
         protected override void OnLayout(LayoutEventArgs levent)
@@ -119,12 +111,12 @@ namespace PaintDotNet
             int ulX = (this.ClientRectangle.Width - UI.ScaleWidth(this.DefaultSize.Width)) / 2;
             int ulY = (this.ClientRectangle.Height - UI.ScaleHeight(this.DefaultSize.Height)) / 2;
 
-            this.foreColorRectangle.Location = new System.Drawing.Point(UI.ScaleWidth(ulX + 2), UI.ScaleHeight(ulY + 2));
-            this.backColorRectangle.Location = new System.Drawing.Point(UI.ScaleWidth(ulX + 18), UI.ScaleHeight(ulY + 18));
+            this.primaryColorRectangle.Location = new System.Drawing.Point(UI.ScaleWidth(ulX + 2), UI.ScaleHeight(ulY + 2));
+            this.secondaryColorRectangle.Location = new System.Drawing.Point(UI.ScaleWidth(ulX + 18), UI.ScaleHeight(ulY + 18));
             this.swapIconBox.Location = new System.Drawing.Point(UI.ScaleWidth(ulX + 30), UI.ScaleHeight(ulY + 2));
             this.blackAndWhiteIconBox.Location = new System.Drawing.Point(UI.ScaleWidth(ulX + 2), UI.ScaleHeight(ulY + 31));
 
-            base.OnLayout (levent);
+            base.OnLayout(levent);
         }
 
         /// <summary> 
@@ -151,8 +143,8 @@ namespace PaintDotNet
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.foreColorRectangle = new PaintDotNet.ColorRectangleControl();
-            this.backColorRectangle = new PaintDotNet.ColorRectangleControl();
+            this.primaryColorRectangle = new PaintDotNet.ColorRectangleControl();
+            this.secondaryColorRectangle = new PaintDotNet.ColorRectangleControl();
             this.swapIconBox = new PaintDotNet.IconBox();
             this.blackAndWhiteIconBox = new PaintDotNet.IconBox();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
@@ -160,21 +152,21 @@ namespace PaintDotNet
             // 
             // foreColorRectangle
             // 
-            this.foreColorRectangle.Name = "foreColorRectangle";
-            this.foreColorRectangle.RectangleColor = System.Drawing.Color.FromArgb(((System.Byte)(0)), ((System.Byte)(0)), ((System.Byte)(192)));
-            this.foreColorRectangle.Size = new System.Drawing.Size(28, 28);
-            this.foreColorRectangle.TabIndex = 0;
-            this.foreColorRectangle.Click += new System.EventHandler(this.foreColorRectangle_Click);
-            this.foreColorRectangle.KeyUp += new System.Windows.Forms.KeyEventHandler(this.control_KeyUp);
+            this.primaryColorRectangle.Name = "foreColorRectangle";
+            this.primaryColorRectangle.RectangleColor = System.Drawing.Color.FromArgb(((System.Byte)(0)), ((System.Byte)(0)), ((System.Byte)(192)));
+            this.primaryColorRectangle.Size = new System.Drawing.Size(28, 28);
+            this.primaryColorRectangle.TabIndex = 0;
+            this.primaryColorRectangle.Click += new System.EventHandler(this.PrimaryColorRectangle_Click);
+            this.primaryColorRectangle.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Control_KeyUp);
             // 
             // backColorRectangle
             // 
-            this.backColorRectangle.Name = "backColorRectangle";
-            this.backColorRectangle.RectangleColor = System.Drawing.Color.Magenta;
-            this.backColorRectangle.Size = new System.Drawing.Size(28, 28);
-            this.backColorRectangle.TabIndex = 1;
-            this.backColorRectangle.Click += new System.EventHandler(this.backColorRectangle_Click);
-            this.backColorRectangle.KeyUp += new System.Windows.Forms.KeyEventHandler(this.control_KeyUp);
+            this.secondaryColorRectangle.Name = "backColorRectangle";
+            this.secondaryColorRectangle.RectangleColor = System.Drawing.Color.Magenta;
+            this.secondaryColorRectangle.Size = new System.Drawing.Size(28, 28);
+            this.secondaryColorRectangle.TabIndex = 1;
+            this.secondaryColorRectangle.Click += new System.EventHandler(this.SecondaryColorRectangle_Click);
+            this.secondaryColorRectangle.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Control_KeyUp);
             // 
             // swapIconBox
             // 
@@ -183,9 +175,9 @@ namespace PaintDotNet
             this.swapIconBox.Size = new System.Drawing.Size(15, 15);
             this.swapIconBox.TabIndex = 2;
             this.swapIconBox.TabStop = false;
-            this.swapIconBox.Click += new System.EventHandler(this.swapIconBox_Click);
-            this.swapIconBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.control_KeyUp);
-            this.swapIconBox.DoubleClick += new System.EventHandler(this.swapIconBox_Click);
+            this.swapIconBox.Click += new System.EventHandler(this.SwapIconBox_Click);
+            this.swapIconBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Control_KeyUp);
+            this.swapIconBox.DoubleClick += new System.EventHandler(this.SwapIconBox_Click);
             // 
             // blackAndWhiteIconBox
             // 
@@ -194,9 +186,9 @@ namespace PaintDotNet
             this.blackAndWhiteIconBox.Size = new System.Drawing.Size(15, 15);
             this.blackAndWhiteIconBox.TabIndex = 3;
             this.blackAndWhiteIconBox.TabStop = false;
-            this.blackAndWhiteIconBox.Click += new System.EventHandler(this.blackAndWhiteIconBox_Click);
-            this.blackAndWhiteIconBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.control_KeyUp);
-            this.blackAndWhiteIconBox.DoubleClick += new System.EventHandler(this.blackAndWhiteIconBox_Click);
+            this.blackAndWhiteIconBox.Click += new System.EventHandler(this.BlackAndWhiteIconBox_Click);
+            this.blackAndWhiteIconBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Control_KeyUp);
+            this.blackAndWhiteIconBox.DoubleClick += new System.EventHandler(this.BlackAndWhiteIconBox_Click);
             // 
             // toolTip
             // 
@@ -206,8 +198,8 @@ namespace PaintDotNet
             // 
             this.Controls.Add(this.blackAndWhiteIconBox);
             this.Controls.Add(this.swapIconBox);
-            this.Controls.Add(this.foreColorRectangle);
-            this.Controls.Add(this.backColorRectangle);
+            this.Controls.Add(this.primaryColorRectangle);
+            this.Controls.Add(this.secondaryColorRectangle);
             this.AutoScaleDimensions = new SizeF(96F, 96F);
             this.AutoScaleMode = AutoScaleMode.Dpi;
             this.Name = "ColorDisplayWidget";
@@ -217,51 +209,63 @@ namespace PaintDotNet
         }
         #endregion
 
-        private void swapIconBox_Click(object sender, System.EventArgs e)
+        public event EventHandler SwapColorsClicked;
+        protected virtual void OnSwapColorsClicked()
         {
-            ColorBgra fore = UserForeColor;
-            ColorBgra back = UserBackColor;
-            UserForeColor = back;
-            UserBackColor = fore;
-            OnUserForeAndBackColorsChanged();
-        }
-
-        private void blackAndWhiteIconBox_Click(object sender, System.EventArgs e)
-        {
-            UserForeColor = ColorBgra.FromBgra(0, 0, 0, 255);
-            UserBackColor = ColorBgra.FromBgra(255, 255, 255, 255);
-            OnUserForeAndBackColorsChanged();
-        }
-
-        public event EventHandler UserForeColorClick;
-        protected virtual void OnUserForeColorClick()
-        {
-            if (UserForeColorClick != null)
+            if (SwapColorsClicked != null)
             {
-                UserForeColorClick(this, EventArgs.Empty);
+                SwapColorsClicked(this, EventArgs.Empty);
             }
         }
 
-        private void foreColorRectangle_Click(object sender, System.EventArgs e)
+        private void SwapIconBox_Click(object sender, System.EventArgs e)
         {
-            OnUserForeColorClick();
+            OnSwapColorsClicked();
         }
 
-        public event EventHandler UserBackColorClick;
-        protected virtual void OnUserBackColorClick()
+        public event EventHandler BlackAndWhiteButtonClicked;
+        protected virtual void OnBlackAndWhiteButtonClicked()
         {
-            if (UserBackColorClick != null)
+            if (BlackAndWhiteButtonClicked != null)
             {
-                UserBackColorClick(this, EventArgs.Empty);
+                BlackAndWhiteButtonClicked(this, EventArgs.Empty);
             }
         }
 
-        private void backColorRectangle_Click(object sender, System.EventArgs e)
+        private void BlackAndWhiteIconBox_Click(object sender, System.EventArgs e)
         {
-            OnUserBackColorClick();
+            OnBlackAndWhiteButtonClicked();
         }
 
-        private void control_KeyUp(object sender, KeyEventArgs e)
+        public event EventHandler UserPrimaryColorClick;
+        protected virtual void OnUserPrimaryColorClick()
+        {
+            if (UserPrimaryColorClick != null)
+            {
+                UserPrimaryColorClick(this, EventArgs.Empty);
+            }
+        }
+
+        private void PrimaryColorRectangle_Click(object sender, System.EventArgs e)
+        {
+            OnUserPrimaryColorClick();
+        }
+
+        public event EventHandler UserSecondaryColorClick;
+        protected virtual void OnUserSecondaryColorClick()
+        {
+            if (UserSecondaryColorClick != null)
+            {
+                UserSecondaryColorClick(this, EventArgs.Empty);
+            }
+        }
+
+        private void SecondaryColorRectangle_Click(object sender, System.EventArgs e)
+        {
+            OnUserSecondaryColorClick();
+        }
+
+        private void Control_KeyUp(object sender, KeyEventArgs e)
         {
             this.OnKeyUp(e);
         }

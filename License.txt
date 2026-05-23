@@ -1,1 +1,1 @@
-See src/Setup/License.rtf for the license.
+See src/Resources/Files/License.txt for the license.

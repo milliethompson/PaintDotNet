@@ -1,27 +1,32 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using Microsoft.Win32;
 using System;
+using System.Globalization;
 
 namespace PaintDotNet.SystemLayer
 {
-    public sealed class OS
+    public static class OS
     {
-        private OS()
-        {
-        }
-
-        public static Version Windows2000
+        /// <summary>
+        /// Gets a flag indicating whether we are running on Windows Vista or later.
+        /// </summary>
+        /// <remarks>
+        /// This is the preferred method for detecting this condition, and the most performant
+        /// (it avoids creating some temporary Version objects).
+        /// </remarks>
+        public static bool IsVistaOrLater
         {
             get
             {
-                return new Version(5, 0);
+                return Environment.OSVersion.Version.Major >= 6;
             }
         }
 
@@ -79,7 +84,14 @@ namespace PaintDotNet.SystemLayer
 
                 if (result)
                 {
-                    type = (OSType)osviex.wProductType;
+                    if (Enum.IsDefined(typeof(OSType), (OSType)osviex.wProductType))
+                    {
+                        type = (OSType)osviex.wProductType;
+                    }
+                    else
+                    {
+                        type = OSType.Unknown;
+                    }
                 }
                 else
                 {
@@ -88,6 +100,81 @@ namespace PaintDotNet.SystemLayer
 
                 return type;
             }
+        }
+
+        public static bool IsDotNetVersionInstalled(int major, int minor, int build)
+        {
+            const string regKeyNameFormat = "Software\\Microsoft\\NET Framework Setup\\NDP\\v{0}.{1}.{2}";
+            const string regValueName = "Install";
+
+            string regKeyName = string.Format(regKeyNameFormat, major.ToString(CultureInfo.InvariantCulture),
+                minor.ToString(CultureInfo.InvariantCulture), build.ToString(CultureInfo.InvariantCulture));
+
+            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(regKeyName, false))
+            {
+                object value = null;
+
+                if (key != null)
+                {
+                    value = key.GetValue(regValueName);
+                }
+
+                return (value != null && value is int && (int)value == 1);
+            }
+        }
+
+        public static bool CheckWindowsVersion(int major, int minor, short servicePack)
+        {
+            NativeStructs.OSVERSIONINFOEX osvi = new NativeStructs.OSVERSIONINFOEX();
+            osvi.dwOSVersionInfoSize = (uint)NativeStructs.OSVERSIONINFOEX.SizeOf;
+            osvi.dwMajorVersion = (uint)major;
+            osvi.dwMinorVersion = (uint)minor;
+            osvi.wServicePackMajor = (ushort)servicePack;
+
+            ulong mask = 0;
+            mask = NativeMethods.VerSetConditionMask(mask, NativeConstants.VER_MAJORVERSION, NativeConstants.VER_GREATER_EQUAL);
+            mask = NativeMethods.VerSetConditionMask(mask, NativeConstants.VER_MINORVERSION, NativeConstants.VER_GREATER_EQUAL);
+            mask = NativeMethods.VerSetConditionMask(mask, NativeConstants.VER_SERVICEPACKMAJOR, NativeConstants.VER_GREATER_EQUAL);
+
+            bool result = NativeMethods.VerifyVersionInfo(
+                ref osvi,
+                NativeConstants.VER_MAJORVERSION |
+                    NativeConstants.VER_MINORVERSION |
+                    NativeConstants.VER_SERVICEPACKMAJOR,
+                mask);
+
+            return result;
+        }
+
+        // Requires:
+        // * Windows XP SP2 or later
+        // * Windows Server 2003 SP1 or later
+        // * Windows Vista
+        // * or later (must be NT-based)
+        public static bool CheckOSRequirement()
+        {
+            // Just say "no" to Windows 9x
+            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            {
+                return false;
+            }
+
+            // Windows Vista or later?
+            bool winVista = OS.CheckWindowsVersion(6, 0, 0);
+
+            // Windows 2003 or later?
+            bool win2k3 = OS.CheckWindowsVersion(5, 2, 0);
+
+            // Windows 2003 SP1 or later?
+            bool win2k3SP1 = OS.CheckWindowsVersion(5, 2, 1);
+
+            // Windows XP or later?
+            bool winXP = OS.CheckWindowsVersion(5, 1, 0);
+
+            // Windows XP SP2 or later?
+            bool winXPSP2 = OS.CheckWindowsVersion(5, 1, 2);
+
+            return winVista || (win2k3 && win2k3SP1) || (winXP && winXPSP2);
         }
     }
 }

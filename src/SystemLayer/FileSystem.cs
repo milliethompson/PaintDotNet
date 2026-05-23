@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using Microsoft.Win32.SafeHandles;
@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.SystemLayer
 {
-    public sealed class FileSystem
+    public static class FileSystem
     {
         private const string sessionLockFileName = "session.lock";
         private static string tempDir;
@@ -41,12 +41,14 @@ namespace PaintDotNet.SystemLayer
                 NativeConstants.FILE_SHARE_READ,
                 IntPtr.Zero,
                 NativeConstants.CREATE_ALWAYS,
-                NativeConstants.FILE_ATTRIBUTE_TEMPORARY | NativeConstants.FILE_FLAG_DELETE_ON_CLOSE,
+                NativeConstants.FILE_ATTRIBUTE_TEMPORARY | 
+                    NativeConstants.FILE_FLAG_DELETE_ON_CLOSE | 
+                    NativeConstants.FILE_ATTRIBUTE_NOT_CONTENT_INDEXED,
                 IntPtr.Zero);
 
             if (hFile == NativeConstants.INVALID_HANDLE_VALUE)
             {
-                NativeMethods.ThrowOnWin32Error();
+                NativeMethods.ThrowOnWin32Error("CreateFileW returned INVALID_HANDLE_VALUE");
             }
 
             SafeFileHandle sfhFile = new SafeFileHandle(hFile, true);
@@ -57,8 +59,9 @@ namespace PaintDotNet.SystemLayer
                 stream = new FileStream(sfhFile, FileAccess.ReadWrite);
             }
 
-            catch
+            catch (Exception)
             {
+                SafeNativeMethods.CloseHandle(hFile);
                 hFile = IntPtr.Zero;
                 throw;
             }
@@ -67,9 +70,11 @@ namespace PaintDotNet.SystemLayer
         }
 
         /// <summary>
-        /// Opens an existing file for streaming. This stream should be read from or 
-        /// written to sequentially for best performance. Random I/O is still permissible, 
+        /// Opens a file for streaming. This stream should be read from or written
+        /// to sequentially for best performance. Random I/O is still permissible, 
         /// but may not perform as well.
+        /// This file is created in such a way that is it NOT indexed by the system's
+        /// file indexer (e.g., Windows Desktop Search).
         /// </summary>
         /// <param name="fileName">The file to open.</param>
         /// <returns>A Stream object that may be used to read from or write to the file, depending on the fileMode parameter.</returns>
@@ -99,18 +104,23 @@ namespace PaintDotNet.SystemLayer
                     throw new InvalidEnumArgumentException();
             }
 
+            uint dwFlagsAndAttributes =
+                NativeConstants.FILE_ATTRIBUTE_TEMPORARY |
+                NativeConstants.FILE_FLAG_SEQUENTIAL_SCAN |
+                NativeConstants.FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
+
             IntPtr hFile = SafeNativeMethods.CreateFileW(
                 fileName,
                 dwDesiredAccess,
                 NativeConstants.FILE_SHARE_READ,
                 IntPtr.Zero,
                 dwCreationDisposition,
-                NativeConstants.FILE_ATTRIBUTE_TEMPORARY | NativeConstants.FILE_FLAG_SEQUENTIAL_SCAN,
+                dwFlagsAndAttributes, 
                 IntPtr.Zero);
 
             if (hFile == NativeConstants.INVALID_HANDLE_VALUE)
             {
-                NativeMethods.ThrowOnWin32Error();
+                NativeMethods.ThrowOnWin32Error("CreateFileW returned INVALID_HANDLE_VALUE");
             }
 
             FileStream stream;
@@ -138,7 +148,9 @@ namespace PaintDotNet.SystemLayer
         /// <param name="pvBits">A pointer to the data to write.</param>
         /// <param name="length">The number of bytes to write.</param>
         /// <remarks>
-        /// This method is provided for performance (memory-usage) purposes.
+        /// This method is provided for performance (memory-usage) purposes. It relies on
+        /// the fact that FileStream provides a property for retrieving the Win32 file
+        /// handle.
         /// </remarks>
         [CLSCompliant(false)]
         public unsafe static void WriteToStream(FileStream output, void *pvBuffer, uint length)
@@ -148,7 +160,7 @@ namespace PaintDotNet.SystemLayer
             GC.KeepAlive(output);
         }
 
-        public unsafe static void WriteToStream(IntPtr hFile, void* pvBuffer, uint length)
+        private unsafe static void WriteToStream(IntPtr hFile, void* pvBuffer, uint length)
         {
             if (hFile == NativeConstants.INVALID_HANDLE_VALUE)
             {
@@ -343,33 +355,38 @@ namespace PaintDotNet.SystemLayer
         ///         }
         ///     }
         /// </summary>
-        /// <param name="outputHandle">A file handle created with CreateStreamingFileHandleWrite.</param>
+        /// <param name="outputHandle">The stream to write to.</param>
         /// <param name="ppvBuffers">Pointers to buffers to write from.</param>
         /// <param name="lengths">The lengths of each buffer.</param>
         /// <remarks>
         /// ppvBuffers.Length must equal lengths.Length
         /// </remarks>
-        public unsafe static void WriteToStreamingFileGather(FileStream outputHandle, void *[] ppvBuffers, uint[] lengths)
+        public unsafe static void WriteToStreamingFileGather(FileStream outputStream, void *[] ppvBuffers, uint[] lengths)
         {
             if (ppvBuffers.Length != lengths.Length)
             {
                 throw new ArgumentException("ppvBuffers.Length != lengths.Length");
             }
 
-            IntPtr hFile = outputHandle.SafeFileHandle.DangerousGetHandle();
+            if (!outputStream.CanWrite)
+            {
+                throw new ArgumentException("outputStream.CanWrite == false");
+            }
+
+            IntPtr hFile = outputStream.SafeFileHandle.DangerousGetHandle();
 
             for (int i = 0; i < ppvBuffers.Length; ++i)
             {
                 WriteToStream(hFile, ppvBuffers[i], lengths[i]);
             }
 
-            GC.KeepAlive(outputHandle);
+            GC.KeepAlive(outputStream);
         }
 
         /// <summary>
-        /// Reads data fromt he file. This data is read contiguously from the file, but the buffers may
+        /// Reads data from the file. This data is read contiguously from the file, but the buffers may
         /// be scattered throughout memory such that ppvBuffers[n][m] is read from file location 
-        /// m + summation of lenghts[0 through n - 1]. If n is 0, then ppvBuffers[0][m] is read from
+        /// m + summation of lengths[0 through n - 1]. If n is 0, then ppvBuffers[0][m] is read from
         /// file location m.
         /// Or, in pseudo code:
         ///     for (int n = 0; n &lt; lengths.Length; ++n)
@@ -484,7 +501,7 @@ namespace PaintDotNet.SystemLayer
                         cleanUp = true;
                     }
 
-                    catch
+                    catch (Exception)
                     {
                     }
                 }
@@ -503,7 +520,7 @@ namespace PaintDotNet.SystemLayer
                             File.Delete(fileToCleanUp);
                         }
 
-                        catch
+                        catch (Exception)
                         {
                         }
                     }
@@ -513,7 +530,7 @@ namespace PaintDotNet.SystemLayer
                         Directory.Delete(oldDirPath, false);
                     }
 
-                    catch
+                    catch (Exception)
                     {
                     }
                 }
@@ -530,6 +547,7 @@ namespace PaintDotNet.SystemLayer
                 {
                     dirInfo.Create();
                     tempDir = subDir;
+                    EnableCompression(tempDir);
                     break;
                 }
             }
@@ -543,6 +561,57 @@ namespace PaintDotNet.SystemLayer
 
             // Cleanup when the app exits.
             Application.ApplicationExit += new EventHandler(Application_ApplicationExit);
+        }
+
+        private static bool EnableCompression(string filePath)
+        {
+            IntPtr hFile = IntPtr.Zero;
+
+            try
+            {
+                hFile = SafeNativeMethods.CreateFileW(
+                    filePath,
+                    NativeConstants.GENERIC_READ | NativeConstants.GENERIC_WRITE,
+                    NativeConstants.FILE_SHARE_READ | NativeConstants.FILE_SHARE_WRITE | NativeConstants.FILE_SHARE_DELETE,
+                    IntPtr.Zero,
+                    NativeConstants.OPEN_EXISTING,
+                    NativeConstants.FILE_FLAG_BACKUP_SEMANTICS,
+                    IntPtr.Zero);
+
+                if (hFile == NativeConstants.INVALID_HANDLE_VALUE)
+                {
+                    int dwError = Marshal.GetLastWin32Error();
+                    return false;
+                }
+
+                ushort cType = NativeConstants.COMPRESSION_FORMAT_DEFAULT;
+                uint dwBytes = 0;
+                bool bResult;
+
+                unsafe
+                {
+                    bResult = NativeMethods.DeviceIoControl(
+                        hFile,
+                        NativeConstants.FSCTL_SET_COMPRESSION,
+                        new IntPtr(&cType),
+                        sizeof(ushort),
+                        IntPtr.Zero,
+                        0,
+                        ref dwBytes,
+                        IntPtr.Zero);
+                }
+
+                return bResult;
+            }
+
+            finally
+            {
+                if (hFile != IntPtr.Zero)
+                {
+                    SafeNativeMethods.CloseHandle(hFile);
+                    hFile = IntPtr.Zero;
+                }
+            }
         }
 
         private static void Application_ApplicationExit(object sender, EventArgs e)
@@ -578,10 +647,6 @@ namespace PaintDotNet.SystemLayer
             }
 
             return returnPath;
-        }
-
-        private FileSystem()
-        {
         }
     }
 }

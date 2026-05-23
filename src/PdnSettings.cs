@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -68,7 +68,7 @@ namespace PaintDotNet
         public const string WindowState = "WindowState";
 
         /// <summary>
-        /// The state of whether rulers are enabled in the DocumentView.
+        /// The state of whether rulers are enabled in the DocumentWorkspace.
         /// </summary>
         /// <remarks>
         /// Written to whenever the value is changed, and read on app startup.
@@ -82,6 +82,14 @@ namespace PaintDotNet
         /// Written to whenever the value is changed, and read on app startup.
         /// </remarks>
         public const string Units = "Units";
+
+        /// <summary>
+        /// The type of font smoothing the user has chosen in the TextConfigStrip.
+        /// </summary>
+        /// <remarks>
+        /// Written to whenever the value is changed, and read on app startup.
+        /// </remarks>
+        public const string FontSmoothing = "FontSmoothing";
 
         /// <summary>
         /// The last unit of measurement the user selected via the WorkspaceOptionsConfigWidget
@@ -111,36 +119,12 @@ namespace PaintDotNet
         }
 
         /// <summary>
-        /// The state of whether the grid is enabled in the DocumentView.
+        /// The state of whether the grid is enabled in the DocumentWorkspace.
         /// </summary>
         /// <remarks>
         /// Written to whenever the value is changed, and read on app startup.
         /// </remarks>
         public const string DrawGrid = "DrawGrid";
-
-        /// <summary>
-        /// The last saved value of the tolerance slider.
-        /// </summary>
-        /// <remarks>
-        /// Written to whenever the value is changed, and read on app startup.
-        /// </remarks>
-        public const string Tolerance = "Tolerance";
-
-        /// <summary>
-        /// Whether or not AA is enabled.
-        /// </summary>
-        /// <remarks>
-        /// Written to whenever the value is changed, and read on app startup.
-        /// </remarks>
-        public const string Antialiasing = "Antialiasing";
-
-        /// <summary>
-        /// Whether or not alpha blending is enabled.
-        /// </summary>
-        /// <remarks>
-        /// Written to whenever the value is changed, and read on app startup.
-        /// </remarks>
-        public const string AlphaBlending = "AlphaBlending";
 
         /// <summary>
         /// The state of whether translucent windows are enabled (Window -> Translucent).
@@ -157,7 +141,7 @@ namespace PaintDotNet
         /// <remarks>
         /// Written on app close, and read on app startup.
         /// </remarks>
-        public const string ToolsFormVisible = "ToolsFormVisible";
+        public const string ToolsFormVisible = "ToolsForm.Visible";
 
         /// <summary>
         /// The state of whether the Colors floating form is visible.
@@ -165,7 +149,7 @@ namespace PaintDotNet
         /// <remarks>
         /// Written on app close, and read on app startup.
         /// </remarks>
-        public const string ColorsFormVisible = "ColorsFormVisible";
+        public const string ColorsFormVisible = "ColorsForm.Visible";
 
         /// <summary>
         /// The state of whether the History floating form is visible.
@@ -173,7 +157,7 @@ namespace PaintDotNet
         /// <remarks>
         /// Written on app close, and read on app startup.
         /// </remarks>
-        public const string HistoryFormVisible = "HistoryFormVisible";
+        public const string HistoryFormVisible = "HistoryForm.Visible";
 
         /// <summary>
         /// The state of whether the Layers floating form is visible.
@@ -181,7 +165,7 @@ namespace PaintDotNet
         /// <remarks>
         /// Written on app close, and read on app startup.
         /// </remarks>
-        public const string LayersFormVisible = "LayersFormVisible";
+        public const string LayersFormVisible = "LayersForm.Visible";
 
         /// <summary>
         /// The last resampling algorithm that was selected in the Resize dialog.
@@ -263,7 +247,7 @@ namespace PaintDotNet
 
         /// <summary>
         /// Whether or not Paint.NET should inform the user of pre-release versions (Betas) of
-        /// Paint.NET.
+        /// Paint.NET                                                                   //.
         /// </summary>
         /// <remarks>
         /// This is a SystemWide setting and may not be changed by non-admins.
@@ -278,17 +262,6 @@ namespace PaintDotNet
         /// This is a CurrentUser setting.
         /// </remarks>
         public const string LastUpdateCheckTimeTicks = "LastUpdateCheckTimeTicks";
-
-        /// <summary>
-        /// When we find out an update is available, the user may not click on the green-arrow
-        /// update button during that session. In order to avoid hitting up the web server again
-        /// for every subsequent Paint.NET session, we set this registry key to 'true' instead. 
-        /// Then when the user finally does click on the button, we do another website ping.
-        /// </summary>
-        /// <remarks>
-        /// This is a CurrentUser setting.
-        /// </remarks>
-        public const string UpdateIsAvailable = "UpdateIsAvailable";
 
         /// <summary>
         /// After installation of the MSI, we set this registry key to keep track of where the
@@ -316,36 +289,31 @@ namespace PaintDotNet
         public const string InstallDirectory = "TARGETDIR";
 
         /// <summary>
-        /// The x,y location of the CommonActionsStrip.
+        /// The current palette is saved here, in the same format used for the palette files.
         /// </summary>
         /// <remarks>
-        /// Read from at app startup, and written to at app close.
+        /// If this setting is missing or invalid, the default palette will be used.
+        /// Read from at app startup, and written to whenever the current palette is changed.
         /// </remarks>
-        public const string CommonActionsLocation = "ToolStrip.CommonActionsLocation";
+        public const string CurrentPalette = "CurrentPalette";
 
         /// <summary>
-        /// The x,y location of the ViewConfigStrip.
+        /// The Type name of the default (startup) tool.
         /// </summary>
         /// <remarks>
-        /// Read from at app startup, and written to at app close.
+        /// Read from at app startup, and written to whenever the default is saved
+        /// from the ChooseToolDefaultsDialog form.
         /// </remarks>
-        public const string ViewConfigLocation = "ToolStrip.ViewConfigLocation";
+        public const string DefaultToolTypeName = "DefaultToolTypeName";
 
         /// <summary>
-        /// The x,y location of the DrawConfigStrip.
+        /// A serialized AppEnvironment that is loaded into the toolbar at startup.
         /// </summary>
         /// <remarks>
-        /// Read from at app startup, and written to at app close.
+        /// Read from at app startup, and written to whenever the default is saved
+        /// from the ChooseToolDefaultsDialog form.
         /// </remarks>
-        public const string DrawConfigLocation = "ToolStrip.DrawConfigLocation";
-
-        /// <summary>
-        /// The x,y location of the TextConfigStrip.
-        /// </summary>
-        /// <remarks>
-        /// Read from at app startup, and written to at app close.
-        /// </remarks>
-        public const string TextConfigLocation = "ToolStrip.TextConfigLocation";
+        public const string DefaultAppEnvironment = "DefaultAppEnvironment";
 
         private PdnSettings()
         {

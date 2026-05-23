@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -23,63 +23,67 @@ namespace PaintDotNet
     /// <summary>
     /// Renders a Surface to the screen.
     /// </summary>
-    public class SurfaceBox : 
-        System.Windows.Forms.Control
+    public sealed class SurfaceBox 
+        : Control
     {
+        public const int MaxSideLength = 32767;
+
         private int justPaintWhite = 0; // when this is non-zero, we just paint white (startup optimization)
         private ScaleFactor scaleFactor;
         private PaintDotNet.Threading.ThreadPool threadPool = new PaintDotNet.Threading.ThreadPool();
-        private SurfaceBoxRendererList renderers;
+        private SurfaceBoxRendererList rendererList;
         private SurfaceBoxBaseRenderer baseRenderer;
-        private SurfaceBoxGridRenderer gridRenderer;
+        private Surface surface;
 
-        public SurfaceBoxRendererList Renderers
+        // Each concrete instance of SurfaceBox holds a strong reference to a single
+        // double buffer Surface. Statically, we store a weak reference to it. This way
+        // when there are no more SurfaceBox instances, the double buffer Surface can
+        // be cleaned up by the GC.
+        private static WeakReference<Surface> doubleBufferSurfaceWeakRef = null;
+        private Surface doubleBufferSurface = null;
+
+        public SurfaceBoxRendererList RendererList
         {
             get
             {
-                return this.renderers;
+                return this.rendererList;
             }
         }
 
-        private Surface surface;
         public Surface Surface
         {
             get
             {
-                return surface;
+                return this.surface;
             }
 
             set
             {
                 this.surface = value;
-                baseRenderer.Source = value;
+                this.baseRenderer.Source = value;
 
                 if (this.surface != null)
                 {
                     // Maintain the scalefactor
                     this.Size = this.scaleFactor.ScaleSize(surface.Size);
-                    this.renderers.SourceSize = this.surface.Size;
-                    this.renderers.DestinationSize = this.Size;
+                    this.rendererList.SourceSize = this.surface.Size;
+                    this.rendererList.DestinationSize = this.Size;
                 }
 
                 Invalidate();
             }
         }
 
+        [Obsolete("This functionality was moved to the DocumentView class", true)]
         public bool DrawGrid 
         {
             get 
             {
-                return this.gridRenderer.Visible;
+                return false;
             }
 
             set 
             {
-                if (value != this.gridRenderer.Visible)
-                {
-                    this.gridRenderer.Visible = value;
-                    Invalidate();
-                }
             }
         }
 
@@ -93,6 +97,20 @@ namespace PaintDotNet
             this.Size = this.scaleFactor.ScaleSize(surface.Size);
         }
 
+        public void RenderTo(Surface dst)
+        {
+            dst.Clear(ColorBgra.Transparent);
+
+            if (this.surface != null)
+            {
+                SurfaceBoxRendererList sbrl = new SurfaceBoxRendererList(this.surface.Size, dst.Size);
+                SurfaceBoxBaseRenderer sbbr = new SurfaceBoxBaseRenderer(sbrl, this.surface);
+                sbrl.Add(sbbr, true);
+                sbrl.Render(dst, new Point(0, 0));
+                sbrl.Remove(sbbr);
+            }
+        }
+
         /// <summary>
         /// Increments the "just paint white" counter. When this counter is non-zero,
         /// the OnPaint() method will only paint white. This is used as an optimization
@@ -103,8 +121,6 @@ namespace PaintDotNet
         {
             ++this.justPaintWhite;
         }
-
-        public const int MaxSideLength = 32767;
 
         protected override void OnResize(EventArgs e)
         {
@@ -154,7 +170,7 @@ namespace PaintDotNet
                 this.scaleFactor = newSF;
             }
 
-            this.renderers.DestinationSize = this.Size;
+            this.rendererList.DestinationSize = this.Size;
         }
 
         public ScaleFactor ScaleFactor
@@ -170,19 +186,23 @@ namespace PaintDotNet
             InitializeComponent();
             this.scaleFactor = ScaleFactor.OneToOne;
 
-            this.renderers = new SurfaceBoxRendererList(this.Size, this.Size);
-            this.renderers.Invalidated += new InvalidateEventHandler(renderers_Invalidated);
-            this.baseRenderer = new SurfaceBoxBaseRenderer(this.renderers, null);
-            this.gridRenderer = new SurfaceBoxGridRenderer(this.renderers);
-            this.gridRenderer.Visible = false;
-            this.renderers.Add(this.baseRenderer, false);
-            this.renderers.Add(this.gridRenderer, true);
+            this.rendererList = new SurfaceBoxRendererList(this.Size, this.Size);
+            this.rendererList.Invalidated += new InvalidateEventHandler(Renderers_Invalidated);
+            this.baseRenderer = new SurfaceBoxBaseRenderer(this.rendererList, null);
+            this.rendererList.Add(this.baseRenderer, false);
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
+                if (this.baseRenderer != null)
+                {
+                    this.rendererList.Remove(this.baseRenderer);
+                    this.baseRenderer.Dispose();
+                    this.baseRenderer = null;
+                }
+
                 if (this.doubleBufferSurface != null)
                 {
                     this.doubleBufferSurface.Dispose();
@@ -190,7 +210,7 @@ namespace PaintDotNet
                 }
             }
 
-            base.Dispose (disposing);
+            base.Dispose(disposing);
         }
 
         /// <summary>
@@ -198,7 +218,7 @@ namespace PaintDotNet
         /// the normal Paint event is raised *before* painting has been performed.
         /// </summary>
         public event PaintEventHandler2 Painted;
-        protected void OnPainted(PaintEventArgs2 e)
+        private void OnPainted(PaintEventArgs2 e)
         {
             if (Painted != null)
             {
@@ -207,7 +227,7 @@ namespace PaintDotNet
         }
 
         public event PaintEventHandler2 PrePaint;
-        protected void OnPrePaint(PaintEventArgs2 e)
+        private void OnPrePaint(PaintEventArgs2 e)
         {
             if (PrePaint != null)
             {
@@ -215,33 +235,70 @@ namespace PaintDotNet
             }
         }
 
-        private const int paintTileSize = 256;
-        private Surface doubleBufferSurface = null;
         private Surface GetDoubleBuffer(Size size)
         {
-            if (doubleBufferSurface == null || 
-                doubleBufferSurface.Width < size.Width || 
-                doubleBufferSurface.Height < size.Height)
+            Surface localDBSurface = null;
+            Size oldSize = new Size(0, 0);
+
+            // If we already have a double buffer surface reference, but if that surface
+            // is already disposed then don't worry about it.
+            if (this.doubleBufferSurface != null && this.doubleBufferSurface.IsDisposed)
             {
-                Size oldSize;
-
-                if (doubleBufferSurface == null)
-                {
-                    oldSize = new Size(0, 0);
-                }
-                else
-                {
-                    oldSize = doubleBufferSurface.Size;
-                    doubleBufferSurface.Dispose();
-                }
-
-                Size newSize = new Size(Math.Max(oldSize.Width, size.Width),
-                                        Math.Max(oldSize.Height, size.Height));
-
-                doubleBufferSurface = new Surface(newSize);
+                oldSize = this.doubleBufferSurface.Size;
+                this.doubleBufferSurface = null;
             }
 
-            return doubleBufferSurface.CreateWindow(new Rectangle(new Point(0, 0), size));
+            // If we already have a double buffer surface reference, but if that surface
+            // is too small, then nuke it.
+            if (this.doubleBufferSurface != null && 
+                (this.doubleBufferSurface.Width < size.Width || this.doubleBufferSurface.Height < size.Height))
+            {
+                oldSize = this.doubleBufferSurface.Size;
+                this.doubleBufferSurface.Dispose();
+                this.doubleBufferSurface = null;
+                doubleBufferSurfaceWeakRef = null;
+            }
+
+            // If we don't have a double buffer, then we'd better get one.
+            if (this.doubleBufferSurface != null)
+            {
+                // Got one!
+                localDBSurface = this.doubleBufferSurface;
+            }
+            else if (doubleBufferSurfaceWeakRef != null)
+            {
+                // First, try to get the one that's already shared amongst all SurfaceBox instances.
+                localDBSurface = doubleBufferSurfaceWeakRef.Target;
+
+                // If it's disposed, then forget about it.
+                if (localDBSurface != null && localDBSurface.IsDisposed)
+                {
+                    oldSize = localDBSurface.Size;
+                    localDBSurface = null;
+                    doubleBufferSurfaceWeakRef = null;
+                }
+            }
+
+            // Make sure the surface is big enough.
+            if (localDBSurface != null && (localDBSurface.Width < size.Width || localDBSurface.Height < size.Height))
+            {
+                oldSize = localDBSurface.Size;
+                localDBSurface.Dispose();
+                localDBSurface = null;
+                doubleBufferSurfaceWeakRef = null;
+            }
+
+            // So, do we have a surface? If not then we'd better make one.
+            if (localDBSurface == null)
+            {
+                Size newSize = new Size(Math.Max(size.Width, oldSize.Width), Math.Max(size.Height, oldSize.Height));
+                localDBSurface = new Surface(newSize.Width, newSize.Height);
+                doubleBufferSurfaceWeakRef = new WeakReference<Surface>(localDBSurface);
+            }
+
+            this.doubleBufferSurface = localDBSurface;
+            Surface window = localDBSurface.CreateWindow(0, 0, size.Width, size.Height);
+            return window;
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -268,9 +325,6 @@ namespace PaintDotNet
                     {
                         if (e.Graphics.IsVisible(rect))
                         {
-                            // uncomment to see rectangles that get repainted
-                            //e.Graphics.FillRectangle(Brushes.Blue, rect);
-
                             PaintEventArgs2 e2 = new PaintEventArgs2(e.Graphics, rect);
                             OnPaintImpl(e2);
                         }
@@ -308,7 +362,7 @@ namespace PaintDotNet
                     doubleBuffer.GetDrawBitmapInfo(out tracking, out childOffset, out parentSize);
 
                     PdnGraphics.DrawBitmap(e.Graphics, e.ClipRectangle, e.Graphics.Transform,
-                        tracking, parentSize.Width, parentSize.Height, childOffset.X, childOffset.Y);
+                        tracking, childOffset.X, childOffset.Y);
                 }
             }
         }
@@ -331,7 +385,7 @@ namespace PaintDotNet
             public void RenderThreadMethod(object indexObject)
             {
                 int index = (int)indexObject;
-                this.owner.renderers.Render(windows[index], offsets[index]);
+                this.owner.rendererList.Render(windows[index], offsets[index]);
                 this.windows[index].Dispose();
                 this.windows[index] = null;
             }
@@ -484,7 +538,6 @@ namespace PaintDotNet
             return new Rectangle(SurfaceToClient(surfaceRect.Location), SurfaceToClient(surfaceRect.Size));
         }
 
-        #region Component Designer generated code
         /// <summary> 
         /// Required method for Designer support - do not modify 
         /// the contents of this method with the code editor.
@@ -492,9 +545,8 @@ namespace PaintDotNet
         private void InitializeComponent()
         {
         }
-        #endregion
 
-        private void renderers_Invalidated(object sender, InvalidateEventArgs e)
+        private void Renderers_Invalidated(object sender, InvalidateEventArgs e)
         {
             Rectangle rect = SurfaceToClient(e.InvalidRect);
             rect.Inflate(1, 1);

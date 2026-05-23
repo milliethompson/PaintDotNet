@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -20,7 +20,7 @@ namespace PaintDotNet
     public class CommonActionsStrip 
         : ToolStripEx
     {
-        private ToolStripButton updatesButton;
+        private ToolStripSeparator separator0;
         private ToolStripButton newButton;
         private ToolStripButton openButton;
         private ToolStripButton saveButton;
@@ -39,7 +39,6 @@ namespace PaintDotNet
         {
             InitializeComponent();
 
-            this.updatesButton.Image = PdnResources.GetImage("Icons.MenuFileUpdatesIcon.png");
             this.newButton.Image = PdnResources.GetImage("Icons.MenuFileNewIcon.png");
             this.openButton.Image = PdnResources.GetImage("Icons.MenuFileOpenIcon.png");
             this.saveButton.Image = PdnResources.GetImage("Icons.MenuFileSaveIcon.png");
@@ -52,7 +51,6 @@ namespace PaintDotNet
             this.undoButton.Image = PdnResources.GetImage("Icons.MenuEditUndoIcon.png");
             this.redoButton.Image = PdnResources.GetImage("Icons.MenuEditRedoIcon.png");
 
-            this.updatesButton.ToolTipText = PdnResources.GetString("CommonAction.CheckForUpdates");
             this.newButton.ToolTipText = PdnResources.GetString("CommonAction.New");
             this.openButton.ToolTipText = PdnResources.GetString("CommonAction.Open");
             this.saveButton.ToolTipText = PdnResources.GetString("CommonAction.Save");
@@ -65,7 +63,6 @@ namespace PaintDotNet
             this.undoButton.ToolTipText = PdnResources.GetString("CommonAction.Undo");
             this.redoButton.ToolTipText = PdnResources.GetString("CommonAction.Redo");
 
-            this.updatesButton.Tag = CommonAction.CheckForUpdates;
             this.newButton.Tag = CommonAction.New;
             this.openButton.Tag = CommonAction.Open;
             this.saveButton.Tag = CommonAction.Save;
@@ -81,9 +78,7 @@ namespace PaintDotNet
 
         private void InitializeComponent()
         {
-            this.updatesButton = new ToolStripButton();
-            this.updatesButton.Visible = false;
-
+            this.separator0 = new ToolStripSeparator();
             this.newButton = new ToolStripButton();
             this.openButton = new ToolStripButton();
             this.saveButton = new ToolStripButton();
@@ -97,9 +92,10 @@ namespace PaintDotNet
             this.separator2 = new ToolStripSeparator();
             this.undoButton = new ToolStripButton();
             this.redoButton = new ToolStripButton();
+
             this.SuspendLayout();
 
-            this.Items.Add(this.updatesButton);
+            this.Items.Add(this.separator0);
             this.Items.Add(this.newButton);
             this.Items.Add(this.openButton);
             this.Items.Add(this.saveButton);
@@ -117,12 +113,12 @@ namespace PaintDotNet
             this.ResumeLayout(false);
         }
 
-        public event EnumValueEventHandler ButtonClick;
+        public event EventHandler<CommonAction> ButtonClick;
         protected void OnButtonClick(CommonAction action)
         {
             if (ButtonClick != null)
             {
-                ButtonClick(this, new EnumValueEventArgs(action));
+                ButtonClick(this, new EventArgs<CommonAction>(action));
             }
         }
 
@@ -167,10 +163,6 @@ namespace PaintDotNet
 
             switch (action)
             {
-                case CommonAction.CheckForUpdates:
-                    button = this.updatesButton;
-                    break;
-
                 case CommonAction.New:
                     button = this.newButton;
                     break;

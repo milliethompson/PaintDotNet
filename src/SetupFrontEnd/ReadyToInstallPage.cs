@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -15,9 +15,6 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Setup
 {
-    /// <summary>
-    /// Summary description for ReadyToInstallPage.
-    /// </summary>
     public class ReadyToInstallPage 
         : WizardPage
     {
@@ -33,7 +30,7 @@ namespace PaintDotNet.Setup
             InitializeComponent();
 
             string introFormat = PdnResources.GetString("SetupWizard.ReadyToInstallPage.IntroText.Text.Format");
-            string appName = PdnInfo.GetProductName();
+            string appName = PdnInfo.GetBareProductName();
             this.introText.Text = string.Format(introFormat, appName);
         }
 
@@ -52,7 +49,7 @@ namespace PaintDotNet.Setup
         public override void OnNextClicked()
         {
             WizardHost.GoToPage(typeof(InstallingPage));
-            base.OnNextClicked ();
+            base.OnNextClicked();
         }
 
         /// <summary> 

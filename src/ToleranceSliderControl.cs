@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -16,12 +16,11 @@ using System.Windows.Forms;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for ToleranceSliderControl.
-    /// </summary>
-    public class ToleranceSliderControl : System.Windows.Forms.UserControl
+    public class ToleranceSliderControl 
+        : Control
     {
-        private bool tracking = false, hovering = false;
+        private bool tracking = false;
+        private bool hovering = false;
         private bool isValid;
         private string toleranceText;
         private string percentageFormat;
@@ -47,7 +46,7 @@ namespace PaintDotNet
         public EventHandler ToleranceChanged;
         protected void OnToleranceChanged() 
         {
-            isValid = false;
+            this.isValid = false;
             this.Invalidate();
             this.Update();
             if (ToleranceChanged != null) 
@@ -91,41 +90,34 @@ namespace PaintDotNet
 
             using (LinearGradientBrush lgb = new LinearGradientBrush(this.ClientRectangle, Color.Black, Color.White, 0, false))
             {
-                bufferGraphics.FillRectangle(lgb, 2, 0, ClientSize.Width - 6, ClientSize.Height);
+                bufferGraphics.FillRectangle(lgb, 0, 0, ClientSize.Width, ClientSize.Height);
             }
 
-            bufferGraphics.FillRectangle(Brushes.DarkBlue, 2.0f, 0.0f, (this.ClientRectangle.Width - 6) * tolerance, this.ClientRectangle.Height);
-            bufferGraphics.DrawRectangle(Pens.Black, 2, 0, this.ClientSize.Width - 6, this.ClientSize.Height - 1);
+            bufferGraphics.FillRectangle(Brushes.DarkBlue, 0.0f, 0.0f, ClientRectangle.Width * tolerance, this.ClientRectangle.Height);
+            bufferGraphics.DrawRectangle(hovering ? Pens.White : Pens.Black, 0, 0, this.ClientSize.Width - 1, this.ClientSize.Height - 1);
             bufferGraphics.SmoothingMode = SmoothingMode.HighQuality;
             bufferGraphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
 
-            Font ourFont;
-
-            try
+            using (Font ourFont = new Font(this.Font.FontFamily, 8.0f, this.Font.Style))
             {
-                ourFont = new Font("Arial", 7);
-            }
+                Brush textBrush;
 
-            catch (Exception)
-            {
-                ourFont = new Font(FontFamily.GenericSansSerif, 7);
-            }
-
-            using (ourFont)
-            {                   
-                if (tracking || hovering) 
+                if (hovering)
                 {
-                    int number = (int)(tolerance * 100);
-                    string text = string.Format(percentageFormat, number);
-                    bufferGraphics.DrawString(text, ourFont, Brushes.White, 2, 2);
-                } 
-                else 
-                {
-                    bufferGraphics.DrawString(this.toleranceText, ourFont, Brushes.White, 1, 2);
+                    textBrush = Brushes.White;
                 }
+                else
+                {
+                    textBrush = Brushes.White;
+                }
+
+                int number = (int)(tolerance * 100);
+                string text = string.Format(percentageFormat, number);
+
+                bufferGraphics.DrawString(text, ourFont, textBrush, 2, 1);
             }
 
-            isValid = true;
+            this.isValid = true;
         }
 
         protected override void OnPaintBackground(PaintEventArgs pevent)
@@ -187,7 +179,7 @@ namespace PaintDotNet
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
-            hovering = true;
+            this.hovering = true;
             this.UpdateBitmap();
             this.Update();
         }
@@ -195,7 +187,7 @@ namespace PaintDotNet
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
-            hovering = false;
+            this.hovering = false;
             this.UpdateBitmap();
             this.Update();
         }
@@ -248,14 +240,9 @@ namespace PaintDotNet
             base.Dispose(disposing);
         }
 
-        #region Component Designer generated code
         private void InitializeComponent()
         {
-            this.SuspendLayout();
-            this.AutoScaleDimensions = new SizeF(96F, 96F);
-            this.AutoScaleMode = AutoScaleMode.Dpi;
-            this.ResumeLayout(false);
+            this.Name = "ToleranceSliderControl";
         }
-        #endregion
     }
 }

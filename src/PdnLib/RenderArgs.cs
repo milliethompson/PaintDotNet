@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -28,10 +28,13 @@ namespace PaintDotNet
     ///         // etc.
     ///     }
     /// </remarks>
-    public class RenderArgs
+    public sealed class RenderArgs
         : IDisposable
     {
         private Surface surface;
+        private Bitmap bitmap;
+        private Graphics graphics;
+        private bool disposed = false;
 
         /// <summary>
         /// Gets the Surface that has been associated with this instance of RenderArgs.
@@ -40,16 +43,14 @@ namespace PaintDotNet
         {
             get
             {
-                if (disposed)
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException("RenderArgs");
                 }
 
-                return surface;
+                return this.surface;
             }
         }
-
-        private Bitmap bitmap;
 
         /// <summary>
         /// Gets a Bitmap reference that aliases the Surface.
@@ -58,21 +59,19 @@ namespace PaintDotNet
         {
             get
             {
-                if (disposed)
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException("RenderArgs");
                 }
 
-                if (bitmap == null)
+                if (this.bitmap == null)
                 {
-                    bitmap = surface.CreateAliasedBitmap();
+                    this.bitmap = surface.CreateAliasedBitmap();
                 }
 
-                return bitmap;
+                return this.bitmap;
             }
         }
-
-        private Graphics graphics;
 
         /// <summary>
         /// Retrieves a Graphics instance that can be used to draw on to the Surface.
@@ -85,17 +84,17 @@ namespace PaintDotNet
         {
             get
             {
-                if (disposed)
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException("RenderArgs");
                 }
 
-                if (graphics == null)
+                if (this.graphics == null)
                 {
-                    graphics = Graphics.FromImage(Bitmap);
+                    this.graphics = Graphics.FromImage(Bitmap);
                 }
 
-                return graphics;
+                return this.graphics;
             }
         }
 
@@ -109,19 +108,79 @@ namespace PaintDotNet
         {
             get
             {
-                if (disposed)
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException("RenderArgs");
                 }
-                
-                return Surface.Bounds;
+
+                return this.Surface.Bounds;
+            }
+        }
+
+        /// <summary>
+        /// Gets the size of the associated Surface object.
+        /// </summary>
+        /// <remarks>
+        /// This is a convenient method equivalent to using RenderArgs.Surface.Size.
+        /// </remarks>
+        public Size Size
+        {
+            get
+            {
+                if (this.disposed)
+                {
+                    throw new ObjectDisposedException("RenderArgs");
+                }
+
+                return this.Surface.Size;
+            }
+        }
+        
+        /// <summary>
+        /// Gets the width of the associated Surface object.
+        /// </summary>
+        /// <remarks>
+        /// This is a convenience method equivalent to using RenderArgs.Surface.Width.
+        /// </remarks>
+        public int Width
+        {
+            get
+            {
+                if (this.disposed)
+                {
+                    throw new ObjectDisposedException("RenderArgs");
+                }
+
+                return this.surface.Width;
+            }
+        }
+
+        /// <summary>
+        /// Gets the height of the associated Surface object.
+        /// </summary>
+        /// <remarks>
+        /// This is a convenience method equivalent to using RenderArgs.Surface.Height.
+        /// </remarks>
+        public int Height
+        {
+            get
+            {
+                if (this.disposed)
+                {
+                    throw new ObjectDisposedException("RenderArgs");
+                }
+
+                return this.surface.Height;
             }
         }
 
         /// <summary>
         /// Creates an instance of the RenderArgs class.
         /// </summary>
-        /// <param name="surface">The Surface to associate with this instance. This instance of RenderArgs does not take ownership of this Surface.</param>
+        /// <param name="surface">
+        /// The Surface to associate with this instance. This instance of RenderArgs does not 
+        /// take ownership of this Surface.
+        /// </param>
         public RenderArgs(Surface surface)
         {
             this.surface = surface;
@@ -129,14 +188,10 @@ namespace PaintDotNet
             this.graphics = null;
         }
 
-        #region IDisposable Members
-
         ~RenderArgs()
         {
             Dispose(false);
         }
-
-        private bool disposed = false;
 
         /// <summary>
         /// Disposes of the contained Bitmap and Graphics instances, if necessary.
@@ -153,26 +208,25 @@ namespace PaintDotNet
 
         private void Dispose(bool disposing)
         {
-            if (!disposed)
+            if (!this.disposed)
             {
-                disposed = true;
+                this.disposed = true;
 
                 if (disposing)
                 {
-                    if (graphics != null)
+                    if (this.graphics != null)
                     {
-                        graphics.Dispose();
-                        graphics = null;
+                        this.graphics.Dispose();
+                        this.graphics = null;
                     }
 
-                    if (bitmap != null)
+                    if (this.bitmap != null)
                     {
-                        bitmap.Dispose();
-                        bitmap = null;
+                        this.bitmap.Dispose();
+                        this.bitmap = null;
                     }
                 }
             }
         }
-        #endregion
     }
 }

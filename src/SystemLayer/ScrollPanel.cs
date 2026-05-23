@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -15,14 +15,15 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.SystemLayer
 {
+    // TODO: remove? <-- depends on rewriting LayerControl and DocumentView so that it doesn't use a Panel, and that is post-3.0 stuff
     /// <summary>
     /// This is the same as System.Windows.Forms.Panel except for three things:
     /// 1. It exposes a Scroll event.
     /// 2. It allows you to disable SetFocus.
     /// 3. It has a much simplified interface for AutoScrollPosition, exposed via the ScrollPosition property.
     /// </summary>
-    public class ScrollPanel : 
-        System.Windows.Forms.Panel
+    public class ScrollPanel
+        : Panel
     {
         private bool ignoreSetFocus = false;
 
@@ -59,39 +60,10 @@ namespace PaintDotNet.SystemLayer
             }
         }
 
-        /*
-        // TODO: remove
-        /// <summary>
-        /// Occurs when the panel is scrolled.
-        /// </summary>
-        public event EventHandler Scroll;
-
-        protected virtual void OnScroll()
-        {
-            if (Scroll != null)
-            {
-                Scroll(this, EventArgs.Empty);
-            }
-        }
-        */
-
         protected override void WndProc(ref Message m)
         {
             switch (m.Msg)
             {
-                    // TODO: Remove
-                    /*
-                case NativeConstants.WM_HSCROLL:
-                case NativeConstants.WM_VSCROLL:
-                case NativeConstants.SBM_SETPOS:
-                case NativeConstants.SBM_SETRANGE:
-                case NativeConstants.SBM_SETRANGEREDRAW:
-                case NativeConstants.SBM_SETSCROLLINFO:
-                    base.WndProc(ref m);
-                    OnScroll();
-                    break;
-                     * */
-
                 case NativeConstants.WM_SETFOCUS:
                     if (IgnoreSetFocus)
                     {

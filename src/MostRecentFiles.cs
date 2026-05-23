@@ -1,12 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.Drawing;
@@ -14,24 +15,39 @@ using System.Drawing;
 namespace PaintDotNet
 {
     /// <summary>
-    /// Manages the Most Recently Used list of files.
+    /// Data structure to manage the Most Recently Used list of files.
     /// </summary>
     public class MostRecentFiles
     {
         private Queue files; // contains MostRecentFile instances
         private int maxCount;
+        private const int iconSize = 56;
+        private bool loaded = false;
 
         public MostRecentFiles(int maxCount)
         {
             this.maxCount = maxCount;
-            files = new Queue();
+            this.files = new Queue();
+        }
+
+        public bool Loaded
+        {
+            get
+            {
+                return this.loaded;
+            }
         }
 
         public int Count
         {
             get
             {
-                return files.Count;
+                if (!this.loaded)
+                {
+                    LoadMruList();
+                }
+
+                return this.files.Count;
             }
         }
 
@@ -39,12 +55,25 @@ namespace PaintDotNet
         {
             get
             {
-                return maxCount;
+                return this.maxCount;
+            }
+        }
+
+        public int IconSize
+        {
+            get
+            {
+                return UI.ScaleWidth(iconSize);
             }
         }
 
         public MostRecentFile[] GetFileList()
         {
+            if (!Loaded)
+            {
+                LoadMruList();
+            }
+
             object[] array = files.ToArray();
             MostRecentFile[] mrfArray = new MostRecentFile[array.Length];
             array.CopyTo(mrfArray, 0);
@@ -53,6 +82,11 @@ namespace PaintDotNet
 
         public bool Contains(string fileName)
         {
+            if (!Loaded)
+            {
+                LoadMruList();
+            }
+
             string lcFileName = fileName.ToLower();
 
             foreach (MostRecentFile mrf in files)
@@ -70,6 +104,11 @@ namespace PaintDotNet
 
         public void Add(MostRecentFile mrf)
         {
+            if (!Loaded)
+            {
+                LoadMruList();
+            }
+
             if (!Contains(mrf.FileName))
             {
                 files.Enqueue(mrf);
@@ -83,6 +122,11 @@ namespace PaintDotNet
 
         public void Remove(string fileName)
         {
+            if (!Loaded)
+            {
+                LoadMruList();
+            }
+
             if (!Contains(fileName))
             {
                 return;
@@ -103,9 +147,81 @@ namespace PaintDotNet
 
         public void Clear()
         {
+            if (!Loaded)
+            {
+                LoadMruList();
+            }
+
             foreach (MostRecentFile mrf in this.GetFileList())
             {
                 Remove(mrf.FileName);
+            }
+        }
+
+        public void LoadMruList()
+        {
+            try
+            {
+                this.loaded = true;
+                Clear();
+
+                for (int i = 0; i < MaxCount; ++i)
+                {
+                    try
+                    {
+                        string mruName = "MRU" + i.ToString();
+                        string fileName = (string)Settings.CurrentUser.GetString(mruName);
+
+                        if (fileName != null)
+                        {
+                            Image thumb = Settings.CurrentUser.GetImage(mruName + "Thumb");
+
+                            if (fileName != null && thumb != null)
+                            {
+                                MostRecentFile mrf = new MostRecentFile(fileName, thumb);
+                                Add(mrf);
+                            }
+                        }
+                    }
+
+                    catch
+                    {
+                        break;
+                    }
+                }
+            }
+
+            catch (Exception ex)
+            {
+                Tracing.Ping("Exception when loading MRU list: " + ex.ToString());
+                Clear();
+            }
+        }
+
+        public void SaveMruList()
+        {
+            if (Loaded)
+            {
+                Settings.CurrentUser.SetInt32(PdnSettings.MruMax, MaxCount);
+                MostRecentFile[] mrfArray = GetFileList();
+
+                for (int i = 0; i < MaxCount; ++i)
+                {
+                    string mruName = "MRU" + i.ToString();
+                    string mruThumbName = mruName + "Thumb";
+
+                    if (i >= mrfArray.Length)
+                    {
+                        Settings.CurrentUser.Delete(mruName);
+                        Settings.CurrentUser.Delete(mruThumbName);
+                    }
+                    else
+                    {
+                        MostRecentFile mrf = mrfArray[i];
+                        Settings.CurrentUser.SetString(mruName, mrf.FileName);
+                        Settings.CurrentUser.SetImage(mruThumbName, mrf.Thumb);
+                    }
+                }
             }
         }
     }

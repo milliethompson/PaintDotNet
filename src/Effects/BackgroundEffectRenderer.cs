@@ -1,12 +1,13 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.SystemLayer;
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -26,6 +27,11 @@ namespace PaintDotNet.Effects
     /// 
     /// This class is NOT SAFE for multithreaded access. Note that the events will 
     /// be raised from arbitrary threads.
+    /// be raised from arbitrary threads. The only method that is safe to call from
+    /// a thread that is not managing Start(), Abort(), and Join() is AbortAsync().
+    /// You may then query whether the rendering actually aborted by using the Abort
+    /// property. If it returns false, then AbortAsync() was not called in time to
+    /// abort anything, which means the rendering completed fully.
     /// </summary>
     public sealed class BackgroundEffectRenderer
         : IDisposable
@@ -42,6 +48,7 @@ namespace PaintDotNet.Effects
         private RenderArgs srcArgs;
         private int workerThreads;
         private ArrayList exceptions = ArrayList.Synchronized(new ArrayList());
+        private volatile bool aborted = false;
 
         public event RenderedTileEventHandler RenderedTile;
         private void OnRenderedTile(RenderedTileEventArgs e)
@@ -97,10 +104,14 @@ namespace PaintDotNet.Effects
 
             public void Renderer()
             {
-                ThreadPriority oldTP = Thread.CurrentThread.Priority;
-                ThreadPriority newTP = ThreadPriority.BelowNormal;
-                Thread.CurrentThread.Priority = newTP;
+                //using (new ThreadBackground(ThreadBackgroundFlags.Cpu))
+                {
+                    RenderImpl();
+                }
+            }
 
+            private void RenderImpl()
+            {
                 int inc = ber.workerThreads;
                 int start = this.threadNumber + (this.startOffset * inc);
                 int max = ber.tileCount;
@@ -111,6 +122,7 @@ namespace PaintDotNet.Effects
                     {
                         if (ber.threadShouldStop)
                         {
+                            this.ber.aborted = true;
                             break;
                         }
 
@@ -124,11 +136,6 @@ namespace PaintDotNet.Effects
                 catch (Exception ex)
                 {
                     ber.exceptions.Add(ex);
-                }
-
-                finally
-                {
-                    Thread.CurrentThread.Priority = oldTP;
                 }
             }
         }
@@ -144,21 +151,12 @@ namespace PaintDotNet.Effects
             {
                 if (tileCount > 0)
                 {
-                    ThreadPriority oldTP = Thread.CurrentThread.Priority;
-                    Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
+                    Rectangle[] subRegion = this.tileRegions[0];
 
-                    try
-                    {
-                        Rectangle[] subRegion = this.tileRegions[0];
-                        this.effect.Render(this.effectTokenCopy, this.dstArgs, this.srcArgs, subRegion);
-                        PdnRegion subPdnRegion = this.tilePdnRegions[0];
-                        OnRenderedTile(new RenderedTileEventArgs(subPdnRegion, this.tileCount, 0));
-                    }
+                    this.effect.Render(this.effectTokenCopy, this.dstArgs, this.srcArgs, subRegion);
 
-                    finally
-                    {
-                        Thread.CurrentThread.Priority = oldTP;
-                    }
+                    PdnRegion subPdnRegion = this.tilePdnRegions[0];
+                    OnRenderedTile(new RenderedTileEventArgs(subPdnRegion, this.tileCount, 0));
                 }
 
                 EffectConfigToken[] tokens = new EffectConfigToken[workerThreads];
@@ -193,18 +191,18 @@ namespace PaintDotNet.Effects
 
             catch (Exception ex)
             {
-                exceptions.Add(ex);
+                this.exceptions.Add(ex);
             }
 
             finally
             {
                 threadPool.Drain();
 
-                Exception[] exceptions = threadPool.Exceptions;
+                Exception[] newExceptions = threadPool.Exceptions;
 
-                if (exceptions.Length > 0)
+                if (newExceptions.Length > 0)
                 {
-                    foreach (Exception exception in exceptions)
+                    foreach (Exception exception in newExceptions)
                     {
                         this.exceptions.Add(exception);
                     }
@@ -223,6 +221,7 @@ namespace PaintDotNet.Effects
         public void Start()
         {
             Abort();
+            this.aborted = false;
 
             if (this.effectToken != null)
             {
@@ -235,6 +234,14 @@ namespace PaintDotNet.Effects
             thread.Start();
         }
 
+        public bool Aborted
+        {
+            get
+            {
+                return this.aborted;
+            }
+        }
+
         public void Abort()
         {
             if (thread != null)
@@ -243,6 +250,14 @@ namespace PaintDotNet.Effects
                 Join();
                 threadPool.Drain();
             }
+        }
+
+        // This is the only method that is safe to call from another thread
+        // If the abort was successful, then get_Aborted will return true
+        // after a Join().
+        public void AbortAsync()
+        {
+            this.threadShouldStop = true;
         }
 
         /// <summary>
@@ -299,11 +314,11 @@ namespace PaintDotNet.Effects
             return slices;
         }
 
-        public BackgroundEffectRenderer(Effect effect, 
-                                        EffectConfigToken effectToken, 
-                                        RenderArgs dstArgs, 
-                                        RenderArgs srcArgs, 
-                                        PdnRegion renderRegion, 
+        public BackgroundEffectRenderer(Effect effect,
+                                        EffectConfigToken effectToken,
+                                        RenderArgs dstArgs,
+                                        RenderArgs srcArgs,
+                                        PdnRegion renderRegion,
                                         int tileCount,
                                         int workerThreads)
         {

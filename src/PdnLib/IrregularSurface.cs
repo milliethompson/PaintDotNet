@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -39,12 +39,12 @@ namespace PaintDotNet
         {
             get
             {
-                if (disposed)
+                if (this.disposed)
                 {
                     throw new ObjectDisposedException("IrregularSurface");
                 }
 
-                return region;
+                return this.region;
             }
         }
 
@@ -59,19 +59,19 @@ namespace PaintDotNet
             roiClipped.Intersect(source.Bounds);
 
             Rectangle[] rects = roiClipped.GetRegionScansReadOnlyInt();
-            placedSurfaces = new ArrayList(rects.Length);
+            this.placedSurfaces = new ArrayList(rects.Length);
 
             foreach (Rectangle rect in rects)
             {
-                placedSurfaces.Add(new PlacedSurface(source, rect));
+                this.placedSurfaces.Add(new PlacedSurface(source, rect));
             }
 
-            region = roiClipped;
+            this.region = roiClipped;
         }
 
         public IrregularSurface (Surface source, RectangleF[] roi)
         {
-            placedSurfaces = new ArrayList(roi.Length);
+            this.placedSurfaces = new ArrayList(roi.Length);
 
             foreach (RectangleF rectF in roi)
             {
@@ -79,17 +79,17 @@ namespace PaintDotNet
 
                 if (!ri.IsEmpty)
                 {
-                    placedSurfaces.Add(new PlacedSurface(source, Rectangle.Truncate(ri)));
+                    this.placedSurfaces.Add(new PlacedSurface(source, Rectangle.Truncate(ri)));
                 }
             }
 
-            region = Utility.RectanglesToRegion(roi);
-            region.Intersect(source.Bounds);
+            this.region = Utility.RectanglesToRegion(roi);
+            this.region.Intersect(source.Bounds);
         }
 
         public IrregularSurface(Surface source, Rectangle[] roi)
         {
-            placedSurfaces = new ArrayList(roi.Length);
+            this.placedSurfaces = new ArrayList(roi.Length);
 
             foreach (Rectangle rect in roi)
             {
@@ -97,12 +97,12 @@ namespace PaintDotNet
 
                 if (!ri.IsEmpty)
                 {
-                    placedSurfaces.Add(new PlacedSurface(source, ri));
+                    this.placedSurfaces.Add(new PlacedSurface(source, ri));
                 }
             }
 
-            region = Utility.RectanglesToRegion(roi);
-            region.Intersect(source.Bounds);
+            this.region = Utility.RectanglesToRegion(roi);
+            this.region.Intersect(source.Bounds);
         }
 
         /// <summary>
@@ -112,18 +112,18 @@ namespace PaintDotNet
         /// <param name="roi">Defines the Rectangle from which to copy pixels from the Image.</param>
         public IrregularSurface (Surface source, Rectangle roi)
         {
-            placedSurfaces = new ArrayList();
-            placedSurfaces.Add(new PlacedSurface(source, roi));
-            region = new PdnRegion(roi);
+            this.placedSurfaces = new ArrayList();
+            this.placedSurfaces.Add(new PlacedSurface(source, roi));
+            this.region = new PdnRegion(roi);
         }
 
         private IrregularSurface (IrregularSurface cloneMe)
         {
-            placedSurfaces = new ArrayList(cloneMe.placedSurfaces.Count);
+            this.placedSurfaces = new ArrayList(cloneMe.placedSurfaces.Count);
 
             foreach (PlacedSurface ps in cloneMe.placedSurfaces)
             {
-                placedSurfaces.Add(ps.Clone());
+                this.placedSurfaces.Add(ps.Clone());
             }
 
             this.region = (PdnRegion)cloneMe.Region.Clone();
@@ -153,12 +153,12 @@ namespace PaintDotNet
 
         public void Draw(Surface dst, IPixelOp pixelOp)
         {
-            if (disposed)
+            if (this.disposed)
             {
                 throw new ObjectDisposedException("IrregularSurface");
             }
 
-            foreach (PlacedSurface ps in placedSurfaces)
+            foreach (PlacedSurface ps in this.placedSurfaces)
             {
                 ps.Draw(dst, pixelOp);
             }
@@ -172,12 +172,12 @@ namespace PaintDotNet
         /// <param name="transformY">The value to be added to every Y coordinate that is used for drawing.</param>
         public void Draw(Surface dst, int tX, int tY)
         {
-            if (disposed)
+            if (this.disposed)
             {
                 throw new ObjectDisposedException("IrregularSurface");
             }
 
-            foreach (PlacedSurface ps in placedSurfaces)
+            foreach (PlacedSurface ps in this.placedSurfaces)
             {
                 ps.Draw(dst, tX, tY);
             }
@@ -185,12 +185,12 @@ namespace PaintDotNet
 
         public void Draw(Surface dst, int tX, int tY, IPixelOp pixelOp)
         {
-            if (disposed)
+            if (this.disposed)
             {
                 throw new ObjectDisposedException("IrregularSurface");
             }
 
-            foreach (PlacedSurface ps in placedSurfaces)
+            foreach (PlacedSurface ps in this.placedSurfaces)
             {
                 ps.Draw(dst, tX, tY, pixelOp);
             }
@@ -207,19 +207,21 @@ namespace PaintDotNet
 
         private void Dispose(bool disposing)
         {
-            if (!disposed)
+            if (!this.disposed)
             {
-                disposed = true;
+                // TODO: FXCOP: call Dispose() on this.region
+
+                this.disposed = true;
 
                 if (disposing)
                 {
-                    foreach (PlacedSurface ps in placedSurfaces)
+                    foreach (PlacedSurface ps in this.placedSurfaces)
                     {
                         ps.Dispose();
                     }
 
-                    placedSurfaces.Clear();
-                    placedSurfaces = null;
+                    this.placedSurfaces.Clear();
+                    this.placedSurfaces = null;
                 }
             }
         }

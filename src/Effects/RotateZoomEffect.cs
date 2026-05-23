@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
@@ -20,7 +20,7 @@ namespace PaintDotNet.Effects
 {
     [EffectCategory(EffectCategory.DoNotDisplay)] // we have a menu item that manually places this in the Layers menu
     [EffectTypeHint(EffectTypeHint.Fast)]
-    public class RotateZoomEffect
+    public sealed class RotateZoomEffect
         : Effect
     {
         private static readonly ColorBgra seeThroughColor = ColorBgra.FromBgra(255, 255, 255, 0);
@@ -33,11 +33,11 @@ namespace PaintDotNet.Effects
             }
         }
 
-        public static Image StaticImage
+        public static ImageResource StaticImage
         {
             get
             {
-                return PdnResources.GetImage("Icons.RotateZoomIcon.png");
+                return ImageResource.Get("Icons.RotateZoomIcon.png");
             }
         }
 
@@ -198,34 +198,27 @@ namespace PaintDotNet.Effects
                                         inBoundsMaskBottom = inBoundsMaskTop & 0xffffffff;
                                     }
                                    
-                                    ColorBgra edgeColor = token.SourceAsBackground ? *srcPtr : ColorBgra.FromUInt32(0x00ffffff);
-                                     
                                     uint maskUL = inBoundsMaskLeft & inBoundsMaskTop;
-                                    ColorBgra cul = ColorBgra.FromUInt32((src.GetPointUnchecked(sleft, stop).Bgra & maskUL) | (edgeColor.Bgra & ~maskUL));
+                                    ColorBgra cul = ColorBgra.FromUInt32(src.GetPointUnchecked(sleft, stop).Bgra & maskUL);
 
                                     uint maskUR = inBoundsMaskRight & inBoundsMaskTop;
-                                    ColorBgra cur = ColorBgra.FromUInt32((src.GetPointUnchecked(sright, stop).Bgra & maskUR) | (edgeColor.Bgra & ~maskUR));
+                                    ColorBgra cur = ColorBgra.FromUInt32(src.GetPointUnchecked(sright, stop).Bgra & maskUR);
 
                                     uint maskLL = inBoundsMaskLeft & inBoundsMaskBottom;
-                                    ColorBgra cll = ColorBgra.FromUInt32((src.GetPointUnchecked(sleft, sbottom).Bgra & maskLL) | (edgeColor.Bgra & ~maskLL));
+                                    ColorBgra cll = ColorBgra.FromUInt32(src.GetPointUnchecked(sleft, sbottom).Bgra & maskLL);
 
                                     uint maskLR = inBoundsMaskRight & inBoundsMaskBottom;
-                                    ColorBgra clr = ColorBgra.FromUInt32((src.GetPointUnchecked(sright, sbottom).Bgra & maskLR) | (edgeColor.Bgra & ~maskLR));
+                                    ColorBgra clr = ColorBgra.FromUInt32(src.GetPointUnchecked(sright, sbottom).Bgra & maskLR);
 
-                                    uint b = ((cul.B * wul) + (cur.B * wur) + (cll.B * wll) + (clr.B * wlr)) >> 16;
-                                    uint g = ((cul.G * wul) + (cur.G * wur) + (cll.G * wll) + (clr.G * wlr)) >> 16;
-                                    uint r = ((cul.R * wul) + (cur.R * wur) + (cll.R * wll) + (clr.R * wlr)) >> 16;
-                                    uint a = ((cul.A * wul) + (cur.A * wur) + (cll.A * wll) + (clr.A * wlr)) >> 16;
+                                    ColorBgra c = ColorBgra.BlendColors4W16IP(cul, wul, cur, wur, cll, wll, clr, wlr);
 
-                                    ColorBgra color = ColorBgra.FromUInt32(b + (g << 8) + (r << 16) + (a << 24));
-
-                                    if (a == 255 || !token.SourceAsBackground)
+                                    if (c.A == 255 || !token.SourceAsBackground)
                                     {
-                                        dstPtr->Bgra = color.Bgra;
+                                        dstPtr->Bgra = c.Bgra;
                                     }
                                     else
                                     {
-                                        *dstPtr = PaintDotNet.UserBlendOps.NormalBlendOp.ApplyStatic(edgeColor, color);
+                                        *dstPtr = PaintDotNet.UserBlendOps.NormalBlendOp.ApplyStatic(*srcPtr, c);
                                     }
                                 }
                             }
@@ -270,8 +263,7 @@ namespace PaintDotNet.Effects
 
         public RotateZoomEffect()
             : base(StaticName, 
-                   StaticImage,
-                   StaticShortcutKeys,
+                   StaticImage.GetCopy(),
                    true)
         {
         }

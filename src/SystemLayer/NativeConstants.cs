@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using Microsoft.Win32.SafeHandles;
@@ -12,23 +12,108 @@ using System;
 
 namespace PaintDotNet.SystemLayer
 {
-    /// <summary>
-    /// Summary description for NativeConstants.
-    /// </summary>
-    internal sealed class NativeConstants
+    internal static class NativeConstants
     {
-        private NativeConstants()
+        public const uint DWMWA_NCRENDERING_ENABLED = 1;           // [get] Is non-client rendering enabled/disabled
+        public const uint DWMWA_NCRENDERING_POLICY = 2;            // [set] Non-client rendering policy
+        public const uint DWMWA_TRANSITIONS_FORCEDISABLED = 3;     // [set] Potentially enable/forcibly disable transitions
+        public const uint DWMWA_ALLOW_NCPAINT = 4;                 // [set] Allow contents rendered in the non-client area to be visible on the DWM-drawn frame.
+        public const uint DWMWA_CAPTION_BUTTON_BOUNDS = 5;         // [get] Bounds of the caption button area in window-relative space.
+        public const uint DWMWA_NONCLIENT_RTL_LAYOUT = 6;          // [set] Is non-client content RTL mirrored
+        public const uint DWMWA_FORCE_ICONIC_REPRESENTATION = 7;   // [set] Force this window to display iconic thumbnails.
+        public const uint DWMWA_FLIP3D_POLICY = 8;                 // [set] Designates how Flip3D will treat the window.
+        public const uint DWMWA_EXTENDED_FRAME_BOUNDS = 9;         // [get] Gets the extended frame bounds rectangle in screen space
+        public const uint DWMWA_LAST = 10;
+
+        public const uint DWMNCRP_USEWINDOWSTYLE = 0;
+        public const uint DWMNCRP_DISABLED = 1;
+        public const uint DWMNCRP_ENABLED = 2;
+        public const uint DWMNCRP_LAST = 3;
+
+        internal const byte VER_EQUAL = 1;
+        internal const byte VER_GREATER = 2;
+        internal const byte VER_GREATER_EQUAL = 3;
+        internal const byte VER_LESS = 4;
+        internal const byte VER_LESS_EQUAL = 5;
+        internal const byte VER_AND = 6;
+        internal const byte VER_OR = 7;
+
+        internal const uint VER_CONDITION_MASK = 7;
+        internal const uint VER_NUM_BITS_PER_CONDITION_MASK = 3;
+
+        internal const uint VER_MINORVERSION = 0x0000001;
+        internal const uint VER_MAJORVERSION = 0x0000002;
+        internal const uint VER_BUILDNUMBER = 0x0000004;
+        internal const uint VER_PLATFORMID = 0x0000008;
+        internal const uint VER_SERVICEPACKMINOR = 0x0000010;
+        internal const uint VER_SERVICEPACKMAJOR = 0x0000020;
+        internal const uint VER_SUITENAME = 0x0000040;
+        internal const uint VER_PRODUCT_TYPE = 0x0000080;
+
+        internal const uint VER_PLATFORM_WIN32s = 0;
+        internal const uint VER_PLATFORM_WIN32_WINDOWS = 1;
+        internal const uint VER_PLATFORM_WIN32_NT = 2;
+
+        internal const int THREAD_MODE_BACKGROUND_BEGIN = 0x10000;
+        internal const int THREAD_MODE_BACKGROUND_END = 0x20000;
+
+        private static uint CTL_CODE(uint deviceType, uint function, uint method, uint access)
         {
+            return (deviceType << 16) | (access << 14) | (function << 2) | method;
         }
+
+        internal const uint FILE_DEVICE_FILE_SYSTEM = 0x00000009;
+        internal const uint METHOD_BUFFERED = 0;
+
+        internal static readonly uint FSCTL_SET_COMPRESSION =
+            CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 16, METHOD_BUFFERED, FILE_READ_DATA | FILE_WRITE_DATA);
+
+        internal static ushort COMPRESSION_FORMAT_DEFAULT = 1;
+
+        internal const int SW_HIDE = 0;
+        internal const int SW_SHOWNORMAL = 1;
+        internal const int SW_NORMAL = 1;
+        internal const int SW_SHOWMINIMIZED = 2;
+        internal const int SW_SHOWMAXIMIZED = 3;
+        internal const int SW_MAXIMIZE = 3;
+        internal const int SW_SHOWNOACTIVATE = 4;
+        internal const int SW_SHOW = 5;
+        internal const int SW_MINIMIZE = 6;
+        internal const int SW_SHOWMINNOACTIVE = 7;
+        internal const int SW_SHOWNA = 8;
+        internal const int SW_RESTORE = 9;
+        internal const int SW_SHOWDEFAULT = 10;
+        internal const int SW_FORCEMINIMIZE = 11;
+        internal const int SW_MAX = 11;
+
+        internal const uint SEE_MASK_CLASSNAME = 0x00000001;
+        internal const uint SEE_MASK_CLASSKEY = 0x00000003;
+        internal const uint SEE_MASK_IDLIST = 0x00000004;
+        internal const uint SEE_MASK_INVOKEIDLIST = 0x0000000c;
+        internal const uint SEE_MASK_ICON = 0x00000010;
+        internal const uint SEE_MASK_HOTKEY = 0x00000020;
+        internal const uint SEE_MASK_NOCLOSEPROCESS = 0x00000040;
+        internal const uint SEE_MASK_CONNECTNETDRV = 0x00000080;
+        internal const uint SEE_MASK_FLAG_DDEWAIT = 0x00000100;
+        internal const uint SEE_MASK_DOENVSUBST = 0x00000200;
+        internal const uint SEE_MASK_FLAG_NO_UI = 0x00000400;
+        internal const uint SEE_MASK_UNICODE = 0x00004000;
+        internal const uint SEE_MASK_NO_CONSOLE = 0x00008000;
+        internal const uint SEE_MASK_ASYNCOK = 0x00100000;
+        internal const uint SEE_MASK_HMONITOR = 0x00200000;
+        internal const uint SEE_MASK_NOZONECHECKS = 0x00800000;
+        internal const uint SEE_MASK_NOQUERYCLASSSTORE = 0x01000000;
+        internal const uint SEE_MASK_WAITFORINPUTIDLE = 0x02000000;
+        internal const uint SEE_MASK_FLAG_LOG_USAGE = 0x04000000;
 
         internal const uint SHARD_PIDL = 0x00000001;
         internal const uint SHARD_PATHA = 0x00000002;
         internal const uint SHARD_PATHW = 0x00000003;
-        
+
         internal const uint VER_NT_WORKSTATION = 0x0000001;
         internal const uint VER_NT_DOMAIN_CONTROLLER = 0x0000002;
-        internal const uint VER_NT_SERVER = 0x0000003; 
-        
+        internal const uint VER_NT_SERVER = 0x0000003;
+
         internal const uint LWA_COLORKEY = 0x00000001;
         internal const uint LWA_ALPHA = 0x00000002;
         internal const uint WS_EX_LAYERED = 0x00080000;
@@ -36,11 +121,9 @@ namespace PaintDotNet.SystemLayer
         internal const ushort PROCESSOR_ARCHITECTURE_INTEL = 0;
         internal const ushort PROCESSOR_ARCHITECTURE_IA64 = 6;
         internal const ushort PROCESSOR_ARCHITECTURE_AMD64 = 9;
-        internal const ushort PROCESSOR_ARCHITECTURE_UNKNOWN = 0xFFFF; 
-        
+        internal const ushort PROCESSOR_ARCHITECTURE_UNKNOWN = 0xFFFF;
+
         internal const uint SHVIEW_THUMBNAIL = 0x702d;
-        internal const uint WM_COMMAND = 0x111;
-        internal const uint WM_MOUSEACTIVATE = 0x21;
 
         internal const uint MA_ACTIVATE = 1;
         internal const uint MA_ACTIVATEANDEAT = 2;
@@ -50,6 +133,8 @@ namespace PaintDotNet.SystemLayer
         internal const uint IDI_APPLICATION = 32512;
 
         internal const int ERROR_SUCCESS = 0;
+        internal const int ERROR_ALREADY_EXISTS = 183;
+        internal const int ERROR_CANCELLED = 1223;
         internal const int ERROR_IO_PENDING = 0x3e5;
         internal const int ERROR_NO_MORE_ITEMS = 259;
 
@@ -72,6 +157,20 @@ namespace PaintDotNet.SystemLayer
         internal const int SBM_SETRANGE = 0x00E2;
         internal const int SBM_SETRANGEREDRAW = 0x00E6;
         internal const int SBM_SETSCROLLINFO = 0x00E9;
+
+        internal const int BCM_FIRST = 0x1600;
+        internal const int BCM_SETSHIELD = BCM_FIRST + 0x000C;
+
+        internal const int CB_SHOWDROPDOWN = 0x014f;
+
+        internal const uint WM_COMMAND = 0x111;
+        internal const uint WM_MOUSEACTIVATE = 0x21;
+        internal const uint WM_COPYDATA = 0x004a;
+
+        internal const uint SMTO_NORMAL = 0x0000;
+        internal const uint SMTO_BLOCK = 0x0001;
+        internal const uint SMTO_ABORTIFHUNG = 0x0002;
+        internal const uint SMTO_NOTIMEOUTIFNOTHUNG = 0x0008;
 
         internal const int WM_USER = 0x400;
         internal const int WM_HSCROLL = 0x114;
@@ -110,7 +209,7 @@ namespace PaintDotNet.SystemLayer
         internal const uint RUSSIAN_CHARSET = 204;
         internal const uint MAC_CHARSET = 77;
         internal const uint BALTIC_CHARSET = 186;
-        
+
         internal const uint SPI_GETBEEP = 0x0001;
         internal const uint SPI_SETBEEP = 0x0002;
         internal const uint SPI_GETMOUSE = 0x0003;
@@ -299,7 +398,7 @@ namespace PaintDotNet.SystemLayer
         internal const int WM_MOVING = 0x0216;
         internal const uint NOTIFY_FOR_ALL_SESSIONS = 1;
         internal const uint NOTIFY_FOR_THIS_SESSION = 0;
-       
+
         internal const int BP_PUSHBUTTON = 1;
         internal const int PBS_NORMAL = 1;
         internal const int PBS_HOT = 2;
@@ -316,7 +415,7 @@ namespace PaintDotNet.SystemLayer
         internal const int PS_INSIDEFRAME = 6;
         internal const int PS_USERSTYLE = 7;
         internal const int PS_ALTERNATE = 8;
-        
+
         internal const int PS_ENDCAP_ROUND = 0x00000000;
         internal const int PS_ENDCAP_SQUARE = 0x00000100;
         internal const int PS_ENDCAP_FLAT = 0x00000200;
@@ -424,7 +523,7 @@ namespace PaintDotNet.SystemLayer
         internal const uint WTD_LIFETIME_SIGNING_FLAG = 0x00000800;
         internal const uint WTD_CACHE_ONLY_URL_RETRIEVAL = 0x00001000;
 
-        internal static readonly Guid WINTRUST_ACTION_GENERIC_VERIFY_V2 = 
+        internal static readonly Guid WINTRUST_ACTION_GENERIC_VERIFY_V2 =
             new Guid(0xaac56b, 0xcd44, 0x11d0, 0x8c, 0xc2, 0x0, 0xc0, 0x4f, 0xc2, 0x95, 0xee);
 
         internal const uint FILE_SHARE_READ = 0x00000001;
@@ -501,6 +600,9 @@ namespace PaintDotNet.SystemLayer
 
         internal static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
 
+        internal const uint HANDLE_FLAG_INHERIT = 0x1;
+        internal const uint HANDLE_FLAG_PROTECT_FROM_CLOSE = 0x2;
+
         internal const uint MEM_COMMIT = 0x1000;
         internal const uint MEM_RESERVE = 0x2000;
         internal const uint MEM_DECOMMIT = 0x4000;
@@ -520,6 +622,27 @@ namespace PaintDotNet.SystemLayer
         internal const uint PAGE_GUARD = 0x100;
         internal const uint PAGE_NOCACHE = 0x200;
         internal const uint PAGE_WRITECOMBINE = 0x400;
+
+        internal const uint SEC_IMAGE = 0x1000000;
+        internal const uint SEC_RESERVE = 0x4000000;
+        internal const uint SEC_COMMIT = 0x8000000;
+        internal const uint SEC_NOCACHE = 0x10000000;
+
+        internal const uint SECTION_QUERY = 0x0001;
+        internal const uint SECTION_MAP_WRITE = 0x0002;
+        internal const uint SECTION_MAP_READ = 0x0004;
+        internal const uint SECTION_MAP_EXECUTE_EXPLICIT = 0x0020;
+
+        internal const uint FILE_MAP_COPY = SECTION_QUERY;
+        internal const uint FILE_MAP_WRITE = SECTION_MAP_WRITE;
+        internal const uint FILE_MAP_READ = SECTION_MAP_READ;
+        internal const uint FILE_MAP_EXECUTE = SECTION_MAP_EXECUTE_EXPLICIT;
+
+        internal const uint GMEM_FIXED = 0x0000;
+        internal const uint GMEM_MOVEABLE = 0x0002;
+        internal const uint GMEM_ZEROINIT = 0x0040;
+        internal const uint GHND = 0x0042;
+        internal const uint GPTR = 0x0040;
 
         internal const uint DIB_RGB_COLORS = 0; /* color table in RGBs */
         internal const uint DIB_PAL_COLORS = 1; /* color table in palette indices */
@@ -611,5 +734,5 @@ namespace PaintDotNet.SystemLayer
         internal const uint FF_DECORATIVE = (5 << 4);
 
         internal const int SB_HORZ = 0;
-    }
+    }  
 }

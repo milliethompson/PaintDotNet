@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -12,6 +12,7 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
 using System.Resources;
@@ -27,15 +28,456 @@ namespace PaintDotNet
     /// We derive from this class instead of Windows.Forms.Form directly.
     /// </summary>
     public class PdnBaseForm 
-        : System.Windows.Forms.Form
+        : Form,
+          ISnapManagerHost
     {
+        static PdnBaseForm()
+        {
+            Application.EnterThreadModal += new EventHandler(Application_EnterThreadModal);
+            Application.LeaveThreadModal += new EventHandler(Application_LeaveThreadModal);
+            Application_EnterThreadModal(null, EventArgs.Empty);
+        }
+
+        // This set keeps track of forms which cannot be the current modal form.
+        private static Stack<List<Form>> parentModalForms = new Stack<List<Form>>();
+
+        private static bool IsInParentModalForms(Form form)
+        {
+            foreach (List<Form> formList in parentModalForms)
+            {
+                foreach (Form parentModalForm in formList)
+                {
+                    if (parentModalForm == form)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static List<Form> GetAllPeerForms(Form form)
+        {
+            if (form == null)
+            {
+                return new List<Form>();
+            }
+
+            if (form.Owner != null)
+            {
+                return GetAllPeerForms(form.Owner);
+            }
+
+            List<Form> forms = new List<Form>();
+            forms.Add(form);
+            forms.AddRange(form.OwnedForms);
+
+            return forms;
+        }
+
+        private static void Application_EnterThreadModal(object sender, EventArgs e)
+        {
+            Form activeForm = Form.ActiveForm;
+            List<Form> allPeerForms = GetAllPeerForms(activeForm);
+            parentModalForms.Push(allPeerForms);
+        }
+
+        private static void Application_LeaveThreadModal(object sender, EventArgs e)
+        {
+            parentModalForms.Pop();
+        }
+
         private bool enableOpacity = true;
         private double ourOpacity = 1.0; // store opacity setting so that when we go from disabled->enabled opacity we can set the correct value
-
+        private SnapManager snapManager = null;
         private System.ComponentModel.IContainer components;
         private bool instanceEnableOpacity = true;
         private static bool globalEnableOpacity = true;
         private FormEx formEx;
+        private bool processFormHotKeyMutex = false; // if we're already processing a form hotkey, don't let other hotkeys execute.
+
+        private static Dictionary<Keys, Function<bool, Keys>> hotkeyRegistrar = null;
+
+        /// <summary>
+        /// Registers a form-wide hot key, and a callback for when the key is pressed.
+        /// The callback must be an instance method on a Control. Whatever Form the Control
+        /// is on will process the hotkey, as long as the Form is derived from PdnBaseForm.
+        /// </summary>
+        public static void RegisterFormHotKey(Keys keys, Function<bool, Keys> callback)
+        {
+            IComponent targetAsComponent = callback.Target as IComponent;
+            IHotKeyTarget targetAsHotKeyTarget = callback.Target as IHotKeyTarget;
+
+            if (targetAsComponent == null && targetAsHotKeyTarget == null)
+            {
+                throw new ArgumentException("target instance must implement IComponent or IHotKeyTarget", "callback");
+            }
+
+            if (hotkeyRegistrar == null)
+            {
+                hotkeyRegistrar = new Dictionary<Keys, Function<bool, Keys>>();
+            }
+
+            Function<bool, Keys> theDelegate = null;
+
+            if (hotkeyRegistrar.ContainsKey(keys))
+            {
+                theDelegate = hotkeyRegistrar[keys];
+                theDelegate += callback;
+                hotkeyRegistrar[keys] = theDelegate;
+            }
+            else
+            {
+                theDelegate = new Function<bool, Keys>(callback);
+                hotkeyRegistrar.Add(keys, theDelegate);
+            }
+
+            if (targetAsComponent != null)
+            {
+                targetAsComponent.Disposed += TargetAsComponent_Disposed;
+            }
+            else
+            {
+                targetAsHotKeyTarget.Disposed += TargetAsHotKeyTarget_Disposed;
+            }
+        }
+
+        private bool ShouldProcessHotKey(Keys keys)
+        {
+            Keys keyOnly = keys & ~Keys.Modifiers;
+
+            if (keyOnly == Keys.Back ||
+                keyOnly == Keys.Delete ||
+                keyOnly == Keys.Left ||
+                keyOnly == Keys.Right ||
+                keyOnly == Keys.Up ||
+                keyOnly == Keys.Down ||
+                keys == (Keys.Control | Keys.A) ||        // select all
+                keys == (Keys.Control | Keys.Z) ||        // undo
+                keys == (Keys.Control | Keys.Y) ||        // redo
+                keys == (Keys.Control | Keys.X) ||        // cut
+                keys == (Keys.Control | Keys.C) ||        // copy
+                keys == (Keys.Control | Keys.V) ||        // paste
+                keys == (Keys.Shift | Keys.Delete) ||     // cut (left-handed)
+                keys == (Keys.Control | Keys.Insert) ||   // copy (left-handed)
+                keys == (Keys.Shift | Keys.Insert)        // paste (left-handed)
+                )
+            {
+                Control focused = Utility.FindFocus();
+
+                if (focused is TextBox || focused is ComboBox || focused is UpDownBase)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static void TargetAsComponent_Disposed(object sender, EventArgs e)
+        {
+            ((IComponent)sender).Disposed -= TargetAsComponent_Disposed;
+            RemoveDisposedTarget(sender);
+        }
+
+        private static void TargetAsHotKeyTarget_Disposed(object sender, EventArgs e)
+        {
+            ((IHotKeyTarget)sender).Disposed -= TargetAsHotKeyTarget_Disposed;
+            RemoveDisposedTarget(sender);
+        }
+
+        static void RemoveDisposedTarget(object sender)
+        {
+            // Control was disposed, but it never unregistered for its hotkeys!
+            List<Keys> keysList = new List<Keys>(hotkeyRegistrar.Keys);
+
+            foreach (Keys keys in keysList)
+            {
+                Function<bool, Keys> theMultiDelegate = hotkeyRegistrar[keys];
+
+                foreach (Delegate theDelegate in theMultiDelegate.GetInvocationList())
+                {
+                    if (object.ReferenceEquals(theDelegate.Target, sender))
+                    {
+                        UnregisterFormHotKey(keys, (Function<bool, Keys>)theDelegate);
+                    }
+                }
+            }
+        }
+
+        public static void UnregisterFormHotKey(Keys keys, Function<bool, Keys> callback)
+        {
+            if (hotkeyRegistrar != null)
+            {
+                Function<bool, Keys> theDelegate = hotkeyRegistrar[keys];
+                theDelegate -= callback;
+                hotkeyRegistrar[keys] = theDelegate;
+
+                IComponent targetAsComponent = callback.Target as IComponent;
+                if (targetAsComponent != null)
+                {
+                    targetAsComponent.Disposed -= TargetAsComponent_Disposed;
+                }
+
+                IHotKeyTarget targetAsHotKeyTarget = callback.Target as IHotKeyTarget;
+                if (targetAsHotKeyTarget != null)
+                {
+                    targetAsHotKeyTarget.Disposed -= TargetAsHotKeyTarget_Disposed;
+                }
+
+                if (theDelegate.GetInvocationList().Length == 0)
+                {
+                    hotkeyRegistrar.Remove(keys);
+                }
+
+                if (hotkeyRegistrar.Count == 0)
+                {
+                    hotkeyRegistrar = null;
+                }
+            }
+        }
+
+        public void Flash()
+        {
+            UI.FlashForm(this);
+        }
+
+        public void RestoreWindow()
+        {
+            if (WindowState == FormWindowState.Minimized)
+            {
+                UI.RestoreWindow(this);
+            }
+        }
+
+        /// <summary>
+        /// Returns the currently active modal form if the process is in the foreground and is active.
+        /// </summary>
+        /// <remarks>
+        /// If Form.ActiveForm is modeless, we search up the chain of owner forms
+        /// to find its modeless owner form.
+        /// </remarks>
+        public static Form CurrentModalForm
+        {
+            get
+            {
+                Form theForm = Form.ActiveForm;
+
+                while (theForm != null && !theForm.Modal && theForm.Owner != null)
+                {
+                    theForm = theForm.Owner;
+                }
+
+                return theForm;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether the current form is the processes' top level modal form.
+        /// </summary>
+        public bool IsCurrentModalForm
+        {
+            get
+            {
+                if (IsInParentModalForms(this))
+                {
+                    return false;
+                }
+
+                if (this.ContainsFocus)
+                {
+                    return true;
+                }
+
+                foreach (Form ownedForm in this.OwnedForms)
+                {
+                    if (ownedForm.ContainsFocus)
+                    {
+                        return true;
+                    }
+                }
+
+                return (this == CurrentModalForm);
+            }
+        }
+
+        private bool IsTargetFormActive(object target)
+        {
+            Control targetControl = null;
+
+            if (targetControl == null)
+            {
+                Control asControl = target as Control;
+
+                if (asControl != null)
+                {
+                    targetControl = asControl;
+                }
+            }
+
+            if (targetControl == null)
+            {
+                IFormAssociate asIFormAssociate = target as IFormAssociate;
+
+                if (asIFormAssociate != null)
+                {
+                    targetControl = asIFormAssociate.AssociatedForm;
+                }
+            }
+
+            // target is not a control, or a type of non-control that we recognize as hosted by a control
+            if (targetControl == null)
+            {
+                return false;
+            }
+
+            Form targetForm = targetControl.FindForm();
+
+            // target is not on a form
+            if (targetForm == null)
+            {
+                return false;
+            }
+
+            // is the target on the currently active form?
+            Form activeModalForm = CurrentModalForm;
+
+            if (targetForm == activeModalForm)
+            {
+                return true;
+            }
+
+            // Nope.
+            return false;
+        }
+
+        private static object GetConcreteTarget(object target)
+        {
+            Delegate asDelegate = target as Delegate;
+
+            if (asDelegate == null)
+            {
+                return target;
+            }
+            else
+            {
+                return GetConcreteTarget(asDelegate.Target);
+            }
+        }
+
+        private bool ProcessFormHotKey(Keys keyData)
+        {
+            bool processed = false;
+
+            if (this.processFormHotKeyMutex)
+            {
+                processed = true;
+            }
+            else
+            {
+                this.processFormHotKeyMutex = true;
+
+                try
+                {
+                    if (hotkeyRegistrar != null && hotkeyRegistrar.ContainsKey(keyData))
+                    {
+                        Function<bool, Keys> theDelegate = hotkeyRegistrar[keyData];
+                        Delegate[] invokeList = theDelegate.GetInvocationList();
+
+                        for (int i = invokeList.Length - 1; i >= 0; --i)
+                        {
+                            Function<bool, Keys> invokeMe = (Function<bool, Keys>)invokeList[i];
+                            object concreteTarget = GetConcreteTarget(invokeMe.Target);
+
+                            if (IsTargetFormActive(concreteTarget))
+                            {
+                                bool result = invokeMe(keyData);
+
+                                if (result)
+                                {
+                                    // The callback handled the key.
+                                    processed = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                finally
+                {
+                    this.processFormHotKeyMutex = false;
+                }
+            }
+
+            return processed;
+        }
+
+        private void OnProcessCmdKeyRelay(object sender, FormEx.ProcessCmdKeyEventArgs e)
+        {
+            bool handled = e.Handled;
+
+            if (!handled)
+            {
+                handled = ProcessCmdKeyData(e.KeyData);
+                e.Handled = handled;
+            }
+        }
+
+        public bool RelayProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            return ProcessCmdKeyData(keyData);
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            bool processed = ProcessCmdKeyData(keyData);
+
+            if (!processed)
+            {
+                processed = base.ProcessCmdKey(ref msg, keyData);
+            }
+
+            return processed;
+        }
+
+        private bool ProcessCmdKeyData(Keys keyData)
+        {
+            bool shouldHandle = ShouldProcessHotKey(keyData);
+
+            if (shouldHandle)
+            {
+                bool processed = ProcessFormHotKey(keyData);
+                return processed;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public static void UpdateAllForms()
+        {
+            try
+            {
+                foreach (Form form in Application.OpenForms)
+                {
+                    try
+                    {
+                        form.Update();
+                    }
+
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+
+            catch (InvalidOperationException)
+            {
+            }
+        }
 
         protected override void OnHelpRequested(HelpEventArgs hevent)
         {
@@ -124,6 +566,8 @@ namespace PaintDotNet
             this.formEx.Visible = false;
             DecideOpacitySetting();
             this.ResumeLayout(false);
+
+            this.formEx.ProcessCmdKeyRelay += OnProcessCmdKeyRelay;
         }
 
         protected override void OnLoad(EventArgs e)
@@ -155,7 +599,7 @@ namespace PaintDotNet
                         }
                     }
 
-                    catch
+                    catch (Exception)
                     {
                     }
                 }
@@ -210,7 +654,7 @@ namespace PaintDotNet
 
                 catch (Exception ex)
                 {
-                    Debug.WriteLine(locationStringName + " is invalid: " + locationString + ", exception: " + ex.ToString());
+                    Tracing.Ping(locationStringName + " is invalid: " + locationString + ", exception: " + ex.ToString());
                 }
             }
 
@@ -231,7 +675,7 @@ namespace PaintDotNet
 
                 catch (Exception ex)
                 {
-                    Debug.WriteLine(sizeStringName + " is invalid: " + sizeString + ", exception: " + ex.ToString());
+                    Tracing.Ping(sizeStringName + " is invalid: " + sizeString + ", exception: " + ex.ToString());
                 }
             }
 
@@ -245,7 +689,7 @@ namespace PaintDotNet
                 }
                 else
                 {
-                    Debug.WriteLine("Name property not set for an instance of " + child.GetType().Name + " within " + baseName);
+                    Tracing.Ping("Name property not set for an instance of " + child.GetType().Name + " within " + baseName);
                 }
             }
         }
@@ -262,7 +706,7 @@ namespace PaintDotNet
         
         private void EnableOpacityChangedHandler(object sender, EventArgs e)
         {
-            this.DecideOpacitySetting();
+            DecideOpacitySetting();
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -477,6 +921,19 @@ namespace PaintDotNet
                 default:
                     base.WndProc(ref m);
                     break;
+            }
+        }
+        
+        public SnapManager SnapManager
+        {
+            get
+            {
+                if (this.snapManager == null)
+                {
+                    this.snapManager = new SnapManager();
+                }
+
+                return snapManager;
             }
         }
     }

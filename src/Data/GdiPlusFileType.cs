@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -33,29 +33,26 @@ namespace PaintDotNet
             }
         }
 
-        protected override void OnSave(Document input, System.IO.Stream output, SaveConfigToken token, ProgressEventHandler callback)
+        protected override void OnSave(Document input, Stream output, SaveConfigToken token, Surface scratchSurface, ProgressEventHandler callback)
         {
-            GdiPlusFileType.Save(input, output, this.ImageFormat, callback);
+            GdiPlusFileType.Save(input, output, scratchSurface, this.ImageFormat, callback);
         }
 
-        public static void Save(Document input, Stream output, ImageFormat format, ProgressEventHandler callback)
+        public static void Save(Document input, Stream output, Surface scratchSurface, ImageFormat format, ProgressEventHandler callback)
         {
             // flatten the document
-            using (Surface surface = new Surface(input.Width, input.Height))
+            scratchSurface.Clear(ColorBgra.FromBgra(0, 0, 0, 0));
+
+            using (RenderArgs ra = new RenderArgs(scratchSurface))
             {
-                surface.Clear(ColorBgra.FromBgra(255, 255, 255, 0));
+                input.Render(ra, true);
+            }
 
-                using (RenderArgs ra = new RenderArgs(surface))
-                {
-                    input.Render(ra, true);
-                }
-
-                using (Bitmap bitmap = surface.CreateAliasedBitmap())
-                {
-                    LoadProperties(bitmap, input);
-                    bitmap.Save(output, format);
-                }
-            }    
+            using (Bitmap bitmap = scratchSurface.CreateAliasedBitmap())
+            {
+                LoadProperties(bitmap, input);
+                bitmap.Save(output, format);
+            }
         }
 
         public static void LoadProperties(Image dstImage, Document srcDoc)
@@ -72,8 +69,8 @@ namespace PaintDotNet
                 switch (srcDoc.DpuUnit)
                 {
                     case MeasurementUnit.Centimeter:
-                        dpiX = (float)Document.CentimetersToInches(srcDoc.DpuX);
-                        dpiY = (float)Document.CentimetersToInches(srcDoc.DpuY);
+                        dpiX = (float)Document.DotsPerCmToDotsPerInch(srcDoc.DpuX);
+                        dpiY = (float)Document.DotsPerCmToDotsPerInch(srcDoc.DpuY);
                         break;
 
                     case MeasurementUnit.Inch:
@@ -97,8 +94,8 @@ namespace PaintDotNet
                 {
                     // Ignore error
                 }
-            } 
-            
+            }
+
             Metadata metaData = srcDoc.Metadata;
 
             foreach (string key in metaData.GetKeys(Metadata.ExifSectionName))

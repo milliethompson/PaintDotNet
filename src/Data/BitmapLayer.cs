@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -18,14 +18,29 @@ using System.Threading;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for BitmapLayer.
-    /// </summary>
     [Serializable]
     public class BitmapLayer
         : Layer,
           IDeserializationCallback
     {
+        public override Surface RenderThumbnail(int maxEdgeLength)
+        {
+            Size thumbSize = Utility.ComputeThumbnailSize(this.Size, maxEdgeLength);
+            Surface thumb = new Surface(thumbSize);
+
+            thumb.SuperSamplingFitSurface(this.surface);
+
+            Surface thumb2 = new Surface(thumbSize);
+            thumb2.ClearWithCheckboardPattern();
+            UserBlendOps.NormalBlendOp nbop = new UserBlendOps.NormalBlendOp();
+            nbop.Apply(thumb2, thumb);
+
+            thumb.Dispose();
+            thumb = null;
+
+            return thumb2;
+        }
+
         private bool disposed = false;
         protected override void Dispose(bool disposing)
         {

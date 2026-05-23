@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -15,8 +15,8 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    public class RedEyeRemoveEffectDialog 
-        : PaintDotNet.Effects.TwoAmountsConfigDialog
+    public sealed class RedEyeRemoveEffectDialog 
+        : TwoAmountsConfigDialogBase
     {
         private System.Windows.Forms.Label usageHintLabel;
         private System.ComponentModel.IContainer components = null;
@@ -58,13 +58,13 @@ namespace PaintDotNet.Effects
             // 
             // okButton
             // 
-            this.okButton.Location = new System.Drawing.Point(101, 179);
+            this.okButton.Location = new System.Drawing.Point(101, 211);
             this.okButton.Size = new System.Drawing.Size(81, 23);
             this.okButton.Name = "okButton";
             // 
             // cancelButton
             // 
-            this.cancelButton.Location = new System.Drawing.Point(188, 179);
+            this.cancelButton.Location = new System.Drawing.Point(188, 211);
             this.cancelButton.Size = new System.Drawing.Size(81, 23);
             this.cancelButton.Name = "cancelButton";
             // 
@@ -73,14 +73,14 @@ namespace PaintDotNet.Effects
             this.usageHintLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.usageHintLabel.Location = new System.Drawing.Point(8, 147);
             this.usageHintLabel.Name = "usageHintLabel";
-            this.usageHintLabel.Size = new System.Drawing.Size(240, 32);
+            this.usageHintLabel.Size = new System.Drawing.Size(240, 64);
             this.usageHintLabel.TabIndex = 9;
             // 
             // RedEyeRemoveEffectDialog
             // 
             this.AutoScaleDimensions = new SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(275, 208);
+            this.ClientSize = new System.Drawing.Size(275, 240);
             this.Controls.Add(this.usageHintLabel);
             this.Location = new System.Drawing.Point(0, 0);
             this.Name = "RedEyeRemoveEffectDialog";

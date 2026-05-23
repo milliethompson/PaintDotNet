@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -12,22 +12,21 @@ using System.Drawing;
 
 namespace PaintDotNet
 {
-    /// <summary>
-    /// Summary description for ToolInfo.
-    /// </summary>
     public class ToolInfo
     {
         private string name;
         private string helpText;
-        private Image image;
+        private ImageResource image;
+        private bool skipIfActiveOnHotKey;
         private char hotKey;
         private Type toolType;
+        private ToolBarConfigItems toolBarConfigItems;
 
         public string Name
         {
             get
             {
-                return name;
+                return this.name;
             }
         }
 
@@ -35,15 +34,23 @@ namespace PaintDotNet
         {
             get
             {
-                return helpText;
+                return this.helpText;
             }
         }
 
-        public Image Image
+        public ImageResource Image
         {
             get
             {
-                return image;
+                return this.image;
+            }
+        }
+
+        public bool SkipIfActiveOnHotKey
+        {
+            get
+            {
+                return this.skipIfActiveOnHotKey;
             }
         }
 
@@ -51,7 +58,7 @@ namespace PaintDotNet
         {
             get
             {
-                return hotKey;
+                return this.hotKey;
             }
         }
 
@@ -59,7 +66,15 @@ namespace PaintDotNet
         {
             get
             {
-                return toolType;
+                return this.toolType;
+            }
+        }
+
+        public ToolBarConfigItems ToolBarConfigItems
+        {
+            get
+            {
+                return this.toolBarConfigItems;
             }
         }
 
@@ -72,10 +87,11 @@ namespace PaintDotNet
                 return false;
             }
 
-            return (name == rhs.name) && 
-                   (helpText == rhs.helpText) && 
-                   (hotKey == rhs.hotKey) &&
-                   (toolType == rhs.toolType);
+            return (this.name == rhs.name) &&
+                   (this.helpText == rhs.helpText) &&
+                   (this.hotKey == rhs.hotKey) &&
+                   (this.skipIfActiveOnHotKey == rhs.skipIfActiveOnHotKey) &&
+                   (this.toolType == rhs.toolType);
         }
 
         public override int GetHashCode()
@@ -83,12 +99,21 @@ namespace PaintDotNet
             return name.GetHashCode();
         }
 
-        public ToolInfo(string name, string helpText, Image image, char hotKey, Type toolType)
+        public ToolInfo(
+            string name, 
+            string helpText, 
+            ImageResource image, 
+            char hotKey, 
+            bool skipIfActiveOnHotKey, 
+            ToolBarConfigItems toolBarConfigItems, 
+            Type toolType)
         {
             this.name = name;
             this.helpText = helpText;
-            this.image = (Image)image.Clone();
+            this.image = image;
             this.hotKey = hotKey;
+            this.skipIfActiveOnHotKey = skipIfActiveOnHotKey;
+            this.toolBarConfigItems = toolBarConfigItems;
             this.toolType = toolType;
         }
     }

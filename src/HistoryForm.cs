@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -126,7 +126,9 @@ namespace PaintDotNet
             this.historyControl.Name = "historyControl";
             this.historyControl.Size = new System.Drawing.Size(160, 152);
             this.historyControl.TabIndex = 0;
-            this.historyControl.HistoryChanged += new System.EventHandler(this.historyControl_HistoryChanged);
+            this.historyControl.HistoryChanged += new System.EventHandler(this.HistoryControl_HistoryChanged);
+            this.historyControl.RelinquishFocus += new EventHandler(HistoryControl_RelinquishFocus);
+            this.historyControl.ManagedFocus = true;
             // 
             // imageList
             // 
@@ -149,7 +151,7 @@ namespace PaintDotNet
             this.toolStrip.Size = new System.Drawing.Size(160, 19);
             this.toolStrip.TabIndex = 2;
             this.toolStrip.Text = "toolStrip1";
-            this.toolStrip.RelinquishFocusRequest += new EventHandler(toolStrip_RelinquishFocusRequest);
+            this.toolStrip.RelinquishFocus += new EventHandler(ToolStrip_RelinquishFocus);
             // 
             // rewindButton
             // 
@@ -195,7 +197,7 @@ namespace PaintDotNet
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(160, 158);
+            this.ClientSize = new System.Drawing.Size(165, 158);
             this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.historyControl);
             this.Name = "HistoryForm";
@@ -210,7 +212,12 @@ namespace PaintDotNet
         }
         #endregion
 
-        void toolStrip_RelinquishFocusRequest(object sender, EventArgs e)
+        private void HistoryControl_RelinquishFocus(object sender, EventArgs e)
+        {
+            OnRelinquishFocus();
+        }
+
+        private void ToolStrip_RelinquishFocus(object sender, EventArgs e)
         {
             OnRelinquishFocus();
         }
@@ -290,44 +297,59 @@ namespace PaintDotNet
             PerformLayout();
         }
 
-        private void historyControl_HistoryChanged(object sender, System.EventArgs e)
+        private void UpdateHistoryButtons()
         {
-            OnRelinquishFocus();
-
-            // Find reasons to disable the rewind and undo buttons
-            if (historyControl.HistoryStack.UndoStack.Count <= 1)
+            if (historyControl.HistoryStack == null)
             {
                 rewindButton.Enabled = false;
                 undoButton.Enabled = false;
-            }
-            else
-            {
-                rewindButton.Enabled = true;
-                undoButton.Enabled = true;
-            }
-
-            // Find reasons to disable the redo and fast forward buttons
-            if (historyControl.HistoryStack.RedoStack.Count == 0)
-            {
                 fastForwardButton.Enabled = false;
                 redoButton.Enabled = false;
+                clearHistoryButton.Enabled = false;
             }
             else
             {
-                fastForwardButton.Enabled = true;
-                redoButton.Enabled = true;
-            }
+                // Find reasons to disable the rewind and undo buttons
+                if (historyControl.HistoryStack.UndoStack.Count <= 1)
+                {
+                    rewindButton.Enabled = false;
+                    undoButton.Enabled = false;
+                }
+                else
+                {
+                    rewindButton.Enabled = true;
+                    undoButton.Enabled = true;
+                }
 
-            // Find reasons to disable the "clear history" button
-            if (historyControl.HistoryStack.UndoStack.Count == 1 &&
-                historyControl.HistoryStack.RedoStack.Count == 0)
-            {
-                this.clearHistoryButton.Enabled = false;
+                // Find reasons to disable the redo and fast forward buttons
+                if (historyControl.HistoryStack.RedoStack.Count == 0)
+                {
+                    fastForwardButton.Enabled = false;
+                    redoButton.Enabled = false;
+                }
+                else
+                {
+                    fastForwardButton.Enabled = true;
+                    redoButton.Enabled = true;
+                }
+
+                // Find reasons to disable the "clear history" button
+                if (historyControl.HistoryStack.UndoStack.Count == 1 &&
+                    historyControl.HistoryStack.RedoStack.Count == 0)
+                {
+                    this.clearHistoryButton.Enabled = false;
+                }
+                else
+                {
+                    this.clearHistoryButton.Enabled = true;
+                }
             }
-            else
-            {
-                this.clearHistoryButton.Enabled = true;
-            }
+        }
+
+        private void HistoryControl_HistoryChanged(object sender, System.EventArgs e)
+        {
+            OnRelinquishFocus();
+            UpdateHistoryButtons();
         }
 
         private void OnToolStripButtonClick(object sender, EventArgs e)

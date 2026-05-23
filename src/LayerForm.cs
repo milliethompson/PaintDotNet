@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -24,6 +24,7 @@ namespace PaintDotNet
         private ToolStripButton addNewLayerButton;
         private ToolStripButton deleteLayerButton;
         private ToolStripButton duplicateLayerButton;
+        private ToolStripButton mergeLayerDownButton;
         private ToolStripButton moveLayerUpButton;
         private ToolStripButton moveLayerDownButton;
         private ToolStripButton propertiesButton;
@@ -66,6 +67,7 @@ namespace PaintDotNet
             int moveLayerUpIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersMoveLayerUpIcon.png"), imageList.TransparentColor);
             int moveLayerDownIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersMoveLayerDownIcon.png"), imageList.TransparentColor);
             int duplicateLayerIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuEditCopyIcon.png"), imageList.TransparentColor);
+            int mergeLayerDownIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersMergeLayerDownIcon.png"), imageList.TransparentColor);
             int propertiesIndex = imageList.Images.Add(PdnResources.GetImage("Icons.MenuLayersLayerPropertiesIcon.png"), imageList.TransparentColor);
 
             addNewLayerButton.ImageIndex = addNewLayerIndex;
@@ -73,14 +75,16 @@ namespace PaintDotNet
             moveLayerUpButton.ImageIndex = moveLayerUpIndex;
             moveLayerDownButton.ImageIndex = moveLayerDownIndex;
             duplicateLayerButton.ImageIndex = duplicateLayerIndex;
+            mergeLayerDownButton.ImageIndex = mergeLayerDownIndex;
             propertiesButton.ImageIndex = propertiesIndex;
 
-            layerControl.KeyUp += new KeyEventHandler(layerControl_KeyUp);
+            layerControl.KeyUp += new KeyEventHandler(LayerControl_KeyUp);
 
             this.Text = PdnResources.GetString("LayerForm.Text");
             this.addNewLayerButton.ToolTipText = PdnResources.GetString("LayerForm.AddNewLayerButton.ToolTipText");
             this.deleteLayerButton.ToolTipText = PdnResources.GetString("LayerForm.DeleteLayerButton.ToolTipText");
             this.duplicateLayerButton.ToolTipText = PdnResources.GetString("LayerForm.DuplicateLayerButton.ToolTipText");
+            this.mergeLayerDownButton.ToolTipText = PdnResources.GetString("LayerForm.MergeLayerDownButton.ToolTipText");
             this.moveLayerUpButton.ToolTipText = PdnResources.GetString("LayerForm.MoveLayerUpButton.ToolTipText");
             this.moveLayerDownButton.ToolTipText = PdnResources.GetString("LayerForm.MoveLayerDownButton.ToolTipText");
             this.propertiesButton.ToolTipText = PdnResources.GetString("LayerForm.PropertiesButton.ToolTipText");
@@ -104,9 +108,6 @@ namespace PaintDotNet
             }
         }
 
-        /// <summary>
-        /// Event Handler for New Layer Button Click
-        /// </summary>
         public event EventHandler NewLayerButtonClick;
         private void OnNewLayerButtonClick()
         {
@@ -116,10 +117,6 @@ namespace PaintDotNet
             }
         }
 
-        /// <summary>
-        /// Event Handler for Delete Layer Button Click
-        /// -CT
-        /// </summary>
         public event EventHandler DeleteLayerButtonClick;
         private void OnDeleteLayerButtonClick()
         {
@@ -129,10 +126,6 @@ namespace PaintDotNet
             }
         }
 
-        /// <summary>
-        /// Event Handler for Duplicate Layer Button Click
-        /// -Rick
-        /// </summary>
         public event EventHandler DuplicateLayerButtonClick;
         private void OnDuplicateLayerButtonClick()
         {
@@ -142,10 +135,15 @@ namespace PaintDotNet
             }
         }
 
-        /// <summary>
-        /// Event Handler for Move Layer Up Button Click
-        /// -CT
-        /// </summary>
+        public event EventHandler MergeLayerDownClick;
+        private void OnMergeLayerDownButtonClick()
+        {
+            if (MergeLayerDownClick != null)
+            {
+                MergeLayerDownClick(this, EventArgs.Empty);
+            }
+        }
+
         public event EventHandler MoveLayerUpButtonClick;
         private void OnMoveLayerUpButtonClick()
         {
@@ -155,10 +153,6 @@ namespace PaintDotNet
             }
         }
 
-        /// <summary>
-        /// Event handler for move layer down button clicked
-        /// -Ct
-        /// </summary>
         public event EventHandler MoveLayerDownButtonClick;
         private void OnMoveLayerDownButtonClick()
         {
@@ -168,9 +162,6 @@ namespace PaintDotNet
             }
         }
 
-        /// <summary>
-        /// Event handler for when the properties button is clicked
-        /// </summary>
         public event EventHandler PropertiesButtonClick;
         private void OnPropertiesButtonClick()
         {
@@ -180,9 +171,6 @@ namespace PaintDotNet
             }
         }
 
-        /// <summary>
-        /// Simulates pressing on the New Layer button
-        /// </summary>
         public void PerformNewLayerClick()
         {
             this.OnNewLayerButtonClick();
@@ -213,32 +201,32 @@ namespace PaintDotNet
             this.OnPropertiesButtonClick();
         }
 
-        private void newLayerButton_Click(object sender, System.EventArgs e)
+        private void NewLayerButton_Click(object sender, System.EventArgs e)
         {
             OnNewLayerButtonClick();
         }
 
-        private void deleteLayerButton_Click(object sender, System.EventArgs e)
+        private void DeleteLayerButton_Click(object sender, System.EventArgs e)
         {
             OnDeleteLayerButtonClick();
         }
 
-        private void duplicateLayerButton_Click(object sender, System.EventArgs e)
+        private void DuplicateLayerButton_Click(object sender, System.EventArgs e)
         {
             OnDuplicateLayerButtonClick();
         }
 
-        private void moveUpButton_Click(object sender, System.EventArgs e)
+        private void MoveUpButton_Click(object sender, System.EventArgs e)
         {
             OnMoveLayerUpButtonClick();
         }
 
-        private void moveDownButton_Click(object sender, System.EventArgs e)
+        private void MoveDownButton_Click(object sender, System.EventArgs e)
         {
             OnMoveLayerDownButtonClick();
         }
 
-        private void propertiesButton_Click(object sender, System.EventArgs e)
+        private void PropertiesButton_Click(object sender, System.EventArgs e)
         {
             OnPropertiesButtonClick();
         }
@@ -268,15 +256,16 @@ namespace PaintDotNet
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.layerControl = new PaintDotNet.LayerControl();
-            this.imageList = new System.Windows.Forms.ImageList(this.components);
-            this.toolStrip = new PaintDotNet.SystemLayer.ToolStripEx();
-            this.addNewLayerButton = new System.Windows.Forms.ToolStripButton();
-            this.deleteLayerButton = new System.Windows.Forms.ToolStripButton();
-            this.duplicateLayerButton = new System.Windows.Forms.ToolStripButton();
-            this.moveLayerUpButton = new System.Windows.Forms.ToolStripButton();
-            this.moveLayerDownButton = new System.Windows.Forms.ToolStripButton();
-            this.propertiesButton = new System.Windows.Forms.ToolStripButton();
+            this.layerControl = new LayerControl();
+            this.imageList = new ImageList(this.components);
+            this.toolStrip = new SystemLayer.ToolStripEx();
+            this.addNewLayerButton = new ToolStripButton();
+            this.deleteLayerButton = new ToolStripButton();
+            this.duplicateLayerButton = new ToolStripButton();
+            this.mergeLayerDownButton = new ToolStripButton();
+            this.moveLayerUpButton = new ToolStripButton();
+            this.moveLayerDownButton = new ToolStripButton();
+            this.propertiesButton = new ToolStripButton();
             this.toolStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -288,10 +277,11 @@ namespace PaintDotNet
             this.layerControl.Name = "layerControl";
             this.layerControl.Size = new System.Drawing.Size(160, 158);
             this.layerControl.TabIndex = 5;
-            this.layerControl.Workspace = null;
-            this.layerControl.SelectedLayerChanged += new PaintDotNet.LayerEventHandler(this.layerControl_ClickOnLayer);
-            this.layerControl.ClickedOnLayer += new PaintDotNet.LayerEventHandler(this.layerControl_ClickOnLayer);
-            this.layerControl.DoubleClickedOnLayer += new PaintDotNet.LayerEventHandler(this.layerControl_DoubleClickedOnLayer);
+            this.layerControl.AppWorkspace = null;
+            this.layerControl.ActiveLayerChanged += this.LayerControl_ClickOnLayer;
+            this.layerControl.ClickedOnLayer += this.LayerControl_ClickOnLayer;
+            this.layerControl.DoubleClickedOnLayer += this.LayerControl_DoubleClickedOnLayer;
+            this.layerControl.RelinquishFocus += new EventHandler(LayerControl_RelinquishFocus);
             // 
             // imageList
             // 
@@ -307,6 +297,7 @@ namespace PaintDotNet
                                                                                         this.addNewLayerButton,
                                                                                         this.deleteLayerButton,
                                                                                         this.duplicateLayerButton,
+                                                                                        this.mergeLayerDownButton,
                                                                                         this.moveLayerUpButton,
                                                                                         this.moveLayerDownButton,
                                                                                         this.propertiesButton
@@ -317,7 +308,7 @@ namespace PaintDotNet
             this.toolStrip.Size = new System.Drawing.Size(160, 26);
             this.toolStrip.TabIndex = 7;
             this.toolStrip.TabStop = true;
-            this.toolStrip.RelinquishFocusRequest += new EventHandler(toolStrip_RelinquishFocusRequest);
+            this.toolStrip.RelinquishFocus += new EventHandler(ToolStrip_RelinquishFocus);
             // 
             // addNewLayerButton
             // 
@@ -342,6 +333,12 @@ namespace PaintDotNet
             this.duplicateLayerButton.Name = "duplicateLayerButton";
             this.duplicateLayerButton.Size = new System.Drawing.Size(23, 4);
             this.duplicateLayerButton.Click += new System.EventHandler(this.OnToolStripButtonClick);
+            //
+            // mergeLayerDownButton
+            //
+            this.mergeLayerDownButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            this.mergeLayerDownButton.Name = "mergeLayerDownButton";
+            this.mergeLayerDownButton.Click += new EventHandler(OnToolStripButtonClick);
             // 
             // moveLayerUpButton
             // 
@@ -372,10 +369,10 @@ namespace PaintDotNet
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.AutoValidate = System.Windows.Forms.AutoValidate.EnablePreventFocusChange;
-            this.ClientSize = new System.Drawing.Size(160, 158);
+            this.ClientSize = new System.Drawing.Size(165, 158);
             this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.layerControl);
-            this.Name = "LayerForm";
+            this.Name = "LayersForm";
             this.Controls.SetChildIndex(this.layerControl, 0);
             this.Controls.SetChildIndex(this.toolStrip, 0);
             this.toolStrip.ResumeLayout(false);
@@ -384,64 +381,95 @@ namespace PaintDotNet
             this.PerformLayout();
 
         }
+
         #endregion
 
-        void toolStrip_RelinquishFocusRequest(object sender, EventArgs e)
+        private void LayerControl_RelinquishFocus(object sender, EventArgs e)
+        {
+            OnRelinquishFocus();
+        }
+
+        private void ToolStrip_RelinquishFocus(object sender, EventArgs e)
         {
             OnRelinquishFocus();
         }
 
         private void DetermineButtonEnableStates()
         {
-            DetermineButtonEnableStates(this.layerControl.SelectedLayer);
+            DetermineButtonEnableStates(this.layerControl.ActiveLayerIndex);
         }
 
         private void DetermineButtonEnableStates(int index)
         {
-            // Find a reason to disable the Move Layer Down button
-            if (index == 0)
+            if (layerControl.AppWorkspace == null)
             {
-                moveLayerDownButton.Enabled = false;
+                return;
+            }
+
+            // Find a reason to disable the Move Layer Down button
+            if (layerControl.AppWorkspace.ActiveDocumentWorkspace == null ||
+                layerControl.AppWorkspace.ActiveDocumentWorkspace.Document == null ||
+                index == 0)
+            {
+                this.moveLayerDownButton.Enabled = false;
             }
             else
             {
-                moveLayerDownButton.Enabled = true;
+                this.moveLayerDownButton.Enabled = true;
             }
 
             // Find a reason to disable the Move Layer Up button
-            if (index == (layerControl.Workspace.Document.Layers.Count - 1))
+            if (layerControl.AppWorkspace.ActiveDocumentWorkspace == null ||
+                layerControl.AppWorkspace.ActiveDocumentWorkspace.Document == null ||
+                index == (layerControl.AppWorkspace.ActiveDocumentWorkspace.Document.Layers.Count - 1))
             {
-                moveLayerUpButton.Enabled = false;
+                this.moveLayerUpButton.Enabled = false;
             }
             else
             {
-                moveLayerUpButton.Enabled = true;
+                this.moveLayerUpButton.Enabled = true;
             }
 
             // Find reasons to disable the Delete Layer button
-            if (layerControl.Workspace.Document.Layers.Count <= 1)
+            if (layerControl.AppWorkspace.ActiveDocumentWorkspace == null ||
+                layerControl.AppWorkspace.ActiveDocumentWorkspace.Document == null ||
+                layerControl.AppWorkspace.ActiveDocumentWorkspace.Document.Layers.Count <= 1)
             {
-                deleteLayerButton.Enabled = false;
+                this.deleteLayerButton.Enabled = false;
             }
             else
             {
-                deleteLayerButton.Enabled = true;
+                this.deleteLayerButton.Enabled = true;
+            }
+
+            // Find reasons to disable the Merge Layer Down button
+            if (layerControl.AppWorkspace.ActiveDocumentWorkspace == null ||
+                layerControl.AppWorkspace.ActiveDocumentWorkspace.Document == null ||
+                layerControl.AppWorkspace.ActiveDocumentWorkspace.ActiveLayerIndex == 0 ||
+                layerControl.AppWorkspace.ActiveDocumentWorkspace.Document.Layers.Count < 2)
+            {
+                this.mergeLayerDownButton.Enabled = false;
+            }
+            else
+            {
+                this.mergeLayerDownButton.Enabled = true;
             }
         }
         
-        private void layerControl_ClickOnLayer(object sender, PaintDotNet.LayerEventArgs ce)
+        private void LayerControl_ClickOnLayer(object sender, EventArgs<Layer> ce)
         {
-            int index = layerControl.Workspace.Document.Layers.IndexOf(ce.Layer);
+            // TODO: whoa there, enough nesting?
+            int index = layerControl.AppWorkspace.ActiveDocumentWorkspace.Document.Layers.IndexOf(ce.Data);
             DetermineButtonEnableStates(index);
         }
 
-        private void layerControl_DoubleClickedOnLayer(object sender, PaintDotNet.LayerEventArgs ce)
+        private void LayerControl_DoubleClickedOnLayer(object sender, EventArgs<Layer> ce)
         {
             OnPropertiesButtonClick();
             this.OnRelinquishFocus();
         }
 
-        private void layerControl_KeyUp(object sender, KeyEventArgs e)
+        private void LayerControl_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Delete && e.Modifiers == Keys.None)
             {
@@ -453,35 +481,39 @@ namespace PaintDotNet
 
         private void OnToolStripButtonClick(object sender, EventArgs e)
         {
-            SystemLayer.UI.SetControlRedraw(this.layerControl, false);
+            SystemLayer.UI.SuspendControlPainting(this.layerControl);
 
             if (sender == addNewLayerButton)
             {
-                this.OnNewLayerButtonClick();
+                OnNewLayerButtonClick();
             }
             else if (sender == deleteLayerButton)
             {
-                this.OnDeleteLayerButtonClick();
+                OnDeleteLayerButtonClick();
             }
             else if (sender == duplicateLayerButton)
             {
-                this.OnDuplicateLayerButtonClick();
+                OnDuplicateLayerButtonClick();
+            }
+            else if (sender == mergeLayerDownButton)
+            {
+                OnMergeLayerDownButtonClick();
             }
             else if (sender == moveLayerUpButton)
             {
-                this.OnMoveLayerUpButtonClick();
+                OnMoveLayerUpButtonClick();
             }
             else if (sender == moveLayerDownButton)
             {
-                this.OnMoveLayerDownButtonClick();
+                OnMoveLayerDownButtonClick();
             }
 
-            SystemLayer.UI.SetControlRedraw(this.layerControl, true);
+            SystemLayer.UI.ResumeControlPainting(this.layerControl);
             this.layerControl.Invalidate(true);
 
             if (sender == propertiesButton)
             {
-                this.OnPropertiesButtonClick();
+                OnPropertiesButtonClick();
             }
 
             DetermineButtonEnableStates();

@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace PaintDotNet.Effects
 {
-    public unsafe class ZoomBlurEffect
+    public sealed class ZoomBlurEffect
         : Effect
     {
         public static string StaticName
@@ -24,18 +24,17 @@ namespace PaintDotNet.Effects
             }
         }
 
-        public static Image StaticImage
+        public static ImageResource StaticImage
         {
             get
             {
-                return PdnResources.GetImage("Icons.ZoomBlurEffect.png");
+                return ImageResource.Get("Icons.ZoomBlurEffect.png");
             }
         }
 
         public ZoomBlurEffect()
             : base(StaticName,
-                   StaticImage,
-                   Keys.None,
+                   StaticImage.Reference,
                    PdnResources.GetString("Effects.Blurring.Submenu.Name"),
                    EffectDirectives.None,
                    true)
@@ -56,7 +55,7 @@ namespace PaintDotNet.Effects
             return oacd;
         }
 
-        public override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
+        public unsafe override void Render(EffectConfigToken parameters, RenderArgs dstArgs, RenderArgs srcArgs, 
             Rectangle[] rois, int startIndex, int length)
         {
             AmountEffectConfigToken token = (AmountEffectConfigToken)parameters;
@@ -103,7 +102,7 @@ namespace PaintDotNet.Effects
                             int u = (int)(fx + fcx + 32768 >> 16);
                             int v = (int)(fy + fcy + 32768 >> 16);
 
-                            ColorBgra *srcPtr2 = src.GetPointAddress(u, v);
+                            ColorBgra *srcPtr2 = src.GetPointAddressUnchecked(u, v);
 
                             sr += srcPtr2->R * srcPtr2->A;
                             sg += srcPtr2->G * srcPtr2->A;

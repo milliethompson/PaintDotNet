@@ -1,150 +1,907 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Data;
 using PaintDotNet.Effects;
+using PaintDotNet.HistoryFunctions;
+using PaintDotNet.HistoryMementos;
 using PaintDotNet.SystemLayer;
+using PaintDotNet.Tools;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Serialization;
+using System.Security;
 using System.Text;
 using System.Windows.Forms;
 
 namespace PaintDotNet
 {
     /// <summary>
-    /// Summary description for DocumentWorkspace.
+    /// Builds on DocumentView by adding application-specific elements.
     /// </summary>
     public class DocumentWorkspace
-        : UserControl
+        : DocumentView,
+          IHistoryWorkspace,
+          IThumbnailProvider
     {
-        private sealed class OurDocumentView
-            : DocumentView
-        {
-            private DocumentWorkspace parent;
-            public DocumentWorkspace WorkspaceParent
-            {
-                get
-                {
-                    return this.parent;
-                }
+        public static readonly DateTime NeverSavedDateTime = DateTime.MinValue;
 
-                set
-                {
-                    this.parent = value;
-                }
+        private static Type[] tools; // TODO: move to Tool class?
+        private static ToolInfo[] toolInfos;
+
+        private ZoomBasis zoomBasis;
+        private AppWorkspace appWorkspace;
+        private string filePath = null;
+        private FileType fileType = null;
+        private SaveConfigToken saveConfigToken = null;
+        private Selection selection = new Selection();
+        private Surface scratchSurface = null;
+        private SelectionRenderer selectionRenderer;
+        private Hashtable staticToolData = Hashtable.Synchronized(new Hashtable());
+        private Tool activeTool;
+        private Type previousActiveToolType;
+        private Type preNullTool = null;
+        private int nullToolCount = 0;
+        private int zoomChangesCount = 0;
+        private HistoryStack history;
+        private Layer activeLayer;
+        private System.Windows.Forms.Timer toolPulseTimer;
+        private DateTime lastSaveTime = NeverSavedDateTime;
+        private int suspendToolCursorChanges = 0;
+        private ImageResource statusIcon = null;
+        private string statusText = null;
+
+        private readonly string contextStatusBarWithAngleFormat = PdnResources.GetString("StatusBar.Context.SelectedArea.Text.WithAngle.Format");
+        private readonly string contextStatusBarFormat = PdnResources.GetString("StatusBar.Context.SelectedArea.Text.Format");
+
+        public void SuspendToolCursorChanges()
+        {
+            ++this.suspendToolCursorChanges;
+        }
+
+        public void ResumeToolCursorChanges()
+        {
+            --this.suspendToolCursorChanges;
+
+            if (this.suspendToolCursorChanges <= 0 && this.activeTool != null)
+            {
+                Cursor = this.activeTool.Cursor;
+            }
+        }
+        
+        public ImageResource StatusIcon
+        {
+            get
+            {
+                return this.statusIcon;
+            }
+        }
+
+        public string StatusText
+        {
+            get
+            {
+                return this.statusText;
+            }
+        }
+
+        public void SetStatus(string newStatusText, ImageResource newStatusIcon)
+        {
+            this.statusText = newStatusText;
+            this.statusIcon = newStatusIcon;
+            OnStatusChanged();
+        }
+
+        public event EventHandler StatusChanged;
+        protected virtual void OnStatusChanged()
+        {
+            if (StatusChanged != null)
+            {
+                StatusChanged(this, EventArgs.Empty);
+            }
+        }
+
+        static DocumentWorkspace()
+        {
+            InitializeTools();
+            InitializeToolInfos();
+        }
+
+        public DateTime LastSaveTime
+        {
+            get
+            {
+                return this.lastSaveTime;
+            }
+        }
+
+        public bool IsZoomChanging
+        {
+            get
+            {
+                return (this.zoomChangesCount > 0);
+            }
+        }
+
+        private void BeginZoomChanges()
+        {
+            ++this.zoomChangesCount;
+        }
+
+        private void EndZoomChanges()
+        {
+            --this.zoomChangesCount;
+        }
+
+        protected override void OnSizeChanged(EventArgs e)
+        {
+            PerformLayout();
+            base.OnSizeChanged(e);
+        }
+
+        protected override void OnLayout(LayoutEventArgs e)
+        {
+            if (this.zoomBasis == ZoomBasis.FitToWindow)
+            {
+                ZoomToWindow();
+
+                // This bizarre ordering of setting PanelAutoScroll prevents some very weird layout/scroll-without-scrollbars stuff.
+                PanelAutoScroll = true;
+                PanelAutoScroll = false;
             }
 
-            protected override bool QueryNewZoomCenterPoint(ref PointF newCenterPt)
+            base.OnLayout(e);
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            if (this.zoomBasis == ZoomBasis.FitToWindow)
             {
-                DocumentEnvironment env = parent.Environment;
+                PerformLayout();
+            }
 
-                if (!env.Selection.IsEmpty) 
+            base.OnResize(e);
+        }
+
+        public DocumentWorkspace()
+        {
+            this.activeLayer = null;
+            this.history = new HistoryStack(this);
+
+            InitializeComponent();
+
+            // hook the DocumentWorkspace with its selectedPath ...
+            this.selectionRenderer = new SelectionRenderer(this.RendererList, this.Selection, this);
+            this.RendererList.Add(this.selectionRenderer, true);
+            this.selectionRenderer.EnableOutlineAnimation = true;
+            this.selectionRenderer.EnableSelectionTinting = false;
+            this.selectionRenderer.EnableSelectionOutline = true;
+
+            this.selection.Changed += new EventHandler(Selection_Changed);
+
+            this.zoomBasis = ZoomBasis.FitToWindow;
+        }
+
+        protected override void OnUnitsChanged()
+        {
+            if (!Selection.IsEmpty)
+            {
+                UpdateSelectionInfoInStatusBar();
+            }
+
+            base.OnUnitsChanged();
+        }
+
+        public void UpdateStatusBarToToolHelpText(Tool tool)
+        {
+            if (tool == null)
+            {
+                SetStatus(string.Empty, null);
+            }
+            else
+            {
+                string toolName = tool.Name;
+                string helpText = tool.HelpText;
+
+                string contextFormat = PdnResources.GetString("StatusBar.Context.Help.Text.Format");
+                string contextText = string.Format(contextFormat, toolName, helpText);
+
+                SetStatus(contextText, ImageResource.Get("Icons.MenuHelpHelpTopicsIcon.png"));
+            }
+        }
+
+        public void UpdateStatusBarToToolHelpText()
+        {
+            UpdateStatusBarToToolHelpText(this.activeTool);
+        }
+
+        private void UpdateSelectionInfoInStatusBar()
+        {
+            if (Selection.IsEmpty)
+            {
+                UpdateStatusBarToToolHelpText();
+            }
+            else
+            {
+                string newStatusText;
+
+                int area = 0;
+                Rectangle bounds;
+
+                using (PdnRegion tempSelection = Selection.CreateRegionRaw())
                 {
-                    using (PdnRegion selectedRegion = env.Selection.CreateRegion())
-                    {
-                        Rectangle selectionBounds = selectedRegion.GetBoundsInt();
+                    tempSelection.Intersect(Document.Bounds);
+                    bounds = Utility.GetRegionBounds(tempSelection);
+                    area = tempSelection.GetArea();
+                }
 
-                        PointF selectionCenter = new PointF((selectionBounds.Left + selectionBounds.Right) / 2,
-                            (selectionBounds.Top + selectionBounds.Bottom) / 2);
+                string unitsAbbreviationXY;
+                string xString;
+                string yString;
+                string unitsAbbreviationWH;
+                string widthString;
+                string heightString;
 
-                        newCenterPt = selectionCenter;
-                    }
+                Document.CoordinatesToStrings(Units, bounds.X, bounds.Y, out xString, out yString, out unitsAbbreviationXY);
+                Document.CoordinatesToStrings(Units, bounds.Width, bounds.Height, out widthString, out heightString, out unitsAbbreviationWH);
 
-                    return true;
+                NumberFormatInfo nfi = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
+
+                string areaString;
+                if (this.Units == MeasurementUnit.Pixel)
+                {
+                    nfi.NumberDecimalDigits = 0;
+                    areaString = area.ToString("N", nfi);
                 }
                 else
                 {
-                    return false;
+                    nfi.NumberDecimalDigits = 2;
+                    double areaD = Document.PixelAreaToPhysicalArea(area, this.Units);
+                    areaString = areaD.ToString("N", nfi);
+                }
+
+                string pluralUnits = PdnResources.GetString("MeasurementUnit." + this.Units.ToString() + ".Plural");
+                MoveToolBase moveTool = Tool as MoveToolBase;
+
+                if (moveTool != null && moveTool.HostShouldShowAngle)
+                {
+                    NumberFormatInfo nfi2 = (NumberFormatInfo)nfi.Clone();
+                    nfi2.NumberDecimalDigits = 2;
+                    float angle = moveTool.HostAngle;
+
+                    while (angle > 180.0f)
+                    {
+                        angle -= 360.0f;
+                    }
+
+                    while (angle < -180.0f)
+                    {
+                        angle += 360.0f;
+                    }
+
+                    newStatusText = string.Format(
+                        contextStatusBarWithAngleFormat,
+                        xString,
+                        unitsAbbreviationXY,
+                        yString,
+                        unitsAbbreviationXY,
+                        widthString,
+                        unitsAbbreviationWH,
+                        heightString,
+                        unitsAbbreviationWH,
+                        areaString,
+                        pluralUnits.ToLower(),
+                        moveTool.HostAngle.ToString("N", nfi2));
+                }
+                else
+                {
+                    newStatusText = string.Format(
+                        contextStatusBarFormat,
+                        xString,
+                        unitsAbbreviationXY,
+                        yString,
+                        unitsAbbreviationXY,
+                        widthString,
+                        unitsAbbreviationWH,
+                        heightString,
+                        unitsAbbreviationWH,
+                        areaString,
+                        pluralUnits.ToLower());
+                }
+
+                SetStatus(newStatusText, ImageResource.Get("Icons.SelectionIcon.png"));
+            }
+        }
+
+        private void Selection_Changed(object sender, EventArgs e)
+        {
+            UpdateRulerSelectionTinting();
+            UpdateSelectionInfoInStatusBar();
+        }
+
+        private void InitializeComponent()
+        {
+            this.toolPulseTimer = new System.Windows.Forms.Timer();
+            this.toolPulseTimer.Interval = 16;
+            this.toolPulseTimer.Tick += new EventHandler(this.ToolPulseTimer_Tick);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (this.activeTool != null)
+                {
+                    this.activeTool.Dispose();
+                    this.activeTool = null;
+                }
+            }
+
+            base.Dispose(disposing);
+        }
+
+        public void PerformActionAsync(DocumentWorkspaceAction action)
+        {
+            BeginInvoke(new Procedure<DocumentWorkspaceAction>(PerformAction), new object[] { action });
+        }
+
+        public void PerformAction(DocumentWorkspaceAction action)
+        {
+            bool nullTool = false;
+
+            if ((action.ActionFlags & ActionFlags.KeepToolActive) != ActionFlags.KeepToolActive)
+            {
+                PushNullTool();
+                Update();
+                nullTool = true;
+            }
+
+            try
+            {
+                using (new WaitCursorChanger(this))
+                {
+                    HistoryMemento ha = action.PerformAction(this);
+
+                    if (ha != null)
+                    {
+                        History.PushNewMemento(ha);
+                    }
+                }
+            }
+
+            finally
+            {
+                if (nullTool)
+                {
+                    PopNullTool();
                 }
             }
         }
 
-        private Document document = null;
-        private string documentFileName = null;
-        private FileType documentFileType = null;
-        private SaveConfigToken documentSaveToken = null;
-
-        private Surface scratch = null;
-        private HistoryStack history;
-        private Layer activeLayer;
-        private DocumentEnvironment environment;
-
-        private ToolInfo[] toolInfos;
-        private Type[] tools;
-        private Type[] effects = null;
-        private OurDocumentView documentView;
-        private SelectionRenderer selectionRenderer;
-
-        private EventHandler zoomChangedDelegate;
-
-        private EventHandler selectedPathChangingDelegate;
-        private EventHandler selectedPathChangedDelegate;
-
-        private EventHandler foreColorChangedDelegate;
-        private EventHandler backColorChangedDelegate;
-        private EventHandler shapeDrawTypeChangedDelegate;
-        private EventHandler alphaBlendingChangedDelegate;
-
-        private IndexEventHandler layerRemovingDelegate;
-        private IndexEventHandler layerRemovedDelegate;
-        private IndexEventHandler layerInsertedDelegate;
-        private PropertyEventHandler layerPropertyChangingDelegate;
-        private PropertyEventHandler layerPropertyChangedDelegate;
-
-        private DocumentWidgets widgets;
-
-        private MainToolBarForm mainToolBarForm;
-        private LayerForm layerForm;
-        private HistoryForm historyForm;
-        private System.Windows.Forms.Timer toolPulseTimer;
-        private ColorsForm colorsForm;
-
-        private const ToolStripGripStyle toolStripsGripStyle = ToolStripGripStyle.Hidden;
-        private CommonActionsStrip commonActionsStrip;
-        private ViewConfigStrip viewConfigStrip;
-        private DrawConfigStrip drawConfigStrip;
-        private TextConfigStrip textConfigStrip;
-
-        private ToolStripContainer toolStripContainer;
-
-        // DocumentChanging
-        // This event is raised right before the 'document' is changed via the 'Document' property.
-        public event EventHandler DocumentChanging;
-
-        protected void OnDocumentChanging()
+        /// <summary>
+        /// Executes a HistoryFunction in the context of this DocumentWorkspace.
+        /// </summary>
+        /// <param name="function">The HistoryFunction to execute.</param>
+        /// <remarks>
+        /// Depending on the HistoryFunction, the currently active tool may be refreshed.
+        /// </remarks>
+        public HistoryFunctionResult ExecuteFunction(HistoryFunction function)
         {
-            if (DocumentChanging != null)
+            HistoryFunctionResult result;
+
+            bool nullTool = false;
+
+            if ((function.ActionFlags & ActionFlags.KeepToolActive) != ActionFlags.KeepToolActive)
             {
-                DocumentChanging(this, EventArgs.Empty);
+                PushNullTool();
+                Update();
+                nullTool = true;
+            }
+
+            try
+            {
+                using (new WaitCursorChanger(this))
+                {
+                    HistoryMemento hm = null;
+                    string errorText;
+
+                    try
+                    {
+                        bool cancelled = false;
+
+                        if ((function.ActionFlags & ActionFlags.ReportsProgress) != ActionFlags.ReportsProgress)
+                        {
+                            hm = function.Execute(this);
+                        }
+                        else
+                        {
+                            ProgressDialog pd = new ProgressDialog();
+                            bool pdLoaded = false;
+                            bool closeAtLoad = false;
+
+                            EventHandler loadCallback =
+                                delegate(object sender, EventArgs e)
+                                {
+                                    pdLoaded = true;
+
+                                    if (closeAtLoad)
+                                    {
+                                        pd.Close();
+                                    }
+                                };
+
+                            ProgressEventHandler progressCallback =
+                                delegate(object sender, ProgressEventArgs e)
+                                {
+                                    if (pdLoaded)
+                                    {
+                                        double newValue = Utility.Clamp(e.Percent, 0.0, 100.0);
+                                        pd.Value = newValue;
+                                    }
+                                };
+
+                            EventHandler<HistoryMemento> finishedCallback =
+                                delegate(object sender, EventArgs<HistoryMemento> e)
+                                {
+                                    hm = e.Data;
+
+                                    if (pdLoaded)
+                                    {
+                                        // TODO: fix ProgressDialog's very weird interface
+                                        pd.ExternalFinish();
+                                        pd.Close();
+                                    }
+                                    else
+                                    {
+                                        closeAtLoad = true;
+                                    }
+                                };
+
+                            EventHandler cancelClickCallback =
+                                delegate(object sender, EventArgs e)
+                                {
+                                    cancelled = true;
+                                    function.RequestCancel();
+                                    //pd.Cancellable = false;
+                                };
+
+                            pd.Text = PdnInfo.GetBareProductName();
+                            pd.Description = PdnResources.GetString("ExecuteFunction.ProgressDialog.Description.Text");
+                            pd.Load += loadCallback;
+                            pd.Cancellable = false; //function.Cancellable;
+                            pd.CancelClick += cancelClickCallback;
+                            function.Progress += progressCallback;
+                            function.BeginExecute(this, this, finishedCallback);
+                            pd.ShowDialog(this);
+                            pd.Dispose();
+                        }
+
+                        if (hm == null && !cancelled)
+                        {
+                            result = HistoryFunctionResult.SuccessNoOp;
+                        }
+                        else if (hm == null && cancelled)
+                        {
+                            result = HistoryFunctionResult.Cancelled;
+                        }
+                        else
+                        {
+                            result = HistoryFunctionResult.Success;
+                        }
+
+                        errorText = null;
+                    }
+
+                    catch (HistoryFunctionNonFatalException hfnfex)
+                    {
+                        if (hfnfex.InnerException is OutOfMemoryException)
+                        {
+                            result = HistoryFunctionResult.OutOfMemory;
+                        }
+                        else
+                        {
+                            result = HistoryFunctionResult.NonFatalError;
+                        }
+
+                        if (hfnfex.LocalizedErrorText != null)
+                        {
+                            errorText = hfnfex.LocalizedErrorText;
+                        }
+                        else
+                        {
+                            if (hfnfex.InnerException is OutOfMemoryException)
+                            {
+                                errorText = PdnResources.GetString("ExecuteFunction.GenericOutOfMemory");
+                            }
+                            else
+                            {
+                                errorText = PdnResources.GetString("ExecuteFunction.GenericError");
+                            }
+                        }
+                    }
+
+                    if (errorText != null)
+                    {
+                        Utility.ErrorBox(this, errorText);
+                    }
+
+                    if (hm != null)
+                    {
+                        History.PushNewMemento(hm);
+                    }
+                }
+            }
+
+            finally
+            {
+                if (nullTool)
+                {
+                    PopNullTool();
+                }
+            }
+
+            return result;
+        }
+
+        public override void ZoomIn()
+        {
+            this.ZoomBasis = ZoomBasis.ScaleFactor;
+            base.ZoomIn();
+        }
+
+        public override void ZoomIn(double factor)
+        {
+            this.ZoomBasis = ZoomBasis.ScaleFactor;
+            base.ZoomIn(factor);
+        }
+
+        public override void ZoomOut()
+        {
+            this.ZoomBasis = ZoomBasis.ScaleFactor;
+            base.ZoomOut();
+        }
+
+        public override void ZoomOut(double factor)
+        {
+            this.ZoomBasis = ZoomBasis.ScaleFactor;
+            base.ZoomOut(factor);
+        }
+
+        // TODO:
+        /// <summary>
+        /// Same as PerformAction(Type) except it lets you rename the HistoryMemento's name.
+        /// </summary>
+        /// <param name="actionType"></param>
+        /// <param name="newName"></param>
+        public void PerformAction(Type actionType, string newName, ImageResource icon)
+        {
+            using (new WaitCursorChanger(this))
+            {
+                ConstructorInfo ci = actionType.GetConstructor(new Type[] { typeof(DocumentWorkspace) });
+                object actionAsObject = ci.Invoke(new object[] { this });
+                DocumentWorkspaceAction action = actionAsObject as DocumentWorkspaceAction;
+
+                if (action != null)
+                {
+                    bool nullTool = false;
+
+                    if ((action.ActionFlags & ActionFlags.KeepToolActive) != ActionFlags.KeepToolActive)
+                    {
+                        PushNullTool();
+                        Update();
+                        nullTool = true;
+                    }
+
+                    try
+                    {
+                        HistoryMemento ha = action.PerformAction(this);
+
+                        if (ha != null)
+                        {
+                            ha.Name = newName;
+                            ha.Image = icon;
+                            History.PushNewMemento(ha);
+                        }
+                    }
+
+                    finally
+                    {
+                        if (nullTool)
+                        {
+                            PopNullTool();
+                        }
+                    }
+                }
+            }
+        }
+        
+        public event EventHandler ZoomBasisChanging;
+        protected virtual void OnZoomBasisChanging()
+        {
+            if (ZoomBasisChanging != null)
+            {
+                ZoomBasisChanging(this, EventArgs.Empty);
             }
         }
 
-        // DocumentChanged
-        // This event is raised right after the 'document' is changed via the 'Document' property.
-        public event EventHandler DocumentChanged;
-        protected void OnDocumentChanged()
+        public event EventHandler ZoomBasisChanged;
+        protected virtual void OnZoomBasisChanged()
         {
-            if (DocumentChanged != null)
+            if (ZoomBasisChanged != null)
             {
-                DocumentChanged(this, EventArgs.Empty);
+                ZoomBasisChanged(this, EventArgs.Empty);
             }
         }
 
-        // ActiveLayerChanging
-        // This event is raised right before the 'Layer' is changed via the 'Layer' property.
+        public ZoomBasis ZoomBasis
+        {
+            get
+            {
+                return this.zoomBasis;
+            }
+
+            set
+            {
+                if (this.zoomBasis != value)
+                {
+                    OnZoomBasisChanging();
+                    this.zoomBasis = value;
+
+                    switch (this.zoomBasis)
+                    {
+                        case ZoomBasis.FitToWindow:
+                            ZoomToWindow();
+
+                            // Enable PanelAutoScroll only long enough to recenter the view
+                            PanelAutoScroll = true;
+                            PanelAutoScroll = false;
+
+                            // this would be unset by the scalefactor changes in ZoomToWindow
+                            this.zoomBasis = ZoomBasis.FitToWindow;
+                            break;
+
+                        case ZoomBasis.ScaleFactor:
+                            PanelAutoScroll = true;
+                            break;
+
+                        default:
+                            throw new InvalidEnumArgumentException();
+                    }
+
+                    OnZoomBasisChanged();
+                }
+            }
+        }
+
+        public void ZoomToSelection()
+        {
+            if (Selection.IsEmpty)
+            {
+                ZoomToWindow();
+            }
+            else
+            {
+                using (PdnRegion region = Selection.CreateRegion())
+                {
+                    ZoomToRectangle(region.GetBoundsInt());
+                }
+            }
+        }
+
+        public void ZoomToRectangle(Rectangle selectionBounds)
+        {
+            PointF selectionCenter = new PointF((selectionBounds.Left + selectionBounds.Right + 1) / 2,
+                (selectionBounds.Top + selectionBounds.Bottom + 1) / 2);
+
+            PointF cornerPosition;
+
+            ScaleFactor zoom = ScaleFactor.Min(ClientRectangleMin.Width, selectionBounds.Width + 2,
+                                               ClientRectangleMin.Height, selectionBounds.Height + 2,
+                                               ScaleFactor.MinValue);
+
+            // Zoom out to fit the image
+            ZoomBasis = ZoomBasis.ScaleFactor;
+            ScaleFactor = zoom;
+
+            cornerPosition = new PointF(selectionCenter.X - (VisibleDocumentRectangleF.Width / 2),
+                selectionCenter.Y - (VisibleDocumentRectangleF.Height / 2));
+
+            DocumentScrollPositionF = cornerPosition;
+        }
+
+        protected override void HandleMouseWheel(Control sender, MouseEventArgs e)
+        {
+            if (Control.ModifierKeys == Keys.Control)
+            {
+                double mouseDelta = (double)e.Delta / 120.0f;
+                Rectangle visibleDocBoundsStart = this.VisibleDocumentBounds;
+                Point mouseDocPt = this.MouseToDocument(sender, new Point(e.X, e.Y));
+                RectangleF visibleDocDocRect1 = this.VisibleDocumentRectangleF;
+
+                PointF mouseNPt = new PointF(
+                    (mouseDocPt.X - visibleDocDocRect1.X) / visibleDocDocRect1.Width,
+                    (mouseDocPt.Y - visibleDocDocRect1.Y) / visibleDocDocRect1.Height);
+
+                const double factor = 1.12;
+                double mouseFactor = Math.Pow(factor, Math.Abs(mouseDelta));
+
+                if (e.Delta > 0)
+                {
+                    this.ZoomIn(mouseFactor);
+                }
+                else if (e.Delta < 0)
+                {
+                    this.ZoomOut(mouseFactor);
+                }
+
+                RectangleF visibleDocDocRect2 = this.VisibleDocumentRectangleF;
+
+                PointF scrollPt2 = new PointF(
+                    mouseDocPt.X - visibleDocDocRect2.Width * mouseNPt.X,
+                    mouseDocPt.Y - visibleDocDocRect2.Height * mouseNPt.Y);
+
+                this.DocumentScrollPositionF = scrollPt2;
+
+                Rectangle visibleDocBoundsEnd = this.VisibleDocumentBounds;
+
+                if (e.Delta < 0 && visibleDocBoundsEnd != visibleDocBoundsStart)
+                {
+                    // Make sure the screen updates, otherwise it can get a little funky looking
+                    this.Update();
+                }
+            }
+
+            base.HandleMouseWheel(sender, e);
+        }
+
+        public void SelectClosestVisibleLayer(Layer layer)
+        {
+            int oldLayerIndex = this.Document.Layers.IndexOf(layer);
+            int newLayerIndex = oldLayerIndex;
+
+            // find the closest layer that is still visible
+            for (int i = 0; i < this.Document.Layers.Count; ++i)
+            {
+                int lower = oldLayerIndex - i;
+                int upper = oldLayerIndex + i;
+
+                if (lower >= 0 && lower < this.Document.Layers.Count && ((Layer)this.Document.Layers[lower]).Visible)
+                {
+                    newLayerIndex = lower;
+                    break;
+                }
+
+                if (upper >= 0 && upper < this.Document.Layers.Count && ((Layer)this.Document.Layers[upper]).Visible)
+                {
+                    newLayerIndex = upper;
+                    break;
+                }
+            }
+
+            if (newLayerIndex != oldLayerIndex)
+            {
+                this.ActiveLayer = (Layer)Document.Layers[newLayerIndex];
+            }
+        }
+
+        public void UpdateRulerSelectionTinting()
+        {
+            if (this.RulersEnabled)
+            {
+                Rectangle bounds = this.Selection.GetBounds();
+                this.SetHighlightRectangle(bounds);
+            }
+        }
+
+        private void LayerRemovingHandler(object sender, IndexEventArgs e)
+        {
+            Layer layer = (Layer)this.Document.Layers[e.Index];
+            layer.PropertyChanging -= LayerPropertyChangingHandler;
+            layer.PropertyChanged -= LayerPropertyChangedHandler;
+
+            // pick a new valid layer!
+            int newLayerIndex;
+
+            if (e.Index == this.Document.Layers.Count - 1)
+            {
+                newLayerIndex = e.Index - 1;
+            }
+            else
+            {
+                newLayerIndex = e.Index + 1;
+            }
+
+            if (newLayerIndex >= 0 && newLayerIndex < this.Document.Layers.Count)
+            {
+                this.ActiveLayer = (Layer)this.Document.Layers[newLayerIndex];
+            }
+            else
+            {
+                if (this.Document.Layers.Count == 0)
+                {
+                    this.ActiveLayer = null;
+                }
+                else
+                {
+                    this.ActiveLayer = (Layer)this.Document.Layers[0];
+                }
+            }
+        }
+
+        private void LayerRemovedHandler(object sender, IndexEventArgs e)
+        {
+        }
+
+        private void LayerInsertedHandler(object sender, IndexEventArgs e)
+        {
+            Layer layer = (Layer)this.Document.Layers[e.Index];
+            this.ActiveLayer = layer;
+            layer.PropertyChanging += LayerPropertyChangingHandler;
+            layer.PropertyChanged += LayerPropertyChangedHandler;
+        }
+
+        private void LayerPropertyChangingHandler(object sender, PropertyEventArgs e)
+        {
+            string nameFormat = PdnResources.GetString("LayerPropertyChanging.HistoryMementoNameFormat");
+            string haName = string.Format(nameFormat, e.PropertyName);
+
+            LayerPropertyHistoryMemento lpha = new LayerPropertyHistoryMemento(
+                haName,
+                ImageResource.Get("Icons.MenuLayersLayerPropertiesIcon.png"),
+                this,
+                this.Document.Layers.IndexOf(sender));
+
+            this.History.PushNewMemento(lpha);
+        }
+
+        private void LayerPropertyChangedHandler(object sender, PropertyEventArgs e)
+        {
+            Layer layer = (Layer)sender;
+
+            if (!layer.Visible && 
+                layer == this.ActiveLayer && 
+                this.Document.Layers.Count > 1 &&
+                !History.IsExecutingMemento)
+            {
+                SelectClosestVisibleLayer(layer);
+            }
+        }
+
+        private void ToolPulseTimer_Tick(object sender, EventArgs e)
+        {
+            if (FindForm() == null || FindForm().WindowState == FormWindowState.Minimized)
+            {
+                return;
+            }
+
+            if (this.Tool != null && this.Tool.Active)
+            {
+                this.Tool.PerformPulse();
+            }
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            if (this.appWorkspace == null)
+            {
+                throw new InvalidOperationException("Must set the Workspace property");
+            }
+
+            base.OnLoad(e);
+        }
+
         public event EventHandler ActiveLayerChanging;
         protected void OnLayerChanging()
         {
@@ -154,90 +911,360 @@ namespace PaintDotNet
             }
         }
 
-        // ActiveLayerChanged
-        // This event is raised right after the 'Layer' is changed via the 'Layer' property.
         public event EventHandler ActiveLayerChanged;
         protected void OnLayerChanged()
         {
             this.Focus();
+
             if (ActiveLayerChanged != null)
             {
                 ActiveLayerChanged(this, EventArgs.Empty);
             }
         }
 
-        [Browsable(false)]
-        public Rectangle VisibleDocumentBounds
+        public Layer ActiveLayer
         {
             get
             {
-                Rectangle screen = documentView.VisibleDocumentBounds; // documentView Client coordinates
-                return this.RectangleToClient(screen); // this Client coordinates
-            }
-        }
-
-        [Browsable(false)]
-        public RectangleF VisibleDocumentRectangleF
-        {
-            get
-            {
-                return documentView.VisibleDocumentRectangleF;
-            }
-        }
-
-        [Browsable(false)]
-        public string DocumentFileName
-        {
-            get
-            {
-                return this.documentFileName;
-            }
-        }
-
-        /// <summary>
-        /// The scratch, stencil, accumulation, whatever buffer. This is used by many parts
-        /// of Paint.NET as a temporary area for which to store data.
-        /// This surface is 'owned' by any Tool that is active. If you want to use this you
-        /// must first deactivate the Tool and then activate it when you are finished.
-        /// To enforce this, this property returns null when a tool is active.
-        /// Tools should use Tool.ScratchSurface instead.
-        /// </summary>
-        [Browsable(false)]
-        public Surface ScratchSurface
-        {
-            get
-            {
-                return scratch;
+                return this.activeLayer;
             }
 
             set
             {
-                this.scratch = value;
+                OnLayerChanging();
+
+                bool deactivateTool;
+
+                if (this.Tool != null)
+                {
+                    deactivateTool = this.Tool.DeactivateOnLayerChange;
+                }
+                else
+                {
+                    deactivateTool = false;
+                }
+
+                if (deactivateTool)
+                {
+                    PushNullTool();
+                    this.EnableToolPulse = false;
+                }
+
+                try
+                {
+                    // Verify that the layer is in the document (sanity checking)
+                    if (this.Document != null)
+                    {
+                        if (value != null && !this.Document.Layers.Contains(value))
+                        {
+                            throw new InvalidOperationException("ActiveLayer was changed to a layer that is not contained within the Document");
+                        }
+                    }
+                    else
+                    {   
+                        // Document == null
+                        if (value != null)
+                        {
+                            throw new InvalidOperationException("ActiveLayer was set to non-null while Document was null");
+                        }
+                    }
+
+                    // Finally, set the field.
+                    this.activeLayer = value;
+                }
+
+                finally
+                {
+                    if (deactivateTool)
+                    {
+                        PopNullTool();
+                        this.EnableToolPulse = true;
+                    }
+                }
+
+                OnLayerChanged();
             }
         }
 
-        [Browsable(false)]
-        public Document Document
+        public int ActiveLayerIndex
         {
             get
             {
-                return document;
+                return Document.Layers.IndexOf(ActiveLayer);
+            }
+
+            set
+            {
+                this.ActiveLayer = (Layer)Document.Layers[value];
             }
         }
 
-        public ZoomBasis ZoomBasis 
+        public bool EnableToolPulse
         {
-            get 
+            get
             {
-                return viewConfigStrip.ZoomBasis;
+                return this.toolPulseTimer.Enabled;
             }
-            set 
+
+            set
             {
-                viewConfigStrip.ZoomBasis = value;
+                this.toolPulseTimer.Enabled = value;
             }
         }
 
-        [Browsable(false)]
+        public HistoryStack History
+        {
+            get
+            {
+                return this.history;
+            }
+        }
+
+        public Tool Tool
+        {
+            get
+            {
+                return this.activeTool;
+            }
+        }
+
+        public Type GetToolType()
+        {
+            if (Tool != null)
+            {
+                return Tool.GetType();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public void SetToolFromType(Type toolType)
+        {
+            if (toolType == GetToolType())
+            {
+                return;
+            }
+            else if (toolType == null)
+            {
+                SetTool(null);
+            }
+            else
+            {
+                Tool newTool = CreateTool(toolType);
+                SetTool(newTool);
+            }
+        }
+
+        public void PushNullTool()
+        {
+            if (this.nullToolCount == 0)
+            {
+                this.preNullTool = GetToolType();
+                this.SetTool(null);
+                this.nullToolCount = 1;
+            }
+            else
+            {
+                ++this.nullToolCount;
+            }
+        }
+
+        public void PopNullTool()
+        {
+            --this.nullToolCount;
+
+            if (this.nullToolCount == 0)
+            {
+                this.SetToolFromType(this.preNullTool);
+                this.preNullTool = null;
+            }
+            else if (this.nullToolCount < 0)
+            {
+                throw new InvalidOperationException("PopNullTool() call was not matched with PushNullTool()");
+            }
+        }
+
+        public Type PreviousActiveToolType
+        {
+            get
+            {
+                return this.previousActiveToolType;
+            }
+        }
+
+        public void SetTool(Tool copyMe)
+        {
+            OnToolChanging();
+
+            if (this.activeTool != null)
+            {
+                this.previousActiveToolType = this.activeTool.GetType();
+                this.activeTool.CursorChanged -= ToolCursorChangedHandler;
+                this.activeTool.PerformDeactivate();
+                this.activeTool.Dispose();
+                this.activeTool = null;
+            }
+
+            if (copyMe == null)
+            {
+                EnableToolPulse = false;
+            }
+            else
+            {
+                this.activeTool = CreateTool(copyMe.GetType());
+                this.activeTool.PerformActivate();
+                this.activeTool.CursorChanged += ToolCursorChangedHandler;
+
+                if (this.suspendToolCursorChanges <= 0)
+                {
+                    Cursor = this.activeTool.Cursor;
+                }
+
+                EnableToolPulse = true;
+            }
+
+            OnToolChanged();
+        }
+
+        public Tool CreateTool(Type toolType)
+        {
+            return DocumentWorkspace.CreateTool(toolType, this);
+        }
+
+        private static Tool CreateTool(Type toolType, DocumentWorkspace dc)
+        {
+            ConstructorInfo ci = toolType.GetConstructor(new Type[] { typeof(DocumentWorkspace) });
+            Tool tool = (Tool)ci.Invoke(new object[] { dc });
+            return tool;
+        }
+
+        private static void InitializeTools()
+        {
+            // add all the tools
+            tools = new Type[] 
+            {
+                typeof(RectangleSelectTool),
+                typeof(MoveTool),
+                typeof(LassoSelectTool),
+                typeof(MoveSelectionTool),
+
+                typeof(EllipseSelectTool),
+                typeof(ZoomTool),
+
+                typeof(MagicWandTool),
+                typeof(PanTool),
+
+                typeof(PaintBucketTool),
+                typeof(GradientTool),
+
+                typeof(PaintBrushTool),
+                typeof(EraserTool),
+                typeof(PencilTool),
+                typeof(ColorPickerTool),
+                typeof(CloneStampTool), 
+                typeof(RecolorTool),
+                typeof(TextTool),
+
+                typeof(LineTool),
+                typeof(RectangleTool),
+                typeof(RoundedRectangleTool),
+                typeof(EllipseTool),
+                typeof(FreeformShapeTool),
+            };
+        }
+
+        private static void InitializeToolInfos()
+        {
+            int i = 0;
+            toolInfos = new ToolInfo[tools.Length];
+
+            foreach (Type toolType in tools)
+            {
+                using (Tool tool = DocumentWorkspace.CreateTool(toolType, null))
+                {
+                    toolInfos[i] = tool.Info;
+                    ++i;
+                }
+            }
+        }
+
+        public static Type[] Tools
+        {
+            get
+            {
+                return (Type[])tools.Clone();
+            }
+        }
+
+        public static ToolInfo[] ToolInfos
+        {
+            get
+            {
+                return (ToolInfo[])toolInfos.Clone();
+            }
+        }
+
+        public event EventHandler ToolChanging;
+        protected void OnToolChanging()
+        {
+            if (ToolChanging != null)
+            {
+                ToolChanging(this, EventArgs.Empty);
+            }
+        }
+
+        public event EventHandler ToolChanged;
+        protected void OnToolChanged()
+        {
+            if (ToolChanged != null)
+            {
+                ToolChanged(this, EventArgs.Empty);
+            }
+        }
+
+        private void ToolCursorChangedHandler(object sender, EventArgs e)
+        {
+            if (this.suspendToolCursorChanges <= 0)
+            {
+                Cursor = this.activeTool.Cursor;
+            }
+        }
+
+        // Note: static tool data is removed whenever the Document changes
+        // TODO: shouldn't this be moved to the Tool class somehow?
+        public object GetStaticToolData(Type toolType)
+        {
+            return staticToolData[toolType];
+        }
+
+        public void SetStaticToolData(Type toolType, object data)
+        {
+            staticToolData[toolType] = data;
+        }
+
+        public AppWorkspace AppWorkspace
+        {
+            get
+            {
+                return this.appWorkspace;
+            }
+
+            set
+            {
+                this.appWorkspace = value;
+            }
+        }
+
+        public Selection Selection
+        {
+            get
+            {
+                return this.selection;
+            }
+        }
+
         public bool EnableOutlineAnimation
         {
             get
@@ -251,7 +1278,6 @@ namespace PaintDotNet
             }
         }
 
-        [Browsable(false)]
         public bool EnableSelectionOutline
         {
             get
@@ -265,7 +1291,6 @@ namespace PaintDotNet
             }
         }
 
-        [Browsable(false)]
         public bool EnableSelectionTinting
         {
             get
@@ -284,51 +1309,154 @@ namespace PaintDotNet
             this.selectionRenderer.ResetOutlineWhiteOpacity();
         }
 
+        public event EventHandler FilePathChanged;
+        protected virtual void OnFilePathChanged()
+        {
+            if (FilePathChanged != null)
+            {
+                FilePathChanged(this, EventArgs.Empty);
+            }
+        }
+
+        public string FilePath
+        {
+            get
+            {
+                return this.filePath;
+            }
+        }
+
+        public string GetFriendlyName()
+        {
+            string friendlyName;
+
+            if (this.filePath != null)
+            {
+                friendlyName = Path.GetFileName(this.filePath);
+            }
+            else
+            {
+                friendlyName = PdnResources.GetString("Untitled.FriendlyName");
+            }
+
+            return friendlyName;
+        }
+
+        public FileType FileType
+        {
+            get
+            {
+                return this.fileType;
+            }
+        }
+
+        public SaveConfigToken SaveConfigToken
+        {
+            get
+            {
+                if (this.saveConfigToken == null)
+                {
+                    return null;
+                }
+                else
+                {
+                    return (SaveConfigToken)this.saveConfigToken.Clone();
+                }
+            }
+        }
+
+        public event EventHandler SaveOptionsChanged;
+        protected virtual void OnSaveOptionsChanged()
+        {
+            if (SaveOptionsChanged != null)
+            {
+                SaveOptionsChanged(this, EventArgs.Empty);
+            }
+        }
+
         /// <summary>
         /// Sets the FileType and SaveConfigToken parameters that are used if the
         /// user chooses "Save" from the File menu. These are not used by the
-        /// DocumentWorkspace class and should be used by whoever actually goes
+        /// DocumentControl class and should be used by whoever actually goes
         /// to save the Document instance.
         /// </summary>
         /// <param name="fileType"></param>
         /// <param name="saveParameters"></param>
-        public void SetDocumentSaveOptions(string fileName, FileType fileType, SaveConfigToken saveParameters)
+        public void SetDocumentSaveOptions(string newFilePath, FileType newFileType, SaveConfigToken newSaveConfigToken)
         {
-            this.documentFileName = fileName;
-            this.documentFileType = fileType;
+            this.filePath = newFilePath;
+            OnFilePathChanged();
 
-            if (saveParameters == null)
+            this.fileType = newFileType;
+
+            if (newSaveConfigToken == null)
             {
-                this.documentSaveToken = null;
+                this.saveConfigToken = null;
             }
             else
             {
-                this.documentSaveToken = (SaveConfigToken)saveParameters.Clone();
+                this.saveConfigToken = (SaveConfigToken)newSaveConfigToken.Clone();
             }
+
+            OnSaveOptionsChanged();
         }
 
-        [Browsable(false)]
-        public FileType DocumentFileType
+        public void GetDocumentSaveOptions(out string filePathResult, out FileType fileTypeResult, out SaveConfigToken saveConfigTokenResult)
         {
-            get
-            {
-                return this.documentFileType;
-            }
-        }
+            filePathResult = this.filePath;
+            fileTypeResult = this.fileType;
 
-        public void GetDocumentSaveOptions(out string fileName, out FileType fileType, out SaveConfigToken saveParameters)
-        {
-            fileName = this.documentFileName;
-            fileType = this.documentFileType;
-
-            if (this.documentSaveToken == null)
+            if (this.saveConfigToken == null)
             {
-                saveParameters = null;
+                saveConfigTokenResult = null;
             }
             else
             {
-                saveParameters = (SaveConfigToken)this.documentSaveToken.Clone();
+                saveConfigTokenResult = (SaveConfigToken)this.saveConfigToken.Clone();
             }
+        }
+
+        private bool isScratchSurfaceBorrowed = false;
+        private string borrowScratchSurfaceReason = string.Empty;
+
+        /// The scratch, stencil, accumulation, whatever buffer. This is used by many parts
+        /// of Paint.NET as a temporary area for which to store data.
+        /// This surface is 'owned' by any Tool that is active. If you want to use this you
+        /// must first deactivate the Tool using PushNullTool() and then reactivate it when 
+        /// you are finished by calling PopNullTool().
+        /// Tools should use Tool.ScratchSurface instead of these API's.
+
+        public Surface BorrowScratchSurface(string reason)
+        {
+            if (this.isScratchSurfaceBorrowed)
+            {
+                throw new InvalidOperationException(
+                    "ScratchSurface already borrowed: '" + 
+                    this.borrowScratchSurfaceReason + 
+                    "' (trying to borrow for: '" + reason + "')");
+            }
+
+            Tracing.Ping("Borrowing scratchSurface: " + reason);
+            this.isScratchSurfaceBorrowed = true;
+            this.borrowScratchSurfaceReason = reason;
+            return this.scratchSurface;
+        }
+
+        public void ReturnScratchSurface(Surface borrowedScratchSurface)
+        {
+            if (!this.isScratchSurfaceBorrowed)
+            {
+                throw new InvalidOperationException("ScratchSurface wasn't borrowed");
+            }
+
+            if (this.scratchSurface != borrowedScratchSurface)
+            {
+                throw new InvalidOperationException("returned ScratchSurface doesn't match the real one");
+            }
+
+            Tracing.Ping("Returning scratchSurface: " + this.borrowScratchSurfaceReason);
+            this.isScratchSurfaceBorrowed = false;
+            this.borrowScratchSurfaceReason = string.Empty;
         }
 
         /// <summary>
@@ -341,1953 +1469,1019 @@ namespace PaintDotNet
             // We want it to say "Creation Software: Paint.NET vX.Y"
             // I have verified that other image editing software overwrites this tag,
             // and does not just add it when it does not exist.
-            PropertyItem pi = Exif.CreateAscii(ExifTagID.Software, PdnInfo.GetProductName(false)); 
+            PropertyItem pi = Exif.CreateAscii(ExifTagID.Software, PdnInfo.GetProductName(false));
             document.Metadata.ReplaceExifValues(ExifTagID.Software, new PropertyItem[1] { pi });
         }
         
-        /// <summary>
-        /// Sets the Document instance to be managed by DocumentWorkspace.
-        /// Before the document is changed, a DocumentChanging event is raised.
-        /// After the document is changed, a DocumentChanged event is raised.
-        /// The DocumentView contained in our Workspace is also notified of the
-        /// change to the Document instance.
-        /// Since the DocumentWorkspace takes ownership of this object (it does 
-        /// not copy it), it was decided that a method instead of a property should 
-        /// be used for the 'set' behavior.
-        /// </summary>
-        /// <param name="document"></param>
-        public void SetDocument(Document document)
+        private ZoomBasis savedZb;
+        private ScaleFactor savedSf;
+        protected override void OnDocumentChanging(Document newDocument)
         {
-            UI.SetControlRedraw(this, false);
-            ZoomBasis savedZb = this.ZoomBasis;
-            ScaleFactor savedSf = DocumentView.ScaleFactor;
+            base.OnDocumentChanging(newDocument);
 
-            UpdateExifTags(document);
+            this.savedZb = this.ZoomBasis;
+            this.savedSf = ScaleFactor;
 
-            Tool oldTool = Environment.Tool;
-            Environment.SetTool(null);
+            if (newDocument != null)
+            {
+                UpdateExifTags(newDocument);
+            }
+
+            if (this.Document != null)
+            {
+                foreach (Layer layer in this.Document.Layers)
+                {
+                    layer.PropertyChanging -= LayerPropertyChangingHandler;
+                    layer.PropertyChanged -= LayerPropertyChangedHandler;
+                }
+
+                this.Document.Layers.RemovingAt -= LayerRemovingHandler;
+                this.Document.Layers.RemovedAt -= LayerRemovedHandler;
+                this.Document.Layers.Inserted -= LayerInsertedHandler;
+            }
+            
+            this.staticToolData.Clear();
+
+            PushNullTool(); // matching Pop is in OnDocumetChanged()
             ActiveLayer = null;
 
-            OnDocumentChanging();
-
-            if (this.Document != null)
+            if (this.scratchSurface != null)
             {
-                foreach (Layer layer in this.Document.Layers)
+                if (this.isScratchSurfaceBorrowed)
                 {
-                    layer.PropertyChanging -= this.layerPropertyChangingDelegate;
-                    layer.PropertyChanged -= this.layerPropertyChangedDelegate;
+                    throw new InvalidOperationException("scratchSurface is currently borrowed: " + this.borrowScratchSurfaceReason);
+                }
+
+                if (newDocument == null || newDocument.Size != this.scratchSurface.Size)
+                {
+                    this.scratchSurface.Dispose();
+                    this.scratchSurface = null;
                 }
             }
 
-            if (!Environment.Selection.IsEmpty)
+            if (!Selection.IsEmpty)
             {
-                Environment.Selection.Reset();
+                Selection.Reset();
             }
+        }
 
-            if (this.document != null)
-            {
-                this.document.Layers.RemovingAt -= layerRemovingDelegate;
-                this.document.Layers.RemovedAt -= layerRemovedDelegate;
-                this.document.Layers.Inserted -= layerInsertedDelegate;
-            }
-
-            Document oldDocument = this.document;
-            documentView.Document = document;
-            this.document = null;
-
-            if (this.scratch != null && this.scratch.Size != document.Size)
-            {
-                this.scratch.Dispose();
-                this.scratch = null;
-            }
-
-            if (this.scratch == null)
-            {
-                this.scratch = new Surface(document.Size);
-            }
-
-            this.document = document;
-            this.environment.Selection.ClipRectangle = this.document.Bounds;
-
-            if (oldDocument != null)
-            {
-                oldDocument.Dispose();
-            }
-
-            OnDocumentChanged();
-
-            if (this.Document != null)
-            {
-                foreach (Layer layer in this.Document.Layers)
-                {
-                    layer.PropertyChanging += this.layerPropertyChangingDelegate;
-                    layer.PropertyChanged += this.layerPropertyChangedDelegate;
-                }
-            }
-
+        protected override void OnDocumentChanged()
+        {
             // if the ActiveLayer is not in this new document, then
             // we try to set ActiveLayer to the first layer in this
             // new document. But if the document contains no layers,
             // or is null, we just null the ActiveLayer.
-            if (this.document == null)
+            if (this.Document == null)
             {
-                ActiveLayer = null;
+                this.ActiveLayer = null;
             }
             else
             {
-                if (!this.document.Layers.Contains(activeLayer))
+                if (this.activeTool != null)
                 {
-                    if (this.document.Layers.Count > 0)
+                    throw new InvalidOperationException("Tool was not deactivated while Document was being changed");
+                }
+
+                if (this.scratchSurface != null)
+                {
+                    if (this.isScratchSurfaceBorrowed)
                     {
-                        ActiveLayer = (Layer)this.document.Layers[0];
+                        throw new InvalidOperationException("scratchSurface is currently borrowed: " + this.borrowScratchSurfaceReason);
+                    }
+
+                    if (Document == null || this.scratchSurface.Size != Document.Size)
+                    {
+                        this.scratchSurface.Dispose();
+                        this.scratchSurface = null;
+                    }
+                }
+
+                this.scratchSurface = new Surface(this.Document.Size);
+
+                this.Selection.ClipRectangle = this.Document.Bounds;
+
+                foreach (Layer layer in this.Document.Layers)
+                {
+                    layer.PropertyChanging += LayerPropertyChangingHandler;
+                    layer.PropertyChanged += LayerPropertyChangedHandler;
+                }
+
+                this.Document.Layers.RemovingAt += LayerRemovingHandler;
+                this.Document.Layers.RemovedAt += LayerRemovedHandler;
+                this.Document.Layers.Inserted += LayerInsertedHandler;
+
+                if (!this.Document.Layers.Contains(this.ActiveLayer))
+                {
+                    if (this.Document.Layers.Count > 0)
+                    {
+                        this.ActiveLayer = (Layer)this.Document.Layers[0];
                     }
                     else
                     {
-                        ActiveLayer = null;
+                        this.ActiveLayer = null;
                     }
                 }
 
-                this.document.Layers.RemovingAt += layerRemovingDelegate;
-                this.document.Layers.RemovedAt += layerRemovedDelegate;
-                this.document.Layers.Inserted += layerInsertedDelegate;
-
-                bool oldDirty = this.document.Dirty;
-                this.document.Invalidate();
-                this.document.Dirty = oldDirty;
-
-                this.ZoomBasis = savedZb;
-                if (savedZb == ZoomBasis.Factor)
+                // we invalidate each layer so that the layer previews refresh themselves
+                foreach (Layer layer in this.Document.Layers)
                 {
-                    this.DocumentView.ScaleFactor = savedSf;
+                    layer.Invalidate();
+                }
+
+                bool oldDirty = this.Document.Dirty;
+                this.Document.Invalidate();
+                this.Document.Dirty = oldDirty;
+
+                this.ZoomBasis = this.savedZb;
+                if (this.savedZb == ZoomBasis.ScaleFactor)
+                {
+                    ScaleFactor = this.savedSf;
                 }
             }
 
-            Environment.SetTool(oldTool);
+            PopNullTool();
+            AutoScrollPosition = new Point(0, 0);
 
-            documentView.AutoScrollPosition = new Point(0, 0);
-
-            // we invalidate each layer so that it raises the PreviewChanged event
-            foreach (Layer layer in Document.Layers)
-            {
-                layer.Invalidate();
-            }
-
-            UI.SetControlRedraw(this, true);
-            Invalidate(true);
+            base.OnDocumentChanged();
         }
 
-        [Browsable(false)]
-        public DocumentWidgets Widgets
+        /// <summary>
+        /// Takes the current Document from this DocumentWorkspace instance and adds it to the MRU list.
+        /// </summary>
+        /// <param name="fileName"></param>
+        public void AddToMruList()
         {
-            get
+            using (new PushNullToolMode(this))
             {
-                return widgets;
-            }
-        }
+                string fullFileName = Path.GetFullPath(this.FilePath);
+                int edgeLength = AppWorkspace.MostRecentFiles.IconSize;
+                Surface thumb1 = RenderThumbnail(edgeLength, true, true);
 
-        [Browsable(false)]
-        public HistoryStack History
-        {
-            get
-            {
-                return history;
-            }
-        }
+                // Put it inside a square bitmap
+                Surface thumb = new Surface(4 + edgeLength, 4 + edgeLength);
 
-        [Browsable(false)]
-        public DocumentEnvironment Environment
-        {
-            get
-            {
-                return environment;
-            }
-        }
+                thumb.Clear(ColorBgra.Transparent);
 
-        [Browsable(false)]
-        public int ActiveLayerIndex
-        {
-            get
-            {
-                return Document.Layers.IndexOf(ActiveLayer);
-            }
+                Rectangle dstRect = new Rectangle((thumb.Width - thumb1.Width) / 2,
+                    (thumb.Height - thumb1.Height) / 2, thumb1.Width, thumb1.Height);
 
-            set
-            {
-                this.ActiveLayer = (Layer)Document.Layers[value];
-            }
-        }
+                thumb.CopySurface(thumb1, dstRect.Location);
 
-        [Browsable(false)]
-        public Layer ActiveLayer
-        {
-            get
-            {
-                return activeLayer;
-            }
-
-            set
-            {
-                OnLayerChanging();
-
-                bool deactivateTool;
-
-                if (Environment.Tool != null)
+                using (RenderArgs ra = new RenderArgs(thumb))
                 {
-                    deactivateTool = Environment.Tool.DeactivateOnLayerChange;
+                    // Draw black border
+                    Rectangle borderRect = new Rectangle(dstRect.Left - 1, dstRect.Top - 1, dstRect.Width + 2, dstRect.Height + 2);
+                    --borderRect.Width;
+                    --borderRect.Height;
+                    ra.Graphics.DrawRectangle(Pens.Black, borderRect);
+
+                    Rectangle shadowRect = Rectangle.Inflate(borderRect, 1, 1);
+                    ++shadowRect.Width;
+                    ++shadowRect.Height;
+                    Utility.DrawDropShadow1px(ra.Graphics, shadowRect);
+
+                    thumb1.Dispose();
+                    thumb1 = null;
+
+                    MostRecentFile mrf = new MostRecentFile(fullFileName, Utility.FullCloneBitmap(ra.Bitmap));
+
+                    if (AppWorkspace.MostRecentFiles.Contains(fullFileName))
+                    {
+                        AppWorkspace.MostRecentFiles.Remove(fullFileName);
+                    }
+
+                    AppWorkspace.MostRecentFiles.Add(mrf);
+                    AppWorkspace.MostRecentFiles.SaveMruList();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Shows an OpenFileDialog or SaveFileDialog and populates the InitialDirectory from the global
+        /// settings repository if possible.
+        /// </summary>
+        /// <param name="fd">The FileDialog to show.</param>
+        /// <remarks>
+        /// The FileDialog should already have its InitialDirectory populated as a suggestion of where to start.
+        /// </remarks>
+        public static DialogResult ShowFileDialog(Control owner, FileDialog fd)
+        {
+            string initialDirectory = Settings.CurrentUser.GetString(PdnSettings.LastFileDialogDirectory, fd.InitialDirectory);
+
+            // TODO: spawn this in a background thread, if it doesn't respond within ~500ms, assume the dir doesn't exist
+            bool dirExists = false;
+
+            try 
+            {
+                DirectoryInfo dirInfo = new DirectoryInfo(initialDirectory);
+
+                using (new WaitCursorChanger(owner))
+                {
+                    dirExists = dirInfo.Exists;
+                    if (!dirInfo.Exists)
+                    {
+                        initialDirectory = fd.InitialDirectory;
+                    }
+                }
+            }
+
+            catch (Exception)
+            {
+                initialDirectory = null;
+            }
+
+            fd.InitialDirectory = initialDirectory;
+            DialogResult result = UI.ShowFileDialogWithThumbnailView(owner, fd);
+
+            if (result == DialogResult.OK)
+            {
+                string newDir = Path.GetDirectoryName(fd.FileNames[0]);
+                Settings.CurrentUser.SetString(PdnSettings.LastFileDialogDirectory, newDir);
+            }
+
+            return result;
+        }
+
+        public static DialogResult ChooseFile(Control parent, out string fileName)
+        {
+            return ChooseFile(parent, out fileName, null);
+        }
+
+        public static DialogResult ChooseFile(Control parent, out string fileName, string startingDir)
+        {
+            string[] fileNames;
+            DialogResult result = ChooseFiles(parent, out fileNames, false, startingDir);
+
+            if (result == DialogResult.OK)
+            {
+                fileName = fileNames[0];
+            }
+            else
+            {
+                fileName = null;
+            }
+
+            return result;
+        }
+
+        public static DialogResult ChooseFiles(Control owner, out string[] fileNames, bool multiselect)
+        {
+            return ChooseFiles(owner, out fileNames, multiselect, null);
+        }
+
+        public static DialogResult ChooseFiles(Control owner, out string[] fileNames, bool multiselect, string startingDir)
+        {
+            FileTypeCollection fileTypes = FileTypes.GetFileTypes();
+
+            using (OpenFileDialog ofd = new OpenFileDialog())
+            {
+                if (startingDir != null)
+                {
+                    ofd.InitialDirectory = startingDir;
                 }
                 else
                 {
-                    deactivateTool = false;
+                    ofd.InitialDirectory = GetDefaultSavePath();
                 }
 
-                Type oldToolType = null;
-                if (deactivateTool)
-                {
-                    toolPulseTimer.Enabled = false;
-                    oldToolType = Environment.GetToolType();
-                    //Environment.Tool.PerformDeactivate();
-                    Environment.SetTool(null);
-                }
+                ofd.CheckFileExists = true;
+                ofd.CheckPathExists = true;
+                ofd.Multiselect = multiselect;
+                ofd.RestoreDirectory = true;
 
-                // Verify that the layer is in the document (sanity checking)
-                if (Document != null)
-                {
-                    if (value != null && !Document.Layers.Contains(value))
-                    {
-                        throw new InvalidOperationException("ActiveLayer was changed to a layer that is not contained within the Document");
-                    }
-                }
-                else
-                {   // Document == null
-                    if (value != null)
-                    {
-                        throw new InvalidOperationException("ActiveLayer was set to non-null while Document was null");
-                    }
-                }
+                ofd.Filter = fileTypes.ToString(true, PdnResources.GetString("FileDialog.Types.AllImages"), false, true);
+                ofd.FilterIndex = 0;
 
-                activeLayer = value;
+                DialogResult result = ShowFileDialog(owner, ofd);
+                fileNames = ofd.FileNames;
 
-                if (deactivateTool)
-                {
-                    //Environment.Tool.PerformActivate();
-                    Environment.SetTool(oldToolType, this);
-                    toolPulseTimer.Enabled = true;
-                }
-
-                OnLayerChanged();
-            }
-        }
-
-        [Browsable(false)]
-        public Type[] Effects
-        {
-            get
-            {
-                if (effects == null)
-                {
-                    InitializeEffects();
-                }
-
-                return (Type[])effects.Clone();
-            }
-        }
-
-        [Browsable(false)]
-        public Type[] Tools
-        {
-            get
-            {
-                return (Type[])tools.Clone();
-            }
-        }
-
-        [Browsable(false)]
-        public ToolInfo[] ToolInfos
-        {
-            get
-            {
-                if (toolInfos == null)
-                {
-                    InitializeToolInfos();
-                }
-
-                return (ToolInfo[])toolInfos.Clone();
-            }
-        }
-
-        [Browsable(false)]
-        public DocumentView DocumentView
-        {
-            get
-            {
-                return documentView;
-            }
-        }
-
-        private void HistoryChangedHandler(object sender, EventArgs e)
-        {
-            // enable/disable buttons on the CommonActionsStrip
-            if (history.UndoStack.Count > 1)
-            {
-                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Undo, true);
-            }
-            else
-            {
-                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Undo, false);
-            }
-
-            if (history.RedoStack.Count > 0)
-            {
-                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Redo, true);
-            }
-            else
-            {
-                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Redo, false);
-            }
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the DocumentWorkspace class.
-        /// </summary>
-        public DocumentWorkspace()
-        {
-            this.document = null;
-            this.environment = new DocumentEnvironment();
-            this.environment.ToolStatusChanged += new EventHandler(environment_ToolStatusChanged);
-            this.activeLayer = null;
-            this.tools = null;
-            this.history = new HistoryStack(this);
-
-            // initialize!
-            InitializeTools();
-            InitializeComponent();
-            this.documentView.WorkspaceParent = this;
-            InitializeFloatingForms();
-            InitializeToolBars();
-
-            this.historyForm.HistoryControl.HistoryStack = this.history;
-            
-            history.Changed += new EventHandler(HistoryChangedHandler);
-           
-            // set the workspace toggle buttons correctly
-            this.viewConfigStrip.Units = Environment.Units;
-            this.viewConfigStrip.RulersEnabled = documentView.RulersEnabled;
-            this.viewConfigStrip.DrawGrid = documentView.DrawGrid;
-            this.drawConfigStrip.AntiAliasing = Environment.AntiAliasing;
-
-            // hook the DocumentView with its selectedPath ...
-            this.selectionRenderer = new SelectionRenderer(this.DocumentView.Renderers, this.environment.Selection, this.DocumentView);
-            this.DocumentView.Renderers.Add(this.selectionRenderer, true);
-            this.selectionRenderer.EnableOutlineAnimation = true;
-            this.selectionRenderer.EnableSelectionTinting = false;
-            this.selectionRenderer.EnableSelectionOutline = true;
-
-            // hook into Environment *Changed events
-            foreColorChangedDelegate = new EventHandler(ForeColorChangedHandler);
-            Environment.ForeColorChanged += foreColorChangedDelegate;
-            mainToolBarForm.MainToolBar.ColorDisplay.UserForeColorChanged += foreColorChangedDelegate;
-
-            backColorChangedDelegate = new EventHandler(BackColorChangedHandler);
-            Environment.BackColorChanged += backColorChangedDelegate;
-            mainToolBarForm.MainToolBar.ColorDisplay.UserBackColorChanged += backColorChangedDelegate;
-
-            mainToolBarForm.MainToolBar.ColorDisplay.UserForeAndBackColorsChanged += new EventHandler(ColorDisplay_UserForeAndBackColorsChanged);
-
-            shapeDrawTypeChangedDelegate = new EventHandler(ShapeDrawTypeChangedHandler);
-            Environment.ShapeDrawTypeChanged += shapeDrawTypeChangedDelegate;
-            
-            Environment.ToleranceChanged += new EventHandler(OnEnvironmentToleranceChanged);
-            mainToolBarForm.MainToolBar.ToleranceSlider.ToleranceChanged += new EventHandler(OnToolBarToleranceChanged);
-
-            alphaBlendingChangedDelegate = new EventHandler(AlphaBlendingChangedHandler);
-            Environment.AlphaBlendingChanged += alphaBlendingChangedDelegate;
-            
-            Environment.FontInfo = textConfigStrip.FontInfo;
-            Environment.TextAlignment = textConfigStrip.TextAlignment;
-            textConfigStrip.TextAlignmentChanged += new EventHandler(textConfigStrip_TextAlignmentChanged);
-            textConfigStrip.FontTextChanged += new EventHandler(textConfigStrip_FontTextChanged);
-            textConfigStrip.RelinquishFocus += new EventHandler(RelinquishFocusHandler2);
-            Environment.AntiAliasingChanged += new EventHandler(Environment_AntiAliasingChanged);
-            Environment.UnitsChanged += new EventHandler(Environment_UnitsChanged);
-            Environment.FontInfoChanged += new EventHandler(Environment_FontInfoChanged);
-            Environment.TextAlignmentChanged += new EventHandler(Environment_TextAlignmentChanged);
-
-            // hook into the SelectedPathChanged event ...
-            selectedPathChangingDelegate = new EventHandler(SelectedPathChangingHandler);
-            Environment.Selection.Changing += selectedPathChangingDelegate;
-            selectedPathChangedDelegate = new EventHandler(SelectedPathChangedHandler);
-            Environment.Selection.Changed += selectedPathChangedDelegate;
-
-            // hook into the ZoomChanged event
-            zoomChangedDelegate = new EventHandler(ZoomChangedHandler);
-            documentView.ScaleFactorChanged += zoomChangedDelegate;
-            documentView.Units = Environment.Units;
-
-            // layer events
-            layerRemovingDelegate = new IndexEventHandler(LayerRemovingHandler);
-            layerRemovedDelegate = new IndexEventHandler(LayerRemovedHandler);
-            layerInsertedDelegate = new IndexEventHandler(LayerInsertedHandler);
-            layerPropertyChangingDelegate = new PropertyEventHandler(LayerPropertyChangingHandler);
-            layerPropertyChangedDelegate = new PropertyEventHandler(LayerPropertyChangedHandler);
-
-            // init the Widgets container
-            widgets = new DocumentWidgets(this);
-            widgets.ViewConfigStrip = viewConfigStrip;
-            widgets.DrawConfigStrip = drawConfigStrip;
-            widgets.CommonActionsStrip = this.commonActionsStrip;
-            widgets.TextConfigStrip = this.textConfigStrip;
-            widgets.MainToolBarForm = mainToolBarForm;
-            widgets.LayerForm = layerForm;
-            widgets.HistoryForm = historyForm;
-            widgets.ColorsForm = colorsForm;
-
-            //
-            drawConfigStrip.PerformPenChanged();
-            drawConfigStrip.PerformBrushChanged();
-            drawConfigStrip.PerformShapeDrawTypeChanged();
-            
-            // Synchronize
-            Environment.PerformAllChanged();
-
-            // PaintBrush tool = the default
-            Widgets.MainToolBar.SelectTool(typeof(PaintBrushTool));
-        }
-
-        public void SaveSettings()
-        {
-            /*
-            Settings.CurrentUser.SetPoint(PdnSettings.CommonActionsLocation, this.commonActionsStrip.Location);
-            Settings.CurrentUser.SetPoint(PdnSettings.ViewConfigLocation, this.viewConfigStrip.Location);
-            Settings.CurrentUser.SetPoint(PdnSettings.DrawConfigLocation, this.drawConfigStrip.Location);
-            Settings.CurrentUser.SetPoint(PdnSettings.TextConfigLocation, this.textConfigStrip.Location);
-             * */
-        }
-
-        public void LoadSettings()
-        {
-            try
-            {
-                this.documentView.RulersEnabled = Settings.CurrentUser.GetBoolean(PdnSettings.Rulers, false);
-                this.documentView.DrawGrid = Settings.CurrentUser.GetBoolean(PdnSettings.DrawGrid, false);
-                this.environment.Units = (MeasurementUnit)Enum.Parse(typeof(MeasurementUnit), Settings.CurrentUser.GetString(PdnSettings.Units, MeasurementUnit.Pixel.ToString()), true);
-                this.environment.AlphaBlending = Settings.CurrentUser.GetBoolean(PdnSettings.AlphaBlending, true);
-                this.environment.AntiAliasing = Settings.CurrentUser.GetBoolean(PdnSettings.Antialiasing, true);
-
-                /*
-                this.commonActionsStrip.Location = Settings.CurrentUser.GetPoint(PdnSettings.CommonActionsLocation, this.commonActionsStrip.Location);
-                this.viewConfigStrip.Location = Settings.CurrentUser.GetPoint(PdnSettings.ViewConfigLocation, this.viewConfigStrip.Location);
-                this.drawConfigStrip.Location = Settings.CurrentUser.GetPoint(PdnSettings.DrawConfigLocation, this.drawConfigStrip.Location);
-                this.textConfigStrip.Location = Settings.CurrentUser.GetPoint(PdnSettings.TextConfigLocation, this.textConfigStrip.Location);
-                 * */
-            }
-
-            catch
-            {
-                try
-                {
-                    Settings.CurrentUser.Delete(
-                        new string[] 
-                        {    
-                             PdnSettings.Rulers, 
-                             PdnSettings.DrawGrid, 
-                             PdnSettings.Units,
-                             PdnSettings.Antialiasing,
-                             PdnSettings.AlphaBlending
-
-                            /*
-                            PdnSettings.CommonActionsLocation,
-                            PdnSettings.ViewConfigLocation,
-                            PdnSettings.DrawConfigLocation,
-                            PdnSettings.TextConfigLocation
-                             * */
-                        });
-                }
-
-                catch
-                {
-                }
-            }
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                if (this.document != null)
-                {
-                    this.document.Dispose();
-                    this.document = null;
-                }
-
-                if (this.scratch != null)
-                {
-                    this.scratch.Dispose();
-                    this.scratch = null;
-                }
-            }
-
-            base.Dispose(disposing);
-        }
-
-        protected override void OnLoad(EventArgs e)
-        {
-            this.DocumentView.Select();
-            SelectedPathChangedHandler(this, EventArgs.Empty);
-            base.OnLoad(e);
-        }
-
-        public void RefreshTool()
-        {
-            Type toolType = environment.GetToolType();
-            Widgets.MainToolBar.SelectTool(toolType);
-        }
-
-        /// <summary>
-        /// Keeps the Environment's ShapeDrawType and the corresponding widget synchronized
-        /// </summary>
-        private void ShapeDrawTypeChangedHandler(object sender, EventArgs e)
-        {
-            if (widgets.DrawConfigStrip.ShapeDrawType != Environment.ShapeDrawType)
-            {
-                widgets.DrawConfigStrip.ShapeDrawType = Environment.ShapeDrawType;
-            }
-        }
-
-        /// <summary>
-        /// Keeps the Environment's alpha blending value and the corresponding widget synchronized
-        /// </summary>
-        private void AlphaBlendingChangedHandler(object sender, EventArgs e)
-        {
-            if (widgets.DrawConfigStrip.AlphaBlending != Environment.AlphaBlending)
-            {
-                widgets.DrawConfigStrip.AlphaBlending = Environment.AlphaBlending;
-            }
-
-            Settings.CurrentUser.SetBoolean(PdnSettings.AlphaBlending, Environment.AlphaBlending);
-        }
-
-        private void ColorDisplay_UserForeAndBackColorsChanged(object sender, EventArgs e)
-        {
-            // We need to make sure that we don't change which user color is selected (primary vs. secondary)
-            // To do this we choose the ordering based on which one is currently active (primary vs. secondary)
-            if (widgets.ColorsForm.WhichUserColor == WhichUserColor.Foreground)
-            {
-                widgets.ColorsForm.SetColorControlsRedraw(false);
-                BackColorChangedHandler(sender, e);
-                ForeColorChangedHandler(sender, e);
-                widgets.ColorsForm.SetColorControlsRedraw(true);
-                widgets.ColorsForm.WhichUserColor = WhichUserColor.Foreground;
-            }
-            else //if (widgets.ColorsForm.WhichUserColor == WhichUserColor.Background)
-            {
-                widgets.ColorsForm.SetColorControlsRedraw(false);
-                ForeColorChangedHandler(sender, e);
-                BackColorChangedHandler(sender, e);
-                widgets.ColorsForm.SetColorControlsRedraw(true);
-                widgets.ColorsForm.WhichUserColor = WhichUserColor.Background;
-            }
-        }
- 
-        /// <summary>
-        /// Handles the ForeColorChanged event that is raised by the DocumentEnvironment.
-        /// </summary>
-        private void ForeColorChangedHandler(object sender, EventArgs e)
-        {
-            if (sender == environment)
-            {
-                widgets.ColorDisplayWidget.UserForeColor = Environment.ForeColor;
-                widgets.ColorsForm.UserForeColor = Environment.ForeColor;
-            }
-            else if (sender == widgets.ColorDisplayWidget)
-            {
-                Environment.ForeColor = widgets.ColorDisplayWidget.UserForeColor;
-            }
-        }
-
-        /// <summary>
-        /// Handles the ToleranceChanged event that is raised by the toolbar
-        /// </summary>
-        private void OnToolBarToleranceChanged(object sender, EventArgs e)
-        {
-            Environment.Tolerance = widgets.MainToolBar.ToleranceSlider.Tolerance;
-            Settings.CurrentUser.SetSingle(PdnSettings.Tolerance, Environment.Tolerance);
-            this.Focus();
-        }
-
-        /// <summary>
-        /// Handles the ToleranceChanged event that is raised by the DocumentEnviroment
-        /// </summary>
-        private void OnEnvironmentToleranceChanged(object sender, EventArgs e)
-        {
-            widgets.MainToolBar.ToleranceSlider.Tolerance = Environment.Tolerance;
-            Settings.CurrentUser.SetSingle(PdnSettings.Tolerance, Environment.Tolerance);
-            this.Focus();
-        }
-
-        /// <summary>
-        /// Handles the BackColorChanged event that is raised by the DocumentEnvironment.
-        /// </summary>
-        private void BackColorChangedHandler(object sender, EventArgs e)
-        {
-            if (sender == environment)
-            {
-                widgets.ColorDisplayWidget.UserBackColor = Environment.BackColor;
-                widgets.ColorsForm.UserBackColor = Environment.BackColor;
-            }
-            else if (sender == widgets.ColorDisplayWidget)
-            {
-                Environment.BackColor = widgets.ColorDisplayWidget.UserBackColor;
-            }
-        }
-
-        private void RelinquishFocusHandler(object sender, EventArgs e)
-        {
-            this.Focus();
-        }
-
-        private void RelinquishFocusHandler2(object sender, EventArgs e)
-        {
-            this.documentView.Focus();
-        }
-
-        private void colorsForm_UserForeColorChanged(object sender, ColorEventArgs e)
-        {
-            ColorsForm cf = (ColorsForm)sender;
-            Environment.ForeColor = e.Color;
-            widgets.ColorDisplayWidget.UserForeColor = e.Color;
-        }
-
-        private void colorsForm_UserBackColorChanged(object sender, ColorEventArgs e)
-        {
-            ColorsForm cf = (ColorsForm)sender;
-            Environment.BackColor = e.Color;
-            widgets.ColorDisplayWidget.UserBackColor = e.Color;
-        }
-
-        private void colorDisplay_ForeColorClicked(object sender, System.EventArgs e)
-        {
-            widgets.ColorsForm.WhichUserColor = WhichUserColor.Foreground;
-            widgets.ColorsForm.UserForeColor = Environment.ForeColor;
-            widgets.ColorsForm.UserBackColor = Environment.BackColor;
-            widgets.ColorsForm.Show();
-            widgets.ColorsForm.Focus();
-            this.RelinquishFocusHandler(widgets.ColorsForm, EventArgs.Empty);
-        }
-
-        private void colorDisplay_BackColorClicked(object sender, System.EventArgs e)
-        {
-            widgets.ColorsForm.WhichUserColor = WhichUserColor.Background;
-            widgets.ColorsForm.UserForeColor = Environment.ForeColor;
-            widgets.ColorsForm.UserBackColor = Environment.BackColor;
-            widgets.ColorsForm.Show();
-            widgets.ColorsForm.Focus();
-            this.RelinquishFocusHandler(widgets.ColorsForm, EventArgs.Empty);
-        }
-
-        private void LayerRemovingHandler(object sender, IndexEventArgs e)
-        {
-            Layer layer = (Layer)Document.Layers[e.Index];
-            layer.PropertyChanging -= layerPropertyChangingDelegate;
-            layer.PropertyChanged -= layerPropertyChangedDelegate;
-
-            // pick a new valid layer!
-            int newLayerIndex;
-
-            if (e.Index == Document.Layers.Count - 1)
-            {
-                newLayerIndex = e.Index - 1;
-            }
-            else
-            {
-                newLayerIndex = e.Index + 1;
-            }
-
-            ActiveLayer = (Layer)Document.Layers[newLayerIndex];
-        }
-
-        private void LayerRemovedHandler(object sender, IndexEventArgs e)
-        {   
-        }
-
-        private void LayerInsertedHandler(object sender, IndexEventArgs e)
-        {
-            Layer layer = (Layer)Document.Layers[e.Index];
-            ActiveLayer = layer;
-            layer.PropertyChanging += layerPropertyChangingDelegate;
-            layer.PropertyChanged += layerPropertyChangedDelegate;
-        }
-
-        private void LayerPropertyChangingHandler(object sender, PropertyEventArgs e)
-        {
-            string nameFormat = PdnResources.GetString("DocumentWorkspace.LayerPropertyChangingHandler.HistoryActionNameFormat");
-            string haName = string.Format(nameFormat, e.PropertyName);
-
-            LayerPropertyHistoryAction lpha = new LayerPropertyHistoryAction(
-                haName, 
-                PdnResources.GetImage("Icons.MenuLayersLayerPropertiesIcon.png"), 
-                this, 
-                Document.Layers.IndexOf(sender));
-
-            History.PushNewAction(lpha);
-        }
-
-        private void LayerPropertyChangedHandler(object sender, PropertyEventArgs e)
-        {
-            Layer layer = (Layer)sender;
-
-            if (!layer.Visible && layer == this.ActiveLayer && document.Layers.Count > 1)
-            {
-                SelectClosestVisibleLayer(layer);
-            }
-        }
-
-        private void SelectClosestVisibleLayer(Layer layer)
-        {
-            int oldLayerIndex = document.Layers.IndexOf(layer);
-            int newLayerIndex = oldLayerIndex;
-
-            // find the closest layer that is still visible
-            for (int i = 0; i < document.Layers.Count; ++i)
-            {
-                int lower = oldLayerIndex - i;
-                int upper = oldLayerIndex + i;
-
-                if (lower >= 0 && lower < document.Layers.Count && ((Layer)document.Layers[lower]).Visible)
-                {
-                    newLayerIndex = lower;
-                    break;
-                }
-
-                if (upper >= 0 && upper < document.Layers.Count && ((Layer)document.Layers[upper]).Visible)
-                {
-                    newLayerIndex = upper;
-                    break;
-                }
-            }
-
-            if (newLayerIndex != oldLayerIndex)
-            {
-                this.ActiveLayer = (Layer)document.Layers[newLayerIndex];
-            }
-        }
-
-        private void UpdateRulerSelectionTinting()
-        {
-            if (this.documentView.RulersEnabled)
-            {
-                Rectangle bounds = environment.Selection.GetBounds();
-                this.documentView.SetHighlightRectangle(bounds);
-            }
-        }
-
-        /// <summary>
-        /// Handles the SelectedPathChanging event that is raised by the DocumentEnvironment.
-        /// </summary>
-        private void SelectedPathChangingHandler(object sender, EventArgs e)
-        {   
-        }
-
-        /// <summary>
-        /// Handles the SelectedPathChanged event that is raised by the DocumentEnvironment.
-        /// </summary>
-        private void SelectedPathChangedHandler(object sender, EventArgs e)
-        {
-            UpdateRulerSelectionTinting();
-
-            // set buttons on CommonActionsStrip
-            if (Environment.Selection.IsEmpty)
-            {
-                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Cut, false);
-                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Copy, false);
-                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Deselect, false);
-                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.CropToSelection, false);
-            }
-            else
-            {
-                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Cut, true);
-                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Copy, true);
-                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.Deselect, true);
-                widgets.CommonActionsStrip.SetButtonEnabled(CommonAction.CropToSelection, true);
+                return result;
             }
         }
         
-        private void ZoomChangedHandler(object sender, EventArgs e)
+        /// <summary>
+        /// Use this to get a save config token. You should already know the filename and file type.
+        /// An existing save config token is optional and will be used to pre-populate the config dialog.
+        /// </summary>
+        /// <param name="fileType"></param>
+        /// <param name="saveConfigToken"></param>
+        /// <param name="newSaveConfigToken"></param>
+        /// <returns>false if the user cancelled, otherwise true</returns>
+        private bool GetSaveConfigToken(
+            FileType currentFileType, 
+            SaveConfigToken currentSaveConfigToken, 
+            out SaveConfigToken newSaveConfigToken, 
+            Surface saveScratchSurface)
         {
-            ScaleFactor sf = documentView.ScaleFactor;
-            viewConfigStrip.SuspendEvents();
-            viewConfigStrip.ZoomBasis = ZoomBasis.Factor;
-            viewConfigStrip.ScaleFactor = sf;
-            viewConfigStrip.ResumeEvents();
-        }
-
-        private void InitializeComponent()
-        {
-            this.documentView = new PaintDotNet.DocumentWorkspace.OurDocumentView();
-            this.toolStripContainer = new ToolStripContainer();
-            this.commonActionsStrip = new CommonActionsStrip();
-            this.viewConfigStrip = new ViewConfigStrip();
-            this.drawConfigStrip = new DrawConfigStrip();
-            this.textConfigStrip = new TextConfigStrip();
-            this.toolPulseTimer = new System.Windows.Forms.Timer();
-            this.toolStripContainer.ContentPanel.SuspendLayout();
-            this.toolStripContainer.TopToolStripPanel.SuspendLayout();
-            this.toolStripContainer.SuspendLayout();
-            this.SuspendLayout();
-            // 
-            // documentView
-            // 
-            this.documentView.BackColor = System.Drawing.SystemColors.ControlDark;
-            this.documentView.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.documentView.Document = null;
-            this.documentView.DrawGrid = false;
-            this.documentView.Location = new System.Drawing.Point(0, 54);
-            this.documentView.Name = "documentView";
-            this.documentView.PanelAutoScroll = true;
-            this.documentView.RulersEnabled = false;
-            this.documentView.Size = new System.Drawing.Size(872, 586);
-            this.documentView.TabIndex = 0;
-            this.documentView.TabStop = false;
-            this.documentView.RulersEnabledChanged += new System.EventHandler(this.documentView_RulersEnabledChanged);
-            this.documentView.DocumentMouseEnter += new EventHandler(this.DocumentMouseEnterHandler);
-            this.documentView.DocumentMouseLeave += new EventHandler(this.DocumentMouseLeaveHandler);
-            this.documentView.DocumentMouseMove += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseMoveHandler);
-            this.documentView.DocumentMouseDown += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseDownHandler);
-            this.documentView.Scroll += new System.Windows.Forms.ScrollEventHandler(this.documentView_Scroll);
-            this.documentView.DrawGridChanged += new System.EventHandler(this.documentView_DrawGridChanged);
-            this.documentView.DocumentClick += new System.EventHandler(this.DocumentClick);
-            this.documentView.DocumentMouseUp += new System.Windows.Forms.MouseEventHandler(this.DocumentMouseUpHandler);
-            this.documentView.DocumentKeyPress += new System.Windows.Forms.KeyPressEventHandler(this.DocumentKeyPress);
-            this.documentView.DocumentKeyUp += new KeyEventHandler(DocumenKeyUp);
-            this.documentView.DocumentKeyDown += new KeyEventHandler(DocumentKeyDown);
-            this.documentView.MouseWheel += new MouseEventHandler(DocumentView_MouseWheel);
-            //
-            // toolStripContainer
-            //
-            this.toolStripContainer.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.toolStripContainer.Location = new System.Drawing.Point(0, 0);
-            this.toolStripContainer.Name = "toolStripContainer";
-            this.toolStripContainer.TabIndex = 0;
-            this.toolStripContainer.TabStop = false;
-            this.toolStripContainer.BottomToolStripPanelVisible = false;
-            this.toolStripContainer.LeftToolStripPanelVisible = false;
-            this.toolStripContainer.RightToolStripPanelVisible = false;
-            //
-            // toolStripContainer.ContentPanel
-            //
-            this.toolStripContainer.ContentPanel.Controls.Add(this.documentView);
-            //
-            // toolStripContainer.ToolStripPanel
-            //
-            LoadSettings();
-            this.toolStripContainer.TopToolStripPanel.Controls.Add(this.viewConfigStrip);
-            this.toolStripContainer.TopToolStripPanel.Controls.Add(this.commonActionsStrip);
-            this.toolStripContainer.TopToolStripPanel.Controls.Add(this.textConfigStrip);
-            this.toolStripContainer.TopToolStripPanel.Controls.Add(this.drawConfigStrip);
-            //
-            // commonActionsStrip
-            //
-            this.commonActionsStrip.Name = "commonActionsStrip";
-            this.commonActionsStrip.TabIndex = 0;
-            this.commonActionsStrip.Dock = DockStyle.None;
-            this.commonActionsStrip.GripStyle = toolStripsGripStyle;
-            this.commonActionsStrip.RelinquishFocusRequest += new EventHandler(OnToolStripRelinquishFocusRequest);
-            this.commonActionsStrip.MouseWheel += new MouseEventHandler(OnToolStripMouseWheel);
-            //
-            // viewConfigStrip
-            //
-            this.viewConfigStrip.Name = "viewConfigStrip";
-            this.viewConfigStrip.ZoomBasis = PaintDotNet.ZoomBasis.Window;
-            this.viewConfigStrip.TabStop = false;
-            this.viewConfigStrip.DrawGrid = false;
-            this.viewConfigStrip.DrawGridChanged += new System.EventHandler(this.viewConfigStrip_DrawGridChanged);
-            this.viewConfigStrip.RulersEnabledChanged += new System.EventHandler(this.viewConfigStrip_RulersEnabledChanged);
-            this.viewConfigStrip.ZoomBasisChanged += new System.EventHandler(this.viewConfigStrip_ZoomBasisChanged);
-            this.viewConfigStrip.ZoomScaleChanged += new System.EventHandler(this.viewConfigStrip_ZoomScaleChanged);
-            this.viewConfigStrip.ZoomIn += new EventHandler(viewConfigStrip_ZoomIn);
-            this.viewConfigStrip.ZoomOut += new EventHandler(viewConfigStrip_ZoomOut);
-            this.viewConfigStrip.UnitsChanged += new EventHandler(viewConfigStrip_UnitsChanged);
-            this.viewConfigStrip.TabIndex = 1;
-            this.viewConfigStrip.Dock = DockStyle.None;
-            this.viewConfigStrip.GripStyle = toolStripsGripStyle;
-            this.viewConfigStrip.RelinquishFocusRequest += new EventHandler(OnToolStripRelinquishFocusRequest);
-            this.viewConfigStrip.MouseWheel += new MouseEventHandler(OnToolStripMouseWheel);
-            //
-            // drawConfigStrip
-            //
-            this.drawConfigStrip.Name = "drawConfigStrip";
-            this.drawConfigStrip.ShapeDrawType = PaintDotNet.ShapeDrawType.Outline;
-            this.drawConfigStrip.BrushChanged += new System.EventHandler(this.drawConfigStrip_BrushChanged);
-            this.drawConfigStrip.ShapeDrawTypeChanged += new System.EventHandler(this.drawConfigStrip_ShapeDrawTypeChanged);
-            this.drawConfigStrip.PenChanged += new System.EventHandler(this.drawConfigStrip_PenChanged);
-            this.drawConfigStrip.AlphaBlendingChanged += new EventHandler(drawConfigStrip_AlphaBlendingChanged);
-            this.drawConfigStrip.AntiAliasingChanged += new System.EventHandler(this.drawConfigStrip_AntiAliasingChanged);
-            this.drawConfigStrip.TabIndex = 2;
-            this.drawConfigStrip.Dock = DockStyle.None;
-            this.drawConfigStrip.GripStyle = toolStripsGripStyle;
-            this.drawConfigStrip.RelinquishFocusRequest += new EventHandler(OnToolStripRelinquishFocusRequest);
-            this.drawConfigStrip.MouseWheel += new MouseEventHandler(OnToolStripMouseWheel);
-            // 
-            // textConfigStrip
-            // 
-            this.textConfigStrip.FontSize = 12F;
-            this.textConfigStrip.FontStyle = System.Drawing.FontStyle.Regular;
-            this.textConfigStrip.Name = "textConfigStrip";
-            this.textConfigStrip.TabIndex = 3;
-            this.textConfigStrip.TextAlignment = PaintDotNet.TextAlignment.Left;
-            this.textConfigStrip.Dock = DockStyle.None;
-            this.textConfigStrip.GripStyle = toolStripsGripStyle;
-            this.textConfigStrip.RelinquishFocusRequest += new EventHandler(OnToolStripRelinquishFocusRequest);
-            this.textConfigStrip.MouseWheel += new MouseEventHandler(OnToolStripMouseWheel);
-            // 
-            // toolPulseTimer
-            // 
-            this.toolPulseTimer.Interval = 16;
-            this.toolPulseTimer.Tick += new EventHandler(this.toolPulseTimer_Tick);
-            // 
-            // DocumentWorkspace
-            // 
-            this.Controls.Add(this.toolStripContainer);
-            this.Name = "DocumentWorkspace";
-            this.Size = new System.Drawing.Size(872, 640);
-            this.toolStripContainer.ContentPanel.ResumeLayout(false);
-            this.toolStripContainer.ContentPanel.PerformLayout();
-            this.toolStripContainer.TopToolStripPanel.ResumeLayout(false);
-            this.toolStripContainer.TopToolStripPanel.PerformLayout();
-            this.toolStripContainer.ResumeLayout(false);
-            this.toolStripContainer.PerformLayout();
-            this.ResumeLayout(false);
-        }
-
-        void OnToolStripMouseWheel(object sender, MouseEventArgs e)
-        {
-            this.documentView.PerformMouseWheel(e);
-            DocumentView_MouseWheel(sender, e);
-        }
-
-        void OnToolStripRelinquishFocusRequest(object sender, EventArgs e)
-        {
-            this.documentView.Focus();
-        }
-
-        // The Document* events are raised by the Document class, handled here,
-        // and relayed as necessary. For instance, for the DocumentMouse* events, 
-        // these are all relayed to the active tool.
-
-        private void DocumentMouseEnterHandler(object sender, EventArgs e)
-        {
-            if (Environment.Tool != null)
+            if (currentFileType.SupportsConfiguration)
             {
-                Environment.Tool.PerformMouseEnter();
-            }
-        }
+                using (SaveConfigDialog scd = new SaveConfigDialog())
+                {
+                    scd.ScratchSurface = saveScratchSurface;
 
-        private void DocumentMouseLeaveHandler(object sender, EventArgs e)
-        {
-            if (Environment.Tool != null)
-            {
-                Environment.Tool.PerformMouseLeave();
-            }
-        }
+                    ProgressEventHandler peh = delegate(object sender, ProgressEventArgs e)
+                    {
+                        if (e.Percent < 0 || e.Percent >= 100)
+                        {
+                            AppWorkspace.Widgets.StatusBarProgress.ResetProgressStatusBar();
+                            AppWorkspace.Widgets.StatusBarProgress.EraseProgressStatusBar();
+                        }
+                        else
+                        {
+                            AppWorkspace.Widgets.StatusBarProgress.SetProgressStatusBar(e.Percent);
+                        }
+                    };
 
-        private void DocumentMouseUpHandler(object sender, MouseEventArgs e)
-        {
-            if (Environment.Tool != null)
-            {
-                Environment.Tool.PerformMouseUp(e);
-            }
-        }
+                    if (currentFileType.SavesWithProgress)
+                    {
+                        scd.Progress += peh;
+                    }
 
-        private void DocumentMouseDownHandler(object sender, MouseEventArgs e)
-        {
-            if (Environment.Tool != null)
-            {
-                Environment.Tool.PerformMouseDown(e);
-            }
-        }
+                    scd.Document = Document;
+                    scd.FileType = currentFileType;
 
-        private void DocumentMouseMoveHandler(object sender, MouseEventArgs e)
-        {
-            if (Environment.Tool != null)
-            {
-                Environment.Tool.PerformMouseMove(e);
-            }
-        }
+                    SaveConfigToken token = currentFileType.GetLastSaveConfigToken();
+                    if (currentSaveConfigToken != null &&
+                        token.GetType() == currentSaveConfigToken.GetType())
+                    {
+                        scd.SaveConfigToken = currentSaveConfigToken;
+                    }
 
-        private void DocumentClick(object sender, EventArgs e)
-        {
-            if (Environment.Tool != null)
-            {
-                Environment.Tool.PerformClick();
-            }
-        }
+                    scd.EnableInstanceOpacity = false;
 
-        private void DocumentKeyPress(object sender, KeyPressEventArgs e)
-        {
-            if (Environment.Tool != null)
-            {
-                Environment.Tool.PerformKeyPress(e);
-            }
-        }
+                    // show configuration/preview dialog
+                    DialogResult dr = scd.ShowDialog(this);
 
-        private void DocumentKeyDown(object sender, KeyEventArgs e)
-        {
-            if (Environment.Tool != null)
-            {
-                Environment.Tool.PerformKeyDown(e);
-            }
-        }
+                    if (currentFileType.SavesWithProgress)
+                    {
+                        scd.Progress -= peh;
+                        AppWorkspace.Widgets.StatusBarProgress.ResetProgressStatusBar();
+                        AppWorkspace.Widgets.StatusBarProgress.EraseProgressStatusBar();
+                    }
 
-        private void DocumenKeyUp(object sender, KeyEventArgs e)
-        {
-            if (Environment.Tool != null)
-            {
-                Environment.Tool.PerformKeyUp(e);
-            }
-        }
-
-        private void InitializeFloatingForms()
-        {
-            // MainToolBarForm
-            mainToolBarForm = new MainToolBarForm();
-            mainToolBarForm.MainToolBar.ColorDisplay.UserForeColorClick += new EventHandler(colorDisplay_ForeColorClicked);
-            mainToolBarForm.MainToolBar.ColorDisplay.UserBackColorClick += new EventHandler(colorDisplay_BackColorClicked);
-            mainToolBarForm.RelinquishFocus += new EventHandler(RelinquishFocusHandler);
-            mainToolBarForm.AttachControl = this.DocumentView;
-            mainToolBarForm.ProcessCmdKeyEvent += new CmdKeysEventHandler(OnToolFormProcessCmdKeyEvent);
-
-            // LayerForm
-            layerForm = new LayerForm();
-            layerForm.LayerControl.Workspace = this;
-            layerForm.LayerControl.ClickedOnLayer += new LayerEventHandler(layerControl_ClickedOnLayer);
-            layerForm.NewLayerButtonClick += new EventHandler(layerForm_NewLayerButtonClicked);
-            layerForm.DeleteLayerButtonClick += new EventHandler(layerForm_DeleteLayerButtonClicked);                        
-            layerForm.DuplicateLayerButtonClick += new EventHandler(layerForm_DuplicateLayerButtonClick);
-            layerForm.MoveLayerUpButtonClick += new EventHandler(layerForm_MoveLayerUpButtonClicked);
-            layerForm.MoveLayerDownButtonClick += new EventHandler(layerForm_MoveLayerDownButtonClicked);
-            layerForm.PropertiesButtonClick += new EventHandler(layerForm_PropertiesButtonClick);
-            layerForm.RelinquishFocus += new EventHandler(RelinquishFocusHandler);
-            layerForm.AttachControl = this.DocumentView;
-            layerForm.ProcessCmdKeyEvent += new CmdKeysEventHandler(OnToolFormProcessCmdKeyEvent);
-            
-            // HistoryForm
-            historyForm = new HistoryForm();
-            historyForm.ClearHistoryButtonClicked += new EventHandler(historyForm_ClearHistoryButtonClicked);
-            historyForm.RewindButtonClicked += new EventHandler(historyForm_RewindButtonClicked);
-            historyForm.UndoButtonClicked += new EventHandler(historyForm_UndoButtonClicked);
-            historyForm.RedoButtonClicked += new EventHandler(historyForm_RedoButtonClicked);
-            historyForm.FastForwardButtonClicked += new EventHandler(historyForm_FastForwardButtonClicked);
-            historyForm.RelinquishFocus += new EventHandler(RelinquishFocusHandler);
-            historyForm.AttachControl = this.DocumentView;
-            historyForm.ProcessCmdKeyEvent += new CmdKeysEventHandler(OnToolFormProcessCmdKeyEvent);
-
-            // ColorsForm
-            colorsForm = new ColorsForm();
-            colorsForm.UserForeColor = Environment.ForeColor;
-            colorsForm.UserBackColor = Environment.BackColor;
-            colorsForm.WhichUserColor = WhichUserColor.Foreground;
-            colorsForm.UserForeColorChanged += new ColorEventHandler(colorsForm_UserForeColorChanged);
-            colorsForm.UserBackColorChanged += new ColorEventHandler(colorsForm_UserBackColorChanged);
-            colorsForm.RelinquishFocus += new EventHandler(RelinquishFocusHandler);
-            colorsForm.AttachControl = this.DocumentView;
-            colorsForm.ProcessCmdKeyEvent += new CmdKeysEventHandler(OnToolFormProcessCmdKeyEvent);
-        }
-
-        public event CmdKeysEventHandler ProcessCmdKeyEvent;
-
-        bool OnToolFormProcessCmdKeyEvent(object sender, ref Message msg, Keys keyData)
-        {
-            if (ProcessCmdKeyEvent != null)
-            {
-                return ProcessCmdKeyEvent(sender, ref msg, keyData);
+                    if (dr == DialogResult.OK)
+                    {
+                        newSaveConfigToken = scd.SaveConfigToken;
+                        return true;
+                    }
+                    else
+                    {
+                        newSaveConfigToken = null;
+                        return false;
+                    }
+                }
             }
             else
             {
-                return false;
+                newSaveConfigToken = currentFileType.GetLastSaveConfigToken();
+                return true;
             }
         }
 
-        protected void InitializeTools()
+        /// <summary>
+        /// Used to set the file name, file type, and save config token
+        /// </summary>
+        /// <param name="newFileName"></param>
+        /// <param name="newFileType"></param>
+        /// <param name="newSaveConfigToken"></param>
+        /// <returns>true if the user clicked through and accepted, or false if they cancelled at any point</returns>
+        private bool DoSaveAsDialog(
+            out string newFileName, 
+            out FileType newFileType, 
+            out SaveConfigToken newSaveConfigToken, 
+            Surface saveScratchSurface)
         {
-            // add all the tools
-            this.tools = new Type[] {
-                                        typeof(RectangleSelectTool),
-                                        typeof(MoveTool),
-                                        typeof(LassoSelectTool),
-                                        typeof(MoveSelectionTool),
-                                        //typeof(PanTool),
-                                        typeof(EllipseSelectTool),
-                                        typeof(ZoomTool),
-                                        typeof(MagicWandTool),
-                                        typeof(TextTool),
-            
-                                        typeof(PaintBrushTool),
-                                        typeof(EraserTool),
-                                        typeof(PencilTool),
-                                        typeof(ColorPickerTool),
-                                        typeof(CloneStampTool), 
-                                        typeof(RecolorTool),
-                                        typeof(PaintBucketTool),
+            FileTypeCollection fileTypes = FileTypes.GetFileTypes();
 
-                                        typeof(LineTool),
-                                        typeof(RectangleTool),
-                                        typeof(RoundedRectangleTool),
-                                        typeof(EllipseTool),
-                                        typeof(FreeformShapeTool),
+            using (SaveFileDialog sfd = new SaveFileDialog())
+            {
+                sfd.AddExtension = true;
+                sfd.CheckPathExists = true;
+                sfd.DefaultExt = string.Empty;
+                sfd.OverwritePrompt = true;
+                string filter = fileTypes.ToString(false, null, true, false);
+                sfd.Filter = filter;
 
-                                    };
+                string localFileName;
+                FileType localFileType;
+                SaveConfigToken localSaveConfigToken;
+                GetDocumentSaveOptions(out localFileName, out localFileType, out localSaveConfigToken);
+
+                if (Document.Layers.Count > 1 && 
+                    localFileType != null && 
+                    !localFileType.SupportsLayers)
+                {
+                    localFileType = null;
+                }
+
+                if (localFileType == null)
+                {
+                    if (Document.Layers.Count == 1)
+                    {
+                        localFileType = PdnFileTypes.Png;
+                    }
+                    else
+                    {
+                        localFileType = PdnFileTypes.Pdn;
+                    }
+
+                    localFileName = Path.ChangeExtension(localFileName, localFileType.DefaultExtension);
+                }
+
+                if (localFileName == null)
+                {
+                    string name = GetDefaultSaveName();
+                    string newName = Path.ChangeExtension(name, localFileType.DefaultExtension);
+                    localFileName = Path.Combine(GetDefaultSavePath(), newName);
+                }
+
+                // If the filename is only an extension (i.e. ".lmnop") then we must treat it specially
+                string fileNameOnly = Path.GetFileName(localFileName);
+                if (fileNameOnly.Length >= 1 && fileNameOnly[0] == '.')
+                {
+                    sfd.FileName = localFileName;
+                }
+                else
+                {
+                    sfd.FileName = Path.ChangeExtension(localFileName, null);
+                }
+
+                sfd.FilterIndex = 1 + fileTypes.IndexOfFileType(localFileType);
+                sfd.InitialDirectory = Path.GetDirectoryName(localFileName);
+                sfd.RestoreDirectory = true;
+                sfd.ShowHelp = false;
+                sfd.Title = PdnResources.GetString("SaveAsDialog.Title");
+                sfd.ValidateNames = true;
+
+                DialogResult dr1 = ShowFileDialog(this, sfd);
+                bool result;
+
+                if (dr1 != DialogResult.OK)
+                {
+                    result = false;
+                }
+                else
+                {
+                    localFileName = sfd.FileName;
+                    FileType fileType2 = fileTypes[sfd.FilterIndex - 1];
+                    result = GetSaveConfigToken(fileType2, localSaveConfigToken, out localSaveConfigToken, saveScratchSurface);
+                    localFileType = fileType2;
+                }
+
+                if (result)
+                {
+                    newFileName = localFileName;
+                    newFileType = localFileType;
+                    newSaveConfigToken = localSaveConfigToken;
+                }
+                else
+                {
+                    newFileName = null;
+                    newFileType = null;
+                    newSaveConfigToken = null;
+                }
+
+                return result;
+            }
         }
 
-        protected void InitializeToolInfos()
+        /// <summary>
+        /// Warns the user that we need to flatten the image.
+        /// </summary>
+        /// <returns>Returns DialogResult.Yes if they want to proceed or DialogResult.No if they don't.</returns>
+        private DialogResult WarnAboutFlattening()
         {
-            int i = 0;
-            Type[] tools = this.Tools;
-            this.toolInfos = new ToolInfo[tools.Length];
+            return MessageBox.Show(
+                AppWorkspace, 
+                PdnResources.GetString("WarnAboutFlattening.Text"),
+                PdnResources.GetString("WarnAboutFlattening.Title"), 
+                MessageBoxButtons.YesNo, 
+                MessageBoxIcon.Question);
+        }
+        
+        private static string GetDefaultSaveName()
+        {
+            return PdnResources.GetString("Untitled.FriendlyName");
+        }
 
-            foreach (Type toolType in this.tools)
+        private static string GetDefaultSavePath()
+        {
+            string myPics = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+            string dir = Settings.CurrentUser.GetString(PdnSettings.LastFileDialogDirectory, null);
+
+            if (dir == null)
             {
-                using (Tool tool = Tool.CreateTool(toolType, this))
+                dir = myPics;
+            }
+            else
+            {
+                try
                 {
-                    toolInfos[i] = tool.Info;
-                    ++i;
+                    DirectoryInfo dirInfo = new DirectoryInfo(dir);
+
+                    if (!dirInfo.Exists)
+                    {
+                        dir = myPics;
+                    }
+                }
+
+                catch (Exception)
+                {
+                    dir = myPics;
                 }
             }
+
+            return dir;
         }
 
-        private Type[] GetEffectsFromAssembly(Assembly assembly)
+        public bool DoSave()
         {
-            List<Type> effects = new List<Type>();
+            return DoSave(false);
+        }
 
-            foreach (Type type in assembly.GetTypes())
+        /// <summary>
+        /// Does the dirty work for a File->Save operation. If any of the "Save Options" in the
+        /// DocumentWorkspace are null, this will call DoSaveAs(). If the image has more than 1
+        /// layer but the file type they want to save with does not support layers, then it will
+        /// ask the user about flattening the image.
+        /// </summary>
+        /// <param name="tryToFlatten">
+        /// If true, will ask the user about flattening if the workspace's saveFileType does not 
+        /// support layers and the image has more than 1 layer.
+        /// If false, then DoSaveAs will be called and the fileType will be prepopulated with
+        /// the .PDN type.
+        /// </param>
+        /// <returns><b>true</b> if the file was saved, <b>false</b> if the user cancelled</returns>
+        protected bool DoSave(bool tryToFlatten)
+        {
+            using (new PushNullToolMode(this))
             {
-                if (type.IsSubclassOf(typeof(Effect)) && !type.IsAbstract)
+                string newFileName;
+                FileType newFileType;
+                SaveConfigToken newSaveConfigToken;
+
+                GetDocumentSaveOptions(out newFileName, out newFileType, out newSaveConfigToken);
+
+                // if they haven't specified a filename, then revert to "Save As" behavior
+                if (newFileName == null)
                 {
-                    effects.Add(type);
+                    return DoSaveAs();
                 }
-            }
 
-            effects.Sort(delegate(Type x, Type y) { return string.Compare(x.Name, y.Name); });
-
-            return effects.ToArray();
-        }
-
-        private void InitializeEffects()
-        {
-            List<Type[]> effectsArrays = new List<Type[]>();
-            string homeDir = PdnInfo.GetApplicationDir();
-
-            try
-            {
-                Assembly effectsAssembly = Assembly.GetAssembly(typeof(Effect));
-                Type[] effectTypes = GetEffectsFromAssembly(effectsAssembly);
-
-                effectsArrays.Add(effectTypes);
-            }
-
-            catch (FileNotFoundException)
-            {
-                //Utility.ErrorBox(this, "PaintDotNet.Effects.dll could not be found -- many Effects will not be available.");
-            }
-
-            string effectsDir = Path.Combine(homeDir, "Effects");
-            bool dirExists;
-
-            try
-            {
-                DirectoryInfo dirInfo = new DirectoryInfo(effectsDir);
-                dirExists = dirInfo.Exists;
-            }
-
-            catch
-            {
-                dirExists = false;
-            }
-
-            if (dirExists)
-            {
-                foreach (string fileName in Directory.GetFiles(effectsDir, "*.dll"))
+                // if we have a filename but no file type, try to infer the file type
+                if (newFileType == null)
                 {
-                    bool success = false;
-                    Assembly pluginAssembly = null;
-                    System.Type[] pluginEffects = null;
+                    FileTypeCollection fileTypes = FileTypes.GetFileTypes();
+                    string ext = Path.GetExtension(newFileName);
+                    int index = fileTypes.IndexOfExtension(ext);
+                    FileType inferredFileType = fileTypes[index];
+                    newFileType = inferredFileType;
+                }
 
+                // if the image has more than 1 layer but is saving with a file type that
+                // does not support layers, then we must ask them if we may flatten the
+                // image first
+                if (Document.Layers.Count > 1 && !newFileType.SupportsLayers)
+                {
+                    if (!tryToFlatten)
+                    {
+                        return DoSaveAs();
+                    }
+                    else
+                    {
+                        DialogResult dr = WarnAboutFlattening();
+
+                        if (dr == DialogResult.Yes)
+                        {
+                            ExecuteFunction(new FlattenFunction());
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                // get the configuration!
+                if (newSaveConfigToken == null)
+                {
+                    Surface scratch = BorrowScratchSurface(this.GetType().Name + ".DoSave() calling GetSaveConfigToken()");
+
+                    bool result;
                     try
                     {
-                        pluginAssembly = Assembly.LoadFrom(fileName);
-                        pluginEffects = GetEffectsFromAssembly(pluginAssembly);
+                        result = GetSaveConfigToken(newFileType, newSaveConfigToken, out newSaveConfigToken, scratch);
+                    }
+
+                    finally
+                    {
+                        ReturnScratchSurface(scratch);
+                    }
+
+                    if (!result)
+                    {
+                        return false;
+                    }
+                }
+
+                // At this point fileName, fileType, and saveConfigToken must all be non-null
+
+                // if the document supports custom headers, embed a thumbnail in there
+                if (newFileType.SupportsCustomHeaders)
+                {
+                    using (new WaitCursorChanger(this))
+                    {
+                        Utility.GCFullCollect();
+                        const int maxDim = 256;
+
+                        Surface thumb;
+                        Surface flattened = BorrowScratchSurface(this.GetType().Name + ".DoSave() preparing embedded thumbnail");
+
+                        try
+                        {
+                            Document.Flatten(flattened);
+
+                            if (Document.Width > maxDim || Document.Height > maxDim)
+                            {
+                                int width;
+                                int height;
+
+                                if (Document.Width > Document.Height)
+                                {
+                                    width = maxDim;
+                                    height = (Document.Height * maxDim) / Document.Width;
+                                }
+                                else
+                                {
+                                    height = maxDim;
+                                    width = (Document.Width * maxDim) / Document.Height;
+                                }
+
+                                int thumbWidth = Math.Max(1, width);
+                                int thumbHeight = Math.Max(1, height);
+
+                                thumb = new Surface(thumbWidth, thumbHeight);
+                                thumb.SuperSamplingFitSurface(flattened);
+                            }
+                            else
+                            {
+                                thumb = new Surface(flattened.Size);
+                                thumb.CopySurface(flattened);
+                            }
+                        }
+
+                        finally
+                        {
+                            ReturnScratchSurface(flattened);
+                        }
+
+                        Document thumbDoc = new Document(thumb.Width, thumb.Height);
+                        BitmapLayer thumbLayer = new BitmapLayer(thumb);
+                        BitmapLayer whiteLayer = new BitmapLayer(thumb.Width, thumb.Height);
+                        whiteLayer.Surface.Clear(ColorBgra.White);
+                        thumb.Dispose();
+                        thumbDoc.Layers.Add(whiteLayer);
+                        thumbDoc.Layers.Add(thumbLayer);
+                        MemoryStream thumbPng = new MemoryStream();
+                        PdnFileTypes.Png.Save(thumbDoc, thumbPng, null, null, null, false);
+                        byte[] thumbBytes = thumbPng.ToArray();
+
+                        string thumbString = Convert.ToBase64String(thumbBytes, Base64FormattingOptions.None);
+                        thumbDoc.Dispose();
+
+                        string thumbXml = "<thumb png=\"" + thumbString + "\" />";
+                        Document.CustomHeaders = thumbXml;
+                    }
+                }
+
+                // save!
+                bool success = false;
+                Stream stream = null;
+
+                try
+                {
+                    stream = (Stream)new FileStream(newFileName, FileMode.Create, FileAccess.Write);
+
+                    using (new WaitCursorChanger(this))
+                    {
+                        Utility.GCFullCollect();
+
+                        SaveProgressDialog sd = new SaveProgressDialog(this);
+                        Surface scratch = BorrowScratchSurface(this.GetType().Name + ".DoSave() handing off scratch surface to SaveProgressDialog.Save()");
+
+                        try
+                        {
+                            sd.Save(stream, Document, newFileType, newSaveConfigToken, scratch);
+                        }
+
+                        finally
+                        {
+                            ReturnScratchSurface(scratch);
+                        }
+
                         success = true;
-                    }
 
-                    catch (Exception ex)
-                    {
-                        //string errorFormat = PdnResources.GetString("DocumentWorkspace.InitializeEffects.DllLoadFailed.Format");
-                        //string errorText = string.Format(errorFormat, fileName);
-                        //Utility.ErrorBox(this, errorText);
-                        Tracing.Ping("Exception while loading " + fileName + ": " + ex.ToString());
-                    }
+                        this.lastSaveTime = DateTime.Now;
 
-                    if (success)
-                    {
-                        effectsArrays.Add(pluginEffects);
-                    }
-                }
-            }
-
-            effectsArrays.Add(GetEffectsFromAssembly(Assembly.GetExecutingAssembly()));
-
-            // collate List<T> of arrays into one big array
-            List<Type> theEffects = new List<Type>();
-
-            foreach (Type[] typeArray in effectsArrays)
-            {
-                foreach (Type type in typeArray)
-                {
-                    theEffects.Add(type);
-                }
-            }
-
-            this.effects = theEffects.ToArray();
-        }
-
-        /// <summary>
-        /// Provides a way for you to perform an action by its class name. 
-        /// This only works for DocumentWorkspace actions don't take any extra context.
-        /// This works for both DocumentAction and WorkspaceAction types.
-        /// </summary>
-        public void PerformAction(Type actionType, params object[] parameters)
-        {
-            Type oldToolType = Environment.GetToolType();
-            Environment.SetTool(null);
-
-            Update();
-
-            using (new WaitCursorChanger(this))
-            {
-                ConstructorInfo ci = actionType.GetConstructor(new Type[] { typeof(DocumentWorkspace) });
-                object action = (DocumentAction)ci.Invoke(new object[] { this });
-
-                if (action is DocumentAction)
-                {
-                    if (parameters.Length != 0)
-                    {
-                        throw new ArgumentException("can't specify parameters for DocumentActions");
-                    }
-
-                    this.PerformAction((DocumentAction)action);
-                }
-                else if (action is WorkspaceAction)
-                {
-                    this.PerformAction((WorkspaceAction)action);
-                }
-            }
-
-            Environment.SetTool(oldToolType, this);
-        }
-
-        /// <summary>
-        /// Same as PerformAction(Type) except it lets you rename the HistoryAction's name.
-        /// </summary>
-        /// <param name="actionType"></param>
-        /// <param name="newName"></param>
-        public void PerformAction(Type actionType, string newName, Image icon)
-        {
-            Type oldToolType = Environment.GetToolType();
-            Environment.SetTool(null);
-
-            Update();
-
-            using (new WaitCursorChanger(this))
-            {
-                ConstructorInfo ci = actionType.GetConstructor(new Type[] { typeof(DocumentWorkspace) });
-                DocumentAction action = (DocumentAction)ci.Invoke(new object[] { this });
-                HistoryAction ha = action.PerformAction();
-
-                if (ha != null)
-                {
-                    ha.Name = newName;
-                    ha.Image = icon;
-                    History.PushNewAction(ha);
-                }
-            }
-
-            Environment.SetTool(oldToolType, this);
-        }
-
-        public void PerformAction(DocumentAction performMe)
-        {
-            Type oldToolType = Environment.GetToolType();
-            Environment.SetTool(null);
-
-            Update();
-
-            using (new WaitCursorChanger(this))
-            {           
-                HistoryAction ha = performMe.PerformAction();
-
-                if (ha != null)
-                {
-                    History.PushNewAction(ha);
-                }
-            }
-
-            Environment.SetTool(oldToolType, this);
-        }
-
-        public void PerformAction(WorkspaceAction performMe, params object[] parameters)
-        {
-            performMe.PerformAction(parameters);
-        }
-        
-        private void mainToolBar_ToolClicked(object sender, ToolClickedEventArgs e)
-        {
-            documentView.Focus();
-            Environment.SetTool(e.ToolType, this);
-        }
-
-        private void ToolChangedHandler(object sender, EventArgs e)
-        {
-            if (Environment.Tool != null)
-            {
-                documentView.Cursor = Environment.Tool.Cursor;
-                Environment.Tool.CursorChanged += new EventHandler(ToolCursorChangedHandler);
-                this.toolPulseTimer.Enabled = true;
-                widgets.MainToolBar.SelectTool(Environment.GetToolType(), false);
-            }
-            else
-            {
-                this.toolPulseTimer.Enabled = false;
-            }
-        }
-
-        private void ToolChangingHandler(object sender, EventArgs e)
-        {
-            if (Environment.Tool != null)
-            {
-                Environment.Tool.CursorChanged -= new EventHandler(ToolCursorChangedHandler);
-            }
-        }
-
-        private void ToolCursorChangedHandler(object sender, EventArgs e)
-        {
-            if (Environment.Tool != null)
-            {
-                documentView.Cursor = Environment.Tool.Cursor;
-            }
-        }
-
-        private void InitializeToolBars()
-        {
-            mainToolBarForm.MainToolBar.SetTools(this.ToolInfos, this);
-            mainToolBarForm.MainToolBar.ToolClicked += new ToolClickedEventHandler(this.mainToolBar_ToolClicked);
-            Environment.ToolChanging += new EventHandler(this.ToolChangingHandler);
-            Environment.ToolChanged += new EventHandler(this.ToolChangedHandler);
-        }
-
-        private void viewConfigStrip_DrawGridChanged(object sender, EventArgs e)
-        {
-            documentView.DrawGrid = ((ViewConfigStrip)sender).DrawGrid;
-        }
-
-        private void drawConfigStrip_AntiAliasingChanged(object sender, System.EventArgs e)
-        {
-            Environment.AntiAliasing = ((DrawConfigStrip)sender).AntiAliasing;
-        }
-
-        private void drawConfigStrip_PenChanged(object sender, System.EventArgs e)
-        {
-            Environment.PenInfo = drawConfigStrip.PenInfo;
-        }
-
-        private void drawConfigStrip_BrushChanged(object sender, System.EventArgs e)
-        {
-            Environment.BrushInfo = drawConfigStrip.BrushInfo;
-        }
-
-        private void layerControl_ClickedOnLayer(object sender, PaintDotNet.LayerEventArgs ce)
-        {
-            if (ce.Layer != ActiveLayer)
-            {
-                ActiveLayer = ce.Layer;
-            }
-
-            this.RelinquishFocusHandler(sender, EventArgs.Empty);
-        }
-
-        private void layerForm_NewLayerButtonClicked(object sender, System.EventArgs e)
-        {
-            try
-            {
-                AddNewLayerToDocument();
-            }
-
-            catch
-            {
-                Utility.ErrorBox(this, PdnResources.GetString("DocumentWorkspace.NewLayerButtonClicked.OutOfMemory"));
-                return;
-            }
-        }
-
-        public NewLayerHistoryAction AddNewLayerToDocument()
-        {
-            BitmapLayer newLayer = null;
-            newLayer = new BitmapLayer(Document.Width, Document.Height);
-            string newLayerNameFormat = PdnResources.GetString("DocumentWorkspace.NewLayerName.Format");
-            newLayer.Name = string.Format(newLayerNameFormat, (1 + Document.Layers.Count).ToString());
-
-            NewLayerHistoryAction ha = new NewLayerHistoryAction(
-                PdnResources.GetString("DocumentWorkspace.AddNewLayerToDocument.NewLayerHistoryActionName"),
-                PdnResources.GetImage("Icons.MenuLayersAddNewLayerIcon.png"), 
-                this, 
-                document.Layers.Count);
-
-            document.Layers.Add(newLayer);
-            History.PushNewAction(ha);
-            return ha;
-        }
-
-        private void layerForm_DeleteLayerButtonClicked(object sender, System.EventArgs e)
-        {
-            if (Document.Layers.Count == 1)
-            {
-                Utility.ErrorBox(this, PdnResources.GetString("DocumentWorkspace.DeleteLayerButtonClicked.MustHaveOneLayer"));
-            }
-            else
-            {
-                if (DialogResult.Yes == Utility.AskYesNo(this, PdnResources.GetString("DocumentWorkspace.DeleteLayerButtonClicked.Confirmation")))
-                {
-                    DeselectAction action = new DeselectAction(this);
-                    HistoryAction ha1 = action.PerformAction();
-                    
-                    HistoryAction ha2 = new DeleteLayerHistoryAction(string.Empty, null, this, ActiveLayer);
-                    Document.Layers.Remove(ActiveLayer);
-
-                    CompoundHistoryAction cha = new CompoundHistoryAction(
-                        PdnResources.GetString("DocumentWorkspace.DeleteLayerButtonClicked.DeleteLayerHistoryActionName"),
-                        PdnResources.GetImage("Icons.MenuLayersDeleteLayerIcon.png"), 
-                        new HistoryAction[] { ha1, ha2 });
-
-                    History.PushNewAction(cha);
-                }
-            }
-        }
-
-        private void layerForm_DuplicateLayerButtonClick(object sender, System.EventArgs e)
-        {
-            Layer newLayer = null;
-            Utility.GCFullCollect();
-
-            try
-            {
-                newLayer = (Layer)ActiveLayer.Clone();
-            }
-
-            catch (OutOfMemoryException)
-            {
-                Utility.ErrorBox(this, PdnResources.GetString("DocumentWorkspace.DuplicateLayerButtonClicked.OutOfMemory"));
-                return;
-            }
-
-            newLayer.IsBackground = false;
-            int newIndex = 1 + Document.Layers.IndexOf(ActiveLayer);
-
-            HistoryAction ha = new NewLayerHistoryAction(
-                PdnResources.GetString("DocumentWorkspace.DuplicateLayerButtonClicked.DuplicateLayerHistoryActionName"),
-                PdnResources.GetImage("Icons.MenuLayersDuplicateLayerIcon.png"), 
-                this, 
-                newIndex);
-
-            Document.Layers.Insert(newIndex, newLayer);
-            History.PushNewAction(ha);
-            newLayer.Invalidate();
-        }
-
-        private void layerForm_MoveLayerUpButtonClicked(object sender, System.EventArgs e)
-        {
-            int index = Document.Layers.IndexOf(ActiveLayer);
-
-            if (index == Document.Layers.Count - 1)
-            {
-                return;
-            }
-
-            SwapLayerHistoryAction slha = new SwapLayerHistoryAction(PdnResources.GetString("DocumentWorkspace.MoveLayerUpButtonClicked.MoveLayerUpHistoryActionName"),
-                                                                     PdnResources.GetImage("Icons.MenuLayersMoveLayerUpIcon.png"),
-                                                                     this,
-                                                                     index,
-                                                                     index + 1);
-
-            HistoryAction ha = slha.PerformUndo();
-            history.PushNewAction(ha);
-
-            this.ActiveLayer = (Layer)Document.Layers[index + 1]; 
-        }
-
-        private void layerForm_MoveLayerDownButtonClicked(object sender, System.EventArgs e)
-        {
-            int index = Document.Layers.IndexOf(ActiveLayer);
-
-            if (index == 0)
-            {
-                return;
-            }
-
-            SwapLayerHistoryAction slha = new SwapLayerHistoryAction(PdnResources.GetString("DocumentWorkspace.MoveLayerDownButtonClicked.MoveLayerDownHistoryActionName"),
-                                                                     PdnResources.GetImage("Icons.MenuLayersMoveLayerDownIcon.png"),
-                                                                     this,
-                                                                     index,
-                                                                     index - 1);
-
-            HistoryAction ha = slha.PerformUndo();
-            history.PushNewAction(ha);
-        }
-
-        private void drawConfigStrip_ShapeDrawTypeChanged(object sender, System.EventArgs e)
-        {
-            if (Environment.ShapeDrawType != widgets.DrawConfigStrip.ShapeDrawType)
-            {
-                Environment.ShapeDrawType = widgets.DrawConfigStrip.ShapeDrawType;
-            }
-        }
-
-        private void historyForm_ClearHistoryButtonClicked(object sender, System.EventArgs e)
-        {
-            if (DialogResult.Yes == Utility.AskYesNo(this, PdnResources.GetString("DocumentWorkspace.ClearHistoryButtonClicked.Confirmation")))
-            {
-                history.ClearAll();
-
-                history.PushNewAction(new NullHistoryAction(
-                    PdnResources.GetString("DocumentWorkspace.ClearHistoryButtonClicked.ClearHistoryActionName"),
-                    PdnResources.GetImage("Icons.MenuLayersDeleteLayerIcon.png")));
-            }
-        }
-
-        private void historyForm_UndoButtonClicked(object sender, System.EventArgs e)
-        {
-            if (History.UndoStack.Count > 0)
-            {
-                if (!(History.UndoStack[History.UndoStack.Count - 1] is NullHistoryAction))
-                {
-                    using (new WaitCursorChanger(this))
-                    {
-                        try
-                        {
-                            History.StepBackward();
-                        }
-
-                        catch (InvalidOperationException)
-                        {
-                            // ignore
-                        }
-
-                        Update();
+                        stream.Close();
+                        stream = null;
                     }
                 }
 
-                Utility.GCFullCollect();
-            }
-        }
-
-        private void historyForm_RedoButtonClicked(object sender, System.EventArgs e)
-        {
-            if (History.RedoStack.Count > 0)
-            {
-                if (!(History.RedoStack[History.RedoStack.Count - 1] is NullHistoryAction))
+                catch (UnauthorizedAccessException)
                 {
-                    using (new WaitCursorChanger(this))
+                    Utility.ErrorBox(this, PdnResources.GetString("SaveImage.Error.UnauthorizedAccessException"));
+                }
+
+                catch (SecurityException)
+                {
+                    Utility.ErrorBox(this, PdnResources.GetString("SaveImage.Error.SecurityException"));
+                }
+
+                catch (DirectoryNotFoundException)
+                {
+                    Utility.ErrorBox(this, PdnResources.GetString("SaveImage.Error.DirectoryNotFoundException"));
+                }
+
+                catch (IOException)
+                {
+                    Utility.ErrorBox(this, PdnResources.GetString("SaveImage.Error.IOException"));
+                }
+
+                catch (OutOfMemoryException)
+                {
+                    Utility.ErrorBox(this, PdnResources.GetString("SaveImage.Error.OutOfMemoryException"));
+                }
+
+#if !DEBUG
+                catch (Exception)
+                {
+                    Utility.ErrorBox(this, PdnResources.GetString("SaveImage.Error.Exception"));
+                }
+#endif
+
+                finally
+                {
+                    if (stream != null)
                     {
-                        try
-                        {
-                            History.StepForward();
-                        }
-
-                        catch (InvalidOperationException)
-                        {
-                            // Ignore
-                        }
-
-                        Update();
+                        stream.Close();
+                        stream = null;
                     }
                 }
 
-                Utility.GCFullCollect();
-            }
-        }
-
-        private void viewConfigStrip_RulersEnabledChanged(object sender, System.EventArgs e)
-        {
-            documentView.RulersEnabled = viewConfigStrip.RulersEnabled;
-        }
-
-        private void historyForm_RewindButtonClicked(object sender, EventArgs e)
-        {
-            DateTime lastUpdate = DateTime.Now;
-
-            History.BeginStepGroup();
-
-            while (History.UndoStack.Count > 1)
-            {
-                using (new WaitCursorChanger(this))
+                if (success)
                 {
-                    try
-                    {
-                        History.StepBackward();
-                    }
-
-                    catch (InvalidOperationException)
-                    {
-                        break;
-                    }
-
-                    if ((DateTime.Now - lastUpdate).TotalMilliseconds >= 500)
-                    {
-                        History.EndStepGroup();
-                        Update();
-                        lastUpdate = DateTime.Now;
-                        History.BeginStepGroup();
-                    }
-                }
-            }
-
-            History.EndStepGroup();
-
-            Utility.GCFullCollect();
-            document.Invalidate();
-            Update();
-        }
-
-        private void historyForm_FastForwardButtonClicked(object sender, EventArgs e)
-        {
-            DateTime lastUpdate = DateTime.Now;
-
-            History.BeginStepGroup();
-
-            while (History.RedoStack.Count > 0)
-            {
-                using (new WaitCursorChanger(this))
-                {
-                    try
-                    {
-                        History.StepForward();
-                    }
-
-                    catch (InvalidOperationException)
-                    {
-                        break;
-                    }
-
-                    if ((DateTime.Now - lastUpdate).TotalMilliseconds >= 500)
-                    {
-                        History.EndStepGroup();
-                        Update();
-                        lastUpdate = DateTime.Now;
-                        History.BeginStepGroup();
-                    }                
-                }
-            }
-
-            History.EndStepGroup();
-
-            Utility.GCFullCollect();
-            document.Invalidate();
-            Update();
-        }
-
-        private void layerForm_PropertiesButtonClick(object sender, EventArgs e)
-        {
-            using (Form lpd = ActiveLayer.CreateConfigDialog())
-            {
-                DialogResult result = Utility.ShowDialog(lpd, FindForm());
-            }
-        }
-
-        private void Environment_FontInfoChanged(object sender, EventArgs e)
-        {
-            widgets.TextConfigStrip.FontInfo = Environment.FontInfo;
-        }
-
-        private void Environment_TextAlignmentChanged(object sender, EventArgs e)
-        {
-            widgets.TextConfigStrip.TextAlignment = Environment.TextAlignment;
-        }
-
-        private void textConfigStrip_TextAlignmentChanged(object sender, EventArgs e)
-        {
-            Environment.TextAlignment = widgets.TextConfigStrip.TextAlignment;
-        }
-
-        private void textConfigStrip_FontTextChanged(object sender, EventArgs e)
-        {
-            Environment.FontInfo = widgets.TextConfigStrip.FontInfo;
-        }
-
-        private void toolPulseTimer_Tick(object sender, EventArgs e)
-        {
-            if (ParentForm == null || ParentForm.WindowState == FormWindowState.Minimized)
-            {
-                return;
-            }
-
-            if (Environment.Tool != null && Environment.Tool.Active)
-            {
-                Environment.Tool.PerformPulse();
-            }
-        }
-
-        protected override void OnLayout(LayoutEventArgs levent)
-        {
-            viewConfigStrip_ZoomBasisChanged(this, EventArgs.Empty);
-            base.OnLayout(levent);
-        }
-
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize(e);
-
-            if (ParentForm != null)
-            {
-                if (ParentForm.WindowState == FormWindowState.Minimized)
-                {
-                    toolPulseTimer.Enabled = false;
+                    Shell.AddToRecentDocumentsList(newFileName);
                 }
                 else
                 {
-                    toolPulseTimer.Enabled = true;
-                    viewConfigStrip_ZoomBasisChanged(this, EventArgs.Empty);
+                    return false;
                 }
+
+                // reset the dirty bit so they won't be asked to save on quitting
+                Document.Dirty = false;
+
+                // some misc. book keeping ...
+                AddToMruList();
+
+                // and finally, shout happiness by way of ...
+                return true;
             }
         }
 
-        private void documentView_Scroll(object sender, System.Windows.Forms.ScrollEventArgs e)
+        /// <summary>
+        /// Does the grunt work to do a File->Save As operation.
+        /// </summary>
+        /// <returns><b>true</b> if the file was saved correctly, <b>false</b> if the user cancelled</returns>
+        public bool DoSaveAs()
         {
-            OnScroll(e);
-        }
-
-        public void ZoomIn(double factor)
-        {
-            this.viewConfigStrip.ZoomBasis = ZoomBasis.Factor;
-            this.documentView.ZoomIn(factor);
-        }
-
-        public void ZoomIn()
-        {
-            this.viewConfigStrip.ZoomBasis = ZoomBasis.Factor;
-            this.documentView.ZoomIn();
-        }
-
-        public void ZoomOut(double factor)
-        {
-            this.viewConfigStrip.ZoomBasis = ZoomBasis.Factor;
-            this.documentView.ZoomOut(factor);
-        }
-
-        public void ZoomOut()
-        {
-            this.viewConfigStrip.ZoomBasis = ZoomBasis.Factor;
-            this.documentView.ZoomOut();
-        }
-
-        public void ZoomToWindow()
-        {
-            this.viewConfigStrip.ZoomBasis = ZoomBasis.Window;
-            this.documentView.ZoomToWindow();
-        }
-
-        public void ZoomToRectangle(Rectangle selectionBounds)
-        {
-            PointF selectionCenter = new PointF((selectionBounds.Left + selectionBounds.Right + 1) / 2,
-                (selectionBounds.Top + selectionBounds.Bottom + 1) / 2);
-
-            PointF cornerPosition;
-
-            ScaleFactor zoom = ScaleFactor.Min(documentView.ClientRectantangleMin.Width, selectionBounds.Width + 2,
-                                               documentView.ClientRectantangleMin.Height, selectionBounds.Height + 2,
-                                               ScaleFactor.MinValue);
-
-            // Zoom out to fit the image
-            documentView.ScaleFactor = zoom;
-
-            cornerPosition = new PointF(selectionCenter.X - (VisibleDocumentRectangleF.Width / 2),
-                selectionCenter.Y - (VisibleDocumentRectangleF.Height / 2));
-
-            documentView.DocumentScrollPositionF = cornerPosition;
-        }
-
-        public void ZoomToSelection()
-        {
-            if (environment.Selection.IsEmpty) 
+            using (new PushNullToolMode(this))
             {
-                ZoomToWindow();
-            } 
-            else 
-            {
-                using (PdnRegion region = environment.Selection.CreateRegion())
-                {
-                    ZoomToRectangle(region.GetBoundsInt());
-                }
-            }
-        }
+                string newFileName;
+                FileType newFileType;
+                SaveConfigToken newSaveConfigToken;
 
-        private uint ignore = 0; //to stop the feedback loop
-        private void viewConfigStrip_ZoomBasisChanged(object sender, EventArgs e)
-        {
-            if (ignore == 0) 
-            {
-                ++ignore;
+                Surface scratch = BorrowScratchSurface(this.GetType() + ".DoSaveAs() handing off scratch surface to DoSaveAsDialog()");
 
+                bool result;
                 try
                 {
-                    switch (viewConfigStrip.ZoomBasis) 
-                    {
-                        case ZoomBasis.Window:
-                            this.viewConfigStrip.BeginZoomChanges();
-                            ZoomToWindow();
-                            // Enable PanelAutoScroll only long enough to recenter the view
-                            this.documentView.PanelAutoScroll = true;
-                            this.documentView.PanelAutoScroll = false;
-                            this.viewConfigStrip.EndZoomChanges();
-                            // This would be unset by the scalefactor change.
-                            this.viewConfigStrip.ZoomBasis = ZoomBasis.Window;
-                            break;
-
-                        case ZoomBasis.Selection:
-                            ZoomToSelection();
-                            this.documentView.PanelAutoScroll = true;
-                            this.viewConfigStrip.ZoomBasis = ZoomBasis.Factor;
-                            break;
-
-                        case ZoomBasis.Factor:
-                            documentView.PanelAutoScroll = true;
-                            break;
-
-                        default:
-                            throw new InvalidEnumArgumentException("viewConfigStrip.ZoomBasis was not a valid enumeration value");
-                    }
+                    result = DoSaveAsDialog(out newFileName, out newFileType, out newSaveConfigToken, scratch);
                 }
 
                 finally
                 {
-                    --ignore;
+                    ReturnScratchSurface(scratch);
                 }
-            }
-        }
 
-        private void viewConfigStrip_ZoomScaleChanged(object sender, EventArgs e)
-        {
-            if (viewConfigStrip.ZoomBasis == ZoomBasis.Factor) 
-            {
-                documentView.ScaleFactor = viewConfigStrip.ScaleFactor;
-            }
-        }
-
-        private void documentView_RulersEnabledChanged(object sender, EventArgs e)
-        {
-            viewConfigStrip.RulersEnabled = documentView.RulersEnabled;
-            viewConfigStrip_ZoomBasisChanged(this, EventArgs.Empty);
-            UpdateRulerSelectionTinting();
-
-            Settings.CurrentUser.SetBoolean(PdnSettings.Rulers, this.documentView.RulersEnabled);
-        }
-
-        private void documentView_DrawGridChanged(object sender, EventArgs e)
-        {
-            viewConfigStrip.DrawGrid = documentView.DrawGrid;
-            Settings.CurrentUser.SetBoolean(PdnSettings.DrawGrid, this.documentView.DrawGrid);
-        }
-
-        private void Environment_AntiAliasingChanged(object sender, EventArgs e)
-        {
-            drawConfigStrip.AntiAliasing = Environment.AntiAliasing;
-            Settings.CurrentUser.SetBoolean(PdnSettings.Antialiasing, Environment.AntiAliasing);
-        }
-
-        private void viewConfigStrip_ZoomIn(object sender, EventArgs e)
-        {
-            this.ZoomIn();
-        }
-
-        private void viewConfigStrip_ZoomOut(object sender, EventArgs e)
-        {
-            this.ZoomOut();
-        }
-
-        private void viewConfigStrip_UnitsChanged(object sender, EventArgs e)
-        {
-            this.environment.Units = this.viewConfigStrip.Units;
-
-            if (this.viewConfigStrip.Units != MeasurementUnit.Pixel)
-            {
-                Settings.CurrentUser.SetString(PdnSettings.LastNonPixelUnits, this.viewConfigStrip.Units.ToString());
-            }
-        }
-
-        private void Environment_UnitsChanged(object sender, EventArgs e)
-        {
-            this.viewConfigStrip.Units = this.environment.Units;
-            this.documentView.Units = this.environment.Units;
-            Settings.CurrentUser.SetString(PdnSettings.Units, this.environment.Units.ToString());
-        }
-
-        private void DocumentView_MouseWheel(object sender, MouseEventArgs e)
-        {
-            if (Control.ModifierKeys == Keys.Control)
-            {
-                double mouseDelta = (double)e.Delta / 120.0f;
-                Rectangle visibleDocBoundsStart = this.documentView.VisibleDocumentBounds;
-
-                Point mouseDocPt = this.documentView.MouseToDocument(sender, new Point(e.X, e.Y));
-                RectangleF visibleDocDocRect1 = this.documentView.VisibleDocumentRectangleF;
-                PointF mouseNPt = new PointF(
-                    (mouseDocPt.X - visibleDocDocRect1.X) / visibleDocDocRect1.Width,
-                    (mouseDocPt.Y - visibleDocDocRect1.Y) / visibleDocDocRect1.Height);
-
-                const double factor = 1.12;
-                double mouseFactor = Math.Pow(factor, Math.Abs(mouseDelta));
-
-                if (e.Delta > 0)
+                if (result)
                 {
-                    this.ZoomIn(mouseFactor);
+                    string oldFileName;
+                    FileType oldFileType;
+                    SaveConfigToken oldSaveConfigToken;
+
+                    GetDocumentSaveOptions(out oldFileName, out oldFileType, out oldSaveConfigToken);
+                    SetDocumentSaveOptions(newFileName, newFileType, newSaveConfigToken);
+
+                    bool result2 = DoSave(true);
+
+                    if (!result2)
+                    {
+                        SetDocumentSaveOptions(oldFileName, oldFileType, oldSaveConfigToken);
+                    }
+
+                    return result2;
                 }
-                else if (e.Delta < 0)
+                else
                 {
-                    this.ZoomOut(mouseFactor);
+                    return false;
                 }
+            }
+        }
 
-                RectangleF visibleDocDocRect2 = this.documentView.VisibleDocumentRectangleF;
-                PointF scrollPt2 = new PointF(
-                    mouseDocPt.X - visibleDocDocRect2.Width * mouseNPt.X,
-                    mouseDocPt.Y - visibleDocDocRect2.Height * mouseNPt.Y);
+        public static Document LoadDocument(Control owner, string fileName, out FileType fileTypeResult, ProgressEventHandler progressCallback)
+        {
+            FileTypeCollection fileTypes;
+            int ftIndex;
+            FileType fileType;
 
-                this.documentView.DocumentScrollPositionF = scrollPt2;
+            fileTypeResult = null;
 
-                Rectangle visibleDocBoundsEnd = this.documentView.VisibleDocumentBounds;
+            try
+            {
+                fileTypes = FileTypes.GetFileTypes();
+                ftIndex = fileTypes.IndexOfExtension(Path.GetExtension(fileName));
 
-                if (e.Delta < 0 && visibleDocBoundsEnd != visibleDocBoundsStart)
+                if (ftIndex == -1)
                 {
-                    // Make sure the screen updates, otherwise it can get a little funky looking
-                    this.documentView.Update();
+                    Utility.ErrorBox(owner, PdnResources.GetString("LoadImage.Error.ImageTypeNotRecognized"));
+                    return null;
+                }
+
+                fileType = fileTypes[ftIndex];
+                fileTypeResult = fileType;
+            }
+
+            catch (ArgumentException)
+            {
+                string format = PdnResources.GetString("LoadImage.Error.InvalidFileName.Format");
+                string error = string.Format(format, fileName);
+                Utility.ErrorBox(owner, error);
+                return null;
+            }
+
+            Document document = null;
+
+            using (new WaitCursorChanger(owner))
+            {
+                Utility.GCFullCollect();
+                Stream stream = null;
+
+                try
+                {
+                    try
+                    {
+                        stream = new FileStream(fileName, FileMode.Open, FileAccess.Read);
+                        long totalBytes = 0;
+
+                        SiphonStream siphonStream = new SiphonStream(stream);
+
+                        IOEventHandler ioEventHandler = null;
+                        ioEventHandler =
+                            delegate(object sender, IOEventArgs e)
+                            {
+                                if (progressCallback != null)
+                                {
+                                    totalBytes += (long)e.Count;
+                                    double percent = Utility.Clamp(100.0 * ((double)totalBytes / (double)siphonStream.Length), 0, 100);
+                                    progressCallback(null, new ProgressEventArgs(percent));
+                                }
+                            };
+
+                        siphonStream.IOFinished += ioEventHandler;
+
+                        using (new WaitCursorChanger(owner))
+                        {
+                            document = fileType.Load(siphonStream);
+
+                            if (progressCallback != null)
+                            {
+                                progressCallback(null, new ProgressEventArgs(100.0));
+                            }
+                        }
+
+                        siphonStream.IOFinished -= ioEventHandler;
+                        siphonStream.Close();
+                    }
+
+                    catch (WorkerThreadException ex)
+                    {
+                        Type innerExType = ex.InnerException.GetType();
+                        ConstructorInfo ci = innerExType.GetConstructor(new Type[] { typeof(string), typeof(Exception) });
+
+                        if (ci == null)
+                        {
+                            throw;
+                        }
+                        else
+                        {
+                            Exception ex2 = (Exception)ci.Invoke(new object[] { "Worker thread threw an exception of this type", ex.InnerException });
+                            throw ex2;
+                        }
+                    }
+                }
+
+                catch (ArgumentException)
+                {
+                    if (fileName.Length == 0)
+                    {
+                        Utility.ErrorBox(owner, PdnResources.GetString("LoadImage.Error.BlankFileName"));
+                    }
+                    else
+                    {
+                        Utility.ErrorBox(owner, PdnResources.GetString("LoadImage.Error.ArgumentException"));
+                    }
+                }
+
+                catch (UnauthorizedAccessException)
+                {
+                    Utility.ErrorBox(owner, PdnResources.GetString("LoadImage.Error.UnauthorizedAccessException"));
+                }
+
+                catch (SecurityException)
+                {
+                    Utility.ErrorBox(owner, PdnResources.GetString("LoadImage.Error.SecurityException"));
+                }
+
+                catch (FileNotFoundException)
+                {
+                    Utility.ErrorBox(owner, PdnResources.GetString("LoadImage.Error.FileNotFoundException"));
+                }
+
+                catch (DirectoryNotFoundException)
+                {
+                    Utility.ErrorBox(owner, PdnResources.GetString("LoadImage.Error.DirectoryNotFoundException"));
+                }
+
+                catch (PathTooLongException)
+                {
+                    Utility.ErrorBox(owner, PdnResources.GetString("LoadImage.Error.PathTooLongException"));
+                }
+
+                catch (IOException)
+                {
+                    Utility.ErrorBox(owner, PdnResources.GetString("LoadImage.Error.IOException"));
+                }
+
+                catch (SerializationException)
+                {
+                    Utility.ErrorBox(owner, PdnResources.GetString("LoadImage.Error.SerializationException"));
+                }
+
+                catch (OutOfMemoryException)
+                {
+                    Utility.ErrorBox(owner, PdnResources.GetString("LoadImage.Error.OutOfMemoryException"));
+                }
+
+                catch (Exception)
+                {
+                    Utility.ErrorBox(owner, PdnResources.GetString("LoadImage.Error.Exception"));
+                }
+
+                finally
+                {
+                    if (stream != null)
+                    {
+                        stream.Close();
+                        stream = null;
+                    }
                 }
             }
+
+            return document;
         }
 
-        private void drawConfigStrip_AlphaBlendingChanged(object sender, EventArgs e)
+        public Surface RenderThumbnail(int maxEdgeLength, bool highQuality, bool forceUpToDate)
         {
-            if (Environment.AlphaBlending != widgets.DrawConfigStrip.AlphaBlending)
+            if (Document == null)
             {
-                Environment.AlphaBlending = widgets.DrawConfigStrip.AlphaBlending;
+                Surface ret = new Surface(maxEdgeLength, maxEdgeLength);
+                ret.Clear(ColorBgra.Transparent);
+                return ret;
             }
+
+            Size thumbSize = Utility.ComputeThumbnailSize(Document.Size, maxEdgeLength);
+            Surface thumb = new Surface(thumbSize);
+            thumb.Clear(ColorBgra.Transparent);
+
+            RenderCompositionTo(thumb, highQuality, forceUpToDate);
+
+            return thumb;
         }
 
-        public event EventHandler ToolStatusChanged;
-        private void OnToolStatusChanged()
+        Surface IThumbnailProvider.RenderThumbnail(int maxEdgeLength)
         {
-            if (ToolStatusChanged != null)
-            {
-                ToolStatusChanged(this, EventArgs.Empty);
-            }
-        }
-
-        private void environment_ToolStatusChanged(object sender, EventArgs e)
-        {
-            OnToolStatusChanged();
+            return RenderThumbnail(maxEdgeLength, true, false);
         }
     }
 }

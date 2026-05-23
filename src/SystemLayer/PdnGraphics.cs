@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -23,12 +23,8 @@ namespace PaintDotNet.SystemLayer
     /// Other implementations of this class, or more generic implementations, may safely 
     /// thunk straight to equivelants in System.Drawing.Graphics.
     /// </summary>
-    public sealed class PdnGraphics
+    public static class PdnGraphics
     {
-        private PdnGraphics()
-        {
-        }
-
         public static void SetPropertyItems(Image image, PropertyItem[] items)
         {
             PropertyItem[] pis = image.PropertyItems;
@@ -124,8 +120,6 @@ namespace PaintDotNet.SystemLayer
             Rectangle dstRect,
             Matrix dstMatrix,
             IntPtr srcBitmapHandle,
-            int srcWidth,
-            int srcHeight,
             int srcOffsetX,
             int srcOffsetY)
         {
@@ -180,6 +174,7 @@ namespace PaintDotNet.SystemLayer
         {
             uint bytes = 0;
             int countdown = screwUpMax;
+            int error = 0;
                     
             // HACK: It seems that sometimes the GetRegionData will return ERROR_INVALID_HANDLE
             //       even though the handle (the HRGN) is fine. Maybe the function is not
@@ -187,6 +182,7 @@ namespace PaintDotNet.SystemLayer
             while (countdown > 0)
             {
                 bytes = SafeNativeMethods.GetRegionData(hRgn, 0, (NativeStructs.RGNDATA *)IntPtr.Zero);
+                error = Marshal.GetLastWin32Error();
 
                 if (bytes == 0)
                 {
@@ -202,7 +198,6 @@ namespace PaintDotNet.SystemLayer
             // But if we retry several times and it still messes up then we will finally give up.
             if (bytes == 0)
             {
-                int error = Marshal.GetLastWin32Error();
                 throw new Win32Exception(error, "GetRegionData returned " + bytes.ToString() + ", GetLastError() = " + error.ToString());
             }
 
@@ -310,7 +305,7 @@ namespace PaintDotNet.SystemLayer
 
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Exception while executing PdnGraphics.DrawPolyLine: " + ex.ToString());
+                Tracing.Ping("Exception while executing PdnGraphics.DrawPolyLine: " + ex.ToString());
             }
         }
 
@@ -334,26 +329,26 @@ namespace PaintDotNet.SystemLayer
 
                 if (pen == IntPtr.Zero)
                 {
-                    NativeMethods.ThrowOnWin32Error();
+                    NativeMethods.ThrowOnWin32Error("CreatePen returned NULL");
                 }
 
                 oldObject = SafeNativeMethods.SelectObject(hdc, pen);
 
                 NativeStructs.POINT pt;
-                uint result = SafeNativeMethods.MoveToEx(hdc, points[0].X, points[0].Y, out pt);
+                bool bResult = SafeNativeMethods.MoveToEx(hdc, points[0].X, points[0].Y, out pt);
                 
-                if (result == 0)
+                if (!bResult)
                 {
-                    NativeMethods.ThrowOnWin32Error();
+                    NativeMethods.ThrowOnWin32Error("MoveToEx returned false");
                 }
 
                 for (int i = 1; i < points.Length; ++i)
                 {
-                    result = SafeNativeMethods.LineTo(hdc, points[i].X, points[i].Y);
+                    bResult = SafeNativeMethods.LineTo(hdc, points[i].X, points[i].Y);
 
-                    if (result == 0)
+                    if (!bResult)
                     {
-                        NativeMethods.ThrowOnWin32Error();
+                        NativeMethods.ThrowOnWin32Error("LineTo returned false");
                     }
                 }
             }
@@ -402,7 +397,7 @@ namespace PaintDotNet.SystemLayer
 
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Exception while executing PdnGraphics.FillRectangles: " + ex.ToString());
+                Tracing.Ping("Exception while executing PdnGraphics.FillRectangles: " + ex.ToString());
             }
         }
 
@@ -421,7 +416,7 @@ namespace PaintDotNet.SystemLayer
 
                 if (brush == IntPtr.Zero)
                 {
-                    NativeMethods.ThrowOnWin32Error();
+                    NativeMethods.ThrowOnWin32Error("CreateSolidBrush returned NULL");
                 }
 
                 oldObject = SafeNativeMethods.SelectObject(hdc, brush);
@@ -439,7 +434,7 @@ namespace PaintDotNet.SystemLayer
 
                     if (result == 0)
                     {
-                        NativeMethods.ThrowOnWin32Error();
+                        NativeMethods.ThrowOnWin32Error("FillRect returned zero");
                     }
                 }
             }

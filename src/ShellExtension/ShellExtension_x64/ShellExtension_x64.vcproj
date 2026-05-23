@@ -124,7 +124,7 @@
 				Optimization="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="2"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SHELLEXTENSION_X64_EXPORTS"
+				PreprocessorDefinitions="WIN32;_WINDOWS;_USRDLL;SHELLEXTENSION_X64_EXPORTS"
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
 				RuntimeTypeInfo="false"
@@ -177,7 +177,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="@rem Sign&#x0D;&#x0A;call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(TargetPath)&quot;"
+				CommandLine="@rem Sign&#x0D;&#x0A;call &quot;$(SolutionDir)signfile.bat&quot; &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

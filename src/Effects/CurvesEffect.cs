@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -19,15 +19,14 @@ namespace PaintDotNet.Effects
     /// </summary>
     [EffectTypeHint(EffectTypeHint.Fast)]
     [EffectCategory(EffectCategory.Adjustment)]
-    public class CurvesEffect
+    public sealed class CurvesEffect
         : Effect
     {
         public CurvesEffect()
             : base(PdnResources.GetString("CurvesEffect.Name"),
-            PdnResources.GetImage("Icons.CurvesEffect.png"),
-            Keys.Control | Keys.Shift | Keys.M,
-            null,
-            EffectDirectives.None, true)
+                PdnResources.GetImage("Icons.CurvesEffect.png"),
+                null,
+                EffectDirectives.None, true)
         {
         }
 

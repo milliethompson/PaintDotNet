@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet.SystemLayer;
@@ -18,9 +18,6 @@ using System.Runtime.Serialization;
 
 namespace PaintDotNet
 { 
-    /// <summary>
-    /// Summary description for PdnGraphicsPath.
-    /// </summary>
     [Serializable]
     public sealed class PdnGraphicsPath
         : MarshalByRefObject,
@@ -311,13 +308,13 @@ namespace PaintDotNet
                         right.X = ((curr.X - last.X) - (curr.Y - last.Y) + 2) / 2 + curr.X - 1;
                         right.Y = ((curr.Y - last.Y) + (curr.X - last.X) + 2) / 2 + curr.Y - 1;
 
-                        if (Utility.IsPointInRectangle(left, bounds) && stencil[left])
+                        if (bounds.Contains(left) && stencil[left])
                         {
                             // go left
                             next.X += curr.Y - last.Y;
                             next.Y -= curr.X - last.X;
                         }
-                        else if (Utility.IsPointInRectangle(right, bounds) && stencil[right])
+                        else if (bounds.Contains(right) && stencil[right])
                         {
                             // go straight
                             next.X += curr.X - last.X;
@@ -430,13 +427,13 @@ namespace PaintDotNet
                     right.X = ((curr.X - last.X) - (curr.Y - last.Y) + 2) / 2 + curr.X - 1;
                     right.Y = ((curr.Y - last.Y) + (curr.X - last.X) + 2) / 2 + curr.Y - 1;
 
-                    if (Utility.IsPointInRectangle(left, bounds) && stencil[left])
+                    if (bounds.Contains(left) && stencil[left])
                     {
                         // go left
                         next.X += curr.Y - last.Y;
                         next.Y -= curr.X - last.X;
                     }
-                    else if (Utility.IsPointInRectangle(right, bounds) && stencil[right])
+                    else if (bounds.Contains(right) && stencil[right])
                     {
                         // go straight
                         next.X += curr.X - last.X;
@@ -465,7 +462,7 @@ namespace PaintDotNet
                     }
                 }
 
-                Point[] points = pts.GetArray();
+                Point[] points = pts.ToArray();
                 Scanline[] scans = Utility.GetScans(points);
 
                 foreach (Scanline scan in scans)

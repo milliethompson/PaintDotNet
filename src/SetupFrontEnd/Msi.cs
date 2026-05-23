@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using Microsoft.Win32;
@@ -234,15 +234,10 @@ namespace PaintDotNet.Setup
         {
             const string x86 = "Intel;1033";
             const string x64 = "x64;1033";
-            const string ia64 = "Intel64;1033";
             string platform;
 
             switch (architecture)
-            {
-                case ProcessorArchitecture.IA64:
-                    platform = ia64;
-                    break;
-                
+            {               
                 case ProcessorArchitecture.X64:
                     platform = x64;
                     break;
@@ -252,7 +247,7 @@ namespace PaintDotNet.Setup
                     break;
 
                 default:
-                    throw new InvalidOperationException("Platform must be X86, X64 or IA64 (" + architecture.ToString() + ")");
+                    throw new InvalidOperationException("Platform must be X86 or X64 (" + architecture.ToString() + ")");
             }
 
             UIntPtr hDatabase = UIntPtr.Zero;
@@ -330,13 +325,6 @@ namespace PaintDotNet.Setup
                 unchecked
                 {
                     productCodeBytes[productCodeBytes.Length - 1] += 1;
-                }
-            }
-            else if (architecture == ProcessorArchitecture.IA64)
-            {
-                unchecked
-                {
-                    productCodeBytes[productCodeBytes.Length - 1] += 2;
                 }
             }
 

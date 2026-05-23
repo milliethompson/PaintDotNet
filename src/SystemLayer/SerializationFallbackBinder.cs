@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////////
-// Paint.NET
-// Copyright (C) Rick Brewster, Chris Crosetto, Dennis Dietrich, Tom Jackson, 
-//               Michael Kelsey, Brandon Ortiz, Craig Taylor, Chris Trevino, 
-//               and Luke Walker
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.
-// See src/setup/License.rtf for complete licensing and attribution information.
+// Paint.NET                                                                   //
+// Copyright (C) Rick Brewster, Tom Jackson, and past contributors.            //
+// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
+// See src/Resources/Files/License.txt for full licensing and attribution      //
+// details.                                                                    //
+// .                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 
 using System;
@@ -26,7 +26,7 @@ namespace PaintDotNet.SystemLayer
     /// make use of it. This class does not otherwise need to be here, and can be
     /// ignored by implementors.
     /// </remarks>
-    public class SerializationFallbackBinder
+    public sealed class SerializationFallbackBinder
         : SerializationBinder
     {
         private List<Assembly> assemblies;
@@ -49,7 +49,6 @@ namespace PaintDotNet.SystemLayer
 
         public override Type BindToType(string assemblyName, string typeName)
         {
-            Tracing.Ping("assemblyName: " + assemblyName + ", typeName: " + typeName);
             Type type = null;
 
             foreach (Assembly tryAssembly in this.assemblies)
